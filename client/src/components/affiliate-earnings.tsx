@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { db } from "@/lib/firebase";
+import { useAuth } from "../hooks/use-auth";
+import { db } from "../lib/firebase";
 import { collection, query, where, getDocs, orderBy, limit, Timestamp } from "firebase/firestore";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "./ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
+import { Label } from "./ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { DollarSign, FileText, ArrowUpRight, Download, CreditCard, Calendar, Clock, Filter, ChevronDown, BarChart, LineChart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -19,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "./ui/table";
 import {
   Select,
   SelectContent,
@@ -33,11 +33,11 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "./ui/popover";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "@radix-ui/react-icons";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Calendar as CalendarComponent } from "./ui/calendar";
 
 interface AffiliateEarningsProps {
   affiliateData: any;

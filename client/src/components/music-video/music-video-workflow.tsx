@@ -5,7 +5,7 @@ import {
   CardHeader, 
   CardTitle, 
   CardDescription 
-} from '@/components/ui/card';
+} from '../ui/card';
 import { 
   Button, 
   buttonVariants
@@ -15,7 +15,7 @@ import {
   TabsContent, 
   TabsList, 
   TabsTrigger 
-} from '@/components/ui/tabs';
+} from '../ui/tabs';
 import {
   Tooltip,
   TooltipContent,
@@ -40,17 +40,17 @@ import {
   Scissors,
   Loader2
 } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '../ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
-import { Input } from '@/components/ui/input';
+import { Input } from '../ui/input';
 import { Label } from '@/components/ui/label';
 import { VideoGenerator, VideoGenerationSettings } from './video-generator';
 import { VideoGeneratorWithCamera } from './video-generator-with-camera';
 import { TimelineClip } from './timeline-editor';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '../ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ProgressSteps, Step } from './progress-steps';
-import { useEditor } from '@/lib/context/editor-context';
+import { useEditor } from '../../lib/context/editor-context';
 
 // Definición local de los pasos para evitar problemas con HMR
 const workflowSteps: Step[] = [

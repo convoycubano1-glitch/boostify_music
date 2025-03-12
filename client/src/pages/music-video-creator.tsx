@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Header } from "@/components/layout/header";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Header } from "../components/layout/header";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
 import { Video, Users, Star, Wand2, Bot, CloudCog, Edit } from "lucide-react";
-import { DirectorsList } from "@/components/music-video/directors-list";
-import { MusicVideoAI } from "@/components/music-video/music-video-ai";
+import { DirectorsList } from "../components/music-video/directors-list";
+import { MusicVideoAI } from "../components/music-video/music-video-ai";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 

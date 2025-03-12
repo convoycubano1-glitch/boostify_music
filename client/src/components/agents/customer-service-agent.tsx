@@ -1,19 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Mic, MicOff, Send, Minimize as MinimizeIcon, Bot, Phone, Headphones, UserRound, ExternalLink, Info } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar } from "../ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { openRouterService } from "@/lib/api/openrouter-service";
-import { elevenLabsService } from "@/lib/api/elevenlabs-service";
+import { useAuth } from "../../hooks/use-auth";
+import { useIsMobile } from "../../hooks/use-mobile";
+import { openRouterService } from "../../lib/api/openrouter-service";
+import { elevenLabsService } from "../../lib/api/elevenlabs-service";
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Custom icon component for music question

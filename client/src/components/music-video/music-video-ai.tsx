@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { TimelineEditor, type TimelineClip } from "./timeline-editor";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { Card } from "@/components/ui/card";
 import Editor from "@monaco-editor/react";
 import {
@@ -13,18 +13,18 @@ import {
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw,
   Film, CheckCircle2, Share, User
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "../../hooks/use-toast";
+import { ScrollArea } from "../ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
-import { db } from "@/firebase";
-import { useAuth } from "@/lib/context/auth-context";
+import { db } from "../../firebase";
+import { useAuth } from "../../lib/context/auth-context";
 import { AnalyticsDashboard } from './analytics-dashboard';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { VideoGenerator } from "./video-generator";
 import { ArtistCustomization } from "./artist-customization";
 import { MusicianIntegration } from "./musician-integration";
@@ -37,11 +37,11 @@ import {
   generateVideoPromptWithRetry, 
   generateMusicVideoScript,
   type VideoPromptParams 
-} from "@/lib/api/openrouter";
-import { upscaleVideo } from "@/lib/api/video-service";
-import { generateVideoScript as generateVideoScriptAPI } from "@/lib/api/openrouter";
+} from "../../lib/api/openrouter";
+import { upscaleVideo } from "../../lib/api/video-service";
+import { generateVideoScript as generateVideoScriptAPI } from "../../lib/api/openrouter";
 import { FileText } from "lucide-react";
-import fluxService, { FluxModel, FluxTaskType } from "@/lib/api/flux/flux-service";
+import fluxService, { FluxModel, FluxTaskType } from "../../lib/api/flux/flux-service";
 
 // OpenAI configuration for audio transcription only
 const openai = new OpenAI({

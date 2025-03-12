@@ -18,7 +18,7 @@ import {
   Filter,
   ArrowRight
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import { 
   Dialog, 
   DialogContent, 
@@ -26,9 +26,9 @@ import {
   DialogTitle, 
   DialogDescription,
   DialogFooter
-} from "@/components/ui/dialog";
-import { toast } from "@/hooks/use-toast";
-import { SubscriptionFeature } from "@/components/subscription/subscription-feature";
+} from "../components/ui/dialog";
+import { toast } from "../hooks/use-toast";
+import { SubscriptionFeature } from "../components/subscription/subscription-feature";
 
 interface Advisor {
   id: string;

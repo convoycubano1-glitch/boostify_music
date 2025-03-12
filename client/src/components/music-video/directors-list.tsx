@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,9 +8,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import {
   Select,
   SelectContent,
@@ -26,7 +26,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "../ui/form";
 import {
   Video,
   Award,
@@ -44,16 +44,16 @@ import {
   Clock,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
+import { useToast } from "../../hooks/use-toast";
+import { db } from "../../lib/firebase";
 import { collection, getDocs, addDoc, serverTimestamp, orderBy, query } from "firebase/firestore";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import * as fal from "@fal-ai/serverless-client";
 import OpenAI from "openai";
-import { auth } from "@/lib/firebase"; //Import auth
+import { auth } from "../../lib/firebase"; //Import auth
 
 
 // Constants for form options

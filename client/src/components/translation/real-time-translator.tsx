@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { translateText, detectLanguage } from "@/lib/api/translation-service";
-import { useToast } from "@/hooks/use-toast";
+import { translateText, detectLanguage } from "../../lib/api/translation-service";
+import { useToast } from "../../hooks/use-toast";
 import { Languages, ArrowRight, Loader2 } from "lucide-react";
 import debounce from "lodash/debounce";
 

@@ -1,13 +1,13 @@
 import { useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "../ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { User, Loader2, Check, AlertCircle } from "lucide-react";
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken } from "../../lib/auth";
 
 // Tipos para el Face Swap
 export interface FaceSwapResult {

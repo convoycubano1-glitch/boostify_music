@@ -1,6 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "./ui/badge";
 import { BarChart, LineChart, TrendingUp, Users, DollarSign, Link, Clock } from "lucide-react";
 
 interface AffiliateOverviewProps {

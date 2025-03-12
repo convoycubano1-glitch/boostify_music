@@ -3,9 +3,9 @@
 import { Share2 } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
-import { openRouterService } from "@/lib/api/openrouteraiagents";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { openRouterService } from "../../lib/api/openrouteraiagents";
+import { useAuth } from "../../hooks/use-auth";
+import { useToast } from "../../hooks/use-toast";
 
 export function SocialMediaAgent() {
   const { user } = useAuth();

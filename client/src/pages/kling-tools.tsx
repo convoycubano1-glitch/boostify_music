@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { EffectsComponent } from "@/components/kling/effects-component";
-import { VirtualTryOnComponent } from "@/components/kling/tryon-component";
-import { LipsyncComponent } from "@/components/kling/lipsync-component";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { EffectsComponent } from "../components/kling/effects-component";
+import { VirtualTryOnComponent } from "../components/kling/tryon-component";
+import { LipsyncComponent } from "../components/kling/lipsync-component";
 import { Shirt, Sparkles, Mic, Store, ExternalLink } from 'lucide-react';
 import { Link } from "wouter";
 

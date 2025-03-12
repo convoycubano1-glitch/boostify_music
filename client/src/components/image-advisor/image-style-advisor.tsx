@@ -1,27 +1,27 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Loader2, Upload, Camera, Sparkles, Palette, UserCircle2, 
   Clock, History, Bookmark, ArrowLeft, CheckCircle, X, Trash2,
   Save, Info, FileText
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { motion } from "framer-motion";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { 
   Dialog, DialogContent, DialogDescription, 
   DialogHeader, DialogTitle, DialogTrigger, DialogFooter 
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { imageAdvisorService, SavedImageAdvice } from "@/lib/services/image-advisor-service";
+import { imageAdvisorService, SavedImageAdvice } from "../../lib/services/image-advisor-service";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 
 export function ImageStyleAdvisor() {
   const { toast } = useToast();

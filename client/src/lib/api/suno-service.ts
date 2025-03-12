@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { db } from '../firebase';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
-import { env } from '@/env';
+import { env } from '../../env';
 import { generateMusicWithSuno, checkMusicGenerationStatus } from './piapi-music';
 
 /**

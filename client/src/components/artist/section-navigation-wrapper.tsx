@@ -1,5 +1,5 @@
 import React from "react";
-import { SectionNavigation, SimpleSectionNavigation } from "@/components/navigation/section-navigation";
+import { SectionNavigation, SimpleSectionNavigation } from "../navigation/section-navigation";
 
 interface NavigationWrapperProps {
   activeSection: 'music' | 'videos' | 'merch' | 'shows';

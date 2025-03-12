@@ -8,7 +8,7 @@
  * 4. Aplicar movimientos de cámara para lograr efectos cinematográficos
  */
 
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "../queryClient";
 
 export interface HailuoVideoOptions {
   // Opciones comunes

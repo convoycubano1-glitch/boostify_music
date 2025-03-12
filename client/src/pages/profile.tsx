@@ -1,7 +1,7 @@
-import { ArtistProfileCard } from "@/components/artist/artist-profile-card";
+import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { useParams } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { Head } from "@/components/ui/head";
+import { useAuth } from "../hooks/use-auth";
+import { Head } from "../components/ui/head";
 import { useQuery } from "@tanstack/react-query";
 
 interface ArtistData {

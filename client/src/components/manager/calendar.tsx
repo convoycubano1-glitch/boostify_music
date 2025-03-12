@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Calendar as CalendarIcon, 
@@ -11,18 +11,18 @@ import {
   Calendar as CalendarIconFull,
   ListTodo
 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "../ui/calendar";
 import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
-import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useToast } from "../../hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "../ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { VisuallyHidden } from "@/components/ui/visually-hidden";
+import { VisuallyHidden } from "../ui/visually-hidden";
 import { format } from "date-fns";
-import { downloadTextFile } from "@/lib/download-helper";
+import { downloadTextFile } from "../../lib/download-helper";
 
 interface CalendarDocument {
   id: string;

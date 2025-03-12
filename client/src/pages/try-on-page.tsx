@@ -1,4 +1,4 @@
-import { SimpleTryOnComponent } from "@/components/kling/simple-tryon-improved";
+import { SimpleTryOnComponent } from "../components/kling/simple-tryon-improved";
 import { Sparkles, ImageIcon, Info } from "lucide-react";
 
 export default function TryOnPage() {

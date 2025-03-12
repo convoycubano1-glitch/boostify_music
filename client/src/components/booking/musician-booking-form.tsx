@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -9,13 +9,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { generateAudioWithFal } from "@/lib/api/fal-ai";
+import { generateAudioWithFal } from "../../lib/api/fal-ai";
 import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { MusicianService } from "@/pages/producer-tools";
-import { createCheckoutSession } from "@/lib/api/stripe-service";
-import { auth } from "@/lib/firebase";
+import { createCheckoutSession } from "../../lib/api/stripe-service";
+import { auth } from "../../lib/firebase";
 
 interface BookingFormProps {
   musician: MusicianService;

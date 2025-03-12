@@ -1,20 +1,20 @@
-import { Header } from "@/components/layout/header";
-import { TrendChart } from "@/components/analytics/trend-chart";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Header } from "../components/layout/header";
+import { TrendChart } from "../components/analytics/trend-chart";
+import { Card } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Music2, Radio, TrendingUp, Globe, Users, Search, Mail, Home } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getSpotifyAnalytics, getSpotifyData } from "@/lib/spotify-store";
+import { getSpotifyAnalytics, getSpotifyData } from "../lib/spotify-store";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import { motion } from "framer-motion";
 import { SiSpotify } from "react-icons/si";
 import { Link } from "wouter";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 import 'react-circular-progressbar/dist/styles.css';
 
 // Plan limits

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
 import QRCode from "react-qr-code";
 import {
   CreditCard,
@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { mockArtist } from "@/components/artist/artist-profile-card";
+import { useAuth } from "../hooks/use-auth";
+import { useToast } from "../hooks/use-toast";
+import { mockArtist } from "../components/artist/artist-profile-card";
 import { useLocation } from "wouter";
 
 const cardPackages = [

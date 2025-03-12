@@ -1,19 +1,19 @@
 import { useState } from "react";
-import { Header } from "@/components/layout/header";
-import { ImageStyleAdvisor } from "@/components/image-advisor/image-style-advisor";
-import { VirtualTryOnComponent } from "@/components/kling/tryon-component";
-import { ArtistVirtualTryOn } from "@/components/kling/artist-virtual-tryon";
-import { EnglishVirtualTryOn } from "@/components/kling/english-virtual-tryon";
-import { FluxUploadSection } from "@/components/image-generation/sections/flux-upload-section";
-import { FluxStyleSection } from "@/components/image-generation/sections/flux-style-section";
+import { Header } from "../components/layout/header";
+import { ImageStyleAdvisor } from "../components/image-advisor/image-style-advisor";
+import { VirtualTryOnComponent } from "../components/kling/tryon-component";
+import { ArtistVirtualTryOn } from "../components/kling/artist-virtual-tryon";
+import { EnglishVirtualTryOn } from "../components/kling/english-virtual-tryon";
+import { FluxUploadSection } from "../components/image-generation/sections/flux-upload-section";
+import { FluxStyleSection } from "../components/image-generation/sections/flux-style-section";
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Upload, Sparkles, Camera, Palette, Music2, TrendingUp, Image as ImageIcon, Star, ArrowLeft, Shirt } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 import { useLocation } from "wouter";
 
 const containerVariants = {

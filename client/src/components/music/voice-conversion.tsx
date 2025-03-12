@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Loader2, Upload, Play, Pause, Download, Music2, Music } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from '../ui/slider';
 import { Progress } from '@/components/ui/progress';
-import { Label } from '@/components/ui/label';
+import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
+import { toast } from '../../hooks/use-toast';
+import { Badge } from '../ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 import { voiceModelService } from '../../lib/services/voice-model-service';

@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Header } from "@/components/layout/header";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Header } from "../components/layout/header";
 import { Upload, UserPlus, Users, FileSpreadsheet, Loader2, Mail, Building2, Phone, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { db, auth } from "@/lib/firebase";
+import { db, auth } from "../lib/firebase";
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
-import { useToast } from "@/hooks/use-toast";
-import { Progress } from "@/components/ui/progress";
+import { useToast } from "../hooks/use-toast";
+import { Progress } from "../components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -16,10 +16,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 
 interface Contact {
   id: string;

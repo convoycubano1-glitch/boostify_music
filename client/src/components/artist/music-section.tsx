@@ -8,7 +8,7 @@ import {
   Loader2,
   ChartBar 
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Card } from '@/components/ui/card';
 
 interface Song {

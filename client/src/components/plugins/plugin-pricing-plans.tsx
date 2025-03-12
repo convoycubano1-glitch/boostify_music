@@ -6,11 +6,11 @@ import {
   CardFooter, 
   CardHeader, 
   CardTitle 
-} from "@/components/ui/card";
+} from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { auth } from '@/lib/firebase';
-import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
+import { auth } from '../../lib/firebase';
+import { useToast } from "../../hooks/use-toast";
+import { Badge } from "../ui/badge";
 import { CheckCircle, Loader2, Rocket, Zap } from "lucide-react";
 
 // Definir función para cargar Stripe de forma lazy

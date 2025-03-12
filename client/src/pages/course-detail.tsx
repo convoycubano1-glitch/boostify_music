@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Header } from "@/components/layout/header";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Progress } from "../components/ui/progress";
+import { Header } from "../components/layout/header";
 import { Loader2, CheckCircle2, Lock, BookOpen, Clock, Trophy, Star, Book, Lightbulb, FileText, Pencil, Link, List } from "lucide-react";
 import { motion } from "framer-motion";
-import { auth, db } from "@/firebase";
+import { auth, db } from "../firebase";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
-import { useToast } from "@/hooks/use-toast";
-import { getRelevantImage } from "@/lib/unsplash-service";
-import { generateImageWithFal } from "@/lib/api/fal-ai";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { generateLessonContent, type LessonContent } from "@/lib/course-content-generator";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { useToast } from "../hooks/use-toast";
+import { getRelevantImage } from "../lib/unsplash-service";
+import { generateImageWithFal } from "../lib/api/fal-ai";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "../components/ui/dialog";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { generateLessonContent, type LessonContent } from "../lib/course-content-generator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "../components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
+import { Label } from "../components/ui/label";
 import * as LucideIcons from "lucide-react";
 
 interface CourseProgress {

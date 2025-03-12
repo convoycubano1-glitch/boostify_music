@@ -6,19 +6,19 @@ import {
   DialogTitle, 
   DialogDescription,
   DialogFooter
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { storage, auth } from "@/firebase"; 
+import { useToast } from "../../hooks/use-toast";
+import { storage, auth } from "../../firebase"; 
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Loader2, Upload, Film, AlertCircle } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAuthToken } from "@/lib/auth";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getAuthToken } from "../../lib/auth";
+import { Alert, AlertDescription } from "../ui/alert";
 
 interface VideoUploadProps {
   isOpen: boolean;

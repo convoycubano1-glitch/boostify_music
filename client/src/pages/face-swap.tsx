@@ -1,6 +1,6 @@
 import React from 'react';
-import { Separator } from '@/components/ui/separator';
-import FaceSwap from '@/components/face-swap/face-swap';
+import { Separator } from '../components/ui/separator';
+import FaceSwap from '../components/face-swap/face-swap';
 
 /**
  * Página principal de Face Swap que muestra el componente de intercambio de rostros

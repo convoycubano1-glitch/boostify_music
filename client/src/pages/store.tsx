@@ -1,9 +1,9 @@
 import React from "react";
-import { Header } from "@/components/layout/header";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Header } from "../components/layout/header";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { motion } from "framer-motion";
 import { SiInstagram, SiFacebook, SiTelegram, SiTiktok, SiYoutube, SiX, SiLinkedin, SiPinterest, SiAndroid, SiApple } from "react-icons/si";
 import {

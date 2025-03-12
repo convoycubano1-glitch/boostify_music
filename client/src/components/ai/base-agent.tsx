@@ -1,19 +1,19 @@
       // src/components/ai/base-agent.tsx
 
       import { useState } from "react";
-      import { Card } from "@/components/ui/card";
+      import { Card } from "../ui/card";
       import { Button } from "@/components/ui/button";
       import { Loader2, HelpCircle } from "lucide-react";
       import { ProgressIndicator } from "./progress-indicator";
-      import { useToast } from "@/hooks/use-toast";
+      import { useToast } from "../../hooks/use-toast";
       import {
         Tooltip,
         TooltipContent,
         TooltipProvider,
         TooltipTrigger,
-      } from "@/components/ui/tooltip";
+      } from "../ui/tooltip";
       import { Label } from "@/components/ui/label";
-      import { Input } from "@/components/ui/input";
+      import { Input } from "../ui/input";
       import {
         Select,
         SelectContent,

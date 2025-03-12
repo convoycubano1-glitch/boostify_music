@@ -7,7 +7,7 @@ import {
   ChartBar,
   Video as VideoIcon
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Card } from '@/components/ui/card';
 
 interface Video {

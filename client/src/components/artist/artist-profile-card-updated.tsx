@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
   Play,
@@ -45,7 +45,7 @@ import {
   CreditCard
 } from "lucide-react";
 // Importamos nuestro componente de navegación
-import { SectionNavigation, SimpleSectionNavigation } from "@/components/navigation/section-navigation";
+import { SectionNavigation, SimpleSectionNavigation } from "../navigation/section-navigation";
 import {
   Dialog,
   DialogContent,
@@ -58,8 +58,8 @@ import "react-circular-progressbar/dist/styles.css";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useToast } from "@/hooks/use-toast";
+import { db } from "../../lib/firebase";
+import { useToast } from "../../hooks/use-toast";
 
 export interface ArtistProfileProps {
   artistId: string;

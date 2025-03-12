@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useToast } from '../hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { ImageIcon, VideoIcon, Loader2, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Badge } from '../components/ui/badge';
+import { Progress } from '../components/ui/progress';
 
 import { 
   generateImage as apiGenerateImage, 
   generateVideo as apiGenerateVideo,
   ImageResult,
   VideoResult
-} from '@/lib/api/multi-platform-generator';
-import { ApiProvider } from '@/lib/types/model-types';
+} from '../lib/api/multi-platform-generator';
+import { ApiProvider } from '../lib/types/model-types';
 
 interface AsyncTaskStatus {
   id: string;

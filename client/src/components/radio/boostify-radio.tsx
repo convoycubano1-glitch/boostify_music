@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { Volume2, Mic, Play, Pause, Radio, X, SkipForward, RefreshCw, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 import { motion } from "framer-motion";
 import { collection, query, getDocs, orderBy, limit } from "firebase/firestore";
-import { db } from "@/firebase";
-import { StreamingService, StreamingTrack } from "@/lib/streaming/streaming-service";
-import { SpotifyStreamingService } from "@/lib/streaming/spotify-service";
-import { useToast } from "@/hooks/use-toast";
+import { db } from "../../firebase";
+import { StreamingService, StreamingTrack } from "../../lib/streaming/streaming-service";
+import { SpotifyStreamingService } from "../../lib/streaming/spotify-service";
+import { useToast } from "../../hooks/use-toast";
 
 type MusicSource = 'spotify' | 'boostify';
 

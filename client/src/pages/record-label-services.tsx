@@ -1,15 +1,15 @@
-import { ScoreCreator } from "@/components/manager/score-creator";
-import { SoundDesigner } from "@/components/manager/sound-designer";
-import { TimelineEditor } from "@/components/manager/timeline-editor";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { ScoreCreator } from "../components/manager/score-creator";
+import { SoundDesigner } from "../components/manager/sound-designer";
+import { TimelineEditor } from "../components/manager/timeline-editor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 import { useState } from "react";
-import { Header } from "@/components/layout/header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ServiceDialog } from "@/components/record-label/service-dialog";
+import { Header } from "../components/layout/header";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ServiceDialog } from "../components/record-label/service-dialog";
 import {
   Music2, Wand2, Video, Building2, ArrowRight, Shield, Banknote,
   Radio, Tv, Film, FileText, Brain, Play, Volume2, Pen, Clock,
@@ -18,23 +18,23 @@ import {
   Music, Check, DollarSign, Globe, Award, BarChart, Zap
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { recordLabelService } from "@/lib/services/record-label-service";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { RadioNetworksDialog } from "@/components/record-label/radio-networks-dialog";
-import { TVNetworksDialog } from "@/components/record-label/tv-networks-dialog";
-import { MovieNetworksDialog } from "@/components/record-label/movie-networks-dialog";
-import { VenuesCatalog } from "@/components/manager/venues-catalog";
-import { VenuesBooking } from "@/components/manager/venues-booking";
-import { VenuesReports } from "@/components/manager/venues-reports";
+import { recordLabelService } from "../lib/services/record-label-service";
+import { useAuth } from "../hooks/use-auth";
+import { useToast } from "../hooks/use-toast";
+import { RadioNetworksDialog } from "../components/record-label/radio-networks-dialog";
+import { TVNetworksDialog } from "../components/record-label/tv-networks-dialog";
+import { MovieNetworksDialog } from "../components/record-label/movie-networks-dialog";
+import { VenuesCatalog } from "../components/manager/venues-catalog";
+import { VenuesBooking } from "../components/manager/venues-booking";
+import { VenuesReports } from "../components/manager/venues-reports";
 import { motion } from "framer-motion";
 import { 
   fadeIn, 
   slideInFromLeft, 
   slideInFromRight 
-} from "@/components/ui/motion";
-import { ArtistRoster } from "@/components/manager/artist-roster";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+} from "../components/ui/motion";
+import { ArtistRoster } from "../components/manager/artist-roster";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 
 export default function RecordLabelServices() {
   const [selectedTab, setSelectedTab] = useState("radio-tv");

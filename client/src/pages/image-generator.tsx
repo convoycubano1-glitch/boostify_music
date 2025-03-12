@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
+import { Slider } from '../components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Separator } from '../components/ui/separator';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from '../components/ui/dialog';
 import { 
   ImageIcon, 
   VideoIcon, 
@@ -30,7 +30,7 @@ import {
   CheckCircle,
   CloudUpload
 } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '../components/ui/progress';
 // Import with @ alias
 import type { 
   ImageResult, 
@@ -42,8 +42,8 @@ import {
   saveGeneratedVideo, 
   getGeneratedVideos,
   saveMediaToLocalStorage
-} from '@/lib/api/generated-images-service';
-import { FluxGenerator } from '@/components/image-generation/flux-generator-new';
+} from '../lib/api/generated-images-service';
+import { FluxGenerator } from '../components/image-generation/flux-generator-new';
 
 // Form validation schemas
 const imageFormSchema = z.object({

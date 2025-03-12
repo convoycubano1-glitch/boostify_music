@@ -5,13 +5,13 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from '@/components/ui/card';
+} from '../ui/card';
 import {
   Button
 } from '@/components/ui/button';
 import {
   Input
-} from '@/components/ui/input';
+} from '../ui/input';
 import {
   Label
 } from '@/components/ui/label';
@@ -21,7 +21,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
+} from '../ui/select';
 import {
   Slider
 } from '@/components/ui/slider';
@@ -30,7 +30,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@/components/ui/tooltip';
+} from '../ui/tooltip';
 import {
   Table,
   TableBody,
@@ -45,7 +45,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger
-} from '@/components/ui/tabs';
+} from '../ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -60,7 +60,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+} from '../ui/dropdown-menu';
 import {
   Music,
   Play,
@@ -83,11 +83,11 @@ import {
   Loader2,
   Music2 as Metronome // Usando Music2 como reemplazo de Metronome
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Beat, Section } from '@/lib/professional-editor-types';
+import { cn } from '../../lib/utils';
+import { Beat, Section } from '../../lib/professional-editor-types';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db } from '../../lib/firebase';
 
 interface BeatAnalyzerProps {
   currentTime: number;

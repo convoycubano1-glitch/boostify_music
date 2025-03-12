@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from "../../lib/utils";
+import { Button } from "../ui/button";
 import { Link, useLocation } from "wouter";
 import { 
   BarChart3, 
@@ -16,9 +16,9 @@ import {
   Globe,
   Puzzle
 } from "lucide-react";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { useToast } from "@/hooks/use-toast";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useFirebaseAuth } from "../../hooks/use-firebase-auth";
+import { useToast } from "../../hooks/use-toast";
+import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { useState } from "react";
 
 const navigation = [

@@ -1,4 +1,4 @@
-import { auth } from "@/firebase";
+import { auth } from "../firebase";
 import { createSampleCourses } from "./create-sample-courses";
 
 async function createCourses() {

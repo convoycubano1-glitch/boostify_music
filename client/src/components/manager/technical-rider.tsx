@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Upload, Download, Building2, Loader2, Eye } from "lucide-react";
-import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
-import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { managerToolsService } from "../../lib/services/managertoolsopenrouter";
+import { useToast } from "../../hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MdMusicNote, MdOutlineAudiotrack, MdLightbulb } from "react-icons/md";
 import { FiDownload, FiFilePlus } from "react-icons/fi";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 interface TechnicalRider {
   id: string;

@@ -7,7 +7,7 @@
 
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 import { motion, HTMLMotionProps } from "framer-motion";
 
 // Motion-enhanced div component

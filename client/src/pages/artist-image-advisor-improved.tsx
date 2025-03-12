@@ -9,20 +9,20 @@ import React, { useEffect } from 'react';
 import { 
   useArtistImageWorkflow, 
   WorkflowStep 
-} from '@/services/artist-image-workflow-service';
-import { WorkflowGuide } from '@/components/image-advisor/workflow-guide';
-import { Button } from '@/components/ui/button';
+} from '../services/artist-image-workflow-service';
+import { WorkflowGuide } from '../components/image-advisor/workflow-guide';
+import { Button } from '../components/ui/button';
 import { 
   ChevronLeft, 
   ChevronRight, 
   RotateCcw 
 } from 'lucide-react';
 
-import { FluxUploadImproved } from '@/components/image-generation/improved/flux-upload-improved';
-import { FluxStyleImproved } from '@/components/image-generation/improved/flux-style-improved';
-import { VirtualTryonImproved } from '@/components/kling/virtual-tryon-improved';
-import { FinalImageGeneration } from '@/components/image-generation/improved/final-image-generation';
-import { ResultsGallery } from '@/components/image-generation/improved/results-gallery';
+import { FluxUploadImproved } from '../components/image-generation/improved/flux-upload-improved';
+import { FluxStyleImproved } from '../components/image-generation/improved/flux-style-improved';
+import { VirtualTryonImproved } from '../components/kling/virtual-tryon-improved';
+import { FinalImageGeneration } from '../components/image-generation/improved/final-image-generation';
+import { ResultsGallery } from '../components/image-generation/improved/results-gallery';
 
 export default function ArtistImageAdvisorImproved() {
   const { 

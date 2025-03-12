@@ -8,15 +8,15 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "../ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import {
   Camera,
   Upload,
@@ -59,7 +59,7 @@ interface TryOnResult {
   id?: string;
 }
 
-import { klingService } from '@/services/kling/kling-service';
+import { klingService } from '../../services/kling/kling-service';
 
 // Animation variants
 const containerVariants = {

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { UpscaleOptions } from '@/components/music-video/final-rendering';
+import { UpscaleOptions } from '../../components/music-video/final-rendering';
 
 /**
  * Interfaz para los resultados de las operaciones de video

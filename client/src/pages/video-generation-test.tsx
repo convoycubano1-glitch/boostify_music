@@ -3,8 +3,8 @@
  */
 
 import { Video } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import VideoGenerator from '@/components/video-generation-test';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import VideoGenerator from '../components/video-generation-test';
 
 export default function VideoGenerationTestPage() {
   return (

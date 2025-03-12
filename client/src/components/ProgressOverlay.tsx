@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "./ui/progress";
 import { CloudUpload, Film, Users, Megaphone, BarChart2, Shield, DollarSign, Zap } from "lucide-react";
 
 interface ProgressOverlayProps {

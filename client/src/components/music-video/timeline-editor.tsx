@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Play, Pause, SkipBack, SkipForward,
@@ -15,10 +15,10 @@ import {
   LineChart, BarChart4
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { cn } from "../../lib/utils";
+import { Dialog, DialogContent, DialogTitle, DialogFooter } from "../ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import WaveSurfer from 'wavesurfer.js';
 import interact from 'interactjs';
 

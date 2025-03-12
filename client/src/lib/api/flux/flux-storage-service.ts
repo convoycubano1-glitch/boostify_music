@@ -5,7 +5,7 @@
  * Asegura que todas las imágenes se guarden correctamente en Firestore con sus metadatos.
  */
 
-import { auth, db } from '@/lib/firebase';
+import { auth, db } from '../../firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, Timestamp, DocumentData } from 'firebase/firestore';
 import { ImageResult } from '../../types/model-types';
 

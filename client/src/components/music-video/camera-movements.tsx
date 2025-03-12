@@ -6,15 +6,15 @@
  * para crear videos dinámicos y profesionales.
  */
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from '../ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Camera, Plus, Trash2, Edit3, VideoIcon, Save, RotateCcw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useEditor } from '@/lib/context/editor-context';
+import { useToast } from '../../hooks/use-toast';
+import { useEditor } from '../../lib/context/editor-context';
 
 interface CameraMovement {
   id?: string;

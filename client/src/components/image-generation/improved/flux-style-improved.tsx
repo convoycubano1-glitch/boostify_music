@@ -6,10 +6,10 @@
  */
 
 import React, { useState } from 'react';
-import { useArtistImageWorkflow } from '@/services/artist-image-workflow-service';
-import { Button } from '@/components/ui/button';
+import { useArtistImageWorkflow } from '../../../services/artist-image-workflow-service';
+import { Button } from '../../ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Label } from '../../ui/label';
 import {
   Select,
   SelectContent,
@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '../../ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Brush, Music, Palette, HelpCircle } from 'lucide-react';
 

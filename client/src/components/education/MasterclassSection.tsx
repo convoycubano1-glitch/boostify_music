@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "../ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { auth, db } from "@/firebase";
+import { auth, db } from "../../firebase";
 import { collection, addDoc, getDocs, query, orderBy, Timestamp, where, doc, updateDoc, increment } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { getRelevantImage } from "@/lib/unsplash-service";
-import { createCheckoutSession } from "@/lib/api/stripe-service";
-import { generateCourseContent } from "@/lib/api/openrouter";
+import { getRelevantImage } from "../../lib/unsplash-service";
+import { createCheckoutSession } from "../../lib/api/stripe-service";
+import { generateCourseContent } from "../../lib/api/openrouter";
 import { User, GraduationCap, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight, Sparkles, Video, Music, Mic2, Zap, Flame, Headphones, Lightbulb, TrendingUp, Wand2, BookOpen } from "lucide-react";
 
 interface MasterclassFormData {

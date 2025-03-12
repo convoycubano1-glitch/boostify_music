@@ -1,5 +1,5 @@
-import { Header } from "@/components/layout/header";
-import { RealTimeTranslator } from "@/components/translation/real-time-translator";
+import { Header } from "../components/layout/header";
+import { RealTimeTranslator } from "../components/translation/real-time-translator";
 
 export default function RealTimeTranslatorPage() {
   return (

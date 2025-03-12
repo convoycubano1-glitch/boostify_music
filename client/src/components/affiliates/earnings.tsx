@@ -1,10 +1,10 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { BarChart, LineChart, PieChart, ChevronDown, Download, Calendar, ArrowUpDown, Share2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 import {
   Select,
   SelectContent,
@@ -12,7 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import {
   Table,
   TableBody,

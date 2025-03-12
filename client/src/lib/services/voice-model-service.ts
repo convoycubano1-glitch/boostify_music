@@ -19,7 +19,7 @@ import {
 import { voiceProcessingService } from './voice-processing-service';
 import { revocalizeAPI } from './api/revocalize-api';
 import { kitsAIAPI } from './api/kits-ai-api';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '../../hooks/use-toast';
 
 class VoiceModelService {
   constructor() {

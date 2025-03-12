@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { db, storage } from "@/lib/firebase";
+import { useAuth } from "../../hooks/use-auth";
+import { useToast } from "../../hooks/use-toast";
+import { db, storage } from "../../lib/firebase";
 import { collection, addDoc, query, where, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage, UploadTaskSnapshot } from "firebase/storage";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Play, Pause, Trash } from "lucide-react";
 

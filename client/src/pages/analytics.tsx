@@ -1,14 +1,14 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Header } from "@/components/layout/header";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Header } from "../components/layout/header";
 import { Activity, TrendingUp, Download, Calendar, Music2, Users, DollarSign, Share2 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell } from 'recharts';
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 import html2pdf from 'html2pdf.js';
 
 const COLORS = ['#f97316', '#fb923c', '#fdba74', '#fed7aa'];

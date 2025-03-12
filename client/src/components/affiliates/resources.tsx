@@ -1,6 +1,6 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Download, ExternalLink, Play, FileText, Image, Video, Zap, BookOpen, Calculator, ChevronRight, Clock, Check, Gift, Star, Award, Search, Globe } from "lucide-react";
 import {
@@ -8,10 +8,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "../ui/accordion";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import {
   Tooltip,
   TooltipContent,

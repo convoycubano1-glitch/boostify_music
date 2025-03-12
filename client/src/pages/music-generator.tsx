@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import { MusicGenerationSection } from "@/components/music/genre-templates/music-generation-section";
-import { MusicGenerationAdvancedParams } from "@/components/music/genre-templates/advanced-music-params";
+import { MusicGenerationSection } from "../components/music/genre-templates/music-generation-section";
+import { MusicGenerationAdvancedParams } from "../components/music/genre-templates/advanced-music-params";
 import { 
   musicGenreTemplates, 
   getGenreTemplateById, 
   getDetailedPrompt,
   MusicGenreTemplate
-} from "@/components/music/genre-templates/genre-data";
-import { generateMusic, checkGenerationStatus, getRecentGenerations } from "@/lib/api/music-generator-service";
-import { useToast } from "@/hooks/use-toast";
-import { Header } from "@/components/layout/header";
+} from "../components/music/genre-templates/genre-data";
+import { generateMusic, checkGenerationStatus, getRecentGenerations } from "../lib/api/music-generator-service";
+import { useToast } from "../hooks/use-toast";
+import { Header } from "../components/layout/header";
 import { motion } from "framer-motion";
 
 import {
@@ -17,7 +17,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
+} from "../components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -25,14 +25,14 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Separator } from "../components/ui/separator";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Avatar } from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 
 import {
   Music,

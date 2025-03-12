@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { generateImageWithFal } from "@/lib/api/fal-ai";
+import { generateImageWithFal } from "../../lib/api/fal-ai";
 import { Loader2, Image as ImageIcon } from "lucide-react";
-import { db } from "@/lib/firebase";
+import { db } from "../../lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import type { MusicianService } from "@/pages/producer-tools";
 

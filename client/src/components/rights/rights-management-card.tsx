@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
 import { Music2, ExternalLink, Shield, DollarSign, Globe } from "lucide-react";
 import { motion } from "framer-motion";

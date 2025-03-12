@@ -1,23 +1,23 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Card } from "../components/ui/card";
+import { AspectRatio } from "../components/ui/aspect-ratio";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../hooks/use-auth";
+import { useToast } from "../hooks/use-toast";
 import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle, Clock, Home, CheckCircle2, Shield, Users, Key, Video, FileText, MessageSquare, Eye, Database, Brain, Music2, Scissors, Type, Sparkles, Music, Search, Image } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 // Stripe is loaded dynamically to prevent initialization errors
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { getAuthToken } from "@/lib/firebase";
-import { createYouTubeViewsOrder, checkApifyRun, YouTubeViewsData } from "@/lib/youtube-store";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog";
+import { getAuthToken } from "../lib/firebase";
+import { createYouTubeViewsOrder, checkApifyRun, YouTubeViewsData } from "../lib/youtube-store";
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import { motion, AnimatePresence } from "framer-motion";
 import 'react-circular-progressbar/dist/styles.css';
 import { Link } from "wouter";
 import { SiYoutube } from "react-icons/si";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Textarea } from "../components/ui/textarea";
 import {
   LineChart,
   Line,
@@ -30,7 +30,7 @@ import {
   AreaChart
 } from "recharts";
 import { Users2 } from "lucide-react";
-import { Header } from "@/components/layout/header";
+import { Header } from "../components/layout/header";
 
 // Function to load Stripe dynamically
 const getStripe = async () => {

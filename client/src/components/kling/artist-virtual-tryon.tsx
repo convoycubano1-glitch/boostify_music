@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '../ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   AlertCircle, 
@@ -17,10 +17,10 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../ui/badge';
 import { motion } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
-import { klingService, TryOnResult } from '@/services/kling/kling-service';
+import { useToast } from '../../hooks/use-toast';
+import { klingService, TryOnResult } from '../../services/kling/kling-service';
 
 export function ArtistVirtualTryOn() {
   const [modelImage, setModelImage] = useState<string>("");

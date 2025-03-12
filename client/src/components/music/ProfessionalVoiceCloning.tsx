@@ -12,9 +12,9 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle 
-} from '@/components/ui/card';
+} from '../ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Mic, Upload, Wand2, Music2, BarChart3, History, 
@@ -23,7 +23,7 @@ import {
 import { VoiceConversionStudio } from './VoiceConversionStudio';
 import { VoiceModelCreator } from './voice-model-creator';
 import { voiceModelService } from '../../lib/services/voice-model-service';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '../../hooks/use-toast';
 
 interface ProfessionalVoiceModelingProps {
   className?: string;

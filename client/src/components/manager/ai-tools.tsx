@@ -1,13 +1,13 @@
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Brain, Wand2, Calculator, ChartBar, ArrowRight, Loader2, MessageSquare, Download, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { managerToolsService } from "@/lib/services/managertoolsopenrouter";
+import { useToast } from "../../hooks/use-toast";
+import { managerToolsService } from "../../lib/services/managertoolsopenrouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { VisuallyHidden } from "@/components/ui/visually-hidden";
+import { VisuallyHidden } from "../ui/visually-hidden";
 
 interface AIResponse {
   id: string;

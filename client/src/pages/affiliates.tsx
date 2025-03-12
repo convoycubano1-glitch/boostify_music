@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Header } from "@/components/layout/header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AffiliateOverview } from "@/components/affiliates/overview";
-import { AffiliateRegistration } from "@/components/affiliates/registration";
-import { AffiliateLinks } from "@/components/affiliates/links";
-import { AffiliateEarnings } from "@/components/affiliates/earnings";
-import { AffiliateContentGenerator } from "@/components/affiliates/content-generator";
-import { AffiliateResources } from "@/components/affiliates/resources";
-import { AffiliateSupport } from "@/components/affiliates/affiliate-support";
-import { useAuth } from "@/hooks/use-auth";
-import { db, auth } from "@/lib/firebase";
+import { Header } from "../components/layout/header";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { AffiliateOverview } from "../components/affiliates/overview";
+import { AffiliateRegistration } from "../components/affiliates/registration";
+import { AffiliateLinks } from "../components/affiliates/links";
+import { AffiliateEarnings } from "../components/affiliates/earnings";
+import { AffiliateContentGenerator } from "../components/affiliates/content-generator";
+import { AffiliateResources } from "../components/affiliates/resources";
+import { AffiliateSupport } from "../components/affiliates/affiliate-support";
+import { useAuth } from "../hooks/use-auth";
+import { db, auth } from "../lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import { 
   CircleCheck, 
   GraduationCap, 
@@ -35,7 +35,7 @@ import {
   Crown,
   Headphones as HeadphonesIcon
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 
 // Define AffiliateData type
 type AffiliateDataType = {

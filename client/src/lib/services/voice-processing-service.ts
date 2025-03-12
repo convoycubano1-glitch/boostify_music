@@ -10,7 +10,7 @@
 
 import { revocalizeAPI } from './api/revocalize-api';
 import { kitsAIAPI, AudioProcessingOptions } from './api/kits-ai-api';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '../../hooks/use-toast';
 import { VoiceModel, AudioEffect, VoiceConversionRecord } from '../types/voice-model-types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getFirestore, collection, addDoc, updateDoc, doc, serverTimestamp, query, where, getDocs, orderBy } from 'firebase/firestore';

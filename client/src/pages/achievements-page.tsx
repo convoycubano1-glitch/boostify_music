@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AchievementBadge } from "@/components/ui/achievement-badge";
+import { AchievementBadge } from "../components/ui/achievement-badge";
 import { Loader2 } from "lucide-react";
 
 export default function AchievementsPage() {

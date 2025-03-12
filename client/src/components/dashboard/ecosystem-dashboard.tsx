@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { db } from "@/lib/firebase";
+import { useAuth } from "../../hooks/use-auth";
+import { db } from "../../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import {
   Music2,
   Bot,

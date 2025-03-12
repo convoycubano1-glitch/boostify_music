@@ -5,7 +5,7 @@
  * en el servidor para operaciones CRUD de proyectos de edición profesional
  */
 
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest } from '../queryClient';
 import { EditorState } from '@/lib/professional-editor-types';
 
 // Interfaz para compatibilidad con la API del servidor

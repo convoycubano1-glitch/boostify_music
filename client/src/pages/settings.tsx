@@ -1,16 +1,16 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "../components/ui/select";
+import { Switch } from "../components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import {
   Bell,
   User,
@@ -18,10 +18,10 @@ import {
   Palette,
   Globe,
 } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useSettingsStore, themeOptions, densityOptions, languageOptions } from "@/store/settings-store";
+import { useIsMobile } from "../hooks/use-mobile";
+import { useSettingsStore, themeOptions, densityOptions, languageOptions } from "../store/settings-store";
 import { useEffect, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 import { z } from "zod";
 import {
   Form,
@@ -31,7 +31,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "../components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Header } from "@/components/layout/header";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Header } from "../components/layout/header";
 import {
   Activity,
   Megaphone,
@@ -18,7 +18,7 @@ import {
   Clock
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CampaignForm } from "@/components/promotion/campaign-form";
+import { CampaignForm } from "../components/promotion/campaign-form";
 import {
   Dialog,
   DialogContent,
@@ -26,8 +26,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { db, auth } from "@/lib/firebase";
+} from "../components/ui/dialog";
+import { db, auth } from "../lib/firebase";
 import {
   collection,
   query,
@@ -41,10 +41,10 @@ import {
   Timestamp,
   getDoc
 } from "firebase/firestore";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { Badge } from "../components/ui/badge";
+import { Progress } from "../components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { useToast } from "../hooks/use-toast";
 
 // Interfaces
 interface Campaign {

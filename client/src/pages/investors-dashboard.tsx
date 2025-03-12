@@ -1,14 +1,14 @@
-import { Header } from "@/components/layout/header";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Header } from "../components/layout/header";
+import { Card } from "../components/ui/card";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Slider } from "../components/ui/slider";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components/ui/form";
 import {
   DollarSign,
   Download,
@@ -30,13 +30,13 @@ import {
   PenSquare
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../hooks/use-auth";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { db } from "@/firebase";
+import { db } from "../firebase";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 // Investment Calculator Component
 function InvestmentCalculator() {
   const [investmentAmount, setInvestmentAmount] = useState(5000);

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Label } from "@/components/ui/label";
 import { 
   ExternalLink, 
@@ -29,9 +29,9 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
-import { getAuthToken } from "@/lib/auth";
-import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "../../hooks/use-toast";
+import { getAuthToken } from "../../lib/auth";
+import { useAuth } from "../../hooks/use-auth";
 
 // Initial data as fallback
 const radioNetworks = [

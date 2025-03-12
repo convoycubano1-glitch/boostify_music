@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "../../hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { 
   Camera, 
   Upload, 
@@ -18,7 +18,7 @@ import {
   Check,
   X
 } from "lucide-react";
-import { klingService, TryOnResult } from "@/services/kling/kling-service";
+import { klingService, TryOnResult } from "../../services/kling/kling-service";
 
 /**
  * VirtualTryOnComponent

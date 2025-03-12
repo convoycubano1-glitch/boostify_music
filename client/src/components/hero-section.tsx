@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { SiSpotify, SiApplemusic, SiYoutube, SiTiktok, SiInstagram } from "react-icons/si";
 import { ArrowRight, Sparkles, Bot, Music, Globe, Building2, ChevronRight, Play, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 
 interface HeroSectionProps {
   handleCreateLabel?: () => void;

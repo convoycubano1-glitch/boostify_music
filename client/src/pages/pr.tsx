@@ -1,8 +1,8 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import {
   Users2,
   MessageSquare,
@@ -20,14 +20,14 @@ import {
   FileText,
   Megaphone
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Avatar } from "../components/ui/avatar";
+import { Progress } from "../components/ui/progress";
 import { useState, useEffect } from "react";
-import { searchContacts, contactCategories, type Contact, saveContact, getSavedContacts } from "@/lib/apify-service";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { Header } from "@/components/layout/header";
+import { searchContacts, contactCategories, type Contact, saveContact, getSavedContacts } from "../lib/apify-service";
+import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../hooks/use-auth";
+import { Header } from "../components/layout/header";
 import { Link } from "wouter";
 import {
   AreaChart,

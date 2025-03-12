@@ -1,15 +1,15 @@
 import React from "react";
-import { PostFeed } from "@/components/social/post-feed";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PostFeed } from "../components/social/post-feed";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
-import { SocialUser } from "@/lib/social/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { apiRequest } from "../lib/queryClient";
+import { useAuth } from "../hooks/use-auth";
+import { SocialUser } from "../lib/social/types";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked } from "lucide-react";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 
 // Constantes que nos ahorraremos de repetir
 const LANGUAGE_BADGE_CLASS = "px-2 py-0.5 rounded-full text-xs inline-flex items-center";

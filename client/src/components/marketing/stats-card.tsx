@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface StatsCardProps {

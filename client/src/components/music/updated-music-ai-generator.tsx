@@ -1,6 +1,6 @@
 import { MusicAIGenerator as OriginalMusicAIGenerator } from './music-ai-generator';
 import { MusicGeneratorWrapper } from './music-generator-wrapper';
-import { musicGenreTemplates, MusicGenreTemplate } from '@/components/music/genre-templates/genre-data';
+import { musicGenreTemplates, MusicGenreTemplate } from './genre-templates/genre-data';
 
 /**
  * Componente mejorado del generador de música con IA

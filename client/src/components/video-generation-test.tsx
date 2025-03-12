@@ -3,15 +3,15 @@
  */
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from './ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Label } from './ui/label';
 import { Slider } from '@/components/ui/slider';
-import { useToast } from '@/hooks/use-toast';
-import { generateVideo, checkVideoStatus, VideoStatusResponse, VideoGenerationOptions } from '@/lib/api/video-service';
-import { Progress } from '@/components/ui/progress';
+import { useToast } from '../hooks/use-toast';
+import { generateVideo, checkVideoStatus, VideoStatusResponse, VideoGenerationOptions } from '../lib/api/video-service';
+import { Progress } from './ui/progress';
 import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info } from 'lucide-react';
 

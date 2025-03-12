@@ -1,4 +1,4 @@
-import { useAIModelsStore } from "@/store/ai-models-store";
+import { useAIModelsStore } from "../store/ai-models-store";
 
 export function useAIModel() {
   const store = useAIModelsStore();

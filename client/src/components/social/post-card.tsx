@@ -4,16 +4,16 @@ import {
   CardContent, 
   CardFooter, 
   CardHeader 
-} from "@/components/ui/card";
+} from "../ui/card";
 import { 
   Avatar, 
   AvatarFallback, 
   AvatarImage 
 } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "../../hooks/use-toast";
+import { useAuth } from "../../hooks/use-auth";
 import { 
   Heart, 
   MessageCircle, 
@@ -25,8 +25,8 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Post, Comment, CreateCommentRequest } from "@/lib/social/types";
+import { apiRequest } from "../../lib/queryClient";
+import { Post, Comment, CreateCommentRequest } from "../../lib/social/types";
 
 interface PostCardProps {
   post: Post;

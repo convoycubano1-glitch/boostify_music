@@ -1,7 +1,7 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Header } from "@/components/layout/header";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Header } from "../components/layout/header";
 import { Activity, Clock, Eye, MessageSquare, ThumbsUp, RefreshCw, Filter, TrendingUp, HashIcon } from "lucide-react";
 import {
   AreaChart,
@@ -19,10 +19,10 @@ import {
   Legend
 } from 'recharts';
 import { useQuery } from "@tanstack/react-query";
-import { fetchMusicIndustryNews, type NewsArticle } from "@/lib/news-service";
+import { fetchMusicIndustryNews, type NewsArticle } from "../lib/news-service";
 import { format } from "date-fns";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../components/ui/badge";
 
 const COLORS = ['#f97316', '#ea580c', '#c2410c', '#9a3412'];
 

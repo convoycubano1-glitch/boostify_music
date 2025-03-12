@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,15 +8,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { recordLabelService } from "@/lib/services/record-label-service";
+import { recordLabelService } from "../../lib/services/record-label-service";
 
 interface ServiceDialogProps {
   type: 'remix' | 'mastering' | 'video';

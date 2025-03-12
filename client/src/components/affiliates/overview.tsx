@@ -1,16 +1,16 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "../ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { Button } from "@/components/ui/button";
 import { BarChart, LineChart, TrendingUp, Users, DollarSign, Link, Clock, ChevronRight, Download, Share2, Wallet, Award, ChevronUp, ChevronDown, ExternalLink, BarChart2, PieChart, Zap, FileDown, FileText, AreaChart, Rocket } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip";
 import { CircularProgress } from "@/components/ui/circular-progress";
 
 interface AffiliateOverviewProps {

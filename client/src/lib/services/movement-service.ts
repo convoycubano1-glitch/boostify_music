@@ -4,7 +4,7 @@
  * a imágenes estáticas y convertirlas en videos con movimiento sincronizado.
  */
 
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "../queryClient";
 
 export interface MovementPattern {
   name: string;

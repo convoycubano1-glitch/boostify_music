@@ -5,15 +5,15 @@
  * permitiendo aplicar efectos dinámicos a los videos generados por IA.
  */
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '../ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../ui/badge';
 import { CameraMovements } from './camera-movements';
-import { useEditor } from '@/lib/context/editor-context';
+import { useEditor } from '../../lib/context/editor-context';
 import {
   Camera,
   Clapperboard,

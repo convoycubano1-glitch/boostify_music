@@ -1,8 +1,11 @@
-import { db } from '@/firebase';
+import { db } from '../firebase';
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, updateDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const auth = getAuth();
+
+// Contract types definition
+export type ContractType = 'legal' | 'recording' | 'performance' | 'licensing' | 'distribution' | 'publishing' | 'management' | 'analysis';
 
 // Contract interface
 export interface Contract {
@@ -14,7 +17,7 @@ export interface Contract {
   updatedAt?: Date;
   userId: string;
   parties?: string[];
-  type?: string;
+  type?: ContractType;
   expiresAt?: Date;
   metadata?: Record<string, any>;
 }

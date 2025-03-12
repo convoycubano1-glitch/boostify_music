@@ -1,11 +1,11 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { SiSpotify } from "react-icons/si";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../../hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { getSpotifyData } from "@/lib/spotify-store";
-import { useToast } from "@/hooks/use-toast";
+import { getSpotifyData } from "../../lib/spotify-store";
+import { useToast } from "../../hooks/use-toast";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 

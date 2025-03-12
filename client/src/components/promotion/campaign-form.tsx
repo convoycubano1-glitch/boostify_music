@@ -2,7 +2,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import {
   Form,
   FormControl,
@@ -12,7 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -20,10 +20,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "@/lib/firebase";
+import { db, auth } from "../../lib/firebase";
 
 const campaignSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),

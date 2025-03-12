@@ -6,8 +6,8 @@
  */
 
 import React, { useState } from 'react';
-import { useArtistImageWorkflow } from '@/services/artist-image-workflow-service';
-import { Button } from '@/components/ui/button';
+import { useArtistImageWorkflow } from '../../../services/artist-image-workflow-service';
+import { Button } from '../../ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '../../ui/dialog';
 import { 
   Download, 
   Share2, 

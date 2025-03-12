@@ -1,5 +1,5 @@
-import { Header } from "@/components/layout/header";
-import { MessagingPanel } from "@/components/messaging/messaging-panel";
+import { Header } from "../components/layout/header";
+import { MessagingPanel } from "../components/messaging/messaging-panel";
 
 export default function MessagesPage() {
   return (

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from '../ui/slider';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '../../hooks/use-toast';
 import { Loader2, ThumbsUp, Activity, Wand2, Check } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../ui/badge';
 
 interface MovementIntegrationProps {
   onApplyMovements: (movements: MovementSettings) => void;

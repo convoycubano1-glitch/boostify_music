@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { 
   ExternalLink, 

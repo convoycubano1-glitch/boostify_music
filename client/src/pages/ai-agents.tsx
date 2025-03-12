@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Header } from "@/components/layout/header";
+import { Header } from "../components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "@/lib/firebase";
+import { db } from "../lib/firebase";
 import { 
   Brain, 
   Database, 
@@ -26,17 +26,17 @@ import {
   Award,
   CheckCircle2
 } from "lucide-react";
-import { agentUsageService } from "@/lib/services/agent-usage-service";
-import { ComposerAgent } from "@/components/ai/composer-agent";
-import { VideoDirectorAgent } from "@/components/ai/video-director-agent";
-import { MarketingAgent } from "@/components/ai/marketing-agent";
-import { SocialMediaAgent } from "@/components/ai/social-media-agent";
-import { MerchandiseAgent } from "@/components/ai/merchandise-agent";
-import { ManagerAgent } from "@/components/ai/manager-agent";
-import { AIDataManager } from "@/components/ai/ai-data-manager";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { agentUsageService } from "../lib/services/agent-usage-service";
+import { ComposerAgent } from "../components/ai/composer-agent";
+import { VideoDirectorAgent } from "../components/ai/video-director-agent";
+import { MarketingAgent } from "../components/ai/marketing-agent";
+import { SocialMediaAgent } from "../components/ai/social-media-agent";
+import { MerchandiseAgent } from "../components/ai/merchandise-agent";
+import { ManagerAgent } from "../components/ai/manager-agent";
+import { AIDataManager } from "../components/ai/ai-data-manager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { 
   Card,
   CardContent,
@@ -44,17 +44,17 @@ import {
   CardFooter,
   CardHeader,
   CardTitle 
-} from "@/components/ui/card";
+} from "../components/ui/card";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+} from "../components/ui/tooltip";
+import { Badge } from "../components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "../hooks/use-auth";
 
 const container = {
   hidden: { opacity: 0 },

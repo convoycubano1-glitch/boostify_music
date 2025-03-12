@@ -1,5 +1,5 @@
 import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { db } from "@/firebase";
+import { db } from "../firebase";
 import { generateCourseContent } from "./api/openrouter";
 import { getRelevantImage } from "./unsplash-service";
 

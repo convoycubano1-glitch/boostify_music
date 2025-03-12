@@ -1,4 +1,4 @@
-import { db } from '@/firebase';
+import { db } from '../../firebase';
 import { 
   collection, 
   doc, 
@@ -14,7 +14,7 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
-import { storage } from '@/firebase';
+import { storage } from '../../firebase';
 
 // Definición de tipos para el editor profesional
 export interface EditorProject {

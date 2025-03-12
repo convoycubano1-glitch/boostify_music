@@ -2,7 +2,7 @@
  * Servicio para administrar imágenes y videos generados en Firestore
  * Proporciona funciones para guardar, recuperar y gestionar contenido multimedia generado
  */
-import { auth, db } from '@/lib/firebase';
+import { auth, db } from '../firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { ImageResult, VideoResult } from '../types/model-types';
 

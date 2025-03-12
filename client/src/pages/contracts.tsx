@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Header } from "@/components/layout/header";
-import { ContractForm, type ContractFormValues } from "@/components/contracts/contract-form";
-import { generateContract } from "@/lib/openai";
-import { saveContract, getUserContracts, deleteContract, updateContract, type Contract } from "@/lib/contracts";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Header } from "../components/layout/header";
+import { ContractForm, type ContractFormValues } from "../components/contracts/contract-form";
+import { generateContract } from "../lib/openai";
+import { saveContract, getUserContracts, deleteContract, updateContract, type Contract } from "../lib/contracts";
 import html2pdf from 'html2pdf.js';
 import {
   Dialog,
@@ -13,7 +13,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,20 +23,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+} from "../components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import {
   FileText, Plus, Download, Edit, Trash2, Eye, MoreVertical, CheckCircle2,
   Clock, AlertCircle, FileDown, Brain, Scale, Sparkles, Shield, Users
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "../components/ui/dropdown-menu";
+import { Badge } from "../components/ui/badge";
+import { useToast } from "../hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { auth } from "@/lib/firebase";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { auth } from "../lib/firebase";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Textarea } from "../components/ui/textarea";
 import { motion } from "framer-motion";
 
 // Animation variants
@@ -192,7 +192,7 @@ export default function ContractsPage() {
       filename: `${contract.title}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as "portrait" | "landscape" }
     };
 
     try {
@@ -233,8 +233,14 @@ export default function ContractsPage() {
       if (!auth.currentUser) {
         throw new Error('Usuario no autenticado');
       }
-      console.log('Saving contract with data:', contractData);
-      return await saveContract(contractData);
+      // Añadir campos requeridos: userId y createdAt
+      const completeContractData = {
+        ...contractData,
+        userId: auth.currentUser.uid,
+        createdAt: new Date()
+      };
+      console.log('Saving contract with data:', completeContractData);
+      return await saveContract(completeContractData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });

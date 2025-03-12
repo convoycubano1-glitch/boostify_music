@@ -2,9 +2,9 @@ import { Video } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "@/lib/api/openrouteraiagents";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { openRouterService } from "../../lib/api/openrouteraiagents";
+import { useAuth } from "../../hooks/use-auth";
+import { useToast } from "../../hooks/use-toast";
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 

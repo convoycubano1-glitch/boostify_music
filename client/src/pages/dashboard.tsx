@@ -1,9 +1,9 @@
-import { TrendChart } from "@/components/analytics/trend-chart";
-import { StatsCard } from "@/components/marketing/stats-card";
-import { PlaylistManager } from "@/components/spotify/playlist-manager";
-import { InstagramConnect } from "@/components/instagram/instagram-connect";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+import { TrendChart } from "../components/analytics/trend-chart";
+import { StatsCard } from "../components/marketing/stats-card";
+import { PlaylistManager } from "../components/spotify/playlist-manager";
+import { InstagramConnect } from "../components/instagram/instagram-connect";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Button } from "../components/ui/button";
 import {
   Music2,
   TrendingUp,
@@ -32,14 +32,14 @@ import {
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
 import { useEffect, useState } from "react";
 import { collection, doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useAuth } from "@/hooks/use-auth";
-import { Card } from "@/components/ui/card";
+import { db } from "../lib/firebase";
+import { useAuth } from "../hooks/use-auth";
+import { Card } from "../components/ui/card";
 import { Link } from "wouter";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 import { motion } from 'framer-motion';
-import EcosystemDashboard from "@/components/dashboard/ecosystem-dashboard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EcosystemDashboard from "../components/dashboard/ecosystem-dashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 
 export default function Dashboard() {

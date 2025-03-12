@@ -6,7 +6,7 @@
  * la obtención de planes de suscripción, y la obtención de la clave publicable de Stripe.
  */
 
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "../queryClient";
 
 // Tipos relacionados con Stripe
 export interface StripeCheckoutResponse {

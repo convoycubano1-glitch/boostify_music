@@ -1,9 +1,9 @@
 import React, { ReactNode } from 'react';
-import { useSubscription } from '@/lib/context/subscription-context';
-import { SubscriptionPlan } from '@/lib/api/subscription-service';
-import { Button } from '@/components/ui/button';
+import { useSubscription } from '../../lib/context/subscription-context';
+import { SubscriptionPlan } from '../../lib/api/subscription-service';
+import { Button } from '../ui/button';
 import { useLocation } from 'wouter';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '../ui/skeleton';
 import { AlertTriangle } from 'lucide-react';
 
 interface SubscriptionGateProps {

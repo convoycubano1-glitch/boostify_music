@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { Input } from "../../ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../../ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../../ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "../../ui/alert";
 import { MusicGenreTemplate } from "./genre-data";
 import { GenreTemplateSelector } from "./genre-template-selector";
 import { 

@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, Loader2, Sparkles, Music, Users, TrendingUp, BarChart2, Star, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+import { Switch } from '../ui/switch';
 import { Label } from '@/components/ui/label';
-import { useSubscription } from '@/lib/context/subscription-context';
+import { useSubscription } from '../../lib/context/subscription-context';
 import { 
   createCheckoutSession, 
   fetchStripePublicKey, 
   fetchSubscriptionPlans,
   SubscriptionPlan 
-} from '@/lib/api/stripe-service';
-import { useAuth } from '@/hooks/use-auth';
-import { Skeleton } from '@/components/ui/skeleton';
+} from '../../lib/api/stripe-service';
+import { useAuth } from '../../hooks/use-auth';
+import { Skeleton } from '../ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '../ui/badge';
 import { motion } from 'framer-motion';
 
 interface ProcessedPlan {

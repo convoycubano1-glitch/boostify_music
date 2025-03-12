@@ -1,9 +1,9 @@
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Music2, Mic2, Radio } from "lucide-react";
-import { MusicLoadingSpinner } from "@/components/ui/music-loading-spinner";
+import { MusicLoadingSpinner } from "../ui/music-loading-spinner";
 
 interface ProgressStep {
   message: string;

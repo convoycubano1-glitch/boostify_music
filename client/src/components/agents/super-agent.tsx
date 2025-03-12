@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { openRouterService } from '@/lib/api/openrouter-service';
+import { openRouterService } from '../../lib/api/openrouter-service';
 import { BaseAgent } from './base-agent';
 import { Brain } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../../hooks/use-auth';
+import { useToast } from '../../hooks/use-toast';
 
 type Message = {
   role: 'user' | 'assistant' | 'system';

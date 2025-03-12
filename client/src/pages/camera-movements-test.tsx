@@ -8,8 +8,8 @@
  * - Selección manual de movimientos de cámara
  */
 import { Video, MoveHorizontal, Camera } from 'lucide-react';
-import VideoGenerationTest from '@/components/video-generation-test';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import VideoGenerationTest from '../components/video-generation-test';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 
 export default function CameraMovementsTestPage() {
   return (

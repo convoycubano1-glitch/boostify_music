@@ -6,10 +6,10 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import { useArtistImageWorkflow } from '@/services/artist-image-workflow-service';
-import { Button } from '@/components/ui/button';
+import { useArtistImageWorkflow } from '../../../services/artist-image-workflow-service';
+import { Button } from '../../ui/button';
 import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Label } from '../../ui/label';
 import { cn } from '@/lib/utils';
 import { UploadCloud, Image, AlertCircle } from 'lucide-react';
 

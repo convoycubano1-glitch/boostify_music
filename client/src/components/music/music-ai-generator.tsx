@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { 
   Music4, Wand2, ImageIcon, Upload, Loader2, 
   Download, Play, Pause, AlertCircle, Check, RefreshCw, 
@@ -14,29 +14,29 @@ import {
   Sparkles, Palette, PictureInPicture, HeartPulse, Copy, Eye,
   FileText
 } from "lucide-react";
-import { masterTrack, separateVocals, splitStems } from "@/lib/api/kits-ai";
-import { generateMusic, checkGenerationStatus } from "@/lib/api/zuno-ai";
-import { generateImageWithFal } from "@/lib/api/fal-ai";
+import { masterTrack, separateVocals, splitStems } from "../../lib/api/kits-ai";
+import { generateMusic, checkGenerationStatus } from "../../lib/api/zuno-ai";
+import { generateImageWithFal } from "../../lib/api/fal-ai";
 import { addDoc, collection, serverTimestamp, query, orderBy, getDocs, limit } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "../../lib/firebase";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import { Progress } from "@/components/ui/progress";
-import { downloadTextFile } from "@/lib/download-helper";
-import { Slider } from "@/components/ui/slider";
+import { downloadTextFile } from "../../lib/download-helper";
+import { Slider } from "../ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { 
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "../ui/popover";
 
 interface ImageData {
   url: string;

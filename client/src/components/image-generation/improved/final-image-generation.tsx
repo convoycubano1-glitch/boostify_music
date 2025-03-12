@@ -6,12 +6,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useArtistImageWorkflow } from '@/services/artist-image-workflow-service';
-import { Button } from '@/components/ui/button';
+import { useArtistImageWorkflow } from '../../../services/artist-image-workflow-service';
+import { Button } from '../../ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { Label } from '../../ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '../../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import axios from 'axios';
 import { Wand2, Loader2, RefreshCw, AlertCircle, Check } from 'lucide-react';

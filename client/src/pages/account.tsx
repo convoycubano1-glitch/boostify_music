@@ -1,16 +1,16 @@
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Separator } from '../components/ui/separator';
 import { CalendarIcon, CreditCard, User, Settings } from 'lucide-react';
-import { useSubscription } from '@/lib/context/subscription-context';
-import { useAuth } from '@/hooks/use-auth';
-import { cancelSubscription } from '@/lib/api/subscription-service';
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from '@/hooks/use-toast';
+import { useSubscription } from '../lib/context/subscription-context';
+import { useAuth } from '../hooks/use-auth';
+import { cancelSubscription } from '../lib/api/subscription-service';
+import { Skeleton } from '../components/ui/skeleton';
+import { toast } from '../hooks/use-toast';
 import { format } from 'date-fns';
-import { PricingPlans } from '@/components/subscription/pricing-plans';
+import { PricingPlans } from '../components/subscription/pricing-plans';
 
 /**
  * Account page with subscription management and user settings

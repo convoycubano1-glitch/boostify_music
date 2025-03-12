@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 import { Shield, Calendar, Mail, Zap, Home, Music2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Card } from "@/components/ui/card";
+import { Button } from "../components/ui/button";
+import { Progress } from "../components/ui/progress";
+import { Card } from "../components/ui/card";
 
 export default function TestProgressPage() {
   const { toast } = useToast();

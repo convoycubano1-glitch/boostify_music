@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "../hooks/use-auth";
+import { Button } from "../components/ui/button";
 import { SiGoogle } from "react-icons/si";
 import { Redirect } from "wouter";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { useToast } from "@/hooks/use-toast";
-import { useGoogleConnectionCheck } from "@/components/auth/google-connection-check";
-import { authService } from "@/services/auth-service";
+import { useFirebaseAuth } from "../hooks/use-firebase-auth";
+import { useToast } from "../hooks/use-toast";
+import { useGoogleConnectionCheck } from "../components/auth/google-connection-check";
+import { authService } from "../services/auth-service";
 import backgroundVideo from '../images/videos/Standard_Mode_Generated_Video.mp4';
 import { Loader2, WifiOff, ShieldCheck, Info, User, UserMinus, AlertTriangle } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 
 export default function AuthPage() {
   const { user } = useAuth();

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Clipboard, Clock, CheckCircle2, ChevronRight, Shield, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 
 /**
  * Enhanced Under Review Screen Component

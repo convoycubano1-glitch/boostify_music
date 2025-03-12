@@ -12,7 +12,7 @@ import {
   serverTimestamp,
   Timestamp 
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db } from "../firebase";
 
 // Interfaces
 export interface ProductionProject {

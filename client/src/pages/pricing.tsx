@@ -1,5 +1,5 @@
 import React from 'react';
-import { PricingPlans } from '@/components/subscription/pricing-plans';
+import { PricingPlans } from '../components/subscription/pricing-plans';
 import { 
   ChevronRight, CreditCard, ArrowUp, Sparkle, Shield, Clock, Calendar, 
   CheckCircle, Headphones, HelpCircle, LucideIcon
@@ -10,7 +10,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "../components/ui/accordion";
 import { SiVisa, SiMastercard, SiAmericanexpress, SiPaypal } from 'react-icons/si';
 
 interface FeatureCardProps {

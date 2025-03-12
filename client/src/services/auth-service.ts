@@ -8,7 +8,7 @@ import {
   Auth,
   signInAnonymously
 } from 'firebase/auth';
-import { auth } from '@/firebase';
+import { auth } from '../firebase';
 import { useLocation } from 'wouter';
 
 /**

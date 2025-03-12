@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { 
   Loader2, Wand2, Mic, Download, RefreshCw, Waves, Music, History, 
   Split, Settings, AudioLines, Info, Cloud, Save, Mic2, ChevronDown,
@@ -13,22 +13,22 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "../ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "../../hooks/use-mobile";
 
 // Importar nuevos componentes de voz
 import { VoiceModelCreator } from "./voice-model-creator";
 import { VoiceConversion } from "./voice-conversion";
 
 // Firebase imports
-import { auth } from "@/firebase";
+import { auth } from "../../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Timestamp } from "firebase/firestore";
 import { 
@@ -39,7 +39,7 @@ import {
   getOrCreateUserDocument,
   downloadFileFromStorage,
   getMockVoiceConversions
-} from "@/lib/firebase-storage";
+} from "../../lib/firebase-storage";
 
 // Importamos los tipos desde nuestro archivo centralizado
 import type { VoiceConversionRecord, VoiceConversion as VoiceConversionType } from "@/lib/types/audio-types";

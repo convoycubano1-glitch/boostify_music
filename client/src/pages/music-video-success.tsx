@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiRequest } from "../lib/queryClient";
+import { useToast } from "../hooks/use-toast";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 import { CheckCircle2, ArrowLeft, Video } from "lucide-react";
-import { useAuth } from "@/lib/context/auth-context";
+import { useAuth } from "../lib/context/auth-context";
 
 export default function MusicVideoSuccess() {
   const [, setLocation] = useLocation();

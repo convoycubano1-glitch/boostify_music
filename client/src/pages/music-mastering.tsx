@@ -1,4 +1,4 @@
-import { AudioMastering } from "@/components/music/audio-mastering";
+import { AudioMastering } from "../components/music/audio-mastering";
 
 export default function MusicMasteringPage() {
   return (

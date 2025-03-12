@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Download, 
@@ -18,8 +18,8 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
-import { useArtistImageWorkflow } from '@/services/artist-image-workflow-service';
+import { useToast } from '../../../hooks/use-toast';
+import { useArtistImageWorkflow } from '../../../services/artist-image-workflow-service';
 
 interface ArtistResultsGalleryProps {
   language?: 'en' | 'es';

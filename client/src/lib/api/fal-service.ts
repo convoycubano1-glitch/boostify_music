@@ -1,8 +1,8 @@
 import { fal } from "@fal-ai/client";
 import { z } from "zod";
-import { db } from '@/lib/firebase';
+import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { env } from '@/env';
+import { env } from '../../env';
 
 // Schema validation for FAL.AI responses
 export const FalResponseSchema = z.object({

@@ -1,14 +1,14 @@
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { useAIModelsStore } from "@/store/ai-models-store";
 import { Brain, Image as ImageIcon } from "lucide-react";
 import type { TextModel, ImageModel } from "@/types/ai-models";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "../../hooks/use-mobile";
 
 export function AIModelsManager() {
   const {

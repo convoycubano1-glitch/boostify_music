@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { useArtistImageWorkflow, WorkflowStep } from '@/services/artist-image-workflow-service';
-import { cn } from '@/lib/utils';
+import { useArtistImageWorkflow, WorkflowStep } from '../../services/artist-image-workflow-service';
+import { cn } from '../../lib/utils';
 import { Upload, Brush, Shirt, Wand2, Images } from 'lucide-react';
 
 export function WorkflowGuide() {

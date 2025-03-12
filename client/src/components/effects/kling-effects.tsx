@@ -1,14 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Input } from "../ui/input";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { Loader2, Upload, Image as ImageIcon, PlayCircle, Wand2 } from 'lucide-react';
 import axios from 'axios';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
 interface KlingEffectsProps {
   className?: string;

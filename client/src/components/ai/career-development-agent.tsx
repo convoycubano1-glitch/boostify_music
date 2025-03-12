@@ -3,7 +3,7 @@ import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProgressIndicator } from "./progress-indicator";
-import { MusicLoadingSpinner } from "@/components/ui/music-loading-spinner";
+import { MusicLoadingSpinner } from "../ui/music-loading-spinner";
 
 const containerVariants = {
   hidden: { opacity: 0, scale: 0.95 },

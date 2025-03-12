@@ -6,7 +6,7 @@
  * retrieval functionality.
  */
 
-import { auth, db } from '@/lib/firebase';
+import { auth, db } from '../firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, Timestamp, DocumentData } from 'firebase/firestore';
 import { ImageResult } from '../types/model-types';
 

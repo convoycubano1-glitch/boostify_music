@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Card } from "@/components/ui/card";
 import { 
   Play, 
@@ -20,12 +20,12 @@ import {
   Share2,
   History
 } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
+import { useToast } from "../../hooks/use-toast";
+import { Badge } from "../ui/badge";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -56,7 +56,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../ui/select";
 import { db, auth, storage } from "@/firebase";
 import { 
   collection, 

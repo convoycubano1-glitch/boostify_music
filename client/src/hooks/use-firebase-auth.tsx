@@ -3,8 +3,8 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
-import { auth } from '@/firebase';
-import { useToast } from '@/hooks/use-toast';
+import { auth } from '../firebase';
+import { useToast } from './use-toast';
 import { authService } from '@/services/auth-service';
 
 export function useFirebaseAuth() {

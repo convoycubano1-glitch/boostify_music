@@ -1,4 +1,4 @@
-import { env } from "@/env";
+import { env } from "../../env";
 
 interface Message {
   role: "user" | "assistant" | "system";

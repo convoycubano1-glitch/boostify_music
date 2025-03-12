@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
-import { env } from "@/env";
-import { db } from "@/lib/firebase";
+import { env } from "../../env";
+import { db } from "../firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 
 if (!env.VITE_OPENROUTER_API_KEY) {

@@ -13,8 +13,8 @@
  */
 import React from 'react';
 import { CheckCircle, Circle, ArrowRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useEditor } from '@/lib/context/editor-context';
+import { cn } from '../../lib/utils';
+import { useEditor } from '../../lib/context/editor-context';
 
 export interface Step {
   id: string;

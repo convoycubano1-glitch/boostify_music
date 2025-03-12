@@ -1,4 +1,4 @@
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken } from "../auth";
 
 interface CourseContent {
   overview: string;

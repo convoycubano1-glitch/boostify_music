@@ -1,21 +1,21 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { db } from "@/lib/firebase";
+import { useAuth } from "../hooks/use-auth";
+import { db } from "../lib/firebase";
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from "firebase/firestore";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "./ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "./ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "./ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Sparkles, Copy, CheckCircle2, RotateCcw, Loader2, Save, Trash2, Download, Share2, SquarePen, Facebook, Instagram, Twitter, Youtube, ArrowRight, Wand2, Mail, Globe, FileText, Video, Link, AlertCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import {
   Select,
   SelectContent,
@@ -34,7 +34,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog";
+} from "./ui/dialog";
 import {
   Tooltip,
   TooltipContent,

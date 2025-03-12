@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { Link } from 'wouter';
-import { useSubscription } from '@/lib/context/subscription-context';
+import { useSubscription } from '../lib/context/subscription-context';
 
 /**
  * This page is displayed after a subscription cancellation

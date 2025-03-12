@@ -1,7 +1,7 @@
-import { Header } from "@/components/layout/header";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Header } from "../components/layout/header";
+import { Card } from "../components/ui/card";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Box, CircleDollarSign, Music2, Users, VideoIcon, Brain, Boxes, Gamepad2 } from "lucide-react";
 
 export default function EcosystemPage() {

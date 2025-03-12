@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { db } from '@/lib/firebase';
+import { db } from '../firebase';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { env } from '@/env';
+import { env } from '../../env';
 
 // Función para obtener la clave API de diferentes fuentes
 function getAPIKey() {

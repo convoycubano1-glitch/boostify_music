@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { Upload, Download, RefreshCcw, FolderOpen, Trash2, RotateCw, AlertCircle, Check, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { storage, db, auth } from "@/firebase";
+import { useToast } from "../../hooks/use-toast";
+import { storage, db, auth } from "../../firebase";
 import { ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata, deleteObject } from "firebase/storage";
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc, serverTimestamp, orderBy } from "firebase/firestore";
 import JSZip from "jszip";
@@ -14,7 +14,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { onAuthStateChanged, User } from "firebase/auth";
 

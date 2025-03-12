@@ -6,19 +6,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '../ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Image as ImageIcon, Save } from 'lucide-react';
-import { FreepikModel } from '@/lib/api/freepik-service';
-import { ImageResult } from '@/lib/api/multi-platform-generator';
-import { freepikStorageService } from '@/lib/api/freepik-storage-service';
-import { multiPlatformGenerator } from '@/lib/api/multi-platform-generator';
-import { GenerateImageParams } from '@/lib/types/model-types';
-import { useToast } from '@/hooks/use-toast';
+import { FreepikModel } from '../../lib/api/freepik-service';
+import { ImageResult } from '../../lib/api/multi-platform-generator';
+import { freepikStorageService } from '../../lib/api/freepik-storage-service';
+import { multiPlatformGenerator } from '../../lib/api/multi-platform-generator';
+import { GenerateImageParams } from '../../lib/types/model-types';
+import { useToast } from '../../hooks/use-toast';
 
 interface FreepikGeneratorProps {
   onGeneratedImage?: (image: ImageResult) => void;

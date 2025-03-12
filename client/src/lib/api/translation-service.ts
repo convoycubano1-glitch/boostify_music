@@ -1,4 +1,4 @@
-import { openai } from "@/lib/openai";
+import { openai } from "../openai";
 import { getAuthToken } from "@/lib/firebase";
 
 interface TranslationRequest {

@@ -4,11 +4,11 @@ import {
   CardContent,
   CardDescription,
   CardFooter
-} from "@/components/ui/card";
+} from "../../ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button } from "../../ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../../ui/scroll-area";
 import { 
   Music, 
   Check 

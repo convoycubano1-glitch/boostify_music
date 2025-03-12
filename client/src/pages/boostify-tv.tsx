@@ -1,30 +1,30 @@
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
-import { Header } from "@/components/layout/header";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { TabsList, TabsTrigger, Tabs, TabsContent } from "@/components/ui/tabs";
+import { Header } from "../components/layout/header";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { TabsList, TabsTrigger, Tabs, TabsContent } from "../components/ui/tabs";
 import { 
   Play, Tv, Film, Music2, Star, Clock, TrendingUp, Search, 
   Share2, Facebook, Twitter, Copy, Instagram, Linkedin, Loader2,
   PlusCircle, Bookmark, BookmarkPlus, ThumbsUp, MessageCircle, Info
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
+} from "../components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
-import { VideoUpload } from "@/components/affiliates/video-upload";
-import { useAuth } from "@/hooks/use-auth";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { VideoUpload } from "../components/affiliates/video-upload";
+import { useAuth } from "../hooks/use-auth";
+import { Skeleton } from "../components/ui/skeleton";
+import { Badge } from "../components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip";
 
 interface VideoContent {
   id: string;

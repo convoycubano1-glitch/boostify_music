@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "../ui/slider";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 import { Download, Share, Film, ZoomIn, CheckCircle2, RefreshCw, ArrowUpRight } from "lucide-react";
 import { TimelineClip } from "./timeline-editor";
 

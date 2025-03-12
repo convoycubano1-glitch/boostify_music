@@ -1,26 +1,26 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Header } from "@/components/layout/header";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { generateCourseContent, extendCourseContent, AdditionalCourseContent } from "@/lib/api/education-service";
-import { ImagePreloader } from "@/components/ui/image-preloader";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import { Header } from "../components/layout/header";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "../components/ui/dialog";
+import { useToast } from "../hooks/use-toast";
+import { generateCourseContent, extendCourseContent, AdditionalCourseContent } from "../lib/api/education-service";
+import { ImagePreloader } from "../components/ui/image-preloader";
 import { Music2, BookOpen, Star, DollarSign, Plus, Loader2, Clock, Users, Award, Play, ChevronRight, PlusCircle, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { auth, db } from "@/firebase";
+import { auth, db } from "../firebase";
 import { 
   collection, addDoc, getDocs, query, orderBy, Timestamp, doc, updateDoc,
   getDoc, setDoc, where, limit, deleteDoc
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { getRelevantImage } from "@/lib/unsplash-service";
-import { generateImageWithFal } from "@/lib/api/fal-ai";
-import { createCheckoutSession } from "@/lib/api/stripe-service";
-import MasterclassSection from "@/components/education/MasterclassSection";
+import { getRelevantImage } from "../lib/unsplash-service";
+import { generateImageWithFal } from "../lib/api/fal-ai";
+import { createCheckoutSession } from "../lib/api/stripe-service";
+import MasterclassSection from "../components/education/MasterclassSection";
 
 interface CourseFormData {
   title: string;

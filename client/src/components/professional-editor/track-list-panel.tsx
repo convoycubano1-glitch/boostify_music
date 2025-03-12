@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { useEditor } from '@/lib/context/editor-context';
+import { useEditor } from '../../lib/context/editor-context';
 import { 
   Track, 
   TrackType,
   Clip,
   AudioClip,
   TextClip
-} from '@/lib/professional-editor-types';
-import { cn } from '@/lib/utils';
+} from '../../lib/professional-editor-types';
+import { cn } from '../../lib/utils';
 
 import {
   Video,
@@ -35,7 +35,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from '../ui/tooltip';
 
 import {
   Accordion,
@@ -50,12 +50,12 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '../ui/dropdown-menu';
 
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '../ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from '../ui/slider';
 
 export interface TrackListPanelProps {
   className?: string;

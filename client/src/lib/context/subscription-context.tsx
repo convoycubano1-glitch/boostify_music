@@ -6,7 +6,7 @@ import {
   getSubscriptionStatus,
   PLAN_HIERARCHY,
   canAccessFeature
-} from '@/lib/api/subscription-service';
+} from '../api/subscription-service';
 import { useAuth } from './auth-context';
 
 /**

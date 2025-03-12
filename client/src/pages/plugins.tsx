@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { Card } from "../components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Button } from "../components/ui/button";
 import { motion } from "framer-motion";
 import { 
   Puzzle, 
@@ -33,7 +33,7 @@ import {
   EchoChatPlugin,
   SEOPulsePlugin
 } from "../components/plugins";
-import { PluginPricingPlans } from "@/components/plugins/plugin-pricing-plans";
+import { PluginPricingPlans } from "../components/plugins/plugin-pricing-plans";
 
 export default function PluginsPage() {
   const [activePlugin, setActivePlugin] = useState<string>("beatnews");

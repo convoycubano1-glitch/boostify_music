@@ -6,11 +6,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '../../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { Label } from '../../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Image as ImageIcon, 
@@ -29,9 +29,9 @@ import {
   FluxTextToImageOptions,
   fluxService,
   canUseFluxDirectly
-} from '@/lib/api/flux/flux-service';
-import { ImageResult } from '@/lib/types/model-types';
-import { fluxLocalStorageService } from '@/lib/api/flux/flux-local-storage-service';
+} from '../../../lib/api/flux/flux-service';
+import { ImageResult } from '../../../lib/types/model-types';
+import { fluxLocalStorageService } from '../../../lib/api/flux/flux-local-storage-service';
 import axios from 'axios';
 
 interface FluxStyleSectionProps {

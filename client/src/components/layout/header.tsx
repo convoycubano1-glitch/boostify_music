@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from "wouter";
-import { useUser } from '@/hooks/use-user';
-import { useAuth } from '@/hooks/use-auth';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
-import { useSubscription } from '@/lib/context/subscription-context';
-import { useLanguageDetection } from '@/hooks/use-language-detection';
-import { useScrollDirection } from '@/hooks/use-scroll-direction';
-import { useNavigationVisibility } from '@/hooks/use-navigation-visibility';
+import { useUser } from '../../hooks/use-user';
+import { useAuth } from '../../hooks/use-auth';
+import { useFirebaseAuth } from '../../hooks/use-firebase-auth';
+import { useSubscription } from '../../lib/context/subscription-context';
+import { useLanguageDetection } from '../../hooks/use-language-detection';
+import { useScrollDirection } from '../../hooks/use-scroll-direction';
+import { useNavigationVisibility } from '../../hooks/use-navigation-visibility';
 import { 
   PieChart, FileText, Home, Music, Video, Rss, 
   ShoppingBag, Shield, ClipboardList, 
@@ -16,8 +16,8 @@ import {
   Wrench, GraduationCap, Tv, Building2, Brain, Users, 
   Music2, Instagram, Youtube, Radio
 } from "lucide-react";
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,

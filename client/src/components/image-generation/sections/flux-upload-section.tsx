@@ -6,11 +6,11 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '../../ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../../../hooks/use-toast';
 import { 
   Image as ImageIcon, 
   Upload, 
@@ -25,8 +25,8 @@ import {
   fluxService, 
   FluxGenerationParams, 
   FluxTaskResult 
-} from '@/lib/api/flux/flux-service';
-import { ImageResult } from '@/lib/types/model-types';
+} from '../../../lib/api/flux/flux-service';
+import { ImageResult } from '../../../lib/types/model-types';
 import axios from 'axios';
 
 interface FluxUploadSectionProps {

@@ -5,26 +5,26 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from '../../components/ui/card';
+} from '../ui/card';
 import {
   Button
-} from '../../components/ui/button';
+} from '@/components/ui/button';
 import {
   Input
-} from '../../components/ui/input';
+} from '../ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '../../components/ui/select';
+} from '@/components/ui/select';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '../../components/ui/tooltip';
+} from '../ui/tooltip';
 import {
   Dialog,
   DialogContent,
@@ -33,12 +33,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '../../components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
-} from '../../components/ui/popover';
+} from '../ui/popover';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -49,7 +49,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuGroup
-} from '../../components/ui/context-menu';
+} from '@/components/ui/context-menu';
 import {
   Eye,
   FileVideo,
@@ -174,7 +174,8 @@ function ProfessionalTimeline({
     startTime: currentTime,
     duration: 5,
     trackId: '0',
-    selected: false
+    selected: false,
+    mediaUrl: ''
   });
   
   // Formatear tiempo en formato profesional (HH:MM:SS:FF)
@@ -314,7 +315,8 @@ function ProfessionalTimeline({
       startTime: newClipData.startTime || currentTime,
       duration: newClipData.duration || 5,
       trackId: newClipData.trackId || '0',
-      selected: false
+      selected: false,
+      mediaUrl: newClipData.mediaUrl || ''
     };
     
     onAddClip(newClip);
@@ -331,7 +333,8 @@ function ProfessionalTimeline({
       type: newClipData.type,
       startTime: newClipData.startTime,
       duration: newClipData.duration,
-      trackId: newClipData.trackId
+      trackId: newClipData.trackId,
+      mediaUrl: newClipData.mediaUrl
     };
     
     onUpdateClip(clipBeingEdited.id, updates);
@@ -360,7 +363,8 @@ function ProfessionalTimeline({
       startTime: currentTime,
       duration: 5,
       trackId: '0',
-      selected: false
+      selected: false,
+      mediaUrl: ''
     });
   };
   
@@ -373,7 +377,8 @@ function ProfessionalTimeline({
       startTime: clip.startTime,
       duration: clip.duration,
       trackId: clip.trackId,
-      selected: clip.selected
+      selected: clip.selected,
+      mediaUrl: clip.mediaUrl || ''
     });
     setClipDialogMode('edit');
     setShowAddClipDialog(true);
@@ -610,7 +615,9 @@ function ProfessionalTimeline({
             ))}
         </div>
       </div>
-    );
+      );
+    });
+  }; // Cierre de la función renderTracks
   
   return (
     <Card className="w-full bg-black border-0 rounded-xl overflow-hidden shadow-xl">

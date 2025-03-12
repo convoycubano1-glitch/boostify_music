@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useToast } from "../../hooks/use-toast";
+import { useFirebaseAuth } from "../../hooks/use-firebase-auth";
 import { 
   productionProgressService, 
   ProductionProject, 
@@ -8,8 +8,8 @@ import {
   ProductionTask, 
   ProductionNote, 
   ProductionCollaborator 
-} from "@/lib/services/production-progress-service";
-import { Card } from "@/components/ui/card";
+} from "../../lib/services/production-progress-service";
+import { Card } from "../ui/card";
 import { Progress } from "@/components/ui/progress";
 import { 
   CheckCircle2, 
@@ -31,13 +31,13 @@ import {
   Loader,
   Loader2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "../ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +55,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "../ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -68,7 +68,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../ui/tooltip";
 
 export function ProductionProgressContainer() {
   const { toast } = useToast();

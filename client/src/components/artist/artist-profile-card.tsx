@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { MusicSection } from "./music-section";
 import { VideosSection } from "./videos-section";
@@ -52,7 +52,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../firebase";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 
 import {
   Dialog,
@@ -60,10 +60,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "../ui/dialog";
 
 // Importamos nuestros componentes de navegación
-import { SectionNavigation, SimpleSectionNavigation } from "@/components/navigation/section-navigation";
+import { SectionNavigation, SimpleSectionNavigation } from "../navigation/section-navigation";
 import { NavigationHeader, SimpleNavigationHeader } from "@/components/artist/section-navigation-wrapper";
 
 export interface ArtistProfileProps {

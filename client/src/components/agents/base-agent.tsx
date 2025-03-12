@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Button } from "@/components/ui/button";
 import { Brain } from "lucide-react";
 

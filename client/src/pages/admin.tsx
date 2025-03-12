@@ -1,10 +1,10 @@
-import { Header } from "@/components/layout/header";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AIModelsManager } from "@/components/admin/ai-models-manager";
+import { Header } from "../components/layout/header";
+import { Card } from "../components/ui/card";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { AIModelsManager } from "../components/admin/ai-models-manager";
 import {
   Users,
   CreditCard,
@@ -24,8 +24,8 @@ import {
   Puzzle
 } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "../hooks/use-auth";
+import { useIsMobile } from "../hooks/use-mobile";
 
 export default function AdminPage() {
   const [selectedTab, setSelectedTab] = useState("subscriptions");

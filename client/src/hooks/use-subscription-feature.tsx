@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useSubscription } from '@/lib/context/subscription-context';
-import { SubscriptionPlan } from '@/lib/api/subscription-service';
+import { useSubscription } from '../lib/context/subscription-context';
+import { SubscriptionPlan } from '../lib/api/subscription-service';
 
 /**
  * Opciones para el hook useSubscriptionFeature

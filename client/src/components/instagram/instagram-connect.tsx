@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { SiInstagram } from "react-icons/si";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 
 export function InstagramConnect() {
   const handleConnect = () => {

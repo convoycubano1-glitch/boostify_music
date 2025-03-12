@@ -1,4 +1,4 @@
-import { getAuthToken } from "@/lib/auth";
+import { getAuthToken } from "../auth";
 import type { FaceSwapResult } from "@/components/face-swap/face-swap";
 import axios from "axios";
 

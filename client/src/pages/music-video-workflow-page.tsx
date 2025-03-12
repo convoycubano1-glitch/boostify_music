@@ -1,6 +1,6 @@
 import React from 'react';
-import { MusicVideoWorkflow } from '@/components/music-video/music-video-workflow';
-import { toast } from '@/hooks/use-toast';
+import { MusicVideoWorkflow } from '../components/music-video/music-video-workflow';
+import { toast } from '../hooks/use-toast';
 
 /**
  * Página para la creación de videos musicales

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Header } from "@/components/layout/header";
-import { useToast } from "@/hooks/use-toast";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Header } from "../components/layout/header";
+import { useToast } from "../hooks/use-toast";
 import {
   FileText,
   Utensils,
@@ -22,22 +22,22 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
+} from "../components/ui/tabs";
 import { motion } from "framer-motion";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "../components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { TechnicalRiderSection } from "@/components/manager/technical-rider";
-import { RequirementsSection } from "@/components/manager/requirements";
-import { BudgetSection } from "@/components/manager/budget";
-import { LogisticsSection } from "@/components/manager/logistics";
-import { HiringSection } from "@/components/manager/hiring";
-import { AIToolsSection } from "@/components/manager/ai-tools";
-import { CalendarSection } from "@/components/manager/calendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "../components/ui/dialog";
+import { Label } from "../components/ui/label";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import { TechnicalRiderSection } from "../components/manager/technical-rider";
+import { RequirementsSection } from "../components/manager/requirements";
+import { BudgetSection } from "../components/manager/budget";
+import { LogisticsSection } from "../components/manager/logistics";
+import { HiringSection } from "../components/manager/hiring";
+import { AIToolsSection } from "../components/manager/ai-tools";
+import { CalendarSection } from "../components/manager/calendar";
 
 
 export default function ManagerToolsPage() {

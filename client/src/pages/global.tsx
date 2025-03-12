@@ -1,7 +1,8 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Header } from "@/components/layout/header";
+// Importaciones estandarizadas usando rutas absolutas con alias @/
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Header } from "../components/layout/header";
 import { Activity, Globe, Map, Flag, Users, TrendingUp, Music2, Radio } from "lucide-react";
 import {
   AreaChart,
@@ -18,7 +19,7 @@ import {
   BarChart,
   Bar
 } from 'recharts';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 
 const COLORS = ['#f97316', '#ea580c', '#c2410c', '#9a3412'];
 

@@ -6,13 +6,13 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useArtistImageWorkflow } from '@/services/artist-image-workflow-service';
-import { klingService, TryOnResult } from '@/services/kling/kling-service';
-import { Button } from '@/components/ui/button';
+import { useArtistImageWorkflow } from '../../services/artist-image-workflow-service';
+import { klingService, TryOnResult } from '../../services/kling/kling-service';
+import { Button } from '../ui/button';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '../ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Shirt, Image, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface VirtualTryonImprovedProps {

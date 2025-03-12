@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { 
   User, 
   MessageSquare, 
@@ -16,7 +16,7 @@ import {
   Send, 
   Filter 
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "../ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
 // Interfaz para los comentarios

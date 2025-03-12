@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "../hooks/use-toast";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 import { XCircle, ArrowLeft, ShoppingCart } from "lucide-react";
 
 export default function MusicVideoCancelled() {

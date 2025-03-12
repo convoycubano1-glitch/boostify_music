@@ -1,4 +1,4 @@
-import { apiRequest } from '@/lib/query-client';
+import { apiRequest } from '../query-client';
 
 /**
  * Tipos de planes de suscripción disponibles

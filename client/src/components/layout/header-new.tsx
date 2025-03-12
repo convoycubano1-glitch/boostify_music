@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { auth } from '@/firebase';
+import { auth } from '../../firebase';
 import { Link } from 'wouter';
-import { useUser } from '@/hooks/use-user';
-import { useNavigationVisibility } from '@/hooks/use-navigation-visibility';
+import { useUser } from '../../hooks/use-user';
+import { useNavigationVisibility } from '../../hooks/use-navigation-visibility';
 import { 
   Users, Search, PieChart, FileText, Home, Music, Video, Rss, 
   ShoppingBag, Calendar, Headphones, Radio, Shield, ClipboardList, 
   LogOut, ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
   Send, MessageSquare, Mic, Zap, Award, BookOpen, BarChart, MoveRight
 } from "lucide-react";
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,

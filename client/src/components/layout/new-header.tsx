@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'wouter';
-import { useUser } from '@/hooks/use-user';
-import { useNavigationVisibility } from '@/hooks/use-navigation-visibility';
+import { useUser } from '../../hooks/use-user';
+import { useNavigationVisibility } from '../../hooks/use-navigation-visibility';
 import { 
   PieChart, FileText, Home, Music, Video, Rss, 
   ShoppingBag, Shield, ClipboardList, 
   ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
   Send, MessageSquare, Zap, Award, BookOpen, BarChart, MoveRight
 } from "lucide-react";
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,

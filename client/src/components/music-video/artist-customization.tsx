@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import { Label } from "@/components/ui/label";
+import { Label } from "../ui/label";
 import { TimelineClip } from "./timeline-editor";
-import FaceSwap, { FaceSwapResult } from "@/components/face-swap/face-swap";
+import FaceSwap, { FaceSwapResult } from "../face-swap/face-swap";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "../ui/progress";
 import { User, Wand2, Loader2, Check, AlertCircle, Info } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { faceSwapService } from "@/lib/services/face-swap-service";
+import { useToast } from "../../hooks/use-toast";
+import { faceSwapService } from "../../lib/services/face-swap-service";
 
 // Extiende la definición de TimelineClip para incluir shotType
 interface EnhancedTimelineClip extends TimelineClip {

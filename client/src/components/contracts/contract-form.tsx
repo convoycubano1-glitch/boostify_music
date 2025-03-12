@@ -2,8 +2,8 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { CONTRACT_TYPES, type ContractType } from "@/lib/openai";
-import { Button } from "@/components/ui/button";
+import { CONTRACT_TYPES, type ContractType } from "../../lib/openai";
+import { Button } from "../ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Form,
@@ -13,9 +13,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "../ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "../ui/textarea";
 import {
   Select,
   SelectContent,

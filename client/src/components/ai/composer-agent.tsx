@@ -1,12 +1,12 @@
 // src/components/ai/composer-agent.tsx
 import { Music2 } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
-import { falService } from "@/lib/api/fal-service";
-import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { falService } from "../../lib/api/fal-service";
+import { useAuth } from "../../hooks/use-auth";
+import { useToast } from "../../hooks/use-toast";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "@/lib/api/openrouteraiagents";
+import { openRouterService } from "../../lib/api/openrouteraiagents";
 
 interface Step {
   message: string;

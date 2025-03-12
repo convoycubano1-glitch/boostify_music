@@ -7,11 +7,11 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Loader2, Image as ImageIcon, Save, RefreshCw } from 'lucide-react';
 import { 
   FluxModel, 
@@ -20,10 +20,10 @@ import {
   FluxTextToImageOptions, 
   fluxService, 
   canUseFluxDirectly 
-} from '@/lib/api/flux/flux-service';
-import { ImageResult } from '@/lib/types/model-types';
-import { fluxLocalStorageService } from '@/lib/api/flux/flux-local-storage-service';
-import { useToast } from '@/hooks/use-toast';
+} from '../../lib/api/flux/flux-service';
+import { ImageResult } from '../../lib/types/model-types';
+import { fluxLocalStorageService } from '../../lib/api/flux/flux-local-storage-service';
+import { useToast } from '../../hooks/use-toast';
 
 interface FluxGeneratorProps {
   onGeneratedImage?: (image: ImageResult) => void;

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
+import { Card } from "../ui/card";
 import { Loader2, Calendar, Music2, Video, BarChart2 } from "lucide-react";
-import { auth, db } from "@/lib/firebase";
+import { auth, db } from "../../lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 

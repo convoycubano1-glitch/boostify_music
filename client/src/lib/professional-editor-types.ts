@@ -354,6 +354,7 @@ export interface TimelineClip {
   color?: string;
   thumbnailUrl?: string;
   selected?: boolean;
+  mediaUrl?: string; // URL del medio asociado al clip
 }
 
 // Metadatos del clip para información adicional
