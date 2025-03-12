@@ -151,6 +151,23 @@ const ProfessionalEditor: React.FC = () => {
     };
   });
   
+  // Estado para el ModuleConfigurator
+  const [moduleConfigOpen, setModuleConfigOpen] = useState<boolean>(false);
+  const [modules, setModules] = useState<ModuleConfig[]>(() => {
+    // Intentar cargar desde localStorage, si existe
+    const savedModules = localStorage.getItem('editor-modules');
+    return savedModules ? JSON.parse(savedModules) : [
+      { id: 'preview', name: 'Vista previa', type: 'panel', enabled: true, visible: true, position: 0, defaultSize: 60 },
+      { id: 'timeline', name: 'Línea de tiempo', type: 'panel', enabled: true, visible: true, position: 1, defaultSize: 20 },
+      { id: 'edit', name: 'Editor', type: 'panel', enabled: true, visible: true, position: 2, defaultSize: 20 },
+      { id: 'effects', name: 'Efectos', type: 'tool', enabled: true, visible: true, position: 3 },
+      { id: 'audio', name: 'Audio', type: 'tool', enabled: true, visible: true, position: 4 },
+      { id: 'text', name: 'Texto', type: 'tool', enabled: true, visible: true, position: 5 },
+      { id: 'camera', name: 'Cámara', type: 'tool', enabled: true, visible: true, position: 6 },
+      { id: 'transitions', name: 'Transiciones', type: 'tool', enabled: true, visible: true, position: 7 },
+    ];
+  });
+  
   // Estado para el modo de edición: pc o móvil
   const [editMode, setEditMode] = useState<'pc' | 'mobile'>(() => {
     // Detectar automáticamente basado en el tamaño de la pantalla
@@ -774,22 +791,40 @@ const ProfessionalEditor: React.FC = () => {
       
       {/* Contenedor principal del editor */}
       <div className="flex-grow flex flex-col relative overflow-hidden">
-        {/* Indicador de modo móvil en pantallas pequeñas */}
-        {editMode === 'mobile' && (
-          <div className="bg-orange-500 text-white text-xs p-1 text-center">
-            Modo móvil activado - Desliza para ver todos los paneles
+        {/* Layout específico para modo móvil usando MobileEditorLayout */}
+        {editMode === 'mobile' ? (
+          <div className="flex-grow relative min-h-[500px] bg-zinc-950 border border-zinc-800 rounded-lg">
+            <MobileEditorLayout
+              visiblePanels={visiblePanels}
+              togglePanelVisibility={togglePanelVisibility}
+              videoSrc={videoSrc}
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              duration={duration}
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onSeek={handleSeek}
+              clips={clips}
+              effects={visualEffects}
+              updateClips={setClips}
+              markModified={markProjectAsModified}
+              tracks={tracks}
+              onAddEffect={handleAddEffect}
+              onUpdateEffect={handleUpdateEffect}
+              onDeleteEffect={handleDeleteEffect}
+              audioTracks={audioTracks}
+              updateAudioTracks={setAudioTracks}
+              transcriptions={transcriptions}
+              updateTranscriptions={setTranscriptions}
+            />
           </div>
-        )}
-        
-        {/* Contenedor principal con paneles redimensionables */}
-        <div className="flex-grow relative min-h-[500px] bg-zinc-950 border border-zinc-800 rounded-lg">
-          {/* Panel principal de edición con modo distinto para móvil */}
-          <ResizablePanelGroup
-            direction={editMode === 'mobile' ? "vertical" : "horizontal"}
-            className="h-full w-full rounded-lg overflow-hidden"
-            onLayout={(sizes) => {
-              // Solo guardar tamaños en modo escritorio
-              if (editMode !== 'mobile') {
+        ) : (
+          /* Contenedor principal con paneles redimensionables para escritorio */
+          <div className="flex-grow relative min-h-[500px] bg-zinc-950 border border-zinc-800 rounded-lg">
+            <ResizablePanelGroup
+              direction="horizontal"
+              className="h-full w-full rounded-lg overflow-hidden"
+              onLayout={(sizes) => {
                 const sizeMap = {
                   preview: sizes[0],
                   timeline: sizes[1],
@@ -797,8 +832,7 @@ const ProfessionalEditor: React.FC = () => {
                 };
                 setPanelSizes(sizeMap);
                 localStorage.setItem('editor-panel-sizes', JSON.stringify(sizeMap));
-              }
-            }}
+              }}
           >
             <ResizablePanel
               defaultSize={panelSizes.preview}
@@ -1019,13 +1053,26 @@ const ProfessionalEditor: React.FC = () => {
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
+        )}
       </div>
       
-      {/* Barra de herramientas para dispositivos móviles (solo visible en pantallas pequeñas) */}
-      <MobileToolbar 
-        activeTool={activeTool}
-        onToolSelect={handleAdvancedToolSelect}
-      />
+      {/* Barra de herramientas para dispositivos móviles (solo visible en modo móvil) */}
+      {editMode === 'mobile' && (
+        <MobileToolbar 
+          activeTool={activeTool}
+          onToolSelect={handleAdvancedToolSelect}
+          isPlaying={isPlaying}
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onSave={handleSaveProject}
+          onExport={handleExportProject}
+          onImport={handleImportMedia}
+          onReset={handleResetProject}
+          onConfigurePanels={() => setModuleConfigOpen(true)}
+        />
+      )}
       
       {/* Margen inferior en móvil para evitar que la barra oculte contenido */}
       <div className="h-16 sm:h-0 w-full bg-black"></div>

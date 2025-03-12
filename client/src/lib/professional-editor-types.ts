@@ -285,6 +285,20 @@ export interface TimelineViewState {
   visibleEndTime: number; // Tiempo final visible
 }
 
+// Configuración de módulos para personalización del editor
+export interface ModuleConfig {
+  id: string;          // Identificador único del módulo
+  name: string;        // Nombre para mostrar
+  type: 'panel' | 'tool' | 'widget'; // Tipo de módulo
+  enabled: boolean;    // Si está habilitado en la configuración
+  visible: boolean;    // Si está visible actualmente 
+  position: number;    // Orden en la interfaz
+  defaultSize?: number; // Tamaño predeterminado (para paneles)
+  minSize?: number;    // Tamaño mínimo (para paneles)
+  maxSize?: number;    // Tamaño máximo (para paneles)
+  icon?: string;       // Nombre del icono (para herramientas)
+}
+
 // Especificación de error
 export interface EditorError {
   code: string;
