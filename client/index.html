@@ -8,22 +8,78 @@
     <link rel="icon" type="image/png" href="/assets/freepik__boostify_music_organe_abstract_icon.png" />
     <link rel="apple-touch-icon" href="/assets/freepik__boostify_music_organe_abstract_icon.png" />
     <script type="text/javascript">
+      // Variables de diagnóstico para depurar la carga de React
+      window.__DEBUG__ = {
+        reactLoaded: false,
+        renderAttempted: false,
+        rootFound: false,
+        errors: []
+      };
+      
+      // Capturar errores globales
+      window.addEventListener('error', function(event) {
+        console.error('Error global capturado:', event.error);
+        if (window.__DEBUG__) {
+          window.__DEBUG__.errors.push({
+            message: event.error?.message || 'Error desconocido',
+            stack: event.error?.stack,
+            timestamp: new Date().toISOString()
+          });
+        }
+      });
+      
       function googleTranslateElementInit() {
         // Get the stored language preference or default to browser language
         const storedLang = localStorage.getItem('preferredLanguage') || navigator.language.split('-')[0];
 
-        new google.translate.TranslateElement({
-          pageLanguage: storedLang || 'en',
-          includedLanguages: 'en,es,fr,de,it,pt,ja,ko,zh-CN,ru',
-          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-          autoDisplay: false
-        }, 'google_translate_element');
+        try {
+          new google.translate.TranslateElement({
+            pageLanguage: storedLang || 'en',
+            includedLanguages: 'en,es,fr,de,it,pt,ja,ko,zh-CN,ru',
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false
+          }, 'google_translate_element');
+        } catch (err) {
+          console.warn('Google Translate inicialización fallida:', err);
+        }
       }
     </script>
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Fallback de carga que se mostrará mientras React se inicializa -->
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;">
+        <div style="text-align: center;">
+          <h1 style="color: #1a202c; margin-bottom: 16px;">Cargando Boostify Music...</h1>
+          <p style="color: #4a5568; margin-bottom: 24px;">La plataforma de marketing musical está preparándose.</p>
+          <div style="width: 50px; height: 50px; border: 5px solid #e2e8f0; border-top-color: #3182ce; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        </div>
+      </div>
+    </div>
+    
     <script type="module" src="/src/main.tsx"></script>
+    
+    <style>
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    
+    <!-- Script de diagnóstico que se ejecutará si React falla en cargar después de 10 segundos -->
+    <script>
+      setTimeout(function() {
+        if (!window.__DEBUG__.reactLoaded) {
+          console.error('React no se cargó correctamente después de 10 segundos');
+          
+          // Mostrar información de diagnóstico en la consola
+          console.info('Estado de diagnóstico:', window.__DEBUG__);
+        }
+      }, 10000);
+    </script>
   </body>
 </html>

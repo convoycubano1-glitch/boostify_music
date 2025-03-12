@@ -5,7 +5,7 @@
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
     "noEmit": true,
-    "module": "ESNext",
+    "module": "ES2020",
     "target": "ESNext",
     "strict": true,
     "lib": ["esnext", "dom", "dom.iterable"],
@@ -24,6 +24,12 @@
       "@db": ["./db/index.ts"],
       "@db/*": ["./db/*"],
       "@/*": ["./client/src/*"]
+    },
+    "forceConsistentCasingInFileNames": true
+  },
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
     }
-  }
+  ]
 }

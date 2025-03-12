@@ -351,10 +351,16 @@ const Router = () => {
   );
 };
 
-const App = () => {
-  const [initError, setInitError] = useState<Error | null>(null);
+// Define App as a proper React function component to fix hook issues
+function App(): JSX.Element {
+  // Using React.useState instead of useState directly to avoid any hook resolution issues
+  const [initError, setInitError] = React.useState<Error | null>(null);
 
-  useEffect(() => {
+  // Using React.useEffect instead of useEffect directly
+  React.useEffect(() => {
+    // Log when React is loaded to help with debugging
+    console.log("React component App is mounting");
+    
     const timer = setTimeout(() => {
       if (!document.querySelector('script[src*="index-"]')) {
         console.warn('Critical assets may not have loaded properly');
