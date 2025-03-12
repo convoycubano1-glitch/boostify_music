@@ -386,17 +386,19 @@ const App = () => {
   return (
     <ErrorBoundary>
       {/* Componente invisible para manejar errores de WebSocket */}
-      <ViteHMRErrorHandler />
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <EditorProvider>
-              <Router />
-              <Toaster />
-            </EditorProvider>
-          </SubscriptionProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <div className="min-h-screen bg-background text-foreground">
+        <ViteHMRErrorHandler />
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <EditorProvider>
+                <Router />
+                <Toaster />
+              </EditorProvider>
+            </SubscriptionProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </div>
     </ErrorBoundary>
   );
 };
