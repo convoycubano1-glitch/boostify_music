@@ -382,7 +382,7 @@ export default function CourseDetailPage() {
       console.log("Generating image with Fal AI for lesson:", lessonTitle);
       
       // Import the generateImageWithFal function
-      const { generateImageWithFal } = await import('@/lib/api/fal-ai');
+      const { generateImageWithFal } = await import("../lib/api/fal-ai");
       
       const result = await generateImageWithFal({
         prompt: prompt,
@@ -479,7 +479,7 @@ export default function CourseDetailPage() {
       console.log("Generating section image with Fal AI, prompt:", enhancedPrompt.substring(0, 100) + "...");
       
       // Import the generateImageWithFal function
-      const { generateImageWithFal } = await import('@/lib/api/fal-ai');
+      const { generateImageWithFal } = await import("../lib/api/fal-ai");
       
       const result = await generateImageWithFal({
         prompt: enhancedPrompt,

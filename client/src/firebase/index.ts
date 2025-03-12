@@ -1,6 +1,6 @@
 /**
- * Firebase setup module
- * Provides Firebase configuration and initialized services
+ * Firebase module - Main Implementation
+ * This file directly exports the Firebase configuration and services
  */
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
@@ -28,6 +28,3 @@ export const storage: FirebaseStorage = getStorage(app);
 
 // Export initialized app
 export const firebaseApp = app;
-
-// Re-export auth helper from the proper location
-export { getAuthToken } from './auth';

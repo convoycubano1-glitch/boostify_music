@@ -1,158 +1,85 @@
-/* Mobile optimization styles 
-   Focusing on navigation and touch-friendly UI
-*/
+/**
+ * Estilos para optimización de dispositivos móviles
+ */
+
+@media (max-width: 768px) {
+  .mobile-responsive {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .mobile-hidden {
+    display: none;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .mobile-text-center {
+    text-align: center;
+  }
+  
+  .mobile-py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .mobile-px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-mt-4 {
+    margin-top: 1rem;
+  }
+  
+  .mobile-mb-4 {
+    margin-bottom: 1rem;
+  }
+  
+  .mobile-flex-col {
+    flex-direction: column;
+  }
+  
+  .mobile-items-center {
+    align-items: center;
+  }
+  
+  .mobile-justify-center {
+    justify-content: center;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+/* Estilos específicos para componentes de audio */
+.audio-controls-mobile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.5rem;
+}
 
 @media (max-width: 640px) {
-  /* Optimizing touch targets for mobile */
-  a, button, .clickable {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Special handling for double-click to hide/show navigation */
-  body {
-    min-height: 100vh;
-    overscroll-behavior: none; /* Prevent bounce effects that interfere with our UI */
-  }
-
-  /* Custom scrollbar styling for horizontal navigation */
-  .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari and Opera */
-  }
-  
-  /* Toast notification styles */
-  .toast-notification {
-    position: fixed;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.75);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    z-index: 9999;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(249, 115, 22, 0.3);
-    backdrop-filter: blur(4px);
-    animation: fade-in-out 3s forwards;
-  }
-  
-  @keyframes fade-in-out {
-    0% { opacity: 0; transform: translate(-50%, 20px); }
-    10% { opacity: 1; transform: translate(-50%, 0); }
-    90% { opacity: 1; transform: translate(-50%, 0); }
-    100% { opacity: 0; transform: translate(-50%, 0); }
-  }
-  
-  /* Enhancing navigation visibility */
-  .mobile-nav-item {
+  .audio-player-container {
     padding: 0.5rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
   }
   
-  .mobile-nav-item:active {
-    transform: scale(0.95);
-    background-color: rgba(249, 115, 22, 0.2); /* orange-500 with opacity */
+  .audio-visualization {
+    height: 80px;
   }
   
-  /* Horizontal scrolling navigation */
-  .horizontal-scroll-container {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    padding: 0.5rem 0;
-    gap: 0.5rem;
-    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-  }
-  
-  .horizontal-scroll-item {
-    scroll-snap-align: start;
-    flex-shrink: 0;
-  }
-  
-  /* Nav button styles for better visibility */
-  .nav-btn {
-    position: relative;
-    display: flex;
+  .audio-controls-row {
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-width: 4rem;
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-    background-color: transparent;
-    transition: all 0.2s ease;
   }
   
-  .nav-btn:active {
-    background-color: rgba(249, 115, 22, 0.2);
-  }
-  
-  .nav-btn-active {
-    background-color: rgba(249, 115, 22, 0.15);
-  }
-  
-  /* Scroll control buttons for navigation */
-  .scroll-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 30px;
-    min-height: 30px;
-    color: rgb(156, 163, 175);
-    transition: color 0.2s ease;
-    cursor: pointer;
-    z-index: 5;
-  }
-  
-  .scroll-control:hover {
-    color: rgb(249, 115, 22);
-  }
-  
-  /* Expanded view toggle button */
-  .nav-toggle {
-    background-color: rgba(0, 0, 0, 0.8);
-    border: 1px solid rgba(249, 115, 22, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 9999px;
-    transition: all 0.2s ease;
-    z-index: 10;
-  }
-  
-  .nav-toggle:active {
-    transform: scale(0.9);
-  }
-  
-  /* Navigation pull-up indicator */
-  .nav-indicator {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 4px;
-    background-color: rgba(249, 115, 22, 0.5);
-    border-radius: 2px;
-    margin-bottom: 6px;
-  }
-  
-  /* Full-screen content adjustments when navigation is hidden */
-  .content-fullscreen {
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
+  .audio-button-group {
+    width: 100%;
+    justify-content: space-between;
   }
 }

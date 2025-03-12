@@ -1,117 +1,164 @@
 /**
- * Script de inicio mejorado con resolución de alias @/
- * Este script inicia la aplicación asegurando que el alias @/ funcione correctamente
+ * Script de inicio mejorado que asegura la integridad de los alias
+ * y reinicia automáticamente la aplicación si hay problemas
  */
 
 import { spawn } from 'child_process';
-import process from 'node:process';
-import './alias-resolver.mjs';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Colores para la salida de la consola
-const colors = {
-  reset: '\x1b[0m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m'
-};
+// Get absolute paths
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname);
+const clientSrcDir = path.join(rootDir, 'client', 'src');
+const nodeModulesDir = path.join(rootDir, 'node_modules');
 
-// Función para iniciar un proceso y mostrar su salida con un prefijo coloreado
-function startProcess(command, args, prefix, color) {
-  console.log(`${color}Iniciando ${prefix}...${colors.reset}`);
+/**
+ * Verifica y corrige problemas con los alias
+ */
+async function fixAliases() {
+  console.log('🔧 Verificando y corrigiendo config de aliases...');
+
+  // Fix circular symlinks in assets directory
+  const assetsDir = path.join(clientSrcDir, 'assets');
+  try {
+    if (fs.existsSync(assetsDir)) {
+      const stats = fs.lstatSync(assetsDir);
+      if (stats.isSymbolicLink()) {
+        console.log('🔄 Eliminando enlace simbólico circular en assets...');
+        fs.unlinkSync(assetsDir);
+        fs.mkdirSync(assetsDir, { recursive: true });
+        console.log('✅ Directorio assets recreado correctamente');
+      }
+    } else {
+      fs.mkdirSync(assetsDir, { recursive: true });
+      console.log('✅ Directorio assets creado');
+    }
+  } catch (error) {
+    console.error('⚠️ Error al arreglar directorio assets:', error.message);
+  }
+
+  // Set up @ alias in node_modules
+  const atDir = path.join(nodeModulesDir, '@');
+  const packageJsonPath = path.join(atDir, 'package.json');
   
-  // Usar shell:true para asegurar la carga adecuada de variables de entorno
-  const childProcess = spawn(command, args, {
-    stdio: ['inherit', 'pipe', 'pipe'],
-    shell: true,
-    env: { ...process.env, FORCE_COLOR: "true" }
-  });
+  try {
+    // Create @ directory if it doesn't exist
+    if (!fs.existsSync(atDir)) {
+      fs.mkdirSync(atDir, { recursive: true });
+      console.log('✅ Directorio @ creado en node_modules');
+    }
+    
+    // Create package.json for @ alias
+    const packageJson = {
+      name: '@',
+      version: '1.0.0',
+      main: '../../client/src/index.js',
+      types: '../../client/src/index.d.ts'
+    };
+    
+    fs.writeFileSync(
+      packageJsonPath,
+      JSON.stringify(packageJson, null, 2)
+    );
+    console.log('✅ package.json configurado para alias @');
+    
+  } catch (error) {
+    console.error('⚠️ Error al configurar alias @:', error.message);
+  }
   
-  let hasStarted = false;
+  // Ensure critical directories exist
+  const criticalDirs = ['lib', 'components', 'styles', 'firebase'];
   
-  childProcess.stdout.on('data', (data) => {
-    const lines = data.toString().trim().split('\n');
-    lines.forEach(line => {
-      if (line.trim()) {
-        console.log(`${color}[${prefix}]${colors.reset} ${line}`);
-        
-        // Marcar como iniciado cuando veamos estos patrones
-        if ((prefix === 'SERVIDOR' && line.includes('Server started')) ||
-            (prefix === 'CLIENTE' && line.includes('Local:'))) {
-          hasStarted = true;
+  for (const dir of criticalDirs) {
+    const dirPath = path.join(clientSrcDir, dir);
+    
+    try {
+      if (fs.existsSync(dirPath)) {
+        const stats = fs.lstatSync(dirPath);
+        if (stats.isSymbolicLink()) {
+          fs.unlinkSync(dirPath);
+          fs.mkdirSync(dirPath, { recursive: true });
+          console.log(`✅ Directorio ${dir} recreado correctamente`);
         }
+      } else {
+        fs.mkdirSync(dirPath, { recursive: true });
+        console.log(`✅ Directorio ${dir} creado`);
       }
-    });
-  });
-  
-  childProcess.stderr.on('data', (data) => {
-    const lines = data.toString().trim().split('\n');
-    lines.forEach(line => {
-      if (line.trim()) {
-        // Para advertencias de ESLint/TypeScript de Vite, usar amarillo en lugar de rojo para diferenciar de errores reales
-        const isWarning = line.includes('warning') || line.includes('Warning');
-        const errorColor = isWarning ? colors.yellow : colors.red;
-        const errorType = isWarning ? 'ADVERTENCIA' : 'ERROR';
-        console.log(`${errorColor}[${prefix} ${errorType}]${colors.reset} ${line}`);
-      }
-    });
-  });
-  
-  // Establecer un tiempo de espera para verificar si el proceso ha iniciado
-  setTimeout(() => {
-    if (!hasStarted && !childProcess.killed) {
-      console.log(`${colors.yellow}[${prefix}] El proceso está tardando más de lo esperado en iniciar. Seguimos esperando...${colors.reset}`);
+    } catch (error) {
+      console.error(`⚠️ Error al arreglar directorio ${dir}:`, error.message);
     }
-  }, 10000);
+  }
   
-  childProcess.on('exit', (code) => {
-    if (code !== 0 && code !== null) {
-      console.log(`${colors.red}[${prefix}] Proceso terminado con código ${code}${colors.reset}`);
-      
-      // Proporcionar consejos útiles de diagnóstico según el prefijo
-      if (prefix === 'SERVIDOR') {
-        console.log(`${colors.yellow}Consejos para solucionar errores del servidor:${colors.reset}`);
-        console.log(`1. Verificar errores de TypeScript en el código del servidor`);
-        console.log(`2. Verificar que todas las variables de entorno requeridas estén configuradas`);
-        console.log(`3. Verificar si el puerto ${process.env.PORT || '5000'} ya está en uso`);
-      } else if (prefix === 'CLIENTE') {
-        console.log(`${colors.yellow}Consejos para solucionar errores del cliente:${colors.reset}`);
-        console.log(`1. Verificar errores de TypeScript en el código del cliente`);
-        console.log(`2. Verificar que todas las variables de entorno requeridas estén configuradas`);
-      }
-    }
-  });
-  
-  return childProcess;
+  console.log('✅ Verificación de aliases completada');
 }
 
-// Intentar iniciar el servidor primero, luego iniciar el cliente
-console.log(`${colors.blue}Iniciando aplicación en modo desarrollo...${colors.reset}`);
-
-// Iniciar servidor usando tsx para ejecución de TypeScript
-const server = startProcess('npx', ['tsx', 'server/index.ts'], 'SERVIDOR', colors.cyan);
-
-// Esperar un poco para que el servidor se inicialice antes de iniciar el cliente
-setTimeout(() => {
-  // Iniciar cliente usando vite con host 0.0.0.0 para acceso externo
-  const client = startProcess('cd', ['client', '&&', 'npx', 'vite', '--host', '0.0.0.0'], 'CLIENTE', colors.green);
+/**
+ * Inicia la aplicación usando npm run dev
+ */
+function startApplication() {
+  console.log('🚀 Iniciando aplicación...');
   
-  // Manejar terminación limpia
-  process.on('SIGINT', () => {
-    console.log('\nDeteniendo procesos...');
-    server.kill();
-    client.kill();
-    process.exit(0);
+  // Spawns the child process to run npm dev
+  const npmProcess = spawn('npm', ['run', 'dev'], {
+    stdio: 'inherit',
+    shell: true
   });
-}, 2000);
+  
+  console.log('✅ Proceso npm run dev iniciado');
+  
+  // Handle process end
+  npmProcess.on('close', (code) => {
+    if (code !== 0) {
+      console.error(`❌ Proceso terminado con código ${code}`);
+      console.log('🔄 Intentando reiniciar...');
+      
+      // If the process crashed, try to fix aliases again
+      setTimeout(async () => {
+        await fixAliases();
+        startApplication();
+      }, 1000);
+    } else {
+      console.log('✅ Aplicación terminada correctamente');
+    }
+  });
+  
+  // Handle process error
+  npmProcess.on('error', (error) => {
+    console.error('❌ Error al iniciar la aplicación:', error);
+  });
+  
+  return npmProcess;
+}
 
-// Manejar excepciones no capturadas
-process.on('uncaughtException', (err) => {
-  console.log(`${colors.red}Excepción no capturada:${colors.reset}`, err);
-});
+/**
+ * Función principal
+ */
+async function main() {
+  try {
+    // First, fix any alias issues
+    await fixAliases();
+    
+    // Then start the application
+    const appProcess = startApplication();
+    
+    // Handle script termination
+    process.on('SIGINT', () => {
+      console.log('👋 Terminando aplicación...');
+      appProcess.kill('SIGINT');
+      process.exit(0);
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fatal:', error);
+    process.exit(1);
+  }
+}
 
-process.on('unhandledRejection', (reason) => {
-  console.log(`${colors.red}Rechazo de promesa no manejado:${colors.reset}`, reason);
+// Run the main function
+main().catch(err => {
+  console.error('❌ Error no capturado:', err);
+  process.exit(1);
 });
