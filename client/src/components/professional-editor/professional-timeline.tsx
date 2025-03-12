@@ -138,7 +138,7 @@ const trackTypeLabels: Record<string, string> = {
 };
 
 // Definir el componente con tipo de retorno explícito para asegurar que devuelve JSX.Element
-const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
+function ProfessionalTimeline({
   clips = [],
   currentTime,
   duration,
@@ -149,7 +149,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   onDeleteClip,
   onPlay,
   onPause,
-}) => {
+}: ProfessionalTimelineProps): JSX.Element {
   // Estado
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [scrollPosition, setScrollPosition] = useState<number>(0);
@@ -169,11 +169,10 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   
   // Form state for new/edited clip
   const [newClipData, setNewClipData] = useState<Partial<TimelineClip>>({
-    title: '',
+    name: '',
     type: 'video',
-    start: currentTime,
+    startTime: currentTime,
     duration: 5,
-    url: '',
     trackId: '0',
     selected: false
   });
@@ -199,9 +198,9 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   };
   
   // Calcular ancho de un clip
-  const calculateClipWidth = (start: number, clipDuration: number): number => {
-    const startPos = timeToPosition(start);
-    const endPos = timeToPosition(start + clipDuration);
+  const calculateClipWidth = (startTime: number, clipDuration: number): number => {
+    const startPos = timeToPosition(startTime);
+    const endPos = timeToPosition(startTime + clipDuration);
     return endPos - startPos;
   };
   
@@ -310,14 +309,12 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
     if (!onAddClip) return;
     
     const newClip: Omit<TimelineClip, 'id'> = {
-      title: newClipData.title || `Nuevo ${newClipData.type}`,
+      name: newClipData.name || `Nuevo ${newClipData.type}`,
       type: newClipData.type || 'video',
-      start: newClipData.start || currentTime,
+      startTime: newClipData.startTime || currentTime,
       duration: newClipData.duration || 5,
-      url: newClipData.url || '',
       trackId: newClipData.trackId || '0',
-      selected: false,
-      end: (newClipData.start || currentTime) + (newClipData.duration || 5)
+      selected: false
     };
     
     onAddClip(newClip);
@@ -330,14 +327,11 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
     if (!onUpdateClip || !clipBeingEdited) return;
     
     const updates: Partial<TimelineClip> = {
-      title: newClipData.title,
+      name: newClipData.name,
       type: newClipData.type,
-      start: newClipData.start,
+      startTime: newClipData.startTime,
       duration: newClipData.duration,
-      url: newClipData.url,
-      trackId: newClipData.trackId,
-      end: (newClipData.start || clipBeingEdited.start) + 
-          (newClipData.duration || clipBeingEdited.duration)
+      trackId: newClipData.trackId
     };
     
     onUpdateClip(clipBeingEdited.id, updates);
@@ -361,11 +355,10 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   // Resetear formulario de nuevo clip
   const resetNewClipForm = () => {
     setNewClipData({
-      title: '',
+      name: '',
       type: 'video',
-      start: currentTime,
+      startTime: currentTime,
       duration: 5,
-      url: '',
       trackId: '0',
       selected: false
     });
@@ -375,12 +368,12 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   const prepareEditClip = (clip: TimelineClip) => {
     setClipBeingEdited(clip);
     setNewClipData({
-      title: clip.title,
+      name: clip.name,
       type: clip.type,
-      start: clip.start,
+      startTime: clip.startTime,
       duration: clip.duration,
-      url: clip.url,
-      trackId: clip.trackId
+      trackId: clip.trackId,
+      selected: clip.selected
     });
     setClipDialogMode('edit');
     setShowAddClipDialog(true);
@@ -492,15 +485,15 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
                       "group"
                     )}
                     style={{
-                      left: `${timeToPosition(clip.start)}%`,
-                      width: `${calculateClipWidth(clip.start, clip.duration)}%`,
+                      left: `${timeToPosition(clip.startTime)}%`,
+                      width: `${calculateClipWidth(clip.startTime, clip.duration)}%`,
                       backgroundColor: clip.color || clipTypeColors[clip.type] || '#6b7280',
                       borderColor: clip.color || clipTypeColors[clip.type] || '#6b7280'
                     }}
                     onClick={(e) => handleClipClick(e, clip.id)}
                   >
                     <div className="w-full px-1 text-xs text-white font-medium truncate bg-black bg-opacity-30">
-                      {clip.title}
+                      {clip.name}
                     </div>
                     
                     <div className="flex items-center space-x-1 absolute bottom-0 right-0 p-0.5 bg-black bg-opacity-30 rounded-tl-sm">
@@ -596,7 +589,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
                   <ContextMenuSeparator />
                   
                   <ContextMenuItem onClick={() => {
-                    if (onSeek) onSeek(clip.start);
+                    if (onSeek) onSeek(clip.startTime);
                   }}>
                     <Play className="h-4 w-4 mr-2" /> Reproducir desde aquí
                   </ContextMenuItem>
@@ -618,7 +611,6 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
         </div>
       </div>
     );
-  };
   
   return (
     <Card className="w-full bg-black border-0 rounded-xl overflow-hidden shadow-xl">
@@ -914,13 +906,13 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="clip-title" className="text-sm font-medium">
+                <label htmlFor="clip-name" className="text-sm font-medium">
                   Título
                 </label>
                 <Input
-                  id="clip-title"
-                  value={newClipData.title || ''}
-                  onChange={(e) => setNewClipData({ ...newClipData, title: e.target.value })}
+                  id="clip-name"
+                  value={newClipData.name || ''}
+                  onChange={(e) => setNewClipData({ ...newClipData, name: e.target.value })}
                   placeholder="Título del clip"
                 />
               </div>
@@ -950,16 +942,16 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
             
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label htmlFor="clip-start" className="text-sm font-medium">
+                <label htmlFor="clip-startTime" className="text-sm font-medium">
                   Inicio (s)
                 </label>
                 <Input
-                  id="clip-start"
+                  id="clip-startTime"
                   type="number"
-                  value={newClipData.start}
+                  value={newClipData.startTime}
                   onChange={(e) => setNewClipData({ 
                     ...newClipData, 
-                    start: parseFloat(e.target.value) 
+                    startTime: parseFloat(e.target.value) 
                   })}
                   min={0}
                   max={duration}
@@ -1009,13 +1001,13 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="clip-url" className="text-sm font-medium">
+              <label htmlFor="clip-mediaUrl" className="text-sm font-medium">
                 URL
               </label>
               <Input
-                id="clip-url"
-                value={newClipData.url || ''}
-                onChange={(e) => setNewClipData({ ...newClipData, url: e.target.value })}
+                id="clip-mediaUrl"
+                value={newClipData.mediaUrl || ''}
+                onChange={(e) => setNewClipData({ ...newClipData, mediaUrl: e.target.value })}
                 placeholder={`URL del ${newClipData.type}`}
               />
               <p className="text-xs text-gray-500">
@@ -1037,7 +1029,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
             
             <Button 
               onClick={clipDialogMode === 'add' ? handleAddClip : handleEditClip}
-              disabled={!newClipData.title || !newClipData.type}
+              disabled={!newClipData.name || !newClipData.type}
               className="bg-orange-500 hover:bg-orange-600"
             >
               {clipDialogMode === 'add' ? 'Añadir' : 'Guardar cambios'}
@@ -1100,6 +1092,6 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
       </CardFooter>
     </Card>
   );
-}; // Fin del componente ProfessionalTimeline
+} // Fin del componente ProfessionalTimeline
 
 export default ProfessionalTimeline;

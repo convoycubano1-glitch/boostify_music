@@ -56,48 +56,57 @@ import { useEditor } from '@/lib/context/editor-context';
 const workflowSteps: Step[] = [
   {
     id: 'transcription',
-    title: 'Transcripción de Audio',
-    description: 'Analizando y transcribiendo la letra de tu canción'
+    name: 'Transcripción de Audio',
+    description: 'Analizando y transcribiendo la letra de tu canción',
+    status: 'pending'
   },
   {
     id: 'script',
-    title: 'Generación de Guion',
-    description: 'Creando un guion visual basado en tu música'
+    name: 'Generación de Guion',
+    description: 'Creando un guion visual basado en tu música',
+    status: 'pending'
   },
   {
     id: 'sync',
-    title: 'Sincronización',
-    description: 'Sincronizando el video con el ritmo de la música'
+    name: 'Sincronización',
+    description: 'Sincronizando el video con el ritmo de la música',
+    status: 'pending'
   },
   {
     id: 'scenes',
-    title: 'Generación de Escenas',
-    description: 'Creando las escenas del video musical'
+    name: 'Generación de Escenas',
+    description: 'Creando las escenas del video musical',
+    status: 'pending'
   },
   {
     id: 'customization',
-    title: 'Personalización',
-    description: 'Ajustando el estilo visual a tus preferencias'
+    name: 'Personalización',
+    description: 'Ajustando el estilo visual a tus preferencias',
+    status: 'pending'
   },
   {
     id: 'movement',
-    title: 'Integración de Movimiento',
-    description: 'Añadiendo coreografías y dinámicas visuales'
+    name: 'Integración de Movimiento',
+    description: 'Añadiendo coreografías y dinámicas visuales',
+    status: 'pending'
   },
   {
     id: 'lipsync',
-    title: 'Sincronización de Labios',
-    description: 'Sincronizando labios con la letra de la canción'
+    name: 'Sincronización de Labios',
+    description: 'Sincronizando labios con la letra de la canción',
+    status: 'pending'
   },
   {
     id: 'generation',
-    title: 'Generación de Video',
-    description: 'Creando videos con IA a partir de tus escenas'
+    name: 'Generación de Video',
+    description: 'Creando videos con IA a partir de tus escenas',
+    status: 'pending'
   },
   {
     id: 'rendering',
-    title: 'Renderizado Final',
-    description: 'Combinando todo en tu video musical'
+    name: 'Renderizado Final',
+    description: 'Combinando todo en tu video musical',
+    status: 'pending'
   }
 ];
 
@@ -325,7 +334,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
         duration,
         type: isVideo ? 'video' : 'image',
         layer: 1, // Capa de video/imagen
-        title: extractLabel(file.name),
+        name: extractLabel(file.name),
         thumbnail: URL.createObjectURL(file),
         imageUrl: !isVideo ? URL.createObjectURL(file) : undefined,
         videoUrl: isVideo ? URL.createObjectURL(file) : undefined,
@@ -343,7 +352,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       duration: audioDuration,
       type: 'audio',
       layer: 0, // Capa de audio
-      title: audioFile.name.replace(/\.[^/.]+$/, ""),
+      name: audioFile.name.replace(/\.[^/.]+$/, ""),
       audioUrl: URL.createObjectURL(audioFile),
     };
     
@@ -362,7 +371,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
           duration: 5, // Duración fija para B-roll
           type: isVideo ? 'video' : 'image',
           layer: 1, // Capa de video/imagen
-          title: `B-Roll ${index + 1}`,
+          name: `B-Roll ${index + 1}`,
           thumbnail: URL.createObjectURL(file),
           imageUrl: !isVideo ? URL.createObjectURL(file) : undefined,
           videoUrl: isVideo ? URL.createObjectURL(file) : undefined,
@@ -380,7 +389,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
     if (transcription.toLowerCase().includes('estribillo')) {
       const midIndex = Math.floor(mainClips.length / 2);
       if (mainClips[midIndex]) {
-        mainClips[midIndex].title += ' (Estribillo)';
+        mainClips[midIndex].name += ' (Estribillo)';
         if (mainClips[midIndex].metadata) {
           mainClips[midIndex].metadata.section = 'Estribillo';
         }
@@ -508,7 +517,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
                 editorContext.addClip({
                   type: clip.type as 'video' | 'image',
                   url: clip.videoUrl || clip.imageUrl || '',
-                  name: clip.title,
+                  name: clip.name,
                   startTime: clip.start,
                   duration: clip.duration,
                   layer: clip.layer,

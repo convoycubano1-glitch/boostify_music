@@ -79,6 +79,7 @@ export interface Project {
   transcriptions: Transcription[];
   beats: Beat[];
   sections: Section[];
+  timelineClips?: TimelineClip[];
   
   // Opciones de exportación
   exportOptions: ExportOptions;
@@ -340,6 +341,19 @@ export interface ThumbnailData {
   url: string;
   width: number;
   height: number;
+}
+
+// Clip específico para la línea de tiempo (simplificado para la interfaz visual)
+export interface TimelineClip {
+  id: string;
+  trackId: string;
+  name: string;
+  type: 'video' | 'image' | 'audio' | 'text' | 'transition';
+  startTime: number;
+  duration: number;
+  color?: string;
+  thumbnailUrl?: string;
+  selected?: boolean;
 }
 
 // Metadatos del clip para información adicional

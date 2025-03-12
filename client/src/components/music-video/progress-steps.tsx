@@ -18,8 +18,10 @@ import { useEditor } from '@/lib/context/editor-context';
 
 export interface Step {
   id: string;
-  title: string;
+  name: string;  // Estandarizado, antes era 'title'
   description: string;
+  status?: 'pending' | 'in-progress' | 'completed' | 'skipped';  // Agregado para compatibilidad con Project.workflowData.steps
+  timestamp?: Date;  // Momento en que se completó el paso
 }
 
 export interface ProgressStepsProps {
@@ -159,7 +161,7 @@ export function ProgressSteps({
                 </div>
                 
                 <div className="md:text-center">
-                  <div className="text-sm font-semibold">{step.title}</div>
+                  <div className="text-sm font-semibold">{step.name}</div>
                   <p className="text-xs md:hidden">{step.description}</p>
                 </div>
               </div>
@@ -181,47 +183,56 @@ export function ProgressSteps({
 export const musicVideoWorkflowSteps: Step[] = [
   {
     id: 'transcription',
-    title: 'Transcripción de Audio',
-    description: 'Analizando y transcribiendo la letra de tu canción'
+    name: 'Transcripción de Audio',
+    description: 'Analizando y transcribiendo la letra de tu canción',
+    status: 'pending'
   },
   {
     id: 'script',
-    title: 'Generación de Guion',
-    description: 'Creando un guion visual basado en tu música'
+    name: 'Generación de Guion',
+    description: 'Creando un guion visual basado en tu música',
+    status: 'pending'
   },
   {
     id: 'sync',
-    title: 'Sincronización',
-    description: 'Sincronizando el video con el ritmo de la música'
+    name: 'Sincronización',
+    description: 'Sincronizando el video con el ritmo de la música',
+    status: 'pending'
   },
   {
     id: 'scenes',
-    title: 'Generación de Escenas',
-    description: 'Creando las escenas del video musical'
+    name: 'Generación de Escenas',
+    description: 'Creando las escenas del video musical',
+    status: 'pending'
   },
   {
     id: 'customization',
-    title: 'Personalización',
-    description: 'Ajustando el estilo visual a tus preferencias'
+    name: 'Personalización',
+    description: 'Ajustando el estilo visual a tus preferencias',
+    status: 'pending'
   },
   {
     id: 'movement',
-    title: 'Integración de Movimiento',
-    description: 'Añadiendo coreografías y dinámicas visuales'
+    name: 'Integración de Movimiento',
+    description: 'Añadiendo coreografías y dinámicas visuales',
+    status: 'pending'
   },
   {
     id: 'lipsync',
-    title: 'Sincronización de Labios',
-    description: 'Sincronizando labios con la letra de la canción'
+    name: 'Sincronización de Labios',
+    description: 'Sincronizando labios con la letra de la canción',
+    status: 'pending'
   },
   {
     id: 'generation',
-    title: 'Generación de Video',
-    description: 'Creando videos con IA a partir de tus escenas'
+    name: 'Generación de Video',
+    description: 'Creando videos con IA a partir de tus escenas',
+    status: 'pending'
   },
   {
     id: 'rendering',
-    title: 'Renderizado Final',
-    description: 'Combinando todo en tu video musical'
+    name: 'Renderizado Final',
+    description: 'Combinando todo en tu video musical',
+    status: 'pending'
   }
 ];
