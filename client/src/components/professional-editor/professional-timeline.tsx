@@ -137,6 +137,7 @@ const trackTypeLabels: Record<string, string> = {
   'mix': 'Mix'
 };
 
+// Definir el componente con tipo de retorno explícito para asegurar que devuelve JSX.Element
 const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   clips = [],
   currentTime,
@@ -147,7 +148,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
   onUpdateClip,
   onDeleteClip,
   onPlay,
-  onPause
+  onPause,
 }) => {
   // Estado
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -1099,6 +1100,6 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
       </CardFooter>
     </Card>
   );
-};
+}; // Fin del componente ProfessionalTimeline
 
 export default ProfessionalTimeline;

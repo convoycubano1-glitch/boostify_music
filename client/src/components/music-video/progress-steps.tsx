@@ -38,23 +38,78 @@ export function ProgressSteps({
   onComplete
 }: ProgressStepsProps) {
   // Integración con el contexto del editor
-  const { project, setCurrentStep, markStepAsCompleted } = useEditor();
+  const { state, setCurrentStep, markStepAsCompleted, updateWorkflowData } = useEditor();
+  const { project } = state;
   
-  // Utilizamos los valores del contexto o los props, priorizando los props para compatibilidad
-  const currentStep = propCurrentStep || 
-    (project.currentStep !== undefined ? steps[project.currentStep]?.id : steps[0].id);
+  // Utilizamos la nueva estructura workflowData si está disponible
+  // Si no, utilizamos los campos clásicos para retrocompatibilidad
   
-  // Construimos un array de IDs de pasos completados a partir de los índices almacenados
-  const completedSteps = propCompletedSteps || 
-    project.completedSteps.map(index => steps[index]?.id).filter(Boolean);
+  let currentStepId;
+  let completedStepIds: string[] = [];
+  
+  // Primero intentamos obtener los datos del nuevo flujo de trabajo
+  if (project?.workflowData?.steps) {
+    const workflowSteps = project.workflowData.steps;
+    
+    // El paso activo es el que tiene status 'in-progress'
+    const activeStep = workflowSteps.find(s => s.status === 'in-progress');
+    if (activeStep) {
+      currentStepId = activeStep.id;
+    }
+    
+    // Los pasos completados son los que tienen status 'completed'
+    completedStepIds = workflowSteps
+      .filter(s => s.status === 'completed')
+      .map(s => s.id);
+  } 
+  // Como fallback, utilizamos la estructura antigua
+  else {
+    currentStepId = propCurrentStep || 
+      (project && project.currentStep !== undefined ? steps[project.currentStep]?.id : steps[0].id);
+      
+    completedStepIds = propCompletedSteps || 
+      (project && project.completedSteps ? project.completedSteps.map(index => steps[index]?.id).filter(Boolean) : []);
+  }
   
   // Manejador de clic en un paso
   const handleStepClick = (stepId: string) => {
     // Encontramos el índice del paso
     const stepIndex = steps.findIndex(step => step.id === stepId);
     if (stepIndex !== -1) {
-      // Actualizamos el estado a través del contexto
-      setCurrentStep(stepIndex);
+      // Si tenemos la nueva estructura de datos, actualizamos workflowData
+      if (project?.workflowData) {
+        // Creamos un array de pasos actualizado para el workflowData
+        const updatedSteps = steps.map(step => {
+          const isTarget = step.id === stepId;
+          const isCompleted = completedStepIds.includes(step.id);
+          
+          // Si el paso ya estaba completado, mantener 'completed'
+          // Si es el paso seleccionado, marcar como 'in-progress'
+          // Sino, mantener como 'pending'
+          let status: 'pending' | 'in-progress' | 'completed' | 'skipped';
+          
+          if (isCompleted) {
+            status = 'completed';
+          } else if (isTarget) {
+            status = 'in-progress';
+          } else {
+            status = 'pending';
+          }
+          
+          return {
+            id: step.id,
+            status,
+            timestamp: isCompleted ? new Date() : undefined
+          };
+        });
+        
+        // Actualizar workflowData con los nuevos pasos
+        updateWorkflowData({ steps: updatedSteps });
+      } 
+      // Como fallback, usar el método clásico
+      else {
+        setCurrentStep(stepIndex);
+      }
       
       // Llamamos al callback si existe
       if (onChange) {
@@ -67,8 +122,8 @@ export function ProgressSteps({
     <div className="w-full">
       <div className="space-y-4 md:space-y-0 md:flex md:items-start md:gap-2">
         {steps.map((step, index) => {
-          const isActive = step.id === currentStep;
-          const isCompleted = completedSteps?.includes?.(step.id) || false;
+          const isActive = step.id === currentStepId;
+          const isCompleted = completedStepIds.includes(step.id);
           
           return (
             <React.Fragment key={step.id}>
@@ -114,7 +169,7 @@ export function ProgressSteps({
       </div>
       
       <div className="hidden md:block mt-1 text-center text-xs text-muted-foreground">
-        {steps.find(step => step.id === currentStep)?.description || ''}
+        {steps.find(step => step.id === currentStepId)?.description || ''}
       </div>
     </div>
   );

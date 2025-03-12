@@ -205,6 +205,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       audioSampleRate: projectData.audioSampleRate || 48000,
       language: projectData.language || 'es',
       
+      // Flujo de trabajo
+      currentStep: projectData.currentStep || 0,
+      completedSteps: projectData.completedSteps || [],
+      
       tracks: projectData.tracks || [],
       clips: projectData.clips || [],
       audioClips: projectData.audioClips || [],
@@ -275,6 +279,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         frameRate: 30,
         audioSampleRate: 48000,
         language: 'es',
+        
+        // Flujo de trabajo
+        currentStep: 0,
+        completedSteps: [],
         
         tracks: [
           {
@@ -1109,10 +1117,38 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   
   // === ACCIONES PARA WORKFLOW UI ===
   
+  // Establecer el paso actual del workflow
   const setCurrentStep = useCallback((step: number) => {
     updateProject(prevProject => {
       if (!prevProject) return null;
       
+      // Si tenemos la nueva estructura de workflow, usarla
+      if (prevProject.workflowData && prevProject.workflowData.steps) {
+        const workflowSteps = [...prevProject.workflowData.steps];
+        const stepId = workflowSteps[step]?.id || '';
+        
+        // Actualizar el estado de cada paso
+        const updatedSteps = workflowSteps.map(s => {
+          // Si es el paso actual, marcarlo como 'in-progress'
+          if (s.id === stepId) {
+            return { ...s, status: 'in-progress' as const };
+          }
+          // Mantener el estado de los demás pasos
+          return s;
+        });
+        
+        return {
+          ...prevProject,
+          workflowData: {
+            ...prevProject.workflowData,
+            steps: updatedSteps
+          },
+          // Mantener retrocompatibilidad con la versión antigua
+          currentStep: step
+        };
+      }
+      
+      // Fallback para la estructura antigua
       return {
         ...prevProject,
         currentStep: step
@@ -1120,10 +1156,43 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     });
   }, [updateProject]);
   
+  // Marcar un paso como completado
   const markStepAsCompleted = useCallback((step: number) => {
     updateProject(prevProject => {
       if (!prevProject) return null;
       
+      // Si tenemos la nueva estructura de workflow, usarla
+      if (prevProject.workflowData && prevProject.workflowData.steps) {
+        const workflowSteps = [...prevProject.workflowData.steps];
+        const stepId = workflowSteps[step]?.id || '';
+        
+        // Actualizar el estado del paso específico
+        const updatedSteps = workflowSteps.map(s => {
+          if (s.id === stepId) {
+            return { 
+              ...s, 
+              status: 'completed' as const,
+              timestamp: new Date()
+            };
+          }
+          return s;
+        });
+        
+        return {
+          ...prevProject,
+          workflowData: {
+            ...prevProject.workflowData,
+            steps: updatedSteps
+          },
+          // Mantener retrocompatibilidad con la versión antigua
+          completedSteps: [
+            ...(prevProject.completedSteps || []),
+            ...(prevProject.completedSteps?.includes(step) ? [] : [step])
+          ]
+        };
+      }
+      
+      // Fallback para la estructura antigua
       const completedSteps = prevProject.completedSteps || [];
       
       if (!completedSteps.includes(step)) {
@@ -1137,15 +1206,60 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     });
   }, [updateProject]);
   
-  const updateWorkflowData = useCallback((data: any) => {
+  /**
+   * Actualiza los datos del flujo de trabajo en el proyecto
+   * @param data Datos del flujo de trabajo a actualizar
+   */
+  const updateWorkflowData = useCallback((data: {
+    steps?: { id: string; status: 'pending' | 'in-progress' | 'completed' | 'skipped'; timestamp?: Date }[];
+    activeTimeline?: boolean;
+    timelineProgress?: number;
+  }) => {
     updateProject(prevProject => {
       if (!prevProject) return null;
       
+      // Si hay steps en los datos nuevos y el proyecto ya tenía steps,
+      // realizamos una combinación más inteligente
+      let mergedSteps;
+      if (data.steps && prevProject.workflowData?.steps) {
+        // Combinamos los pasos por ID para no perder información
+        const stepMap = new Map();
+        
+        // Primero agregamos los pasos existentes
+        prevProject.workflowData.steps.forEach(step => {
+          stepMap.set(step.id, step);
+        });
+        
+        // Luego actualizamos o agregamos los nuevos pasos
+        data.steps.forEach(step => {
+          if (stepMap.has(step.id)) {
+            stepMap.set(step.id, {
+              ...stepMap.get(step.id),
+              ...step,
+              // Aseguramos que si el paso pasa a 'completed', se registre el timestamp
+              ...(step.status === 'completed' && !step.timestamp ? { timestamp: new Date() } : {})
+            });
+          } else {
+            stepMap.set(step.id, step);
+          }
+        });
+        
+        // Convertimos el mapa de vuelta a un array
+        mergedSteps = Array.from(stepMap.values());
+      }
+      
       return {
         ...prevProject,
+        // Actualizamos currentStep si se proporciona un paso activo
+        ...(data.steps?.find(s => s.status === 'in-progress') 
+          ? { currentStep: prevProject.workflowData?.steps?.findIndex(s => 
+              s.id === data.steps?.find(ns => ns.status === 'in-progress')?.id) || 0 } 
+          : {}),
         workflowData: {
           ...(prevProject.workflowData || {}),
-          ...data
+          ...data,
+          // Si tenemos steps combinados, los usamos en lugar de los steps directos
+          ...(mergedSteps ? { steps: mergedSteps } : {})
         }
       };
     });

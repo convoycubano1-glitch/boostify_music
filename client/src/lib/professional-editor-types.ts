@@ -54,6 +54,21 @@ export interface Project {
   audioSampleRate: number;
   language: 'es' | 'en';
   
+  // Flujo de trabajo
+  currentStep?: number;
+  completedSteps: number[];
+  
+  // Datos del flujo de trabajo para videos musicales (opcional)
+  workflowData?: {
+    steps?: {
+      id: string;
+      status: 'pending' | 'in-progress' | 'completed' | 'skipped';
+      timestamp?: Date;
+    }[];
+    activeTimeline?: boolean;
+    timelineProgress?: number;
+  };
+  
   // Colecciones
   tracks: Track[];
   clips: Clip[];
