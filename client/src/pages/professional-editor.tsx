@@ -780,7 +780,7 @@ const ProfessionalEditor: React.FC = () => {
         <div className="flex-grow relative">
           <ResizablePanelGroup
             direction={editMode === 'mobile' ? "vertical" : "horizontal"}
-            className="h-full w-full rounded-lg"
+            className="h-full w-full rounded-lg border border-zinc-800"
             onLayout={(sizes) => {
               // Solo guardar tamaños en modo escritorio
               if (editMode !== 'mobile') {
