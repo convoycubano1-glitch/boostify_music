@@ -40,6 +40,14 @@ import {
   Paintbrush,
   Tags,
   Folder,
+  Layout,
+  Plus,
+  Music2,
+  Scan,
+  Video,
+  Flower,
+  Sliders,
+  FilmIcon,
 } from 'lucide-react';
 
 export interface ToolbarProps {
@@ -64,84 +72,98 @@ const renderIcon = (IconComponent: React.ElementType) => {
 // Definimos las herramientas en grupos al estilo Adobe Premiere Pro
 const TOOLS = {
   es: [
-    // Grupo de selección y posicionamiento
-    { id: 'selection', icon: renderIcon(MoveHorizontal), label: 'Selección', group: 'select', tooltip: 'Herramienta de selección para mover clips' },
-    { id: 'hand', icon: renderIcon(Hand), label: 'Mano', group: 'select', tooltip: 'Desplazar el lienzo' },
-    
     // Grupo de edición básica
+    { id: 'selection', icon: renderIcon(MoveHorizontal), label: 'Selección', group: 'edit', tooltip: 'Herramienta de selección para mover clips' },
+    { id: 'hand', icon: renderIcon(Hand), label: 'Mano', group: 'edit', tooltip: 'Desplazar el lienzo' },
     { id: 'cut', icon: renderIcon(Scissors), label: 'Cortar', group: 'edit', tooltip: 'Cortar clip en la posición actual' },
     { id: 'split', icon: renderIcon(Split), label: 'Dividir', group: 'edit', tooltip: 'Dividir clip en múltiples partes' },
     { id: 'crop', icon: renderIcon(Crop), label: 'Recortar', group: 'edit', tooltip: 'Recortar área visible del clip' },
     { id: 'rotate', icon: renderIcon(RotateCw), label: 'Rotar', group: 'edit', tooltip: 'Rotar clips seleccionados' },
     
-    // Grupo de medios
-    { id: 'video', icon: renderIcon(FileVideo), label: 'Video', group: 'media', tooltip: 'Agregar clip de video' },
-    { id: 'audio', icon: renderIcon(Music), label: 'Audio', group: 'media', tooltip: 'Agregar pista de audio' },
-    { id: 'image', icon: renderIcon(Image), label: 'Imagen', group: 'media', tooltip: 'Agregar imagen o foto' },
-    { id: 'folder', icon: renderIcon(Folder), label: 'Importar', group: 'media', tooltip: 'Importar multimedia' },
+    // Grupo de Activos
+    { id: 'video', icon: renderIcon(FileVideo), label: 'Video', group: 'assets', tooltip: 'Agregar clip de video' },
+    { id: 'image', icon: renderIcon(Image), label: 'Imagen', group: 'assets', tooltip: 'Agregar imagen o foto' },
+    { id: 'folder', icon: renderIcon(Folder), label: 'Importar', group: 'assets', tooltip: 'Importar multimedia' },
+    { id: 'projects', icon: renderIcon(SquareStack), label: 'Proyectos', group: 'assets', tooltip: 'Gestión de proyectos' },
     
-    // Grupo de efectos y gráficos
-    { id: 'text', icon: renderIcon(Type), label: 'Texto', group: 'effects', tooltip: 'Agregar texto y títulos' },
+    // Grupo de Efectos
     { id: 'effects', icon: renderIcon(Sparkles), label: 'Efectos', group: 'effects', tooltip: 'Aplicar efectos visuales' },
     { id: 'transitions', icon: renderIcon(Layers), label: 'Transiciones', group: 'effects', tooltip: 'Aplicar transiciones entre clips' },
-    { id: 'color', icon: renderIcon(Palette), label: 'Color', group: 'effects', tooltip: 'Ajustes de color y gradación' },
-    { id: 'paintbrush', icon: renderIcon(Paintbrush), label: 'Pincel', group: 'effects', tooltip: 'Herramientas de pintura y máscaras' },
+    { id: 'add_effect', icon: renderIcon(Plus), label: 'Añadir efecto', group: 'effects', tooltip: 'Añadir nuevo efecto' },
     
-    // Grupo de cámara y animación
-    { id: 'camera', icon: renderIcon(CameraIcon), label: 'Cámara', group: 'camera', tooltip: 'Movimientos de cámara' },
-    { id: 'speed', icon: renderIcon(Clock), label: 'Velocidad', group: 'camera', tooltip: 'Ajustes de velocidad y tiempo' },
-    { id: 'workflow', icon: renderIcon(Workflow), label: 'Animación', group: 'camera', tooltip: 'Editor de animación keyframe' },
+    // Grupo de Audio
+    { id: 'audio', icon: renderIcon(Music), label: 'Audio', group: 'audio', tooltip: 'Agregar pista de audio' },
+    { id: 'volume', icon: renderIcon(Volume2), label: 'Volumen', group: 'audio', tooltip: 'Ajustes de audio y volumen' },
+    { id: 'audio_effects', icon: renderIcon(Music2), label: 'Efectos de Audio', group: 'audio', tooltip: 'Aplicar efectos a pistas de audio' },
     
-    // Grupo de análisis
-    { id: 'beat', icon: renderIcon(SplitSquareHorizontal), label: 'Beats', group: 'analysis', tooltip: 'Análisis de beats musicales' },
-    { id: 'transcription', icon: renderIcon(FileText), label: 'Transcripción', group: 'analysis', tooltip: 'Transcripción y subtítulos' },
-    { id: 'tags', icon: renderIcon(Tags), label: 'Marcadores', group: 'analysis', tooltip: 'Añadir marcadores y etiquetas' },
+    // Grupo de Ritmo
+    { id: 'beat', icon: renderIcon(SplitSquareHorizontal), label: 'Beats', group: 'rhythm', tooltip: 'Análisis de beats musicales' },
+    { id: 'speed', icon: renderIcon(Clock), label: 'Velocidad', group: 'rhythm', tooltip: 'Ajustes de velocidad y tiempo' },
+    
+    // Grupo de Texto
+    { id: 'text', icon: renderIcon(Type), label: 'Texto', group: 'text', tooltip: 'Agregar texto y títulos' },
+    { id: 'transcription', icon: renderIcon(FileText), label: 'Transcripción', group: 'text', tooltip: 'Transcripción y subtítulos' },
+    
+    // Grupo de Efectos Visuales
+    { id: 'visual_effects', icon: renderIcon(Flower), label: 'Efectos Visuales', group: 'visual_effects', tooltip: 'Efectos visuales avanzados' },
+    { id: 'color', icon: renderIcon(Palette), label: 'Color', group: 'visual_effects', tooltip: 'Ajustes de color y gradación' },
+    { id: 'paintbrush', icon: renderIcon(Paintbrush), label: 'Pincel', group: 'visual_effects', tooltip: 'Herramientas de pintura y máscaras' },
+    { id: 'camera', icon: renderIcon(CameraIcon), label: 'Cámara', group: 'visual_effects', tooltip: 'Movimientos de cámara' },
+    
+    // Grupo de Línea de Tiempo
+    { id: 'timeline', icon: renderIcon(Layout), label: 'Línea de Tiempo', group: 'timeline', tooltip: 'Gestionar línea de tiempo' },
+    { id: 'tags', icon: renderIcon(Tags), label: 'Marcadores', group: 'timeline', tooltip: 'Añadir marcadores y etiquetas' },
     
     // Grupo de utilidades
-    { id: 'volume', icon: renderIcon(Volume2), label: 'Volumen', group: 'utility', tooltip: 'Ajustes de audio y volumen' },
     { id: 'settings', icon: renderIcon(SlidersHorizontal), label: 'Ajustes', group: 'utility', tooltip: 'Configuración del proyecto' },
-    { id: 'projects', icon: renderIcon(SquareStack), label: 'Proyectos', group: 'utility', tooltip: 'Gestión de proyectos' },
     { id: 'export', icon: renderIcon(ArrowUpRight), label: 'Exportar', group: 'utility', tooltip: 'Exportar video' },
     { id: 'save', icon: renderIcon(Save), label: 'Guardar', group: 'utility', tooltip: 'Guardar proyecto' }
   ],
   en: [
-    // Selection and positioning group
-    { id: 'selection', icon: renderIcon(MoveHorizontal), label: 'Selection', group: 'select', tooltip: 'Selection tool for moving clips' },
-    { id: 'hand', icon: renderIcon(Hand), label: 'Hand', group: 'select', tooltip: 'Pan the canvas' },
-    
     // Basic editing group
+    { id: 'selection', icon: renderIcon(MoveHorizontal), label: 'Selection', group: 'edit', tooltip: 'Selection tool for moving clips' },
+    { id: 'hand', icon: renderIcon(Hand), label: 'Hand', group: 'edit', tooltip: 'Pan the canvas' },
     { id: 'cut', icon: renderIcon(Scissors), label: 'Cut', group: 'edit', tooltip: 'Cut clip at current position' },
     { id: 'split', icon: renderIcon(Split), label: 'Split', group: 'edit', tooltip: 'Split clip into multiple parts' },
     { id: 'crop', icon: renderIcon(Crop), label: 'Crop', group: 'edit', tooltip: 'Crop visible area of clip' },
     { id: 'rotate', icon: renderIcon(RotateCw), label: 'Rotate', group: 'edit', tooltip: 'Rotate selected clips' },
     
-    // Media group
-    { id: 'video', icon: renderIcon(FileVideo), label: 'Video', group: 'media', tooltip: 'Add video clip' },
-    { id: 'audio', icon: renderIcon(Music), label: 'Audio', group: 'media', tooltip: 'Add audio track' },
-    { id: 'image', icon: renderIcon(Image), label: 'Image', group: 'media', tooltip: 'Add image or photo' },
-    { id: 'folder', icon: renderIcon(Folder), label: 'Import', group: 'media', tooltip: 'Import media' },
+    // Assets group
+    { id: 'video', icon: renderIcon(FileVideo), label: 'Video', group: 'assets', tooltip: 'Add video clip' },
+    { id: 'image', icon: renderIcon(Image), label: 'Image', group: 'assets', tooltip: 'Add image or photo' },
+    { id: 'folder', icon: renderIcon(Folder), label: 'Import', group: 'assets', tooltip: 'Import media' },
+    { id: 'projects', icon: renderIcon(SquareStack), label: 'Projects', group: 'assets', tooltip: 'Project management' },
     
-    // Effects and graphics group
-    { id: 'text', icon: renderIcon(Type), label: 'Text', group: 'effects', tooltip: 'Add text and titles' },
+    // Effects group
     { id: 'effects', icon: renderIcon(Sparkles), label: 'Effects', group: 'effects', tooltip: 'Apply visual effects' },
     { id: 'transitions', icon: renderIcon(Layers), label: 'Transitions', group: 'effects', tooltip: 'Apply transitions between clips' },
-    { id: 'color', icon: renderIcon(Palette), label: 'Color', group: 'effects', tooltip: 'Color adjustment and grading' },
-    { id: 'paintbrush', icon: renderIcon(Paintbrush), label: 'Brush', group: 'effects', tooltip: 'Painting tools and masks' },
+    { id: 'add_effect', icon: renderIcon(Plus), label: 'Add Effect', group: 'effects', tooltip: 'Add new effect' },
     
-    // Camera and animation group
-    { id: 'camera', icon: renderIcon(CameraIcon), label: 'Camera', group: 'camera', tooltip: 'Camera movements' },
-    { id: 'speed', icon: renderIcon(Clock), label: 'Speed', group: 'camera', tooltip: 'Speed and time adjustments' },
-    { id: 'workflow', icon: renderIcon(Workflow), label: 'Animation', group: 'camera', tooltip: 'Keyframe animation editor' },
+    // Audio group
+    { id: 'audio', icon: renderIcon(Music), label: 'Audio', group: 'audio', tooltip: 'Add audio track' },
+    { id: 'volume', icon: renderIcon(Volume2), label: 'Volume', group: 'audio', tooltip: 'Audio and volume adjustments' },
+    { id: 'audio_effects', icon: renderIcon(Music2), label: 'Audio Effects', group: 'audio', tooltip: 'Apply effects to audio tracks' },
     
-    // Analysis group
-    { id: 'beat', icon: renderIcon(SplitSquareHorizontal), label: 'Beats', group: 'analysis', tooltip: 'Music beat analysis' },
-    { id: 'transcription', icon: renderIcon(FileText), label: 'Transcription', group: 'analysis', tooltip: 'Transcription and subtitles' },
-    { id: 'tags', icon: renderIcon(Tags), label: 'Markers', group: 'analysis', tooltip: 'Add markers and tags' },
+    // Rhythm group
+    { id: 'beat', icon: renderIcon(SplitSquareHorizontal), label: 'Beats', group: 'rhythm', tooltip: 'Music beat analysis' },
+    { id: 'speed', icon: renderIcon(Clock), label: 'Speed', group: 'rhythm', tooltip: 'Speed and time adjustments' },
+    
+    // Text group
+    { id: 'text', icon: renderIcon(Type), label: 'Text', group: 'text', tooltip: 'Add text and titles' },
+    { id: 'transcription', icon: renderIcon(FileText), label: 'Transcription', group: 'text', tooltip: 'Transcription and subtitles' },
+    
+    // Visual Effects group
+    { id: 'visual_effects', icon: renderIcon(Flower), label: 'Visual Effects', group: 'visual_effects', tooltip: 'Advanced visual effects' },
+    { id: 'color', icon: renderIcon(Palette), label: 'Color', group: 'visual_effects', tooltip: 'Color adjustment and grading' },
+    { id: 'paintbrush', icon: renderIcon(Paintbrush), label: 'Brush', group: 'visual_effects', tooltip: 'Painting tools and masks' },
+    { id: 'camera', icon: renderIcon(CameraIcon), label: 'Camera', group: 'visual_effects', tooltip: 'Camera movements' },
+    
+    // Timeline group
+    { id: 'timeline', icon: renderIcon(Layout), label: 'Timeline', group: 'timeline', tooltip: 'Manage timeline' },
+    { id: 'tags', icon: renderIcon(Tags), label: 'Markers', group: 'timeline', tooltip: 'Add markers and tags' },
     
     // Utility group
-    { id: 'volume', icon: renderIcon(Volume2), label: 'Volume', group: 'utility', tooltip: 'Audio and volume adjustments' },
     { id: 'settings', icon: renderIcon(SlidersHorizontal), label: 'Settings', group: 'utility', tooltip: 'Project settings' },
-    { id: 'projects', icon: renderIcon(SquareStack), label: 'Projects', group: 'utility', tooltip: 'Project management' },
     { id: 'export', icon: renderIcon(ArrowUpRight), label: 'Export', group: 'utility', tooltip: 'Export video' },
     { id: 'save', icon: renderIcon(Save), label: 'Save', group: 'utility', tooltip: 'Save project' }
   ]
@@ -182,8 +204,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
     return groups;
   }, {});
 
-  // Orden de los grupos en estilo Adobe Premiere Pro
-  const groupOrder = ['select', 'edit', 'media', 'effects', 'camera', 'analysis', 'utility'];
+  // Orden de los grupos según las secciones solicitadas
+  const groupOrder = ['edit', 'assets', 'effects', 'audio', 'rhythm', 'text', 'visual_effects', 'timeline', 'utility'];
 
   // Función para alternar el colapso de la barra de herramientas
   const toggleCollapse = () => {
@@ -371,14 +393,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
     ? 'h-full w-px bg-zinc-700 mx-2'
     : 'w-full h-px bg-zinc-700 my-2';
 
-  // Nombres de grupos según el estilo de Adobe Premiere Pro
+  // Nombres de grupos según las secciones solicitadas
   const groupNames: Record<string, string> = {
-    select: language === 'es' ? 'Selección' : 'Selection',
     edit: language === 'es' ? 'Edición' : 'Edit',
-    media: language === 'es' ? 'Medios' : 'Media',
+    assets: language === 'es' ? 'Activos' : 'Assets',
     effects: language === 'es' ? 'Efectos' : 'Effects',
-    camera: language === 'es' ? 'Cámara' : 'Camera',
-    analysis: language === 'es' ? 'Análisis' : 'Analysis',
+    audio: language === 'es' ? 'Audio' : 'Audio',
+    rhythm: language === 'es' ? 'Ritmo' : 'Rhythm',
+    text: language === 'es' ? 'Texto' : 'Text',
+    visual_effects: language === 'es' ? 'Efectos Visuales' : 'Visual Effects',
+    timeline: language === 'es' ? 'Línea de Tiempo' : 'Timeline',
     utility: language === 'es' ? 'Utilidades' : 'Utility'
   };
 

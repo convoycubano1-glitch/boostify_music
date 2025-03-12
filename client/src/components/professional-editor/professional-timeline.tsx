@@ -616,7 +616,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
             ))}
         </div>
       </div>
-    ));
+    );
   };
   
   return (

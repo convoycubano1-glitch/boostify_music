@@ -40,7 +40,7 @@ import {
 import BeatAnalyzer from '@/components/professional-editor/beat-analyzer';
 import EffectsPanel from '@/components/professional-editor/effects-panel';
 import VideoPreviewPanel from '@/components/professional-editor/video-preview-panel';
-import ProfessionalTimeline from '@/components/professional-editor/professional-timeline';
+import ProfessionalTimeline from '@/components/professional-editor/fixed-timeline';
 import TranscriptionPanel from '@/components/professional-editor/transcription-panel';
 import AudioTrackEditor from '@/components/professional-editor/audio-track-editor';
 import Toolbar from '@/components/professional-editor/toolbar';
