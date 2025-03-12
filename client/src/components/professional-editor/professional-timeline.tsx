@@ -617,7 +617,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
         </div>
       </div>
     ));
-  }
+  };
   
   return (
     <Card className="w-full bg-black border-0 rounded-xl overflow-hidden shadow-xl">
