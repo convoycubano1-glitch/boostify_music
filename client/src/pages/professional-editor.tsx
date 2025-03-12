@@ -45,6 +45,8 @@ import TranscriptionPanel from '@/components/professional-editor/transcription-p
 import AudioTrackEditor from '@/components/professional-editor/audio-track-editor';
 import Toolbar from '@/components/professional-editor/toolbar';
 import TrackListPanel, { Track } from '@/components/professional-editor/track-list-panel';
+import CutPanel from '@/components/professional-editor/cut-panel';
+import TransitionsPanel from '@/components/professional-editor/transitions-panel';
 
 // Importar tipos desde professional-editor-types
 import { 
@@ -540,9 +542,40 @@ const ProfessionalEditor: React.FC = () => {
     });
   };
   
-  // Manejar selección de herramienta
+  // Mapeamos las herramientas de la barra a los tabs disponibles
+  const toolToTabMap: Record<string, string> = {
+    'effects': 'effects',
+    'audio': 'audio',
+    'text': 'transcription',
+    'transitions': 'effects',
+    'stickers': 'effects',
+    'templates': 'effects',
+    'speed': 'effects',
+    'volume': 'audio',
+    'camera': 'effects',
+    'cut': 'effects',
+    'settings': 'effects',
+  };
+
+  // Manejar selección de herramienta y cambiar a la pestaña correspondiente
   const handleToolChange = (tool: string) => {
     setActiveTool(tool);
+    
+    // Verificar si la herramienta tiene una pestaña correspondiente
+    const tabValue = toolToTabMap[tool] || 'effects';
+    
+    // Buscar el elemento Tabs y cambiar su valor
+    const tabsElement = document.querySelector('[data-orientation="horizontal"]');
+    if (tabsElement) {
+      // Utilizar la API del componente Tabs para cambiar el valor
+      const tabsList = document.querySelector('[role="tablist"]');
+      if (tabsList) {
+        const tabButton = tabsList.querySelector(`[data-value="${tabValue}"]`) as HTMLElement;
+        if (tabButton) {
+          tabButton.click();
+        }
+      }
+    }
   };
 
   return (
@@ -638,8 +671,8 @@ const ProfessionalEditor: React.FC = () => {
             
             {/* Barra de herramientas del editor de video */}
             <Toolbar 
-              activeTool={activeTool}
-              onToolChange={handleToolChange}
+              activeToolId={activeTool}
+              onToolSelect={handleToolChange}
             />
             
             <VideoPreviewPanel
@@ -715,10 +748,11 @@ const ProfessionalEditor: React.FC = () => {
               </h2>
             </div>
             
-            <Tabs defaultValue="effects">
+            <Tabs defaultValue="effects" className="w-full">
               <TabsList className="w-full grid grid-cols-4 md:flex md:justify-start bg-zinc-900 p-1 rounded-xl">
                 <TabsTrigger 
                   value="effects" 
+                  data-value="effects"
                   className="flex items-center justify-center data-[state=active]:bg-zinc-800 data-[state=active]:text-white rounded-lg"
                 >
                   <SlidersHorizontal className="h-4 w-4 md:mr-1 text-orange-400" /> 
@@ -726,6 +760,7 @@ const ProfessionalEditor: React.FC = () => {
                 </TabsTrigger>
                 <TabsTrigger 
                   value="audio" 
+                  data-value="audio"
                   className="flex items-center justify-center data-[state=active]:bg-zinc-800 data-[state=active]:text-white rounded-lg"
                 >
                   <Music className="h-4 w-4 md:mr-1 text-blue-400" />
@@ -733,6 +768,7 @@ const ProfessionalEditor: React.FC = () => {
                 </TabsTrigger>
                 <TabsTrigger 
                   value="beats" 
+                  data-value="beats"
                   className="flex items-center justify-center data-[state=active]:bg-zinc-800 data-[state=active]:text-white rounded-lg"
                 >
                   <Activity className="h-4 w-4 md:mr-1 text-green-400" />
@@ -740,6 +776,7 @@ const ProfessionalEditor: React.FC = () => {
                 </TabsTrigger>
                 <TabsTrigger 
                   value="transcription" 
+                  data-value="transcription"
                   className="flex items-center justify-center data-[state=active]:bg-zinc-800 data-[state=active]:text-white rounded-lg"
                 >
                   <Type className="h-4 w-4 md:mr-1 text-purple-400" />
@@ -747,6 +784,7 @@ const ProfessionalEditor: React.FC = () => {
                 </TabsTrigger>
               </TabsList>
               
+              {/* Panel de Efectos */}
               <TabsContent value="effects" className="mt-4">
                 <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
                   <EffectsPanel
@@ -766,6 +804,7 @@ const ProfessionalEditor: React.FC = () => {
                 </div>
               </TabsContent>
               
+              {/* Panel de Audio */}
               <TabsContent value="audio" className="mt-4">
                 <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
                   <AudioTrackEditor
@@ -785,6 +824,7 @@ const ProfessionalEditor: React.FC = () => {
                 </div>
               </TabsContent>
               
+              {/* Panel de Análisis de Ritmo */}
               <TabsContent value="beats" className="mt-4">
                 <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
                   <BeatAnalyzer
@@ -802,6 +842,7 @@ const ProfessionalEditor: React.FC = () => {
                 </div>
               </TabsContent>
               
+              {/* Panel de Transcripción */}
               <TabsContent value="transcription" className="mt-4">
                 <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
                   <TranscriptionPanel
@@ -816,6 +857,83 @@ const ProfessionalEditor: React.FC = () => {
                   />
                 </div>
               </TabsContent>
+
+              {/* Panel de Corte - Mostrado cuando activeTool es 'cut' */}
+              {activeTool === 'cut' && (
+                <div className="mt-4">
+                  <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+                    <CutPanel
+                      currentTime={currentTime}
+                      duration={duration}
+                      clips={clips}
+                      onCut={(time) => {
+                        // Implementar la lógica de corte
+                        alert(`Corte en tiempo ${time.toFixed(2)}`);
+                      }}
+                      onRemove={(clipId) => handleDeleteClip(clipId)}
+                      onSplit={(clipId, time) => {
+                        // Implementar la lógica de división
+                        alert(`Dividir clip ${clipId} en tiempo ${time.toFixed(2)}`);
+                      }}
+                      onTrim={(clipId, startTime, endTime) => {
+                        // Actualizar los tiempos del clip
+                        handleUpdateClip(clipId, { startTime, endTime });
+                      }}
+                      onSeek={handleSeek}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Panel de Transiciones - Mostrado cuando activeTool es 'transitions' */}
+              {activeTool === 'transitions' && (
+                <div className="mt-4">
+                  <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800">
+                    <TransitionsPanel
+                      transitions={[]} // Aquí pasarías las transiciones reales
+                      clips={clips}
+                      currentTime={currentTime}
+                      duration={duration}
+                      isPlaying={isPlaying}
+                      onPlay={handlePlay}
+                      onPause={handlePause}
+                      onSeek={handleSeek}
+                      onAddTransition={(transition) => {
+                        // Implementación pendiente
+                        alert(`Añadir transición de tipo ${transition.type}`);
+                      }}
+                      onUpdateTransition={(id, updates) => {
+                        // Implementación pendiente
+                        console.log("Actualizar transición", id, updates);
+                      }}
+                      onDeleteTransition={(id) => {
+                        // Implementación pendiente
+                        alert(`Eliminar transición ${id}`);
+                      }}
+                      onPreview={(transition) => {
+                        // Ir a la posición de la transición
+                        if (transition.startTime !== undefined) {
+                          handleSeek(transition.startTime);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Placeholder para herramientas no implementadas aún */}
+              {['stickers', 'templates', 'camera', 'speed', 'volume', 'settings'].includes(activeTool) && (
+                <div className="mt-4">
+                  <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800 flex flex-col items-center justify-center py-10">
+                    <div className="text-4xl mb-4">🚧</div>
+                    <h3 className="text-xl font-bold text-white mb-2">Herramienta en desarrollo</h3>
+                    <p className="text-zinc-400 text-center max-w-md">
+                      La herramienta "{activeTool}" está actualmente en desarrollo. 
+                      Pronto tendrás acceso a todas sus funcionalidades.
+                    </p>
+                  </div>
+                </div>
+              )}
             </Tabs>
           </div>
         </div>
