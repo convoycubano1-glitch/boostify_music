@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Agents - Prueba Independiente</title>
+    <style>
+        /* Reset básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        /* Estilos de la página */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        header {
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ff6b00;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .agent-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            background-color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card:hover {
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            border-color: #ff6b00;
+        }
+
+        .agent-card.selected {
+            border: 2px solid #ff6b00;
+            background-color: rgba(255, 107, 0, 0.03);
+        }
+
+        .rating-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 107, 0, 0.1);
+            color: #ff6b00;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .agent-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #111;
+        }
+
+        .agent-specialty {
+            font-size: 16px;
+            font-weight: 500;
+            color: #ff6b00;
+            margin-bottom: 10px;
+        }
+
+        .agent-info {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .agent-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: #ff6b00;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background-color: #e06000;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #ddd;
+            color: #555;
+        }
+
+        .btn-outline:hover {
+            border-color: #999;
+            color: #333;
+        }
+
+        .info-box {
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .info-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .selection-alert {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background-color: rgba(255, 107, 0, 0.1);
+            border-left: 4px solid #ff6b00;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .selection-alert.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Editor Agents</h1>
+            <p class="subtitle">Editores profesionales de video con IA avanzada para tus proyectos musicales</p>
+        </header>
+
+        <div id="selectionAlert" class="selection-alert">
+            <strong>Agente seleccionado:</strong> <span id="selectedAgentName">Ninguno</span>
+        </div>
+
+        <div class="agent-grid">
+            <!-- Agente 1 -->
+            <div class="agent-card" data-id="agent-001">
+                <div class="rating-badge">4.8 ★</div>
+                <h3 class="agent-name">Sofia Ramirez</h3>
+                <p class="agent-specialty">Edición Dinámica Urbana</p>
+                <p class="agent-info"><strong>Experiencia:</strong> 12 años en postproducción para videos musicales urbanos</p>
+                <p class="agent-info"><strong>Estilo:</strong> Transiciones fluidas con efectos visuales modernos</p>
+                <div class="agent-actions">
+                    <button class="btn btn-primary select-agent">Seleccionar Agente</button>
+                    <button class="btn btn-outline">Ver Detalles</button>
+                </div>
+            </div>
+
+            <!-- Agente 2 -->
+            <div class="agent-card" data-id="agent-002">
+                <div class="rating-badge">4.9 ★</div>
+                <h3 class="agent-name">Marcus Chen</h3>
+                <p class="agent-specialty">Montaje Experimental</p>
+                <p class="agent-info"><strong>Experiencia:</strong> 15 años en cine independiente y videos experimentales</p>
+                <p class="agent-info"><strong>Estilo:</strong> Composiciones visuales complejas con capas múltiples</p>
+                <div class="agent-actions">
+                    <button class="btn btn-primary select-agent">Seleccionar Agente</button>
+                    <button class="btn btn-outline">Ver Detalles</button>
+                </div>
+            </div>
+
+            <!-- Agente 3 -->
+            <div class="agent-card" data-id="agent-003">
+                <div class="rating-badge">4.7 ★</div>
+                <h3 class="agent-name">Isabella Moretti</h3>
+                <p class="agent-specialty">Edición Pop Contemporánea</p>
+                <p class="agent-info"><strong>Experiencia:</strong> 10 años en videoclips para artistas pop internacionales</p>
+                <p class="agent-info"><strong>Estilo:</strong> Colores vibrantes y transiciones elegantes tipo fashion</p>
+                <div class="agent-actions">
+                    <button class="btn btn-primary select-agent">Seleccionar Agente</button>
+                    <button class="btn btn-outline">Ver Detalles</button>
+                </div>
+            </div>
+
+            <!-- Agente 4 -->
+            <div class="agent-card" data-id="agent-004">
+                <div class="rating-badge">4.9 ★</div>
+                <h3 class="agent-name">Alejandro Vega</h3>
+                <p class="agent-specialty">Edición Musical Sincronizada</p>
+                <p class="agent-info"><strong>Experiencia:</strong> 14 años en sincronización audio-visual para conciertos</p>
+                <p class="agent-info"><strong>Estilo:</strong> Precisión milimétrica en sincronización con beats y ritmos</p>
+                <div class="agent-actions">
+                    <button class="btn btn-primary select-agent">Seleccionar Agente</button>
+                    <button class="btn btn-outline">Ver Detalles</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3 class="info-title">Sobre los Agentes Editores:</h3>
+            <p class="info-text">Los Agentes Editores utilizan técnicas avanzadas de inteligencia artificial para asistir en el proceso de edición profesional. Cada agente ha sido entrenado con miles de horas de contenido de alta calidad y especializado en diferentes estilos visuales y técnicas de edición.</p>
+            <p class="info-text">Al seleccionar un agente editor para tu proyecto, tendrás acceso a su experiencia específica y estilo visual único, lo que elevará la calidad de tus videos musicales y contenido promocional.</p>
+        </div>
+    </div>
+
+    <script>
+        // Funcionalidad para selección de agentes
+        document.addEventListener('DOMContentLoaded', function() {
+            const agentCards = document.querySelectorAll('.agent-card');
+            const selectButtons = document.querySelectorAll('.select-agent');
+            const selectionAlert = document.getElementById('selectionAlert');
+            const selectedAgentName = document.getElementById('selectedAgentName');
+            
+            // Función para deseleccionar todos los agentes
+            function deselectAllAgents() {
+                agentCards.forEach(card => {
+                    card.classList.remove('selected');
+                    const button = card.querySelector('.select-agent');
+                    button.textContent = 'Seleccionar Agente';
+                });
+            }
+            
+            // Evento para botones de selección
+            selectButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const card = this.closest('.agent-card');
+                    const agentId = card.dataset.id;
+                    const agentName = card.querySelector('.agent-name').textContent;
+                    
+                    // Si ya está seleccionado, deseleccionar
+                    if (card.classList.contains('selected')) {
+                        card.classList.remove('selected');
+                        this.textContent = 'Seleccionar Agente';
+                        selectionAlert.classList.remove('active');
+                    } else {
+                        // Deseleccionar otros agentes
+                        deselectAllAgents();
+                        
+                        // Seleccionar este agente
+                        card.classList.add('selected');
+                        this.textContent = 'Agente Seleccionado';
+                        selectedAgentName.textContent = agentName;
+                        selectionAlert.classList.add('active');
+                        
+                        // Aquí se podría enviar el ID del agente al backend
+                        console.log(`Agente seleccionado: ${agentName} (ID: ${agentId})`);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

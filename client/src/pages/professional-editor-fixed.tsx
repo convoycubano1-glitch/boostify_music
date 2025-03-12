@@ -49,7 +49,7 @@ import { TrackListPanel } from '../components/professional-editor/track-list-pan
 import { Track } from '../lib/professional-editor-types';
 import CutPanel from '../components/professional-editor/cut-panel';
 import TransitionsPanel from '../components/professional-editor/transitions-panel';
-import SimpleEditorAgents from '../components/professional-editor/simple-editor-agents';
+import StandaloneEditorAgents from '../components/professional-editor/standalone-editor-agents';
 import { EditorProvider } from '../lib/context/editor-context';
 import { apiService } from '../lib/services/professional-editor-api-service';
 
@@ -348,7 +348,7 @@ export default function ProfessionalEditor() {
                     </TabsContent>
                     
                     <TabsContent value="agents" className="p-0 h-full">
-                      <SimpleEditorAgents />
+                      <StandaloneEditorAgents />
                     </TabsContent>
                   </Tabs>
                 </div>
