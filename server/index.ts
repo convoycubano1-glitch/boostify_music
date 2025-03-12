@@ -310,6 +310,11 @@ if (process.env.NODE_ENV === "production") {
 (async () => {
   try {
     log('🔄 Starting server setup...');
+    
+    // Import and run environment check
+    const { checkEnvironment } = await import('./utils/environment-check');
+    checkEnvironment();
+    
     const server = registerRoutes(app);
 
     // Global error handler
