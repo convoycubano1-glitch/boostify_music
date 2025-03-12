@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "../components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "../lib/firebase";
+import { db } from "../firebase";
 import { 
   Brain, 
   Database, 
