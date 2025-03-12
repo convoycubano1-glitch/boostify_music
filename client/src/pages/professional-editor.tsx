@@ -772,17 +772,19 @@ const ProfessionalEditor: React.FC = () => {
         {/* Contenedor principal con paneles redimensionables */}
         <div className="flex-grow relative">
           <ResizablePanelGroup
-            direction="horizontal"
+            direction={editMode === 'mobile' ? "vertical" : "horizontal"}
             className="h-full w-full rounded-lg"
             onLayout={(sizes) => {
-              // Guardar tamaños cuando cambian
-              const sizeMap = {
-                preview: sizes[0],
-                timeline: sizes[1],
-                edit: sizes[2]
-              };
-              setPanelSizes(sizeMap);
-              localStorage.setItem('editor-panel-sizes', JSON.stringify(sizeMap));
+              // Solo guardar tamaños en modo escritorio
+              if (editMode !== 'mobile') {
+                const sizeMap = {
+                  preview: sizes[0],
+                  timeline: sizes[1],
+                  edit: sizes[2]
+                };
+                setPanelSizes(sizeMap);
+                localStorage.setItem('editor-panel-sizes', JSON.stringify(sizeMap));
+              }
             }}
           >
             <ResizablePanel
@@ -1005,6 +1007,15 @@ const ProfessionalEditor: React.FC = () => {
           </ResizablePanelGroup>
         </div>
       </div>
+      
+      {/* Barra de herramientas para dispositivos móviles (solo visible en pantallas pequeñas) */}
+      <MobileToolbar 
+        activeTool={activeTool}
+        onToolSelect={handleAdvancedToolSelect}
+      />
+      
+      {/* Margen inferior en móvil para evitar que la barra oculte contenido */}
+      <div className="h-16 sm:h-0 w-full bg-black"></div>
     </div>
   );
 };
