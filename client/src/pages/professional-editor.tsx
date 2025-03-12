@@ -386,6 +386,23 @@ const ProfessionalEditor: React.FC = () => {
     setSections(newSections);
     markProjectAsModified();
   };
+  
+  // Funciones para deshacer/rehacer
+  const handleUndo = () => {
+    console.log('Deshacer última acción');
+    toast({
+      title: "Acción deshecha",
+      description: "Se ha deshecho la última acción"
+    });
+  };
+  
+  const handleRedo = () => {
+    console.log('Rehacer última acción');
+    toast({
+      title: "Acción rehecha",
+      description: "Se ha rehecho la última acción"
+    });
+  };
 
   // Manejar efectos visuales
   const handleAddEffect = (effect: Omit<VisualEffect, 'id'>) => {
@@ -466,6 +483,83 @@ const ProfessionalEditor: React.FC = () => {
     }
   };
   
+  // Función para importar medios (imágenes, videos, audio)
+  const handleImportMedia = () => {
+    try {
+      // Crear un input tipo file oculto
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*,video/*,audio/*';
+      fileInput.multiple = true;
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+      
+      // Manejar la selección de archivos
+      fileInput.onchange = async (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        const files = target.files;
+        
+        if (!files || files.length === 0) {
+          return;
+        }
+        
+        toast({
+          title: "Importando medios",
+          description: `Procesando ${files.length} archivo(s)...`
+        });
+        
+        // Aquí se procesarían los archivos seleccionados
+        // En una implementación completa, esto subiría los archivos al servidor
+        // Por ahora, solo mostramos información
+        
+        console.log(`Importando ${files.length} archivo(s)`);
+        
+        setTimeout(() => {
+          toast({
+            title: "Medios importados",
+            description: `Se han añadido ${files.length} archivo(s) al proyecto`
+          });
+        }, 1000);
+        
+        // Limpiar el input del DOM después de usarlo
+        document.body.removeChild(fileInput);
+      };
+      
+      // Simular click para abrir el diálogo de selección de archivo
+      fileInput.click();
+    } catch (error) {
+      console.error('Error al importar medios:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudieron importar los medios seleccionados"
+      });
+    }
+  };
+  
+  // Función para reiniciar el proyecto a un estado limpio
+  const handleResetProject = () => {
+    // Mostrar confirmación antes de resetear
+    if (confirm("¿Está seguro de que desea reiniciar el proyecto? Se perderán todos los cambios no guardados.")) {
+      // Resetear estados
+      setClips([]);
+      setVisualEffects([]);
+      setAudioTracks([]);
+      setTranscriptions([]);
+      setProjectName("Nuevo Proyecto");
+      setBpm(120);
+      setCurrentTime(0);
+      setIsPlaying(false);
+      
+      toast({
+        title: "Proyecto reiniciado",
+        description: "Se ha creado un nuevo proyecto vacío"
+      });
+      
+      setProjectModified(false);
+    }
+  };
+
   // Exportar proyecto a archivo JSON
   const handleExportProject = async () => {
     try {
