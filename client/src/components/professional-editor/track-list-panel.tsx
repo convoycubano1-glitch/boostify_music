@@ -1,25 +1,35 @@
 import React, { useState } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { useEditor } from '@/lib/context/editor-context';
 import { 
-  List, 
-  PlusCircle, 
-  Mic, 
+  Track, 
+  TrackType,
+  Clip,
+  AudioClip,
+  TextClip
+} from '@/lib/professional-editor-types';
+import { cn } from '@/lib/utils';
+
+import {
+  Video,
+  Music,
+  Type,
+  Image,
+  Lock,
+  LockOpen,
+  Eye,
+  EyeOff,
+  Volume2,
+  VolumeX,
+  Trash2,
+  Plus,
   Settings,
   ChevronDown,
-  ChevronUp,
-  Music,
-  Video,
-  Image,
-  FileAudio,
-  Layers
+  ChevronRight,
+  Layers,
+  GripVertical
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+
 import {
   Tooltip,
   TooltipContent,
@@ -27,239 +37,597 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-export interface Track {
-  id: string;
-  name: string;
-  type: 'video' | 'audio' | 'image' | 'text';
-  color?: string;
-  muted?: boolean;
-  locked?: boolean;
-  visible?: boolean;
-}
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 
 export interface TrackListPanelProps {
-  tracks: Track[];
-  onAddTrack: (trackType: string) => void;
-  onRecordAudio: () => void;
-  onToggleTrackVisibility: (trackId: string) => void;
-  onToggleTrackLock: (trackId: string) => void;
-  onToggleTrackMute: (trackId: string) => void;
-  onDeleteTrack: (trackId: string) => void;
-  onReorderTracks: (startIndex: number, endIndex: number) => void;
+  className?: string;
   language?: 'es' | 'en';
+  onAddTrack?: (trackType: TrackType) => void;
+  onAddClip?: (trackId: string, clipType: 'video' | 'audio' | 'text') => void;
 }
 
-export const TrackListPanel: React.FC<TrackListPanelProps> = ({
-  tracks,
-  onAddTrack,
-  onRecordAudio,
-  onToggleTrackVisibility,
-  onToggleTrackLock,
-  onToggleTrackMute,
-  onDeleteTrack,
-  onReorderTracks,
-  language = 'es'
-}) => {
-  const [expanded, setExpanded] = useState(true);
-  
-  // Traducciones
-  const texts = {
-    es: {
-      trackList: 'Lista de pistas',
-      addTrack: 'Añadir pista',
-      record: 'Grabar',
-      settings: 'Ajustes',
-      videoTrack: 'Pista de video',
-      audioTrack: 'Pista de audio',
-      imageTrack: 'Pista de imagen',
-      textTrack: 'Pista de texto',
-      addVideoTrack: 'Añadir pista de video',
-      addAudioTrack: 'Añadir pista de audio',
-      addImageTrack: 'Añadir pista de imagen',
-      addTextTrack: 'Añadir pista de texto'
-    },
-    en: {
-      trackList: 'Track list',
-      addTrack: 'Add track',
-      record: 'Record',
-      settings: 'Settings',
-      videoTrack: 'Video track',
-      audioTrack: 'Audio track',
-      imageTrack: 'Image track',
-      textTrack: 'Text track',
-      addVideoTrack: 'Add video track',
-      addAudioTrack: 'Add audio track',
-      addImageTrack: 'Add image track',
-      addTextTrack: 'Add text track'
-    }
-  };
-  
-  const t = texts[language] || texts.en;
-  
-  // Función para renderizar el ícono de tipo de pista
-  const renderTrackTypeIcon = (type: string) => {
-    switch (type) {
-      case 'video':
-        return <Video size={16} className="text-blue-400" />;
-      case 'audio':
-        return <Music size={16} className="text-green-400" />;
-      case 'image':
-        return <Image size={16} className="text-purple-400" />;
-      case 'text':
-        return <FileAudio size={16} className="text-yellow-400" />;
-      default:
-        return <Layers size={16} className="text-gray-400" />;
-    }
-  };
-
-  return (
-    <div className="track-list-panel bg-zinc-900 border-t border-zinc-800">
-      {/* Cabecera de panel de pistas - Estilo CapCut */}
-      <div className="flex items-center justify-between py-2 px-4 bg-zinc-800">
-        <div className="flex items-center space-x-2">
-          <List size={18} className="text-zinc-400" />
-          <h3 className="text-sm font-medium text-white">{t.trackList}</h3>
-        </div>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-zinc-400 hover:text-white"
-        >
-          {expanded ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-        </button>
-      </div>
-
-      {/* Contenido del panel de pistas */}
-      {expanded && (
-        <div className="p-2">
-          {/* Barra de herramientas de pistas - Estilo CapCut */}
-          <div className="flex items-center justify-between mb-3 space-x-2">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="bg-orange-600 hover:bg-orange-700 text-white border-none rounded-full flex-1"
-                >
-                  <PlusCircle size={15} className="mr-1" /> {t.addTrack}
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="bg-zinc-900 border-t border-zinc-800">
-                <SheetHeader>
-                  <SheetTitle className="text-white">{t.addTrack}</SheetTitle>
-                </SheetHeader>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <Button variant="outline" className="bg-blue-600/20 text-blue-400 border-blue-800 hover:bg-blue-600/30" onClick={() => onAddTrack('video')}>
-                    <Video size={18} className="mr-2" /> {t.videoTrack}
-                  </Button>
-                  <Button variant="outline" className="bg-green-600/20 text-green-400 border-green-800 hover:bg-green-600/30" onClick={() => onAddTrack('audio')}>
-                    <Music size={18} className="mr-2" /> {t.audioTrack}
-                  </Button>
-                  <Button variant="outline" className="bg-purple-600/20 text-purple-400 border-purple-800 hover:bg-purple-600/30" onClick={() => onAddTrack('image')}>
-                    <Image size={18} className="mr-2" /> {t.imageTrack}
-                  </Button>
-                  <Button variant="outline" className="bg-yellow-600/20 text-yellow-400 border-yellow-800 hover:bg-yellow-600/30" onClick={() => onAddTrack('text')}>
-                    <FileAudio size={18} className="mr-2" /> {t.textTrack}
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-zinc-800 hover:bg-zinc-700 border-none rounded-full w-10 h-10 p-0">
-                    <Mic size={15} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <p>{t.record}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-zinc-800 hover:bg-zinc-700 border-none rounded-full w-10 h-10 p-0">
-                    <Settings size={15} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <p>{t.settings}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-
-          {/* Lista de pistas - Estilo CapCut */}
-          <div className="space-y-2 mt-2">
-            {tracks.length === 0 && (
-              <div className="text-center py-4 text-zinc-500 text-sm">
-                {language === 'es' ? 'No hay pistas. Añade una nueva pista haciendo clic en "Añadir pista"' : 'No tracks. Add a new track by clicking "Add track"'}
-              </div>
-            )}
-            
-            {tracks.map((track, index) => (
-              <div
-                key={track.id}
-                className="flex items-center p-2 bg-zinc-800 rounded-md"
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('trackIndex', index.toString());
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  const startIndex = parseInt(e.dataTransfer.getData('trackIndex'));
-                  onReorderTracks(startIndex, index);
-                }}
-              >
-                <div className="flex-shrink-0 mr-2">
-                  {renderTrackTypeIcon(track.type)}
-                </div>
-                <div className="flex-grow font-medium text-sm truncate text-white">
-                  {track.name}
-                </div>
-                <div className="flex space-x-1">
-                  <button
-                    onClick={() => onToggleTrackVisibility(track.id)}
-                    className={`p-1 rounded-full ${track.visible ? 'text-blue-400' : 'text-zinc-500'}`}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" fill="currentColor" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => onToggleTrackLock(track.id)}
-                    className={`p-1 rounded-full ${track.locked ? 'text-red-400' : 'text-zinc-500'}`}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M18 8H17V6C17 3.24 14.76 1 12 1C9.24 1 7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15C10 13.9 10.9 13 12 13C13.1 13 14 13.9 14 15C14 16.1 13.1 17 12 17ZM15.1 8H8.9V6C8.9 4.29 10.29 2.9 12 2.9C13.71 2.9 15.1 4.29 15.1 6V8Z" fill="currentColor" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => onToggleTrackMute(track.id)}
-                    className={`p-1 rounded-full ${track.muted ? 'text-yellow-400' : 'text-zinc-500'}`}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M16.5 12C16.5 10.23 15.48 8.71 14 7.97V16.02C15.48 15.29 16.5 13.77 16.5 12ZM19 12C19 15.53 16.39 18.44 13 18.93V21H11V18.93C7.61 18.44 5 15.53 5 12H7C7 14.76 9.24 17 12 17C14.76 17 17 14.76 17 12H19ZM12 3C14.76 3 17 5.24 17 8H7C7 5.24 9.24 3 12 3ZM12 1C8.13 1 5 4.13 5 8H3C3 4.13 6.13 1 10 1H12Z" fill="currentColor" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => onDeleteTrack(track.id)}
-                    className="p-1 rounded-full text-zinc-500 hover:text-red-500"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z" fill="currentColor" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+// Textos localizados
+const localizedText = {
+  tracks: {
+    es: 'Pistas',
+    en: 'Tracks'
+  },
+  addTrack: {
+    es: 'Añadir pista',
+    en: 'Add track'
+  },
+  videoTrack: {
+    es: 'Pista de video',
+    en: 'Video track'
+  },
+  audioTrack: {
+    es: 'Pista de audio',
+    en: 'Audio track'
+  },
+  textTrack: {
+    es: 'Pista de texto',
+    en: 'Text track'
+  },
+  overlayTrack: {
+    es: 'Pista de superposición',
+    en: 'Overlay track'
+  },
+  visibility: {
+    es: 'Visibilidad',
+    en: 'Visibility'
+  },
+  lock: {
+    es: 'Bloquear',
+    en: 'Lock'
+  },
+  unlock: {
+    es: 'Desbloquear',
+    en: 'Unlock'
+  },
+  mute: {
+    es: 'Silenciar',
+    en: 'Mute'
+  },
+  unmute: {
+    es: 'Activar sonido',
+    en: 'Unmute'
+  },
+  remove: {
+    es: 'Eliminar',
+    en: 'Remove'
+  },
+  duplicate: {
+    es: 'Duplicar',
+    en: 'Duplicate'
+  },
+  hide: {
+    es: 'Ocultar',
+    en: 'Hide'
+  },
+  show: {
+    es: 'Mostrar',
+    en: 'Show'
+  },
+  properties: {
+    es: 'Propiedades',
+    en: 'Properties'
+  },
+  volume: {
+    es: 'Volumen',
+    en: 'Volume'
+  },
+  opacity: {
+    es: 'Opacidad',
+    en: 'Opacity'
+  },
+  size: {
+    es: 'Tamaño',
+    en: 'Size'
+  },
+  position: {
+    es: 'Posición',
+    en: 'Position'
+  },
+  addClip: {
+    es: 'Añadir clip',
+    en: 'Add clip'
+  },
+  addVideo: {
+    es: 'Añadir video',
+    en: 'Add video'
+  },
+  addAudio: {
+    es: 'Añadir audio',
+    en: 'Add audio'
+  },
+  addText: {
+    es: 'Añadir texto',
+    en: 'Add text'
+  },
+  addImage: {
+    es: 'Añadir imagen',
+    en: 'Add image'
+  },
+  solo: {
+    es: 'Solo',
+    en: 'Solo'
+  }
 };
 
-export default TrackListPanel;
+export function TrackListPanel({
+  className,
+  language = 'es',
+  onAddTrack,
+  onAddClip
+}: TrackListPanelProps) {
+  const { 
+    state, 
+    setSelectedTrack, 
+    addTrack, 
+    updateTrack, 
+    removeTrack, 
+    reorderTracks 
+  } = useEditor();
+  
+  const [expandedTracks, setExpandedTracks] = useState<string[]>([]);
+  
+  // Obtener texto localizado
+  const getText = (key: keyof typeof localizedText) => {
+    return localizedText[key][language];
+  };
+  
+  // Toggle expandir/colapsar una pista
+  const toggleExpandTrack = (trackId: string) => {
+    setExpandedTracks(prev => 
+      prev.includes(trackId)
+        ? prev.filter(id => id !== trackId)
+        : [...prev, trackId]
+    );
+  };
+  
+  // Manejar selección de pista
+  const handleSelectTrack = (trackId: string) => {
+    setSelectedTrack(trackId);
+  };
+  
+  // Manejar visibilidad de pista
+  const handleVisibilityToggle = (trackId: string, isVisible: boolean) => {
+    updateTrack(trackId, { visible: isVisible });
+  };
+  
+  // Manejar bloqueo de pista
+  const handleLockToggle = (trackId: string, isLocked: boolean) => {
+    updateTrack(trackId, { locked: isLocked });
+  };
+  
+  // Manejar silencio de pista
+  const handleMuteToggle = (trackId: string, isMuted: boolean) => {
+    updateTrack(trackId, { muted: isMuted });
+  };
+  
+  // Manejar cambio de volumen
+  const handleVolumeChange = (trackId: string, volume: number) => {
+    updateTrack(trackId, { volume });
+  };
+  
+  // Manejar modo solo
+  const handleSoloToggle = (trackId: string, solo: boolean) => {
+    // Si esta pista se pone en solo, todas las demás deberían silenciarse
+    if (solo && state.project) {
+      state.project.tracks.forEach(track => {
+        if (track.id !== trackId) {
+          updateTrack(track.id, { muted: true });
+        }
+      });
+    }
+    updateTrack(trackId, { solo, muted: false });
+  };
+  
+  // Manejar eliminación de pista
+  const handleRemoveTrack = (trackId: string) => {
+    removeTrack(trackId);
+  };
+  
+  // Manejar añadir pista
+  const handleAddTrack = (type: TrackType) => {
+    // Si hay un manejador personalizado, usarlo
+    if (onAddTrack) {
+      onAddTrack(type);
+      return;
+    }
+    
+    // Si no, usar el comportamiento por defecto
+    const newTrack: Omit<Track, 'id'> = {
+      name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${state.project?.tracks.length ?? 0 + 1}`,
+      type,
+      position: state.project?.tracks.length ?? 0,
+      visible: true,
+      locked: false,
+      muted: false,
+      solo: false,
+      color: getTrackColor(type),
+      createdAt: new Date()
+    };
+    
+    addTrack(newTrack);
+  };
+  
+  // Manejar añadir clip a una pista
+  const handleAddClip = (trackId: string, clipType: 'video' | 'audio' | 'text') => {
+    if (onAddClip) {
+      onAddClip(trackId, clipType);
+    }
+  };
+  
+  // Manejar reordenamiento de pistas
+  const handleDragEnd = (result: DropResult) => {
+    // Si no hay destino válido, no hacemos nada
+    if (!result.destination) return;
+    
+    // Si no hay proyecto, no hacemos nada
+    if (!state.project) return;
+    
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    
+    // Si el índice no cambió, no hacemos nada
+    if (sourceIndex === destinationIndex) return;
+    
+    reorderTracks(sourceIndex, destinationIndex);
+  };
+  
+  // Obtener color para el tipo de pista
+  function getTrackColor(type: TrackType): string {
+    switch (type) {
+      case 'video':
+        return '#4B91F7';
+      case 'audio':
+        return '#47B881';
+      case 'text':
+        return '#F7D154';
+      case 'overlay':
+        return '#D14343';
+      default:
+        return '#CCCCCC';
+    }
+  }
+  
+  // Obtener icono para el tipo de pista
+  function getTrackIcon(type: TrackType) {
+    switch (type) {
+      case 'video':
+        return <Video className="h-4 w-4" />;
+      case 'audio':
+        return <Music className="h-4 w-4" />;
+      case 'text':
+        return <Type className="h-4 w-4" />;
+      case 'overlay':
+        return <Image className="h-4 w-4" />;
+      default:
+        return <Layers className="h-4 w-4" />;
+    }
+  }
+  
+  return (
+    <div className={cn("flex flex-col h-full bg-background border-r", className)}>
+      <div className="p-3 border-b flex justify-between items-center">
+        <h3 className="text-sm font-medium">{getText('tracks')}</h3>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleAddTrack('video')}>
+              <Video className="h-4 w-4 mr-2" />
+              {getText('videoTrack')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddTrack('audio')}>
+              <Music className="h-4 w-4 mr-2" />
+              {getText('audioTrack')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddTrack('text')}>
+              <Type className="h-4 w-4 mr-2" />
+              {getText('textTrack')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddTrack('overlay')}>
+              <Image className="h-4 w-4 mr-2" />
+              {getText('overlayTrack')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="track-list">
+          {(provided) => (
+            <div
+              className="flex-1 overflow-y-auto"
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {state.project && state.project.tracks.length > 0 ? (
+                state.project.tracks.map((track, index) => (
+                  <Draggable key={track.id} draggableId={track.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={cn(
+                          "mb-1 border-b",
+                          snapshot.isDragging && "opacity-70",
+                          state.selectedTrackId === track.id && "bg-accent",
+                          !track.visible && "opacity-50"
+                        )}
+                      >
+                        <div 
+                          className="p-2 flex items-center"
+                          onClick={() => handleSelectTrack(track.id)}
+                        >
+                          <div {...provided.dragHandleProps} className="mr-2 cursor-grab">
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          
+                          <div 
+                            className="w-2 h-5 mr-2 rounded-sm" 
+                            style={{ backgroundColor: track.color }}
+                          />
+                          
+                          <button
+                            className="mr-2 focus:outline-none"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpandTrack(track.id);
+                            }}
+                          >
+                            {expandedTracks.includes(track.id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </button>
+                          
+                          <div className="mr-2">
+                            {getTrackIcon(track.type)}
+                          </div>
+                          
+                          <div className="flex-1 truncate text-sm">{track.name}</div>
+                          
+                          <div className="flex items-center space-x-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleVisibilityToggle(track.id, !track.visible);
+                                    }}
+                                  >
+                                    {track.visible ? (
+                                      <Eye className="h-3 w-3" />
+                                    ) : (
+                                      <EyeOff className="h-3 w-3" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {track.visible ? getText('hide') : getText('show')}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleLockToggle(track.id, !track.locked);
+                                    }}
+                                  >
+                                    {track.locked ? (
+                                      <Lock className="h-3 w-3" />
+                                    ) : (
+                                      <LockOpen className="h-3 w-3" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {track.locked ? getText('unlock') : getText('lock')}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            {(track.type === 'video' || track.type === 'audio') && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleMuteToggle(track.id, !track.muted);
+                                      }}
+                                    >
+                                      {track.muted ? (
+                                        <VolumeX className="h-3 w-3" />
+                                      ) : (
+                                        <Volume2 className="h-3 w-3" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {track.muted ? getText('unmute') : getText('mute')}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                >
+                                  <Settings className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleAddClip(track.id, 
+                                  track.type === 'text' ? 'text' : 
+                                  track.type === 'audio' ? 'audio' : 'video'
+                                )}>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  {getText('addClip')}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {(track.type === 'video' || track.type === 'audio') && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleSoloToggle(track.id, !track.solo)}
+                                  >
+                                    <Volume2 className="h-4 w-4 mr-2" />
+                                    {getText('solo')}
+                                    <div className="ml-auto">
+                                      <Switch
+                                        checked={track.solo}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onCheckedChange={(checked) => handleSoloToggle(track.id, checked)}
+                                      />
+                                    </div>
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  onClick={() => handleRemoveTrack(track.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  {getText('remove')}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                        
+                        {expandedTracks.includes(track.id) && (
+                          <div className="px-4 pb-2">
+                            <Accordion type="single" collapsible className="w-full">
+                              <AccordionItem value="properties" className="border-none">
+                                <AccordionTrigger className="py-1 text-xs hover:no-underline">
+                                  {getText('properties')}
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  {(track.type === 'video' || track.type === 'audio') && (
+                                    <div className="space-y-4">
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-xs">{getText('volume')}</span>
+                                          <span className="text-xs">{track.volume ?? 100}%</span>
+                                        </div>
+                                        <Slider
+                                          defaultValue={[track.volume ?? 100]}
+                                          max={100}
+                                          step={1}
+                                          onValueChange={([value]) => handleVolumeChange(track.id, value)}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Propiedades específicas para pistas de texto */}
+                                  {track.type === 'text' && (
+                                    <div className="space-y-4">
+                                      {/* Aquí irían controles para pistas de texto */}
+                                      <p className="text-xs text-muted-foreground">
+                                        {language === 'es' ? 'Ajustes de texto' : 'Text settings'}
+                                      </p>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Propiedades específicas para pistas de overlay */}
+                                  {track.type === 'overlay' && (
+                                    <div className="space-y-4">
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-xs">{getText('opacity')}</span>
+                                          <span className="text-xs">100%</span>
+                                        </div>
+                                        <Slider
+                                          defaultValue={[100]}
+                                          max={100}
+                                          step={1}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Draggable>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full p-4 text-center text-muted-foreground">
+                  <Layers className="h-8 w-8 mb-2" />
+                  <p className="text-sm">
+                    {language === 'es' ? 'No hay pistas disponibles' : 'No tracks available'}
+                  </p>
+                  <p className="text-xs mb-4">
+                    {language === 'es' ? 'Añade una pista para comenzar' : 'Add a track to get started'}
+                  </p>
+                  <Button size="sm" onClick={() => handleAddTrack('video')}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    {getText('addTrack')}
+                  </Button>
+                </div>
+              )}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+      
+      <div className="p-3 border-t">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+          onClick={() => handleAddTrack('video')}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          {getText('addTrack')}
+        </Button>
+      </div>
+    </div>
+  );
+}

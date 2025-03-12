@@ -1,380 +1,360 @@
 /**
- * Tipos para el Editor Profesional
+ * Sistema de tipos para el editor profesional de videos
  * 
- * Este archivo define los tipos y interfaces utilizados en los componentes
- * del editor profesional.
+ * Este archivo contiene todas las definiciones de tipos necesarias para
+ * el editor profesional, incluyendo proyectos, pistas, clips, efectos,
+ * y otras entidades del editor.
  */
 
-/**
- * Estado general del editor
- */
-export interface EditorState {
-  // Información del proyecto
-  projectId: string;
-  projectName: string;
-  projectDescription?: string;
-  userId: string;
+// Estado de guardado del proyecto
+export enum ProjectSaveStatus {
+  SAVED = 'saved',
+  SAVING = 'saving',
+  UNSAVED = 'unsaved',
+  ERROR = 'error'
+}
+
+// Modo de persistencia
+export type PersistenceMode = 'LOCAL' | 'CLOUD' | 'HYBRID';
+
+// Tipo de etiqueta para categorizar elementos
+export type EditorTag = 
+  | 'video' 
+  | 'audio' 
+  | 'text' 
+  | 'overlay' 
+  | 'effect' 
+  | 'transition'
+  | 'music'
+  | 'voiceover'
+  | 'ambient'
+  | 'sfx'
+  | 'title'
+  | 'subtitle'
+  | 'caption'
+  | 'graphic';
+
+// Tipo de pista
+export type TrackType = 
+  | 'video'
+  | 'audio'
+  | 'text'
+  | 'overlay';
+
+// Definición de un proyecto
+export interface Project {
+  id: string;
+  name: string;
+  duration: number; // En segundos
+  resolution: {
+    width: number;
+    height: number;
+  };
+  frameRate: number;
+  audioSampleRate: number;
+  language: 'es' | 'en';
   
-  // Contenido multimedia
+  // Colecciones
+  tracks: Track[];
   clips: Clip[];
-  audioTracks: AudioTrack[];
-  transcriptions: Transcription[];
+  audioClips: AudioClip[];
+  textClips: TextClip[];
+  effects: VisualEffect[];
   cameraMovements: CameraMovement[];
-  visualEffects: VisualEffect[];
-  
-  // Análisis musical
+  transcriptions: Transcription[];
   beats: Beat[];
   sections: Section[];
   
-  // Estado reproducción
-  currentTime: number;
-  duration: number;
-  isPlaying: boolean;
-  
-  // Configuración
-  settings: EditorSettings;
+  // Opciones de exportación
+  exportOptions: ExportOptions;
   
   // Metadata
   createdAt: Date;
   updatedAt: Date;
-  lastSavedAt?: Date;
+  version: string;
 }
 
-/**
- * Clip multimedia (video o imagen)
- */
+// Opciones de exportación
+export interface ExportOptions {
+  startTime: number;
+  endTime: number;
+  format: 'mp4' | 'webm' | 'gif';
+  quality: 'low' | 'medium' | 'high';
+  resolution: '720p' | '1080p' | '4k';
+  frameRate: number;
+  includeAudio: boolean;
+  includeSubtitles: boolean;
+  watermark: boolean;
+  effects: boolean;
+  metadata: Record<string, any>;
+}
+
+// Definición de una pista (track)
+export interface Track {
+  id: string;
+  name: string;
+  type: TrackType;
+  position: number;
+  visible: boolean;
+  locked: boolean;
+  muted: boolean;
+  solo: boolean;
+  volume?: number; // 0-100, solo para pistas de audio y video
+  color: string; // Color para identificar visualmente la pista
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+// Definición base para un clip
 export interface Clip {
   id: string;
+  trackId: string;
   name: string;
-  type: 'video' | 'image';
-  source: string;
-  startTime: number;
-  endTime: number;
-  duration?: number;
-  thumbnail?: string;
-  effects?: VisualEffect[];
-  metadata?: Record<string, any>;
+  source: string; // URL o ruta al recurso original
+  startTime: number; // Tiempo de inicio en la línea de tiempo (segundos)
+  duration: number; // Duración en segundos
+  trimStart: number; // Punto de inicio en el clip original (segundos)
+  trimEnd: number; // Punto final en el clip original (segundos)
+  tags?: EditorTag[];
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
-/**
- * Pista de audio
- */
-export interface AudioTrack {
-  id: string;
-  name: string;
-  source: string;
-  type: 'music' | 'vocal' | 'sfx' | 'ambience';
-  startTime: number;
-  duration: number;
-  volume: number;
-  muted: boolean;
-  loop: boolean;
-  waveform: number[];
-  metadata?: Record<string, any>;
+// Clip de audio específico
+export interface AudioClip extends Omit<Clip, 'source'> {
+  source: string; // URL o ruta al archivo de audio
+  volume: number; // 0-100
+  fadeIn: number; // Duración del fade in en segundos
+  fadeOut: number; // Duración del fade out en segundos
+  looped: boolean; // Si el audio debe repetirse
+  pitch?: number; // Ajuste de tono
+  tempo?: number; // Ajuste de velocidad
+  waveform?: number[]; // Datos de la forma de onda para visualización
 }
 
-/**
- * Transcripción o subtítulo
- */
-export interface Transcription {
-  id: string;
-  text: string;
-  startTime: number;
-  endTime: number;
-  type: 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro' | 'custom';
-  language?: string;
-  style?: {
-    color: string;
-    fontSize: number;
-    fontWeight: string;
-    position: 'top' | 'center' | 'bottom';
+// Clip de texto específico
+export interface TextClip extends Omit<Clip, 'source'> {
+  text: string; // Contenido del texto
+  font: string; // Tipo de letra
+  size: number; // Tamaño del texto
+  color: string; // Color del texto (hex)
+  backgroundColor?: string; // Color de fondo (hex)
+  position: {
+    x: number; // 0-100 (porcentaje del ancho)
+    y: number; // 0-100 (porcentaje del alto)
+    anchor: 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   };
-  metadata?: Record<string, any>;
+  animation?: {
+    type: 'fade' | 'slide' | 'zoom' | 'none';
+    duration: number; // Duración de la animación en segundos
+    delay: number; // Retraso antes de comenzar la animación
+  };
+  style?: {
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+    uppercase: boolean;
+    spacing: number; // Espaciado entre letras
+    lineHeight: number; // Altura de línea
+  };
 }
 
-/**
- * Movimiento de cámara
- */
-export interface CameraMovement {
-  id: string;
-  name: string;
-  type: 'track' | 'zoom' | 'pan' | 'tilt' | 'dolly';
-  startTime: number;
-  duration: number;
-  start: number;
-  end: number;
-  parameters?: Record<string, number>;
-  metadata?: Record<string, any>;
-}
+// Tipo de efecto visual
+export type EffectType = 
+  | 'filter' 
+  | 'transition' 
+  | 'overlay' 
+  | 'blur'
+  | 'crop'
+  | 'custom';
 
-/**
- * Efecto visual
- */
+// Efecto visual
 export interface VisualEffect {
   id: string;
+  trackId: string;
   name: string;
-  type: 'filter' | 'overlay' | 'transition' | 'zoom' | 'crop' | 'blur' | 'custom';
-  startTime: number;
-  duration: number;
-  intensity: number;
-  parameters?: Record<string, any>;
-  metadata?: Record<string, any>;
+  type: EffectType;
+  startTime: number; // Tiempo de inicio en segundos
+  endTime: number; // Tiempo de finalización en segundos
+  duration: number; // Duración en segundos (endTime - startTime)
+  intensity?: number; // Intensidad del efecto (0-100)
+  parameters: Record<string, any>; // Parámetros específicos del efecto
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
-/**
- * Beat o pulso en la música
- */
+// Tipo de movimiento de cámara
+export type CameraMovementType = 
+  | 'pan' 
+  | 'tilt' 
+  | 'zoom' 
+  | 'dolly';
+
+// Movimiento de cámara
+export interface CameraMovement {
+  id: string;
+  trackId: string; // Track al que está asociado
+  type: CameraMovementType;
+  startTime: number; // Tiempo de inicio en segundos
+  endTime: number; // Tiempo de finalización en segundos
+  duration: number; // Duración en segundos
+  parameters?: Record<string, number>; // Parámetros específicos del movimiento
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+// Tipo de transcripción
+export type TranscriptionType = 
+  | 'dialogue' 
+  | 'lyrics';
+
+// Transcripción (diálogos, letras, etc.)
+export interface Transcription {
+  id: string;
+  text: string; // Texto de la transcripción
+  type: TranscriptionType;
+  startTime: number; // Tiempo de inicio en segundos
+  endTime: number; // Tiempo de finalización en segundos
+  duration: number; // Duración en segundos
+  speakerId?: string; // ID del hablante (si aplica)
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+// Información de ritmo (beat)
 export interface Beat {
   id: string;
-  time: number;
-  type: 'beat' | 'bar';
-  intensity: number;
-  label?: string;
-  bpm?: number;
-  metadata?: Record<string, any>;
+  time: number; // Tiempo en segundos
+  strength: number; // Intensidad del beat (0-1)
+  type: 'downbeat' | 'upbeat';
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
-/**
- * Sección musical
- */
+// Tipo de sección
+export type SectionType = 
+  | 'intro' 
+  | 'verse' 
+  | 'chorus' 
+  | 'bridge' 
+  | 'outro' 
+  | 'breakdown'
+  | 'custom';
+
+// Sección (parte de la canción o video)
 export interface Section {
   id: string;
   name: string;
-  startTime: number;
-  endTime: number;
-  type: 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro' | 'breakdown' | 'custom';
-  color: string;
-  metadata?: Record<string, any>;
+  type: SectionType;
+  startTime: number; // Tiempo de inicio en segundos
+  endTime: number; // Tiempo de finalización en segundos
+  duration: number; // Duración en segundos
+  color: string; // Color para visualizar la sección
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
-/**
- * Timeline clip para representar cualquier elemento en la línea de tiempo
- */
-export interface TimelineClip {
+// Posición del cursor de reproducción (playhead)
+export interface PlayheadPosition {
+  time: number; // Tiempo actual en segundos
+  isPlaying: boolean;
+  speed: number; // Velocidad de reproducción (1 = normal)
+}
+
+// Estado de visualización de la línea de tiempo
+export interface TimelineViewState {
+  scale: number; // Factor de escala (zoom)
+  offset: number; // Desplazamiento horizontal
+  visibleStartTime: number; // Tiempo de inicio visible
+  visibleEndTime: number; // Tiempo final visible
+}
+
+// Especificación de error
+export interface EditorError {
+  code: string;
+  message: string;
+  details?: any;
+  timestamp: Date;
+}
+
+// Historia de acciones (para undo/redo)
+export interface ActionHistory {
   id: string;
-  title: string;
-  type: 'video' | 'image' | 'audio' | 'text';
-  start: number;
-  duration: number;
-  url: string;
-  trackId: string;
-  selected?: boolean;
-  color?: string;
-  end?: number;
-  metadata?: Record<string, any>;
+  action: string; // Tipo de acción
+  payload: any; // Datos asociados a la acción
+  timestamp: Date;
 }
 
-/**
- * Configuración del editor
- */
-export interface EditorSettings {
+// Configuración del editor
+export interface EditorConfig {
   language: 'es' | 'en';
   theme: 'light' | 'dark' | 'system';
+  shortcuts: Record<string, string>;
   autoSave: boolean;
-  autoSaveInterval: number;
-  videoQuality: 'draft' | 'standard' | 'high';
-  frameRate: number;
-  backgroundColor: string;
-  showTimecode: boolean;
-  snapToGrid: boolean;
-  gridSize: number;
-  defaultTransitionDuration: number;
+  autoSaveInterval: number; // En segundos
+  audioWaveforms: boolean;
+  thumbnailsQuality: 'low' | 'medium' | 'high';
+  renderPreview: boolean;
+  defaultTrackHeight: number;
+  showTimecodes: boolean;
 }
 
-/**
- * Historia del proyecto
- */
-export interface ProjectHistory {
-  id: string;
-  projectId: string;
-  userId: string;
-  action: 'create' | 'update' | 'delete' | 'export';
-  timestamp: Date;
-  details?: Record<string, any>;
+// Configuración de exportación avanzada
+export interface AdvancedExportSettings extends ExportOptions {
+  codec: string;
+  bitrate: number;
+  audioCodec: string;
+  audioBitrate: number;
+  customCommand?: string;
 }
 
-/**
- * Objeto de exportación
- */
-export interface ExportResult {
-  id: string;
-  projectId: string;
-  userId: string;
-  format: 'mp4' | 'webm' | 'gif';
-  quality: 'draft' | 'standard' | 'high';
-  resolution: '480p' | '720p' | '1080p' | '4k';
+// Estado del proceso de exportación
+export interface ExportProgress {
+  status: 'idle' | 'preparing' | 'processing' | 'finalizing' | 'completed' | 'error';
+  progress: number; // 0-100
+  currentFrame: number;
+  totalFrames: number;
+  timeRemaining?: number; // En segundos
+  error?: string;
+  outputUrl?: string;
+}
+
+// Tipo para las miniaturas de la línea de tiempo
+export interface ThumbnailData {
+  time: number;
   url: string;
-  duration: number;
-  size: number;
-  createdAt: Date;
-  metadata?: Record<string, any>;
+  width: number;
+  height: number;
 }
 
-/**
- * Métodos auxiliares para manipular objetos EditorState
- */
-export const EditorStateUtils = {
-  /**
-   * Calcula la duración total del proyecto
-   */
-  calculateDuration(state: Partial<EditorState>): number {
-    let maxEnd = 0;
-    
-    // Revisar clips
-    if (state.clips) {
-      state.clips.forEach(clip => {
-        const clipEnd = clip.endTime;
-        if (clipEnd > maxEnd) maxEnd = clipEnd;
-      });
-    }
-    
-    // Revisar pistas de audio
-    if (state.audioTracks) {
-      state.audioTracks.forEach(track => {
-        const trackEnd = track.startTime + track.duration;
-        if (trackEnd > maxEnd) maxEnd = trackEnd;
-      });
-    }
-    
-    // Revisar transcripciones
-    if (state.transcriptions) {
-      state.transcriptions.forEach(transcription => {
-        if (transcription.endTime > maxEnd) maxEnd = transcription.endTime;
-      });
-    }
-    
-    return maxEnd;
-  },
-  
-  /**
-   * Encuentra elementos activos en un tiempo determinado
-   */
-  findActiveElementsAtTime(state: Partial<EditorState>, time: number): {
-    clips: Clip[];
-    audioTracks: AudioTrack[];
-    transcriptions: Transcription[];
-    cameraMovements: CameraMovement[];
-    visualEffects: VisualEffect[];
-    beats: Beat[];
-    sections: Section[];
-  } {
-    const result = {
-      clips: [] as Clip[],
-      audioTracks: [] as AudioTrack[],
-      transcriptions: [] as Transcription[],
-      cameraMovements: [] as CameraMovement[],
-      visualEffects: [] as VisualEffect[],
-      beats: [] as Beat[],
-      sections: [] as Section[]
-    };
-    
-    // Clips activos
-    if (state.clips) {
-      result.clips = state.clips.filter(
-        clip => time >= clip.startTime && time < clip.endTime
-      );
-    }
-    
-    // Pistas de audio activas
-    if (state.audioTracks) {
-      result.audioTracks = state.audioTracks.filter(
-        track => time >= track.startTime && time < (track.startTime + track.duration)
-      );
-    }
-    
-    // Transcripciones activas
-    if (state.transcriptions) {
-      result.transcriptions = state.transcriptions.filter(
-        transcription => time >= transcription.startTime && time <= transcription.endTime
-      );
-    }
-    
-    // Movimientos de cámara activos
-    if (state.cameraMovements) {
-      result.cameraMovements = state.cameraMovements.filter(
-        movement => time >= movement.startTime && time < (movement.startTime + movement.duration)
-      );
-    }
-    
-    // Efectos visuales activos
-    if (state.visualEffects) {
-      result.visualEffects = state.visualEffects.filter(
-        effect => time >= effect.startTime && time < (effect.startTime + effect.duration)
-      );
-    }
-    
-    // Beats activos (el beat más cercano)
-    if (state.beats) {
-      // Encontrar el beat más cercano al tiempo actual
-      let closestBeat: Beat | null = null;
-      let minDistance = Infinity;
-      
-      for (const beat of state.beats) {
-        const distance = Math.abs(beat.time - time);
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestBeat = beat;
-        }
-      }
-      
-      // Solo considerar un beat como activo si está a menos de 0.2 segundos
-      if (closestBeat && minDistance <= 0.2) {
-        result.beats = [closestBeat];
-      }
-    }
-    
-    // Secciones activas
-    if (state.sections) {
-      result.sections = state.sections.filter(
-        section => time >= section.startTime && time < section.endTime
-      );
-    }
-    
-    return result;
-  },
-  
-  /**
-   * Crea un nuevo estado de editor vacío
-   */
-  createEmptyState(userId: string): EditorState {
-    const now = new Date();
-    return {
-      projectId: `project-${Date.now()}`,
-      projectName: 'Nuevo proyecto',
-      projectDescription: '',
-      userId,
-      clips: [],
-      audioTracks: [],
-      transcriptions: [],
-      cameraMovements: [],
-      visualEffects: [],
-      beats: [],
-      sections: [],
-      currentTime: 0,
-      duration: 0,
-      isPlaying: false,
-      settings: {
-        language: 'es',
-        theme: 'system',
-        autoSave: true,
-        autoSaveInterval: 30,
-        videoQuality: 'standard',
-        frameRate: 30,
-        backgroundColor: '#000000',
-        showTimecode: true,
-        snapToGrid: true,
-        gridSize: 1,
-        defaultTransitionDuration: 1
-      },
-      createdAt: now,
-      updatedAt: now
-    };
-  },
-  
-  /**
-   * Clona un estado de editor
-   */
-  cloneState(state: EditorState): EditorState {
-    return JSON.parse(JSON.stringify(state));
-  }
-};
+// Metadatos del clip para información adicional
+export interface ClipMetadata {
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  dateCreated: Date;
+  dateModified: Date;
+  duration: number;
+  resolution?: {
+    width: number;
+    height: number;
+  };
+  bitrate?: number;
+  frameRate?: number;
+  codec?: string;
+  audioCodec?: string;
+  audioBitrate?: number;
+  audioChannels?: number;
+  audioSampleRate?: number;
+  tags?: Record<string, string>;
+  location?: {
+    latitude: number;
+    longitude: number;
+    altitude?: number;
+  };
+  camera?: {
+    make: string;
+    model: string;
+    settings?: string;
+  };
+}

@@ -1,613 +1,1036 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { useEditor } from '@/lib/context/editor-context';
+import { cn } from '@/lib/utils';
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Save,
+  Download,
+  Settings,
+  Video,
+  Music,
+  Image,
+  Type,
+  Wand2,
+  Camera,
+  Clock,
+  Text,
+  Layers,
+  FileVideo,
+  PlusCircle,
+  Scissors,
+  PanelRight,
+  ScreenShare,
+  Mic,
+  Brush,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  RotateCw,
+  ChevronDown,
+  MoreHorizontal,
+  CheckCircle2,
+  Upload
+} from 'lucide-react';
+
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight } from 'lucide-react';
+
 import {
-  Scissors,
-  Music,
-  Image,
-  Type,
-  Film,
-  Wand2,
-  Layers,
-  LayoutGrid,
-  Camera,
-  Volume2,
-  Clock,
-  SlidersHorizontal,
-  Camera as CameraIcon,
-  Crop,
-  Sparkles,
-  Palette,
-  Split,
-  SplitSquareHorizontal,
-  RotateCw,
-  FileVideo,
-  MoveHorizontal,
-  Play,
-  Save,
-  FileText,
-  ArrowUpRight,
-  SquareStack,
-  Workflow,
-  Hand,
-  PanelLeft,
-  Paintbrush,
-  Tags,
-  Folder,
-  Layout,
-  Plus,
-  Music2,
-  Scan,
-  Video,
-  Flower,
-  Sliders,
-  FilmIcon,
-} from 'lucide-react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from '@/components/ui/dropdown-menu';
+
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
 
 export interface ToolbarProps {
-  onToolSelect: (tool: string) => void;
-  activeToolId?: string;
-  showLabels?: boolean;
   orientation?: 'horizontal' | 'vertical';
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  className?: string;
   language?: 'es' | 'en';
-  isCollapsible?: boolean;
+  onZoom?: (level: number) => void;
+  currentZoom?: number;
 }
 
-// Función para renderizar iconos con estilo para que se vean más profesionales
-const renderIcon = (IconComponent: React.ElementType) => {
-  return (
-    <div className="flex items-center justify-center">
-      <IconComponent className="h-5 w-5" strokeWidth={1.5} />
-    </div>
-  );
+// Textos localizados
+const localizedText = {
+  efectos: {
+    es: 'Efectos',
+    en: 'Effects'
+  },
+  audio: {
+    es: 'Audio',
+    en: 'Audio'
+  },
+  ritmo: {
+    es: 'Ritmo',
+    en: 'Rhythm'
+  },
+  texto: {
+    es: 'Texto',
+    en: 'Text'
+  },
+  efectosVisuales: {
+    es: 'Efectos Visuales',
+    en: 'Visual Effects'
+  },
+  añadirEfecto: {
+    es: 'Añadir efecto',
+    en: 'Add effect'
+  },
+  lineaTiempo: {
+    es: 'Línea de Tiempo',
+    en: 'Timeline'
+  },
+  activos: {
+    es: 'Activos',
+    en: 'Assets'
+  },
+  grabar: {
+    es: 'Grabar',
+    en: 'Record'
+  },
+  camara: {
+    es: 'Cámara',
+    en: 'Camera'
+  },
+  importar: {
+    es: 'Importar',
+    en: 'Import'
+  },
+  exportar: {
+    es: 'Exportar',
+    en: 'Export'
+  },
+  guardar: {
+    es: 'Guardar',
+    en: 'Save'
+  },
+  configuracion: {
+    es: 'Configuración',
+    en: 'Settings'
+  },
+  deshacer: {
+    es: 'Deshacer',
+    en: 'Undo'
+  },
+  rehacer: {
+    es: 'Rehacer',
+    en: 'Redo'
+  },
+  cortar: {
+    es: 'Cortar',
+    en: 'Cut'
+  },
+  dividir: {
+    es: 'Dividir',
+    en: 'Split'
+  },
+  titulo: {
+    es: 'Título',
+    en: 'Title'
+  },
+  subtitulo: {
+    es: 'Subtítulo',
+    en: 'Subtitle'
+  },
+  musica: {
+    es: 'Música',
+    en: 'Music'
+  },
+  voz: {
+    es: 'Voz',
+    en: 'Voice'
+  },
+  transicion: {
+    es: 'Transición',
+    en: 'Transition'
+  },
+  filtro: {
+    es: 'Filtro',
+    en: 'Filter'
+  },
+  animacion: {
+    es: 'Animación',
+    en: 'Animation'
+  },
+  velocidad: {
+    es: 'Velocidad',
+    en: 'Speed'
+  },
+  volumen: {
+    es: 'Volumen',
+    en: 'Volume'
+  },
+  tono: {
+    es: 'Tono',
+    en: 'Pitch'
+  },
+  color: {
+    es: 'Color',
+    en: 'Color'
+  },
+  brillo: {
+    es: 'Brillo',
+    en: 'Brightness'
+  },
+  contraste: {
+    es: 'Contraste',
+    en: 'Contrast'
+  },
+  saturacion: {
+    es: 'Saturación',
+    en: 'Saturation'
+  },
+  desenfoque: {
+    es: 'Desenfoque',
+    en: 'Blur'
+  },
+  recorte: {
+    es: 'Recorte',
+    en: 'Crop'
+  },
+  rotar: {
+    es: 'Rotar',
+    en: 'Rotate'
+  },
+  girar: {
+    es: 'Girar',
+    en: 'Flip'
+  },
+  normal: {
+    es: 'Normal',
+    en: 'Normal'
+  },
+  lento: {
+    es: 'Lento',
+    en: 'Slow'
+  },
+  rapido: {
+    es: 'Rápido',
+    en: 'Fast'
+  },
+  pantallaCompleta: {
+    es: 'Pantalla completa',
+    en: 'Fullscreen'
+  },
+  acercar: {
+    es: 'Acercar',
+    en: 'Zoom in'
+  },
+  alejar: {
+    es: 'Alejar',
+    en: 'Zoom out'
+  },
+  compartir: {
+    es: 'Compartir',
+    en: 'Share'
+  },
+  reproducir: {
+    es: 'Reproducir',
+    en: 'Play'
+  },
+  pausar: {
+    es: 'Pausar',
+    en: 'Pause'
+  },
+  reiniciar: {
+    es: 'Reiniciar',
+    en: 'Reset'
+  }
 };
 
-// Definimos las herramientas en grupos al estilo Adobe Premiere Pro
-const TOOLS = {
-  es: [
-    // Grupo de edición básica
-    { id: 'selection', icon: renderIcon(MoveHorizontal), label: 'Selección', group: 'edit', tooltip: 'Herramienta de selección para mover clips' },
-    { id: 'hand', icon: renderIcon(Hand), label: 'Mano', group: 'edit', tooltip: 'Desplazar el lienzo' },
-    { id: 'cut', icon: renderIcon(Scissors), label: 'Cortar', group: 'edit', tooltip: 'Cortar clip en la posición actual' },
-    { id: 'split', icon: renderIcon(Split), label: 'Dividir', group: 'edit', tooltip: 'Dividir clip en múltiples partes' },
-    { id: 'crop', icon: renderIcon(Crop), label: 'Recortar', group: 'edit', tooltip: 'Recortar área visible del clip' },
-    { id: 'rotate', icon: renderIcon(RotateCw), label: 'Rotar', group: 'edit', tooltip: 'Rotar clips seleccionados' },
-    
-    // Grupo de Activos
-    { id: 'video', icon: renderIcon(FileVideo), label: 'Video', group: 'assets', tooltip: 'Agregar clip de video' },
-    { id: 'image', icon: renderIcon(Image), label: 'Imagen', group: 'assets', tooltip: 'Agregar imagen o foto' },
-    { id: 'folder', icon: renderIcon(Folder), label: 'Importar', group: 'assets', tooltip: 'Importar multimedia' },
-    { id: 'projects', icon: renderIcon(SquareStack), label: 'Proyectos', group: 'assets', tooltip: 'Gestión de proyectos' },
-    
-    // Grupo de Efectos
-    { id: 'effects', icon: renderIcon(Sparkles), label: 'Efectos', group: 'effects', tooltip: 'Aplicar efectos visuales' },
-    { id: 'transitions', icon: renderIcon(Layers), label: 'Transiciones', group: 'effects', tooltip: 'Aplicar transiciones entre clips' },
-    { id: 'add_effect', icon: renderIcon(Plus), label: 'Añadir efecto', group: 'effects', tooltip: 'Añadir nuevo efecto' },
-    
-    // Grupo de Audio
-    { id: 'audio', icon: renderIcon(Music), label: 'Audio', group: 'audio', tooltip: 'Agregar pista de audio' },
-    { id: 'volume', icon: renderIcon(Volume2), label: 'Volumen', group: 'audio', tooltip: 'Ajustes de audio y volumen' },
-    { id: 'audio_effects', icon: renderIcon(Music2), label: 'Efectos de Audio', group: 'audio', tooltip: 'Aplicar efectos a pistas de audio' },
-    
-    // Grupo de Ritmo
-    { id: 'beat', icon: renderIcon(SplitSquareHorizontal), label: 'Beats', group: 'rhythm', tooltip: 'Análisis de beats musicales' },
-    { id: 'speed', icon: renderIcon(Clock), label: 'Velocidad', group: 'rhythm', tooltip: 'Ajustes de velocidad y tiempo' },
-    
-    // Grupo de Texto
-    { id: 'text', icon: renderIcon(Type), label: 'Texto', group: 'text', tooltip: 'Agregar texto y títulos' },
-    { id: 'transcription', icon: renderIcon(FileText), label: 'Transcripción', group: 'text', tooltip: 'Transcripción y subtítulos' },
-    
-    // Grupo de Efectos Visuales
-    { id: 'visual_effects', icon: renderIcon(Flower), label: 'Efectos Visuales', group: 'visual_effects', tooltip: 'Efectos visuales avanzados' },
-    { id: 'color', icon: renderIcon(Palette), label: 'Color', group: 'visual_effects', tooltip: 'Ajustes de color y gradación' },
-    { id: 'paintbrush', icon: renderIcon(Paintbrush), label: 'Pincel', group: 'visual_effects', tooltip: 'Herramientas de pintura y máscaras' },
-    { id: 'camera', icon: renderIcon(CameraIcon), label: 'Cámara', group: 'visual_effects', tooltip: 'Movimientos de cámara' },
-    
-    // Grupo de Línea de Tiempo
-    { id: 'timeline', icon: renderIcon(Layout), label: 'Línea de Tiempo', group: 'timeline', tooltip: 'Gestionar línea de tiempo' },
-    { id: 'tags', icon: renderIcon(Tags), label: 'Marcadores', group: 'timeline', tooltip: 'Añadir marcadores y etiquetas' },
-    
-    // Grupo de utilidades
-    { id: 'settings', icon: renderIcon(SlidersHorizontal), label: 'Ajustes', group: 'utility', tooltip: 'Configuración del proyecto' },
-    { id: 'export', icon: renderIcon(ArrowUpRight), label: 'Exportar', group: 'utility', tooltip: 'Exportar video' },
-    { id: 'save', icon: renderIcon(Save), label: 'Guardar', group: 'utility', tooltip: 'Guardar proyecto' }
-  ],
-  en: [
-    // Basic editing group
-    { id: 'selection', icon: renderIcon(MoveHorizontal), label: 'Selection', group: 'edit', tooltip: 'Selection tool for moving clips' },
-    { id: 'hand', icon: renderIcon(Hand), label: 'Hand', group: 'edit', tooltip: 'Pan the canvas' },
-    { id: 'cut', icon: renderIcon(Scissors), label: 'Cut', group: 'edit', tooltip: 'Cut clip at current position' },
-    { id: 'split', icon: renderIcon(Split), label: 'Split', group: 'edit', tooltip: 'Split clip into multiple parts' },
-    { id: 'crop', icon: renderIcon(Crop), label: 'Crop', group: 'edit', tooltip: 'Crop visible area of clip' },
-    { id: 'rotate', icon: renderIcon(RotateCw), label: 'Rotate', group: 'edit', tooltip: 'Rotate selected clips' },
-    
-    // Assets group
-    { id: 'video', icon: renderIcon(FileVideo), label: 'Video', group: 'assets', tooltip: 'Add video clip' },
-    { id: 'image', icon: renderIcon(Image), label: 'Image', group: 'assets', tooltip: 'Add image or photo' },
-    { id: 'folder', icon: renderIcon(Folder), label: 'Import', group: 'assets', tooltip: 'Import media' },
-    { id: 'projects', icon: renderIcon(SquareStack), label: 'Projects', group: 'assets', tooltip: 'Project management' },
-    
-    // Effects group
-    { id: 'effects', icon: renderIcon(Sparkles), label: 'Effects', group: 'effects', tooltip: 'Apply visual effects' },
-    { id: 'transitions', icon: renderIcon(Layers), label: 'Transitions', group: 'effects', tooltip: 'Apply transitions between clips' },
-    { id: 'add_effect', icon: renderIcon(Plus), label: 'Add Effect', group: 'effects', tooltip: 'Add new effect' },
-    
-    // Audio group
-    { id: 'audio', icon: renderIcon(Music), label: 'Audio', group: 'audio', tooltip: 'Add audio track' },
-    { id: 'volume', icon: renderIcon(Volume2), label: 'Volume', group: 'audio', tooltip: 'Audio and volume adjustments' },
-    { id: 'audio_effects', icon: renderIcon(Music2), label: 'Audio Effects', group: 'audio', tooltip: 'Apply effects to audio tracks' },
-    
-    // Rhythm group
-    { id: 'beat', icon: renderIcon(SplitSquareHorizontal), label: 'Beats', group: 'rhythm', tooltip: 'Music beat analysis' },
-    { id: 'speed', icon: renderIcon(Clock), label: 'Speed', group: 'rhythm', tooltip: 'Speed and time adjustments' },
-    
-    // Text group
-    { id: 'text', icon: renderIcon(Type), label: 'Text', group: 'text', tooltip: 'Add text and titles' },
-    { id: 'transcription', icon: renderIcon(FileText), label: 'Transcription', group: 'text', tooltip: 'Transcription and subtitles' },
-    
-    // Visual Effects group
-    { id: 'visual_effects', icon: renderIcon(Flower), label: 'Visual Effects', group: 'visual_effects', tooltip: 'Advanced visual effects' },
-    { id: 'color', icon: renderIcon(Palette), label: 'Color', group: 'visual_effects', tooltip: 'Color adjustment and grading' },
-    { id: 'paintbrush', icon: renderIcon(Paintbrush), label: 'Brush', group: 'visual_effects', tooltip: 'Painting tools and masks' },
-    { id: 'camera', icon: renderIcon(CameraIcon), label: 'Camera', group: 'visual_effects', tooltip: 'Camera movements' },
-    
-    // Timeline group
-    { id: 'timeline', icon: renderIcon(Layout), label: 'Timeline', group: 'timeline', tooltip: 'Manage timeline' },
-    { id: 'tags', icon: renderIcon(Tags), label: 'Markers', group: 'timeline', tooltip: 'Add markers and tags' },
-    
-    // Utility group
-    { id: 'settings', icon: renderIcon(SlidersHorizontal), label: 'Settings', group: 'utility', tooltip: 'Project settings' },
-    { id: 'export', icon: renderIcon(ArrowUpRight), label: 'Export', group: 'utility', tooltip: 'Export video' },
-    { id: 'save', icon: renderIcon(Save), label: 'Save', group: 'utility', tooltip: 'Save project' }
-  ]
-};
-
-const Toolbar: React.FC<ToolbarProps> = ({
-  onToolSelect,
-  activeToolId,
-  showLabels = false,
+export function Toolbar({
   orientation = 'horizontal',
-  position = 'bottom',
+  className,
   language = 'es',
-  isCollapsible = false
-}) => {
-  // Estados para el modo de colapso
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
-  const [mouseHoveringOnToolbar, setMouseHoveringOnToolbar] = useState(false);
-  const [lastMouseMoveTime, setLastMouseMoveTime] = useState<number>(Date.now());
-  const [mouseDistance, setMouseDistance] = useState<{x: number, y: number} | null>(null);
-  const [mouseProximity, setMouseProximity] = useState<number>(100); // 0 = muy cerca, 100 = muy lejos
-  const toolbarRef = useRef<HTMLDivElement>(null);
+  onZoom,
+  currentZoom = 1
+}: ToolbarProps) {
+  const { 
+    state, 
+    play, 
+    pause, 
+    seek, 
+    undo, 
+    redo, 
+    saveProject,
+    exportProject 
+  } = useEditor();
   
-  // Temporizadores para colapsar después de inactividad y para detectar movimiento del ratón
-  const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const mouseActivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   
-  // Determine the tools array based on language
-  const tools = TOOLS[language] || TOOLS.en;
-
-  // Agrupar herramientas por tipo
-  const groupedTools = tools.reduce((groups: Record<string, typeof tools>, tool) => {
-    const group = tool.group || 'misc';
-    if (!groups[group]) {
-      groups[group] = [];
-    }
-    groups[group].push(tool);
-    return groups;
-  }, {});
-
-  // Orden de los grupos según las secciones solicitadas
-  const groupOrder = ['edit', 'assets', 'effects', 'audio', 'rhythm', 'text', 'visual_effects', 'timeline', 'utility'];
-
-  // Función para alternar el colapso de la barra de herramientas
-  const toggleCollapse = () => {
-    setIsCollapsed(prev => !prev);
-    setExpandedGroup(null);
-  };
-  
-  // Función para expandir la barra de herramientas
-  const expandToolbar = () => {
-    if (isCollapsed && isCollapsible) {
-      setIsCollapsed(false);
-    }
-  };
-
-  // Función para expandir un grupo específico
-  const toggleGroupExpansion = (groupName: string) => {
-    if (expandedGroup === groupName) {
-      setExpandedGroup(null);
+  // Controlar la reproducción
+  const togglePlayback = () => {
+    if (state.playhead.isPlaying) {
+      pause();
     } else {
-      setExpandedGroup(groupName);
-    }
-    resetCollapseTimer();
-  };
-  
-  // Función para reiniciar el temporizador de colapso
-  const resetCollapseTimer = () => {
-    if (collapseTimerRef.current) {
-      clearTimeout(collapseTimerRef.current);
-    }
-    
-    if (isCollapsible && !isCollapsed) {
-      collapseTimerRef.current = setTimeout(() => {
-        if (!mouseHoveringOnToolbar) {
-          setIsCollapsed(true);
-          setExpandedGroup(null);
-        }
-      }, 3000); // 3 segundos de inactividad
+      play();
     }
   };
   
-  // Efecto para detectar clics fuera de la barra de herramientas y seguimiento del ratón
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (toolbarRef.current && !toolbarRef.current.contains(event.target as Node) && isCollapsible) {
-        setIsCollapsed(true);
-        setExpandedGroup(null);
-      }
-    };
-    
-    // Función para rastrear movimiento del ratón con detección avanzada de proximidad
-    const handleMouseMove = (event: MouseEvent) => {
-      const currentTime = Date.now();
-      setLastMouseMoveTime(currentTime);
-      
-      // Guardar la posición del ratón para poder calcular la distancia y velocidad
-      setMouseDistance({x: event.clientX, y: event.clientY});
-      
-      // Si la barra de herramientas está disponible, calcular la proximidad del ratón
-      if (toolbarRef.current) {
-        const rect = toolbarRef.current.getBoundingClientRect();
-        const maxDistance = 150; // Distancia máxima para calcular proximidad (100%)
-        const threshold = 50; // Distancia para activar la expansión
-        
-        let distance = 0;
-        let shouldExpand = false;
-        
-        // Calcular la distancia real según orientación y posición
-        if (orientation === 'vertical') {
-          if (position === 'left') {
-            // Distancia al borde derecho de la barra cuando está a la izquierda
-            distance = Math.abs(event.clientX - rect.right);
-          } else if (position === 'right') {
-            // Distancia al borde izquierdo de la barra cuando está a la derecha
-            distance = Math.abs(event.clientX - rect.left);
-          }
-        } else {
-          if (position === 'top') {
-            // Distancia al borde inferior de la barra cuando está arriba
-            distance = Math.abs(event.clientY - rect.bottom);
-          } else if (position === 'bottom') {
-            // Distancia al borde superior de la barra cuando está abajo
-            distance = Math.abs(event.clientY - rect.top);
-          }
-        }
-        
-        // Calcular proximidad como un valor entre 0 (muy cerca) y 100 (lejos)
-        const proximity = Math.min(100, Math.round((distance / maxDistance) * 100));
-        setMouseProximity(proximity);
-        
-        // Determinar si debemos expandir la barra basado en la proximidad
-        shouldExpand = distance < threshold;
-        
-        // Expandir la barra si el ratón está lo suficientemente cerca y la barra está colapsada
-        if (shouldExpand && isCollapsed && isCollapsible) {
-          expandToolbar();
-        }
-      }
-    };
-    
-    // Monitorear actividad del ratón para auto-colapso
-    const checkMouseActivity = () => {
-      const currentTime = Date.now();
-      const timeSinceLastMove = currentTime - lastMouseMoveTime;
-      
-      // Si no hay movimiento del ratón durante el período especificado, colapsar la barra
-      if (timeSinceLastMove > 3000 && !mouseHoveringOnToolbar && isCollapsible && !isCollapsed) {
-        setIsCollapsed(true);
-        setExpandedGroup(null);
-      }
-      
-      // Continuar monitoreando (al estilo de Adobe Premiere)
-      mouseActivityTimerRef.current = setTimeout(checkMouseActivity, 1000);
-    };
-    
-    // Registrar eventos
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('mousemove', handleMouseMove);
-    
-    // Iniciar monitoreo de actividad
-    if (isCollapsible) {
-      mouseActivityTimerRef.current = setTimeout(checkMouseActivity, 1000);
-    }
-    
-    // Limpiar eventos y temporizadores
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('mousemove', handleMouseMove);
-      
-      if (collapseTimerRef.current) {
-        clearTimeout(collapseTimerRef.current);
-      }
-      
-      if (mouseActivityTimerRef.current) {
-        clearTimeout(mouseActivityTimerRef.current);
-      }
-    };
-  }, [isCollapsible, isCollapsed, orientation, position, lastMouseMoveTime, expandToolbar]);
-  
-  // Efecto para iniciar el temporizador de colapso
-  useEffect(() => {
-    resetCollapseTimer();
-    
-    return () => {
-      if (collapseTimerRef.current) {
-        clearTimeout(collapseTimerRef.current);
-      }
-    };
-  }, [isCollapsed, isCollapsible, mouseHoveringOnToolbar]);
-
-  // El estilo Adobe Premiere usa una barra con grupos de herramientas
-  const containerClasses = (() => {
-    if (orientation === 'horizontal') {
-      return isCollapsed 
-        ? 'flex overflow-x-auto pb-1 hide-scrollbar transition-all duration-400 ease-in-out opacity-85 hover:opacity-100 transform hover:translate-y-0 translate-y-[2px]'
-        : 'flex overflow-x-auto pb-1 hide-scrollbar transition-all duration-400 ease-in-out opacity-100 transform translate-y-0';
-    } else {
-      return isCollapsed 
-        ? 'flex flex-col space-y-2 w-16 transition-all duration-400 ease-in-out opacity-85 hover:opacity-100 transform hover:translate-x-0'
-        : 'flex flex-col space-y-2 w-64 transition-all duration-400 ease-in-out opacity-100 transform translate-x-0';
-    }
-  })();
-
-  // En dispositivos móviles, ocupa todo el ancho de la pantalla
-  const positionClasses = (() => {
-    switch (position) {
-      case 'top': return 'top-0 left-0 right-0';
-      case 'bottom': return 'bottom-0 left-0 right-0';
-      case 'left': return 'left-0 top-0 bottom-0';
-      case 'right': return 'right-0 top-0 bottom-0';
-      default: return '';
-    }
-  })();
-
-  // Clases para botones y separadores al estilo Adobe Premiere Pro
-  const buttonClasses = 'rounded-md flex items-center justify-center';
-  const activeToolClasses = 'bg-orange-500 text-white shadow-md';
-  const inactiveToolClasses = 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white hover:shadow-sm';
-  
-  // Clases específicas según la orientación
-  const groupClasses = orientation === 'horizontal' 
-    ? 'flex flex-wrap items-center px-1 py-1' 
-    : 'flex flex-col items-center px-1 py-2';
-    
-  const separatorClasses = orientation === 'horizontal'
-    ? 'h-full w-px bg-zinc-700 mx-2'
-    : 'w-full h-px bg-zinc-700 my-2';
-
-  // Nombres de grupos según las secciones solicitadas
-  const groupNames: Record<string, string> = {
-    edit: language === 'es' ? 'Edición' : 'Edit',
-    assets: language === 'es' ? 'Activos' : 'Assets',
-    effects: language === 'es' ? 'Efectos' : 'Effects',
-    audio: language === 'es' ? 'Audio' : 'Audio',
-    rhythm: language === 'es' ? 'Ritmo' : 'Rhythm',
-    text: language === 'es' ? 'Texto' : 'Text',
-    visual_effects: language === 'es' ? 'Efectos Visuales' : 'Visual Effects',
-    timeline: language === 'es' ? 'Línea de Tiempo' : 'Timeline',
-    utility: language === 'es' ? 'Utilidades' : 'Utility'
+  // Ir al inicio
+  const goToStart = () => {
+    seek(0);
   };
-
-  // Estilos específicos para barras de herramientas verticales - estilo Adobe Premiere Pro
-  const verticalToolbarClasses = orientation === 'vertical' 
-    ? 'h-full py-4 flex-col bg-[#232323] border-r border-[#1a1a1a]' 
-    : '';
-    
-  const verticalGroupLabelClasses = orientation === 'vertical'
-    ? 'text-[10px] uppercase tracking-wider text-center text-zinc-400 font-semibold w-full py-1 mb-1 border-b border-zinc-800'
-    : 'text-xs mb-1 text-center text-zinc-400 font-medium w-full';
   
-  // Obtener clase para el contenedor principal
-  const mainContainerClasses = `toolbar ${containerClasses} ${positionClasses} p-2 bg-zinc-900 shadow-md ${verticalToolbarClasses}`;
-  
-  // Renderizar el botón de colapso/expandir para la barra (estilo Adobe Premiere Pro)
-  const renderCollapseButton = () => {
-    if (!isCollapsible) return null;
-    
-    // Usamos chevrones dobles para un aspecto más profesional
-    const CollapseIcon = isCollapsed
-      ? (orientation === 'horizontal' ? ChevronDown : ChevronsRight)
-      : (orientation === 'horizontal' ? ChevronUp : ChevronsLeft);
-      
-    return (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={toggleCollapse}
-        title={isCollapsed ? 'Expandir barra de herramientas' : 'Contraer barra de herramientas'}
-        className={`${buttonClasses} bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white hover:shadow-sm
-          absolute ${orientation === 'horizontal' 
-            ? 'top-full left-1/2 transform -translate-x-1/2 -translate-y-1/2' 
-            : 'top-2 right-0 transform translate-x-1/2'} z-10 border border-zinc-700`}
-      >
-        <CollapseIcon className="h-4 w-4" />
-      </Button>
+  // Saltar adelante 5 segundos
+  const skipForward = () => {
+    const newTime = Math.min(
+      (state.project?.duration || 60),
+      state.playhead.time + 5
     );
+    seek(newTime);
   };
   
-  // Renderizar grupo colapsado o expandido
-  const renderGroup = (groupName: string, groupIndex: number) => {
-    const groupTools = groupedTools[groupName] || [];
-    if (groupTools.length === 0) return null;
+  // Saltar atrás 5 segundos
+  const skipBackward = () => {
+    const newTime = Math.max(0, state.playhead.time - 5);
+    seek(newTime);
+  };
+  
+  // Guardar el proyecto
+  const handleSave = async () => {
+    const saved = await saveProject();
     
-    const isGroupExpanded = expandedGroup === groupName;
-    const shouldShowFullGroup = !isCollapsed || isGroupExpanded;
-    
-    // Para barras verticales colapsadas, solo mostrar el primer elemento como representante del grupo
-    const displayedTools = (isCollapsed && orientation === 'vertical' && !isGroupExpanded) 
-      ? [groupTools[0]] 
-      : groupTools;
+    // Aquí podríamos mostrar una notificación de éxito/error
+    console.log('Proyecto guardado:', saved);
+  };
+  
+  // Exportar el proyecto
+  const handleExport = async () => {
+    try {
+      const url = await exportProject();
       
-    // Clase para grupo expandido
-    const expandedGroupClass = isGroupExpanded ? 'ring-1 ring-orange-500 bg-zinc-950 rounded-lg' : '';
-    
-    return (
-      <React.Fragment key={groupName}>
-        {groupIndex > 0 && <div className={separatorClasses} />}
-        <div 
-          className={`${groupClasses} ${expandedGroupClass} relative`}
-          onClick={isCollapsed && orientation === 'vertical' ? () => toggleGroupExpansion(groupName) : undefined}
-        >
-          {/* Etiqueta de grupo */}
-          {(showLabels || (orientation === 'vertical' && !isCollapsed)) && (
-            <div className={verticalGroupLabelClasses}
-                 onClick={() => isCollapsible ? toggleGroupExpansion(groupName) : undefined}
-            >
-              <div className="flex items-center justify-center">
-                {groupNames[groupName]}
-                {isCollapsible && orientation === 'vertical' && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="ml-1 p-0 h-4 w-4"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleGroupExpansion(groupName);
-                    }}
-                  >
-                    {isGroupExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* Herramientas del grupo */}
-          <div className={`flex ${orientation === 'vertical' ? 'flex-col' : 'flex-row flex-wrap'} items-center`}>
-            {displayedTools.map((tool) => (
-              <TooltipProvider key={tool.id}>
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onToolSelect(tool.id)}
-                      className={`${buttonClasses} ${activeToolId === tool.id ? activeToolClasses : inactiveToolClasses} 
-                        ${orientation === 'horizontal' ? 'mr-1 mb-0' : 'mr-0 mb-1'} 
-                        ${orientation === 'vertical' ? 'w-12 h-12' : 'h-10 w-10'}`}
-                      aria-label={tool.label}
-                    >
-                      {tool.icon}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    side={orientation === 'horizontal' ? 'top' : 'right'}
-                    className="bg-zinc-800 border border-zinc-700 text-xs p-2 max-w-xs"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <p className="font-medium text-white">{tool.label}</p>
-                      {tool.tooltip && (
-                        <p className="text-zinc-300 text-[10px]">{tool.tooltip}</p>
-                      )}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-                
-                {/* Etiquetas de herramientas */}
-                {(showLabels || (isGroupExpanded && orientation === 'vertical')) && (
-                  <div className="text-xs mt-1 text-center text-zinc-400 w-full">
-                    {tool.label}
-                  </div>
-                )}
-              </TooltipProvider>
-            ))}
-          </div>
+      // Aquí podríamos mostrar una notificación de éxito con el enlace
+      console.log('Proyecto exportado:', url);
+    } catch (error) {
+      // Aquí podríamos mostrar una notificación de error
+      console.error('Error al exportar:', error);
+    }
+  };
+  
+  // Cambiar el nivel de zoom
+  const handleZoomChange = (newZoom: number) => {
+    if (onZoom) {
+      onZoom(newZoom);
+    }
+  };
+  
+  // Determinar si un menú está activo
+  const isMenuActive = (menuId: string) => activeMenu === menuId;
+  
+  // Alternar un menú
+  const toggleMenu = (menuId: string) => {
+    setActiveMenu(isMenuActive(menuId) ? null : menuId);
+  };
+  
+  // Obtener el texto localizado
+  const getText = (key: keyof typeof localizedText) => {
+    return localizedText[key][language];
+  };
+  
+  // Renderizar la barra de herramientas horizontal
+  const renderHorizontalToolbar = () => (
+    <div className={cn("flex items-center gap-2 p-2 bg-card border-b", className)}>
+      {/* Botones principales */}
+      <div className="flex items-center gap-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={handleSave}>
+                <Save className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{getText('guardar')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator orientation="vertical" className="h-6" />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={undo}>
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{getText('deshacer')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={redo}>
+                <RotateCw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{getText('rehacer')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator orientation="vertical" className="h-6" />
+      </div>
+      
+      {/* Controles de reproducción */}
+      <div className="flex items-center gap-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={goToStart}>
+                <SkipBack className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{language === 'es' ? 'Ir al inicio' : 'Go to start'}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={skipBackward}>
+                <SkipBack className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{language === 'es' ? 'Retroceder 5s' : 'Back 5s'}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant={state.playhead.isPlaying ? "default" : "outline"} size="icon" onClick={togglePlayback}>
+                {state.playhead.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{state.playhead.isPlaying ? getText('pausar') : getText('reproducir')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={skipForward}>
+                <SkipForward className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{language === 'es' ? 'Avanzar 5s' : 'Forward 5s'}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator orientation="vertical" className="h-6 ml-1" />
+      </div>
+      
+      {/* Menús desplegables */}
+      <div className="flex-1 flex items-center gap-1">
+        {/* Menú de Efectos */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className={isMenuActive('efectos') ? 'bg-accent' : ''}>
+              <Wand2 className="h-4 w-4 mr-1" />
+              {getText('efectos')}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <Image className="h-4 w-4 mr-2" />
+                {getText('filtro')}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Brush className="h-4 w-4 mr-2" />
+                {getText('color')}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Wand2 className="h-4 w-4 mr-2" />
+                {getText('transicion')}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Menú de Audio */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className={isMenuActive('audio') ? 'bg-accent' : ''}>
+              <Music className="h-4 w-4 mr-1" />
+              {getText('audio')}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <Music className="h-4 w-4 mr-2" />
+                {getText('musica')}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Mic className="h-4 w-4 mr-2" />
+                {getText('voz')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <MoreHorizontal className="h-4 w-4 mr-2" />
+                  {language === 'es' ? 'Ajustes de audio' : 'Audio settings'}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem>
+                    {getText('volumen')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    {getText('velocidad')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    {getText('tono')}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Menú de Ritmo */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className={isMenuActive('ritmo') ? 'bg-accent' : ''}>
+              <Clock className="h-4 w-4 mr-1" />
+              {getText('ritmo')}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Análisis de ritmo' : 'Rhythm analysis'}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Detectar beats' : 'Detect beats'}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Sincronizar clip' : 'Sync clip'}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Menú de Texto */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className={isMenuActive('texto') ? 'bg-accent' : ''}>
+              <Type className="h-4 w-4 mr-1" />
+              {getText('texto')}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <Text className="h-4 w-4 mr-2" />
+                {getText('titulo')}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Text className="h-4 w-4 mr-2" />
+                {getText('subtitulo')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <MoreHorizontal className="h-4 w-4 mr-2" />
+                  {language === 'es' ? 'Estilos de texto' : 'Text styles'}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem>
+                    {language === 'es' ? 'Negrita' : 'Bold'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    {language === 'es' ? 'Cursiva' : 'Italic'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    {language === 'es' ? 'Subrayado' : 'Underline'}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Menú de Efectos Visuales */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className={isMenuActive('efectosVisuales') ? 'bg-accent' : ''}>
+              <Video className="h-4 w-4 mr-1" />
+              {getText('efectosVisuales')}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <Camera className="h-4 w-4 mr-2" />
+                {getText('camara')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                {getText('brillo')}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                {getText('contraste')}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <MoreHorizontal className="h-4 w-4 mr-2" />
+                {getText('saturacion')}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Menú de Añadir Efecto */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className={isMenuActive('anadirEfecto') ? 'bg-accent' : ''}>
+              <PlusCircle className="h-4 w-4 mr-1" />
+              {getText('añadirEfecto')}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <Wand2 className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Destello' : 'Flare'}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Wand2 className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Partículas' : 'Particles'}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Wand2 className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Viñeta' : 'Vignette'}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Menú de Línea de Tiempo */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className={isMenuActive('lineaTiempo') ? 'bg-accent' : ''}>
+              <Layers className="h-4 w-4 mr-1" />
+              {getText('lineaTiempo')}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <Scissors className="h-4 w-4 mr-2" />
+                {getText('cortar')}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Scissors className="h-4 w-4 mr-2" />
+                {getText('dividir')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value="normal">
+                <DropdownMenuRadioItem value="slow">
+                  {getText('lento')} (0.5x)
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="normal">
+                  {getText('normal')} (1x)
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="fast">
+                  {getText('rapido')} (2x)
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Menú de Activos */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className={isMenuActive('activos') ? 'bg-accent' : ''}>
+              <FileVideo className="h-4 w-4 mr-1" />
+              {getText('activos')}
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <Upload className="h-4 w-4 mr-2" />
+                {getText('importar')}
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Download className="h-4 w-4 mr-2" />
+                {getText('exportar')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <PanelRight className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Mostrar biblioteca' : 'Show library'}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
+      {/* Controles de zoom */}
+      <div className="flex items-center gap-2 ml-auto">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => handleZoomChange(Math.max(0.25, currentZoom - 0.25))}>
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{getText('alejar')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Slider
+          value={[currentZoom]}
+          min={0.25}
+          max={3}
+          step={0.25}
+          className="w-32"
+          onValueChange={([value]) => handleZoomChange(value)}
+        />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => handleZoomChange(Math.min(3, currentZoom + 0.25))}>
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{getText('acercar')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <div className="text-xs text-muted-foreground w-10 text-center">
+          {(currentZoom * 100).toFixed(0)}%
         </div>
-      </React.Fragment>
-    );
-  };
-  
-  // Calcular estilos visuales basados en proximidad del ratón
-  const proximityStyles = (() => {
-    // Usamos mouseProximity para efectos visuales (0 = muy cerca, 100 = muy lejos)
-    // Calculamos la opacidad (entre 0.7 y 1) según la proximidad
-    const opacity = isCollapsed 
-      ? 0.7 + ((100 - Math.min(mouseProximity, 100)) / 100) * 0.3
-      : 1;
-    
-    // Intensidad de sombra basada en proximidad
-    const shadowIntensity = isCollapsed
-      ? Math.max(0, ((50 - Math.min(mouseProximity, 50)) / 50) * 0.15)
-      : 0.3;
-    
-    // Radio de borde más suave cuando el ratón está cerca
-    const borderRadius = isCollapsed
-      ? 4 + ((100 - Math.min(mouseProximity, 100)) / 100) * 2
-      : 6;
+      </div>
       
-    // Escala sutilmente cuando el ratón está cerca
-    const scale = isCollapsed && mouseProximity < 50
-      ? 1 + ((50 - mouseProximity) / 50) * 0.02  // Escala entre 1 y 1.02
-      : 1;
-      
-    // Desplazamiento de 1-2px que disminuye a medida que el ratón se acerca
-    const translateY = isCollapsed && orientation === 'horizontal'
-      ? Math.min(2, mouseProximity / 50)
-      : 0;
-      
-    const translateX = isCollapsed && orientation === 'vertical'
-      ? (position === 'left' ? -1 : 1) * Math.min(2, mouseProximity / 50)
-      : 0;
-      
-    // Intensidad de resplandor que aumenta cuando el ratón está cerca
-    const glowIntensity = isCollapsed
-      ? Math.max(0, ((50 - Math.min(mouseProximity, 50)) / 50) * 6)
-      : 0;
-      
-    return {
-      opacity,
-      boxShadow: `0 ${shadowIntensity * 16}px ${shadowIntensity * 40}px rgba(0, 0, 0, ${shadowIntensity})${
-        glowIntensity > 0 ? `, 0 0 ${glowIntensity}px rgba(255, 120, 20, ${glowIntensity * 0.1})` : ''
-      }`,
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
-      borderRadius: `${borderRadius}px`,
-      border: isCollapsed 
-        ? `1px solid rgba(60, 60, 60, ${0.3 + ((100 - Math.min(mouseProximity, 100)) / 100) * 0.2})`
-        : '1px solid rgba(80, 80, 80, 0.4)',
-      transform: `scale(${scale}) ${orientation === 'horizontal' ? `translateY(${translateY}px)` : `translateX(${translateX}px)`}`
-    };
-  })();
-
-  return (
-    <div 
-      ref={toolbarRef}
-      className={`${mainContainerClasses} relative transition-all duration-300 ease-in-out`}
-      onMouseEnter={() => {
-        setMouseHoveringOnToolbar(true);
-        if (isCollapsed && isCollapsible) {
-          expandToolbar(); // Usamos la nueva función para expandir
-        }
-      }}
-      onMouseLeave={() => {
-        setMouseHoveringOnToolbar(false);
-        resetCollapseTimer();
-      }}
-      // Aplicamos los estilos calculados basados en la proximidad del ratón
-      style={proximityStyles}
-    >
-      {groupOrder.map((groupName, groupIndex) => renderGroup(groupName, groupIndex))}
-      {renderCollapseButton()}
+      {/* Botones de acciones */}
+      <div className="flex items-center gap-1 ml-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <ScreenShare className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{getText('pantallaCompleta')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={handleExport}>
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{getText('exportar')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{getText('configuracion')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
-};
-
-export default Toolbar;
+  
+  // Renderizar la barra de herramientas vertical
+  const renderVerticalToolbar = () => (
+    <div className={cn("flex flex-col gap-2 p-2 bg-card border-r h-full", className)}>
+      {/* Botones principales */}
+      <div className="flex flex-col gap-1 items-center">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={handleSave}>
+                <Save className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('guardar')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator className="w-4 my-1" />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={undo}>
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('deshacer')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={redo}>
+                <RotateCw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('rehacer')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator className="w-4 my-1" />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant={state.playhead.isPlaying ? "default" : "outline"} size="icon" onClick={togglePlayback}>
+                {state.playhead.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{state.playhead.isPlaying ? getText('pausar') : getText('reproducir')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Separator className="w-4 my-1" />
+      </div>
+      
+      {/* Menús de herramientas */}
+      <div className="flex-1 flex flex-col gap-1 items-center">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={isMenuActive('efectos') ? 'bg-accent' : ''}
+                onClick={() => toggleMenu('efectos')}
+              >
+                <Wand2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('efectos')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={isMenuActive('audio') ? 'bg-accent' : ''} 
+                onClick={() => toggleMenu('audio')}
+              >
+                <Music className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('audio')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={isMenuActive('ritmo') ? 'bg-accent' : ''} 
+                onClick={() => toggleMenu('ritmo')}
+              >
+                <Clock className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('ritmo')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={isMenuActive('texto') ? 'bg-accent' : ''} 
+                onClick={() => toggleMenu('texto')}
+              >
+                <Type className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('texto')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={isMenuActive('efectosVisuales') ? 'bg-accent' : ''} 
+                onClick={() => toggleMenu('efectosVisuales')}
+              >
+                <Video className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('efectosVisuales')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={isMenuActive('anadirEfecto') ? 'bg-accent' : ''} 
+                onClick={() => toggleMenu('anadirEfecto')}
+              >
+                <PlusCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('añadirEfecto')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={isMenuActive('lineaTiempo') ? 'bg-accent' : ''} 
+                onClick={() => toggleMenu('lineaTiempo')}
+              >
+                <Layers className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('lineaTiempo')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={isMenuActive('activos') ? 'bg-accent' : ''} 
+                onClick={() => toggleMenu('activos')}
+              >
+                <FileVideo className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('activos')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      
+      {/* Controles de zoom */}
+      <div className="flex flex-col gap-2 items-center mt-auto">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => handleZoomChange(Math.min(3, currentZoom + 0.25))}>
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('acercar')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <Slider
+          value={[currentZoom]}
+          min={0.25}
+          max={3}
+          step={0.25}
+          orientation="vertical"
+          className="h-32"
+          onValueChange={([value]) => handleZoomChange(value)}
+        />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => handleZoomChange(Math.max(0.25, currentZoom - 0.25))}>
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('alejar')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <div className="text-xs text-muted-foreground text-center mt-1">
+          {(currentZoom * 100).toFixed(0)}%
+        </div>
+      </div>
+      
+      {/* Botones de acciones */}
+      <div className="flex flex-col gap-1 items-center mt-2">
+        <Separator className="w-4 my-1" />
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={handleExport}>
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('exportar')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{getText('configuracion')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </div>
+  );
+  
+  // Renderizar según orientación
+  return orientation === 'horizontal' ? renderHorizontalToolbar() : renderVerticalToolbar();
+}
