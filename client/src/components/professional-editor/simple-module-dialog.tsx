@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ModuleConfig } from '../../lib/professional-editor-types';
+import { useToast } from '../../hooks/use-toast';
 
 interface SimpleModuleDialogProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface SimpleModuleDialogProps {
 export function SimpleModuleDialog({ isOpen, onClose, modules, onModulesChange }: SimpleModuleDialogProps) {
   const [localModules, setLocalModules] = useState<ModuleConfig[]>([]);
   const [activeTab, setActiveTab] = useState('panels');
+  const { toast } = useToast();
   
   // Cargar módulos al abrir el diálogo
   useEffect(() => {
@@ -22,6 +24,10 @@ export function SimpleModuleDialog({ isOpen, onClose, modules, onModulesChange }
   // Guardar los cambios cuando el usuario acepte
   const handleSave = () => {
     onModulesChange(localModules);
+    toast({
+      title: "Configuración guardada",
+      description: "La configuración de módulos se ha actualizado correctamente"
+    });
     onClose();
   };
   
@@ -45,6 +51,10 @@ export function SimpleModuleDialog({ isOpen, onClose, modules, onModulesChange }
     ];
     
     setLocalModules(defaultModules);
+    toast({
+      title: "Configuración restablecida",
+      description: "Se ha restablecido la configuración predeterminada"
+    });
   };
   
   // Cambiar visibilidad de un módulo
