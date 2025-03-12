@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App-simple"; // Versión simplificada para desarrollo
+import App from "./App"; // Usamos la versión completa de App para tener acceso a todas las rutas
 import "./index.css";
 
 // Reemplazamos el enrutador de hash y usamos el enfoque básico
