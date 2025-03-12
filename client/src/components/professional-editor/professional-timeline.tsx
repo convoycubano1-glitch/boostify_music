@@ -51,6 +51,7 @@ import {
   ContextMenuGroup
 } from '@/components/ui/context-menu';
 import {
+  Eye,
   FileVideo,
   Image,
   Music,
@@ -114,7 +115,26 @@ const clipTypeColors: Record<string, string> = {
   video: '#3b82f6', // blue-500
   image: '#10b981', // green-500
   audio: '#f59e0b', // amber-500
-  text: '#8b5cf6'   // violet-500
+  text: '#8b5cf6',  // violet-500
+  transition: '#ec4899' // pink-500
+};
+
+// Paleta de colores para clips de diferentes tipos al estilo Adobe Premiere
+const premierePalette = [
+  '#4ade80', // verde (clips de video)
+  '#a78bfa', // morado (clips de texto)
+  '#f97316', // naranja (audio principal)
+  '#60a5fa', // azul claro (efectos)
+  '#fbbf24', // amarillo (música)
+  '#f43f5e', // rojo (transiciones)
+  '#22d3ee', // cian (imagen fija)
+];
+
+// Mapeo de tipo de pista a nombre en Adobe Premiere
+const trackTypeLabels: Record<string, string> = {
+  'video': 'Video',
+  'audio': 'Audio',
+  'mix': 'Mix'
 };
 
 const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
@@ -157,12 +177,14 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
     selected: false
   });
   
-  // Formatear tiempo (mm:ss.ms)
-  const formatTime = (timeInSeconds: number): string => {
-    const minutes = Math.floor(timeInSeconds / 60);
+  // Formatear tiempo en formato profesional (HH:MM:SS:FF)
+  const formatTime = (timeInSeconds: number, frameRate: number = 24): string => {
+    const hours = Math.floor(timeInSeconds / 3600);
+    const minutes = Math.floor((timeInSeconds % 3600) / 60);
     const seconds = Math.floor(timeInSeconds % 60);
-    const ms = Math.floor((timeInSeconds % 1) * 100);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    const frames = Math.floor((timeInSeconds % 1) * frameRate);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
   };
   
   // Convertir tiempo a posición en la línea de tiempo
@@ -377,47 +399,85 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
     return Math.max(5, maxTrackId + 1); // Al menos 5 pistas
   };
   
-  // Renderizar marcadores de tiempo
+  // Renderizar marcadores de tiempo al estilo Adobe Premiere
   const renderTimeMarkers = () => {
     // Calcular número de marcadores según zoom
-    const markersCount = Math.ceil(10 * (zoomLevel / 100));
+    const markersCount = Math.ceil(15 * (zoomLevel / 100));
     const markers = [];
     
+    // Crear marcadores principales (con texto)
     for (let i = 0; i <= markersCount; i++) {
       const percent = (i / markersCount) * 100;
       const time = (percent / 100) * duration;
       
+      // Crear marcador principal
       markers.push(
         <div 
           key={`marker-${i}`} 
-          className="absolute top-0 h-full border-l border-gray-300 dark:border-gray-700" 
+          className="absolute top-0 h-full border-l border-gray-500 dark:border-gray-700" 
           style={{ left: `${percent}%` }}
         >
-          <span className="absolute top-0 left-1 text-xs text-gray-500 bg-white dark:bg-gray-950 px-1">
+          <span className="absolute top-0 left-1 text-[10px] text-gray-300 bg-zinc-950 px-1 font-mono">
             {formatTime(time)}
           </span>
         </div>
       );
+      
+      // Crear submarcadores (sin texto) entre marcadores principales
+      if (i < markersCount) {
+        // Añadir 3 submarcadores entre cada marcador principal
+        for (let j = 1; j <= 3; j++) {
+          const subPercent = percent + (j * ((1 / markersCount) * 100) / 4);
+          
+          markers.push(
+            <div 
+              key={`submarker-${i}-${j}`} 
+              className={`absolute top-5 h-2 border-l ${j === 2 ? 'border-gray-400' : 'border-gray-600'} dark:border-gray-800`}
+              style={{ left: `${subPercent}%` }}
+            />
+          );
+        }
+      }
     }
     
     return markers;
   };
   
-  // Renderizar pistas de la línea de tiempo
+  // Renderizar pistas de la línea de tiempo al estilo Adobe Premiere
   const renderTracks = () => {
     const visibleTrackIds = getVisibleTracks();
     
-    return visibleTrackIds.map(trackId => (
-      <div 
-        key={`track-${trackId}`} 
-        className="relative h-10 border-b border-gray-200 dark:border-gray-800"
-        style={{ height: `${trackHeight}px` }}
-      >
-        <div className="absolute inset-y-0 left-0 w-12 bg-gray-100 dark:bg-gray-900 flex items-center justify-center border-r">
-          <span className="text-xs text-gray-500">{parseInt(trackId) + 1}</span>
-        </div>
-        
-        <div className="ml-12 h-full relative">
+    return visibleTrackIds.map(trackId => {
+      // Determinar tipo de pista (video, audio, etc.) basado en ID
+      // Asumimos: 0-1 son video, 2-3 son audio, 4 es mix
+      const trackTypeIdx = parseInt(trackId);
+      const trackType = trackTypeIdx < 2 ? 'video' : trackTypeIdx < 4 ? 'audio' : 'mix';
+      const trackName = trackTypeLabels[trackType] || 'Pista';
+      const trackColor = trackType === 'video' ? 'bg-purple-800' : 
+                         trackType === 'audio' ? 'bg-blue-800' : 'bg-amber-800';
+      
+      return (
+        <div 
+          key={`track-${trackId}`} 
+          className="relative border-b border-zinc-800"
+          style={{ height: `${trackHeight}px` }}
+        >
+          <div className={`absolute inset-y-0 left-0 w-32 flex-shrink-0 bg-zinc-900 flex items-center justify-between px-2 border-r border-zinc-700`}>
+            <div className="flex items-center">
+              <span className={`h-3 w-3 rounded-sm ${trackColor} mr-2`}></span>
+              <span className="text-xs text-gray-300 font-medium">{trackName} {parseInt(trackId) + 1}</span>
+            </div>
+            <div className="flex space-x-1">
+              <button className="text-gray-400 hover:text-white">
+                <Volume2 className="h-3 w-3" />
+              </button>
+              <button className="text-gray-400 hover:text-white">
+                <Eye className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+          
+          <div className="ml-32 h-full relative">
           {/* Clips en esta pista */}
           {clips
             .filter(clip => clip.trackId === trackId)
@@ -557,7 +617,7 @@ const ProfessionalTimeline: React.FC<ProfessionalTimelineProps> = ({
         </div>
       </div>
     ));
-  };
+  }
   
   return (
     <Card className="w-full bg-black border-0 rounded-xl overflow-hidden shadow-xl">

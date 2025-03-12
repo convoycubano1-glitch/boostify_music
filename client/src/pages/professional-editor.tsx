@@ -103,6 +103,18 @@ const ProfessionalEditor: React.FC = () => {
   ]);
   // Estado para la herramienta activa
   const [activeTool, setActiveTool] = useState<string>('cut');
+  // Estado para el idioma del editor (español por defecto)
+  const [language, setLanguage] = useState<string>('es');
+
+  // Manejo de selección de herramientas
+  const handleToolChange = (toolId: string) => {
+    setActiveTool(toolId);
+  };
+
+  // Función para manejar la selección de herramientas desde la barra vertical
+  const handleToolSelect = (toolId: string) => {
+    setActiveTool(toolId);
+  };
 
   // Manejar reproducción
   const handlePlay = () => {
@@ -628,9 +640,23 @@ const ProfessionalEditor: React.FC = () => {
         </div>
       </div>
       
-      {/* Área principal del editor - Estilo CapCut para móvil */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-zinc-900">
-        {/* Barra de navegación móvil - Estilo CapCut (dock inferior en móvil) */}
+      {/* Área principal del editor - Combinación de estilo Adobe Premiere con CapCut para móvil */}
+      <div className="flex-1 flex md:flex-row flex-col overflow-hidden bg-zinc-900">
+        {/* Barra de herramientas vertical (Adobe Premiere) - Solo visible en escritorio */}
+        <div className="hidden md:flex flex-col h-full border-r border-zinc-800 bg-zinc-900">
+          <Toolbar
+            onToolSelect={handleToolSelect}
+            activeToolId={activeTool}
+            orientation="vertical"
+            position="left"
+            showLabels={false}
+            language={language || 'es'}
+          />
+        </div>
+        
+        {/* Contenido principal */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Barra de navegación móvil - Estilo CapCut (dock inferior en móvil) */}
         <div className="md:hidden flex justify-around p-2 border-t border-zinc-800 bg-black fixed bottom-0 left-0 right-0 z-50">
           <Button 
             variant="ghost" 
@@ -661,8 +687,11 @@ const ProfessionalEditor: React.FC = () => {
           </Button>
         </div>
         
-        {/* Contenido principal con estilo CapCut */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden pb-16 md:pb-0">
+        {/* Contenido principal con estilo Adobe Premiere */}
+        <div className="flex-1 flex flex-row overflow-hidden">
+          
+          {/* Contenido principal */}
+          <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden pb-16 md:pb-0">
           {/* Panel de visualización (izquierda en desktop, arriba en móvil) - Estilo CapCut */}
           <div className="w-full md:w-3/5 p-2 sm:p-4 flex flex-col bg-black" id="preview-section">
             <div className="sticky top-0 z-10 bg-black pb-2">
