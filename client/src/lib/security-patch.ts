@@ -21,19 +21,6 @@ const createSecureEnvProxy = () => {
         if (import.meta.env.DEV) {
           console.warn(`Attempted to access sensitive key ${String(prop)} directly in the browser. Use server-side API instead.`);
         }
-        
-        // Report to server for monitoring in production
-        if (import.meta.env.PROD) {
-          fetch('/api/security/report', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              type: 'key_access_attempt', 
-              key: String(prop).replace(/[^A-Z_]/gi, '*') 
-            })
-          }).catch(() => {/* silent fail */});
-        }
-        
         return '[PROTECTED]';
       }
       return target[prop as keyof typeof target];

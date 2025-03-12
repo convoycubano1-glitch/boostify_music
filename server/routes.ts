@@ -48,7 +48,6 @@ import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
 import { Request, Response } from 'express';
-import securityRoutes from './routes/security'; // Added import
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -65,7 +64,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 // Export the configured server
 export function registerRoutes(app: Express): Server {
   // IMPORTANTE: Configurar rutas públicas antes de cualquier middleware de autenticación
-
+  
   // Ruta pública para obtener la clave publicable de Stripe (fuera de cualquier middleware de autenticación)
   app.get('/api/stripe/publishable-key', (req, res) => {
     console.log('Accediendo a clave publicable de Stripe (ruta global)');
@@ -74,7 +73,7 @@ export function registerRoutes(app: Express): Server {
       success: true
     });
   });
-
+  
   // Initialize session middleware después de rutas públicas
   app.use(session({
     secret: process.env.REPL_ID!,
@@ -93,7 +92,7 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/status', (req, res) => {
     // Check database connection if needed
     const databaseStatus = db ? 'connected' : 'disconnected';
-
+    
     // Basic system information
     const status = {
       server: {
@@ -113,7 +112,7 @@ export function registerRoutes(app: Express): Server {
         apify: !!process.env.APIFY_API_TOKEN ? 'configured' : 'not_configured',
       }
     };
-
+    
     res.status(200).json(status);
   });
 
@@ -122,7 +121,7 @@ export function registerRoutes(app: Express): Server {
 
   // Register video generation router (direct implementation)
   app.use('/api/video-generation', videoGenerationRouter);
-
+  
   // Register video upscale router for final rendering with Qubico/video-toolkit
   app.use('/api/proxy/piapi/video-upscale', videoUpscaleRouter);
 
@@ -142,28 +141,28 @@ export function registerRoutes(app: Express): Server {
 
   // Registrar el router de proxy API (sin autenticación)
   app.use('/api', apiProxyRouter);
-
+  
   // Registrar el router dedicado para estado de videos (sin autenticación)
   app.use('/api/video', videoStatusRouter);
-
+  
   // Registrar las rutas de la API de Kling (sin autenticación para permitir proceso de imágenes)
   app.use('/api/kling', klingApiRouter);
-
+  
   // Registrar las rutas específicas para LipSync con Kling
   app.use('/api/kling', klingLipsyncRouter);
-
+  
   // Registrar el procesador de imágenes para API de uploads
   app.use('/api', uploadApiRouter);
-
+  
   // Registrar las rutas de prueba de Kling (solo para desarrollo)
   app.use('/api/kling-test', klingTestRouter);
-
+  
   // Registrar el router para generación de música (requiere autenticación parcial)
   app.use('/api/music', musicRouter);
-
+  
   // Registrar el router para Flux API (generación de imágenes avanzada)
   app.use('/api', fluxApiRouter);
-
+  
   // ☑️ Rutas de Kling API ahora están separadas en su propio router
   // Véase server/routes/kling-api.ts para la implementación
 
@@ -248,16 +247,16 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/video/status', async (req, res) => {
     try {
       const { taskId, provider } = req.query;
-
+      
       console.log('Procesando solicitud de estado de video:', { taskId, provider });
-
+      
       if (!taskId) {
         return res.status(400).json({
           success: false,
           error: 'Se requiere el ID de la tarea'
         });
       }
-
+      
       if (provider === 'piapi') {
         // Verificar estado en PiAPI
         console.log(`Verificando estado de tarea de video ${taskId} con proveedor ${provider}`);
@@ -265,7 +264,7 @@ export function registerRoutes(app: Express): Server {
           const proxyRes = await axios.get(
             `${req.protocol}://${req.get('host')}/api/proxy/piapi/video/status?taskId=${taskId}`
           );
-
+          
           console.log('Respuesta de verificación de estado:', proxyRes.data);
           return res.json(proxyRes.data);
         } catch (proxyError) {
@@ -281,7 +280,7 @@ export function registerRoutes(app: Express): Server {
           const proxyRes = await axios.get(
             `${req.protocol}://${req.get('host')}/api/proxy/luma/status?taskId=${taskId}`
           );
-
+          
           return res.json(proxyRes.data);
         } catch (proxyError) {
           return res.status(500).json({
@@ -295,7 +294,7 @@ export function registerRoutes(app: Express): Server {
           const proxyRes = await axios.get(
             `${req.protocol}://${req.get('host')}/api/proxy/kling/video/status?taskId=${taskId}`
           );
-
+          
           return res.json(proxyRes.data);
         } catch (proxyError) {
           return res.status(500).json({
@@ -317,7 +316,7 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
-
+  
   /**
    * Endpoint general para verificar el estado de cualquier tarea asíncrona
    * Esta ruta también es pública y no requiere autenticación
@@ -325,16 +324,16 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/task/status', async (req, res) => {
     try {
       const { taskId, provider } = req.query;
-
+      
       console.log('Procesando solicitud general de estado de tarea:', { taskId, provider });
-
+      
       if (!taskId) {
         return res.status(400).json({
           success: false,
           error: 'Se requiere el ID de la tarea'
         });
       }
-
+      
       // Redirigir a los endpoints específicos según el proveedor
       if (provider === 'piapi' || provider === 'luma' || provider === 'kling') {
         // Para proveedores de video, usar el endpoint de video
@@ -420,7 +419,7 @@ export function registerRoutes(app: Express): Server {
       ]
     });
   });
-
+  
   // Registrar rutas protegidas por control de acceso por suscripción
   // Servicios que requieren autenticación - después de definir todas las rutas públicas
   setupAuth(app);
@@ -431,10 +430,10 @@ export function registerRoutes(app: Express): Server {
   setupApifyRoutes(app);
   setupSocialNetworkRoutes(app);
   app.use('/api/stripe', stripeRouter);
-
+  
   // Setup subscription-protected routes
   setupSubscriptionRoutes(app);
-
+  
   app.use('/api/subscription', authenticate, subscriptionRoutesRouter);
 
   // Usar Firestore para la red social
@@ -448,18 +447,18 @@ export function registerRoutes(app: Express): Server {
 
   // Register investors routes
   app.use('/api/investors', investorsRouter);
-
+  
   // Register Professional Editor routes
   app.use('/api/editor', professionalEditorRouter);
-
+  
   // Register music generation routes - specific routes handling
   // Separate public test endpoint from authenticated routes
   app.post('/api/music/test-integration', (req, res) => {
     try {
       const { prompt = 'Una melodía suave de piano' } = req.body;
-
+      
       const taskId = uuidv4();
-
+      
       // Solo verificamos si existe la API key para este test público
       if (process.env.PIAPI_API_KEY) {
         return res.status(200).json({ 
@@ -479,7 +478,7 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ error: 'Error interno al probar la integración' });
     }
   });
-
+  
   // Eliminamos la línea duplicada que registra las rutas de música
   // (ya está registrada en la línea 125)
 
@@ -1219,7 +1218,7 @@ export function registerRoutes(app: Express): Server {
       timestamp: new Date().toISOString()
     });
   });
-
+  
   // Eliminamos completamente el manejador de ruta raíz '/'
   // Esto permite que Vite se encargue correctamente de servir la aplicación frontend
   // en modo desarrollo, y en producción se manejará a través de la configuración en server/index.ts
@@ -1242,15 +1241,15 @@ export function registerRoutes(app: Express): Server {
   app.post('/api/video/generate', async (req, res) => {
     try {
       console.log('Recibiendo solicitud de generación de video:', req.body);
-
+      
       // Preparar los parámetros para enviar al proxy
       const apiProvider = req.body.apiProvider;
-
+      
       if (apiProvider === 'piapi') {
         // Preparar parámetros para PiAPI - manejo de nombres de parámetros esperados
         // Extraer el modelo del piapiModel si existe, o usar el campo model, o fallback a t2v-01
         const model = req.body.piapiModel || req.body.model || 't2v-01';
-
+        
         // Extrae los movimientos de cámara que pueden venir en formato array o string
         let cameraMovement = null;
         if (req.body.cameraMovements && Array.isArray(req.body.cameraMovements)) {
@@ -1260,22 +1259,22 @@ export function registerRoutes(app: Express): Server {
           // Si ya viene como string (camera_movement), lo usamos directamente
           cameraMovement = req.body.camera_movement;
         }
-
+        
         const proxyReq = {
           prompt: req.body.prompt,
           model: model,
           camera_movement: cameraMovement,
           image_url: req.body.image_url
         };
-
+        
         console.log('Enviando solicitud al proxy con parámetros:', proxyReq);
-
+        
         // Realizar la solicitud al proxy interno
         const proxyRes = await axios.post(
           `${req.protocol}://${req.get('host')}/api/proxy/piapi/video/start`,
           proxyReq
         );
-
+        
         // Verificar si la respuesta fue exitosa
         if (proxyRes.data.success) {
           // La generación se inició correctamente, devolver el ID de tarea
@@ -1306,7 +1305,7 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
-
+  
   /**
    * Endpoint específico para verificar el estado de tareas de generación de video
    * Esta ruta es pública y no requiere autenticación
@@ -1314,16 +1313,16 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/video/status', async (req, res) => {
     try {
       const { taskId, provider } = req.query;
-
+      
       console.log('Procesando solicitud de estado de video:', { taskId, provider });
-
+      
       if (!taskId) {
         return res.status(400).json({
           success: false,
           error: 'Se requiere el ID de la tarea'
         });
       }
-
+      
       if (provider === 'piapi') {
         // Verificar estado en PiAPI
         console.log(`Verificando estado de tarea de video ${taskId} con proveedor ${provider}`);
@@ -1331,7 +1330,7 @@ export function registerRoutes(app: Express): Server {
           const proxyRes = await axios.get(
             `${req.protocol}://${req.get('host')}/api/proxy/piapi/video/status?taskId=${taskId}`
           );
-
+          
           console.log('Respuesta de verificación de estado:', proxyRes.data);
           return res.json(proxyRes.data);
         } catch (proxyError) {
@@ -1347,7 +1346,7 @@ export function registerRoutes(app: Express): Server {
           const proxyRes = await axios.get(
             `${req.protocol}://${req.get('host')}/api/proxy/luma/status?taskId=${taskId}`
           );
-
+          
           return res.json(proxyRes.data);
         } catch (proxyError) {
           return res.status(500).json({
@@ -1361,7 +1360,7 @@ export function registerRoutes(app: Express): Server {
           const proxyRes = await axios.get(
             `${req.protocol}://${req.get('host')}/api/proxy/kling/video/status?taskId=${taskId}`
           );
-
+          
           return res.json(proxyRes.data);
         } catch (proxyError) {
           return res.status(500).json({
@@ -1383,7 +1382,7 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
-
+  
   /**
    * Endpoint general para verificar el estado de cualquier tarea asíncrona
    * Esta ruta también es pública y no requiere autenticación
@@ -1391,16 +1390,16 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/task/status', async (req, res) => {
     try {
       const { taskId, provider } = req.query;
-
+      
       console.log('Procesando solicitud general de estado de tarea:', { taskId, provider });
-
+      
       if (!taskId) {
         return res.status(400).json({
           success: false,
           error: 'Se requiere el ID de la tarea'
         });
       }
-
+      
       // Redirigir a los endpoints específicos según el proveedor
       if (provider === 'piapi' || provider === 'luma' || provider === 'kling') {
         // Para proveedores de video, usar el endpoint de video
@@ -1430,10 +1429,6 @@ export function registerRoutes(app: Express): Server {
       });
     }
   });
-
-  app.use('/auth', authRoutes);
-  app.use('/api', apiRoutes);
-  app.use('/api/security', securityRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
