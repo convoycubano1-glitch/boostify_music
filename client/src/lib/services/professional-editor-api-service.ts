@@ -209,6 +209,52 @@ export async function importProject(importData: any): Promise<any> {
 }
 
 /**
+ * Guarda el proyecto actual (usado directamente por el editor)
+ * @param projectData Datos del proyecto actual a guardar
+ * @returns Resultado de la operación
+ */
+export async function saveProject(projectData: any): Promise<{success: boolean, error?: string}> {
+  try {
+    // Verificar que tenemos datos necesarios para guardar
+    if (!projectData || !projectData.name) {
+      return { 
+        success: false, 
+        error: 'Datos de proyecto incompletos' 
+      };
+    }
+    
+    // Preparar datos para guardar
+    const projectToSave = {
+      id: projectData.id || `project-${Date.now()}`, // Usar ID existente o generar uno nuevo
+      name: projectData.name,
+      timeline: typeof projectData.timeline === 'string' 
+        ? projectData.timeline 
+        : JSON.stringify(projectData.timeline || []),
+      effects: typeof projectData.effects === 'string'
+        ? projectData.effects
+        : JSON.stringify(projectData.effects || []),
+      settings: typeof projectData.settings === 'string'
+        ? projectData.settings
+        : JSON.stringify(projectData.settings || {})
+    };
+    
+    // Guardar el proyecto en el servidor
+    const savedProject = await saveProjectToServer(projectToSave);
+    
+    return {
+      success: true,
+      project: savedProject
+    };
+  } catch (error) {
+    console.error('Error al guardar el proyecto:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido al guardar'
+    };
+  }
+}
+
+/**
  * Sube un archivo multimedia (audio, video, imagen) para un proyecto
  * @param projectId ID del proyecto
  * @param file Archivo a subir

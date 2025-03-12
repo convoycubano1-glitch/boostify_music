@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Tabs,
   TabsContent,
@@ -33,8 +33,20 @@ import {
   Clock,
   Volume2,
   Layers,
-  Image
+  Image,
+  Move,
+  Maximize2,
+  Minimize2,
+  LayoutGrid,
+  Grip,
+  GripVertical,
+  GripHorizontal,
+  X,
+  ChevronsUpDown,
+  ChevronsLeftRight,
+  RotateCcw
 } from 'lucide-react';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '../components/ui/resizable';
 
 // Importar componentes del editor
 import BeatAnalyzer from '../components/professional-editor/beat-analyzer';
@@ -49,423 +61,641 @@ import { Track } from '../lib/professional-editor-types';
 import CutPanel from '../components/professional-editor/cut-panel';
 import TransitionsPanel from '../components/professional-editor/transitions-panel';
 import { EditorProvider } from '../lib/context/editor-context';
-import { apiService } from '../lib/services/professional-editor-api-service';
 
-// Tipo para la configuración del editor
-interface EditorConfig {
-  defaultZoom: number;
-  autoSaveInterval: number; // en milisegundos
-  maxTracks: number;
-  language: 'es' | 'en';
-  interfaceMode: 'simple' | 'advanced';
-  trackHeight: number;
-  themeMode: 'light' | 'dark' | 'system';
-  showTimecodes: boolean;
-  showWaveforms: boolean;
-  showThumbnails: boolean;
-  gridSnap: boolean;
-  theme: {
-    primary: string;
-    accent: string;
-    background: string;
-    text: string;
-  }
-}
+// Importar tipos desde professional-editor-types
+import { 
+  VisualEffect, 
+  AudioTrack, 
+  Beat, 
+  Section, 
+  Clip, 
+  Transcription, 
+  TimelineClip, 
+  EditorState,
+  EditorStateUtils 
+} from '../lib/professional-editor-types';
 
-export default function ProfessionalEditor() {
+// Importar servicios para comunicación con el servidor
+import * as editorApiService from '../lib/services/professional-editor-api-service';
+
+const ProfessionalEditor: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Estado para la configuración del editor
-  const [config, setConfig] = useState<EditorConfig>({
-    defaultZoom: 1,
-    autoSaveInterval: 60000, // 1 minuto
-    maxTracks: 20,
-    language: 'es',
-    interfaceMode: 'advanced',
-    trackHeight: 60,
-    themeMode: 'system',
-    showTimecodes: true,
-    showWaveforms: true,
-    showThumbnails: true,
-    gridSnap: true,
-    theme: {
-      primary: '#FF5A00',
-      accent: '#FFA162',
-      background: '#1A1A1A',
-      text: '#FFFFFF'
-    }
-  });
+  // Estado del reproductor de video
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [duration, setDuration] = useState<number>(120); // 2 minutos por defecto
+
+  // Estado de los datos del proyecto
+  // Usar un video de ejemplo para que el reproductor funcione correctamente
+  const [videoSrc, setVideoSrc] = useState<string>('/assets/Standard_Mode_Generated_Video (2).mp4');
+  const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
+  const [visualEffects, setVisualEffects] = useState<VisualEffect[]>([]);
+  const [beats, setBeats] = useState<Beat[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [clips, setClips] = useState<Clip[]>([]);
+  const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
+  const [projectName, setProjectName] = useState<string>('Nuevo Proyecto');
+  const [projectModified, setProjectModified] = useState<boolean>(false);
+  const [bpm, setBpm] = useState<number>(120);
   
-  // Estado para selección de herramientas
-  const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [selectedPanel, setSelectedPanel] = useState<string>('video');
-  
-  // Estado para simulación de guardado
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  
-  // Estado para zoom
-  const [zoomLevel, setZoomLevel] = useState<number>(config.defaultZoom);
-  
-  // Estado para orientación de la barra de herramientas
-  const [toolbarOrientation, setToolbarOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
-  
-  // Estado para simular pistas
+  // Estado para el panel de pistas
   const [tracks, setTracks] = useState<Track[]>([
     {
-      id: '1',
+      id: 'video-main',
       name: 'Video principal',
       type: 'video',
-      color: '#FF5A00',
-      clips: [
-        {
-          id: 'clip1',
-          name: 'Intro',
-          start: 0,
-          end: 10,
-          sourceStart: 0,
-          sourceEnd: 10,
-          color: '#FF5A00'
-        },
-        {
-          id: 'clip2',
-          name: 'Parte 1',
-          start: 10,
-          end: 25,
-          sourceStart: 0,
-          sourceEnd: 15,
-          color: '#FF5A00'
-        }
-      ],
-      muted: false,
+      position: 0,
+      visible: true,
       locked: false,
-      visible: true
+      muted: false,
+      solo: false,
+      color: '#FF5733',
+      createdAt: new Date()
     },
     {
-      id: '2',
-      name: 'Música',
+      id: 'audio-main',
+      name: 'Audio principal',
       type: 'audio',
-      color: '#00AAFF',
-      clips: [
-        {
-          id: 'clip3',
-          name: 'Música de fondo',
-          start: 0,
-          end: 30,
-          sourceStart: 0,
-          sourceEnd: 30,
-          color: '#00AAFF'
-        }
-      ],
-      muted: false,
+      position: 1,
+      visible: true,
       locked: false,
-      visible: true
-    },
-    {
-      id: '3',
-      name: 'Voz en off',
-      type: 'audio',
-      color: '#00FF00',
-      clips: [
-        {
-          id: 'clip4',
-          name: 'Narración',
-          start: 5,
-          end: 20,
-          sourceStart: 0,
-          sourceEnd: 15,
-          color: '#00FF00'
-        }
-      ],
       muted: false,
-      locked: false,
-      visible: true
+      solo: false,
+      color: '#3498DB',
+      createdAt: new Date()
     }
   ]);
   
-  // Simulación de guardado automático
-  useEffect(() => {
-    const autoSaveInterval = setInterval(() => {
-      handleSave();
-    }, config.autoSaveInterval);
-    
-    return () => clearInterval(autoSaveInterval);
-  }, [config.autoSaveInterval, tracks]);
+  // Estado para la herramienta activa
+  const [activeTool, setActiveTool] = useState<string>('cut');
   
-  // Función para guardar el proyecto
-  const handleSave = async () => {
-    setIsSaving(true);
-    
-    // Simular una operación de guardado
-    setTimeout(() => {
-      setIsSaving(false);
-      setLastSaved(new Date());
-      
-      toast({
-        title: "Proyecto guardado",
-        description: `Guardado exitosamente a las ${new Date().toLocaleTimeString()}`,
-      });
-    }, 1000);
-    
-    // Aquí iría la lógica real de guardado
-    // await apiService.saveProject(projectData);
-  };
+  // Estado para el idioma del editor (español por defecto)
+  const [language, setLanguage] = useState<string>('es');
   
-  // Función para exportar el proyecto
-  const handleExport = async () => {
-    toast({
-      title: "Exportando proyecto",
-      description: "La exportación puede tomar algunos minutos...",
+  // Estado para la configuración de paneles
+  const [panelLayout, setPanelLayout] = useState<string>('default'); // 'default', 'compact', 'video-focus', 'timeline-focus', 'edit-focus'
+  const [panelSizes, setPanelSizes] = useState<{[key: string]: number}>(() => {
+    // Intentar cargar desde localStorage, si existe
+    const savedSizes = localStorage.getItem('editor-panel-sizes');
+    return savedSizes ? JSON.parse(savedSizes) : {
+      preview: 60, // Porcentaje del ancho
+      timeline: 20,
+      edit: 20,
+    };
+  });
+  
+  // Estado para el modo de edición: pc o móvil
+  const [editMode, setEditMode] = useState<'pc' | 'mobile'>(() => {
+    // Detectar automáticamente basado en el tamaño de la pantalla
+    return window.innerWidth < 768 ? 'mobile' : 'pc';
+  });
+
+  // Referencias para elementos arrastables
+  const panelRefs = useRef<{[key: string]: HTMLDivElement | null}>({
+    preview: null,
+    timeline: null,
+    edit: null,
+  });
+  
+  // Estado para mostrar/ocultar paneles
+  const [visiblePanels, setVisiblePanels] = useState<{[key: string]: boolean}>(() => {
+    // Intentar cargar desde localStorage, si existe
+    const savedVisibility = localStorage.getItem('editor-panel-visibility');
+    return savedVisibility ? JSON.parse(savedVisibility) : {
+      preview: true,
+      timeline: true,
+      edit: true,
+      toolbar: true,
+    };
+  });
+
+  // Función para actualizar tamaños de paneles
+  const handlePanelResize = (panelId: string, newSize: number) => {
+    setPanelSizes(prev => {
+      const updated = { ...prev, [panelId]: newSize };
+      // Guardar en localStorage
+      localStorage.setItem('editor-panel-sizes', JSON.stringify(updated));
+      return updated;
     });
-    
-    // Aquí iría la lógica real de exportación
-    // const result = await apiService.exportProject(projectId);
+    markProjectAsModified();
   };
-  
-  // Función para manejar cambios en el zoom
-  const handleZoomChange = (level: number) => {
-    setZoomLevel(level);
+
+  // Función para mostrar/ocultar paneles
+  const togglePanelVisibility = (panelId: string) => {
+    setVisiblePanels(prev => {
+      const updated = { ...prev, [panelId]: !prev[panelId] };
+      // Guardar en localStorage
+      localStorage.setItem('editor-panel-visibility', JSON.stringify(updated));
+      return updated;
+    });
   };
-  
-  // Función para seleccionar una herramienta
-  const handleToolSelect = (toolId: string) => {
-    setSelectedTool(toolId);
+
+  // Función para restaurar el layout predeterminado
+  const resetLayout = () => {
+    setPanelSizes({
+      preview: 60,
+      timeline: 20,
+      edit: 20,
+    });
+    setVisiblePanels({
+      preview: true,
+      timeline: true,
+      edit: true,
+      toolbar: true,
+    });
+    setPanelLayout('default');
+    localStorage.setItem('editor-panel-sizes', JSON.stringify({
+      preview: 60,
+      timeline: 20,
+      edit: 20,
+    }));
+    localStorage.setItem('editor-panel-visibility', JSON.stringify({
+      preview: true,
+      timeline: true,
+      edit: true,
+      toolbar: true,
+    }));
+    toast({
+      title: "Layout restaurado",
+      description: "La distribución de paneles se ha restablecido a los valores predeterminados"
+    });
+  };
+
+  // Función para cambiar entre layouts predefinidos
+  const changeLayout = (layoutName: string) => {
+    setPanelLayout(layoutName);
     
-    // Dependiendo de la herramienta seleccionada, podríamos cambiar el panel visible
-    switch (toolId) {
-      case 'efectos':
-        setSelectedPanel('effects');
+    // Configurar tamaños según el layout seleccionado
+    switch(layoutName) {
+      case 'video-focus':
+        setPanelSizes({
+          preview: 70,
+          timeline: 15,
+          edit: 15,
+        });
+        setVisiblePanels(prev => ({...prev, preview: true, timeline: true, edit: true}));
         break;
-      case 'audio':
-        setSelectedPanel('audio');
+      case 'timeline-focus':
+        setPanelSizes({
+          preview: 30,
+          timeline: 50,
+          edit: 20,
+        });
+        setVisiblePanels(prev => ({...prev, preview: true, timeline: true, edit: true}));
         break;
-      case 'ritmo':
-        setSelectedPanel('rhythm');
+      case 'edit-focus':
+        setPanelSizes({
+          preview: 30,
+          timeline: 20,
+          edit: 50,
+        });
+        setVisiblePanels(prev => ({...prev, preview: true, timeline: true, edit: true}));
         break;
-      case 'texto':
-        setSelectedPanel('text');
+      case 'compact':
+        setPanelSizes({
+          preview: 50,
+          timeline: 25,
+          edit: 25,
+        });
+        setVisiblePanels(prev => ({...prev, preview: true, timeline: true, edit: true}));
         break;
-      case 'cortar':
-        setSelectedPanel('cut');
-        break;
-      default:
-        // Mantener el panel actual para otras herramientas
+      default: // 'default'
+        setPanelSizes({
+          preview: 60,
+          timeline: 20,
+          edit: 20,
+        });
+        setVisiblePanels(prev => ({...prev, preview: true, timeline: true, edit: true}));
         break;
     }
+    
+    // Guardar en localStorage
+    localStorage.setItem('editor-panel-sizes', JSON.stringify(panelSizes));
+    localStorage.setItem('editor-panel-visibility', JSON.stringify(visiblePanels));
+    
+    toast({
+      title: "Layout cambiado",
+      description: `Se ha aplicado el layout "${layoutName}"`
+    });
+  };
+
+  // Detectar cambios en el tamaño de la ventana
+  useEffect(() => {
+    const handleResize = () => {
+      setEditMode(window.innerWidth < 768 ? 'mobile' : 'pc');
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Función unificada para manejar la selección de herramientas
+  const handleToolSelect = (toolId: string) => {
+    setActiveTool(toolId);
   };
   
+  // Función para manejar herramientas avanzadas del editor
+  const handleAdvancedToolSelect = (toolId: string) => {
+    setActiveTool(toolId);
+    
+    // Verificar si la herramienta tiene una pestaña correspondiente
+    const tabValue = toolToTabMap?.[toolId] || 'effects';
+    
+    // Si es una herramienta que necesita un panel específico, mostrar ese panel
+    if (toolId === 'cut' || toolId === 'transitions') {
+      // Asegurar que el panel de edición es visible
+      setVisiblePanels(prev => ({...prev, edit: true}));
+      // Hacer scroll al panel de edición en móvil
+      if (editMode === 'mobile') {
+        document.getElementById('edit-section')?.scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      // Buscar el elemento Tabs y cambiar su valor si existe
+      const tabsElement = document.querySelector('[data-orientation="horizontal"]');
+      if (tabsElement) {
+        const tabButton = document.querySelector(`[data-value="${tabValue}"]`) as HTMLElement;
+        if (tabButton) {
+          tabButton.click();
+        }
+      }
+    }
+  };
+
+  // Manejar reproducción
+  const handlePlay = () => {
+    setIsPlaying(true);
+  };
+
+  const handlePause = () => {
+    setIsPlaying(false);
+  };
+
+  const handleSeek = (time: number) => {
+    setCurrentTime(time);
+  };
+
+  // Actualizar estado de proyecto
+  const markProjectAsModified = () => {
+    setProjectModified(true);
+  };
+
+  // Manejar beats
+  const handleUpdateBeats = (newBeats: Beat[]) => {
+    setBeats(newBeats);
+    markProjectAsModified();
+  };
+
+  // Manejar secciones
+  const handleUpdateSections = (newSections: Section[]) => {
+    setSections(newSections);
+    markProjectAsModified();
+  };
+
+  // Manejar efectos visuales
+  const handleAddEffect = (effect: Omit<VisualEffect, 'id'>) => {
+    const newEffect: VisualEffect = {
+      ...effect,
+      id: `effect-${Date.now()}`
+    };
+    setVisualEffects([...visualEffects, newEffect]);
+    markProjectAsModified();
+  };
+
+  const handleUpdateEffect = (effectId: string, updates: Partial<VisualEffect>) => {
+    const updatedEffects = visualEffects.map(effect => 
+      effect.id === effectId ? { ...effect, ...updates } : effect
+    );
+    setVisualEffects(updatedEffects);
+    markProjectAsModified();
+  };
+
+  const handleDeleteEffect = (effectId: string) => {
+    const filteredEffects = visualEffects.filter(effect => effect.id !== effectId);
+    setVisualEffects(filteredEffects);
+    markProjectAsModified();
+  };
+
+  // Definir mapeo de herramientas a pestañas
+  const toolToTabMap: { [key: string]: string } = {
+    cut: 'cut',
+    transitions: 'transitions',
+    audio: 'audio',
+    text: 'text',
+    effects: 'effects'
+  };
+
   return (
-    <EditorProvider>
-      <div className="flex flex-col h-screen bg-background text-foreground">
-        {/* Barra de herramientas principal */}
-        <Toolbar 
-          orientation={toolbarOrientation}
-          language={config.language}
-          onZoom={handleZoomChange}
-          currentZoom={zoomLevel}
-          onToolSelect={handleToolSelect}
-          activeToolId={selectedTool}
-        />
+    <div className="flex flex-col min-h-screen bg-black text-white">
+      {/* Barra de herramientas superior - Estilo CapCut para móvil */}
+      <div className="flex flex-col sm:flex-row justify-between items-center p-2 border-b border-zinc-800 bg-zinc-900">
+        <div className="flex items-center w-full sm:w-auto mb-2 sm:mb-0">
+          <span className="text-lg font-semibold mr-2 truncate text-white">{projectName}</span>
+          {projectModified && <span className="text-xs text-orange-400">(Sin guardar)</span>}
+        </div>
         
-        <div className="flex flex-1 overflow-hidden">
-          {/* Panel lateral izquierdo (solo si la barra de herramientas es horizontal) */}
-          {toolbarOrientation === 'horizontal' && (
-            <div className="w-16 bg-card border-r flex flex-col items-center p-2 space-y-4">
-              <Button variant="ghost" size="icon" onClick={() => handleToolSelect('video')}>
-                <Film className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleToolSelect('audio')}>
-                <FileAudio className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleToolSelect('text')}>
-                <Type className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleToolSelect('effects')}>
-                <Wand2 className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleToolSelect('rhythm')}>
-                <Activity className="h-5 w-5" />
-              </Button>
-            </div>
-          )}
+        <div className="flex flex-wrap justify-center sm:justify-end gap-1 w-full sm:w-auto">
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 px-2"
+            onClick={handleImportProject}
+          >
+            <Upload className="h-4 w-4 mr-1" />
+            <span className="text-xs">Importar</span>
+          </Button>
           
-          {/* Área de trabajo principal */}
-          <div className="flex flex-1 flex-col overflow-hidden">
-            {/* Área de previsualización */}
-            <div className="flex-1 p-4 overflow-hidden">
-              <div className="h-full flex gap-4">
-                {/* Previsualización de video */}
-                <div className="flex-1 bg-card rounded-lg overflow-hidden shadow-lg flex flex-col">
-                  <VideoPreviewPanel />
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 px-2"
+            onClick={handleExportProject}
+          >
+            <Download className="h-4 w-4 mr-1" />
+            <span className="text-xs">Exportar</span>
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 px-2"
+            onClick={handleSaveProject}
+          >
+            <Save className="h-4 w-4 mr-1" />
+            <span className="text-xs">Guardar</span>
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 px-2"
+          >
+            <Share2 className="h-4 w-4 mr-1" />
+            <span className="text-xs">Compartir</span>
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 px-2"
+            onClick={resetLayout}
+          >
+            <LayoutGrid className="h-4 w-4 mr-1" />
+            <span className="text-xs">Resetear</span>
+          </Button>
+        </div>
+      </div>
+      
+      {/* Contenedor principal del editor */}
+      <div className="flex-grow flex flex-col relative overflow-hidden">
+        {/* Indicador de modo móvil en pantallas pequeñas */}
+        {editMode === 'mobile' && (
+          <div className="bg-orange-500 text-white text-xs p-1 text-center">
+            Modo móvil activado - Desliza para ver todos los paneles
+          </div>
+        )}
+        
+        {/* Contenedor principal con paneles redimensionables */}
+        <div className="flex-grow relative">
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="h-full w-full rounded-lg"
+            onLayout={(sizes) => {
+              // Guardar tamaños cuando cambian
+              const sizeMap = {
+                preview: sizes[0],
+                timeline: sizes[1],
+                edit: sizes[2]
+              };
+              setPanelSizes(sizeMap);
+              localStorage.setItem('editor-panel-sizes', JSON.stringify(sizeMap));
+            }}
+          >
+            <ResizablePanel
+              defaultSize={panelSizes.preview}
+              minSize={20}
+              collapsible={true}
+              collapsedSize={0}
+              onCollapse={() => togglePanelVisibility('preview')}
+              className={!visiblePanels.preview ? 'hidden' : ''}
+            >
+              <div className="h-full flex flex-col bg-zinc-950 rounded-tl-lg overflow-hidden">
+                <div className="bg-zinc-900 p-2 flex items-center justify-between">
+                  <h3 className="font-medium text-sm">Vista previa</h3>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      onClick={() => changeLayout('video-focus')}
+                    >
+                      <Maximize2 className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      onClick={() => togglePanelVisibility('preview')}
+                    >
+                      <Minimize2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                
-                {/* Panel lateral derecho */}
-                <div className="w-1/4 bg-card rounded-lg shadow-lg overflow-hidden">
-                  <Tabs defaultValue={selectedPanel} value={selectedPanel} className="w-full h-full" onValueChange={(value) => setSelectedPanel(value as string)}>
-                    <TabsList className="w-full grid grid-cols-5">
-                      <TabsTrigger value="video">Video</TabsTrigger>
-                      <TabsTrigger value="audio">Audio</TabsTrigger>
-                      <TabsTrigger value="rhythm">Ritmo</TabsTrigger>
-                      <TabsTrigger value="effects">Efectos</TabsTrigger>
-                      <TabsTrigger value="text">Texto</TabsTrigger>
+                <div className="flex-grow overflow-hidden p-2">
+                  <VideoPreviewPanel 
+                    videoSrc={videoSrc}
+                    currentTime={currentTime}
+                    duration={duration}
+                    isPlaying={isPlaying}
+                    activeEffects={visualEffects}
+                    onPlay={handlePlay}
+                    onPause={handlePause}
+                    onSeek={handleSeek}
+                  />
+                </div>
+              </div>
+            </ResizablePanel>
+            
+            <ResizableHandle withHandle className="bg-zinc-800 hover:bg-zinc-700">
+              <GripVertical className="h-4 w-4 text-zinc-400" />
+            </ResizableHandle>
+            
+            <ResizablePanel
+              defaultSize={panelSizes.timeline}
+              minSize={15}
+              collapsible={true}
+              collapsedSize={0}
+              onCollapse={() => togglePanelVisibility('timeline')}
+              className={!visiblePanels.timeline ? 'hidden' : ''}
+            >
+              <div className="h-full flex flex-col bg-zinc-950 overflow-hidden">
+                <div className="bg-zinc-900 p-2 flex items-center justify-between">
+                  <h3 className="font-medium text-sm">Línea de tiempo</h3>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      onClick={() => changeLayout('timeline-focus')}
+                    >
+                      <Maximize2 className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      onClick={() => togglePanelVisibility('timeline')}
+                    >
+                      <Minimize2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex-grow overflow-auto p-2">
+                  <TrackListPanel tracks={tracks} />
+                </div>
+              </div>
+            </ResizablePanel>
+            
+            <ResizableHandle withHandle className="bg-zinc-800 hover:bg-zinc-700">
+              <GripVertical className="h-4 w-4 text-zinc-400" />
+            </ResizableHandle>
+            
+            <ResizablePanel
+              defaultSize={panelSizes.edit}
+              minSize={15}
+              collapsible={true}
+              collapsedSize={0}
+              onCollapse={() => togglePanelVisibility('edit')}
+              className={!visiblePanels.edit ? 'hidden' : ''}
+            >
+              <div id="edit-section" className="h-full flex flex-col bg-zinc-950 rounded-tr-lg overflow-hidden">
+                <div className="bg-zinc-900 p-2 flex items-center justify-between">
+                  <h3 className="font-medium text-sm">Editor</h3>
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      onClick={() => changeLayout('edit-focus')}
+                    >
+                      <Maximize2 className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6" 
+                      onClick={() => togglePanelVisibility('edit')}
+                    >
+                      <Minimize2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex-grow p-2 overflow-auto">
+                  <Tabs defaultValue="cut" className="w-full">
+                    <TabsList className="grid grid-cols-5 mb-4">
+                      <TabsTrigger value="cut">
+                        <SlidersHorizontal className="h-4 w-4 mr-1" />
+                        <span className="text-xs hidden sm:inline">Cortar</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="transitions">
+                        <Activity className="h-4 w-4 mr-1" />
+                        <span className="text-xs hidden sm:inline">Transiciones</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="effects">
+                        <Wand2 className="h-4 w-4 mr-1" />
+                        <span className="text-xs hidden sm:inline">Efectos</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="audio">
+                        <FileAudio className="h-4 w-4 mr-1" />
+                        <span className="text-xs hidden sm:inline">Audio</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="text">
+                        <Type className="h-4 w-4 mr-1" />
+                        <span className="text-xs hidden sm:inline">Texto</span>
+                      </TabsTrigger>
                     </TabsList>
-                    
-                    <TabsContent value="video" className="p-0 h-full">
-                      <TrackListPanel tracks={tracks} />
+
+                    <TabsContent value="cut" className="w-full">
+                      <CutPanel 
+                        currentTime={currentTime}
+                        duration={duration}
+                        clips={clips}
+                        onCut={(clipData) => {
+                          // Implementación pendiente
+                          alert(`Cortar en tiempo ${clipData.startTime}`);
+                        }}
+                        onUpdateClip={(id, updates) => {
+                          // Implementación pendiente
+                          console.log("Actualizar clip", id, updates);
+                        }}
+                        onDeleteClip={(id) => {
+                          // Implementación pendiente
+                          alert(`Eliminar clip ${id}`);
+                        }}
+                        onPreview={(clip) => {
+                          // Ir a la posición del clip
+                          if (clip.startTime !== undefined) {
+                            handleSeek(clip.startTime);
+                          }
+                        }}
+                      />
                     </TabsContent>
-                    
-                    <TabsContent value="audio" className="p-0 h-full">
-                      <AudioTrackEditor />
+
+                    <TabsContent value="transitions" className="w-full">
+                      <TransitionsPanel 
+                        transitions={[]}
+                        clips={clips}
+                        currentTime={currentTime}
+                        duration={duration}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onSeek={handleSeek}
+                        onAddTransition={(transition) => {
+                          // Implementación pendiente
+                          alert(`Añadir transición de tipo ${transition.type}`);
+                        }}
+                        onUpdateTransition={(id, updates) => {
+                          // Implementación pendiente
+                          console.log("Actualizar transición", id, updates);
+                        }}
+                        onDeleteTransition={(id) => {
+                          // Implementación pendiente
+                          alert(`Eliminar transición ${id}`);
+                        }}
+                        onPreview={(transition) => {
+                          // Ir a la posición de la transición
+                          if (transition.startTime !== undefined) {
+                            handleSeek(transition.startTime);
+                          }
+                        }}
+                      />
                     </TabsContent>
-                    
-                    <TabsContent value="rhythm" className="p-0 h-full">
-                      <BeatAnalyzer />
-                    </TabsContent>
-                    
-                    <TabsContent value="effects" className="p-0 h-full">
-                      <EffectsPanel />
-                    </TabsContent>
-                    
-                    <TabsContent value="text" className="p-0 h-full">
-                      <TranscriptionPanel />
-                    </TabsContent>
-                    
-                    <TabsContent value="cut" className="p-0 h-full">
-                      <CutPanel />
-                    </TabsContent>
-                    
-                    <TabsContent value="transitions" className="p-0 h-full">
-                      <TransitionsPanel />
-                    </TabsContent>
+
+                    {/* Placeholder para herramientas no implementadas aún */}
+                    {['effects', 'audio', 'text', 'stickers', 'templates', 'camera', 'speed', 'volume', 'settings'].includes(activeTool) && (
+                      <div className="mt-4">
+                        <div className="bg-zinc-900 rounded-xl p-3 border border-zinc-800 flex flex-col items-center justify-center py-10">
+                          <div className="text-4xl mb-4">🚧</div>
+                          <h3 className="text-xl font-bold text-white mb-2">Herramienta en desarrollo</h3>
+                          <p className="text-zinc-400 text-center max-w-md">
+                            La herramienta "{activeTool}" está actualmente en desarrollo. 
+                            Pronto tendrás acceso a todas sus funcionalidades.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </Tabs>
                 </div>
               </div>
-            </div>
-            
-            {/* Línea de tiempo */}
-            <div className="h-1/3 border-t bg-card">
-              <ProfessionalTimeline 
-                tracks={tracks} 
-                zoom={zoomLevel}
-              />
-            </div>
-          </div>
-          
-          {/* Panel lateral derecho (controlado por estado) */}
-          {toolbarOrientation === 'vertical' && (
-            <div className="w-64 bg-card border-l flex flex-col p-4 space-y-4 overflow-auto">
-              <Accordion type="single" collapsible defaultValue="settings">
-                <AccordionItem value="settings">
-                  <AccordionTrigger>
-                    <div className="flex items-center">
-                      <SlidersHorizontal className="h-4 w-4 mr-2" />
-                      {config.language === 'es' ? 'Configuración' : 'Settings'}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span>{config.language === 'es' ? 'Mostrar códigos de tiempo' : 'Show timecodes'}</span>
-                        <Button 
-                          variant={config.showTimecodes ? "default" : "outline"} 
-                          size="sm"
-                          onClick={() => setConfig({...config, showTimecodes: !config.showTimecodes})}
-                        >
-                          {config.showTimecodes ? 
-                            (config.language === 'es' ? 'Sí' : 'Yes') : 
-                            (config.language === 'es' ? 'No' : 'No')
-                          }
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span>{config.language === 'es' ? 'Mostrar formas de onda' : 'Show waveforms'}</span>
-                        <Button 
-                          variant={config.showWaveforms ? "default" : "outline"} 
-                          size="sm"
-                          onClick={() => setConfig({...config, showWaveforms: !config.showWaveforms})}
-                        >
-                          {config.showWaveforms ? 
-                            (config.language === 'es' ? 'Sí' : 'Yes') : 
-                            (config.language === 'es' ? 'No' : 'No')
-                          }
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span>{config.language === 'es' ? 'Orientación de la barra' : 'Toolbar orientation'}</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setToolbarOrientation(
-                            toolbarOrientation === 'horizontal' ? 'vertical' : 'horizontal'
-                          )}
-                        >
-                          {toolbarOrientation === 'horizontal' ? 
-                            (config.language === 'es' ? 'Horizontal' : 'Horizontal') : 
-                            (config.language === 'es' ? 'Vertical' : 'Vertical')
-                          }
-                        </Button>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="project">
-                  <AccordionTrigger>
-                    <div className="flex items-center">
-                      <Film className="h-4 w-4 mr-2" />
-                      {config.language === 'es' ? 'Proyecto' : 'Project'}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span>{config.language === 'es' ? 'Auto-guardado' : 'Auto-save'}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {config.autoSaveInterval / 1000}s
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span>{config.language === 'es' ? 'Último guardado' : 'Last saved'}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {lastSaved ? 
-                            lastSaved.toLocaleTimeString() : 
-                            (config.language === 'es' ? 'Nunca' : 'Never')
-                          }
-                        </span>
-                      </div>
-                      
-                      <Button 
-                        className="w-full mt-2" 
-                        onClick={handleSave}
-                        disabled={isSaving}
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        {isSaving ? 
-                          (config.language === 'es' ? 'Guardando...' : 'Saving...') : 
-                          (config.language === 'es' ? 'Guardar ahora' : 'Save now')
-                        }
-                      </Button>
-                      
-                      <Button 
-                        className="w-full" 
-                        variant="outline"
-                        onClick={handleExport}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        {config.language === 'es' ? 'Exportar' : 'Export'}
-                      </Button>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          )}
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
       </div>
-    </EditorProvider>
+    </div>
   );
-}
+};
+
+export default ProfessionalEditor;
