@@ -1,0 +1,124 @@
+Choose Your Creation Path
+Whether you prefer working with professional directors or leveraging AI technology, we provide the tools you need to create stunning music videos
+
+
+Work with Directors
+
+AI Video Creation
+
+Professional Editor
+Creador de Videos Musicales AI
+Transforma tu música en experiencias visuales
+
+1. Subir Audio
+Ningún archivo seleccionado
+2. Transcripción
+Sin transcripción
+Generar Guion Musical
+3. Guion Profesional
+El guion profesional se generará basado en la transcripción de la letra.
+
+Incluirá análisis de género musical, estructura narrativa, diseño visual y segmentación por escenas con vocabulario cinematográfico.
+
+4. Estilo Visual
+Formato de Cámara
+Seleccionar formato de cámara
+Mood
+Seleccionar mood
+Paleta de Colores
+Seleccionar paleta
+Estilo de Personajes
+Seleccionar estilo
+Intensidad Visual (50%)
+Intensidad Narrativa (50%)
+Ajusta qué tan fielmente el video sigue la narrativa de la letra
+
+Imagen de Referencia
+Ningún archivo seleccionado
+Director del Video
+
+Seleccionar director
+5. Sincronizar BeatsDetectar Cortes Musicales
+Estilo de Edición
+
+Edición por Frases
+Cortes sincronizados con las frases musicales
+
+
+Compases Aleatorios
+Cortes variados siguiendo el ritmo
+
+
+Dinámico
+Cortes rápidos en momentos intensos, más lentos en partes suaves
+
+
+Lento
+Cortes largos y suaves transiciones
+
+
+Cinematográfico
+Estilo de película con variedad de duraciones
+
+
+Video Musical
+Estilo MTV con cortes rápidos y dinámicos
+
+
+Narrativo
+Cortes que siguen la historia de la letra
+
+
+Experimental
+Patrones de corte no convencionales
+
+
+Rítmico
+Cortes precisos en cada beat
+
+
+Minimalista
+Pocos cortes, transiciones suaves
+
+6. Generar PromptsGenerar Prompts con Estilo
+7. Generar ImágenesGenerar Imágenes
+
+Reproducir
+
+00:00:00:00
+0:00.000 / 0:00.000
+
+
+
+
+Cortar
+
+Transición
+
+Efecto
+
+Transición...
+
+Efecto...
+
+
+
+No hay clips en el timeline
+
+Utiliza "Detectar Cortes Musicales" para generar los clips automáticamente
+
+Análisis y Métricas
+Estadísticas detalladas del video musical
+
+Métricas Generales
+Duración Total
+0.00s
+
+Total de Planos
+0
+
+Duración Media
+0.00s
+
+Rango de Duración
+0.0s - 0.0s
