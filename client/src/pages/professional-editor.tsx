@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Settings, LayoutPanelLeft, Cog, Library } from 'lucide-react';
 
-import VideoPreviewPanelComponent from '../components/professional-editor/video-preview-panel';
-import ResizeHandleControl, { ModuleConfig } from '../components/professional-editor/resize-handle-control';
-import ModuleConfiguratorComponent from '../components/professional-editor/module-configurator';
-import MediaLibraryComponent, { MediaItem } from '../components/professional-editor/media-library';
+import VideoPreviewPanelComponent from '@/components/professional-editor/video-preview-panel';
+import ResizeHandleControl, { ModuleConfig } from '@/components/professional-editor/resize-handle-control';
+import ModuleConfiguratorComponent from '@/components/professional-editor/module-configurator';
+import MediaLibraryComponent, { MediaItem } from '@/components/professional-editor/media-library';
 
 // Datos de ejemplo para la biblioteca de medios
 const mockMediaItems: MediaItem[] = [

@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Card, CardContent } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { ScrollArea } from '../../../components/ui/scroll-area';
-import { Slider } from '../../../components/ui/slider';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/ui/tooltip';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Slider } from '@/components/ui/slider';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   PlayCircle, PauseCircle, ZoomIn, ZoomOut, Plus, Scissors, Trash2, 
   Music, Image, Text, Video, Layers, MoveVertical, Eye, EyeOff, Lock, Unlock,
@@ -16,13 +16,13 @@ import { WaveformLayer } from './WaveformLayer';
 import { BeatsLayer } from './BeatsLayer';
 import { ClipsLayer } from './ClipsLayer';
 import { PlayheadLayer } from './PlayheadLayer';
-import { useWaveSurfer } from '../../../hooks/timeline/useWaveSurfer';
-import { useClipInteractions } from '../../../hooks/timeline/useClipInteractions';
-import { useBeatsVisualization } from '../../../hooks/timeline/useBeatsVisualization';
-import { useTimelineNavigation } from '../../../hooks/timeline/useTimelineNavigation';
-import { usePreviewDialogs } from '../../../hooks/timeline/usePreviewDialogs';
-import { useClipOperations } from '../../../hooks/timeline/useClipOperations';
-import { useTimelineLayers, LayerConfig } from '../../../hooks/timeline/useTimelineLayers';
+import { useWaveSurfer } from '@/hooks/timeline/useWaveSurfer';
+import { useClipInteractions } from '@/hooks/timeline/useClipInteractions';
+import { useBeatsVisualization } from '@/hooks/timeline/useBeatsVisualization';
+import { useTimelineNavigation } from '@/hooks/timeline/useTimelineNavigation';
+import { usePreviewDialogs } from '@/hooks/timeline/usePreviewDialogs';
+import { useClipOperations } from '@/hooks/timeline/useClipOperations';
+import { useTimelineLayers, LayerConfig } from '@/hooks/timeline/useTimelineLayers';
 
 // Importar componentes del editor profesional
 import ResizeHandleControl from '../../../components/professional-editor/resize-handle-control';
