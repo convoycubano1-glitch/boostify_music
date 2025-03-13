@@ -92,6 +92,7 @@ export function TimelineEditor({
   clips: initialClips = [],
   beatMap,
   audioUrl,
+  videoUrl, // Añadido parámetro para URL de vídeo
   duration = 0,
   className,
   onClipsChange,
@@ -251,7 +252,7 @@ export function TimelineEditor({
   
   // Efecto para sincronizar video con audio
   useEffect(() => {
-    if (!videoUrl || !videoRef.current) return;
+    if (!videoRef.current) return;
     
     const videoElement = videoRef.current;
     
@@ -287,7 +288,7 @@ export function TimelineEditor({
       videoElement.removeEventListener('canplay', handleVideoCanPlay);
       videoElement.removeEventListener('error', handleVideoError);
     };
-  }, [videoUrl, isPlaying, previewLoaded]);
+  }, [isPlaying, previewLoaded]);
 
   // Notificar cambios en los clips
   useEffect(() => {
@@ -305,8 +306,14 @@ export function TimelineEditor({
     setIsPlaying(false);
     setCurrentTime(0);
     
+    // Detener y reiniciar el audio
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
+    }
+    
+    // Detener y reiniciar el video
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
     }
   }, []);
   
@@ -314,8 +321,14 @@ export function TimelineEditor({
     const clampedTime = Math.min(Math.max(time, 0), duration);
     setCurrentTime(clampedTime);
     
+    // Actualizar tiempo de audio
     if (audioRef.current) {
       audioRef.current.currentTime = clampedTime;
+    }
+    
+    // Actualizar tiempo de video
+    if (videoRef.current) {
+      videoRef.current.currentTime = clampedTime;
     }
   }, [duration]);
   
@@ -608,6 +621,27 @@ export function TimelineEditor({
         onError={(e) => console.error("Error en elemento de audio:", e)}
       />
       
+      {/* Video player para vista previa */}
+      {videoUrl && (
+        <video 
+          ref={videoRef}
+          src={videoUrl}
+          preload="auto"
+          playsInline // Necesario para iOS
+          muted={isMuted}
+          loop={false}
+          className={cn(
+            "video-preview absolute top-0 right-0 z-20 rounded border border-border shadow-md", 
+            "w-40 md:w-64 lg:w-80 aspect-video object-cover",
+            "transition-all duration-200",
+            !showPreview && "opacity-0 pointer-events-none",
+            !previewLoaded && "hidden"
+          )}
+          onCanPlay={() => console.log("Video listo para reproducción")}
+          onError={(e) => console.error("Error en elemento de video:", e)}
+        />
+      )}
+      
       {/* Barra de herramientas mejorada para móviles */}
       <div className="timeline-toolbar flex flex-wrap items-center justify-between p-2 border-b bg-muted/30 gap-2">
         {/* Grupo de controles de reproducción - siempre visible */}
@@ -722,6 +756,21 @@ export function TimelineEditor({
             >
               <Badge variant={showAllLayers ? "default" : "outline"} className="whitespace-nowrap">Todas las capas</Badge>
             </Button>
+            
+            {/* Botón para mostrar/ocultar vista previa de video */}
+            {videoUrl && (
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={() => setShowPreview(!showPreview)}
+                className="touch-manipulation"
+                title={showPreview ? "Ocultar vista previa" : "Mostrar vista previa"}
+              >
+                <Badge variant={showPreview ? "default" : "outline"} className="whitespace-nowrap">
+                  <Eye className="h-3.5 w-3.5 mr-1" /> Vista previa
+                </Badge>
+              </Button>
+            )}
           </div>
         </div>
       </div>
