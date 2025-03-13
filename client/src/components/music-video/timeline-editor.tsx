@@ -2,16 +2,16 @@
  * Editor de línea de tiempo para música
  * Componente principal que integra gestión de capas, clips y reproducción de audio
  * @export TimelineEditor - Componente principal del editor
- * @export TimelineClip - Tipo para los clips de la línea de tiempo
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '../../lib/utils';
 import { 
-  Play, Pause, SkipBack, SkipForward, Zoom, ZoomIn, ZoomOut,
+  Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut,
   Music, Volume2, Volume1, VolumeX, Layers, Lock, Eye, Trash, 
   Plus, Save, Download, Upload, Share2
 } from 'lucide-react';
+import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Slider } from '../../components/ui/slider';
 import { Button } from '../../components/ui/button';
@@ -27,7 +27,6 @@ import { Progress } from '../../components/ui/progress';
 import LayerManager from '../timeline/LayerManager';
 import { useTimelineLayers, LayerConfig } from '../../hooks/useTimelineLayers';
 import { useIsolatedLayers, IsolatedLayerOperation } from '../../hooks/useIsolatedLayers';
-import { TimelineClip } from '../../components/timeline/TimelineClip';
 import { 
   LayerType, 
   PIXELS_PER_SECOND, 
@@ -36,19 +35,7 @@ import {
   ClipOperation
 } from '../../constants/timeline-constants';
 
-// Definición del tipo TimelineClip
-export interface TimelineClip {
-  id: number;
-  type: string;
-  layer: number;
-  start: number;
-  duration: number;
-  metadata?: {
-    isAIGenerated?: boolean;
-    [key: string]: any;
-  };
-  title?: string;
-}
+// Utilizamos TimelineClip importado desde '../timeline/TimelineClip'
 
 // Metadatos del mapa de beats
 export interface BeatMapMetadata {
@@ -611,7 +598,7 @@ export function TimelineEditor({
             onClick={resetZoom}
             title="Restablecer zoom"
           >
-            <Zoom className="h-4 w-4" />
+            <div className="h-4 w-4 flex items-center justify-center text-xs font-medium">1x</div>
           </Button>
           
           <Button 
@@ -926,5 +913,4 @@ function formatTime(seconds: number): string {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms}`;
 }
 
-// Exportar los elementos necesarios para los otros componentes
-export { TimelineClip };
+// La interfaz TimelineClip ya está exportada directamente arriba

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Slider } from '../../components/ui/slider';
-import { LayerType } from '../../constants/timeline-constants';
+import { LayerType, ClipOperation } from '../../constants/timeline-constants';
 import { useToast } from '../../hooks/use-toast';
 import LayerManager from './LayerManager';
 import { useTimelineLayers } from '../../hooks/useTimelineLayers';
