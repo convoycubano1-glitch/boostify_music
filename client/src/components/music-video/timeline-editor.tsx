@@ -634,9 +634,9 @@ export function TimelineEditor({
       </div>
       
       {/* Área principal */}
-      <div className="timeline-content flex h-full">
+      <div className="timeline-content flex h-full bg-background">
         {/* Panel lateral de capas */}
-        <div className="layers-panel w-64 border-r p-2 overflow-y-auto">
+        <div className="layers-panel w-64 border-r border-border p-2 overflow-y-auto">
           <LayerManager
             layers={layers}
             clips={clips}
@@ -655,7 +655,7 @@ export function TimelineEditor({
         {/* Panel principal de timeline */}
         <div className="timeline-panel flex-1 overflow-hidden">
           {/* Regla temporal */}
-          <div className="time-ruler h-8 border-b relative bg-background/50 overflow-hidden">
+          <div className="time-ruler h-8 border-b border-border relative bg-muted/20 overflow-hidden">
             <div 
               className="ruler-marks absolute top-0 left-0 h-full"
               style={{ width: `${timelineWidth}px` }}
@@ -735,7 +735,7 @@ export function TimelineEditor({
                 <div 
                   key={`layer-${layer.id}`}
                   className={cn(
-                    "layer-track relative border-b",
+                    "layer-track relative border-b border-border",
                     !visibleLayers[layer.id] && "opacity-30"
                   )}
                   style={{ 
@@ -818,7 +818,7 @@ export function TimelineEditor({
       
       {/* Panel de propiedades (para clip seleccionado) */}
       {selectedClipId !== null && (
-        <div className="properties-panel border-t p-3 bg-muted/20">
+        <div className="properties-panel border-t border-border p-3 bg-background/80">
           <h3 className="text-sm font-medium mb-2">Propiedades del clip</h3>
           
           <div className="grid grid-cols-2 gap-3">
