@@ -48,6 +48,10 @@ export interface TimelineClip {
   isPlaceholder?: boolean;
   pendingGeneration?: boolean;
   placeholderType?: 'image' | 'video' | 'audio' | 'text';
+  // Límite de duración (importante para clips AI, 5 segundos máximo)
+  maxDuration?: number;
+  // Indicador para capas aisladas (como audio)
+  isIsolated?: boolean;
   generationPrompt?: string;
   // Propiedades para capas aisladas (audio debe estar aislado)
   isIsolated?: boolean;
