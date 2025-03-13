@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../compo
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/ui/tooltip';
 import { 
   PlayCircle, PauseCircle, ZoomIn, ZoomOut, Plus, Scissors, Trash2, 
-  Music, Image, Text, Video, Layers, MoveVertical, Eye, EyeOff, Lock, Unlock
+  Music, Image, Text, Video, Layers, MoveVertical, Eye, EyeOff, Lock, Unlock,
+  Settings, FileVideo
 } from 'lucide-react';
 
 // Importar nuestros componentes y hooks personalizados 
@@ -22,6 +23,12 @@ import { useTimelineNavigation } from '../../../hooks/timeline/useTimelineNaviga
 import { usePreviewDialogs } from '../../../hooks/timeline/usePreviewDialogs';
 import { useClipOperations } from '../../../hooks/timeline/useClipOperations';
 import { useTimelineLayers, LayerConfig } from '../../../hooks/timeline/useTimelineLayers';
+
+// Importar componentes del editor profesional
+import ResizeHandleControl from '../../../components/professional-editor/resize-handle-control';
+import VideoPreviewPanelComponent from '../../../components/professional-editor/video-preview-panel';
+import ModuleConfiguratorComponent from '../../../components/professional-editor/module-configurator';
+import MediaLibraryComponent from '../../../components/professional-editor/media-library';
 
 // Importar constantes
 import {
@@ -61,6 +68,29 @@ export interface BeatMap {
   };
 }
 
+interface VisualEffect {
+  id: string;
+  name: string;
+  type: 'transition' | 'filter' | 'motion' | 'color' | 'text';
+  intensity: number;
+  applied: boolean;
+  start: number;
+  duration: number;
+  layer?: number;
+  settings?: Record<string, any>;
+}
+
+interface ModuleConfig {
+  id: string;
+  name: string;
+  type: 'panel' | 'tool';
+  enabled: boolean;
+  visible: boolean;
+  position: number;
+  defaultSize?: number;
+  settings?: Record<string, any>;
+}
+
 interface TimelineEditorProps {
   audioUrl?: string;
   initialClips?: TimelineClip[];
@@ -90,6 +120,21 @@ export function TimelineEditor({
   // Estado para gestión de capas
   const [visibleLayers, setVisibleLayers] = useState<string[]>(['audio', 'video', 'text', 'effects']);
   const [lockedLayers, setLockedLayers] = useState<string[]>([]);
+  
+  // Estados para componentes profesionales
+  const [showModuleConfig, setShowModuleConfig] = useState<boolean>(false);
+  const [activeEffects, setActiveEffects] = useState<VisualEffect[]>([]);
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [modules, setModules] = useState<ModuleConfig[]>([
+    { id: 'preview', name: 'Vista previa', type: 'panel', enabled: true, visible: true, position: 0, defaultSize: 60 },
+    { id: 'timeline', name: 'Línea de tiempo', type: 'panel', enabled: true, visible: true, position: 1, defaultSize: 20 },
+    { id: 'media', name: 'Biblioteca', type: 'panel', enabled: true, visible: true, position: 2, defaultSize: 20 },
+    { id: 'effects', name: 'Efectos', type: 'tool', enabled: true, visible: true, position: 3 },
+    { id: 'audio', name: 'Audio', type: 'tool', enabled: true, visible: true, position: 4 },
+    { id: 'text', name: 'Texto', type: 'tool', enabled: true, visible: true, position: 5 },
+  ]);
   
   // Reproducción de audio con visualización de forma de onda
   const { 
@@ -774,6 +819,90 @@ export function TimelineEditor({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Herramientas profesionales de edición */}
+      
+      {/* Panel de vista previa de video */}
+      <VideoPreviewPanelComponent 
+        currentTime={currentTime}
+        duration={duration}
+        isPlaying={isPlaying}
+        onPlay={play}
+        onPause={pause}
+        onSeek={seekTo}
+        selectedClip={selectedClip ? clips.find(c => c.id === selectedClip) : null}
+        visible={modules.find(m => m.id === 'preview')?.visible || false}
+      />
+      
+      {/* Control de redimensionamiento de paneles */}
+      <ResizeHandleControl 
+        modules={modules}
+        onResize={(newModules) => setModules(newModules)}
+        direction="horizontal"
+      />
+      
+      {/* Biblioteca de medios */}
+      <MediaLibraryComponent 
+        videos={videoFiles}
+        images={imageFiles}
+        audio={audioFile}
+        onVideoSelect={(file) => {
+          if (file) {
+            handleAddClip({
+              type: 'video',
+              start: currentTime,
+              duration: 3,
+              layer: LAYER_TYPES.VIDEO,
+              name: file.name,
+              url: URL.createObjectURL(file)
+            });
+          }
+        }}
+        onImageSelect={(file) => {
+          if (file) {
+            handleAddClip({
+              type: 'image',
+              start: currentTime,
+              duration: 2,
+              layer: LAYER_TYPES.VIDEO,
+              name: file.name,
+              url: URL.createObjectURL(file)
+            });
+          }
+        }}
+        onAudioSelect={(file) => {
+          if (file) {
+            handleAddClip({
+              type: 'audio',
+              start: currentTime,
+              duration: 5,
+              layer: LAYER_TYPES.AUDIO,
+              name: file.name,
+              url: URL.createObjectURL(file)
+            });
+          }
+        }}
+        visible={modules.find(m => m.id === 'media')?.visible || false}
+      />
+      
+      {/* Configurador de módulos y efectos */}
+      <ModuleConfiguratorComponent 
+        modules={modules}
+        activeEffects={activeEffects}
+        onModuleToggle={(moduleId, visible) => {
+          setModules(modules.map(m => 
+            m.id === moduleId ? {...m, visible} : m
+          ));
+        }}
+        onEffectAdd={(effect) => {
+          setActiveEffects([...activeEffects, effect]);
+        }}
+        onEffectRemove={(effectId) => {
+          setActiveEffects(activeEffects.filter(e => e.id !== effectId));
+        }}
+        visible={showModuleConfig}
+        onClose={() => setShowModuleConfig(false)}
+      />
     </Card>
   );
 }

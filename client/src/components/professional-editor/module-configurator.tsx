@@ -1,242 +1,193 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import React, { useState, useCallback } from 'react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription
+} from '../../components/ui/dialog';
 import { Button } from '../../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Switch } from '../../components/ui/switch';
 import { Label } from '../../components/ui/label';
-import { Check, Grip, X, ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react';
-import { Badge } from '../../components/ui/badge';
 import { ScrollArea } from '../../components/ui/scroll-area';
-import { ModuleConfig } from '../../lib/professional-editor-types';
-import { toast } from '../../hooks/use-toast';
+import { Card, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Check, X, Move, Eye, EyeOff, Settings, Paintbrush, Layout, ArrowUpDown, RotateCcw } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
-interface ModuleConfiguratorProps {
-  isOpen: boolean;
-  onClose: () => void;
+// ModuleConfig ya fue definido en resize-handle-control.tsx
+// Lo importamos para mantener la coherencia
+import { ModuleConfig } from './resize-handle-control';
+
+export interface ModuleConfiguratorProps {
   modules: ModuleConfig[];
-  onModulesChange: (modules: ModuleConfig[]) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (modules: ModuleConfig[]) => void;
+  activeEffects?: string[];
+  onResetLayout?: () => void;
 }
 
-export function ModuleConfigurator({ isOpen, onClose, modules, onModulesChange }: ModuleConfiguratorProps) {
-  const [localModules, setLocalModules] = useState<ModuleConfig[]>([]);
-  const [activeTab, setActiveTab] = useState('panels');
+// Combined default and named export
+export default function ModuleConfiguratorComponent({
+  modules,
+  open,
+  onOpenChange,
+  onSave,
+  activeEffects = [],
+  onResetLayout
+}: ModuleConfiguratorProps) {
+  const [localModules, setLocalModules] = useState<ModuleConfig[]>(() => [...modules]);
   
-  // Cargar módulos al abrir el diálogo
-  useEffect(() => {
-    if (isOpen) {
-      setLocalModules([...modules]);
-    }
-  }, [isOpen, modules]);
+  // Función para manejar cambios en los módulos
+  const handleModuleChange = useCallback((id: string, updates: Partial<ModuleConfig>) => {
+    setLocalModules(prev => 
+      prev.map(module => module.id === id ? { ...module, ...updates } : module)
+    );
+  }, []);
   
-  // Guardar los cambios cuando el usuario acepte
-  const handleSave = () => {
-    onModulesChange(localModules);
-    toast({
-      title: 'Configuración guardada',
-      description: 'La configuración de módulos se ha actualizado correctamente.',
-    });
-    onClose();
-  };
-  
-  // Cancelar y descartar cambios
-  const handleCancel = () => {
-    setLocalModules([...modules]);
-    onClose();
-  };
-  
-  // Restablecer a la configuración predeterminada
-  const handleReset = () => {
-    const defaultModules: ModuleConfig[] = [
-      { id: 'preview', name: 'Vista previa', type: 'panel', enabled: true, visible: true, position: 0, defaultSize: 60 },
-      { id: 'timeline', name: 'Línea de tiempo', type: 'panel', enabled: true, visible: true, position: 1, defaultSize: 20 },
-      { id: 'edit', name: 'Editor', type: 'panel', enabled: true, visible: true, position: 2, defaultSize: 20 },
-      { id: 'effects', name: 'Efectos', type: 'tool', enabled: true, visible: true, position: 3 },
-      { id: 'audio', name: 'Audio', type: 'tool', enabled: true, visible: true, position: 4 },
-      { id: 'text', name: 'Texto', type: 'tool', enabled: true, visible: true, position: 5 },
-      { id: 'camera', name: 'Cámara', type: 'tool', enabled: true, visible: true, position: 6 },
-      { id: 'transitions', name: 'Transiciones', type: 'tool', enabled: true, visible: true, position: 7 },
-    ];
+  // Función para manejar el drag-and-drop
+  const handleDragEnd = useCallback((result: any) => {
+    if (!result.destination) return;
     
-    setLocalModules(defaultModules);
-    toast({
-      title: 'Configuración restablecida',
-      description: 'Se ha restablecido la configuración predeterminada de módulos.',
-    });
-  };
+    const items = Array.from(localModules);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    // Actualizar las posiciones después del reordenamiento
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      position: index
+    }));
+    
+    setLocalModules(updatedItems);
+  }, [localModules]);
   
-  // Cambiar visibilidad de un módulo
-  const toggleVisibility = (moduleId: string) => {
-    setLocalModules(prev => 
-      prev.map(m => 
-        m.id === moduleId 
-          ? { ...m, visible: !m.visible } 
-          : m
-      )
-    );
-  };
+  // Función para guardar los cambios
+  const handleSave = useCallback(() => {
+    onSave(localModules);
+    onOpenChange(false);
+  }, [localModules, onSave, onOpenChange]);
   
-  // Cambiar estado de activación/desactivación de un módulo
-  const toggleEnabled = (moduleId: string) => {
-    setLocalModules(prev => 
-      prev.map(m => 
-        m.id === moduleId 
-          ? { ...m, enabled: !m.enabled, visible: !m.enabled ? true : m.visible } 
-          : m
-      )
-    );
-  };
+  // Función para cancelar los cambios
+  const handleCancel = useCallback(() => {
+    setLocalModules([...modules]);
+    onOpenChange(false);
+  }, [modules, onOpenChange]);
   
-  // Mover un módulo hacia arriba en la lista
-  const moveUp = (moduleId: string) => {
-    setLocalModules(prev => {
-      const index = prev.findIndex(m => m.id === moduleId);
-      if (index <= 0) return prev;
-      
-      const result = [...prev];
-      // Intercambiar posiciones
-      const temp = result[index].position;
-      result[index].position = result[index - 1].position;
-      result[index - 1].position = temp;
-      
-      // Reordenar el array
-      return result.sort((a, b) => a.position - b.position);
-    });
-  };
-  
-  // Mover un módulo hacia abajo en la lista
-  const moveDown = (moduleId: string) => {
-    setLocalModules(prev => {
-      const index = prev.findIndex(m => m.id === moduleId);
-      if (index === -1 || index >= prev.length - 1) return prev;
-      
-      const result = [...prev];
-      // Intercambiar posiciones
-      const temp = result[index].position;
-      result[index].position = result[index + 1].position;
-      result[index + 1].position = temp;
-      
-      // Reordenar el array
-      return result.sort((a, b) => a.position - b.position);
-    });
-  };
-  
-  // Filtrar módulos por tipo según la pestaña activa
-  const filteredModules = localModules
-    .filter(m => {
-      if (activeTab === 'panels') return m.type === 'panel';
-      if (activeTab === 'tools') return m.type === 'tool';
-      if (activeTab === 'widgets') return m.type === 'widget';
-      return true;
-    })
-    .sort((a, b) => a.position - b.position);
+  // Función para restablecer la disposición predeterminada
+  const handleResetLayout = useCallback(() => {
+    if (onResetLayout) {
+      onResetLayout();
+      setLocalModules([...modules]);
+      onOpenChange(false);
+    }
+  }, [onResetLayout, modules, onOpenChange]);
   
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Configurar módulos del editor</DialogTitle>
+          <DialogTitle>Configuración de módulos</DialogTitle>
           <DialogDescription>
-            Personaliza los módulos visibles y su orden en el editor profesional.
+            Personaliza los módulos visibles y su orden en el editor.
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="panels">Paneles</TabsTrigger>
-            <TabsTrigger value="tools">Herramientas</TabsTrigger>
-            <TabsTrigger value="widgets">Widgets</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value={activeTab} className="mt-2">
-            <ScrollArea className="h-[50vh] border rounded-md p-2">
-              <div className="space-y-4 p-2">
-                {filteredModules.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No hay módulos de este tipo configurados
-                  </div>
-                ) : (
-                  filteredModules.map((module) => (
-                    <div key={module.id} className="flex items-center justify-between p-3 border rounded-md bg-background">
-                      <div className="flex items-center gap-3">
-                        <Grip className="h-4 w-4 text-muted-foreground cursor-move" />
-                        <div>
-                          <div className="font-medium">{module.name}</div>
-                          <div className="text-xs text-muted-foreground">{module.id}</div>
-                        </div>
-                        {module.defaultSize && (
-                          <Badge variant="outline" className="ml-2">
-                            {module.defaultSize}%
-                          </Badge>
+        <div className="py-4">
+          <ScrollArea className="h-[350px] pr-4">
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="modules">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-3"
+                  >
+                    {localModules.sort((a, b) => a.position - b.position).map((module, index) => (
+                      <Draggable key={module.id} draggableId={module.id} index={index}>
+                        {(provided) => (
+                          <Card
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`border ${module.enabled ? 'border-primary/20' : 'border-muted/30'}`}
+                          >
+                            <CardContent className="p-3 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  {...provided.dragHandleProps}
+                                  className="cursor-move p-1"
+                                >
+                                  <Move size={16} className="text-muted-foreground" />
+                                </div>
+                                
+                                <div className="flex flex-col">
+                                  <span className={`font-medium ${module.enabled ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                    {module.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground capitalize">
+                                    {module.type}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                {module.type === 'panel' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={!module.enabled}
+                                    onClick={() => handleModuleChange(module.id, { visible: !module.visible })}
+                                    title={module.visible ? "Ocultar panel" : "Mostrar panel"}
+                                  >
+                                    {module.visible ? (
+                                      <Eye size={16} className={module.enabled ? "text-primary" : "text-muted-foreground"} />
+                                    ) : (
+                                      <EyeOff size={16} className="text-muted-foreground" />
+                                    )}
+                                  </Button>
+                                )}
+                                
+                                <Switch
+                                  checked={module.enabled}
+                                  onCheckedChange={(checked) => {
+                                    handleModuleChange(module.id, { 
+                                      enabled: checked,
+                                      visible: checked ? module.visible : false 
+                                    });
+                                  }}
+                                  className="ml-2"
+                                />
+                              </div>
+                            </CardContent>
+                          </Card>
                         )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {/* Botones de navegación */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => moveUp(module.id)}
-                          disabled={filteredModules.indexOf(module) === 0}
-                        >
-                          <ArrowUp className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => moveDown(module.id)}
-                          disabled={filteredModules.indexOf(module) === filteredModules.length - 1}
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </Button>
-                        
-                        {/* Botón de visibilidad */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleVisibility(module.id)}
-                          disabled={!module.enabled}
-                        >
-                          {module.visible ? (
-                            <Eye className="h-4 w-4" />
-                          ) : (
-                            <EyeOff className="h-4 w-4" />
-                          )}
-                        </Button>
-                        
-                        {/* Switch para habilitar/deshabilitar */}
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id={`switch-${module.id}`}
-                            checked={module.enabled}
-                            onCheckedChange={() => toggleEnabled(module.id)}
-                          />
-                          <Label htmlFor={`switch-${module.id}`}>
-                            {module.enabled ? (
-                              <Check className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <X className="h-4 w-4 text-red-500" />
-                            )}
-                          </Label>
-                        </div>
-                      </div>
-                    </div>
-                  ))
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
                 )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+              </Droppable>
+            </DragDropContext>
+          </ScrollArea>
+        </div>
         
-        <DialogFooter className="mt-4 flex justify-between items-center">
-          <Button variant="outline" onClick={handleReset}>
-            Restablecer
-          </Button>
+        <DialogFooter className="flex justify-between">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleResetLayout} disabled={!onResetLayout}>
+              <RotateCcw size={16} className="mr-2" />
+              Restablecer
+            </Button>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleCancel}>
+              <X size={16} className="mr-2" />
               Cancelar
             </Button>
             <Button onClick={handleSave}>
-              Guardar cambios
+              <Check size={16} className="mr-2" />
+              Guardar
             </Button>
           </div>
         </DialogFooter>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -14,7 +14,7 @@ import {
   Music,
   AlertCircle
 } from "lucide-react";
-import { ShotType, CameraMovementPattern } from "@/lib/professional-editor-types";
+import { ShotType, CameraMovementPattern } from "../../lib/professional-editor-types";
 
 // Tipo para cada elemento de imagen en la secuencia
 interface ImageSequenceItem {
