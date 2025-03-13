@@ -712,6 +712,7 @@ export function useClipOperations({
    * Borra todos los clips
    */
   const clearAllClips = useCallback(() => {
+    setClips([]);
     setClipsByLayer({});
     setLastClipId(0);
   }, []);
@@ -732,24 +733,40 @@ export function useClipOperations({
     // Actualizar el último ID
     setLastClipId(highestId);
     
+    // Crear una copia de los clips actuales
+    const newClips = [...clips];
+    
     // Organizar clips por capa
     const newClipsByLayer: { [layerId: number]: TimelineClip[] } = { ...clipsByLayer };
     
     importedClips.forEach(clip => {
-      if (!newClipsByLayer[clip.layerId]) {
-        newClipsByLayer[clip.layerId] = [];
+      // Procesar el clip para manejar diferentes formas de propiedades (compatibilidad)
+      const processedClip = {
+        ...clip,
+        // Normalizar propiedades de tiempo
+        startTime: clip.startTime || clip.start || 0,
+        endTime: clip.endTime || (clip.start ? clip.start + (clip.duration || 0) : 0),
+        // Normalizar propiedades de capa
+        layer: clip.layer || 0,
+        layerId: clip.layer || 0 // Mantener para compatibilidad
+      };
+      
+      // Añadir a la lista plana de clips
+      newClips.push(processedClip);
+      
+      // Añadir a la estructura por capas
+      const layerId = clip.layer || 0; // Usar "layer" en lugar de "layerId" para compatibilidad
+      if (!newClipsByLayer[layerId]) {
+        newClipsByLayer[layerId] = [];
       }
       
-      newClipsByLayer[clip.layerId].push({
-        ...clip,
-        // Asegurar que tenga las propiedades necesarias
-        startTime: clip.startTime || 0,
-        endTime: clip.endTime || 0
-      });
+      newClipsByLayer[layerId].push(processedClip);
     });
     
+    // Actualizar ambos estados
+    setClips(newClips);
     setClipsByLayer(newClipsByLayer);
-  }, [clipsByLayer, lastClipId]);
+  }, [clips, clipsByLayer, lastClipId]);
   
   // Aprovechar las capacidades de useClipInteractions
   const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
