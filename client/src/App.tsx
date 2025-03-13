@@ -44,6 +44,7 @@ import MerchandisePage from "./pages/merchandise";
 import MessagesPage from "./pages/messages";
 import MusicVideoCreator from "./pages/music-video-creator";
 import MusicVideoWorkflowPage from "./pages/music-video-workflow-page";
+import MusicVideoEditor from "./pages/music-video-editor";
 import MusicGeneratorPage from "./pages/music-generator";
 import NewsPage from "./pages/news";
 import PRPage from "./pages/pr";
@@ -207,6 +208,7 @@ const Router = () => {
   const WrappedProducerToolsPage = withPageWrapper(ProducerToolsPage);
   const WrappedMusicVideoCreator = withPageWrapper(MusicVideoCreator);
   const WrappedMusicVideoWorkflowPage = withPageWrapper(MusicVideoWorkflowPage);
+  const WrappedMusicVideoEditor = withPageWrapper(MusicVideoEditor);
   const WrappedMusicGeneratorPage = withPageWrapper(MusicGeneratorPage);
   const WrappedRecordLabelServices = withPageWrapper(RecordLabelServices);
   const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
@@ -332,6 +334,7 @@ const Router = () => {
         {getRouteComponent("/kling-test", WrappedKlingTestPage, null)}
         {getRouteComponent("/video-generation-test", WrappedVideoGenerationTestPage, null)}
         {getRouteComponent("/camera-movements-test", WrappedCameraMovementsTestPage, null)}
+        {getRouteComponent("/music-video-editor", WrappedMusicVideoEditor, null)}
         {getRouteComponent("/music-mastering", WrappedMusicMasteringPage, null)}
         {getRouteComponent("/vrl", WrappedVirtualRecordLabelPage, null)}
         {getRouteComponent("/virtual-record-label", WrappedVirtualRecordLabelPage, null)}
