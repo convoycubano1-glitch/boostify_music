@@ -210,68 +210,89 @@ export function TimelineEditor({
     }
   }, [isPlaying, isMuted, volume, toast]);
 
-  // Actualización de tiempo durante reproducción con sincronización de video
+  // Actualización de tiempo durante reproducción con sincronización de video optimizada
   useEffect(() => {
+    // Esta implementación usa requestAnimationFrame para máxima fluidez y sincronía
+    
+    // Esta variable detecta si necesitamos detener la animación debido a un evento externo
+    let isMounted = true;
+    
     if (isPlaying) {
-      // Reproducir audio principal
-      if (audioRef.current) {
-        audioRef.current.play().catch(err => {
-          console.error("Error al reproducir audio:", err);
-          setIsPlaying(false);
-        });
-      }
+      console.log("▶️ Iniciando control de reproducción y animación de timeline");
       
-      // Reproducir video principal (referencia)
-      if (videoRef.current) {
-        videoRef.current.play().catch(err => {
-          console.error("Error al reproducir video:", err);
-          // No detenemos la reproducción, ya que puede ser opcional
-        });
-      }
-      
-      // Reproducir todos los videos de vista previa
-      document.querySelectorAll('video').forEach(video => {
-        if (video !== videoRef.current) { // Evitar el video de referencia
-          video.play().catch(err => {
-            console.error("Error al reproducir video de vista previa:", err);
-          });
-        }
-      });
-      
+      // Definimos el sistema de loops de animación para actualización de tiempo
       const updateTimeFromAudio = () => {
-        if (audioRef.current) {
-          setCurrentTime(audioRef.current.currentTime);
+        // Verificar si el componente sigue montado
+        if (!isMounted) return;
+        
+        try {
+          // El audio es siempre nuestra fuente de verdad para la sincronización
+          if (audioRef.current) {
+            const currentAudioTime = audioRef.current.currentTime;
+            
+            // Actualizar tiempo del componente (para la UI)
+            setCurrentTime(currentAudioTime);
+            
+            // Comprobar si hemos llegado al final
+            if (currentAudioTime >= duration) {
+              console.log("🔚 Final de reproducción alcanzado");
+              setIsPlaying(false);
+              
+              // Reiniciar a tiempo cero o quizás al inicio si implementamos loop
+              if (audioRef.current) audioRef.current.pause();
+              if (videoRef.current) videoRef.current.pause();
+              if (previewVideoRef.current) previewVideoRef.current.pause();
+              
+              // Confirmar que hemos detenido la reproducción
+              return;
+            }
+            
+            // Verificar si el audio y el video de vista previa están sincronizados
+            // Si la diferencia es mayor que 100ms, sincronizamos manualmente
+            if (previewVideoRef.current && Math.abs(previewVideoRef.current.currentTime - currentAudioTime) > 0.1) {
+              console.log("⚠️ Resincronizando video de vista previa, desviación detectada");
+              previewVideoRef.current.currentTime = currentAudioTime;
+            }
+          }
           
-          // Avanzar al siguiente frame
-          animationFrameRef.current = requestAnimationFrame(updateTimeFromAudio);
+          // Continuar animación si seguimos reproduciendo
+          if (isPlaying && isMounted) {
+            animationFrameRef.current = requestAnimationFrame(updateTimeFromAudio);
+          }
+        } catch (error) {
+          console.error("Error en bucle de animación:", error);
+          
+          // En caso de error, intentamos continuar con la animación para evitar congelación
+          if (isPlaying && isMounted) {
+            animationFrameRef.current = requestAnimationFrame(updateTimeFromAudio);
+          }
         }
       };
       
-      // Iniciar bucle de actualización
+      // Iniciar bucle de actualización optimizado para rendimiento
       animationFrameRef.current = requestAnimationFrame(updateTimeFromAudio);
       
-      // Limpiar al desmontar
+      // Limpiar cuando el efecto se desmonte o cambien las dependencias
       return () => {
-        cancelAnimationFrame(animationFrameRef.current);
-      };
-    } else {
-      // Pausar audio y videos cuando no está reproduciendo
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-      
-      // Pausar todos los videos de vista previa
-      document.querySelectorAll('video').forEach(video => {
-        if (video !== videoRef.current) { // Evitar el video de referencia
-          video.pause();
+        isMounted = false;
+        
+        // Cancelar bucle de animación
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
         }
-      });
+        
+        console.log("🛑 Bucle de animación de timeline detenido");
+      };
     }
-  }, [isPlaying]);
+    
+    // Cuando no está reproduciendo, nos aseguramos de limpiar el bucle de animación
+    return () => {
+      isMounted = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying, duration]);
 
   // Actualizar posición de tiempo y sincronizar video
   useEffect(() => {
@@ -391,47 +412,82 @@ export function TimelineEditor({
     const newPlayState = !isPlaying;
     setIsPlaying(newPlayState);
     
-    // Controlar reproducción del video de vista previa
-    if (previewVideoRef.current) {
+    try {
+      // Control de reproducción global con manejo preciso de errores
       if (newPlayState) {
-        previewVideoRef.current.play().catch(err => {
-          console.error("Error al reproducir vista previa:", err);
+        console.log("▶️ Iniciando reproducción sincronizada");
+        
+        // Array para controlar promesas de reproducción
+        const playPromises = [];
+        
+        // Iniciar reproducción de audio primero (funciona como "maestro")
+        if (audioRef.current) {
+          playPromises.push(
+            audioRef.current.play()
+              .catch(err => {
+                console.error("Error al reproducir audio:", err);
+                // Si falla el audio, revertimos el estado
+                setIsPlaying(false);
+                throw new Error("No se pudo reproducir el audio");
+              })
+          );
+        }
+        
+        // Sincronizar video de referencia (usado para análisis interno)
+        if (videoRef.current) {
+          playPromises.push(
+            videoRef.current.play()
+              .catch(err => {
+                console.error("Error al reproducir video de referencia:", err);
+                // No revertimos el estado aquí, solo registramos
+              })
+          );
+        }
+        
+        // Sincronizar vista previa (lo que el usuario ve)
+        if (previewVideoRef.current) {
+          playPromises.push(
+            previewVideoRef.current.play()
+              .catch(err => {
+                console.error("Error al reproducir vista previa:", err);
+                // Error crítico, notificar al usuario
+                toast({
+                  title: "Error de reproducción",
+                  description: "No se pudo reproducir el video de vista previa. Intente hacer clic nuevamente.",
+                  variant: "destructive",
+                });
+              })
+          );
+        }
+        
+        // Verificar si todo se reprodujo correctamente
+        Promise.all(playPromises).then(() => {
+          console.log("✅ Todos los elementos multimedia sincronizados y reproduciendo");
+        }).catch(() => {
+          console.log("⚠️ Algunos elementos no pudieron sincronizarse");
         });
+        
       } else {
-        previewVideoRef.current.pause();
+        // Pausar todos los elementos
+        console.log("⏸️ Pausando todos los elementos");
+        
+        if (audioRef.current) audioRef.current.pause();
+        if (videoRef.current) videoRef.current.pause();
+        if (previewVideoRef.current) previewVideoRef.current.pause();
       }
+    } catch (error) {
+      // Error inesperado, revertir estado
+      console.error("Error fatal al controlar reproducción:", error);
+      setIsPlaying(false);
+      toast({
+        title: "Error de reproducción",
+        description: "Ocurrió un problema al intentar reproducir. Intente de nuevo.",
+        variant: "destructive",
+      });
     }
-  }, [isPlaying]);
+  }, [isPlaying, toast]);
   
-  const stop = useCallback(() => {
-    setIsPlaying(false);
-    setCurrentTime(0);
-    
-    // Detener y reiniciar el audio
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-    }
-    
-    // Detener y reiniciar el video de referencia
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-    }
-    
-    // Detener y reiniciar el video de vista previa específico
-    if (previewVideoRef.current) {
-      previewVideoRef.current.currentTime = 0;
-      previewVideoRef.current.pause();
-    }
-    
-    // Reiniciar cualquier otro video que pueda estar en el panel
-    document.querySelectorAll('video').forEach(video => {
-      if (video !== videoRef.current && video !== previewVideoRef.current) {
-        video.currentTime = 0;
-        video.pause();
-      }
-    });
-  }, []);
-  
+  // Declaración seekToTime para manejo de la sincronización de tiempo
   const seekToTime = useCallback((time: number) => {
     // Garantizar que el tiempo está dentro de los límites del video/audio
     const clampedTime = Math.min(Math.max(time, 0), duration);
@@ -477,6 +533,51 @@ export function TimelineEditor({
       });
     }
   }, [duration, toast]);
+  
+  // Función para detener reproducción
+  const stop = useCallback(() => {
+    // Detener reproducción
+    setIsPlaying(false);
+    
+    console.log("⏹️ Deteniendo y reiniciando todos los elementos multimedia");
+    
+    try {
+      // Usar seekToTime(0) para la sincronización de tiempo
+      // Esto asegura que todos los elementos se reinicien correctamente
+      seekToTime(0);
+      
+      // Asegurarnos de pausar explícitamente todos los elementos
+      if (audioRef.current) {
+        audioRef.current.pause();
+        console.log("🔊 Audio detenido y reiniciado");
+      }
+      
+      if (videoRef.current) {
+        videoRef.current.pause();
+        console.log("🎬 Video de referencia detenido y reiniciado");
+      }
+      
+      if (previewVideoRef.current) {
+        previewVideoRef.current.pause();
+        console.log("👁️ Vista previa detenida y reiniciada");
+      }
+      
+      // Reiniciar cualquier otro video que pueda estar en el panel
+      document.querySelectorAll('video').forEach(video => {
+        if (video !== videoRef.current && video !== previewVideoRef.current) {
+          video.currentTime = 0;
+          video.pause();
+        }
+      });
+    } catch (error) {
+      console.error("Error al detener reproducción:", error);
+      toast({
+        title: "Error al detener",
+        description: "No se pudieron detener todos los elementos multimedia correctamente",
+        variant: "destructive",
+      });
+    }
+  }, [seekToTime, toast]);
   
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);
