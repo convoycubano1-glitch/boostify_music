@@ -170,6 +170,11 @@ export function TimelineEditor({
   const playheadAnimation = useAnimation();
   const [selectedImagePreview, setSelectedImagePreview] = useState<TimelineClip | null>(null);
   const [expandedPreview, setExpandedPreview] = useState(false);
+  
+  // Estados para gestión de capas
+  const [visibleLayers, setVisibleLayers] = useState<number[]>([0, 1, 2, 3]); // Todas las capas visibles por defecto
+  const [lockedLayers, setLockedLayers] = useState<number[]>([]); // Ninguna capa bloqueada por defecto
+  const [layerManagerOpen, setLayerManagerOpen] = useState(false);
 
   const timelineWidth = duration * zoom * 100;
   const timeToPixels = (time: number) => time * zoom * 100;
@@ -1352,7 +1357,7 @@ export function TimelineEditor({
                   {/* Clips de audio en esta capa */}
                   <div className="absolute inset-0">
                     {clips
-                      .filter(clip => clip.layer === 0) // Mostrar solo clips de la capa de audio
+                      .filter(clip => clip.layer === 0 && visibleLayers.includes(0)) // Mostrar solo clips de la capa de audio visible
                       .map((clip) => (
                         <div
                           key={`audio-clip-${clip.id}`}
@@ -1401,7 +1406,7 @@ export function TimelineEditor({
                   {/* Clips de imágenes en esta capa */}
                   <div className="absolute inset-0">
                     {clips
-                      .filter(clip => clip.layer === 1) // Mostrar solo clips de la capa de imágenes
+                      .filter(clip => clip.layer === 1 && visibleLayers.includes(1)) // Mostrar solo clips de la capa de imágenes visible
                       .map((clip, idx, filteredClips) => {
                         // Identificar si es el primer o último clip para resaltar visualmente
                         const isFirstClip = idx === 0;
