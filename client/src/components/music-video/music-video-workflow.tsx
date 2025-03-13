@@ -46,7 +46,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { VideoGenerator, VideoGenerationSettings } from './video-generator';
 import { VideoGeneratorWithCamera } from './video-generator-with-camera';
-import { TimelineClip } from './timeline-editor';
+import { TimelineClip } from './timeline/TimelineEditor';
 import { TimelineEditor } from './timeline/TimelineEditor';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';

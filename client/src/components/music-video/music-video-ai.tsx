@@ -4,7 +4,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { TimelineEditor, type TimelineClip } from "./timeline-editor";
+import { TimelineEditor, type TimelineClip } from "./timeline/TimelineEditor";
 import { Slider } from "../ui/slider";
 import { Card } from "../ui/card";
 import Editor from "@monaco-editor/react";
