@@ -433,31 +433,50 @@ export function TimelineEditor({
   }, []);
   
   const seekToTime = useCallback((time: number) => {
+    // Garantizar que el tiempo está dentro de los límites del video/audio
     const clampedTime = Math.min(Math.max(time, 0), duration);
+    
+    // Actualizar el estado de tiempo actualizado
     setCurrentTime(clampedTime);
     
-    // Actualizar tiempo de audio
-    if (audioRef.current) {
-      audioRef.current.currentTime = clampedTime;
-    }
+    // Log para debug de sincronización
+    console.log(`⏱️ Buscando tiempo: ${clampedTime.toFixed(2)}s de ${duration.toFixed(2)}s`);
     
-    // Actualizar tiempo de video de referencia
-    if (videoRef.current) {
-      videoRef.current.currentTime = clampedTime;
-    }
-    
-    // Actualizar tiempo del video de vista previa específico
-    if (previewVideoRef.current) {
-      previewVideoRef.current.currentTime = clampedTime;
-    }
-    
-    // Actualizar cualquier otro video que pueda estar en el panel
-    document.querySelectorAll('video').forEach(video => {
-      if (video !== videoRef.current && video !== previewVideoRef.current) {
-        video.currentTime = clampedTime;
+    try {
+      // Actualizar tiempo de audio - prioridad alta
+      if (audioRef.current) {
+        audioRef.current.currentTime = clampedTime;
+        console.log(`🔊 Audio sincronizado a ${clampedTime.toFixed(2)}s`);
       }
-    });
-  }, [duration]);
+      
+      // Actualizar tiempo de video de referencia
+      if (videoRef.current) {
+        videoRef.current.currentTime = clampedTime;
+        console.log(`🎬 Video de referencia sincronizado`);
+      }
+      
+      // Actualizar tiempo del video de vista previa específico 
+      if (previewVideoRef.current) {
+        previewVideoRef.current.currentTime = clampedTime;
+        console.log(`👁️ Video de vista previa sincronizado`);
+      }
+      
+      // Actualizar cualquier otro video que pueda estar en el panel
+      // Esta es una sincronización de respaldo por si se añaden más elementos
+      document.querySelectorAll('video').forEach(video => {
+        if (video !== videoRef.current && video !== previewVideoRef.current) {
+          video.currentTime = clampedTime;
+        }
+      });
+    } catch (error) {
+      console.error('Error al sincronizar medios:', error);
+      toast({
+        title: "Error de sincronización",
+        description: "No se pudieron sincronizar todos los elementos multimedia",
+        variant: "destructive",
+      });
+    }
+  }, [duration, toast]);
   
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);
@@ -677,11 +696,17 @@ export function TimelineEditor({
     const clickX = e.clientX - rect.left;
     
     // Convertir a tiempo
-    const clickTime = (clickX / (PIXELS_PER_SECOND * zoom));
+    const rawClickTime = (clickX / (PIXELS_PER_SECOND * zoom));
+    
+    // Limitar al rango válido de la línea de tiempo
+    const validClickTime = Math.max(0, Math.min(rawClickTime, duration));
     
     // Actualizar tiempo actual
-    seekToTime(clickTime);
-  }, [activeOperation, zoom, seekToTime]);
+    seekToTime(validClickTime);
+    
+    // Log para debug de sincronización
+    console.log(`Timeline click: posición ${clickX.toFixed(0)}px, tiempo ${validClickTime.toFixed(2)}s`);
+  }, [activeOperation, zoom, seekToTime, duration]);
   
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     // Atajos de teclado
