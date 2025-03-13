@@ -744,6 +744,15 @@ export function TimelineEditor({
   
   const handleMouseMove = (e: MouseEvent) => {
     if (isDragging && selectedClip !== null) {
+      const clip = clips.find(c => c.id === selectedClip);
+      if (!clip) return;
+      
+      // Si el clip pertenece a una capa aislada, no permitir moverlo
+      if (clip.isIsolated) {
+        console.log("No se puede mover un clip en capa aislada");
+        return;
+      }
+      
       const deltaX = e.clientX - dragStartX;
       const deltaTime = pixelsToTime(deltaX);
       const newStartTime = Math.max(0, clipStartTime + deltaTime);
@@ -785,9 +794,21 @@ export function TimelineEditor({
 
     const clip = clips.find(c => c.id === selectedClip);
     if (!clip) return;
-
-    // Máxima duración permitida para un clip (5 segundos)
-    const MAX_CLIP_DURATION = 5.0;
+    
+    // Si es una capa aislada, no permitir modificaciones
+    if (clip.isIsolated) {
+      console.log("No se puede redimensionar un clip aislado");
+      return;
+    }
+    
+    // Determinar la duración máxima permitida según el tipo de clip
+    // Por defecto 5 segundos, pero respeta la configuración individual
+    const defaultMaxDuration = 5.0;
+    const maxDurationFromClip = clip.maxDuration || defaultMaxDuration;
+    
+    // Si es un placeholder de IA generado, siempre limitar a 5 segundos máximo
+    const isAIPlaceholder = clip.placeholderType !== undefined;
+    const MAX_CLIP_DURATION = isAIPlaceholder ? Math.min(defaultMaxDuration, maxDurationFromClip) : maxDurationFromClip;
     
     const deltaX = e.clientX - dragStartX;
     const deltaTime = pixelsToTime(deltaX);
@@ -820,6 +841,12 @@ export function TimelineEditor({
         MAX_CLIP_DURATION,
         Math.max(0.5, clip.duration + deltaTime)
       );
+      
+      // Mostrar indicador visual si es un placeholder de IA que está intentando exceder el límite
+      if (isAIPlaceholder && clip.duration + deltaTime > MAX_CLIP_DURATION) {
+        console.log("Placeholder de IA limitado a 5 segundos");
+        // Aquí podríamos agregar una notificación visual al usuario
+      }
       
       onClipUpdate(selectedClip, {
         duration: newDuration
@@ -1063,8 +1090,29 @@ export function TimelineEditor({
                   if (selectedClip !== null) {
                     // Lógica para cortar el clip en la posición actual
                     const clip = clips.find(c => c.id === selectedClip);
-                    if (clip && currentTime > clip.start && currentTime < clip.start + clip.duration) {
+                    if (!clip) return;
+                    
+                    // No permitir cortar clips en capas aisladas
+                    if (clip.isIsolated) {
+                      console.log("No se puede cortar un clip en capa aislada");
+                      // Aquí podríamos mostrar una notificación al usuario
+                      return;
+                    }
+                    
+                    // Verificar que el clip se puede cortar en la posición actual
+                    if (currentTime > clip.start && currentTime < clip.start + clip.duration) {
                       const relativePosition = currentTime - clip.start;
+                      
+                      // Si es un placeholder de IA, verificar restricciones adicionales
+                      const isAIPlaceholder = clip.placeholderType !== undefined;
+                      if (isAIPlaceholder) {
+                        // No permitir cortar placeholders de IA que ya son menores a 1 segundo
+                        if (clip.duration < 1.0 || (clip.duration - relativePosition) < 1.0) {
+                          console.log("No se puede cortar placeholders de IA en segmentos menores a 1 segundo");
+                          // Aquí podríamos mostrar una notificación al usuario
+                          return;
+                        }
+                      }
                       
                       // Actualizar el clip actual para que termine en la posición de corte
                       onClipUpdate(selectedClip, {
