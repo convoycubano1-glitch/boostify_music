@@ -175,6 +175,14 @@ export function TimelineEditor({
   const [visibleLayers, setVisibleLayers] = useState<number[]>([0, 1, 2, 3]); // Todas las capas visibles por defecto
   const [lockedLayers, setLockedLayers] = useState<number[]>([]); // Ninguna capa bloqueada por defecto
   const [layerManagerOpen, setLayerManagerOpen] = useState(false);
+  
+  // Configuración de posicionamiento de capas para evitar superposición
+  const layerConfig = {
+    0: { name: 'Audio', color: 'bg-orange-500/20', top: 'top-4', height: 'h-16', border: 'border-orange-400' },
+    1: { name: 'Imágenes', color: 'bg-blue-500/20', top: 'top-24', height: 'h-20', border: 'border-blue-400' },
+    2: { name: 'Texto', color: 'bg-violet-500/20', top: 'top-48', height: 'h-14', border: 'border-violet-400' },
+    3: { name: 'Efectos', color: 'bg-emerald-500/20', top: 'top-66', height: 'h-14', border: 'border-emerald-400' }
+  };
 
   const timelineWidth = duration * zoom * 100;
   const timeToPixels = (time: number) => time * zoom * 100;
@@ -1380,10 +1388,10 @@ export function TimelineEditor({
                         <div
                           key={`audio-clip-${clip.id}`}
                           className={cn(
-                            "absolute h-16 top-4 border rounded-sm overflow-hidden",
+                            `absolute ${layerConfig[0].height} ${layerConfig[0].top} border rounded-sm overflow-hidden`,
                             selectedClip === clip.id ? "ring-2 ring-orange-500 border-orange-400" : "border-orange-300 dark:border-orange-700",
                             "bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20",
-                            "cursor-move"
+                            "cursor-move timeline-clip"
                           )}
                           style={{
                             left: `${timeToPixels(clip.start)}px`,
@@ -1479,7 +1487,7 @@ export function TimelineEditor({
                           <div
                             key={`image-clip-${clip.id}`}
                             className={cn(
-                              "absolute h-20 top-2 border border-t-2 rounded-sm overflow-hidden",
+                              `absolute ${layerConfig[1].height} ${layerConfig[1].top} border border-t-2 rounded-sm overflow-hidden`,
                               borderStyle,
                               shotTypeClasses,
                               selectedClip === clip.id 
@@ -1598,10 +1606,10 @@ export function TimelineEditor({
                         <div
                           key={`text-clip-${clip.id}`}
                           className={cn(
-                            "absolute h-12 top-2 border rounded-sm overflow-hidden",
+                            `absolute ${layerConfig[2].height} ${layerConfig[2].top} border rounded-sm overflow-hidden`,
                             selectedClip === clip.id ? "ring-2 ring-violet-500 border-violet-400" : "border-violet-300 dark:border-violet-700",
                             "bg-gradient-to-r from-violet-100 to-violet-50 dark:from-violet-900/30 dark:to-violet-800/20",
-                            "cursor-move"
+                            "cursor-move timeline-clip"
                           )}
                           style={{
                             left: `${timeToPixels(clip.start)}px`,
