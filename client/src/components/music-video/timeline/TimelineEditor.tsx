@@ -613,8 +613,9 @@ export function TimelineEditor({
                 size="sm" 
                 onClick={() => {
                   // Añadir nueva capa
+                  const layerId = `layer-${Date.now()}`;
                   const newLayer: LayerConfig = {
-                    id: `layer-${Date.now()}`,
+                    id: layerId,
                     name: `Layer ${layers.length + 1}`,
                     type: LayerType.VIDEO,
                     visible: true,
@@ -622,6 +623,11 @@ export function TimelineEditor({
                     index: layers.length
                   };
                   addLayer(newLayer);
+                  
+                  // Agregar a capas visibles automáticamente
+                  if (!visibleLayers.includes(layerId)) {
+                    setVisibleLayers([...visibleLayers, layerId]);
+                  }
                 }}
               >
                 <Plus size={16} className="mr-1" /> Add Layer
@@ -651,7 +657,10 @@ export function TimelineEditor({
                         className="h-7 w-7"
                         onClick={() => toggleLayerVisibility(layer.id)}
                       >
-                        {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                        {isLayerLocked(layer.id) ? 
+                          <Lock size={14} /> : 
+                          (visibleLayers.includes(layer.id) ? <Eye size={14} /> : <EyeOff size={14} />)
+                        }
                       </Button>
                       
                       <Button 
@@ -660,14 +669,19 @@ export function TimelineEditor({
                         className="h-7 w-7"
                         onClick={() => toggleLayerLock(layer.id)}
                       >
-                        {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
+                        {isLayerLocked(layer.id) ? <Lock size={14} /> : <Unlock size={14} />}
                       </Button>
                       
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="h-7 w-7 text-red-500"
-                        onClick={() => removeLayer(layer.id)}
+                        onClick={() => {
+                          removeLayer(layer.id);
+                          // Eliminar de las capas visibles y bloqueadas si existe
+                          setVisibleLayers(visibleLayers.filter(id => id !== layer.id));
+                          setLockedLayers(lockedLayers.filter(id => id !== layer.id));
+                        }}
                       >
                         <Trash2 size={14} />
                       </Button>
