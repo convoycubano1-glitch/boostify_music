@@ -19,6 +19,14 @@ export enum LayerType {
   EFFECTS = 3     // Efectos visuales y transiciones
 }
 
+// Mapa de tipos de capas para compatibilidad con TimelineEditor
+export const LAYER_TYPES = {
+  AUDIO: 0,
+  VIDEO_IMAGE: 1,
+  TEXT: 2,
+  EFFECTS: 3
+};
+
 // Límites de capas por tipo
 export const MAX_LAYERS = {
   [LayerType.AUDIO]: 8,
