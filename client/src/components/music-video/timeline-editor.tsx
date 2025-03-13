@@ -941,6 +941,24 @@ export function TimelineEditor({
                   <Button
                     variant="outline"
                     size="icon"
+                    onClick={() => setLayerManagerOpen(true)}
+                    className="border-orange-500/30"
+                  >
+                    <Layers className="h-4 w-4 text-orange-500" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Gestionar capas</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
                     onClick={() => setExpandedPreview(!expandedPreview)}
                     className="border-orange-500/30"
                   >
@@ -1975,6 +1993,232 @@ export function TimelineEditor({
               </div>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de gestión de capas */}
+      <Dialog open={layerManagerOpen} onOpenChange={setLayerManagerOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogTitle>Gestión de Capas</DialogTitle>
+          
+          <div className="grid gap-4 py-4">
+            {/* Capa de Audio */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-100 dark:bg-blue-900">
+                  <AudioLines className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Capas de Audio</h4>
+                  <p className="text-xs text-muted-foreground">Pistas de audio, música y efectos sonoros</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={visibleLayers.includes(0) ? "bg-primary/10" : ""}
+                  onClick={() => {
+                    if (visibleLayers.includes(0)) {
+                      setVisibleLayers(visibleLayers.filter(l => l !== 0));
+                    } else {
+                      setVisibleLayers([...visibleLayers, 0]);
+                    }
+                  }}
+                >
+                  {visibleLayers.includes(0) ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={lockedLayers.includes(0) ? "bg-primary/10" : ""}
+                  onClick={() => {
+                    if (lockedLayers.includes(0)) {
+                      setLockedLayers(lockedLayers.filter(l => l !== 0));
+                    } else {
+                      setLockedLayers([...lockedLayers, 0]);
+                    }
+                  }}
+                >
+                  {lockedLayers.includes(0) ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <Unlock className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Capa de Video/Imagen */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100 dark:bg-purple-900">
+                  <Film className="h-4 w-4 text-purple-600 dark:text-purple-300" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Capas de Video e Imagen</h4>
+                  <p className="text-xs text-muted-foreground">Clips de video, imágenes y fondos</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={visibleLayers.includes(1) ? "bg-primary/10" : ""}
+                  onClick={() => {
+                    if (visibleLayers.includes(1)) {
+                      setVisibleLayers(visibleLayers.filter(l => l !== 1));
+                    } else {
+                      setVisibleLayers([...visibleLayers, 1]);
+                    }
+                  }}
+                >
+                  {visibleLayers.includes(1) ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={lockedLayers.includes(1) ? "bg-primary/10" : ""}
+                  onClick={() => {
+                    if (lockedLayers.includes(1)) {
+                      setLockedLayers(lockedLayers.filter(l => l !== 1));
+                    } else {
+                      setLockedLayers([...lockedLayers, 1]);
+                    }
+                  }}
+                >
+                  {lockedLayers.includes(1) ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <Unlock className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Capa de Texto */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-100 dark:bg-amber-900">
+                  <Type className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Capas de Texto</h4>
+                  <p className="text-xs text-muted-foreground">Títulos, subtítulos y textos complementarios</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={visibleLayers.includes(2) ? "bg-primary/10" : ""}
+                  onClick={() => {
+                    if (visibleLayers.includes(2)) {
+                      setVisibleLayers(visibleLayers.filter(l => l !== 2));
+                    } else {
+                      setVisibleLayers([...visibleLayers, 2]);
+                    }
+                  }}
+                >
+                  {visibleLayers.includes(2) ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={lockedLayers.includes(2) ? "bg-primary/10" : ""}
+                  onClick={() => {
+                    if (lockedLayers.includes(2)) {
+                      setLockedLayers(lockedLayers.filter(l => l !== 2));
+                    } else {
+                      setLockedLayers([...lockedLayers, 2]);
+                    }
+                  }}
+                >
+                  {lockedLayers.includes(2) ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <Unlock className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Capa de Efectos */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-pink-100 dark:bg-pink-900">
+                  <Sparkles className="h-4 w-4 text-pink-600 dark:text-pink-300" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium">Capas de Efectos</h4>
+                  <p className="text-xs text-muted-foreground">Efectos visuales, transiciones y animaciones</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={visibleLayers.includes(3) ? "bg-primary/10" : ""}
+                  onClick={() => {
+                    if (visibleLayers.includes(3)) {
+                      setVisibleLayers(visibleLayers.filter(l => l !== 3));
+                    } else {
+                      setVisibleLayers([...visibleLayers, 3]);
+                    }
+                  }}
+                >
+                  {visibleLayers.includes(3) ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={lockedLayers.includes(3) ? "bg-primary/10" : ""}
+                  onClick={() => {
+                    if (lockedLayers.includes(3)) {
+                      setLockedLayers(lockedLayers.filter(l => l !== 3));
+                    } else {
+                      setLockedLayers([...lockedLayers, 3]);
+                    }
+                  }}
+                >
+                  {lockedLayers.includes(3) ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <Unlock className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="secondary" 
+              onClick={() => {
+                setVisibleLayers([0, 1, 2, 3]);
+                setLockedLayers([]);
+              }}
+            >
+              Restablecer
+            </Button>
+            <Button onClick={() => setLayerManagerOpen(false)}>Cerrar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
