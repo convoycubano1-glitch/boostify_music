@@ -746,20 +746,68 @@ export function useClipOperations({
     setClipsByLayer(newClipsByLayer);
   }, [clipsByLayer, lastClipId]);
   
+  // Aprovechar las capacidades de useClipInteractions
+  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
+  
+  // Conector para que useClipOperations utilice las funciones de useClipInteractions
+  const {
+    operation,
+    getClipMouseHandlers,
+    getClipCursorStyle,
+    selectClip,
+    deselectClip,
+    handleAddClip,
+    handleDeleteClip,
+    handleMoveClip,
+    handleResizeClip,
+    handleSplitClip,
+    handleDuplicateClip
+  } = clipInteractions;
+  
+  // Función para combinar multiple selección con las operaciones de clips
+  const handleBatchOperation = useCallback((operation: ClipOperation, clipIds: number[]) => {
+    // Implementar operaciones en lote según sea necesario
+    switch (operation) {
+      case ClipOperation.CUT:
+        clipIds.forEach(id => handleDeleteClip(id));
+        return true;
+      default:
+        return false;
+    }
+  }, [handleDeleteClip]);
+  
   // Objeto con todas las funciones que exponemos al componente
   return {
-    // Operaciones de clips
-    addClip,
-    removeClip,
-    moveClip,
-    resizeClip,
-    splitClip,
+    // Estado de clips
+    clips,
+    clipsByLayer,
+    selectedClipId,
+    
+    // Operaciones básicas de clips
+    addClip: handleAddClip,
+    removeClip: handleDeleteClip,
+    moveClip: handleMoveClip,
+    resizeClip: handleResizeClip,
+    splitClip: handleSplitClip,
     combineClips,
-    duplicateClip,
-    cutClip,         // Agregamos la nueva operación de corte
+    duplicateClip: handleDuplicateClip,
+    cutClip: handleDeleteClip,
     changeClipLayer,
     clearAllClips,
     importClips,
+    
+    // Operaciones de selección y manipulación
+    selectClip,
+    deselectClip,
+    
+    // Helpers para interactividad
+    getClipMouseHandlers,
+    getClipCursorStyle,
+    currentOperation: operation,
+    isClipSelected: (clipId: number) => selectedClipId === clipId,
+    
+    // Operaciones avanzadas
+    handleBatchOperation,
     
     // Acceso a clips
     getClipsInLayer,
@@ -771,6 +819,5 @@ export function useClipOperations({
     findSnapPosition,
     
     // Estado
-    clipsByLayer,
   };
 }
