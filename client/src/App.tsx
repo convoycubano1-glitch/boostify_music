@@ -86,6 +86,7 @@ import MusicVideoSuccess from "./pages/music-video-success";
 import MusicVideoCancelled from "./pages/music-video-cancelled";
 import SubscriptionExamplePage from "./pages/subscription-example";
 import ProfessionalEditorPage from "./pages/professional-editor";
+import LayerFilterDemoPage from "./pages/layer-filter-demo";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -248,6 +249,7 @@ const Router = () => {
   const WrappedMusicVideoSuccess = withPageWrapper(MusicVideoSuccess);
   const WrappedMusicVideoCancelled = withPageWrapper(MusicVideoCancelled);
   const WrappedProfessionalEditorPage = withPageWrapper(ProfessionalEditorPage);
+  const WrappedLayerFilterDemoPage = withPageWrapper(LayerFilterDemoPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -340,6 +342,7 @@ const Router = () => {
         {getRouteComponent("/try-on", WrappedTryOnPage, null)}
         {getRouteComponent("/try-on-page", WrappedTryOnPage, null)}
         {getRouteComponent("/professional-editor", WrappedProfessionalEditorPage, null)}
+        {getRouteComponent("/layer-filter-demo", WrappedLayerFilterDemoPage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
