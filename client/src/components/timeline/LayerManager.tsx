@@ -228,11 +228,11 @@ const LayerManager: React.FC<LayerManagerProps> = ({
   }, [onToggleLayerLock]);
   
   return (
-    <div className="layer-manager bg-white border-r overflow-y-auto" style={{ minWidth: "280px" }}>
+    <div className="layer-manager bg-background border-border overflow-y-auto" style={{ minWidth: "280px" }}>
       {/* Encabezado */}
-      <div className="bg-gray-100 px-4 py-3 border-b">
+      <div className="bg-muted/40 px-4 py-3 border-b border-border">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-medium text-gray-700">Capas</h3>
+          <h3 className="text-sm font-medium text-foreground">Capas</h3>
           
           {/* Menú para agregar capas */}
           <Popover>
@@ -318,8 +318,8 @@ const LayerManager: React.FC<LayerManagerProps> = ({
             <div 
               key={layer.id}
               className={cn(
-                "layer-item border-b py-2 px-4 hover:bg-gray-50 transition-colors",
-                isSelected ? "bg-blue-50" : "",
+                "layer-item border-b border-border py-2 px-4 hover:bg-muted/40 transition-colors",
+                isSelected ? "bg-primary/10" : "",
                 isVisible ? "" : "opacity-60"
               )}
               onClick={(e) => handleLayerClick(e, layer.id)}
@@ -336,8 +336,8 @@ const LayerManager: React.FC<LayerManagerProps> = ({
                     style={{ backgroundColor: layer.color }}
                   />
                   <div className="flex items-center">
-                    <LayerTypeIcon type={layer.type} className="w-4 h-4 mr-1 text-gray-500" />
-                    <span className="text-sm font-medium">{layer.name}</span>
+                    <LayerTypeIcon type={layer.type} className="w-4 h-4 mr-1 text-foreground/70" />
+                    <span className="text-sm font-medium text-foreground">{layer.name}</span>
                   </div>
                 </div>
                 
@@ -354,9 +354,9 @@ const LayerManager: React.FC<LayerManagerProps> = ({
                           onClick={(e) => handleToggleVisibility(e, layer.id)}
                         >
                           {isVisible ? (
-                            <Eye size={14} className="text-gray-500" />
+                            <Eye size={14} className="text-foreground/70" />
                           ) : (
-                            <EyeOff size={14} className="text-gray-500" />
+                            <EyeOff size={14} className="text-foreground/70" />
                           )}
                         </Button>
                       </TooltipTrigger>
@@ -377,9 +377,9 @@ const LayerManager: React.FC<LayerManagerProps> = ({
                           onClick={(e) => handleToggleLock(e, layer.id)}
                         >
                           {isLocked ? (
-                            <Lock size={14} className="text-gray-500" />
+                            <Lock size={14} className="text-foreground/70" />
                           ) : (
-                            <Unlock size={14} className="text-gray-500" />
+                            <Unlock size={14} className="text-foreground/70" />
                           )}
                         </Button>
                       </TooltipTrigger>
@@ -398,7 +398,7 @@ const LayerManager: React.FC<LayerManagerProps> = ({
                         className="h-6 w-6"
                         disabled={isLocked}
                       >
-                        <Menu size={14} className="text-gray-500" />
+                        <Menu size={14} className="text-foreground/70" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-36">
@@ -447,7 +447,7 @@ const LayerManager: React.FC<LayerManagerProps> = ({
               {/* Previsualización de clips en esta capa */}
               {layerClips.length > 0 && (
                 <div className="layer-clips-preview mt-1 pl-6">
-                  <div className="text-xs text-gray-500 mb-1">
+                  <div className="text-xs text-foreground/60 mb-1">
                     {layerClips.length} {layerClips.length === 1 ? 'clip' : 'clips'}
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -465,7 +465,7 @@ const LayerManager: React.FC<LayerManagerProps> = ({
                       </div>
                     ))}
                     {layerClips.length > 3 && (
-                      <div className="text-xs text-gray-500 self-end">
+                      <div className="text-xs text-foreground/60 self-end">
                         +{layerClips.length - 3} más
                       </div>
                     )}
