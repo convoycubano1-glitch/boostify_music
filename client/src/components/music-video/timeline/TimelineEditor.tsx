@@ -87,6 +87,10 @@ export function TimelineEditor({
   const [beatsData, setBeatsData] = useState<BeatMap | undefined>(initialBeats);
   const [showLayerManager, setShowLayerManager] = useState<boolean>(false);
   
+  // Estado para gestión de capas
+  const [visibleLayers, setVisibleLayers] = useState<string[]>(['audio', 'video', 'text', 'effects']);
+  const [lockedLayers, setLockedLayers] = useState<string[]>([]);
+  
   // Reproducción de audio con visualización de forma de onda
   const { 
     waveformContainerRef, 
@@ -178,19 +182,38 @@ export function TimelineEditor({
   // Gestión de capas del timeline
   const {
     layers,
-    visibleLayers,
     addLayer,
     removeLayer,
     updateLayer,
-    toggleLayerVisibility,
-    toggleLayerLock,
-    getLayerById,
-    isLayerLocked
+    getLayerById
   } = useTimelineLayers({
     onLayerChange: (updatedLayers) => {
       console.log("Capas actualizadas:", updatedLayers);
     }
   });
+  
+  // Funciones para gestionar la visibilidad de capas
+  const toggleLayerVisibility = useCallback((layerId: string) => {
+    if (visibleLayers.includes(layerId)) {
+      setVisibleLayers(visibleLayers.filter(id => id !== layerId));
+    } else {
+      setVisibleLayers([...visibleLayers, layerId]);
+    }
+  }, [visibleLayers]);
+  
+  // Funciones para gestionar el bloqueo de capas
+  const toggleLayerLock = useCallback((layerId: string) => {
+    if (lockedLayers.includes(layerId)) {
+      setLockedLayers(lockedLayers.filter(id => id !== layerId));
+    } else {
+      setLockedLayers([...lockedLayers, layerId]);
+    }
+  }, [lockedLayers]);
+  
+  // Verificar si una capa está bloqueada
+  const isLayerLocked = useCallback((layerId: string) => {
+    return lockedLayers.includes(layerId);
+  }, [lockedLayers]);
   
   // Control de reproducción
   const togglePlayPause = useCallback(() => {
@@ -436,77 +459,248 @@ export function TimelineEditor({
             
             {/* Capas para diferentes tipos de clips */}
             <div className="mt-1 border-t border-gray-800">
-              {/* Capa de audio */}
+              {/* Capas predeterminadas */}
               <div className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1">
-                <div className="absolute left-2 top-0 text-xs font-medium text-muted-foreground">
-                  Audio
+                <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
+                  <span>Audio</span>
+                  <button 
+                    className="ml-2 rounded-full bg-blue-500/20 p-0.5 text-blue-500 hover:bg-blue-500/30"
+                    onClick={() => toggleLayerVisibility('audio')}
+                  >
+                    {isLayerLocked('audio') ? <Lock size={10} /> : (
+                      visibleLayers.includes('audio') ? <Eye size={10} /> : <EyeOff size={10} />
+                    )}
+                  </button>
                 </div>
                 <ClipsLayer
-                  clips={clips.filter(clip => clip.layer === LAYER_TYPES.AUDIO)}
+                  clips={clips.filter(clip => clip.layer === LayerType.AUDIO)}
                   selectedClip={selectedClip}
                   timeToPixels={timeToPixels}
                   onSelectClip={handleSelectClip}
-                  onResizeClip={handleResizeClip}
-                  onMoveClip={handleMoveClip}
+                  onResizeClip={isLayerLocked('audio') ? undefined : handleResizeClip}
+                  onMoveClip={isLayerLocked('audio') ? undefined : handleMoveClip}
                   onPreviewClip={handleOpenPreview}
                   height={40}
+                  disabled={!visibleLayers.includes('audio')}
                 />
               </div>
               
               {/* Capa de video/imagen */}
               <div className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1">
-                <div className="absolute left-2 top-0 text-xs font-medium text-muted-foreground">
-                  Video/Image
+                <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
+                  <span>Video/Image</span>
+                  <button 
+                    className="ml-2 rounded-full bg-purple-500/20 p-0.5 text-purple-500 hover:bg-purple-500/30"
+                    onClick={() => toggleLayerVisibility('video')}
+                  >
+                    {isLayerLocked('video') ? <Lock size={10} /> : (
+                      visibleLayers.includes('video') ? <Eye size={10} /> : <EyeOff size={10} />
+                    )}
+                  </button>
                 </div>
                 <ClipsLayer
-                  clips={clips.filter(clip => clip.layer === LAYER_TYPES.VIDEO)}
+                  clips={clips.filter(clip => clip.layer === LayerType.VIDEO)}
                   selectedClip={selectedClip}
                   timeToPixels={timeToPixels}
                   onSelectClip={handleSelectClip}
-                  onResizeClip={handleResizeClip}
-                  onMoveClip={handleMoveClip}
+                  onResizeClip={isLayerLocked('video') ? undefined : handleResizeClip}
+                  onMoveClip={isLayerLocked('video') ? undefined : handleMoveClip}
                   onPreviewClip={handleOpenPreview}
                   height={40}
+                  disabled={!visibleLayers.includes('video')}
                 />
               </div>
               
               {/* Capa de texto */}
               <div className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1">
-                <div className="absolute left-2 top-0 text-xs font-medium text-muted-foreground">
-                  Text
+                <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
+                  <span>Text</span>
+                  <button 
+                    className="ml-2 rounded-full bg-amber-500/20 p-0.5 text-amber-500 hover:bg-amber-500/30"
+                    onClick={() => toggleLayerVisibility('text')}
+                  >
+                    {isLayerLocked('text') ? <Lock size={10} /> : (
+                      visibleLayers.includes('text') ? <Eye size={10} /> : <EyeOff size={10} />
+                    )}
+                  </button>
                 </div>
                 <ClipsLayer
-                  clips={clips.filter(clip => clip.layer === LAYER_TYPES.TEXT)}
+                  clips={clips.filter(clip => clip.layer === LayerType.TEXT)}
                   selectedClip={selectedClip}
                   timeToPixels={timeToPixels}
                   onSelectClip={handleSelectClip}
-                  onResizeClip={handleResizeClip}
-                  onMoveClip={handleMoveClip}
+                  onResizeClip={isLayerLocked('text') ? undefined : handleResizeClip}
+                  onMoveClip={isLayerLocked('text') ? undefined : handleMoveClip}
                   onPreviewClip={handleOpenPreview}
                   height={40}
+                  disabled={!visibleLayers.includes('text')}
                 />
               </div>
               
               {/* Capa de efectos */}
               <div className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1">
-                <div className="absolute left-2 top-0 text-xs font-medium text-muted-foreground">
-                  Effects
+                <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
+                  <span>Effects</span>
+                  <button 
+                    className="ml-2 rounded-full bg-pink-500/20 p-0.5 text-pink-500 hover:bg-pink-500/30"
+                    onClick={() => toggleLayerVisibility('effects')}
+                  >
+                    {isLayerLocked('effects') ? <Lock size={10} /> : (
+                      visibleLayers.includes('effects') ? <Eye size={10} /> : <EyeOff size={10} />
+                    )}
+                  </button>
                 </div>
                 <ClipsLayer
-                  clips={clips.filter(clip => clip.layer === LAYER_TYPES.EFFECTS)}
+                  clips={clips.filter(clip => clip.layer === LayerType.EFFECTS)}
                   selectedClip={selectedClip}
                   timeToPixels={timeToPixels}
                   onSelectClip={handleSelectClip}
-                  onResizeClip={handleResizeClip}
-                  onMoveClip={handleMoveClip}
+                  onResizeClip={isLayerLocked('effects') ? undefined : handleResizeClip}
+                  onMoveClip={isLayerLocked('effects') ? undefined : handleMoveClip}
                   onPreviewClip={handleOpenPreview}
                   height={40}
+                  disabled={!visibleLayers.includes('effects')}
                 />
               </div>
+              
+              {/* Capas personalizadas */}
+              {layers.filter(layer => getLayerById(layer.id) && visibleLayers.includes(layer.id)).map(layer => (
+                <div 
+                  key={layer.id}
+                  className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1"
+                >
+                  <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
+                    <span>{layer.name}</span>
+                    <button 
+                      className="ml-2 rounded-full bg-indigo-500/20 p-0.5 text-indigo-500 hover:bg-indigo-500/30"
+                      onClick={() => toggleLayerVisibility(layer.id)}
+                    >
+                      {isLayerLocked(layer.id) ? <Lock size={10} /> : (
+                        visibleLayers.includes(layer.id) ? <Eye size={10} /> : <EyeOff size={10} />
+                      )}
+                    </button>
+                  </div>
+                  <ClipsLayer
+                    clips={clips.filter(clip => clip.layer === layer.id)}
+                    selectedClip={selectedClip}
+                    timeToPixels={timeToPixels}
+                    onSelectClip={handleSelectClip}
+                    onResizeClip={isLayerLocked(layer.id) ? undefined : handleResizeClip}
+                    onMoveClip={isLayerLocked(layer.id) ? undefined : handleMoveClip}
+                    onPreviewClip={handleOpenPreview}
+                    height={40}
+                    disabled={!visibleLayers.includes(layer.id)}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </ScrollArea>
       </CardContent>
+      
+      {/* Diálogo del administrador de capas */}
+      <Dialog open={showLayerManager} onOpenChange={setShowLayerManager}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Layer Manager</DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-4 space-y-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-medium">Timeline Layers</h3>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  // Añadir nueva capa
+                  const newLayer: LayerConfig = {
+                    id: `layer-${Date.now()}`,
+                    name: `Layer ${layers.length + 1}`,
+                    type: LayerType.VIDEO,
+                    visible: true,
+                    locked: false,
+                    index: layers.length
+                  };
+                  addLayer(newLayer);
+                }}
+              >
+                <Plus size={16} className="mr-1" /> Add Layer
+              </Button>
+            </div>
+            
+            <div className="max-h-80 overflow-y-auto space-y-2 pr-2">
+              {layers.length === 0 ? (
+                <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
+                  No custom layers added yet. Add a layer to get started.
+                </div>
+              ) : (
+                layers.map((layer) => (
+                  <div 
+                    key={layer.id} 
+                    className="flex items-center p-2 border rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{layer.name}</div>
+                      <div className="text-xs text-muted-foreground capitalize">{LayerType[layer.type]}</div>
+                    </div>
+                    
+                    <div className="flex space-x-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7"
+                        onClick={() => toggleLayerVisibility(layer.id)}
+                      >
+                        {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7"
+                        onClick={() => toggleLayerLock(layer.id)}
+                      >
+                        {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-red-500"
+                        onClick={() => removeLayer(layer.id)}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <div className="pt-4 border-t">
+              <h3 className="text-sm font-medium mb-2">Default Layers</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2 border rounded-md bg-muted/30">
+                  <div className="font-medium text-sm">Audio</div>
+                  <div className="text-xs text-muted-foreground">Base layer for audio clips</div>
+                </div>
+                <div className="p-2 border rounded-md bg-muted/30">
+                  <div className="font-medium text-sm">Video/Image</div>
+                  <div className="text-xs text-muted-foreground">Base layer for visual media</div>
+                </div>
+                <div className="p-2 border rounded-md bg-muted/30">
+                  <div className="font-medium text-sm">Text</div>
+                  <div className="text-xs text-muted-foreground">Titles and captions</div>
+                </div>
+                <div className="p-2 border rounded-md bg-muted/30">
+                  <div className="font-medium text-sm">Effects</div>
+                  <div className="text-xs text-muted-foreground">Visual effects and overlays</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       {/* Diálogo de previsualización de imágenes/clips */}
       <Dialog open={!!selectedImagePreview} onOpenChange={(open) => !open && handleClosePreview()}>
