@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   SubscriptionPlan, 
@@ -7,7 +7,7 @@ import {
   PLAN_HIERARCHY,
   canAccessFeature
 } from '../api/subscription-service';
-import { useAuth } from './auth-context';
+import { useAuth } from '../../hooks/use-auth';
 
 /**
  * Interface for the simplified user in the subscription context

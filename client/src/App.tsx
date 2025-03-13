@@ -398,8 +398,8 @@ const App = () => {
           <AuthProvider>
             <SubscriptionProvider>
               <EditorProvider>
-                <Router />
                 <Toaster />
+                <Router />
               </EditorProvider>
             </SubscriptionProvider>
           </AuthProvider>
