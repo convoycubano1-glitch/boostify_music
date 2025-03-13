@@ -378,6 +378,31 @@ function useTimelineLayers(
     return layers.filter(layer => layer.type === type);
   }, [layers]);
 
+  /**
+   * Verificar si se puede añadir un clip a una capa específica
+   * @param layerId ID de la capa
+   * @param clips Array de clips existentes
+   * @returns Verdadero si es posible añadir un clip a esta capa
+   */
+  const canAddClipToLayer = useCallback((layerId: number, clips: any[]) => {
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer) return false;
+    
+    // No se pueden añadir clips a capas bloqueadas
+    if (lockedLayers[layerId]) return false;
+    
+    // Verificar restricciones específicas por tipo de capa
+    // Por ejemplo, algunas capas como audio podrían tener restricciones adicionales
+    if (layer.type === LayerType.AUDIO) {
+      // Verificar si ya hay clips en esta capa
+      const layerClips = clips.filter(clip => clip.layer === layerId);
+      // Máximo 1 clip para la capa de audio
+      if (layerClips.length >= 1) return false;
+    }
+    
+    return true;
+  }, [layers, lockedLayers]);
+
   return {
     layers,
     visibleLayers,
@@ -392,7 +417,8 @@ function useTimelineLayers(
     updateLayer,
     resetLayers,
     isIsolatedLayer,
-    getLayersByType
+    getLayersByType,
+    canAddClipToLayer
   };
 }
 

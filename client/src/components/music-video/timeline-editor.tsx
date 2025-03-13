@@ -145,8 +145,12 @@ export function TimelineEditor({
     toggleLayerVisibility,
     toggleLayerLock,
     selectLayer,
+    getLayersByType,
     canAddClipToLayer
-  } = useTimelineLayers(clips);
+  } = useTimelineLayers([], { 
+    createDefaultLayers: true, 
+    isolatedLayerTypes: [LayerType.AUDIO]
+  });
 
   // Validar cambios en los clips iniciales
   useEffect(() => {

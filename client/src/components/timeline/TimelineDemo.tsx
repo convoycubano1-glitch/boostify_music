@@ -188,7 +188,7 @@ const TimelineDemo: React.FC<TimelineDemoProps> = ({
     };
     
     // Validar operación
-    const validationResult = validateClipOperation(newClip, clips, 'add');
+    const validationResult = validateClipOperation(newClip, clips, ClipOperation.ADD);
     if (!validationResult.isValid) {
       toast({
         title: 'Error al añadir clip',
@@ -228,7 +228,7 @@ const TimelineDemo: React.FC<TimelineDemoProps> = ({
     if (!clip) return;
     
     // Validar operación
-    const validationResult = validateClipOperation(clip, clips, 'delete');
+    const validationResult = validateClipOperation(clip, clips, ClipOperation.DELETE);
     if (!validationResult.isValid) {
       toast({
         title: 'Error al eliminar clip',
@@ -272,7 +272,7 @@ const TimelineDemo: React.FC<TimelineDemoProps> = ({
     };
     
     // Validar operación
-    const validationResult = validateClipOperation(newClip, clips, 'add');
+    const validationResult = validateClipOperation(newClip, clips, ClipOperation.ADD);
     if (!validationResult.isValid) {
       toast({
         title: 'Error al duplicar clip',
@@ -300,7 +300,7 @@ const TimelineDemo: React.FC<TimelineDemoProps> = ({
     if (!clip) return;
     
     // Validar operación
-    const validationResult = validateClipOperation(clip, clips, 'split');
+    const validationResult = validateClipOperation(clip, clips, ClipOperation.SPLIT);
     if (!validationResult.isValid) {
       toast({
         title: 'Error al dividir clip',
@@ -420,7 +420,7 @@ const TimelineDemo: React.FC<TimelineDemoProps> = ({
       const validationResult = validateClipOperation(
         updatedClip, 
         clips.filter(c => c.id !== draggingClipId),
-        'move'
+        ClipOperation.MOVE
       );
       
       if (validationResult.isValid) {
@@ -466,7 +466,7 @@ const TimelineDemo: React.FC<TimelineDemoProps> = ({
       
       // Validar operación
       const updatedClip = { ...clip, start: newStart, duration: newDuration };
-      const resizeOp = resizeHandle === 'start' ? 'resize_start' : 'resize_end';
+      const resizeOp = resizeHandle === 'start' ? ClipOperation.RESIZE_START : ClipOperation.RESIZE_END;
       const validationResult = validateClipOperation(
         updatedClip, 
         clips.filter(c => c.id !== resizingClipId),
@@ -622,6 +622,7 @@ const TimelineDemo: React.FC<TimelineDemoProps> = ({
           <div className="flex-1 overflow-y-auto">
             <LayerManager
               layers={layers}
+              clips={clips}
               visibleLayers={visibleLayers}
               lockedLayers={lockedLayers}
               selectedLayerId={selectedLayerId}
