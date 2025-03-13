@@ -1,4 +1,4 @@
-// This file is used to tell TypeScript that .tsx files can use JSX
+// Este archivo configura el soporte completo de JSX para TypeScript
 import React from 'react';
 
 declare global {
@@ -6,5 +6,19 @@ declare global {
     interface IntrinsicElements {
       [elemName: string]: any;
     }
+    
+    // Definiciones para elementos HTML estándar
+    interface Element extends React.ReactElement<any, any> {}
+    
+    // Definición de fragmentos
+    interface ElementChildrenAttribute {
+      children: {};
+    }
+    
+    // Atributos de componentes
+    interface IntrinsicAttributes extends React.Attributes {}
+    
+    // Atributos para elementos DOM
+    interface IntrinsicClassAttributes<T> extends React.ClassAttributes<T> {}
   }
 }

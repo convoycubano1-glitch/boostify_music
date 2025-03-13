@@ -568,12 +568,20 @@ export function TimelineEditor({
               move: (event) => {
                 if (!isDragging || selectedClip === null) return;
                 
+                const selectedClipObj = clips.find(c => c.id === selectedClip);
+                if (!selectedClipObj) return;
+                
+                // Si el clip pertenece a una capa aislada, no permitir moverlo
+                if (selectedClipObj.isIsolated) {
+                  console.log("No se puede mover un clip en capa aislada");
+                  return;
+                }
+                
                 const deltaPixels = event.dx;
                 const deltaTime = pixelsToTime(deltaPixels);
                 const newStartTime = Math.max(0, clipStartTime + deltaTime);
                 
                 // Asegurar que los clips no se superpongan inadecuadamente
-                const selectedClipObj = clips.find(c => c.id === selectedClip);
                 if (selectedClipObj) {
                   // Buscar el clip anterior y asegurar que no haya solapamiento
                   const previousClips = clips
@@ -631,8 +639,19 @@ export function TimelineEditor({
                 const clip = clips.find((c) => c.id === selectedClip);
                 if (!clip) return;
                 
-                // Máxima duración permitida para un clip (5 segundos)
-                const MAX_CLIP_DURATION = 5.0;
+                // Si es una capa aislada, no permitir modificaciones (por ejemplo, la capa de audio)
+                if (clip.isIsolated) {
+                  console.log("No se puede modificar un clip aislado");
+                  return;
+                }
+                
+                // Determinar la duración máxima permitida para el clip
+                // Por defecto 5 segundos, pero respeta la configuración individual del clip si existe
+                const MAX_CLIP_DURATION = clip.maxDuration || 5.0;
+                
+                // Si es un placeholder de AI generado, siempre limitar a 5 segundos máximo
+                const isAIPlaceholder = clip.placeholderType !== undefined;
+                const effectiveMaxDuration = isAIPlaceholder ? Math.min(MAX_CLIP_DURATION, 5.0) : MAX_CLIP_DURATION;
                 
                 if (resizingSide === 'start') {
                   // Redimensionar desde el inicio
@@ -644,10 +663,10 @@ export function TimelineEditor({
                   let newDuration = clip.duration + (clip.start - newStart);
                   
                   // Si excede el límite, ajustar el tiempo de inicio para mantener la duración máxima
-                  if (newDuration > MAX_CLIP_DURATION) {
+                  if (newDuration > effectiveMaxDuration) {
                     // Calcular nuevo tiempo de inicio para respetar el límite
-                    const adjustedStart = (clip.start + clip.duration) - MAX_CLIP_DURATION;
-                    newDuration = MAX_CLIP_DURATION;
+                    const adjustedStart = (clip.start + clip.duration) - effectiveMaxDuration;
+                    newDuration = effectiveMaxDuration;
                     
                     onClipUpdate(selectedClip, {
                       start: Math.max(0, adjustedStart),
@@ -667,7 +686,7 @@ export function TimelineEditor({
                   
                   // Calcular nueva duración respetando el límite máximo
                   const newDuration = Math.min(
-                    MAX_CLIP_DURATION,
+                    effectiveMaxDuration,
                     Math.max(0.5, clip.duration + deltaTime)
                   );
                   
