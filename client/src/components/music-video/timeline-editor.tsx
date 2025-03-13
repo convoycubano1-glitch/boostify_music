@@ -258,7 +258,7 @@ export function TimelineEditor({
     
     // Manejar eventos de video
     const handleVideoCanPlay = () => {
-      console.log("Video listo para reproducción");
+      console.log("Video de referencia listo para reproducción");
       setPreviewLoaded(true);
     };
     
@@ -279,8 +279,27 @@ export function TimelineEditor({
           console.error("Error al iniciar reproducción de video:", error);
         });
       }
+      
+      // Sincronizar todos los elementos de video en el documento
+      document.querySelectorAll('video').forEach(video => {
+        if (video !== videoElement) { // Evitar el video de referencia
+          const videoPlayPromise = video.play();
+          if (videoPlayPromise !== undefined) {
+            videoPlayPromise.catch(error => {
+              console.error("Error al iniciar reproducción de vista previa:", error);
+            });
+          }
+        }
+      });
     } else {
       videoElement.pause();
+      
+      // Pausar todos los elementos de video en el documento
+      document.querySelectorAll('video').forEach(video => {
+        if (video !== videoElement) { // Evitar el video de referencia
+          video.pause();
+        }
+      });
     }
     
     // Limpiar manejadores al desmontar
@@ -621,7 +640,7 @@ export function TimelineEditor({
         onError={(e) => console.error("Error en elemento de audio:", e)}
       />
       
-      {/* Video player para vista previa */}
+      {/* Video player para vista previa (versión oculta para referencia) */}
       {videoUrl && (
         <video 
           ref={videoRef}
@@ -630,13 +649,7 @@ export function TimelineEditor({
           playsInline // Necesario para iOS
           muted={isMuted}
           loop={false}
-          className={cn(
-            "video-preview absolute top-0 right-0 z-20 rounded border border-border shadow-md", 
-            "w-40 md:w-64 lg:w-80 aspect-video object-cover",
-            "transition-all duration-200",
-            !showPreview && "opacity-0 pointer-events-none",
-            !previewLoaded && "hidden"
-          )}
+          className="hidden" // Oculto ya que usaremos una versión más grande en el panel principal
           onCanPlay={() => console.log("Video listo para reproducción")}
           onError={(e) => console.error("Error en elemento de video:", e)}
         />
@@ -796,6 +809,64 @@ export function TimelineEditor({
         
         {/* Panel principal de timeline - se adapta mejor en móvil */}
         <div className="timeline-panel flex-1 overflow-hidden">
+          {/* Panel de Vista Previa de Video */}
+          {videoUrl && showPreview && (
+            <div className={cn(
+              "video-preview-panel border-b border-border relative overflow-hidden bg-black/90",
+              "w-full h-auto max-h-[300px] md:max-h-[400px] transition-all duration-300",
+              !previewLoaded && "h-0 max-h-0"
+            )}>
+              <div className="relative w-full aspect-video max-w-3xl mx-auto">
+                {/* Capa de Video */}
+                <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
+                  {/* Muestra el video del videoRef usando un canvas sincronizado */}
+                  <video 
+                    src={videoUrl}
+                    preload="auto"
+                    playsInline
+                    muted={isMuted}
+                    loop={false}
+                    className={cn(
+                      "h-auto max-h-full max-w-full object-contain",
+                      !previewLoaded && "opacity-0"
+                    )}
+                    onClick={togglePlay}
+                    style={{ width: "100%" }}
+                    onCanPlay={(e) => {
+                      console.log("Video preview listo para reproducción");
+                      if (videoRef.current) {
+                        // Sincronizar el tiempo con el video de referencia
+                        e.currentTarget.currentTime = videoRef.current.currentTime;
+                      }
+                      setPreviewLoaded(true);
+                    }}
+                  />
+                  
+                  {/* Overlay para indicadores */}
+                  <div className={cn(
+                    "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
+                    "bg-black/30 pointer-events-none",
+                    isPlaying ? "opacity-0" : "opacity-100"
+                  )}>
+                    {!isPlaying && (
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-background/80 flex items-center justify-center">
+                        <Play className="h-8 w-8 md:h-10 md:w-10 text-primary" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Indicador de tiempo de reproducción */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted">
+                  <div 
+                    className="h-full bg-primary"
+                    style={{ width: `${(currentTime / duration) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Regla temporal mejorada para táctil */}
           <div className="time-ruler h-8 md:h-10 border-b border-border relative bg-muted/20 overflow-hidden">
             <div 
