@@ -156,5 +156,8 @@ export enum ClipOperation {
   NONE = 'none',
   MOVE = 'move',
   RESIZE_START = 'resize_start',
-  RESIZE_END = 'resize_end'
+  RESIZE_END = 'resize_end',
+  SPLIT = 'split',
+  DUPLICATE = 'duplicate',
+  CUT = 'cut'
 }
