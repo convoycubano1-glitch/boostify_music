@@ -1,236 +1,280 @@
-import { useState, useCallback } from 'react';
-import { TimelineClip } from '../../components/music-video/timeline/TimelineEditor';
-import {
-  MIN_CLIP_DURATION,
-  MAX_CLIP_DURATION,
-  SNAP_THRESHOLD,
-  ClipOperation
-} from '../../constants/timeline-constants';
+import { useState, useCallback, useRef } from 'react';
+import { ClipType, LayerType, MAX_CLIP_DURATION, ERROR_MESSAGES } from '../../constants/timeline-constants';
+import { TimelineClip } from './useClipOperations';
 
-interface UseClipInteractionsProps {
-  clips: TimelineClip[];
-  setClips: React.Dispatch<React.SetStateAction<TimelineClip[]>>;
-  selectedClip: number | null;
-  setSelectedClip: React.Dispatch<React.SetStateAction<number | null>>;
-  onClipsChange?: (clips: TimelineClip[]) => void;
+// Define constantes para la interacción
+const SNAP_THRESHOLD = 0.2; // En segundos
+const MIN_CLIP_DURATION = 0.3; // Duración mínima en segundos
+
+export enum ClipOperation {
+  NONE = 'none',
+  MOVE = 'move',
+  RESIZE_START = 'resize_start',
+  RESIZE_END = 'resize_end'
 }
 
-interface UseClipInteractionsResult {
-  handleAddClip: (clipParams: Partial<TimelineClip>) => void;
-  handleSelectClip: (clipId: number) => void;
-  handleDeleteClip: (clipId: number) => void;
-  handleMoveClip: (clipId: number, newStart: number) => void;
-  handleResizeClip: (clipId: number, newDuration: number) => void;
-  handleClipOperation: (operation: ClipOperation, clipId?: number, data?: any) => void;
+interface ClipInteractionOptions {
+  pixelsPerSecond: number;
+  onClipUpdate?: (clipId: string, updates: Partial<TimelineClip>) => void;
+  onClipMoved?: (clipId: string, layerId: string, startTime: number) => void;
+  onClipResized?: (clipId: string, newDuration: number) => void;
+  snapToBeat?: boolean;
+  snapToOtherClips?: boolean;
+  beatPositions?: number[];
+  checkClipOverlap?: (layerId: string, startTime: number, duration: number, excludeClipId?: string) => boolean;
 }
 
 /**
- * Hook para gestionar interacciones con clips (selección, movimiento, redimensionado, etc.)
+ * Hook para manejar las interacciones con clips en el timeline
+ * Gestiona operaciones como arrastrar, redimensionar y soltar
  */
 export function useClipInteractions({
-  clips,
-  setClips,
-  selectedClip,
-  setSelectedClip,
-  onClipsChange
-}: UseClipInteractionsProps): UseClipInteractionsResult {
-  // Estado para guardar clips en el portapapeles
-  const [clipboardClip, setClipboardClip] = useState<TimelineClip | null>(null);
+  pixelsPerSecond,
+  onClipUpdate,
+  onClipMoved,
+  onClipResized,
+  snapToBeat = true,
+  snapToOtherClips = true,
+  beatPositions = [],
+  checkClipOverlap
+}: ClipInteractionOptions) {
+  // Estado para la operación actual
+  const [activeOperation, setActiveOperation] = useState<ClipOperation>(ClipOperation.NONE);
+  const [activeClipId, setActiveClipId] = useState<string | null>(null);
+  const [dragStartX, setDragStartX] = useState<number>(0);
+  const [originalClipState, setOriginalClipState] = useState<Partial<TimelineClip> | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   
-  // Seleccionar un clip
-  const handleSelectClip = useCallback((clipId: number) => {
-    setSelectedClip(clipId);
-  }, [setSelectedClip]);
+  // Referencias para datos intermedios
+  const lastPositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   
-  // Agregar un nuevo clip
-  const handleAddClip = useCallback((clipParams: Partial<TimelineClip>) => {
-    const newClipId = Math.max(0, ...clips.map(clip => clip.id)) + 1;
+  // Iniciar operación de arrastrar
+  const startDrag = useCallback((
+    clipId: string, 
+    operation: ClipOperation, 
+    clientX: number, 
+    clipData: Partial<TimelineClip>
+  ) => {
+    setActiveClipId(clipId);
+    setActiveOperation(operation);
+    setDragStartX(clientX);
+    setOriginalClipState(clipData);
+    setIsDragging(true);
     
-    const newClip: TimelineClip = {
-      id: newClipId,
-      type: clipParams.type || 'video',
-      start: clipParams.start || 0,
-      duration: clipParams.duration || 1,
-      layer: clipParams.layer || 0,
-      name: clipParams.name || `Clip ${newClipId}`,
-      url: clipParams.url,
-      content: clipParams.content
-    };
+    lastPositionRef.current = { x: clientX, y: 0 };
     
-    setClips(prevClips => {
-      const updatedClips = [...prevClips, newClip];
-      onClipsChange?.(updatedClips);
-      return updatedClips;
-    });
-    
-    setSelectedClip(newClipId);
-  }, [clips, setClips, setSelectedClip, onClipsChange]);
+    // Añadir listeners globales para poder mover fuera del clip
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
   
-  // Eliminar un clip
-  const handleDeleteClip = useCallback((clipId: number) => {
-    setClips(prevClips => {
-      const updatedClips = prevClips.filter(clip => clip.id !== clipId);
-      onClipsChange?.(updatedClips);
-      return updatedClips;
-    });
+  // Convertir pixels a segundos basado en el zoom
+  const pixelsToSeconds = useCallback((pixels: number) => {
+    return pixels / pixelsPerSecond;
+  }, [pixelsPerSecond]);
+  
+  // Snap to beat o a otros clips
+  const getSnappedTime = useCallback((time: number): number => {
+    if (!snapToBeat && !snapToOtherClips) return time;
     
-    if (selectedClip === clipId) {
-      setSelectedClip(null);
+    // Redondear a 2 decimales para evitar errores de precisión
+    time = Math.round(time * 100) / 100;
+    
+    // Snap a beat si está activado
+    if (snapToBeat && beatPositions.length > 0) {
+      for (const beatTime of beatPositions) {
+        if (Math.abs(time - beatTime) < SNAP_THRESHOLD) {
+          return beatTime;
+        }
+      }
     }
-  }, [setClips, selectedClip, setSelectedClip, onClipsChange]);
-  
-  // Mover un clip a una nueva posición
-  const handleMoveClip = useCallback((clipId: number, newStart: number) => {
-    // Asegurar que el tiempo de inicio sea no negativo
-    const validNewStart = Math.max(0, newStart);
     
-    setClips(prevClips => {
-      const clipIndex = prevClips.findIndex(clip => clip.id === clipId);
-      
-      if (clipIndex === -1) return prevClips;
-      
-      const targetClip = { ...prevClips[clipIndex] };
-      
-      // Comprobar si hay snap a otros clips
-      let snappedStart = validNewStart;
-      
-      // Comprobar snap a otros clips (inicio y fin)
-      prevClips.forEach(otherClip => {
-        if (otherClip.id !== clipId && otherClip.layer === targetClip.layer) {
-          // Snap al inicio de otro clip
-          if (Math.abs(validNewStart - otherClip.start) < SNAP_THRESHOLD) {
-            snappedStart = otherClip.start;
-          }
-          
-          // Snap al final de otro clip
-          const otherClipEnd = otherClip.start + otherClip.duration;
-          if (Math.abs(validNewStart - otherClipEnd) < SNAP_THRESHOLD) {
-            snappedStart = otherClipEnd;
-          }
-        }
-      });
-      
-      // Actualizar clip
-      const updatedClip = {
-        ...targetClip,
-        start: snappedStart
-      };
-      
-      const updatedClips = [
-        ...prevClips.slice(0, clipIndex),
-        updatedClip,
-        ...prevClips.slice(clipIndex + 1)
-      ];
-      
-      onClipsChange?.(updatedClips);
-      return updatedClips;
-    });
-  }, [setClips, onClipsChange]);
-  
-  // Cambiar la duración de un clip
-  const handleResizeClip = useCallback((clipId: number, newDuration: number) => {
-    // Limitar la duración al rango válido
-    const validNewDuration = Math.max(
-      MIN_CLIP_DURATION,
-      Math.min(MAX_CLIP_DURATION, newDuration)
-    );
+    // En el futuro podríamos implementar snap a otros clips
     
-    setClips(prevClips => {
-      const clipIndex = prevClips.findIndex(clip => clip.id === clipId);
-      
-      if (clipIndex === -1) return prevClips;
-      
-      const targetClip = { ...prevClips[clipIndex] };
-      
-      // Comprobar snap a otros clips
-      let snappedDuration = validNewDuration;
-      const clipEnd = targetClip.start + validNewDuration;
-      
-      // Comprobar snap al inicio de otros clips
-      prevClips.forEach(otherClip => {
-        if (otherClip.id !== clipId && otherClip.layer === targetClip.layer) {
-          // Snap al inicio de otro clip
-          if (Math.abs(clipEnd - otherClip.start) < SNAP_THRESHOLD) {
-            snappedDuration = otherClip.start - targetClip.start;
-          }
-        }
-      });
-      
-      // Actualizar clip
-      const updatedClip = {
-        ...targetClip,
-        duration: snappedDuration
-      };
-      
-      const updatedClips = [
-        ...prevClips.slice(0, clipIndex),
-        updatedClip,
-        ...prevClips.slice(clipIndex + 1)
-      ];
-      
-      onClipsChange?.(updatedClips);
-      return updatedClips;
-    });
-  }, [setClips, onClipsChange]);
+    return time;
+  }, [snapToBeat, snapToOtherClips, beatPositions]);
   
-  // Operaciones genéricas sobre clips (copiar, pegar, etc.)
-  const handleClipOperation = useCallback((operation: ClipOperation, clipId?: number, data?: any) => {
-    switch (operation) {
-      case ClipOperation.COPY:
-        if (clipId) {
-          const clipToCopy = clips.find(clip => clip.id === clipId);
-          if (clipToCopy) {
-            setClipboardClip({ ...clipToCopy });
-          }
+  // Manejar movimiento del mouse durante una operación
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!activeClipId || !originalClipState || activeOperation === ClipOperation.NONE) return;
+    
+    const deltaX = e.clientX - dragStartX;
+    const timeDelta = pixelsToSeconds(deltaX);
+    
+    // Actualizar la posición actual
+    lastPositionRef.current = { x: e.clientX, y: e.clientY };
+    
+    switch (activeOperation) {
+      case ClipOperation.MOVE: {
+        if (!originalClipState.startTime) return;
+        
+        // Calcular nueva posición con snap
+        let newStartTime = originalClipState.startTime + timeDelta;
+        newStartTime = Math.max(0, newStartTime); // No permitir valores negativos
+        newStartTime = getSnappedTime(newStartTime);
+        
+        // Si onClipUpdate está disponible, usarlo para actualizar el clip
+        if (onClipUpdate) {
+          onClipUpdate(activeClipId, { startTime: newStartTime });
         }
         break;
+      }
+      
+      case ClipOperation.RESIZE_START: {
+        if (!originalClipState.startTime || !originalClipState.duration) return;
         
-      case ClipOperation.PASTE:
-        if (clipboardClip && data?.start !== undefined) {
-          const newClipId = Math.max(0, ...clips.map(clip => clip.id)) + 1;
-          
-          const newClip: TimelineClip = {
-            ...clipboardClip,
-            id: newClipId,
-            start: data.start
-          };
-          
-          setClips(prevClips => {
-            const updatedClips = [...prevClips, newClip];
-            onClipsChange?.(updatedClips);
-            return updatedClips;
+        // Calcular nuevo tiempo de inicio y duración
+        let deltaStart = Math.min(timeDelta, originalClipState.duration - MIN_CLIP_DURATION);
+        let newStartTime = originalClipState.startTime + deltaStart;
+        newStartTime = Math.max(0, newStartTime);
+        newStartTime = getSnappedTime(newStartTime);
+        
+        // Recalcular delta después del snap
+        deltaStart = newStartTime - originalClipState.startTime;
+        
+        // Ajustar la duración para mantener el final fijo
+        const newDuration = Math.max(
+          MIN_CLIP_DURATION,
+          originalClipState.duration - deltaStart
+        );
+        
+        // Actualizar clip
+        if (onClipUpdate) {
+          onClipUpdate(activeClipId, { 
+            startTime: newStartTime,
+            duration: newDuration 
           });
+        }
+        break;
+      }
+      
+      case ClipOperation.RESIZE_END: {
+        if (!originalClipState.duration) return;
+        
+        // Calcular nueva duración con límites
+        let newDuration = Math.max(
+          MIN_CLIP_DURATION,
+          originalClipState.duration + timeDelta
+        );
+        
+        // Aplicar límite máximo
+        newDuration = Math.min(newDuration, MAX_CLIP_DURATION);
+        
+        // Hacer snap del final del clip
+        if (originalClipState.startTime) {
+          const endTime = originalClipState.startTime + newDuration;
+          const snappedEndTime = getSnappedTime(endTime);
+          newDuration = snappedEndTime - originalClipState.startTime;
           
-          setSelectedClip(newClipId);
+          // Asegurar que se mantiene la duración mínima
+          newDuration = Math.max(MIN_CLIP_DURATION, newDuration);
+        }
+        
+        // Actualizar clip
+        if (onClipUpdate) {
+          onClipUpdate(activeClipId, { duration: newDuration });
         }
         break;
-        
-      case ClipOperation.DELETE:
-        if (clipId) {
-          handleDeleteClip(clipId);
-        }
-        break;
-        
-      case ClipOperation.SELECT:
-        if (clipId !== undefined) {
-          setSelectedClip(clipId);
-        } else {
-          setSelectedClip(null);
-        }
-        break;
-        
-      default:
-        console.warn(`Operación no soportada: ${operation}`);
-        break;
+      }
     }
-  }, [clips, clipboardClip, setClips, setSelectedClip, handleDeleteClip, onClipsChange]);
+  }, [
+    activeClipId, 
+    originalClipState, 
+    activeOperation, 
+    dragStartX, 
+    onClipUpdate, 
+    pixelsToSeconds, 
+    getSnappedTime
+  ]);
+  
+  // Finalizar operación de arrastrar
+  const handleMouseUp = useCallback(() => {
+    // Limpiar listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    
+    // Finalizar la operación
+    if (activeClipId && originalClipState) {
+      switch (activeOperation) {
+        case ClipOperation.MOVE:
+          if (onClipMoved && originalClipState.startTime && originalClipState.layerId) {
+            const updatedStartTime = lastPositionRef.current.x !== dragStartX
+              ? getSnappedTime(originalClipState.startTime + pixelsToSeconds(lastPositionRef.current.x - dragStartX))
+              : originalClipState.startTime;
+            
+            onClipMoved(activeClipId, originalClipState.layerId, updatedStartTime);
+          }
+          break;
+          
+        case ClipOperation.RESIZE_START:
+        case ClipOperation.RESIZE_END:
+          if (onClipResized && originalClipState.duration) {
+            let updatedDuration = originalClipState.duration;
+            
+            if (activeOperation === ClipOperation.RESIZE_START && originalClipState.startTime) {
+              // Para redimensionar por el inicio, calculamos la nueva duración
+              const deltaStart = pixelsToSeconds(lastPositionRef.current.x - dragStartX);
+              updatedDuration = Math.max(MIN_CLIP_DURATION, originalClipState.duration - deltaStart);
+            } else if (activeOperation === ClipOperation.RESIZE_END) {
+              // Para redimensionar por el final, simplemente ajustamos la duración
+              const deltaEnd = pixelsToSeconds(lastPositionRef.current.x - dragStartX);
+              updatedDuration = Math.max(MIN_CLIP_DURATION, originalClipState.duration + deltaEnd);
+              updatedDuration = Math.min(updatedDuration, MAX_CLIP_DURATION);
+            }
+            
+            onClipResized(activeClipId, updatedDuration);
+          }
+          break;
+      }
+    }
+    
+    // Resetear estado
+    setActiveClipId(null);
+    setActiveOperation(ClipOperation.NONE);
+    setOriginalClipState(null);
+    setIsDragging(false);
+  }, [
+    activeClipId, 
+    activeOperation, 
+    originalClipState, 
+    dragStartX, 
+    onClipMoved, 
+    onClipResized,
+    pixelsToSeconds,
+    getSnappedTime
+  ]);
+  
+  // Método para cancelar una operación en curso
+  const cancelOperation = useCallback(() => {
+    // Restaurar el estado original del clip si se proporcionó un callback
+    if (activeClipId && originalClipState && onClipUpdate) {
+      onClipUpdate(activeClipId, originalClipState);
+    }
+    
+    // Limpiar listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    
+    // Resetear estado
+    setActiveClipId(null);
+    setActiveOperation(ClipOperation.NONE);
+    setOriginalClipState(null);
+    setIsDragging(false);
+  }, [activeClipId, originalClipState, onClipUpdate, handleMouseMove, handleMouseUp]);
+  
+  // Al desmontar, asegurarse de limpiar los listeners
+  useCallback(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
   
   return {
-    handleAddClip,
-    handleSelectClip,
-    handleDeleteClip,
-    handleMoveClip,
-    handleResizeClip,
-    handleClipOperation
+    startDrag,
+    cancelOperation,
+    activeClipId,
+    activeOperation,
+    isDragging
   };
 }
