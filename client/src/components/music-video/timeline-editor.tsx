@@ -11,8 +11,8 @@ import {
   Scissors, ArrowLeftRight, Film, Wand2, Layers, Plus, 
   CornerUpLeft, CornerUpRight, ArrowUpDown, Sparkles,
   ArrowRight, Sunset, MoveHorizontal, ArrowRight as ArrowRightIcon,
-  Text, Type, BringToFront, SendToBack, Lock, AudioLines,
-  LineChart, BarChart4
+  Text, Type, BringToFront, SendToBack, Lock, Unlock, AudioLines,
+  LineChart, BarChart4, Eye, EyeOff
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "../../lib/utils";
@@ -1665,7 +1665,7 @@ export function TimelineEditor({
               
               {/* Regiones para visualizar clips */}
               <div className="absolute top-0 left-0 right-0 h-20 z-10 pointer-events-none">
-                {clips.map((clip) => (
+                {clips.filter(clip => visibleLayers.includes(clip.layer)).map((clip) => (
                   <div
                     key={`region-${clip.id}`}
                     className={cn(
@@ -1793,7 +1793,7 @@ export function TimelineEditor({
             {/* Clips de la línea de tiempo */}
             <div className="mt-36">
               <AnimatePresence>
-                {clips.map((clip) => (
+                {clips.filter(clip => visibleLayers.includes(clip.layer)).map((clip) => (
                   <motion.div
                     key={clip.id}
                     layout
