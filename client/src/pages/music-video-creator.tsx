@@ -130,7 +130,7 @@ const ContentSection = ({ activeTab, setActiveTab }: ContentSectionProps) => (
           <Bot className="h-4 w-4 mr-1 sm:mr-2" />
           <span className="whitespace-nowrap">AI Video Creation</span>
         </Button>
-        <Link href="/professional-editor">
+        <Link href="/music-video-editor">
           <Button
             variant={activeTab === 'editor' ? 'default' : 'outline'}
             className="w-full sm:w-auto min-h-[40px] sm:min-h-[44px] text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4"
