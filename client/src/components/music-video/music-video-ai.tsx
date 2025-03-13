@@ -3251,6 +3251,7 @@ ${transcription}`;
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                     isPlaying={isPlaying}
+                    initialBeats={beatsJsonData ? JSON.parse(beatsJsonData) : undefined}
                     onRegenerateImage={(clipId) => {
                       const item = timelineItems.find(item => item.id === clipId);
                       if (item) {
