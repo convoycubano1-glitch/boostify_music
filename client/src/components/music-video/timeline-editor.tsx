@@ -63,6 +63,7 @@ interface TimelineEditorProps {
   clips?: TimelineClip[];
   beatMap?: BeatMap;
   audioUrl?: string;
+  videoUrl?: string; // URL para vista previa de vídeo
   duration?: number;
   className?: string;
   onClipsChange?: (clips: TimelineClip[]) => void;
@@ -127,7 +128,12 @@ export function TimelineEditor({
   // Referencias a elementos DOM
   const timelineRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const animationFrameRef = useRef<number>(0);
+  
+  // Estado para preview de video
+  const [showPreview, setShowPreview] = useState<boolean>(true);
+  const [previewLoaded, setPreviewLoaded] = useState<boolean>(false);
   
   // Hooks personalizados
   const { toast } = useToast();
@@ -158,18 +164,39 @@ export function TimelineEditor({
     setNextClipId(Math.max(...initialClips.map(c => c.id), 0) + 1);
   }, [JSON.stringify(initialClips)]);
 
-  // Gestionar reproducción de audio
+  // Gestionar reproducción de audio - mejorado para dispositivos móviles
   useEffect(() => {
     if (audioRef.current) {
+      // Establecer volumen sin importar el estado de reproducción
       audioRef.current.volume = isMuted ? 0 : volume;
       
       if (isPlaying) {
-        audioRef.current.play()
-          .catch(error => {
-            console.error("Error al iniciar reproducción:", error);
-            setIsPlaying(false);
-          });
+        // Solución para reproducción en móviles: necesitamos manejar la Promise correctamente
+        const playPromise = audioRef.current.play();
+        
+        // En móviles, play() devuelve una Promise que debemos manejar para evitar errores
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              // La reproducción comenzó con éxito
+              console.log("Reproducción iniciada correctamente");
+            })
+            .catch(error => {
+              // La reproducción falló, probablemente debido a políticas de interacción del usuario
+              console.error("Error al iniciar reproducción:", error);
+              // Reintentar con un control más explícito para móviles
+              if (error.name === 'NotAllowedError') {
+                toast({
+                  title: "Interacción requerida",
+                  description: "Toca la pantalla para permitir la reproducción",
+                  variant: "default"
+                });
+              }
+              setIsPlaying(false);
+            });
+        }
       } else {
+        // Pausar reproducción
         audioRef.current.pause();
       }
     }
@@ -178,7 +205,7 @@ export function TimelineEditor({
     if (onPlaybackStateChange) {
       onPlaybackStateChange(isPlaying);
     }
-  }, [isPlaying, isMuted, volume]);
+  }, [isPlaying, isMuted, volume, toast]);
 
   // Actualización de tiempo durante reproducción
   useEffect(() => {
@@ -202,7 +229,7 @@ export function TimelineEditor({
     }
   }, [isPlaying]);
 
-  // Actualizar posición de tiempo
+  // Actualizar posición de tiempo y sincronizar video
   useEffect(() => {
     if (onTimeChange) {
       onTimeChange(currentTime);
@@ -211,11 +238,56 @@ export function TimelineEditor({
     // Si está reproduciendo, no hacer nada más (el audio controla el tiempo)
     if (isPlaying) return;
     
-    // Si está en pausa, actualizar tiempo manualmente en el audio
+    // Si está en pausa, actualizar tiempo manualmente en el audio y video
     if (audioRef.current) {
       audioRef.current.currentTime = currentTime;
     }
+    
+    // Sincronizar video si está disponible
+    if (videoRef.current) {
+      videoRef.current.currentTime = currentTime;
+    }
   }, [currentTime, onTimeChange]);
+  
+  // Efecto para sincronizar video con audio
+  useEffect(() => {
+    if (!videoUrl || !videoRef.current) return;
+    
+    const videoElement = videoRef.current;
+    
+    // Manejar eventos de video
+    const handleVideoCanPlay = () => {
+      console.log("Video listo para reproducción");
+      setPreviewLoaded(true);
+    };
+    
+    const handleVideoError = (e: any) => {
+      console.error("Error en elemento de video:", e);
+      setPreviewLoaded(false);
+    };
+    
+    // Registrar manejadores de eventos
+    videoElement.addEventListener('canplay', handleVideoCanPlay);
+    videoElement.addEventListener('error', handleVideoError);
+    
+    // Sincronizar con el estado de reproducción
+    if (isPlaying && previewLoaded) {
+      const playPromise = videoElement.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Error al iniciar reproducción de video:", error);
+        });
+      }
+    } else {
+      videoElement.pause();
+    }
+    
+    // Limpiar manejadores al desmontar
+    return () => {
+      videoElement.removeEventListener('canplay', handleVideoCanPlay);
+      videoElement.removeEventListener('error', handleVideoError);
+    };
+  }, [videoUrl, isPlaying, previewLoaded]);
 
   // Notificar cambios en los clips
   useEffect(() => {
@@ -523,13 +595,17 @@ export function TimelineEditor({
       onKeyDown={handleKeyDown} 
       tabIndex={0}
     >
-      {/* Audio player oculto */}
+      {/* Audio player mejorado para móviles */}
       <audio 
         ref={audioRef}
         src={audioUrl} 
         preload="auto" 
+        playsInline // Necesario para iOS
+        muted={isMuted} // Para manejar mejor el estado de silencio
         loop={false}
         style={{ display: 'none' }}
+        onCanPlay={() => console.log("Audio listo para reproducción")}
+        onError={(e) => console.error("Error en elemento de audio:", e)}
       />
       
       {/* Barra de herramientas mejorada para móviles */}
