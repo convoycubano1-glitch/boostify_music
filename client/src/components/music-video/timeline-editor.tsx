@@ -130,6 +130,7 @@ export function TimelineEditor({
   const timelineRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null); // Referencia específica para video de vista previa
   const animationFrameRef = useRef<number>(0);
   
   // Estado para preview de video
@@ -359,8 +360,20 @@ export function TimelineEditor({
 
   // Funciones para reproducción
   const togglePlay = useCallback(() => {
-    setIsPlaying(prev => !prev);
-  }, []);
+    const newPlayState = !isPlaying;
+    setIsPlaying(newPlayState);
+    
+    // Controlar reproducción del video de vista previa
+    if (previewVideoRef.current) {
+      if (newPlayState) {
+        previewVideoRef.current.play().catch(err => {
+          console.error("Error al reproducir vista previa:", err);
+        });
+      } else {
+        previewVideoRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
   
   const stop = useCallback(() => {
     setIsPlaying(false);
@@ -376,9 +389,15 @@ export function TimelineEditor({
       videoRef.current.currentTime = 0;
     }
     
-    // Reiniciar todos los videos de vista previa
+    // Detener y reiniciar el video de vista previa específico
+    if (previewVideoRef.current) {
+      previewVideoRef.current.currentTime = 0;
+      previewVideoRef.current.pause();
+    }
+    
+    // Reiniciar cualquier otro video que pueda estar en el panel
     document.querySelectorAll('video').forEach(video => {
-      if (video !== videoRef.current) { // Evitar el video de referencia
+      if (video !== videoRef.current && video !== previewVideoRef.current) {
         video.currentTime = 0;
         video.pause();
       }
@@ -399,9 +418,14 @@ export function TimelineEditor({
       videoRef.current.currentTime = clampedTime;
     }
     
-    // Actualizar tiempo de todos los videos de vista previa
+    // Actualizar tiempo del video de vista previa específico
+    if (previewVideoRef.current) {
+      previewVideoRef.current.currentTime = clampedTime;
+    }
+    
+    // Actualizar cualquier otro video que pueda estar en el panel
     document.querySelectorAll('video').forEach(video => {
-      if (video !== videoRef.current) { // Evitar el video de referencia
+      if (video !== videoRef.current && video !== previewVideoRef.current) {
         video.currentTime = clampedTime;
       }
     });
@@ -875,8 +899,9 @@ export function TimelineEditor({
               <div className="relative w-full aspect-video max-w-3xl mx-auto">
                 {/* Capa de Video */}
                 <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
-                  {/* Muestra el video del videoRef usando un canvas sincronizado */}
+                  {/* Video de vista previa optimizado con referencia propia */}
                   <video 
+                    ref={previewVideoRef}
                     src={videoUrl}
                     preload="auto"
                     playsInline
@@ -890,8 +915,8 @@ export function TimelineEditor({
                     style={{ width: "100%" }}
                     onCanPlay={(e) => {
                       console.log("Video preview listo para reproducción");
+                      // Sincronizar el tiempo con el video de referencia
                       if (videoRef.current) {
-                        // Sincronizar el tiempo con el video de referencia
                         e.currentTarget.currentTime = videoRef.current.currentTime;
                       }
                       setPreviewLoaded(true);
