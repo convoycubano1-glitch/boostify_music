@@ -1,12 +1,6 @@
 import React from 'react';
+import { WaveformData } from '../../../hooks/timeline/useWaveSurfer';
 import { cn } from '../../../lib/utils';
-
-// Definimos la interfaz WaveformData aquí, ya que no está exportada desde useWaveSurfer
-export interface WaveformData {
-  min: number;
-  max: number;
-  time?: number;
-}
 
 interface WaveformLayerProps {
   waveformData: WaveformData[];
@@ -24,8 +18,8 @@ export function WaveformLayer({
   waveformContainerRef,
   duration
 }: WaveformLayerProps) {
-  // Si no hay datos de forma de onda o los datos son undefined, renderizar un contenedor vacío
-  if (!waveformData || waveformData.length === 0) {
+  // Si no hay datos de forma de onda, renderizar un contenedor vacío
+  if (waveformData.length === 0) {
     return (
       <div 
         ref={waveformContainerRef} 

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { BeatMap, BeatData } from '../../components/music-video/timeline/TimelineEditor';
+import { BeatMap, BeatData } from '../../components/music-video/timeline-editor';
 
 interface UseBeatsVisualizationProps {
   beatsData?: BeatMap;

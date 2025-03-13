@@ -1,17 +1,15 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { 
   ClipType, 
   LayerType, 
   MAX_CLIP_DURATION, 
   MIN_CLIP_DURATION,
   ERROR_MESSAGES,
-  SNAP_THRESHOLD,
-  ClipOperation
+  SNAP_THRESHOLD
 } from '../../constants/timeline-constants';
 
 // Importar tipo desde nuestro componente TimelineEditor para asegurar consistencia
 import { TimelineClip } from '../../components/music-video/timeline/TimelineEditor';
-import { useClipInteractions } from './useClipInteractions';
 
 export interface ClipOperationsOptions {
   /**
@@ -58,37 +56,10 @@ export function useClipOperations({
   allowOverlap = false,
   snapThreshold = SNAP_THRESHOLD,
   beatPositions = [],
-  beatSnapEnabled = true,
-  initialClips = []
-}: ClipOperationsOptions & { initialClips?: TimelineClip[] } = {}) {
-  // Estado para los clips como lista plana
-  const [clips, setClips] = useState<TimelineClip[]>(initialClips);
-  
-  // Estado para clips organizados por capa (derivado de clips)
+  beatSnapEnabled = true
+}: ClipOperationsOptions = {}) {
+  // Estado principal: todos los clips organizados por capa
   const [clipsByLayer, setClipsByLayer] = useState<{ [layerId: number]: TimelineClip[] }>({});
-  
-  // Usamos useClipInteractions como capa base de interactividad
-  const clipInteractions = useClipInteractions({
-    clips,
-    onClipsChange: (updatedClips) => setClips(updatedClips),
-  });
-  
-  // Organizamos los clips por capa para operaciones más complejas
-  // y actualizamos el estado clipsByLayer
-  useMemo(() => {
-    const grouped: { [layerId: number]: TimelineClip[] } = {};
-    
-    for (const clip of clips) {
-      const layerId = clip.layer || 0; // Fallback a capa 0 por compatibilidad
-      if (!grouped[layerId]) {
-        grouped[layerId] = [];
-      }
-      grouped[layerId].push(clip);
-    }
-    
-    setClipsByLayer(grouped);
-    return grouped;
-  }, [clips]);
   
   // Estado para tracking del último ID usado
   const [lastClipId, setLastClipId] = useState<number>(0);
@@ -551,17 +522,6 @@ export function useClipOperations({
   }, [clipsByLayer, onError]);
   
   /**
-   * Corta un clip eliminándolo del timeline
-   * A diferencia de removeClip, esta operación está diseñada para ser
-   * utilizada específicamente con la interfaz de usuario de edición
-   */
-  const cutClip = useCallback((clipId: number): boolean => {
-    // Simplemente delegamos al método removeClip, pero mantenemos
-    // una función separada para claridad semántica en la interfaz
-    return removeClip(clipId);
-  }, [removeClip]);
-
-  /**
    * Duplica un clip
    */
   const duplicateClip = useCallback((clipId: number, offsetTime: number = 0): TimelineClip | null => {
@@ -712,7 +672,6 @@ export function useClipOperations({
    * Borra todos los clips
    */
   const clearAllClips = useCallback(() => {
-    setClips([]);
     setClipsByLayer({});
     setLastClipId(0);
   }, []);
@@ -733,103 +692,38 @@ export function useClipOperations({
     // Actualizar el último ID
     setLastClipId(highestId);
     
-    // Crear una copia de los clips actuales
-    const newClips = [...clips];
-    
     // Organizar clips por capa
     const newClipsByLayer: { [layerId: number]: TimelineClip[] } = { ...clipsByLayer };
     
     importedClips.forEach(clip => {
-      // Procesar el clip para manejar diferentes formas de propiedades (compatibilidad)
-      const processedClip = {
-        ...clip,
-        // Normalizar propiedades de tiempo
-        startTime: clip.startTime || clip.start || 0,
-        endTime: clip.endTime || (clip.start ? clip.start + (clip.duration || 0) : 0),
-        // Normalizar propiedades de capa
-        layer: clip.layer || 0,
-        layerId: clip.layer || 0 // Mantener para compatibilidad
-      };
-      
-      // Añadir a la lista plana de clips
-      newClips.push(processedClip);
-      
-      // Añadir a la estructura por capas
-      const layerId = clip.layer || 0; // Usar "layer" en lugar de "layerId" para compatibilidad
-      if (!newClipsByLayer[layerId]) {
-        newClipsByLayer[layerId] = [];
+      if (!newClipsByLayer[clip.layerId]) {
+        newClipsByLayer[clip.layerId] = [];
       }
       
-      newClipsByLayer[layerId].push(processedClip);
+      newClipsByLayer[clip.layerId].push({
+        ...clip,
+        // Asegurar que tenga las propiedades necesarias
+        startTime: clip.startTime || 0,
+        endTime: clip.endTime || 0
+      });
     });
     
-    // Actualizar ambos estados
-    setClips(newClips);
     setClipsByLayer(newClipsByLayer);
-  }, [clips, clipsByLayer, lastClipId]);
-  
-  // Aprovechar las capacidades de useClipInteractions
-  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
-  
-  // Conector para que useClipOperations utilice las funciones de useClipInteractions
-  const {
-    operation,
-    getClipMouseHandlers,
-    getClipCursorStyle,
-    selectClip,
-    deselectClip,
-    handleAddClip,
-    handleDeleteClip,
-    handleMoveClip,
-    handleResizeClip,
-    handleSplitClip,
-    handleDuplicateClip
-  } = clipInteractions;
-  
-  // Función para combinar multiple selección con las operaciones de clips
-  const handleBatchOperation = useCallback((operation: ClipOperation, clipIds: number[]) => {
-    // Implementar operaciones en lote según sea necesario
-    switch (operation) {
-      case ClipOperation.CUT:
-        clipIds.forEach(id => handleDeleteClip(id));
-        return true;
-      default:
-        return false;
-    }
-  }, [handleDeleteClip]);
+  }, [clipsByLayer, lastClipId]);
   
   // Objeto con todas las funciones que exponemos al componente
   return {
-    // Estado de clips
-    clips,
-    clipsByLayer,
-    selectedClipId,
-    
-    // Operaciones básicas de clips
-    addClip: handleAddClip,
-    removeClip: handleDeleteClip,
-    moveClip: handleMoveClip,
-    resizeClip: handleResizeClip,
-    splitClip: handleSplitClip,
+    // Operaciones de clips
+    addClip,
+    removeClip,
+    moveClip,
+    resizeClip,
+    splitClip,
     combineClips,
-    duplicateClip: handleDuplicateClip,
-    cutClip: handleDeleteClip,
+    duplicateClip,
     changeClipLayer,
     clearAllClips,
     importClips,
-    
-    // Operaciones de selección y manipulación
-    selectClip,
-    deselectClip,
-    
-    // Helpers para interactividad
-    getClipMouseHandlers,
-    getClipCursorStyle,
-    currentOperation: operation,
-    isClipSelected: (clipId: number) => selectedClipId === clipId,
-    
-    // Operaciones avanzadas
-    handleBatchOperation,
     
     // Acceso a clips
     getClipsInLayer,
@@ -841,5 +735,6 @@ export function useClipOperations({
     findSnapPosition,
     
     // Estado
+    clipsByLayer,
   };
 }

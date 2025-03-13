@@ -14,7 +14,7 @@ import {
   Music,
   AlertCircle
 } from "lucide-react";
-import { ShotType, CameraMovementPattern } from "../../lib/professional-editor-types";
+import { ShotType, CameraMovementPattern } from "@/lib/professional-editor-types";
 
 // Tipo para cada elemento de imagen en la secuencia
 interface ImageSequenceItem {

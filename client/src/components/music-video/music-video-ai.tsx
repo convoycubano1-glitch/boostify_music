@@ -4,7 +4,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { TimelineEditor, type TimelineClip } from "./timeline/TimelineEditor";
+import { TimelineEditor, type TimelineClip } from "./timeline-editor";
 import { Slider } from "../ui/slider";
 import { Card } from "../ui/card";
 import Editor from "@monaco-editor/react";
@@ -3251,11 +3251,6 @@ ${transcription}`;
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                     isPlaying={isPlaying}
-                    initialBeats={beatsJsonData ? (() => {
-                      const parsedBeats = JSON.parse(beatsJsonData);
-                      console.log("Passing beats data to TimelineEditor:", parsedBeats);
-                      return parsedBeats;
-                    })() : undefined}
                     onRegenerateImage={(clipId) => {
                       const item = timelineItems.find(item => item.id === clipId);
                       if (item) {

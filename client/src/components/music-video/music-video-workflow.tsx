@@ -46,8 +46,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { VideoGenerator, VideoGenerationSettings } from './video-generator';
 import { VideoGeneratorWithCamera } from './video-generator-with-camera';
-import { TimelineClip } from './timeline/TimelineEditor';
-import { TimelineEditor } from './timeline/TimelineEditor';
+import { TimelineClip } from './timeline-editor';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
 import { ProgressSteps, Step } from './progress-steps';
@@ -232,15 +231,6 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
     if (lower.includes('medio') || lower.includes('medium')) return 'Plano Medio';
     if (lower.includes('aerial') || lower.includes('aereo')) return 'Plano Aéreo';
     return 'Plano General';
-  };
-  
-  // Función para formatear el tiempo en formato MM:SS.ms
-  const formatTimecode = (timeInSeconds: number): string => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = Math.floor(timeInSeconds % 60);
-    const milliseconds = Math.floor((timeInSeconds % 1) * 100);
-    
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
   };
 
   // Componente para mostrar el estado de guardado
@@ -942,43 +932,65 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
               </TabsContent>
               
               <TabsContent value="timeline" className="space-y-4 mt-4">
-                <div className="bg-muted rounded-md p-4 h-[500px] overflow-auto">
-                  {/* Implementación del Editor de Línea de Tiempo Avanzado */}
-                  <TimelineEditor
-                    audioUrl={timelineData.find(clip => clip.type === 'audio')?.audioUrl}
-                    initialClips={timelineData.map(clip => ({
-                      id: clip.id as number,
-                      type: clip.type as 'video' | 'audio' | 'image' | 'text',
-                      start: clip.start,
-                      duration: clip.duration,
-                      layer: clip.layer || (clip.type === 'audio' ? 0 : 1),
-                      name: clip.name || clip.title || `Clip ${clip.id}`,
-                      url: clip.videoUrl || clip.imageUrl || clip.audioUrl
-                    }))}
-                    onClipsChange={(updatedClips) => {
-                      // Sincronizar los clips actualizados con el estado
-                      setTimelineData(prevData => {
-                        // Mantener metadatos pero actualizar posición/duración
-                        return prevData.map(prevClip => {
-                          const updatedClip = updatedClips.find(c => c.id === prevClip.id);
-                          if (updatedClip) {
-                            return {
-                              ...prevClip,
-                              start: updatedClip.start,
-                              duration: updatedClip.duration,
-                              layer: updatedClip.layer,
-                              name: updatedClip.name
-                            };
-                          }
-                          return prevClip;
-                        });
-                      });
-                    }}
-                    onCurrentTimeChange={(time) => {
-                      // Actualizar tiempo actual para sincronización
-                      editorContext.setCurrentTime(time);
-                    }}
-                  />
+                <div className="bg-muted rounded-md p-4 h-[400px] overflow-auto">
+                  <div className="text-center text-muted-foreground mb-4">
+                    Aquí se mostraría una vista completa de la línea de tiempo
+                  </div>
+                  
+                  {/* Simulación visual de la línea de tiempo */}
+                  <div className="space-y-4">
+                    {/* Capa de Audio */}
+                    <div className="relative h-16 bg-black/5 rounded-md">
+                      <div className="absolute left-0 top-0 h-full bg-orange-500/20 rounded-l-md" style={{ width: '100%' }}>
+                        <div className="flex items-center h-full px-2">
+                          <Music className="h-4 w-4 text-orange-500 mr-2" />
+                          <span className="text-xs font-medium">
+                            {timelineData.find(clip => clip.type === 'audio')?.title || 'Audio Track'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Capa de Video/Imágenes */}
+                    <div className="relative h-16 bg-black/5 rounded-md flex items-center">
+                      <div className="absolute top-0 left-0 h-full w-full">
+                        {timelineData
+                          .filter(clip => clip.type !== 'audio')
+                          .map(clip => (
+                            <div
+                              key={clip.id}
+                              className="absolute top-0 h-full bg-blue-500/30 rounded-md border border-blue-500/50"
+                              style={{
+                                left: `${(clip.start / duration) * 100}%`,
+                                width: `${(clip.duration / duration) * 100}%`
+                              }}
+                            >
+                              <div className="flex items-center h-full px-2 overflow-hidden">
+                                <span className="text-xs font-medium whitespace-nowrap">
+                                  {clip.title}
+                                </span>
+                              </div>
+                            </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Escala de tiempo */}
+                    <div className="relative h-8 mt-2">
+                      {Array.from({ length: Math.ceil(duration / 30) + 1 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute top-0 -translate-x-1/2"
+                          style={{ left: `${(i * 30 / duration) * 100}%` }}
+                        >
+                          <div className="h-3 w-0.5 bg-gray-300"></div>
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            {i * 30}s
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="flex justify-end gap-2">

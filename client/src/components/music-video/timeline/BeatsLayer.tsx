@@ -26,12 +26,6 @@ export function BeatsLayer({
   bpmInfo,
   height = 20
 }: BeatsLayerProps) {
-  // Añadimos un log para verificar que se están recibiendo los datos de beats
-  console.log("BeatsLayer rendering with: ", { 
-    hasBeats, 
-    beatsCount: visibleBeats.length, 
-    bpmInfo 
-  });
   if (!hasBeats) {
     return (
       <div className="flex h-5 w-full items-center justify-center bg-card/10 text-xs text-muted-foreground">

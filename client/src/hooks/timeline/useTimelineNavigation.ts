@@ -8,7 +8,7 @@ import {
   SCROLL_POSITION_FORWARD,
   SCROLL_POSITION_BACKWARD
 } from '../../constants/timeline-constants';
-import { TimelineClip } from '../../components/music-video/timeline/TimelineEditor';
+import { TimelineClip } from '../../components/music-video/timeline-editor';
 
 interface UseTimelineNavigationProps {
   duration: number;
