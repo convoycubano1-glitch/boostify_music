@@ -208,9 +208,34 @@ export function TimelineEditor({
     }
   }, [isPlaying, isMuted, volume, toast]);
 
-  // Actualización de tiempo durante reproducción
+  // Actualización de tiempo durante reproducción con sincronización de video
   useEffect(() => {
     if (isPlaying) {
+      // Reproducir audio principal
+      if (audioRef.current) {
+        audioRef.current.play().catch(err => {
+          console.error("Error al reproducir audio:", err);
+          setIsPlaying(false);
+        });
+      }
+      
+      // Reproducir video principal (referencia)
+      if (videoRef.current) {
+        videoRef.current.play().catch(err => {
+          console.error("Error al reproducir video:", err);
+          // No detenemos la reproducción, ya que puede ser opcional
+        });
+      }
+      
+      // Reproducir todos los videos de vista previa
+      document.querySelectorAll('video').forEach(video => {
+        if (video !== videoRef.current) { // Evitar el video de referencia
+          video.play().catch(err => {
+            console.error("Error al reproducir video de vista previa:", err);
+          });
+        }
+      });
+      
       const updateTimeFromAudio = () => {
         if (audioRef.current) {
           setCurrentTime(audioRef.current.currentTime);
@@ -227,6 +252,22 @@ export function TimelineEditor({
       return () => {
         cancelAnimationFrame(animationFrameRef.current);
       };
+    } else {
+      // Pausar audio y videos cuando no está reproduciendo
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      
+      // Pausar todos los videos de vista previa
+      document.querySelectorAll('video').forEach(video => {
+        if (video !== videoRef.current) { // Evitar el video de referencia
+          video.pause();
+        }
+      });
     }
   }, [isPlaying]);
 
