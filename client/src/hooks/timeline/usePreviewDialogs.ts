@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TimelineClip } from '../../components/music-video/timeline-editor';
+import { TimelineClip } from '../../components/music-video/timeline/TimelineEditor';
 
 interface UsePreviewDialogsResult {
   selectedImagePreview: TimelineClip | null;
