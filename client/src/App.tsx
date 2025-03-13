@@ -88,6 +88,7 @@ import SubscriptionExamplePage from "./pages/subscription-example";
 import ProfessionalEditorPage from "./pages/professional-editor";
 import LayerFilterDemoPage from "./pages/layer-filter-demo";
 import TimelineDemoPage from "./pages/timeline-demo";
+import TimelineVideoDemoPage from "./pages/timeline-video-demo";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -252,6 +253,7 @@ const Router = () => {
   const WrappedProfessionalEditorPage = withPageWrapper(ProfessionalEditorPage);
   const WrappedLayerFilterDemoPage = withPageWrapper(LayerFilterDemoPage);
   const WrappedTimelineDemoPage = withPageWrapper(TimelineDemoPage);
+  const WrappedTimelineVideoDemoPage = withPageWrapper(TimelineVideoDemoPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -346,6 +348,7 @@ const Router = () => {
         {getRouteComponent("/professional-editor", WrappedProfessionalEditorPage, null)}
         {getRouteComponent("/layer-filter-demo", WrappedLayerFilterDemoPage, null)}
         {getRouteComponent("/timeline-demo", WrappedTimelineDemoPage, null)}
+        {getRouteComponent("/timeline-video-demo", WrappedTimelineVideoDemoPage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />

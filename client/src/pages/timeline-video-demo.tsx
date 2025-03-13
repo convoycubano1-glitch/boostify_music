@@ -5,7 +5,8 @@
 
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { TimelineEditor, TimelineClip } from '../components/music-video/timeline-editor';
+import { TimelineEditor } from '../components/music-video/timeline-editor';
+import { TimelineClip } from '../components/timeline/TimelineClip';
 import { Button } from '../components/ui/button';
 import { useToast } from '../hooks/use-toast';
 import { LayerType } from '../constants/timeline-constants';
@@ -75,7 +76,6 @@ export default function TimelineVideoDemo() {
   
   // Mapa de beats para sincronización (ejemplo simple)
   const beatMap = {
-    bpm: 120,
     beats: [
       { time: 0, type: 'downbeat' },
       { time: 0.5, type: 'beat' },
@@ -93,7 +93,12 @@ export default function TimelineVideoDemo() {
       { name: 'Verso', startTime: 8, endTime: 16 },
       { name: 'Coro', startTime: 16, endTime: 24 },
       { name: 'Outro', startTime: 24, endTime: 30 }
-    ]
+    ],
+    metadata: {
+      bpm: 120,
+      timeSignature: '4/4',
+      key: 'C Major'
+    }
   };
   
   // Funciones para gestionar eventos del timeline
