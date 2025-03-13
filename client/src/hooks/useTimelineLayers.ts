@@ -1,112 +1,198 @@
 /**
- * Hook personalizado para gestionar capas del timeline
- * Este hook controla la creación, configuración y validación de capas
+ * Hook personalizado para la gestión de capas en la línea de tiempo
+ * 
+ * Este hook proporciona:
+ * - Estado para las capas (visibilidad, bloqueo, orden)
+ * - Funciones para manipular capas (añadir, eliminar, reordenar, etc.)
+ * - Soporte para capas aisladas (audio, video, etc.)
  */
 
-import { useState, useCallback, useMemo } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { LayerType, DEFAULT_LAYERS, AI_PLACEHOLDER_RESTRICTIONS } from '../constants/timeline-constants';
-import { useIsolatedLayers, type TimelineClip } from './useIsolatedLayers';
+import { useState, useCallback, useEffect } from 'react';
+import { LayerType } from '../constants/timeline-constants';
 
-// Tipos para gestión de capas
+/**
+ * Configuración de una capa
+ */
 export interface LayerConfig {
   id: number;
-  name: string;
-  type: string | LayerType;
-  isIsolated?: boolean;
-  visible: boolean;
+  name: string; 
+  type: string;
   locked: boolean;
+  visible: boolean;
+  height: number;
   color: string;
 }
 
-export type LayerVisibilityMap = Record<number, boolean>;
-export type LayerLockMap = Record<number, boolean>;
-
-export interface UseTimelineLayersResult {
-  layers: LayerConfig[];
-  visibleLayers: LayerVisibilityMap;
-  lockedLayers: LayerLockMap;
-  selectedLayerId: number | null;
-  addLayer: (type: LayerType) => LayerConfig;
-  removeLayer: (id: number) => void;
-  updateLayer: (id: number, updates: Partial<LayerConfig>) => void;
-  toggleLayerVisibility: (id: number) => void;
-  toggleLayerLock: (id: number) => void;
-  selectLayer: (id: number | null) => void;
-  canAddClipToLayer: (layerId: number, clipType: string) => boolean;
-  isLayerIsolated: (layerId: number) => boolean;
-  getLayerByType: (type: LayerType) => LayerConfig | undefined;
-  getLayerNameById: (id: number) => string;
-  getLayerColorById: (id: number) => string;
-  resetLayers: () => void;
+/**
+ * Opciones para crear el hook de capas
+ */
+export interface TimelineLayersOptions {
+  createDefaultLayers?: boolean;
+  isolatedLayerTypes?: string[];
+  defaultLayerHeight?: number;
 }
 
 /**
- * Hook para gestionar capas del timeline
+ * Colores predeterminados para cada tipo de capa
  */
-export function useTimelineLayers(
-  clips: TimelineClip[] = [],
-  initialLayers: LayerConfig[] = DEFAULT_LAYERS
-): UseTimelineLayersResult {
-  const [layers, setLayers] = useState<LayerConfig[]>(initialLayers);
-  const [visibleLayers, setVisibleLayers] = useState<LayerVisibilityMap>(() => {
-    const map: LayerVisibilityMap = {};
-    initialLayers.forEach(layer => {
-      map[layer.id] = layer.visible;
-    });
-    return map;
+const LAYER_COLORS = {
+  [LayerType.AUDIO]: '#8A2BE2',
+  [LayerType.VIDEO]: '#4169E1',
+  [LayerType.IMAGE]: '#20B2AA',
+  [LayerType.TEXT]: '#FF6347',
+  [LayerType.EFFECT]: '#FFD700',
+  [LayerType.TRANSITION]: '#32CD32',
+  [LayerType.AI_PLACEHOLDER]: '#BA55D3'
+};
+
+/**
+ * Hook personalizado para gestionar las capas de la línea de tiempo
+ */
+function useTimelineLayers(
+  initialLayers: LayerConfig[] = [],
+  options: TimelineLayersOptions = {}
+) {
+  // Opciones predeterminadas
+  const {
+    createDefaultLayers = false,
+    isolatedLayerTypes = [],
+    defaultLayerHeight = 60
+  } = options;
+
+  // Estado de las capas
+  const [layers, setLayers] = useState<LayerConfig[]>(() => {
+    if (initialLayers.length > 0) {
+      return [...initialLayers];
+    }
+
+    // Crear capas predeterminadas si se solicita
+    if (createDefaultLayers) {
+      return [
+        // Capa de audio (id 0)
+        {
+          id: 0,
+          name: 'Audio',
+          type: LayerType.AUDIO,
+          locked: isolatedLayerTypes.includes(LayerType.AUDIO),
+          visible: true,
+          height: defaultLayerHeight,
+          color: LAYER_COLORS[LayerType.AUDIO]
+        },
+        // Capa de video/imágenes (id 1)
+        {
+          id: 1,
+          name: 'Video',
+          type: LayerType.VIDEO,
+          locked: isolatedLayerTypes.includes(LayerType.VIDEO),
+          visible: true,
+          height: defaultLayerHeight,
+          color: LAYER_COLORS[LayerType.VIDEO]
+        },
+        // Capa de imágenes (id 2)
+        {
+          id: 2,
+          name: 'Imágenes',
+          type: LayerType.IMAGE,
+          locked: isolatedLayerTypes.includes(LayerType.IMAGE),
+          visible: true,
+          height: defaultLayerHeight,
+          color: LAYER_COLORS[LayerType.IMAGE]
+        },
+        // Capa de texto (id 3)
+        {
+          id: 3,
+          name: 'Texto',
+          type: LayerType.TEXT,
+          locked: isolatedLayerTypes.includes(LayerType.TEXT),
+          visible: true,
+          height: defaultLayerHeight,
+          color: LAYER_COLORS[LayerType.TEXT]
+        }
+      ];
+    }
+
+    return [];
   });
+
+  // Estado para la visibilidad de las capas
+  const [visibleLayers, setVisibleLayers] = useState<Record<number, boolean>>({});
   
-  const [lockedLayers, setLockedLayers] = useState<LayerLockMap>(() => {
-    const map: LayerLockMap = {};
-    initialLayers.forEach(layer => {
-      map[layer.id] = layer.locked || false;
+  // Estado para el bloqueo de las capas
+  const [lockedLayers, setLockedLayers] = useState<Record<number, boolean>>({});
+  
+  // Estado para la capa seleccionada actualmente
+  const [selectedLayerId, setSelectedLayerId] = useState<number | null>(
+    layers.length > 0 ? layers[0].id : null
+  );
+
+  // Inicializar estados de visibilidad y bloqueo basado en las capas
+  useEffect(() => {
+    const visibilityMap: Record<number, boolean> = {};
+    const lockMap: Record<number, boolean> = {};
+
+    layers.forEach(layer => {
+      visibilityMap[layer.id] = layer.visible;
+      lockMap[layer.id] = layer.locked;
     });
-    return map;
-  });
-  
-  const [selectedLayerId, setSelectedLayerId] = useState<number | null>(null);
-  
-  // Usar el hook de capas aisladas para validaciones
-  const { canAddClipToLayer: validateClipForLayer } = useIsolatedLayers(clips);
+
+    setVisibleLayers(visibilityMap);
+    setLockedLayers(lockMap);
+  }, []);
 
   /**
-   * Agregar una nueva capa al timeline
+   * Añadir una nueva capa
    */
-  const addLayer = useCallback((type: LayerType): LayerConfig => {
-    const newLayer: LayerConfig = {
-      id: layers.length > 0 ? Math.max(...layers.map(l => l.id)) + 1 : 0,
-      name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${layers.filter(l => l.type === type).length + 1}`,
-      type,
-      isIsolated: type === LayerType.AUDIO, // Las capas de audio están aisladas por defecto
-      visible: true,
-      locked: false,
-      color: getRandomColor()
-    };
-    
-    setLayers(prevLayers => [...prevLayers, newLayer]);
-    
-    // Actualizar los mapas de visibilidad y bloqueo
-    setVisibleLayers(prev => ({ ...prev, [newLayer.id]: true }));
-    setLockedLayers(prev => ({ ...prev, [newLayer.id]: false }));
-    
-    return newLayer;
-  }, [layers]);
+  const addLayer = useCallback((type: string) => {
+    setLayers(prevLayers => {
+      // Encontrar el ID más alto para asignar un nuevo ID
+      const highestId = Math.max(...prevLayers.map(layer => layer.id), -1);
+      const newId = highestId + 1;
+
+      // Crear una nueva capa
+      const newLayer: LayerConfig = {
+        id: newId,
+        name: getLayerName(type, prevLayers),
+        type,
+        locked: isolatedLayerTypes.includes(type),
+        visible: true,
+        height: defaultLayerHeight,
+        color: LAYER_COLORS[type as LayerType] || '#CCCCCC'
+      };
+
+      // Actualizar estados de visibilidad y bloqueo
+      setVisibleLayers(prev => ({ ...prev, [newId]: true }));
+      setLockedLayers(prev => ({ ...prev, [newId]: isolatedLayerTypes.includes(type) }));
+      
+      // Seleccionar la nueva capa
+      setSelectedLayerId(newId);
+
+      return [...prevLayers, newLayer];
+    });
+  }, [isolatedLayerTypes, defaultLayerHeight]);
 
   /**
-   * Eliminar una capa del timeline
+   * Eliminar una capa
    */
   const removeLayer = useCallback((id: number) => {
-    // No permitir eliminar capas que tienen clips
-    const hasClips = clips.some(clip => clip.layer === id);
-    if (hasClips) {
-      console.warn('No se puede eliminar una capa que contiene clips.');
-      return;
+    // No permitir eliminar capas aisladas
+    if (layers.find(l => l.id === id && isolatedLayerTypes.includes(l.type))) {
+      return false;
     }
-    
-    setLayers(prevLayers => prevLayers.filter(layer => layer.id !== id));
-    
-    // Actualizar los mapas de visibilidad y bloqueo
+
+    setLayers(prevLayers => {
+      const updatedLayers = prevLayers.filter(layer => layer.id !== id);
+      
+      // Si se elimina la capa seleccionada, seleccionar otra
+      if (selectedLayerId === id && updatedLayers.length > 0) {
+        setSelectedLayerId(updatedLayers[0].id);
+      } else if (updatedLayers.length === 0) {
+        setSelectedLayerId(null);
+      }
+      
+      return updatedLayers;
+    });
+
+    // Limpiar estados de visibilidad y bloqueo
     setVisibleLayers(prev => {
       const updated = { ...prev };
       delete updated[id];
@@ -118,154 +204,179 @@ export function useTimelineLayers(
       delete updated[id];
       return updated;
     });
-    
-    // Si la capa eliminada estaba seleccionada, deseleccionar
-    if (selectedLayerId === id) {
-      setSelectedLayerId(null);
-    }
-  }, [clips, selectedLayerId]);
+
+    return true;
+  }, [layers, selectedLayerId, isolatedLayerTypes]);
 
   /**
-   * Actualizar propiedades de una capa
+   * Cambiar el orden de las capas
    */
-  const updateLayer = useCallback((id: number, updates: Partial<LayerConfig>) => {
-    setLayers(prevLayers => 
-      prevLayers.map(layer => 
-        layer.id === id ? { ...layer, ...updates } : layer
-      )
-    );
+  const reorderLayers = useCallback((newOrder: number[]) => {
+    // Verificar que todos los IDs estén presentes
+    if (layers.length !== newOrder.length) return false;
     
-    // Actualizar los mapas de visibilidad y bloqueo si esas propiedades cambian
-    if (updates.visible !== undefined) {
-      setVisibleLayers(prev => ({ ...prev, [id]: updates.visible || false }));
-    }
-    
-    if (updates.locked !== undefined) {
-      setLockedLayers(prev => ({ ...prev, [id]: updates.locked || false }));
-    }
-  }, []);
-
-  /**
-   * Alternar visibilidad de una capa
-   */
-  const toggleLayerVisibility = useCallback((id: number) => {
-    setVisibleLayers(prev => {
-      const currentVisibility = prev[id] !== undefined ? prev[id] : true;
-      return { ...prev, [id]: !currentVisibility };
+    setLayers(prevLayers => {
+      // Crear un mapa de capas por ID para facilitar la reordenación
+      const layerMap = new Map(prevLayers.map(layer => [layer.id, layer]));
+      
+      // Crear nuevo array reordenado
+      const reorderedLayers = newOrder.map(id => {
+        const layer = layerMap.get(id);
+        if (!layer) throw new Error(`Layer with ID ${id} not found`);
+        return layer;
+      });
+      
+      return reorderedLayers;
     });
     
-    // También actualizar el estado de la capa
-    setLayers(prevLayers => 
-      prevLayers.map(layer => 
-        layer.id === id ? { ...layer, visible: !(visibleLayers[id] !== undefined ? visibleLayers[id] : true) } : layer
+    return true;
+  }, [layers]);
+
+  /**
+   * Cambiar visibilidad de una capa
+   */
+  const toggleLayerVisibility = useCallback((id: number) => {
+    setVisibleLayers(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+    
+    // También actualizar el estado en la lista de capas
+    setLayers(prev => 
+      prev.map(layer => 
+        layer.id === id ? { ...layer, visible: !visibleLayers[id] } : layer
       )
     );
   }, [visibleLayers]);
 
   /**
-   * Alternar bloqueo de una capa
+   * Cambiar estado de bloqueo de una capa
    */
   const toggleLayerLock = useCallback((id: number) => {
-    setLockedLayers(prev => {
-      const currentLock = prev[id] !== undefined ? prev[id] : false;
-      return { ...prev, [id]: !currentLock };
-    });
+    // No permitir desbloquear capas aisladas
+    const layer = layers.find(l => l.id === id);
+    if (layer && isolatedLayerTypes.includes(layer.type)) {
+      return false;
+    }
+
+    setLockedLayers(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
     
-    // También actualizar el estado de la capa
-    setLayers(prevLayers => 
-      prevLayers.map(layer => 
-        layer.id === id ? { ...layer, locked: !(lockedLayers[id] !== undefined ? lockedLayers[id] : false) } : layer
+    // También actualizar el estado en la lista de capas
+    setLayers(prev => 
+      prev.map(layer => 
+        layer.id === id ? { ...layer, locked: !lockedLayers[id] } : layer
       )
     );
-  }, [lockedLayers]);
+    
+    return true;
+  }, [layers, lockedLayers, isolatedLayerTypes]);
 
   /**
    * Seleccionar una capa
    */
-  const selectLayer = useCallback((id: number | null) => {
+  const selectLayer = useCallback((id: number) => {
     setSelectedLayerId(id);
   }, []);
 
   /**
-   * Verificar si se puede agregar un clip a una capa específica
+   * Actualizar una capa
    */
-  const canAddClipToLayer = useCallback((layerId: number, clipType: string): boolean => {
-    // Obtener la capa por ID
-    const layer = layers.find(l => l.id === layerId);
+  const updateLayer = useCallback((id: number, updates: Partial<LayerConfig>) => {
+    const layer = layers.find(l => l.id === id);
     if (!layer) return false;
     
-    // No permitir agregar clips a capas bloqueadas
-    if (lockedLayers[layerId]) return false;
-    
-    // Verificar compatibilidad de tipos
-    const isTypeCompatible = 
-      (layer.type === LayerType.AUDIO && clipType === 'audio') ||
-      (layer.type === LayerType.IMAGE && (clipType === 'image' || clipType === 'video')) ||
-      (layer.type === LayerType.TEXT && clipType === 'text') ||
-      (layer.type === LayerType.EFFECT && clipType === 'effect');
-    
-    if (!isTypeCompatible) return false;
-    
-    // Si la capa es de audio y ya tiene clips, no permitir agregar más
-    if (layer.type === LayerType.AUDIO) {
-      const layerHasClips = clips.some(clip => clip.layer === layerId);
-      if (layerHasClips) return false;
+    // No permitir cambiar el tipo de las capas aisladas
+    if (isolatedLayerTypes.includes(layer.type) && updates.type && updates.type !== layer.type) {
+      return false;
     }
     
-    // Verificar las reglas de capa aislada usando el hook
-    return validateClipForLayer(layerId);
-  }, [layers, lockedLayers, clips, validateClipForLayer]);
+    setLayers(prev => 
+      prev.map(layer => 
+        layer.id === id ? { ...layer, ...updates } : layer
+      )
+    );
+    
+    // Actualizar estados de visibilidad y bloqueo si se modifican
+    if (updates.visible !== undefined) {
+      setVisibleLayers(prev => ({
+        ...prev,
+        [id]: updates.visible as boolean
+      }));
+    }
+    
+    if (updates.locked !== undefined) {
+      setLockedLayers(prev => ({
+        ...prev,
+        [id]: updates.locked as boolean
+      }));
+    }
+    
+    return true;
+  }, [layers, isolatedLayerTypes]);
+
+  /**
+   * Generar un nombre único para una nueva capa
+   */
+  function getLayerName(type: string, existingLayers: LayerConfig[]): string {
+    // Definir nombres base según el tipo
+    const baseNames: Record<string, string> = {
+      [LayerType.AUDIO]: 'Audio',
+      [LayerType.VIDEO]: 'Video',
+      [LayerType.IMAGE]: 'Imágenes',
+      [LayerType.TEXT]: 'Texto',
+      [LayerType.EFFECT]: 'Efectos',
+      [LayerType.TRANSITION]: 'Transición',
+      [LayerType.AI_PLACEHOLDER]: 'IA Placeholder'
+    };
+    
+    const baseName = baseNames[type] || 'Capa';
+    
+    // Contar cuántas capas del mismo tipo ya existen
+    const sameTypeCount = existingLayers.filter(layer => layer.type === type).length;
+    
+    // Si ya existe una capa de este tipo, añadir un número
+    return sameTypeCount > 0 ? `${baseName} ${sameTypeCount + 1}` : baseName;
+  }
+
+  /**
+   * Restaurar capas a su estado inicial
+   */
+  const resetLayers = useCallback(() => {
+    setLayers(initialLayers);
+    
+    // Reiniciar estados de visibilidad y bloqueo
+    const visibilityMap: Record<number, boolean> = {};
+    const lockMap: Record<number, boolean> = {};
+    
+    initialLayers.forEach(layer => {
+      visibilityMap[layer.id] = layer.visible;
+      lockMap[layer.id] = layer.locked;
+    });
+    
+    setVisibleLayers(visibilityMap);
+    setLockedLayers(lockMap);
+    
+    // Seleccionar la primera capa si existe
+    setSelectedLayerId(initialLayers.length > 0 ? initialLayers[0].id : null);
+  }, [initialLayers]);
 
   /**
    * Verificar si una capa está aislada
    */
-  const isLayerIsolated = useCallback((layerId: number): boolean => {
+  const isIsolatedLayer = useCallback((layerId: number) => {
     const layer = layers.find(l => l.id === layerId);
-    return layer?.isIsolated || false;
-  }, [layers]);
+    return layer ? isolatedLayerTypes.includes(layer.type) : false;
+  }, [layers, isolatedLayerTypes]);
 
   /**
-   * Obtener una capa por su tipo
+   * Obtener todas las capas de un tipo específico
    */
-  const getLayerByType = useCallback((type: LayerType): LayerConfig | undefined => {
-    return layers.find(layer => layer.type === type);
+  const getLayersByType = useCallback((type: string) => {
+    return layers.filter(layer => layer.type === type);
   }, [layers]);
-
-  /**
-   * Obtener el nombre de una capa por su ID
-   */
-  const getLayerNameById = useCallback((id: number): string => {
-    const layer = layers.find(l => l.id === id);
-    return layer?.name || `Capa ${id}`;
-  }, [layers]);
-
-  /**
-   * Obtener el color de una capa por su ID
-   */
-  const getLayerColorById = useCallback((id: number): string => {
-    const layer = layers.find(l => l.id === id);
-    return layer?.color || '#cccccc';
-  }, [layers]);
-
-  /**
-   * Restablecer capas a la configuración predeterminada
-   */
-  const resetLayers = useCallback(() => {
-    setLayers(DEFAULT_LAYERS);
-    
-    // Restablecer mapas de visibilidad y bloqueo
-    const visMap: LayerVisibilityMap = {};
-    const lockMap: LayerLockMap = {};
-    
-    DEFAULT_LAYERS.forEach(layer => {
-      visMap[layer.id] = layer.visible;
-      lockMap[layer.id] = layer.locked || false;
-    });
-    
-    setVisibleLayers(visMap);
-    setLockedLayers(lockMap);
-    setSelectedLayerId(null);
-  }, []);
 
   return {
     layers,
@@ -274,29 +385,16 @@ export function useTimelineLayers(
     selectedLayerId,
     addLayer,
     removeLayer,
-    updateLayer,
+    reorderLayers,
     toggleLayerVisibility,
     toggleLayerLock,
     selectLayer,
-    canAddClipToLayer,
-    isLayerIsolated,
-    getLayerByType,
-    getLayerNameById,
-    getLayerColorById,
-    resetLayers
+    updateLayer,
+    resetLayers,
+    isIsolatedLayer,
+    getLayersByType
   };
 }
 
-/**
- * Función auxiliar para generar un color aleatorio
- */
-function getRandomColor(): string {
-  const colors = [
-    '#FF5722', '#E91E63', '#9C27B0', '#673AB7', 
-    '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4',
-    '#009688', '#4CAF50', '#8BC34A', '#CDDC39',
-    '#FFC107', '#FF9800', '#795548', '#607D8B'
-  ];
-  
-  return colors[Math.floor(Math.random() * colors.length)];
-}
+// Exportar el hook principal y sus tipos asociados
+export { useTimelineLayers, LayerConfig };

@@ -1,409 +1,803 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { TimelineClip as ITimelineClip } from '../../components/music-video/timeline-editor';
-import TimelineClip from './TimelineClip';
-import LayerManager from './LayerManager';
-import { useTimelineLayers, LayerType } from '../../hooks/useTimelineLayers';
+/**
+ * Componente de demostración del Timeline Editor
+ * 
+ * Este componente integra todos los elementos del editor de línea de tiempo
+ * en una demostración funcional, incluyendo capas, clips, y operaciones.
+ */
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { 
+  ZoomIn, 
+  ZoomOut, 
+  Play, 
+  Pause, 
+  PlusCircle, 
+  SkipBack,
+  SkipForward
+} from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Slider } from '../../components/ui/slider';
-import { Label } from '../../components/ui/label';
-import { Wand2, Plus, Play, Pause, SkipBack } from 'lucide-react';
-import { Progress } from '../../components/ui/progress';
+import { LayerType } from '../../constants/timeline-constants';
+import { useToast } from '../../hooks/use-toast';
+import LayerManager from './LayerManager';
+import { useTimelineLayers } from '../../hooks/useTimelineLayers';
+import { useIsolatedLayers } from '../../hooks/useIsolatedLayers';
+import { TimelineClip } from './TimelineClip';
 
 /**
- * Demostración del sistema de timeline con capas aisladas y placeholders
- * 
- * Este componente muestra un timeline funcional con:
- * - Soporte completo para capas aisladas (capa de audio)
- * - Gestión de placeholders para generación AI
- * - Limitación de duración (máximo 5 segundos para clips AI)
- * - Integración con el panel de capas
+ * Propiedades para el componente TimelineDemo
  */
-export function TimelineDemo() {
-  // Estado para clips del timeline
-  const [clips, setClips] = useState<ITimelineClip[]>([
-    {
-      id: 1,
-      start: 0,
-      duration: 10,
-      type: 'audio',
-      layer: 0, // Capa de audio (aislada)
-      title: 'Pista de Audio',
-      isIsolated: true, // Audio aislado
-      locked: true, // Audio bloqueado
-      visible: true
-    },
-    {
-      id: 2,
-      start: 0,
-      duration: 3,
-      type: 'image',
-      layer: 1, // Capa de imagen
-      title: 'Imagen de Intro',
-      visible: true,
-      locked: false,
-      imageUrl: 'https://example.com/image.jpg'
-    },
-    {
-      id: 3,
-      start: 3,
-      duration: 2,
-      type: 'image',
-      layer: 1, // Capa de imagen
-      title: 'Placeholder AI',
-      isPlaceholder: true, // Marcado como placeholder
-      pendingGeneration: true, // Pendiente de generación
-      placeholderType: 'image',
-      generationPrompt: 'Imagen artística del artista en estudio',
-      visible: true,
-      locked: false
-    },
-    {
-      id: 4,
-      start: 5,
-      duration: 5, // Duración exacta de 5 segundos (máximo permitido)
-      type: 'video',
-      layer: 1, // Capa de video
-      title: 'Video con restricción',
-      maxDuration: 5, // Restricción de duración máxima
-      visible: true,
-      locked: false,
-      videoUrl: 'https://example.com/video.mp4'
-    },
-    {
-      id: 5,
-      start: 2,
-      duration: 4,
-      type: 'text',
-      layer: 2, // Capa de texto
-      title: 'Título principal',
-      visible: true,
-      locked: false,
-      metadata: {
-        textContent: 'Título del Video Musical'
-      }
-    },
-    {
-      id: 6,
-      start: 7,
-      duration: 3,
-      type: 'effect',
-      layer: 3, // Capa de efectos
-      title: 'Efecto visual',
-      visible: true,
-      locked: false,
-      effectType: 'glow',
-      effectIntensity: 0.7
-    }
-  ]);
+interface TimelineDemoProps {
+  initialClips?: TimelineClip[];
+  mode?: 'view' | 'edit';
+  onTimelineUpdate?: (clips: TimelineClip[]) => void;
+}
+
+/**
+ * Componente demo que muestra y permite interactuar con la línea de tiempo
+ */
+const TimelineDemo: React.FC<TimelineDemoProps> = ({
+  initialClips = [],
+  mode = 'edit',
+  onTimelineUpdate
+}) => {
+  // Referencias
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const playheadRef = useRef<HTMLDivElement>(null);
   
-  // Estados para la reproducción
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [zoom, setZoom] = useState(100); // Píxeles por segundo
-  const totalDuration = 15; // Duración total en segundos
+  // Estado
+  const [clips, setClips] = useState<TimelineClip[]>(initialClips);
+  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
+  const [draggingClipId, setDraggingClipId] = useState<number | null>(null);
+  const [resizingClipId, setResizingClipId] = useState<number | null>(null);
+  const [resizeHandle, setResizeHandle] = useState<'start' | 'end' | null>(null);
+  const [dragStartX, setDragStartX] = useState<number>(0);
+  const [clipStartPosition, setClipStartPosition] = useState<number>(0);
+  const [clipDuration, setClipDuration] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(60); // 60 segundos por defecto
+  const [zoom, setZoom] = useState<number>(1);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [playbackInterval, setPlaybackInterval] = useState<NodeJS.Timeout | null>(null);
   
-  // Usar nuestro hook personalizado para gestión de capas
-  const { 
+  const { toast } = useToast();
+  
+  // Constantes
+  const PIXELS_PER_SECOND = 100;
+  const MIN_ZOOM = 0.1;
+  const MAX_ZOOM = 5.0;
+  
+  // Configuración de capas aisladas
+  const isolatedLayerTypes = [LayerType.AUDIO];
+  
+  // Hooks personalizados
+  const {
     layers,
     visibleLayers,
     lockedLayers,
+    selectedLayerId,
+    addLayer,
+    removeLayer,
     toggleLayerVisibility,
     toggleLayerLock,
-    addLayer,
-    resetLayers
-  } = useTimelineLayers({
-    onLayerChange: (layers) => {
-      console.log('Capas actualizadas:', layers);
-    }
+    selectLayer
+  } = useTimelineLayers([], {
+    createDefaultLayers: true,
+    isolatedLayerTypes
   });
   
-  // Manejador para actualizar un clip
-  const handleClipUpdate = (clipId: number, updates: Partial<ITimelineClip>) => {
-    setClips(prev => 
-      prev.map(clip => 
-        clip.id === clipId ? { ...clip, ...updates } : clip
-      )
-    );
+  const {
+    validateClipOperation,
+    getLastError,
+    clearError
+  } = useIsolatedLayers({
+    restrictedLayerTypes: isolatedLayerTypes,
+    maxAIPlaceholderDuration: 5,
+    allowOverlap: false
+  });
+  
+  // Convertir tiempo a píxeles
+  const timeToPixels = useCallback((time: number) => {
+    return time * PIXELS_PER_SECOND * zoom;
+  }, [zoom]);
+  
+  // Convertir píxeles a tiempo
+  const pixelsToTime = useCallback((pixels: number) => {
+    return pixels / (PIXELS_PER_SECOND * zoom);
+  }, [zoom]);
+  
+  // Ancho total de la línea de tiempo en píxeles
+  const timelineWidth = timeToPixels(duration);
+  
+  // Obtener un clip por su ID
+  const getClipById = useCallback((id: number) => {
+    return clips.find(clip => clip.id === id) || null;
+  }, [clips]);
+  
+  // Ajustar zoom
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev * 1.2, MAX_ZOOM));
   };
   
-  // Manejador para mover el inicio de un clip
-  const handleMoveClipStart = (clipId: number, delta: number) => {
-    setClips(prev => 
-      prev.map(clip => {
-        if (clip.id === clipId) {
-          const newStart = Math.max(0, clip.start + delta);
-          const newDuration = Math.max(0.5, clip.duration - delta);
-          
-          // No permitir exceder maxDuration
-          if (clip.maxDuration && newDuration > clip.maxDuration) {
-            return clip;
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev * 0.8, MIN_ZOOM));
+  };
+  
+  // Reproducción
+  const handlePlay = () => {
+    if (isPlaying) {
+      // Pausar
+      if (playbackInterval) {
+        clearInterval(playbackInterval);
+        setPlaybackInterval(null);
+      }
+      setIsPlaying(false);
+    } else {
+      // Reproducir
+      const interval = setInterval(() => {
+        setCurrentTime(prev => {
+          if (prev >= duration) {
+            clearInterval(interval);
+            setPlaybackInterval(null);
+            setIsPlaying(false);
+            return 0;
           }
-          
-          return {
-            ...clip,
-            start: newStart,
-            duration: newDuration
-          };
-        }
-        return clip;
-      })
-    );
-  };
-  
-  // Manejador para mover el final de un clip
-  const handleMoveClipEnd = (clipId: number, delta: number) => {
-    setClips(prev => 
-      prev.map(clip => {
-        if (clip.id === clipId) {
-          const newDuration = Math.max(0.5, clip.duration + delta);
-          
-          // No permitir exceder maxDuration
-          if (clip.maxDuration && newDuration > clip.maxDuration) {
-            return clip;
-          }
-          
-          return {
-            ...clip,
-            duration: newDuration
-          };
-        }
-        return clip;
-      })
-    );
-  };
-  
-  // Manejador para regenerar contenido AI
-  const handleRegenerateContent = (clipId: number) => {
-    // Simulación de generación AI
-    console.log(`Generando contenido AI para clip ${clipId}`);
-    
-    // Actualizar clip después de "generación"
-    setTimeout(() => {
-      setClips(prev => 
-        prev.map(clip => {
-          if (clip.id === clipId) {
-            return {
-              ...clip,
-              pendingGeneration: false,
-              isPlaceholder: false,
-              title: `Contenido AI generado (${clipId})`,
-              imageUrl: 'https://example.com/generated.jpg'
-            };
-          }
-          return clip;
-        })
-      );
-    }, 1500);
-  };
-  
-  // Manejador para reproducción
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
-  
-  // Formatear tiempo
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-  
-  // Determinar si el playhead está sobre un clip
-  const isPlayheadOverClip = (clip: ITimelineClip) => {
-    return currentTime >= clip.start && currentTime <= (clip.start + clip.duration);
-  };
-  
-  // Añadir un nuevo clip placeholder
-  const addPlaceholderClip = () => {
-    // Encontrar un espacio libre en la capa 1 (video/imagen)
-    let startTime = 0;
-    // Encontrar todos los clips en la capa 1
-    const layer1Clips = clips.filter(clip => clip.layer === 1);
-    
-    // Si hay clips, encontrar un espacio o posicionar al final
-    if (layer1Clips.length > 0) {
-      // Ordenar por tiempo de inicio
-      const sortedClips = [...layer1Clips].sort((a, b) => a.start - b.start);
-      // Encontrar el último clip
-      const lastClip = sortedClips[sortedClips.length - 1];
-      startTime = lastClip.start + lastClip.duration;
+          return prev + 0.1;
+        });
+      }, 100);
+      setPlaybackInterval(interval);
+      setIsPlaying(true);
     }
+  };
+  
+  const handleSeek = (time: number) => {
+    if (time < 0) time = 0;
+    if (time > duration) time = duration;
+    setCurrentTime(time);
+  };
+  
+  // Limpiar intervalo al desmontar
+  useEffect(() => {
+    return () => {
+      if (playbackInterval) {
+        clearInterval(playbackInterval);
+      }
+    };
+  }, [playbackInterval]);
+  
+  // Manejar operaciones de clips
+  const handleAddClip = (type: string, layerId: number) => {
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer) return;
     
-    // Crear nuevo clip placeholder
-    const newClip: ITimelineClip = {
-      id: Date.now(),
-      start: startTime,
-      duration: 3, // Duración predeterminada (respetando máximo de 5s)
-      type: 'image',
-      layer: 1,
-      title: 'Nuevo Placeholder AI',
-      isPlaceholder: true,
-      pendingGeneration: true,
-      placeholderType: 'image',
-      generationPrompt: 'Imagen generada para sección musical',
-      visible: true,
-      locked: false,
-      maxDuration: 5 // Restricción de duración máxima
+    // Generar ID único para el nuevo clip
+    const maxId = Math.max(0, ...clips.map(c => c.id));
+    const newId = maxId + 1;
+    
+    // Crear clip en la posición actual
+    const newClip: TimelineClip = {
+      id: newId,
+      title: `${type.charAt(0).toUpperCase() + type.slice(1)} ${newId}`,
+      type: type,
+      layer: layerId,
+      start: currentTime,
+      duration: type === LayerType.AI_PLACEHOLDER ? 5 : 10,
+      metadata: {
+        isAIGenerated: type === LayerType.AI_PLACEHOLDER
+      }
     };
     
-    // Agregar el nuevo clip
+    // Validar operación
+    const validationResult = validateClipOperation(newClip, clips, 'add');
+    if (!validationResult.isValid) {
+      toast({
+        title: 'Error al añadir clip',
+        description: validationResult.error || 'No se puede añadir el clip en esta posición',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Agregar clip
     setClips(prev => [...prev, newClip]);
+    setSelectedClipId(newId);
+    
+    // Notificar cambios
+    if (onTimelineUpdate) {
+      onTimelineUpdate([...clips, newClip]);
+    }
+  };
+  
+  const handleSelectClip = (id: number, multiSelect: boolean = false) => {
+    if (mode === 'view') return;
+    
+    // Si el clip está en una capa bloqueada, no seleccionar
+    const clip = getClipById(id);
+    if (clip && lockedLayers[clip.layer]) {
+      return;
+    }
+    
+    setSelectedClipId(id);
+  };
+  
+  const handleDeleteClip = (id: number) => {
+    if (mode === 'view') return;
+    
+    // Obtener el clip
+    const clip = getClipById(id);
+    if (!clip) return;
+    
+    // Validar operación
+    const validationResult = validateClipOperation(clip, clips, 'delete');
+    if (!validationResult.isValid) {
+      toast({
+        title: 'Error al eliminar clip',
+        description: validationResult.error || 'No se puede eliminar este clip',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Eliminar clip
+    setClips(prev => prev.filter(c => c.id !== id));
+    
+    // Deseleccionar si era el seleccionado
+    if (selectedClipId === id) {
+      setSelectedClipId(null);
+    }
+    
+    // Notificar cambios
+    if (onTimelineUpdate) {
+      onTimelineUpdate(clips.filter(c => c.id !== id));
+    }
+  };
+  
+  const handleDuplicateClip = (id: number) => {
+    if (mode === 'view') return;
+    
+    // Obtener el clip a duplicar
+    const clip = getClipById(id);
+    if (!clip) return;
+    
+    // Generar nuevo ID para el duplicado
+    const maxId = Math.max(0, ...clips.map(c => c.id));
+    const newId = maxId + 1;
+    
+    // Crear duplicado con posición ajustada
+    const newClip: TimelineClip = {
+      ...clip,
+      id: newId,
+      title: `${clip.title} (copia)`,
+      start: clip.start + clip.duration + 0.5 // Colocar justo después del original
+    };
+    
+    // Validar operación
+    const validationResult = validateClipOperation(newClip, clips, 'add');
+    if (!validationResult.isValid) {
+      toast({
+        title: 'Error al duplicar clip',
+        description: validationResult.error || 'No se puede duplicar el clip en esta posición',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Agregar duplicado y seleccionarlo
+    setClips(prev => [...prev, newClip]);
+    setSelectedClipId(newId);
+    
+    // Notificar cambios
+    if (onTimelineUpdate) {
+      onTimelineUpdate([...clips, newClip]);
+    }
+  };
+  
+  const handleSplitClip = (id: number, splitTime: number) => {
+    if (mode === 'view') return;
+    
+    // Obtener el clip a dividir
+    const clip = getClipById(id);
+    if (!clip) return;
+    
+    // Validar operación
+    const validationResult = validateClipOperation(clip, clips, 'split');
+    if (!validationResult.isValid) {
+      toast({
+        title: 'Error al dividir clip',
+        description: validationResult.error || 'No se puede dividir este clip',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Asegurarse que el punto de división está dentro del clip
+    if (splitTime <= clip.start || splitTime >= clip.start + clip.duration) {
+      toast({
+        title: 'Error al dividir clip',
+        description: 'El punto de división debe estar dentro del clip',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Generar nuevo ID para el segundo clip
+    const maxId = Math.max(0, ...clips.map(c => c.id));
+    const newId = maxId + 1;
+    
+    // Crear primer parte del clip (clip original modificado)
+    const firstClip: TimelineClip = {
+      ...clip,
+      duration: splitTime - clip.start
+    };
+    
+    // Crear segunda parte del clip
+    const secondClip: TimelineClip = {
+      ...clip,
+      id: newId,
+      title: `${clip.title} (parte 2)`,
+      start: splitTime,
+      duration: (clip.start + clip.duration) - splitTime
+    };
+    
+    // Actualizar clips
+    setClips(prev => [
+      ...prev.filter(c => c.id !== id),
+      firstClip,
+      secondClip
+    ]);
+    
+    // Seleccionar segundo clip
+    setSelectedClipId(newId);
+    
+    // Notificar cambios
+    if (onTimelineUpdate) {
+      onTimelineUpdate([
+        ...clips.filter(c => c.id !== id),
+        firstClip,
+        secondClip
+      ]);
+    }
+  };
+  
+  const handleStartDragClip = (e: React.MouseEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
+    if (mode === 'view') return;
+    
+    const clip = getClipById(clipId);
+    if (!clip || lockedLayers[clip.layer]) return;
+    
+    // Obtener posición inicial
+    const timelineRect = timelineRef.current?.getBoundingClientRect();
+    if (!timelineRect) return;
+    
+    const mouseX = e.clientX - timelineRect.left;
+    
+    // Iniciar arrastre o redimensionamiento
+    if (handle === 'start' || handle === 'end') {
+      // Iniciar redimensionamiento
+      setResizingClipId(clipId);
+      setResizeHandle(handle);
+      setDragStartX(mouseX);
+      setClipStartPosition(clip.start);
+      setClipDuration(clip.duration);
+    } else {
+      // Iniciar arrastre
+      setDraggingClipId(clipId);
+      setDragStartX(mouseX);
+      setClipStartPosition(clip.start);
+    }
+    
+    // Seleccionar el clip
+    setSelectedClipId(clipId);
+    
+    // Agregar event listeners
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+  
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const timelineRect = timelineRef.current?.getBoundingClientRect();
+    if (!timelineRect) return;
+    
+    const mouseX = e.clientX - timelineRect.left;
+    const deltaPixels = mouseX - dragStartX;
+    const deltaTime = pixelsToTime(deltaPixels);
+    
+    if (draggingClipId !== null) {
+      // Mover clip
+      const clip = getClipById(draggingClipId);
+      if (!clip) return;
+      
+      let newStart = clipStartPosition + deltaTime;
+      
+      // Asegurar que el clip no salga del timeline
+      if (newStart < 0) newStart = 0;
+      if (newStart + clip.duration > duration) {
+        newStart = duration - clip.duration;
+      }
+      
+      // Verificar validez
+      const updatedClip = { ...clip, start: newStart };
+      const validationResult = validateClipOperation(
+        updatedClip, 
+        clips.filter(c => c.id !== draggingClipId),
+        'move'
+      );
+      
+      if (validationResult.isValid) {
+        // Aplicar movimiento
+        setClips(prev => prev.map(c => 
+          c.id === draggingClipId 
+            ? { ...c, start: newStart } 
+            : c
+        ));
+      }
+    } else if (resizingClipId !== null && resizeHandle !== null) {
+      // Redimensionar clip
+      const clip = getClipById(resizingClipId);
+      if (!clip) return;
+      
+      let newStart = clip.start;
+      let newDuration = clip.duration;
+      
+      if (resizeHandle === 'start') {
+        // Ajustar inicio del clip
+        newStart = clipStartPosition + deltaTime;
+        newDuration = clipDuration - deltaTime;
+        
+        // Restricciones
+        if (newStart < 0) {
+          newStart = 0;
+          newDuration = clipStartPosition + clipDuration;
+        }
+        if (newDuration < 0.5) {
+          newDuration = 0.5;
+          newStart = clipStartPosition + clipDuration - 0.5;
+        }
+      } else if (resizeHandle === 'end') {
+        // Ajustar duración del clip
+        newDuration = clipDuration + deltaTime;
+        
+        // Restricciones
+        if (newDuration < 0.5) newDuration = 0.5;
+        if (newStart + newDuration > duration) {
+          newDuration = duration - newStart;
+        }
+      }
+      
+      // Validar operación
+      const updatedClip = { ...clip, start: newStart, duration: newDuration };
+      const resizeOp = resizeHandle === 'start' ? 'resize_start' : 'resize_end';
+      const validationResult = validateClipOperation(
+        updatedClip, 
+        clips.filter(c => c.id !== resizingClipId),
+        resizeOp
+      );
+      
+      if (validationResult.isValid) {
+        // Aplicar redimensionamiento
+        setClips(prev => prev.map(c => 
+          c.id === resizingClipId 
+            ? { ...c, start: newStart, duration: newDuration } 
+            : c
+        ));
+      }
+    }
+  }, [
+    draggingClipId, 
+    resizingClipId, 
+    resizeHandle, 
+    dragStartX, 
+    clipStartPosition, 
+    clipDuration, 
+    pixelsToTime, 
+    getClipById, 
+    validateClipOperation, 
+    clips,
+    duration
+  ]);
+  
+  const handleMouseUp = useCallback(() => {
+    // Finalizar arrastre o redimensionamiento
+    if (draggingClipId !== null || resizingClipId !== null) {
+      // Notificar cambios
+      if (onTimelineUpdate) {
+        onTimelineUpdate(clips);
+      }
+    }
+    
+    setDraggingClipId(null);
+    setResizingClipId(null);
+    setResizeHandle(null);
+    
+    // Quitar event listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [
+    draggingClipId, 
+    resizingClipId, 
+    clips, 
+    handleMouseMove, 
+    onTimelineUpdate
+  ]);
+  
+  const handlePreviewClip = (id: number) => {
+    const clip = getClipById(id);
+    if (!clip) return;
+    
+    // Mover playhead al inicio del clip
+    setCurrentTime(clip.start);
+    
+    // Iniciar reproducción si no está reproduciendo
+    if (!isPlaying) {
+      handlePlay();
+    }
+  };
+  
+  const handleTimelineClick = (e: React.MouseEvent) => {
+    const timelineRect = timelineRef.current?.getBoundingClientRect();
+    if (!timelineRect) return;
+    
+    const clickX = e.clientX - timelineRect.left;
+    const clickTime = pixelsToTime(clickX);
+    
+    handleSeek(clickTime);
   };
   
   return (
-    <Card className="border shadow-sm">
-      <CardHeader>
-        <CardTitle>Demo del Editor de Timeline</CardTitle>
-        <CardDescription>
-          Demostración del sistema de capas aisladas y placeholders para generación de contenido AI
-        </CardDescription>
-      </CardHeader>
+    <div className="timeline-demo flex flex-col h-full p-4 bg-background">
+      {/* Controles superiores */}
+      <div className="timeline-controls flex justify-between items-center p-2 mb-4 bg-secondary rounded-md">
+        <div className="playback-controls flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleSeek(0)}
+            title="Inicio"
+          >
+            <SkipBack className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handlePlay}
+            title={isPlaying ? "Pausar" : "Reproducir"}
+          >
+            {isPlaying ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleSeek(duration)}
+            title="Final"
+          >
+            <SkipForward className="h-4 w-4" />
+          </Button>
+          
+          <div className="time-display ml-2 text-sm">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
+        </div>
+        
+        <div className="zoom-controls flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleZoomOut}
+            disabled={zoom <= MIN_ZOOM}
+            title="Alejar"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          
+          <div className="zoom-level text-sm">
+            {Math.round(zoom * 100)}%
+          </div>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleZoomIn}
+            disabled={zoom >= MAX_ZOOM}
+            title="Acercar"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       
-      <CardContent>
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Panel de capas */}
-          <div className="w-full md:w-64">
+      {/* Área principal con capas y línea de tiempo */}
+      <div className="timeline-container flex flex-1 overflow-hidden">
+        {/* Panel de capas */}
+        <div className="layers-panel w-60 mr-2 flex flex-col">
+          <div className="panel-header px-3 py-2 bg-secondary rounded-t-md font-medium">
+            Capas
+          </div>
+          
+          <div className="flex-1 overflow-y-auto">
             <LayerManager
               layers={layers}
               visibleLayers={visibleLayers}
               lockedLayers={lockedLayers}
+              selectedLayerId={selectedLayerId}
+              onAddLayer={(type) => {
+                if (mode === 'edit') {
+                  addLayer(type);
+                }
+              }}
+              onRemoveLayer={(id) => {
+                if (mode === 'edit') {
+                  removeLayer(id);
+                }
+              }}
               onToggleLayerVisibility={toggleLayerVisibility}
               onToggleLayerLock={toggleLayerLock}
-              className="mb-4"
+              onSelectLayer={selectLayer}
             />
-            
-            <div className="space-y-4 mt-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full" 
-                onClick={addPlaceholderClip}
+          </div>
+          
+          {mode === 'edit' && (
+            <div className="panel-footer p-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => addLayer('effect')}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Añadir Placeholder AI
+                <PlusCircle className="h-4 w-4 mr-1" />
+                Añadir Capa
               </Button>
+            </div>
+          )}
+        </div>
+        
+        {/* Área de línea de tiempo */}
+        <div className="timeline-area flex-1 overflow-hidden flex flex-col">
+          {/* Regla de tiempo */}
+          <div className="time-ruler h-6 bg-secondary rounded-t-md relative">
+            <div 
+              className="ruler-marks" 
+              style={{ width: `${timelineWidth}px` }}
+            >
+              {/* Marcas de tiempo (cada segundo) */}
+              {Array.from({ length: Math.ceil(duration) + 1 }).map((_, i) => (
+                <div 
+                  key={i}
+                  className="absolute bottom-0 h-3 border-l border-primary/60"
+                  style={{ left: `${timeToPixels(i)}px` }}
+                >
+                  {i % 5 === 0 && (
+                    <div className="absolute -translate-x-1/2 text-xs">
+                      {formatTime(i)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Contenedor de la línea de tiempo */}
+          <div 
+            className="timeline-content flex-1 bg-background rounded-b-md overflow-auto relative"
+            ref={timelineRef}
+            onClick={handleTimelineClick}
+          >
+            {/* Área extensible para el timeline */}
+            <div 
+              className="timeline-canvas"
+              style={{ width: `${timelineWidth}px`, minHeight: '100%' }}
+            >
+              {/* Grid de fondo */}
+              <div className="grid-lines absolute inset-0 pointer-events-none">
+                {Array.from({ length: Math.ceil(duration) + 1 }).map((_, i) => (
+                  <div 
+                    key={i}
+                    className={`absolute top-0 bottom-0 border-l ${
+                      i % 5 === 0 ? 'border-gray-400' : 'border-gray-200'
+                    }`}
+                    style={{ left: `${timeToPixels(i)}px` }}
+                  />
+                ))}
+              </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="zoom-level">Zoom: {zoom}px/s</Label>
-                <Slider
-                  id="zoom-level"
-                  min={50}
-                  max={200}
-                  step={5}
-                  value={[zoom]}
-                  onValueChange={([value]) => setZoom(value)}
-                />
+              {/* Renderizar clips por capa */}
+              {layers.map((layer) => {
+                // Filtrar clips que pertenecen a esta capa
+                const layerClips = clips.filter(
+                  c => c.layer === layer.id && (!layer.locked || lockedLayers[layer.id])
+                );
+                
+                return (
+                  <div 
+                    key={layer.id}
+                    className={`layer-track relative mb-1 ${
+                      !visibleLayers[layer.id] ? 'opacity-50' : ''
+                    }`}
+                    style={{ 
+                      height: `${layer.height}px`,
+                      display: visibleLayers[layer.id] ? 'block' : 'none'
+                    }}
+                  >
+                    {/* Fondo de la capa */}
+                    <div 
+                      className={`absolute inset-0 border ${
+                        selectedLayerId === layer.id ? 'border-primary' : 'border-gray-300'
+                      } rounded-md overflow-hidden`}
+                    />
+                    
+                    {/* Clips en esta capa */}
+                    {layerClips.map(clip => (
+                      <TimelineClip
+                        key={clip.id}
+                        clip={clip}
+                        selected={selectedClipId === clip.id}
+                        timeToPixels={timeToPixels}
+                        disabled={layer.locked || mode === 'view'}
+                        onSelect={handleSelectClip}
+                        onDelete={handleDeleteClip}
+                        onDuplicate={handleDuplicateClip}
+                        onSplit={handleSplitClip}
+                        onPreview={handlePreviewClip}
+                        onMouseDown={handleStartDragClip}
+                      />
+                    ))}
+                    
+                    {/* Botón para añadir clip (solo en modo edición) */}
+                    {mode === 'edit' && !layer.locked && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 opacity-50 hover:opacity-100"
+                        onClick={() => handleAddClip(layer.type, layer.id)}
+                      >
+                        <PlusCircle className="h-3 w-3 mr-1" />
+                        <span className="text-xs">Clip</span>
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+              
+              {/* Indicador de tiempo actual (playhead) */}
+              <div 
+                ref={playheadRef}
+                className="playhead absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                style={{ left: `${timeToPixels(currentTime)}px` }}
+              >
+                <div className="playhead-handle w-3 h-3 bg-red-500 -ml-1 rounded-full" />
               </div>
             </div>
           </div>
           
-          {/* Editor de Timeline */}
-          <div className="flex-1">
-            {/* Controles de reproducción */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setCurrentTime(0)}
-                >
-                  <SkipBack className="h-4 w-4" />
-                </Button>
-                
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={handlePlayPause}
-                >
-                  {isPlaying ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                </Button>
-                
-                <span className="text-sm font-mono">
-                  {formatTime(currentTime)} / {formatTime(totalDuration)}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Wand2 className="h-4 w-4 text-orange-500" />
-                <span className="text-xs text-muted-foreground">
-                  La capa de audio está aislada y no puede modificarse
-                </span>
-              </div>
-            </div>
-            
-            {/* Timeline */}
-            <div className="relative mb-1 overflow-x-auto">
-              <div 
-                className="bg-gray-800 rounded-md border border-gray-700 relative"
-                style={{ height: '200px', width: `${totalDuration * zoom}px`, minWidth: '100%' }}
-              >
-                {/* Grid de tiempo */}
-                {Array.from({ length: Math.ceil(totalDuration) }).map((_, i) => (
-                  <div 
-                    key={`grid-${i}`}
-                    className="absolute top-0 bottom-0 border-l border-gray-700" 
-                    style={{ left: `${i * zoom}px` }}
-                  >
-                    <div className="absolute -top-5 text-xs text-gray-400">
-                      {formatTime(i)}
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Playhead */}
-                <div 
-                  className="absolute top-0 bottom-0 w-0.5 bg-orange-500 z-50"
-                  style={{ 
-                    left: `${currentTime * zoom}px`,
-                    transform: 'translateX(-50%)'
-                  }}
-                />
-                
-                {/* Clips */}
-                <div className="absolute inset-0">
-                  {clips.filter(clip => visibleLayers.includes(clip.layer)).map(clip => (
-                    <div 
-                      key={clip.id}
-                      className="absolute"
-                      style={{
-                        top: `${clip.layer * 50}px`,
-                        height: '45px'
-                      }}
-                    >
-                      <TimelineClip
-                        clip={clip}
-                        pixelsPerSecond={zoom}
-                        currentTime={currentTime}
-                        isSelected={false}
-                        onSelect={() => {}}
-                        onRegenerateContent={handleRegenerateContent}
-                        onMoveClipStart={handleMoveClipStart}
-                        onMoveClipEnd={handleMoveClipEnd}
-                        isPlayheadOver={isPlayheadOverClip(clip)}
-                        layersVisible={visibleLayers}
-                        layersLocked={lockedLayers}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            {/* Barra de progreso */}
-            <Progress
-              value={(currentTime / totalDuration) * 100}
-              className="h-2"
+          {/* Control deslizante para la línea de tiempo */}
+          <div className="timeline-slider mt-2">
+            <Slider 
+              value={[currentTime]} 
+              min={0} 
+              max={duration} 
+              step={0.01}
+              onValueChange={(value) => handleSeek(value[0])}
             />
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
+};
+
+/**
+ * Formatea segundos a formato mm:ss
+ */
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+export { TimelineClip };
 export default TimelineDemo;
