@@ -47,15 +47,12 @@ export interface TimelineClip {
   // Nuevas propiedades para sistema de placeholders
   isPlaceholder?: boolean;
   pendingGeneration?: boolean;
-  placeholderType?: 'image' | 'video' | 'audio' | 'text';
-  // Límite de duración (importante para clips AI, 5 segundos máximo)
+  // Propiedades para clips aislados (como la capa de audio)
+  isIsolated?: boolean;
+  // Duración máxima para clips con restricciones (5 seg para placeholders de AI)
   maxDuration?: number;
-  // Indicador para capas aisladas (como audio)
-  isIsolated?: boolean;
+  placeholderType?: 'image' | 'video' | 'audio' | 'text';
   generationPrompt?: string;
-  // Propiedades para capas aisladas (audio debe estar aislado)
-  isIsolated?: boolean;
-  maxDuration?: number; // Para limitar clips a máximo 5 segundos
   // URLs de recursos
   imageUrl?: string;
   videoUrl?: string;
@@ -185,8 +182,16 @@ export function TimelineEditor({
   
   // Estados para gestión de capas
   const [visibleLayers, setVisibleLayers] = useState<number[]>([0, 1, 2, 3]); // Todas las capas visibles por defecto
-  const [lockedLayers, setLockedLayers] = useState<number[]>([]); // Ninguna capa bloqueada por defecto
+  const [lockedLayers, setLockedLayers] = useState<number[]>([0]); // Capa de audio bloqueada por defecto
   const [layerManagerOpen, setLayerManagerOpen] = useState(false);
+  
+  // Configuración de capas para LayerManager
+  const [layerList, setLayerList] = useState([
+    { id: 0, name: 'Audio', type: 'audio', locked: true, visible: true, isIsolated: true },
+    { id: 1, name: 'Imágenes', type: 'image', locked: false, visible: true, isPlaceholder: true },
+    { id: 2, name: 'Texto', type: 'text', locked: false, visible: true },
+    { id: 3, name: 'Efectos', type: 'effect', locked: false, visible: true }
+  ]);
   
   // Configuración de posicionamiento de capas para evitar superposición
   const layerConfig = {
