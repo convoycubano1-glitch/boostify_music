@@ -64,6 +64,9 @@ export function useClipOperations({
   // Estado para los clips como lista plana
   const [clips, setClips] = useState<TimelineClip[]>(initialClips);
   
+  // Estado para clips organizados por capa (derivado de clips)
+  const [clipsByLayer, setClipsByLayer] = useState<{ [layerId: number]: TimelineClip[] }>({});
+  
   // Usamos useClipInteractions como capa base de interactividad
   const clipInteractions = useClipInteractions({
     clips,
@@ -71,17 +74,19 @@ export function useClipOperations({
   });
   
   // Organizamos los clips por capa para operaciones más complejas
-  const clipsByLayer = useMemo(() => {
+  // y actualizamos el estado clipsByLayer
+  useMemo(() => {
     const grouped: { [layerId: number]: TimelineClip[] } = {};
     
     for (const clip of clips) {
-      const layerId = clip.layerIndex || 0; // Fallback a capa 0 por compatibilidad
+      const layerId = clip.layer || 0; // Fallback a capa 0 por compatibilidad
       if (!grouped[layerId]) {
         grouped[layerId] = [];
       }
       grouped[layerId].push(clip);
     }
     
+    setClipsByLayer(grouped);
     return grouped;
   }, [clips]);
   
