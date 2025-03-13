@@ -1,3 +1,4 @@
+import React from 'react';
 import { WaitlistModal } from "../components/marketing/waitlist-modal";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
