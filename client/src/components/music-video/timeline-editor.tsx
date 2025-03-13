@@ -107,7 +107,7 @@ export function TimelineEditor({
   autoScroll = true,
   initialTime = 0,
   maxTime = 0
-}: TimelineEditorProps) {
+}: TimelineEditorProps): JSX.Element {
   // Estado para clips
   const [clips, setClips] = useState<TimelineClip[]>(initialClips);
   const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
