@@ -39,7 +39,40 @@ export type TrackType =
   | 'video'
   | 'audio'
   | 'text'
-  | 'overlay';
+  | 'overlay'
+  | 'image-sequence';  // Secuencia de imágenes (tipo especializado para videos musicales)
+
+// Tipos de plano para clips de video e imagen
+export type ShotType = 
+  | 'close-up'      // Primer plano
+  | 'medium'        // Plano medio  
+  | 'wide'          // Plano general
+  | 'transition'    // Transición visual
+  | 'normal';       // Plano normal (por defecto)
+
+// Tipos de transición entre clips
+export type TransitionType = 
+  | 'cut'           // Corte directo
+  | 'crossfade'     // Fundido cruzado
+  | 'fade'          // Fundido a negro/blanco
+  | 'wipe'          // Barrido 
+  | 'slide'         // Deslizamiento
+  | 'zoom'          // Zoom in/out
+  | 'dissolve'      // Disolución
+  | 'custom';       // Transición personalizada
+
+// Patrones de movimiento de cámara
+export type CameraMovementPattern = 
+  | 'static'        // Sin movimiento
+  | 'pan-left'      // Paneo hacia la izquierda
+  | 'pan-right'     // Paneo hacia la derecha
+  | 'tilt-up'       // Inclinación hacia arriba
+  | 'tilt-down'     // Inclinación hacia abajo
+  | 'zoom-in'       // Acercamiento
+  | 'zoom-out'      // Alejamiento
+  | 'dolly'         // Movimiento hacia adelante/atrás
+  | 'track'         // Seguimiento lateral
+  | 'custom';       // Movimiento personalizado
 
 // Definición de un proyecto
 export interface Project {

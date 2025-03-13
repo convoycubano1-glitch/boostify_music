@@ -1220,55 +1220,128 @@ export function TimelineEditor({
                     className="relative w-full h-20 bg-transparent rounded-md overflow-hidden mt-2"
                   />
                   
-                  {/* Visualización de Beats mejorada */}
+                  {/* Visualización de Beats mejorada - Estilo profesional de edición de video */}
                   {beatsData && beatsData.beats && beatsData.beats.length > 0 && (
                     <>
-                      {/* Beat visualization in timeline */}
-                      <div className="absolute top-0 left-0 w-full h-8 pointer-events-none">
+                      {/* Beat visualization in timeline - Inspirado en editores profesionales */}
+                      <div className="absolute top-0 left-0 w-full h-10 pointer-events-none">
                         {beatsData.beats.map((beat, index) => {
-                          // Determinar colores según tipo de beat
+                          // Determinar colores según tipo de beat (estilo profesional)
                           const beatColor = beat.type === 'downbeat' 
-                            ? 'bg-red-500' 
+                            ? 'bg-red-500 dark:bg-red-600' 
                             : beat.type === 'accent'
-                              ? 'bg-yellow-500'
-                              : 'bg-blue-500';
+                              ? 'bg-yellow-500 dark:bg-yellow-600'
+                              : 'bg-blue-500 dark:bg-blue-600';
                           
-                          // Altura basada en intensidad (0-1)
-                          const height = `${Math.max(15, Math.min(95, beat.intensity * 90))}%`;
+                          // Altura basada en intensidad (0-1) con escala profesional
+                          const heightPercentage = Math.max(20, Math.min(100, beat.intensity * 100));
+                          const height = `${heightPercentage}%`;
+                          
+                          // Ancho variable basado en tipo de beat (estilo profesional)
+                          const width = beat.type === 'downbeat' ? 2 : 1;
+                          
+                          // Calcular si este beat coincide con un clip (para sugerir edición basada en beats)
+                          const clipStartsAtBeat = clips.find(clip => 
+                            Math.abs(clip.start - beat.time) < 0.05
+                          );
+                          
+                          const clipEndsAtBeat = clips.find(clip => 
+                            Math.abs((clip.start + clip.duration) - beat.time) < 0.05
+                          );
+                          
+                          // Destacar visuales para beats que son puntos de corte potenciales
+                          const isCutPoint = beat.type === 'downbeat' || (beat.type === 'accent' && beat.intensity > 0.65);
+                          const isBeatFourCount = (index % 4 === 0); // Destacar cada 4 beats (estructura musical común)
+                          
+                          // Highlight especial para cambios de sección musical (estilo profesional)
+                          const isDownbeatHighlight = beat.type === 'downbeat' && beat.intensity > 0.8;
                           
                           return (
                             <div 
                               key={`beat-${index}`} 
-                              className={`absolute bottom-0 ${beatColor} w-1 opacity-80 hover:opacity-100 rounded-t transition-all duration-75 hover:w-1.5`}
+                              className={`absolute bottom-0 ${beatColor} opacity-90 hover:opacity-100 rounded-t shadow-sm 
+                                         ${isCutPoint ? 'border-t border-white/30' : ''} 
+                                         ${isDownbeatHighlight ? 'animate-pulse' : ''}
+                                         ${clipStartsAtBeat ? 'ring-1 ring-white' : ''}
+                                         ${clipEndsAtBeat ? 'ring-1 ring-green-300' : ''}
+                                         transition-all duration-75 hover:scale-110`}
                               style={{
                                 height,
+                                width: `${width}px`,
                                 left: `${timeToPixels(beat.time)}px`,
-                                transform: 'translateX(-50%)'
+                                transform: 'translateX(-50%)',
+                                zIndex: beat.type === 'downbeat' ? 3 : beat.type === 'accent' ? 2 : 1
                               }}
-                              title={`${beat.type} - ${beat.timecode} - Energía: ${beat.energy.toFixed(2)}`}
-                            />
+                              title={`${beat.type} - ${beat.timecode} - Energía: ${beat.energy.toFixed(2)}${
+                                isCutPoint ? ' - Punto de corte recomendado' : ''
+                              }${
+                                isBeatFourCount ? ' - Beat estructural' : ''
+                              }${
+                                clipStartsAtBeat ? ' - Inicio de clip' : ''
+                              }${
+                                clipEndsAtBeat ? ' - Fin de clip' : ''
+                              }`}
+                            >
+                              {/* Indicador numérico para beats importantes (editores profesionales) */}
+                              {(isBeatFourCount || beat.type === 'downbeat') && (
+                                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-[8px] font-mono 
+                                              bg-background/70 rounded px-1 whitespace-nowrap">
+                                  {(index + 1).toString().padStart(2, '0')}
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
+                        
+                        {/* Líneas de grid para estructura musical (estilo profesional) */}
+                        {beatsData.metadata?.bpm && beatsData.beats.length > 8 && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            {/* Crear líneas de grid cada 4 beats para estructura musical */}
+                            {beatsData.beats
+                              .filter((_, i) => i % 16 === 0) // Cada 16 beats = típicamente 4 compases en 4/4
+                              .map((beat, i) => (
+                                <div
+                                  key={`grid-${i}`}
+                                  className="absolute top-0 bottom-0 border-l border-dashed border-orange-500/30 dark:border-orange-400/20"
+                                  style={{
+                                    left: `${timeToPixels(beat.time)}px`,
+                                  }}
+                                />
+                              ))}
+                          </div>
+                        )}
                       </div>
                       
-                      {/* Leyenda de tipos de beat */}
-                      <div className="absolute top-1 right-3 bg-background/80 backdrop-blur-sm rounded-sm px-2 py-1 z-10 border shadow-sm">
+                      {/* Leyenda de tipos de beat - Mejorada con información musical */}
+                      <div className="absolute top-1 right-3 bg-background/90 backdrop-blur-sm rounded-md px-2 py-1.5 z-10 border shadow-sm">
                         <div className="flex items-center gap-3 text-xs">
-                          <div className="flex items-center">
-                            <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
-                            <span className="text-xs">Downbeat</span>
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
+                              <span className="text-xs">Downbeat</span>
+                            </div>
+                            <span className="text-[9px] text-muted-foreground">Cortes principales</span>
                           </div>
-                          <div className="flex items-center">
-                            <div className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
-                            <span className="text-xs">Accent</span>
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
+                              <span className="text-xs">Accent</span>
+                            </div>
+                            <span className="text-[9px] text-muted-foreground">Transiciones</span>
                           </div>
-                          <div className="flex items-center">
-                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
-                            <span className="text-xs">Beat</span>
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 rounded-full bg-blue-500 mr-1"></div>
+                              <span className="text-xs">Beat</span>
+                            </div>
+                            <span className="text-[9px] text-muted-foreground">Sincronización</span>
                           </div>
                           {beatsData.metadata?.bpm && (
-                            <div className="flex items-center">
+                            <div className="flex flex-col items-center border-l pl-2">
                               <span className="font-medium text-xs">{beatsData.metadata.bpm} BPM</span>
+                              <span className="text-[9px] text-muted-foreground">
+                                {beatsData.metadata.timeSignature || "4/4"}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -1329,40 +1402,151 @@ export function TimelineEditor({
                   <div className="absolute inset-0">
                     {clips
                       .filter(clip => clip.layer === 1) // Mostrar solo clips de la capa de imágenes
-                      .map((clip) => (
-                        <div
-                          key={`image-clip-${clip.id}`}
-                          className={cn(
-                            "absolute h-20 top-2 border rounded-sm overflow-hidden",
-                            selectedClip === clip.id ? "ring-2 ring-blue-500 border-blue-400" : "border-blue-300 dark:border-blue-700",
-                            "bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20",
-                            "cursor-move"
-                          )}
-                          style={{
-                            left: `${timeToPixels(clip.start)}px`,
-                            width: `${timeToPixels(clip.duration)}px`,
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedClip(clip.id);
-                          }}
-                          onMouseDown={(e) => handleClipDragStart(clip.id, e)}
-                        >
-                          <div 
-                            className="absolute inset-0"
+                      .map((clip, idx, filteredClips) => {
+                        // Identificar si es el primer o último clip para resaltar visualmente
+                        const isFirstClip = idx === 0;
+                        const isLastClip = idx === filteredClips.length - 1;
+                        
+                        // Detectar si este clip está sincronizado con un beat (para estilo profesional)
+                        const isSyncedWithBeat = beatsData?.beats?.some(beat => 
+                          Math.abs(clip.start - beat.time) < 0.05 && beat.type === 'downbeat'
+                        );
+                        
+                        // Determinar si hay un clip adyacente para transiciones
+                        const hasNextClip = idx < filteredClips.length - 1;
+                        const nextClip = hasNextClip ? filteredClips[idx + 1] : null;
+                        const isConnectedToNext = hasNextClip && 
+                          Math.abs((clip.start + clip.duration) - nextClip.start) < 0.05;
+                        
+                        // Determinar estilo de borde según posición y contexto
+                        const borderStyle = isConnectedToNext 
+                          ? "border-r-0" // Sin borde derecho si hay clip conectado
+                          : "";
+                        
+                        // Determinar el tipo de clip basado en sus propiedades
+                        const clipStyle = clip.shotType || (clip.metadata?.shotType || "normal");
+                        
+                        // Variable para guardar clases adicionales según el tipo de plano
+                        let shotTypeClasses = "";
+                        let shotTypeLabel = "";
+                        
+                        switch (clipStyle) {
+                          case "close-up":
+                            shotTypeClasses = "border-t-indigo-500";
+                            shotTypeLabel = "Primer plano";
+                            break;
+                          case "medium":
+                            shotTypeClasses = "border-t-green-500";
+                            shotTypeLabel = "Plano medio";
+                            break;
+                          case "wide":
+                            shotTypeClasses = "border-t-amber-500";
+                            shotTypeLabel = "Plano general";
+                            break;
+                          case "transition":
+                            shotTypeClasses = "border-t-pink-500 bg-gradient-to-r from-pink-100/30 to-blue-100/30";
+                            shotTypeLabel = "Transición";
+                            break;
+                          default:
+                            shotTypeClasses = "border-t-blue-500";
+                            shotTypeLabel = "Normal";
+                        }
+                        
+                        return (
+                          <div
+                            key={`image-clip-${clip.id}`}
+                            className={cn(
+                              "absolute h-20 top-2 border border-t-2 rounded-sm overflow-hidden",
+                              borderStyle,
+                              shotTypeClasses,
+                              selectedClip === clip.id 
+                                ? "ring-2 ring-blue-500 border-blue-400 shadow-md" 
+                                : "border-blue-300 dark:border-blue-700",
+                              isSyncedWithBeat 
+                                ? "border-l-red-500 border-l-2" 
+                                : "",
+                              "bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-800/20",
+                              "cursor-move hover:shadow-lg transition-shadow duration-150"
+                            )}
                             style={{
-                              backgroundImage: clip.thumbnail ? `url(${clip.thumbnail})` : undefined,
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center',
-                              opacity: 0.7
+                              left: `${timeToPixels(clip.start)}px`,
+                              width: `${timeToPixels(clip.duration)}px`,
                             }}
-                          />
-                          <div className="absolute top-0 left-0 right-0 p-1 text-[10px] bg-black/50 text-white flex items-center justify-between">
-                            <span className="font-medium truncate">{clip.title}</span>
-                            <span>{formatTimecode(clip.duration)}</span>
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedClip(clip.id);
+                            }}
+                            onMouseDown={(e) => handleClipDragStart(clip.id, e)}
+                          >
+                            {/* Fondo del clip con efecto profesional */}
+                            <div 
+                              className="absolute inset-0 group-hover:scale-105 transition-transform duration-200"
+                              style={{
+                                backgroundImage: clip.thumbnail ? `url(${clip.thumbnail})` : undefined,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                opacity: 0.8
+                              }}
+                            />
+                            
+                            {/* Capa de gradiente para mejorar legibilidad */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-60" />
+                            
+                            {/* Barra superior de información */}
+                            <div className="absolute top-0 left-0 right-0 p-1 text-[10px] bg-black/60 text-white flex items-center justify-between">
+                              <div className="flex items-center">
+                                <span className="font-medium truncate">
+                                  {clip.title || `Clip ${clip.id}`}
+                                </span>
+                                {clip.lipsyncApplied && (
+                                  <div className="ml-1 flex items-center bg-blue-500/70 px-1 rounded text-[8px]">
+                                    LIPSYNC
+                                  </div>
+                                )}
+                              </div>
+                              <span>{formatTimecode(clip.duration)}</span>
+                            </div>
+                            
+                            {/* Tipo de plano (información profesional) */}
+                            <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[8px] px-1 rounded">
+                              {shotTypeLabel}
+                            </div>
+                            
+                            {/* Íconos indicadores de propiedades especiales */}
+                            <div className="absolute bottom-1 right-1 flex space-x-1">
+                              {clip.transitionType && (
+                                <div className="bg-pink-500/80 rounded p-0.5 shadow-sm" title={`Transición: ${clip.transitionType}`}>
+                                  <div className="w-3 h-3 flex items-center justify-center">
+                                    {clip.transitionType === 'crossfade' && <Layers className="w-2 h-2 text-white" />}
+                                    {clip.transitionType === 'wipe' && <ArrowRightIcon className="w-2 h-2 text-white" />}
+                                    {clip.transitionType === 'fade' && <Film className="w-2 h-2 text-white" />}
+                                    {clip.transitionType === 'slide' && <ArrowLeftRight className="w-2 h-2 text-white" />}
+                                    {clip.transitionType === 'zoom' && <ZoomIn className="w-2 h-2 text-white" />}
+                                  </div>
+                                </div>
+                              )}
+                              {clip.metadata?.movementApplied && (
+                                <div className="bg-orange-500/80 rounded p-0.5 shadow-sm" title={`Movimiento: ${clip.metadata.movementPattern || 'Personalizado'}`}>
+                                  <MoveHorizontal className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                              {isSyncedWithBeat && (
+                                <div className="bg-green-500/80 rounded p-0.5 shadow-sm" title="Sincronizado con beat">
+                                  <Music2 className="w-3 h-3 text-white" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Indicadores de posición en la secuencia */}
+                            {isFirstClip && (
+                              <div className="absolute top-1/2 -left-1 transform -translate-y-1/2 h-4 w-1 bg-blue-500 rounded-l" />
+                            )}
+                            {isLastClip && (
+                              <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 h-4 w-1 bg-blue-500 rounded-r" />
+                            )}
                           </div>
-                        </div>
-                    ))}
+                        );
+                      })}
                   </div>
                 </div>
               </div>
