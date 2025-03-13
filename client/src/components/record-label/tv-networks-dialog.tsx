@@ -1,4 +1,3 @@
-import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -22,6 +21,7 @@ import {
   MoveRight,
   Video
 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const tvNetworks = [

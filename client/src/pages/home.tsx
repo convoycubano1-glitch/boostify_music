@@ -1,4 +1,3 @@
-import React, { useState, useEffect, useRef } from "react";
 import { WaitlistModal } from "../components/marketing/waitlist-modal";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -17,6 +16,7 @@ import { useToast } from "../hooks/use-toast";
 import { Footer } from "../components/layout/footer";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import { useState, useEffect, useRef } from "react";
 // Comentando los siguientes imports temporalmente ya que no son esenciales para la página inicial
 // import { SuperAgent } from "../components/agents/super-agent";
 // import { PricingPlans } from "../components/subscription/pricing-plans";
