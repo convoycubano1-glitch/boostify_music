@@ -522,6 +522,17 @@ export function useClipOperations({
   }, [clipsByLayer, onError]);
   
   /**
+   * Corta un clip eliminándolo del timeline
+   * A diferencia de removeClip, esta operación está diseñada para ser
+   * utilizada específicamente con la interfaz de usuario de edición
+   */
+  const cutClip = useCallback((clipId: number): boolean => {
+    // Simplemente delegamos al método removeClip, pero mantenemos
+    // una función separada para claridad semántica en la interfaz
+    return removeClip(clipId);
+  }, [removeClip]);
+
+  /**
    * Duplica un clip
    */
   const duplicateClip = useCallback((clipId: number, offsetTime: number = 0): TimelineClip | null => {
@@ -721,6 +732,7 @@ export function useClipOperations({
     splitClip,
     combineClips,
     duplicateClip,
+    cutClip,         // Agregamos la nueva operación de corte
     changeClipLayer,
     clearAllClips,
     importClips,
