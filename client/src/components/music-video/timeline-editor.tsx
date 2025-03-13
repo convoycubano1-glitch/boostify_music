@@ -330,10 +330,18 @@ export function TimelineEditor({
       audioRef.current.currentTime = 0;
     }
     
-    // Detener y reiniciar el video
+    // Detener y reiniciar el video de referencia
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
     }
+    
+    // Reiniciar todos los videos de vista previa
+    document.querySelectorAll('video').forEach(video => {
+      if (video !== videoRef.current) { // Evitar el video de referencia
+        video.currentTime = 0;
+        video.pause();
+      }
+    });
   }, []);
   
   const seekToTime = useCallback((time: number) => {
@@ -345,10 +353,17 @@ export function TimelineEditor({
       audioRef.current.currentTime = clampedTime;
     }
     
-    // Actualizar tiempo de video
+    // Actualizar tiempo de video de referencia
     if (videoRef.current) {
       videoRef.current.currentTime = clampedTime;
     }
+    
+    // Actualizar tiempo de todos los videos de vista previa
+    document.querySelectorAll('video').forEach(video => {
+      if (video !== videoRef.current) { // Evitar el video de referencia
+        video.currentTime = clampedTime;
+      }
+    });
   }, [duration]);
   
   const toggleMute = useCallback(() => {
