@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { TimelineEditor } from '../components/music-video/timeline-editor';
+import { TimelineEditor, BeatMap } from '../components/music-video/timeline-editor';
 import { TimelineClip } from '../components/timeline/TimelineClip';
 import { Button } from '../components/ui/button';
 import { useToast } from '../hooks/use-toast';
@@ -75,7 +75,7 @@ export default function TimelineVideoDemo() {
   ];
   
   // Mapa de beats para sincronización (ejemplo simple)
-  const beatMap = {
+  const beatMap: BeatMap = {
     beats: [
       { time: 0, type: 'downbeat' },
       { time: 0.5, type: 'beat' },
@@ -85,7 +85,7 @@ export default function TimelineVideoDemo() {
       { time: 2.5, type: 'beat' },
       { time: 3.0, type: 'downbeat' },
       { time: 3.5, type: 'beat' },
-      { time: 4.0, type: 'downbeat' },
+      { time: 4.0, type: 'downbeat' }
       // Más beats...
     ],
     sections: [
