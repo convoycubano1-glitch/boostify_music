@@ -37,10 +37,11 @@ export interface TimelineClip {
   // Propiedades visuales
   thumbnail?: string;
   title: string;
+  // Tipo de plano para clips de vídeo/imagen
+  shotType?: string;
   description?: string;
   waveform?: number[];
   imagePrompt?: string;
-  shotType?: string;
   // Propiedades de visibilidad y bloqueo
   visible?: boolean;
   locked?: boolean;
@@ -73,6 +74,7 @@ export interface TimelineClip {
     faceSwapApplied?: boolean;
     musicianIntegrated?: boolean;
     sourceIndex?: number; // Índice en el guion original
+    shotType?: string;    // Tipo de plano (primer plano, plano medio, etc.)
     // Propiedades de sincronización de labios en metadata
     lipsync?: {
       applied: boolean;
@@ -654,9 +656,15 @@ export function TimelineEditor({
   const handleClipDragStart = (clipId: number, e: React.MouseEvent) => {
     // Esta función ahora es solo un fallback, principalmente gestionada por interactjs
     try {
-      // Eliminamos la verificación problemática de interact.isSet
       e.preventDefault();
       const clip = clips.find(c => c.id === clipId);
+      
+      // Verificar si la capa del clip está bloqueada
+      if (clip && lockedLayers.includes(clip.layer)) {
+        // Si la capa está bloqueada, no permitir la edición
+        console.log(`Capa ${clip.layer} bloqueada - no se puede mover el clip`);
+        return;
+      }
       if (clip) {
         setIsDragging(true);
         setSelectedClip(clipId);
@@ -696,10 +704,20 @@ export function TimelineEditor({
   const handleResizeStart = (clipId: number, side: 'start' | 'end', e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    
+    const clip = clips.find(c => c.id === clipId);
+    
+    // Verificar si la capa del clip está bloqueada
+    if (clip && lockedLayers.includes(clip.layer)) {
+      // Si la capa está bloqueada, no permitir la edición
+      console.log(`Capa ${clip.layer} bloqueada - no se puede redimensionar el clip`);
+      return;
+    }
+    
     setSelectedClip(clipId);
     setResizingSide(side);
     setDragStartX(e.clientX);
-    const clip = clips.find(c => c.id === clipId);
+    
     if (clip) {
       setClipStartTime(clip.start);
       
@@ -962,6 +980,25 @@ export function TimelineEditor({
       
       {/* Barra de herramientas de edición */}
       <div className="flex flex-wrap items-center gap-2 mb-4 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        {/* Botón para gestión de capas */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                onClick={() => setLayerManagerOpen(true)}
+                variant="ghost" 
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Layers className="h-4 w-4" />
+                <span className="hidden sm:inline">Capas</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Administrar capas y visibilidad</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -1537,7 +1574,7 @@ export function TimelineEditor({
                               )}
                               {isSyncedWithBeat && (
                                 <div className="bg-green-500/80 rounded p-0.5 shadow-sm" title="Sincronizado con beat">
-                                  <Music2 className="w-3 h-3 text-white" />
+                                  <Music className="w-3 h-3 text-white" />
                                 </div>
                               )}
                             </div>
@@ -1901,6 +1938,263 @@ export function TimelineEditor({
           </div>
         )}
       </ScrollArea>
+
+      {/* Diálogo de gestión de capas */}
+      <Dialog open={layerManagerOpen} onOpenChange={setLayerManagerOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogTitle>Gestión de Capas</DialogTitle>
+          <div className="space-y-4 my-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Gestión de Capas</h3>
+              <div className="grid grid-cols-1 gap-2">
+                {/* Capa de Audio */}
+                <div className="flex items-center p-2 rounded border bg-slate-50 dark:bg-slate-900">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="flex-shrink-0 h-6 w-6 rounded bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                      <AudioLines className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <span>Capa de Audio</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Control de visibilidad */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (visibleLayers.includes(0)) {
+                            setVisibleLayers(visibleLayers.filter(layer => layer !== 0));
+                          } else {
+                            setVisibleLayers([...visibleLayers, 0]);
+                          }
+                        }}
+                        className="h-8 w-8"
+                        title={visibleLayers.includes(0) ? "Ocultar capa" : "Mostrar capa"}
+                      >
+                        {visibleLayers.includes(0) ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </Button>
+                      <span className="text-xs">{visibleLayers.includes(0) ? "Visible" : "Oculta"}</span>
+                    </div>
+                    
+                    {/* Control de bloqueo */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (lockedLayers.includes(0)) {
+                            setLockedLayers(lockedLayers.filter(layer => layer !== 0));
+                          } else {
+                            setLockedLayers([...lockedLayers, 0]);
+                          }
+                        }}
+                        className="h-8 w-8"
+                        title={lockedLayers.includes(0) ? "Desbloquear capa" : "Bloquear capa"}
+                      >
+                        {lockedLayers.includes(0) ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                      </Button>
+                      <span className="text-xs">{lockedLayers.includes(0) ? "Bloqueada" : "Editable"}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Capa de Vídeo/Imagen */}
+                <div className="flex items-center p-2 rounded border bg-slate-50 dark:bg-slate-900">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="flex-shrink-0 h-6 w-6 rounded bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                      <ImageIcon className="h-4 w-4 text-purple-500" />
+                    </div>
+                    <span>Capa de Video/Imagen</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Control de visibilidad */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (visibleLayers.includes(1)) {
+                            setVisibleLayers(visibleLayers.filter(layer => layer !== 1));
+                          } else {
+                            setVisibleLayers([...visibleLayers, 1]);
+                          }
+                        }}
+                        className="h-8 w-8"
+                        title={visibleLayers.includes(1) ? "Ocultar capa" : "Mostrar capa"}
+                      >
+                        {visibleLayers.includes(1) ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </Button>
+                      <span className="text-xs">{visibleLayers.includes(1) ? "Visible" : "Oculta"}</span>
+                    </div>
+                    
+                    {/* Control de bloqueo */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (lockedLayers.includes(1)) {
+                            setLockedLayers(lockedLayers.filter(layer => layer !== 1));
+                          } else {
+                            setLockedLayers([...lockedLayers, 1]);
+                          }
+                        }}
+                        className="h-8 w-8"
+                        title={lockedLayers.includes(1) ? "Desbloquear capa" : "Bloquear capa"}
+                      >
+                        {lockedLayers.includes(1) ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                      </Button>
+                      <span className="text-xs">{lockedLayers.includes(1) ? "Bloqueada" : "Editable"}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Capa de Texto */}
+                <div className="flex items-center p-2 rounded border bg-slate-50 dark:bg-slate-900">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="flex-shrink-0 h-6 w-6 rounded bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                      <Type className="h-4 w-4 text-amber-500" />
+                    </div>
+                    <span>Capa de Texto</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Control de visibilidad */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (visibleLayers.includes(2)) {
+                            setVisibleLayers(visibleLayers.filter(layer => layer !== 2));
+                          } else {
+                            setVisibleLayers([...visibleLayers, 2]);
+                          }
+                        }}
+                        className="h-8 w-8"
+                        title={visibleLayers.includes(2) ? "Ocultar capa" : "Mostrar capa"}
+                      >
+                        {visibleLayers.includes(2) ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </Button>
+                      <span className="text-xs">{visibleLayers.includes(2) ? "Visible" : "Oculta"}</span>
+                    </div>
+                    
+                    {/* Control de bloqueo */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (lockedLayers.includes(2)) {
+                            setLockedLayers(lockedLayers.filter(layer => layer !== 2));
+                          } else {
+                            setLockedLayers([...lockedLayers, 2]);
+                          }
+                        }}
+                        className="h-8 w-8"
+                        title={lockedLayers.includes(2) ? "Desbloquear capa" : "Bloquear capa"}
+                      >
+                        {lockedLayers.includes(2) ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                      </Button>
+                      <span className="text-xs">{lockedLayers.includes(2) ? "Bloqueada" : "Editable"}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Capa de Efectos */}
+                <div className="flex items-center p-2 rounded border bg-slate-50 dark:bg-slate-900">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="flex-shrink-0 h-6 w-6 rounded bg-pink-100 dark:bg-pink-900 flex items-center justify-center">
+                      <Sparkles className="h-4 w-4 text-pink-500" />
+                    </div>
+                    <span>Capa de Efectos</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Control de visibilidad */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (visibleLayers.includes(3)) {
+                            setVisibleLayers(visibleLayers.filter(layer => layer !== 3));
+                          } else {
+                            setVisibleLayers([...visibleLayers, 3]);
+                          }
+                        }}
+                        className="h-8 w-8"
+                        title={visibleLayers.includes(3) ? "Ocultar capa" : "Mostrar capa"}
+                      >
+                        {visibleLayers.includes(3) ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </Button>
+                      <span className="text-xs">{visibleLayers.includes(3) ? "Visible" : "Oculta"}</span>
+                    </div>
+                    
+                    {/* Control de bloqueo */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (lockedLayers.includes(3)) {
+                            setLockedLayers(lockedLayers.filter(layer => layer !== 3));
+                          } else {
+                            setLockedLayers([...lockedLayers, 3]);
+                          }
+                        }}
+                        className="h-8 w-8"
+                        title={lockedLayers.includes(3) ? "Desbloquear capa" : "Bloquear capa"}
+                      >
+                        {lockedLayers.includes(3) ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                      </Button>
+                      <span className="text-xs">{lockedLayers.includes(3) ? "Bloqueada" : "Editable"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Acciones rápidas */}
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setVisibleLayers([0, 1, 2, 3])}
+                className="text-xs flex items-center gap-1"
+              >
+                <Eye className="h-3 w-3" /> Mostrar todas
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setVisibleLayers([])}
+                className="text-xs flex items-center gap-1"
+              >
+                <EyeOff className="h-3 w-3" /> Ocultar todas
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLockedLayers([])}
+                className="text-xs flex items-center gap-1"
+              >
+                <Unlock className="h-3 w-3" /> Desbloquear todas
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLockedLayers([0, 1, 2, 3])}
+                className="text-xs flex items-center gap-1"
+              >
+                <Lock className="h-3 w-3" /> Bloquear todas
+              </Button>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button onClick={() => setLayerManagerOpen(false)}>Cerrar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Diálogo de vista previa de imagen */}
       <Dialog open={selectedImagePreview !== null} onOpenChange={() => setSelectedImagePreview(null)}>
