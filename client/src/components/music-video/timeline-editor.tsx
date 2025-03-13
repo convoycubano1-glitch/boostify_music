@@ -26,7 +26,8 @@ import { Progress } from '../../components/ui/progress';
 
 import LayerManager from '../timeline/LayerManager';
 import { useTimelineLayers, LayerConfig } from '../../hooks/useTimelineLayers';
-import { useIsolatedLayers, IsolatedLayerOperation, TimelineClip } from '../../hooks/useIsolatedLayers';
+import { useIsolatedLayers, IsolatedLayerOperation } from '../../hooks/useIsolatedLayers';
+import { TimelineClip } from '../../components/timeline/TimelineClip';
 import { 
   LayerType, 
   PIXELS_PER_SECOND, 
@@ -34,6 +35,20 @@ import {
   CLIP_COLORS,
   ClipOperation
 } from '../../constants/timeline-constants';
+
+// Definición del tipo TimelineClip
+export interface TimelineClip {
+  id: number;
+  type: string;
+  layer: number;
+  start: number;
+  duration: number;
+  metadata?: {
+    isAIGenerated?: boolean;
+    [key: string]: any;
+  };
+  title?: string;
+}
 
 // Metadatos del mapa de beats
 export interface BeatMapMetadata {

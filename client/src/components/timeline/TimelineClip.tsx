@@ -60,7 +60,7 @@ interface TimelineClipProps {
 /**
  * Componente que muestra un clip en la línea de tiempo
  */
-const TimelineClip: React.FC<TimelineClipProps> = ({
+export const TimelineClipComponent: React.FC<TimelineClipProps> = ({
   clip,
   selected,
   timeToPixels,
@@ -273,4 +273,5 @@ const TimelineClip: React.FC<TimelineClipProps> = ({
   );
 };
 
-export default TimelineClip;
+export { TimelineClipComponent as TimelineClip };
+export default TimelineClipComponent;

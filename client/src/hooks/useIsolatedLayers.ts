@@ -33,19 +33,9 @@ export interface ValidationResult {
 }
 
 /**
- * Tipo de un clip del timeline para validación
+ * Importamos el tipo TimelineClip desde el componente
  */
-interface TimelineClip {
-  id: number;
-  type: string;
-  layer: number;
-  start: number;
-  duration: number;
-  metadata?: {
-    isAIGenerated?: boolean;
-    [key: string]: any;
-  };
-}
+import { TimelineClip } from '../components/timeline/TimelineClip';
 
 /**
  * Hook personalizado para manejar lógica de validación de operaciones en capas aisladas
