@@ -58,6 +58,7 @@ export interface LayerManagerProps {
   onToggleLayerVisibility: (id: number) => void;
   onToggleLayerLock: (id: number) => void;
   onSelectLayer: (id: number) => void;
+  onUpdateLayer?: (id: number, updates: Partial<Layer>) => void;
   onOrderChange?: (newOrder: number[]) => void;
 }
 
@@ -99,6 +100,7 @@ const LayerManager: React.FC<LayerManagerProps> = ({
   onToggleLayerVisibility,
   onToggleLayerLock,
   onSelectLayer,
+  onUpdateLayer,
   onOrderChange
 }) => {
   /**

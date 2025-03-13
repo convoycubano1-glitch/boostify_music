@@ -11,9 +11,14 @@ import { useState, useCallback } from 'react';
 import { ClipOperation, ERROR_MESSAGES } from '../constants/timeline-constants';
 
 /**
+ * Importamos el tipo TimelineClip desde el componente
+ */
+import { TimelineClip } from '../components/timeline/TimelineClip';
+
+/**
  * Opciones para el hook de capas aisladas
  */
-export interface IsolatedLayersOptions {
+interface IsolatedLayersOptions {
   // Tipos de capas con restricciones especiales
   restrictedLayerTypes?: string[];
   
@@ -27,15 +32,11 @@ export interface IsolatedLayersOptions {
 /**
  * Resultado de la validación de operaciones en clips
  */
-export interface ValidationResult {
+interface ValidationResult {
   isValid: boolean;
   error?: string;
+  message?: string; // Propiedad alias para compatibilidad
 }
-
-/**
- * Importamos el tipo TimelineClip desde el componente
- */
-import { TimelineClip } from '../components/timeline/TimelineClip';
 
 /**
  * Hook personalizado para manejar lógica de validación de operaciones en capas aisladas
@@ -68,6 +69,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
       if (clip.duration > maxAIPlaceholderDuration) {
         result.isValid = false;
         result.error = `${ERROR_MESSAGES.AI_PLACEHOLDER_DURATION} (${maxAIPlaceholderDuration}s)`;
+        result.message = result.error; // Para compatibilidad
         setLastError(result.error);
         return result;
       }
@@ -86,6 +88,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
           if (existingClips.filter(c => c.layer === clip.layer).length <= 1) {
             result.isValid = false;
             result.error = ERROR_MESSAGES.CANNOT_DELETE_ISOLATED_LAYER;
+            result.message = result.error; // Para compatibilidad
             setLastError(result.error);
             return result;
           }
@@ -99,6 +102,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
           // Por defecto, no permitir otras operaciones en capas restringidas
           result.isValid = false;
           result.error = ERROR_MESSAGES.CANNOT_MODIFY_ISOLATED_CLIP;
+          result.message = result.error; // Para compatibilidad
           setLastError(result.error);
           return result;
           
@@ -106,6 +110,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
           // Operación desconocida
           result.isValid = false;
           result.error = ERROR_MESSAGES.INVALID_OPERATION;
+          result.message = result.error; // Para compatibilidad
           setLastError(result.error);
           return result;
       }
@@ -138,6 +143,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
       if (hasOverlap) {
         result.isValid = false;
         result.error = ERROR_MESSAGES.CLIP_OVERLAP;
+        result.message = result.error; // Para compatibilidad
         setLastError(result.error);
         return result;
       }
@@ -172,8 +178,8 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
 // Exportar el hook principal
 export { useIsolatedLayers };
 
-// Exportar los tipos y exportaciones necesarias para mantener la compatibilidad
-export { IsolatedLayersOptions, ValidationResult, TimelineClip }; 
-
 // Para mantener compatibilidad con las importaciones existentes
 export const IsolatedLayerOperation = ClipOperation;
+
+// Re-exportamos tipos para mantener la compatibilidad
+export type { TimelineClip, IsolatedLayersOptions, ValidationResult };
