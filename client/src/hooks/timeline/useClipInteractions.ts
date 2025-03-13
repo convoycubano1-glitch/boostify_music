@@ -592,6 +592,8 @@ export function useClipInteractions({
     getClipMouseHandlers,
     getClipCursorStyle,
     selectClip,
+    // Añadir handleSelectClip como alias de selectClip para mantener compatibilidad
+    handleSelectClip: selectClip,
     deselectClip,
     isSelected: (clipId: number) => selectedClipId === clipId,
     handleMouseMove,
