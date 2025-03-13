@@ -1575,7 +1575,7 @@ export function TimelineEditor({
                   {/* Clips de texto en esta capa */}
                   <div className="absolute inset-0">
                     {clips
-                      .filter(clip => clip.layer === 2) // Mostrar solo clips de la capa de texto
+                      .filter(clip => clip.layer === 2 && visibleLayers.includes(2)) // Mostrar solo clips de la capa de texto visible
                       .map((clip) => (
                         <div
                           key={`text-clip-${clip.id}`}
