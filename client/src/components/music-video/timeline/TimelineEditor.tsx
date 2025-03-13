@@ -5,7 +5,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PlayCircle, PauseCircle, ZoomIn, ZoomOut, Plus, Scissors, Trash2, Music, Image, Text, Video } from 'lucide-react';
+import { 
+  PlayCircle, PauseCircle, ZoomIn, ZoomOut, Plus, Scissors, Trash2, 
+  Music, Image, Text, Video, Layers, MoveVertical, Eye, EyeOff, Lock, Unlock
+} from 'lucide-react';
 
 // Importar nuestros componentes y hooks personalizados 
 import { WaveformLayer } from './WaveformLayer';
@@ -17,12 +20,16 @@ import { useClipInteractions } from '../../../hooks/timeline/useClipInteractions
 import { useBeatsVisualization } from '../../../hooks/timeline/useBeatsVisualization';
 import { useTimelineNavigation } from '../../../hooks/timeline/useTimelineNavigation';
 import { usePreviewDialogs } from '../../../hooks/timeline/usePreviewDialogs';
+import { useClipOperations } from '../../../hooks/timeline/useClipOperations';
+import { useTimelineLayers, LayerConfig } from '../../../hooks/timeline/useTimelineLayers';
 
 // Importar constantes
 import {
   LAYER_TYPES,
   CLIP_COLORS,
-  ClipOperation
+  ClipOperation,
+  LayerType,
+  SNAP_THRESHOLD
 } from '../../../constants/timeline-constants';
 
 // Interfaces para datos
@@ -78,6 +85,7 @@ export function TimelineEditor({
   const [clips, setClips] = useState<TimelineClip[]>(initialClips);
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
   const [beatsData, setBeatsData] = useState<BeatMap | undefined>(initialBeats);
+  const [showLayerManager, setShowLayerManager] = useState<boolean>(false);
   
   // Reproducción de audio con visualización de forma de onda
   const { 
@@ -153,6 +161,36 @@ export function TimelineEditor({
     handleClosePreview,
     handleToggleExpandPreview
   } = usePreviewDialogs();
+  
+  // Operaciones avanzadas para clips (dividir, combinar, duplicar)
+  const {
+    splitClip,
+    combineClips,
+    duplicateClip,
+    findSnapPosition
+  } = useClipOperations({
+    onError: (message) => console.error(message),
+    snapThreshold: SNAP_THRESHOLD,
+    beatPositions: beatsData?.beats?.map(beat => beat.time) || [],
+    beatSnapEnabled: true
+  });
+  
+  // Gestión de capas del timeline
+  const {
+    layers,
+    visibleLayers,
+    addLayer,
+    removeLayer,
+    updateLayer,
+    toggleLayerVisibility,
+    toggleLayerLock,
+    getLayerById,
+    isLayerLocked
+  } = useTimelineLayers({
+    onLayerChange: (updatedLayers) => {
+      console.log("Capas actualizadas:", updatedLayers);
+    }
+  });
   
   // Control de reproducción
   const togglePlayPause = useCallback(() => {
@@ -288,22 +326,82 @@ export function TimelineEditor({
               </Tooltip>
             </TooltipProvider>
             
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => setShowLayerManager(!showLayerManager)}
+                  >
+                    <Layers size={16} className="text-indigo-500" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Manage Layers</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
             {selectedClip !== null && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={() => handleDeleteClip(selectedClip)}
-                      className="text-red-500"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Delete Selected Clip</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => {
+                          if (selectedClip) {
+                            const clip = clips.find(c => c.id === selectedClip);
+                            if (clip) {
+                              // Calcular punto medio del clip para dividirlo
+                              const clipMiddle = clip.start + (clip.duration / 2);
+                              handleClipOperation(selectedClip, ClipOperation.SPLIT, { splitTime: clipMiddle });
+                            }
+                          }
+                        }}
+                      >
+                        <Scissors size={16} className="text-orange-500" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Split Clip</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => {
+                          if (selectedClip) {
+                            handleClipOperation(selectedClip, ClipOperation.DUPLICATE);
+                          }
+                        }}
+                      >
+                        <Plus size={16} className="text-teal-500" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Duplicate Clip</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => handleDeleteClip(selectedClip)}
+                        className="text-red-500"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete Selected Clip</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </>
             )}
           </div>
         </div>
