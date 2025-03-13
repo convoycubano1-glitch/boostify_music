@@ -41,10 +41,16 @@ export interface SyncOptions {
   cutOnBeats: boolean;
   prioritizeDownbeats: boolean;
   minimumClipDuration: number;
+  maximumClipDuration: number; // Nueva propiedad para limitar clips a máximo 5 segundos
   transitionType: string;
   intensityThreshold: number;
-  cutStyle: 'rhythmic' | 'melodic' | 'narrative' | 'balanced';
+  cutStyle: 'phrases' | 'random_bars' | 'dynamic' | 'slow' | 'cinematic' | 
+            'music_video' | 'narrative' | 'experimental' | 'rhythmic' | 
+            'minimalist' | 'balanced' | 'melodic';
   allowBeatSkipping: boolean;
+  durationRange: { min: number, max: number }; // Para mantener rangos específicos por estilo
+  sectionDetection: boolean; // Habilitar detección de secciones (versos, coros, etc.)
+  placeholderGeneration: boolean; // Generar placeholders para contenido futuro
 }
 
 /**
@@ -69,10 +75,14 @@ export function BeatSynchronizationPanel({
     cutOnBeats: true,
     prioritizeDownbeats: true,
     minimumClipDuration: 1.5, // segundos
+    maximumClipDuration: 5.0, // máximo 5 segundos para clips
     transitionType: "cut",
     intensityThreshold: 0.5, // 0-1
     cutStyle: "balanced",
-    allowBeatSkipping: true
+    allowBeatSkipping: true,
+    durationRange: { min: 1.5, max: 5.0 }, // Rango por defecto
+    sectionDetection: true, // Habilitar detección de secciones
+    placeholderGeneration: true // Generar placeholders para contenido AI
   });
   
   // Estado activo para la vista de análisis
@@ -338,16 +348,51 @@ export function BeatSynchronizationPanel({
                 <Label htmlFor="cut-style" className="text-sm">Estilo de corte</Label>
                 <Select 
                   value={syncOptions.cutStyle}
-                  onValueChange={(value: any) => updateSyncOption('cutStyle', value)}
+                  onValueChange={(value: any) => {
+                    // Actualizar el estilo de corte
+                    updateSyncOption('cutStyle', value);
+                    
+                    // Actualizar los rangos de duración según el estilo seleccionado
+                    const durations = {
+                      phrases: { min: 4, max: 5 }, // Limitamos a máximo 5s
+                      random_bars: { min: 2, max: 5 },
+                      dynamic: { min: 1.5, max: 4 },
+                      slow: { min: 5, max: 5 }, // Limitamos a máximo 5s
+                      cinematic: { min: 3, max: 5 },
+                      music_video: { min: 1, max: 3 },
+                      narrative: { min: 4, max: 5 }, // Limitamos a máximo 5s
+                      experimental: { min: 1, max: 5 },
+                      rhythmic: { min: 1, max: 2 },
+                      minimalist: { min: 5, max: 5 }, // Limitamos a máximo 5s
+                      balanced: { min: 2, max: 4 },
+                      melodic: { min: 3, max: 5 }
+                    };
+                    
+                    // Si existe el rango para el estilo seleccionado, lo aplicamos
+                    if (durations[value as keyof typeof durations]) {
+                      updateSyncOption('durationRange', durations[value as keyof typeof durations]);
+                      updateSyncOption('minimumClipDuration', durations[value as keyof typeof durations].min);
+                      updateSyncOption('maximumClipDuration', 
+                        Math.min(durations[value as keyof typeof durations].max, 5.0)); // Máximo 5 segundos
+                    }
+                  }}
                 >
                   <SelectTrigger id="cut-style">
                     <SelectValue placeholder="Seleccionar estilo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="rhythmic">Rítmico (frecuente)</SelectItem>
-                    <SelectItem value="melodic">Melódico (moderado)</SelectItem>
-                    <SelectItem value="narrative">Narrativo (pausado)</SelectItem>
+                    <SelectItem value="phrases">Edición por Frases</SelectItem>
+                    <SelectItem value="random_bars">Compases Aleatorios</SelectItem>
+                    <SelectItem value="dynamic">Dinámico</SelectItem>
+                    <SelectItem value="slow">Lento</SelectItem>
+                    <SelectItem value="cinematic">Cinematográfico</SelectItem>
+                    <SelectItem value="music_video">Video Musical</SelectItem>
+                    <SelectItem value="narrative">Narrativo</SelectItem>
+                    <SelectItem value="experimental">Experimental</SelectItem>
+                    <SelectItem value="rhythmic">Rítmico</SelectItem>
+                    <SelectItem value="minimalist">Minimalista</SelectItem>
                     <SelectItem value="balanced">Equilibrado</SelectItem>
+                    <SelectItem value="melodic">Melódico</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
