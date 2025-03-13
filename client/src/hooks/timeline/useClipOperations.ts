@@ -1,15 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   ClipType, 
   LayerType, 
   MAX_CLIP_DURATION, 
   MIN_CLIP_DURATION,
   ERROR_MESSAGES,
-  SNAP_THRESHOLD
+  SNAP_THRESHOLD,
+  ClipOperation
 } from '../../constants/timeline-constants';
 
 // Importar tipo desde nuestro componente TimelineEditor para asegurar consistencia
 import { TimelineClip } from '../../components/music-video/timeline/TimelineEditor';
+import { useClipInteractions } from './useClipInteractions';
 
 export interface ClipOperationsOptions {
   /**
@@ -56,10 +58,32 @@ export function useClipOperations({
   allowOverlap = false,
   snapThreshold = SNAP_THRESHOLD,
   beatPositions = [],
-  beatSnapEnabled = true
-}: ClipOperationsOptions = {}) {
-  // Estado principal: todos los clips organizados por capa
-  const [clipsByLayer, setClipsByLayer] = useState<{ [layerId: number]: TimelineClip[] }>({});
+  beatSnapEnabled = true,
+  initialClips = []
+}: ClipOperationsOptions & { initialClips?: TimelineClip[] } = {}) {
+  // Estado para los clips como lista plana
+  const [clips, setClips] = useState<TimelineClip[]>(initialClips);
+  
+  // Usamos useClipInteractions como capa base de interactividad
+  const clipInteractions = useClipInteractions({
+    clips,
+    onClipsChange: (updatedClips) => setClips(updatedClips),
+  });
+  
+  // Organizamos los clips por capa para operaciones más complejas
+  const clipsByLayer = useMemo(() => {
+    const grouped: { [layerId: number]: TimelineClip[] } = {};
+    
+    for (const clip of clips) {
+      const layerId = clip.layerIndex || 0; // Fallback a capa 0 por compatibilidad
+      if (!grouped[layerId]) {
+        grouped[layerId] = [];
+      }
+      grouped[layerId].push(clip);
+    }
+    
+    return grouped;
+  }, [clips]);
   
   // Estado para tracking del último ID usado
   const [lastClipId, setLastClipId] = useState<number>(0);
