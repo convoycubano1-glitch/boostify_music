@@ -1,280 +1,307 @@
-import { useState, useCallback, useRef } from 'react';
-import { ClipType, LayerType, MAX_CLIP_DURATION, ERROR_MESSAGES } from '../../constants/timeline-constants';
-import { TimelineClip } from './useClipOperations';
+import { useRef, useState, useCallback, useEffect } from 'react';
+import { 
+  ClipOperation, 
+  CLIP_HANDLE_WIDTH 
+} from '../../constants/timeline-constants';
 
-// Define constantes para la interacción
-const SNAP_THRESHOLD = 0.2; // En segundos
-const MIN_CLIP_DURATION = 0.3; // Duración mínima en segundos
-
-export enum ClipOperation {
-  NONE = 'none',
-  MOVE = 'move',
-  RESIZE_START = 'resize_start',
-  RESIZE_END = 'resize_end'
-}
-
-interface ClipInteractionOptions {
-  pixelsPerSecond: number;
-  onClipUpdate?: (clipId: string, updates: Partial<TimelineClip>) => void;
-  onClipMoved?: (clipId: string, layerId: string, startTime: number) => void;
-  onClipResized?: (clipId: string, newDuration: number) => void;
-  snapToBeat?: boolean;
-  snapToOtherClips?: boolean;
-  beatPositions?: number[];
-  checkClipOverlap?: (layerId: string, startTime: number, duration: number, excludeClipId?: string) => boolean;
+/**
+ * Opciones para configurar las interacciones con clips
+ */
+export interface ClipInteractionsOptions {
+  /**
+   * Función que se llama cuando un clip se mueve
+   */
+  onMoveClip?: (clipId: number, newStartTime: number) => void;
+  
+  /**
+   * Función que se llama cuando se redimensiona un clip
+   */
+  onResizeClip?: (clipId: number, isStart: boolean, newTime: number) => void;
+  
+  /**
+   * Función que se llama cuando se selecciona un clip
+   */
+  onSelectClip?: (clipId: number) => void;
+  
+  /**
+   * Función que se llama cuando se inicia una operación de clip
+   */
+  onOperationStart?: (operation: ClipOperation, clipId: number) => void;
+  
+  /**
+   * Función que se llama cuando finaliza una operación de clip
+   */
+  onOperationEnd?: (operation: ClipOperation, clipId: number) => void;
+  
+  /**
+   * Función para convertir píxeles a segundos según el zoom actual
+   */
+  pixelsToSeconds: (pixels: number) => number;
+  
+  /**
+   * Función para convertir segundos a píxeles según el zoom actual
+   */
+  secondsToPixels: (seconds: number) => number;
+  
+  /**
+   * Ancho del controlador de redimensionamiento en píxeles
+   */
+  handleWidth?: number;
 }
 
 /**
- * Hook para manejar las interacciones con clips en el timeline
- * Gestiona operaciones como arrastrar, redimensionar y soltar
+ * Hook para manejar las interacciones del usuario con los clips en el timeline
+ * 
+ * Este hook maneja:
+ * - Selección de clips
+ * - Arrastrar clips para moverlos
+ * - Redimensionar clips desde el inicio o final
+ * - Operaciones de movimiento de ratón y eventos táctiles
  */
 export function useClipInteractions({
-  pixelsPerSecond,
-  onClipUpdate,
-  onClipMoved,
-  onClipResized,
-  snapToBeat = true,
-  snapToOtherClips = true,
-  beatPositions = [],
-  checkClipOverlap
-}: ClipInteractionOptions) {
-  // Estado para la operación actual
-  const [activeOperation, setActiveOperation] = useState<ClipOperation>(ClipOperation.NONE);
-  const [activeClipId, setActiveClipId] = useState<string | null>(null);
-  const [dragStartX, setDragStartX] = useState<number>(0);
-  const [originalClipState, setOriginalClipState] = useState<Partial<TimelineClip> | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  onMoveClip,
+  onResizeClip,
+  onSelectClip,
+  onOperationStart,
+  onOperationEnd,
+  pixelsToSeconds,
+  secondsToPixels,
+  handleWidth = CLIP_HANDLE_WIDTH
+}: ClipInteractionsOptions) {
+  // Estado para la operación actual y el clip seleccionado
+  const [operation, setOperation] = useState<ClipOperation>(ClipOperation.NONE);
+  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
   
-  // Referencias para datos intermedios
-  const lastPositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  // Refs para guardar la posición inicial y el desplazamiento
+  const offsetXRef = useRef<number>(0);
+  const startXRef = useRef<number>(0);
+  const activeClipIdRef = useRef<number | null>(null);
   
-  // Iniciar operación de arrastrar
-  const startDrag = useCallback((
-    clipId: string, 
-    operation: ClipOperation, 
-    clientX: number, 
-    clipData: Partial<TimelineClip>
-  ) => {
-    setActiveClipId(clipId);
-    setActiveOperation(operation);
-    setDragStartX(clientX);
-    setOriginalClipState(clipData);
-    setIsDragging(true);
+  /**
+   * Inicia una operación de mover clip
+   */
+  const startMoveOperation = useCallback((clipId: number, clientX: number, currentStartTime: number) => {
+    setOperation(ClipOperation.MOVE);
+    activeClipIdRef.current = clipId;
+    startXRef.current = clientX;
+    offsetXRef.current = secondsToPixels(currentStartTime);
     
-    lastPositionRef.current = { x: clientX, y: 0 };
+    if (onOperationStart) {
+      onOperationStart(ClipOperation.MOVE, clipId);
+    }
+  }, [onOperationStart, secondsToPixels]);
+  
+  /**
+   * Inicia una operación de redimensionar clip desde el inicio
+   */
+  const startResizeStartOperation = useCallback((clipId: number, clientX: number, currentStartTime: number) => {
+    setOperation(ClipOperation.RESIZE_START);
+    activeClipIdRef.current = clipId;
+    startXRef.current = clientX;
+    offsetXRef.current = secondsToPixels(currentStartTime);
     
-    // Añadir listeners globales para poder mover fuera del clip
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    if (onOperationStart) {
+      onOperationStart(ClipOperation.RESIZE_START, clipId);
+    }
+  }, [onOperationStart, secondsToPixels]);
+  
+  /**
+   * Inicia una operación de redimensionar clip desde el final
+   */
+  const startResizeEndOperation = useCallback((clipId: number, clientX: number, currentEndTime: number) => {
+    setOperation(ClipOperation.RESIZE_END);
+    activeClipIdRef.current = clipId;
+    startXRef.current = clientX;
+    offsetXRef.current = secondsToPixels(currentEndTime);
+    
+    if (onOperationStart) {
+      onOperationStart(ClipOperation.RESIZE_END, clipId);
+    }
+  }, [onOperationStart, secondsToPixels]);
+  
+  /**
+   * Maneja el movimiento durante una operación activa
+   */
+  const handleMouseMove = useCallback((clientX: number) => {
+    if (operation === ClipOperation.NONE || activeClipIdRef.current === null) {
+      return;
+    }
+    
+    const deltaX = clientX - startXRef.current;
+    const newPositionPx = offsetXRef.current + deltaX;
+    const newPositionSec = pixelsToSeconds(newPositionPx);
+    
+    switch (operation) {
+      case ClipOperation.MOVE:
+        if (onMoveClip) {
+          onMoveClip(activeClipIdRef.current, newPositionSec);
+        }
+        break;
+        
+      case ClipOperation.RESIZE_START:
+        if (onResizeClip) {
+          onResizeClip(activeClipIdRef.current, true, newPositionSec);
+        }
+        break;
+        
+      case ClipOperation.RESIZE_END:
+        if (onResizeClip) {
+          onResizeClip(activeClipIdRef.current, false, newPositionSec);
+        }
+        break;
+    }
+  }, [operation, onMoveClip, onResizeClip, pixelsToSeconds]);
+  
+  /**
+   * Finaliza cualquier operación activa
+   */
+  const endOperation = useCallback(() => {
+    if (operation !== ClipOperation.NONE && activeClipIdRef.current !== null) {
+      if (onOperationEnd) {
+        onOperationEnd(operation, activeClipIdRef.current);
+      }
+      
+      // Restablecer el estado
+      setOperation(ClipOperation.NONE);
+      activeClipIdRef.current = null;
+    }
+  }, [operation, onOperationEnd]);
+  
+  /**
+   * Selecciona un clip
+   */
+  const selectClip = useCallback((clipId: number) => {
+    setSelectedClipId(clipId);
+    if (onSelectClip) {
+      onSelectClip(clipId);
+    }
+  }, [onSelectClip]);
+  
+  /**
+   * Deselecciona el clip actual
+   */
+  const deselectClip = useCallback(() => {
+    setSelectedClipId(null);
   }, []);
   
-  // Convertir pixels a segundos basado en el zoom
-  const pixelsToSeconds = useCallback((pixels: number) => {
-    return pixels / pixelsPerSecond;
-  }, [pixelsPerSecond]);
-  
-  // Snap to beat o a otros clips
-  const getSnappedTime = useCallback((time: number): number => {
-    if (!snapToBeat && !snapToOtherClips) return time;
-    
-    // Redondear a 2 decimales para evitar errores de precisión
-    time = Math.round(time * 100) / 100;
-    
-    // Snap a beat si está activado
-    if (snapToBeat && beatPositions.length > 0) {
-      for (const beatTime of beatPositions) {
-        if (Math.abs(time - beatTime) < SNAP_THRESHOLD) {
-          return beatTime;
+  /**
+   * Maneja los eventos de ratón para un clip
+   */
+  const getClipMouseHandlers = useCallback((
+    clipId: number, 
+    startTime: number, 
+    endTime: number
+  ) => {
+    return {
+      onClick: (e: React.MouseEvent) => {
+        // Si no estamos en una operación, seleccionar el clip
+        if (operation === ClipOperation.NONE) {
+          e.stopPropagation();
+          selectClip(clipId);
         }
-      }
-    }
-    
-    // En el futuro podríamos implementar snap a otros clips
-    
-    return time;
-  }, [snapToBeat, snapToOtherClips, beatPositions]);
-  
-  // Manejar movimiento del mouse durante una operación
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!activeClipId || !originalClipState || activeOperation === ClipOperation.NONE) return;
-    
-    const deltaX = e.clientX - dragStartX;
-    const timeDelta = pixelsToSeconds(deltaX);
-    
-    // Actualizar la posición actual
-    lastPositionRef.current = { x: e.clientX, y: e.clientY };
-    
-    switch (activeOperation) {
-      case ClipOperation.MOVE: {
-        if (!originalClipState.startTime) return;
+      },
+      onMouseDown: (e: React.MouseEvent) => {
+        e.stopPropagation();
         
-        // Calcular nueva posición con snap
-        let newStartTime = originalClipState.startTime + timeDelta;
-        newStartTime = Math.max(0, newStartTime); // No permitir valores negativos
-        newStartTime = getSnappedTime(newStartTime);
+        // Obtener la posición relativa del cursor dentro del clip
+        const clipElement = e.currentTarget as HTMLElement;
+        const clipRect = clipElement.getBoundingClientRect();
+        const relativeX = e.clientX - clipRect.left;
         
-        // Si onClipUpdate está disponible, usarlo para actualizar el clip
-        if (onClipUpdate) {
-          onClipUpdate(activeClipId, { startTime: newStartTime });
-        }
-        break;
-      }
-      
-      case ClipOperation.RESIZE_START: {
-        if (!originalClipState.startTime || !originalClipState.duration) return;
-        
-        // Calcular nuevo tiempo de inicio y duración
-        let deltaStart = Math.min(timeDelta, originalClipState.duration - MIN_CLIP_DURATION);
-        let newStartTime = originalClipState.startTime + deltaStart;
-        newStartTime = Math.max(0, newStartTime);
-        newStartTime = getSnappedTime(newStartTime);
-        
-        // Recalcular delta después del snap
-        deltaStart = newStartTime - originalClipState.startTime;
-        
-        // Ajustar la duración para mantener el final fijo
-        const newDuration = Math.max(
-          MIN_CLIP_DURATION,
-          originalClipState.duration - deltaStart
-        );
-        
-        // Actualizar clip
-        if (onClipUpdate) {
-          onClipUpdate(activeClipId, { 
-            startTime: newStartTime,
-            duration: newDuration 
-          });
-        }
-        break;
-      }
-      
-      case ClipOperation.RESIZE_END: {
-        if (!originalClipState.duration) return;
-        
-        // Calcular nueva duración con límites
-        let newDuration = Math.max(
-          MIN_CLIP_DURATION,
-          originalClipState.duration + timeDelta
-        );
-        
-        // Aplicar límite máximo
-        newDuration = Math.min(newDuration, MAX_CLIP_DURATION);
-        
-        // Hacer snap del final del clip
-        if (originalClipState.startTime) {
-          const endTime = originalClipState.startTime + newDuration;
-          const snappedEndTime = getSnappedTime(endTime);
-          newDuration = snappedEndTime - originalClipState.startTime;
-          
-          // Asegurar que se mantiene la duración mínima
-          newDuration = Math.max(MIN_CLIP_DURATION, newDuration);
+        // Determinar la operación según la posición del cursor
+        if (relativeX <= handleWidth) {
+          // Cerca del borde izquierdo - redimensionar desde el inicio
+          startResizeStartOperation(clipId, e.clientX, startTime);
+        } else if (relativeX >= clipRect.width - handleWidth) {
+          // Cerca del borde derecho - redimensionar desde el final
+          startResizeEndOperation(clipId, e.clientX, endTime);
+        } else {
+          // En el medio - mover
+          startMoveOperation(clipId, e.clientX, startTime);
         }
         
-        // Actualizar clip
-        if (onClipUpdate) {
-          onClipUpdate(activeClipId, { duration: newDuration });
-        }
-        break;
+        // Seleccionar el clip
+        selectClip(clipId);
       }
-    }
-  }, [
-    activeClipId, 
-    originalClipState, 
-    activeOperation, 
-    dragStartX, 
-    onClipUpdate, 
-    pixelsToSeconds, 
-    getSnappedTime
-  ]);
-  
-  // Finalizar operación de arrastrar
-  const handleMouseUp = useCallback(() => {
-    // Limpiar listeners
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    
-    // Finalizar la operación
-    if (activeClipId && originalClipState) {
-      switch (activeOperation) {
-        case ClipOperation.MOVE:
-          if (onClipMoved && originalClipState.startTime && originalClipState.layerId) {
-            const updatedStartTime = lastPositionRef.current.x !== dragStartX
-              ? getSnappedTime(originalClipState.startTime + pixelsToSeconds(lastPositionRef.current.x - dragStartX))
-              : originalClipState.startTime;
-            
-            onClipMoved(activeClipId, originalClipState.layerId, updatedStartTime);
-          }
-          break;
-          
-        case ClipOperation.RESIZE_START:
-        case ClipOperation.RESIZE_END:
-          if (onClipResized && originalClipState.duration) {
-            let updatedDuration = originalClipState.duration;
-            
-            if (activeOperation === ClipOperation.RESIZE_START && originalClipState.startTime) {
-              // Para redimensionar por el inicio, calculamos la nueva duración
-              const deltaStart = pixelsToSeconds(lastPositionRef.current.x - dragStartX);
-              updatedDuration = Math.max(MIN_CLIP_DURATION, originalClipState.duration - deltaStart);
-            } else if (activeOperation === ClipOperation.RESIZE_END) {
-              // Para redimensionar por el final, simplemente ajustamos la duración
-              const deltaEnd = pixelsToSeconds(lastPositionRef.current.x - dragStartX);
-              updatedDuration = Math.max(MIN_CLIP_DURATION, originalClipState.duration + deltaEnd);
-              updatedDuration = Math.min(updatedDuration, MAX_CLIP_DURATION);
-            }
-            
-            onClipResized(activeClipId, updatedDuration);
-          }
-          break;
-      }
-    }
-    
-    // Resetear estado
-    setActiveClipId(null);
-    setActiveOperation(ClipOperation.NONE);
-    setOriginalClipState(null);
-    setIsDragging(false);
-  }, [
-    activeClipId, 
-    activeOperation, 
-    originalClipState, 
-    dragStartX, 
-    onClipMoved, 
-    onClipResized,
-    pixelsToSeconds,
-    getSnappedTime
-  ]);
-  
-  // Método para cancelar una operación en curso
-  const cancelOperation = useCallback(() => {
-    // Restaurar el estado original del clip si se proporcionó un callback
-    if (activeClipId && originalClipState && onClipUpdate) {
-      onClipUpdate(activeClipId, originalClipState);
-    }
-    
-    // Limpiar listeners
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    
-    // Resetear estado
-    setActiveClipId(null);
-    setActiveOperation(ClipOperation.NONE);
-    setOriginalClipState(null);
-    setIsDragging(false);
-  }, [activeClipId, originalClipState, onClipUpdate, handleMouseMove, handleMouseUp]);
-  
-  // Al desmontar, asegurarse de limpiar los listeners
-  useCallback(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [handleMouseMove, handleMouseUp]);
+  }, [
+    operation, 
+    selectClip, 
+    startMoveOperation, 
+    startResizeEndOperation, 
+    startResizeStartOperation, 
+    handleWidth
+  ]);
+  
+  /**
+   * Configura los event listeners globales
+   */
+  useEffect(() => {
+    // Manejador para movimiento del ratón
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      handleMouseMove(e.clientX);
+    };
+    
+    // Manejador para soltar el botón del ratón
+    const handleGlobalMouseUp = () => {
+      endOperation();
+    };
+    
+    // Manejador para clics fuera de los clips
+    const handleGlobalClick = (e: MouseEvent) => {
+      // Verificar si el clic fue directamente en el timeline (no en un clip)
+      const clickedOnClip = (e.target as HTMLElement)?.closest('.timeline-clip');
+      if (!clickedOnClip) {
+        deselectClip();
+      }
+    };
+    
+    // Añadir event listeners
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('click', handleGlobalClick);
+    
+    // Limpiar event listeners al desmontar
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, [handleMouseMove, endOperation, deselectClip]);
+  
+  /**
+   * Obtiene el estilo del cursor según la operación y posición
+   */
+  const getClipCursorStyle = useCallback((e: React.MouseEvent) => {
+    // Si hay una operación activa, no cambiar el cursor
+    if (operation !== ClipOperation.NONE) {
+      return;
+    }
+    
+    // Obtener la posición relativa del cursor dentro del clip
+    const clipElement = e.currentTarget as HTMLElement;
+    const clipRect = clipElement.getBoundingClientRect();
+    const relativeX = e.clientX - clipRect.left;
+    
+    if (relativeX <= handleWidth) {
+      return 'ew-resize'; // Redimensionar desde el inicio
+    } else if (relativeX >= clipRect.width - handleWidth) {
+      return 'ew-resize'; // Redimensionar desde el final
+    } else {
+      return 'move'; // Mover
+    }
+  }, [operation, handleWidth]);
   
   return {
-    startDrag,
-    cancelOperation,
-    activeClipId,
-    activeOperation,
-    isDragging
+    operation,
+    selectedClipId,
+    activeClipId: activeClipIdRef.current,
+    getClipMouseHandlers,
+    getClipCursorStyle,
+    selectClip,
+    deselectClip,
+    isSelected: (clipId: number) => selectedClipId === clipId,
+    handleMouseMove,
+    endOperation
   };
 }

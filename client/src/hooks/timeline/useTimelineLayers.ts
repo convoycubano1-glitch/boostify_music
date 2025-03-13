@@ -1,283 +1,385 @@
 import { useState, useCallback, useMemo } from 'react';
-import { MAX_LAYERS, LayerType, ClipType } from '../../constants/timeline-constants';
+import { LayerType } from '../../constants/timeline-constants';
 
-export interface TimelineLayer {
-  id: string;
-  type: LayerType;
+export interface LayerConfig {
+  /**
+   * ID único de la capa
+   */
+  id: number;
+  
+  /**
+   * Nombre descriptivo de la capa
+   */
   name: string;
-  visible: boolean;
+  
+  /**
+   * Tipo de capa (audio, video, texto, efectos)
+   */
+  type: LayerType;
+  
+  /**
+   * Si la capa está bloqueada para edición
+   */
   locked: boolean;
-  clips: string[]; // IDs de clips en esta capa
+  
+  /**
+   * Si la capa está visible
+   */
+  visible: boolean;
+  
+  /**
+   * Color asociado con la capa (opcional)
+   */
+  color?: string;
+  
+  /**
+   * Altura en píxeles de la capa
+   */
+  height: number;
+  
+  /**
+   * Metadatos adicionales específicos para cada tipo de capa
+   */
+  metadata?: Record<string, any>;
 }
 
-export interface LayerOperation {
-  addLayer: (type: LayerType, name?: string) => string | null;
-  removeLayer: (layerId: string) => boolean;
-  toggleLayerVisibility: (layerId: string) => void;
-  toggleLayerLock: (layerId: string) => void;
-  moveClipToLayer: (clipId: string, fromLayerId: string, toLayerId: string) => boolean;
-  getAvailableLayerForClipType: (clipType: ClipType) => string | null;
-  renameLayer: (layerId: string, newName: string) => void;
-  getLayerType: (layerId: string) => LayerType | null;
-  getLayerById: (layerId: string) => TimelineLayer | null;
-  getLayers: () => TimelineLayer[];
-  getLayersByType: (type: LayerType) => TimelineLayer[];
-  duplicateLayer: (layerId: string) => string | null;
-  getClipLayer: (clipId: string) => string | null;
+interface TimelineLayersOptions {
+  /**
+   * Callback cuando cambia una capa
+   */
+  onLayerChange?: (layers: LayerConfig[]) => void;
+  
+  /**
+   * Altura predeterminada de las capas
+   */
+  defaultLayerHeight?: number;
 }
 
 /**
- * Hook para la gestión de capas en el timeline
- * Proporciona operaciones para agregar, eliminar, modificar capas, y organizar clips
+ * Hook para gestionar las capas del timeline
+ * 
+ * Permite:
+ * - Crear capas de diferentes tipos (audio, video, texto, efectos)
+ * - Reordenar capas
+ * - Cambiar visibilidad y bloqueo de capas
+ * - Eliminar capas
  */
-export function useTimelineLayers(initialLayers: TimelineLayer[] = []): LayerOperation {
-  const [layers, setLayers] = useState<TimelineLayer[]>(initialLayers.length > 0 ? initialLayers : [
-    // Capas por defecto si no se proporcionan
-    { id: 'audio-main', type: LayerType.AUDIO, name: 'Audio Principal', visible: true, locked: false, clips: [] },
-    { id: 'video-main', type: LayerType.VIDEO_IMAGE, name: 'Video Principal', visible: true, locked: false, clips: [] },
-    { id: 'text-overlay', type: LayerType.TEXT, name: 'Textos', visible: true, locked: false, clips: [] }
-  ]);
-
-  // Obtener un ID único para una nueva capa
-  const getUniqueLayerId = useCallback((type: LayerType, name: string) => {
-    const baseId = `${LayerType[type].toLowerCase()}-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-    let id = baseId;
-    let counter = 1;
-    
-    while (layers.some(layer => layer.id === id)) {
-      id = `${baseId}-${counter}`;
-      counter++;
-    }
-    
-    return id;
-  }, [layers]);
-
-  // Agregar una nueva capa
-  const addLayer = useCallback((type: LayerType, name?: string): string | null => {
-    const layersOfType = layers.filter(layer => layer.type === type);
-    
-    // Verificar si hemos alcanzado el límite de capas para este tipo
-    if (layersOfType.length >= MAX_LAYERS[type]) {
-      console.warn(`No se pueden agregar más capas de tipo ${LayerType[type]}, límite alcanzado.`);
-      return null;
-    }
-    
-    // Generar nombre predeterminado si no se proporciona uno
-    const layerName = name || `${LayerType[type]} ${layersOfType.length + 1}`;
-    const id = getUniqueLayerId(type, layerName);
-    
-    const newLayer: TimelineLayer = {
-      id,
-      type,
-      name: layerName,
-      visible: true,
+export function useTimelineLayers({
+  onLayerChange,
+  defaultLayerHeight = 50
+}: TimelineLayersOptions = {}) {
+  // Estado para las capas
+  const [layers, setLayers] = useState<LayerConfig[]>([
+    // Capa de audio (siempre presente en la posición más baja)
+    {
+      id: LayerType.AUDIO,
+      name: 'Audio',
+      type: LayerType.AUDIO,
       locked: false,
-      clips: []
+      visible: true,
+      height: defaultLayerHeight,
+      color: '#3498db' // Azul
+    },
+    // Capa de video/imagen (siempre presente arriba del audio)
+    {
+      id: LayerType.VIDEO,
+      name: 'Video/Imagen',
+      type: LayerType.VIDEO,
+      locked: false,
+      visible: true,
+      height: defaultLayerHeight,
+      color: '#9b59b6' // Púrpura
+    }
+  ]);
+  
+  /**
+   * Añade una nueva capa de un tipo específico
+   */
+  const addLayer = useCallback((type: LayerType, name?: string, metadata?: Record<string, any>) => {
+    const newLayer: LayerConfig = {
+      id: Date.now(), // ID único basado en timestamp
+      name: name || getDefaultLayerName(type),
+      type,
+      locked: false,
+      visible: true,
+      height: defaultLayerHeight,
+      color: getLayerColorByType(type),
+      metadata
     };
     
-    setLayers(prev => [...prev, newLayer]);
-    return id;
-  }, [layers, getUniqueLayerId]);
-
-  // Eliminar una capa
-  const removeLayer = useCallback((layerId: string): boolean => {
-    const layerToRemove = layers.find(layer => layer.id === layerId);
-    
-    if (!layerToRemove) {
-      console.warn(`Capa con ID ${layerId} no encontrada.`);
-      return false;
-    }
-    
-    // No permitir eliminar una capa que tiene clips
-    if (layerToRemove.clips.length > 0) {
-      console.warn(`No se puede eliminar la capa ${layerId} porque contiene clips.`);
-      return false;
-    }
-    
-    // No permitir eliminar si es la última capa de su tipo
-    const layersOfSameType = layers.filter(layer => layer.type === layerToRemove.type);
-    if (layersOfSameType.length <= 1) {
-      console.warn(`No se puede eliminar la capa ${layerId} porque es la última de su tipo.`);
-      return false;
-    }
-    
-    setLayers(prev => prev.filter(layer => layer.id !== layerId));
-    return true;
-  }, [layers]);
-
-  // Alternar visibilidad de una capa
-  const toggleLayerVisibility = useCallback((layerId: string) => {
-    setLayers(prev => prev.map(layer => 
-      layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
-    ));
-  }, []);
-
-  // Alternar bloqueo de una capa
-  const toggleLayerLock = useCallback((layerId: string) => {
-    setLayers(prev => prev.map(layer => 
-      layer.id === layerId ? { ...layer, locked: !layer.locked } : layer
-    ));
-  }, []);
-
-  // Mover un clip a otra capa
-  const moveClipToLayer = useCallback((clipId: string, fromLayerId: string, toLayerId: string): boolean => {
-    // Verificar que las capas existen
-    const fromLayer = layers.find(layer => layer.id === fromLayerId);
-    const toLayer = layers.find(layer => layer.id === toLayerId);
-    
-    if (!fromLayer || !toLayer) {
-      console.warn(`Alguna de las capas no existe: fromLayer=${fromLayerId}, toLayer=${toLayerId}`);
-      return false;
-    }
-    
-    // Verificar que el clip existe en la capa de origen
-    if (!fromLayer.clips.includes(clipId)) {
-      console.warn(`Clip ${clipId} no encontrado en la capa ${fromLayerId}`);
-      return false;
-    }
-    
-    // No permitir mover clips a capas bloqueadas
-    if (toLayer.locked) {
-      console.warn(`No se puede mover el clip a la capa ${toLayerId} porque está bloqueada.`);
-      return false;
-    }
-    
-    setLayers(prev => prev.map(layer => {
-      if (layer.id === fromLayerId) {
-        return { ...layer, clips: layer.clips.filter(id => id !== clipId) };
+    setLayers(prevLayers => {
+      const updatedLayers = [...prevLayers, newLayer];
+      
+      if (onLayerChange) {
+        onLayerChange(updatedLayers);
       }
-      if (layer.id === toLayerId) {
-        return { ...layer, clips: [...layer.clips, clipId] };
+      
+      return updatedLayers;
+    });
+    
+    return newLayer;
+  }, [defaultLayerHeight, onLayerChange]);
+  
+  /**
+   * Elimina una capa por ID
+   * Las capas base (audio y video) no pueden ser eliminadas
+   */
+  const removeLayer = useCallback((layerId: number) => {
+    // No permitir eliminar las capas de audio o video
+    if (layerId === LayerType.AUDIO || layerId === LayerType.VIDEO) {
+      console.warn('No se pueden eliminar las capas base (audio y video)');
+      return false;
+    }
+    
+    setLayers(prevLayers => {
+      const updatedLayers = prevLayers.filter(layer => layer.id !== layerId);
+      
+      if (onLayerChange) {
+        onLayerChange(updatedLayers);
       }
-      return layer;
-    }));
+      
+      return updatedLayers;
+    });
     
     return true;
+  }, [onLayerChange]);
+  
+  /**
+   * Actualiza una capa existente
+   */
+  const updateLayer = useCallback((layerId: number, updates: Partial<Omit<LayerConfig, 'id'>>) => {
+    setLayers(prevLayers => {
+      const updatedLayers = prevLayers.map(layer => {
+        if (layer.id === layerId) {
+          return { ...layer, ...updates };
+        }
+        return layer;
+      });
+      
+      if (onLayerChange) {
+        onLayerChange(updatedLayers);
+      }
+      
+      return updatedLayers;
+    });
+  }, [onLayerChange]);
+  
+  /**
+   * Cambia la visibilidad de una capa
+   */
+  const toggleLayerVisibility = useCallback((layerId: number) => {
+    setLayers(prevLayers => {
+      const updatedLayers = prevLayers.map(layer => {
+        if (layer.id === layerId) {
+          return { ...layer, visible: !layer.visible };
+        }
+        return layer;
+      });
+      
+      if (onLayerChange) {
+        onLayerChange(updatedLayers);
+      }
+      
+      return updatedLayers;
+    });
+  }, [onLayerChange]);
+  
+  /**
+   * Cambia el estado de bloqueo de una capa
+   */
+  const toggleLayerLock = useCallback((layerId: number) => {
+    setLayers(prevLayers => {
+      const updatedLayers = prevLayers.map(layer => {
+        if (layer.id === layerId) {
+          return { ...layer, locked: !layer.locked };
+        }
+        return layer;
+      });
+      
+      if (onLayerChange) {
+        onLayerChange(updatedLayers);
+      }
+      
+      return updatedLayers;
+    });
+  }, [onLayerChange]);
+  
+  /**
+   * Ajusta la altura de una capa
+   */
+  const resizeLayer = useCallback((layerId: number, height: number) => {
+    // Asegurar que la altura esté dentro de límites razonables
+    const constrainedHeight = Math.max(20, Math.min(200, height));
+    
+    setLayers(prevLayers => {
+      const updatedLayers = prevLayers.map(layer => {
+        if (layer.id === layerId) {
+          return { ...layer, height: constrainedHeight };
+        }
+        return layer;
+      });
+      
+      if (onLayerChange) {
+        onLayerChange(updatedLayers);
+      }
+      
+      return updatedLayers;
+    });
+  }, [onLayerChange]);
+  
+  /**
+   * Mueve una capa hacia arriba en la pila de capas
+   */
+  const moveLayerUp = useCallback((layerId: number) => {
+    setLayers(prevLayers => {
+      const layerIndex = prevLayers.findIndex(layer => layer.id === layerId);
+      
+      // No se puede mover si ya está en la parte superior
+      if (layerIndex === prevLayers.length - 1 || layerIndex === -1) {
+        return prevLayers;
+      }
+      
+      // Intercambiar con la capa de arriba
+      const updatedLayers = [...prevLayers];
+      [updatedLayers[layerIndex], updatedLayers[layerIndex + 1]] = 
+      [updatedLayers[layerIndex + 1], updatedLayers[layerIndex]];
+      
+      if (onLayerChange) {
+        onLayerChange(updatedLayers);
+      }
+      
+      return updatedLayers;
+    });
+  }, [onLayerChange]);
+  
+  /**
+   * Mueve una capa hacia abajo en la pila de capas
+   */
+  const moveLayerDown = useCallback((layerId: number) => {
+    setLayers(prevLayers => {
+      const layerIndex = prevLayers.findIndex(layer => layer.id === layerId);
+      
+      // No se puede mover si ya está en la parte inferior
+      if (layerIndex <= 0 || layerIndex === -1) {
+        return prevLayers;
+      }
+      
+      // Intercambiar con la capa de abajo
+      const updatedLayers = [...prevLayers];
+      [updatedLayers[layerIndex], updatedLayers[layerIndex - 1]] = 
+      [updatedLayers[layerIndex - 1], updatedLayers[layerIndex]];
+      
+      if (onLayerChange) {
+        onLayerChange(updatedLayers);
+      }
+      
+      return updatedLayers;
+    });
+  }, [onLayerChange]);
+  
+  /**
+   * Restablece todas las capas a su estado original
+   */
+  const resetLayers = useCallback(() => {
+    const defaultLayers = [
+      {
+        id: LayerType.AUDIO,
+        name: 'Audio',
+        type: LayerType.AUDIO,
+        locked: false,
+        visible: true,
+        height: defaultLayerHeight,
+        color: '#3498db' // Azul
+      },
+      {
+        id: LayerType.VIDEO,
+        name: 'Video/Imagen',
+        type: LayerType.VIDEO,
+        locked: false,
+        visible: true,
+        height: defaultLayerHeight,
+        color: '#9b59b6' // Púrpura
+      }
+    ];
+    
+    setLayers(defaultLayers);
+    
+    if (onLayerChange) {
+      onLayerChange(defaultLayers);
+    }
+  }, [defaultLayerHeight, onLayerChange]);
+  
+  /**
+   * Devuelve solo las capas visibles
+   */
+  const visibleLayers = useMemo(() => {
+    return layers.filter(layer => layer.visible);
   }, [layers]);
-
-  // Obtener una capa disponible para un tipo de clip
-  const getAvailableLayerForClipType = useCallback((clipType: ClipType): string | null => {
-    // Mapear el tipo de clip al tipo de capa correspondiente
-    let layerType: LayerType;
-    
-    switch (clipType) {
-      case ClipType.AUDIO:
-        layerType = LayerType.AUDIO;
-        break;
-      case ClipType.VIDEO:
-      case ClipType.IMAGE:
-        layerType = LayerType.VIDEO_IMAGE;
-        break;
-      case ClipType.TEXT:
-        layerType = LayerType.TEXT;
-        break;
-      case ClipType.EFFECT:
-        layerType = LayerType.EFFECTS;
-        break;
-      default:
-        return null;
-    }
-    
-    // Buscar la primera capa no bloqueada del tipo correspondiente
-    const availableLayer = layers
-      .filter(layer => layer.type === layerType && !layer.locked)
-      .sort((a, b) => a.clips.length - b.clips.length) // Preferir capas con menos clips
-      .shift();
-    
-    if (availableLayer) {
-      return availableLayer.id;
-    }
-    
-    // Si no hay capas disponibles, crear una nueva si no hemos alcanzado el límite
-    if (layers.filter(layer => layer.type === layerType).length < MAX_LAYERS[layerType]) {
-      return addLayer(layerType);
-    }
-    
-    return null;
-  }, [layers, addLayer]);
-
-  // Renombrar una capa
-  const renameLayer = useCallback((layerId: string, newName: string) => {
-    setLayers(prev => prev.map(layer => 
-      layer.id === layerId ? { ...layer, name: newName } : layer
-    ));
-  }, []);
-
-  // Obtener el tipo de una capa
-  const getLayerType = useCallback((layerId: string): LayerType | null => {
-    const layer = layers.find(layer => layer.id === layerId);
-    return layer ? layer.type : null;
-  }, [layers]);
-
-  // Obtener una capa por su ID
-  const getLayerById = useCallback((layerId: string): TimelineLayer | null => {
+  
+  /**
+   * Obtiene una capa por ID
+   */
+  const getLayerById = useCallback((layerId: number) => {
     return layers.find(layer => layer.id === layerId) || null;
   }, [layers]);
-
-  // Obtener todas las capas
-  const getLayers = useCallback((): TimelineLayer[] => {
-    return [...layers];
-  }, [layers]);
-
-  // Obtener capas por tipo
-  const getLayersByType = useCallback((type: LayerType): TimelineLayer[] => {
-    return layers.filter(layer => layer.type === type);
-  }, [layers]);
-
-  // Duplicar una capa (sin duplicar los clips)
-  const duplicateLayer = useCallback((layerId: string): string | null => {
-    const layerToDuplicate = layers.find(layer => layer.id === layerId);
-    
-    if (!layerToDuplicate) {
-      console.warn(`Capa con ID ${layerId} no encontrada.`);
-      return null;
-    }
-    
-    // Verificar límite de capas
-    const layersOfType = layers.filter(layer => layer.type === layerToDuplicate.type);
-    if (layersOfType.length >= MAX_LAYERS[layerToDuplicate.type]) {
-      console.warn(`No se pueden agregar más capas de tipo ${LayerType[layerToDuplicate.type]}, límite alcanzado.`);
-      return null;
-    }
-    
-    const newName = `${layerToDuplicate.name} (copia)`;
-    const newId = getUniqueLayerId(layerToDuplicate.type, newName);
-    
-    const newLayer: TimelineLayer = {
-      ...layerToDuplicate,
-      id: newId,
-      name: newName,
-      clips: [] // La capa duplicada no contiene los clips de la original
-    };
-    
-    setLayers(prev => [...prev, newLayer]);
-    return newId;
-  }, [layers, getUniqueLayerId]);
-
-  // Obtener la capa que contiene un clip específico
-  const getClipLayer = useCallback((clipId: string): string | null => {
-    for (const layer of layers) {
-      if (layer.clips.includes(clipId)) {
-        return layer.id;
-      }
-    }
-    return null;
-  }, [layers]);
-
-  // Exponer las funciones
+  
+  /**
+   * Verifica si una capa está bloqueada
+   */
+  const isLayerLocked = useCallback((layerId: number) => {
+    const layer = getLayerById(layerId);
+    return layer ? layer.locked : false;
+  }, [getLayerById]);
+  
   return {
+    layers,
+    visibleLayers,
     addLayer,
     removeLayer,
+    updateLayer,
     toggleLayerVisibility,
     toggleLayerLock,
-    moveClipToLayer,
-    getAvailableLayerForClipType,
-    renameLayer,
-    getLayerType,
+    resizeLayer,
+    moveLayerUp,
+    moveLayerDown,
+    resetLayers,
     getLayerById,
-    getLayers,
-    getLayersByType,
-    duplicateLayer,
-    getClipLayer
+    isLayerLocked
   };
+}
+
+/**
+ * Obtiene un color adecuado según el tipo de capa
+ */
+function getLayerColorByType(type: LayerType): string {
+  switch (type) {
+    case LayerType.AUDIO:
+      return '#3498db'; // Azul
+    case LayerType.VIDEO:
+      return '#9b59b6'; // Púrpura
+    case LayerType.TEXT:
+      return '#f39c12'; // Ámbar
+    case LayerType.EFFECTS:
+      return '#2ecc71'; // Verde
+    default:
+      return '#7f8c8d'; // Gris
+  }
+}
+
+/**
+ * Obtiene un nombre predeterminado según el tipo de capa
+ */
+function getDefaultLayerName(type: LayerType): string {
+  switch (type) {
+    case LayerType.AUDIO:
+      return 'Audio';
+    case LayerType.VIDEO:
+      return 'Video/Imagen';
+    case LayerType.TEXT:
+      return 'Texto';
+    case LayerType.EFFECTS:
+      return 'Efectos';
+    default:
+      return `Capa ${Date.now() % 1000}`;
+  }
 }
