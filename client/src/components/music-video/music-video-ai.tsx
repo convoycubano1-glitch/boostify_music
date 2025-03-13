@@ -3251,7 +3251,11 @@ ${transcription}`;
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                     isPlaying={isPlaying}
-                    initialBeats={beatsJsonData ? JSON.parse(beatsJsonData) : undefined}
+                    initialBeats={beatsJsonData ? (() => {
+                      const parsedBeats = JSON.parse(beatsJsonData);
+                      console.log("Passing beats data to TimelineEditor:", parsedBeats);
+                      return parsedBeats;
+                    })() : undefined}
                     onRegenerateImage={(clipId) => {
                       const item = timelineItems.find(item => item.id === clipId);
                       if (item) {
