@@ -25,7 +25,7 @@ import {
   Menu
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../../components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
 import { LayerType } from '../../constants/timeline-constants';
@@ -344,46 +344,50 @@ const LayerManager: React.FC<LayerManagerProps> = ({
                 {/* Acciones para la capa */}
                 <div className="flex space-x-1">
                   {/* Botón de visibilidad */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6" 
-                        onClick={(e) => handleToggleVisibility(e, layer.id)}
-                      >
-                        {isVisible ? (
-                          <Eye size={14} className="text-gray-500" />
-                        ) : (
-                          <EyeOff size={14} className="text-gray-500" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {isVisible ? "Ocultar capa" : "Mostrar capa"}
-                    </TooltipContent>
-                  </Tooltip>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={(e) => handleToggleVisibility(e, layer.id)}
+                        >
+                          {isVisible ? (
+                            <Eye size={14} className="text-gray-500" />
+                          ) : (
+                            <EyeOff size={14} className="text-gray-500" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {isVisible ? "Ocultar capa" : "Mostrar capa"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
                   {/* Botón de bloqueo */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6" 
-                        onClick={(e) => handleToggleLock(e, layer.id)}
-                      >
-                        {isLocked ? (
-                          <Lock size={14} className="text-gray-500" />
-                        ) : (
-                          <Unlock size={14} className="text-gray-500" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {isLocked ? "Desbloquear capa" : "Bloquear capa"}
-                    </TooltipContent>
-                  </Tooltip>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={(e) => handleToggleLock(e, layer.id)}
+                        >
+                          {isLocked ? (
+                            <Lock size={14} className="text-gray-500" />
+                          ) : (
+                            <Unlock size={14} className="text-gray-500" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {isLocked ? "Desbloquear capa" : "Bloquear capa"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   
                   {/* Menú de acciones */}
                   <DropdownMenu>
