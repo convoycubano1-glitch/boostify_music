@@ -44,6 +44,14 @@ export interface TimelineClip {
   // Propiedades de visibilidad y bloqueo
   visible?: boolean;
   locked?: boolean;
+  // Nuevas propiedades para sistema de placeholders
+  isPlaceholder?: boolean;
+  pendingGeneration?: boolean;
+  placeholderType?: 'image' | 'video' | 'audio' | 'text';
+  generationPrompt?: string;
+  // Propiedades para capas aisladas (audio debe estar aislado)
+  isIsolated?: boolean;
+  maxDuration?: number; // Para limitar clips a máximo 5 segundos
   // URLs de recursos
   imageUrl?: string;
   videoUrl?: string;
@@ -178,10 +186,37 @@ export function TimelineEditor({
   
   // Configuración de posicionamiento de capas para evitar superposición
   const layerConfig = {
-    0: { name: 'Audio', color: 'bg-orange-500/20', top: 'top-4', height: 'h-16', border: 'border-orange-400' },
-    1: { name: 'Imágenes', color: 'bg-blue-500/20', top: 'top-24', height: 'h-20', border: 'border-blue-400' },
-    2: { name: 'Texto', color: 'bg-violet-500/20', top: 'top-48', height: 'h-14', border: 'border-violet-400' },
-    3: { name: 'Efectos', color: 'bg-emerald-500/20', top: 'top-66', height: 'h-14', border: 'border-emerald-400' }
+    0: { 
+      name: 'Audio', 
+      color: 'bg-orange-500/20', 
+      top: 'top-4', 
+      height: 'h-16', 
+      border: 'border-orange-400',
+      isLocked: true, // Audio siempre bloqueado por defecto
+      isIsolated: true // Capa aislada para evitar modificaciones accidentales
+    },
+    1: { 
+      name: 'Imágenes', 
+      color: 'bg-blue-500/20', 
+      top: 'top-24', 
+      height: 'h-20', 
+      border: 'border-blue-400',
+      isPlaceholder: true // Indicar que esta capa contendrá placeholders para generación de AI
+    },
+    2: { 
+      name: 'Texto', 
+      color: 'bg-violet-500/20', 
+      top: 'top-48', 
+      height: 'h-14', 
+      border: 'border-violet-400' 
+    },
+    3: { 
+      name: 'Efectos', 
+      color: 'bg-emerald-500/20', 
+      top: 'top-66', 
+      height: 'h-14', 
+      border: 'border-emerald-400' 
+    }
   };
 
   const timelineWidth = duration * zoom * 100;
