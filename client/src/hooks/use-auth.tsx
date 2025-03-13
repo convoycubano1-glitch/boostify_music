@@ -1,18 +1,12 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { User } from "firebase/auth";
+import { auth } from "../firebase";
 import { useToast } from "../hooks/use-toast";
+import { authService } from "../services/auth-service";
 import { useLocation } from "wouter";
 
-// Definición de Usuario simplificada para desarrollo
-interface SimplifiedUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-}
-
-// Tipo para contexto de autenticación
 type AuthContextType = {
-  user: SimplifiedUser | null;
+  user: User | null;
   isLoading: boolean;
   error: Error | null;
   login: (redirectPath?: string) => Promise<void>;
@@ -22,26 +16,17 @@ type AuthContextType = {
 export const AuthContext = React.createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Usuario demo para desarrollo
-  const demoUser: SimplifiedUser = {
-    uid: "demo-user-123",
-    email: "demo@example.com",
-    displayName: "Usuario Demo",
-    photoURL: null
-  };
-
-  const [user] = useState<SimplifiedUser | null>(demoUser);
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
 
-  // Función simulada de inicio de sesión para desarrollo
+  // Iniciar sesión con Google
   const login = useCallback(async (redirectPath: string = '/dashboard') => {
     try {
       setLoading(true);
-      console.log('Login simulado, redirigiendo a:', redirectPath);
-      setTimeout(() => setLocation(redirectPath), 500);
+      await authService.signInWithGoogle(redirectPath);
     } catch (err) {
       console.error('Login error:', err);
       setError(err as Error);
@@ -53,14 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [toast, setLocation]);
+  }, [toast]);
 
-  // Función simulada de cierre de sesión para desarrollo
+  // Cerrar sesión
   const logout = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('Logout simulado');
-      setTimeout(() => setLocation('/'), 500);
+      await authService.signOut();
+      setLocation('/');
     } catch (err) {
       console.error('Logout error:', err);
       setError(err as Error);
@@ -73,6 +58,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     }
   }, [toast, setLocation]);
+
+  // Verificar resultados de redirección al cargar
+  useEffect(() => {
+    async function checkRedirect() {
+      try {
+        const redirectUser = await authService.checkRedirectResult();
+        if (redirectUser) {
+          setUser(redirectUser);
+        }
+      } catch (err) {
+        console.error('Redirect result error:', err);
+        // No mostramos toast aquí para evitar mostrar errores en la carga inicial
+      }
+    }
+
+    checkRedirect();
+  }, []);
+
+  // Monitorear cambios en el estado de autenticación
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    try {
+      if (!auth) {
+        console.warn('Firebase Auth not initialized');
+        setLoading(false);
+        return;
+      }
+
+      unsubscribe = auth.onAuthStateChanged(
+        (user) => {
+          setUser(user);
+          setLoading(false);
+          
+          if (user) {
+            console.log('User authenticated:', user.displayName || user.email);
+          }
+        },
+        (error) => {
+          console.error('Auth state change error:', error);
+          setError(error as Error);
+          setLoading(false);
+          toast({
+            title: "Authentication Error",
+            description: "There was an error with authentication. Some features may be limited.",
+            variant: "destructive"
+          });
+        }
+      );
+    } catch (err) {
+      console.error('Error setting up auth listener:', err);
+      setError(err as Error);
+      setLoading(false);
+    }
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [toast]);
 
   return (
     <AuthContext.Provider
