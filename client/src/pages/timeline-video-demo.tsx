@@ -20,8 +20,8 @@ export default function TimelineVideoDemo() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   
   // URL de audio y vídeo de ejemplo
-  const demoAudioUrl = "/assets/Standard_Mode_Generated_Video%20(9).mp4";
-  const demoVideoUrl = "/assets/Standard_Mode_Generated_Video%20(9).mp4";
+  const demoAudioUrl = "/src/images/videos/Standard_Mode_Generated_Video.mp4";
+  const demoVideoUrl = "/src/images/videos/Standard_Mode_Generated_Video.mp4";
   
   // Duración en segundos para el demo
   const demoDuration = 30;

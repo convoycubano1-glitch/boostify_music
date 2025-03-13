@@ -9,7 +9,8 @@ import { cn } from '../../lib/utils';
 import { 
   Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut,
   Music, Volume2, Volume1, VolumeX, Layers, Lock, Eye, Trash, 
-  Plus, Save, Download, Upload, Share2
+  Plus, Save, Download, Upload, Share2, Loader2, ChevronLeft, 
+  ChevronRight, EyeOff, LockOpen, Unlock
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -292,7 +293,7 @@ export function TimelineEditor({
     }
   }, [currentTime, onTimeChange]);
   
-  // Efecto para sincronizar video con audio
+  // Efecto para sincronizar video de referencia
   useEffect(() => {
     if (!videoRef.current) return;
     
@@ -321,27 +322,8 @@ export function TimelineEditor({
           console.error("Error al iniciar reproducción de video:", error);
         });
       }
-      
-      // Sincronizar todos los elementos de video en el documento
-      document.querySelectorAll('video').forEach(video => {
-        if (video !== videoElement) { // Evitar el video de referencia
-          const videoPlayPromise = video.play();
-          if (videoPlayPromise !== undefined) {
-            videoPlayPromise.catch(error => {
-              console.error("Error al iniciar reproducción de vista previa:", error);
-            });
-          }
-        }
-      });
     } else {
       videoElement.pause();
-      
-      // Pausar todos los elementos de video en el documento
-      document.querySelectorAll('video').forEach(video => {
-        if (video !== videoElement) { // Evitar el video de referencia
-          video.pause();
-        }
-      });
     }
     
     // Limpiar manejadores al desmontar
@@ -350,6 +332,52 @@ export function TimelineEditor({
       videoElement.removeEventListener('error', handleVideoError);
     };
   }, [isPlaying, previewLoaded]);
+  
+  // Efecto específico para la vista previa de video
+  useEffect(() => {
+    if (!previewVideoRef.current || !videoUrl) return;
+    
+    const previewElement = previewVideoRef.current;
+    
+    // Manejar eventos de video de vista previa
+    const handlePreviewCanPlay = () => {
+      console.log("Vista previa de video lista para reproducción");
+      setPreviewLoaded(true);
+    };
+    
+    const handlePreviewError = (e: any) => {
+      console.error("Error en vista previa de video:", e);
+      setPreviewLoaded(false);
+    };
+    
+    // Registrar manejadores de eventos
+    previewElement.addEventListener('canplay', handlePreviewCanPlay);
+    previewElement.addEventListener('error', handlePreviewError);
+    
+    // Sincronizar reproducción
+    if (isPlaying && previewLoaded) {
+      console.log("Intentando reproducir vista previa de video");
+      const playPromise = previewElement.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Error al reproducir vista previa:", error);
+        });
+      }
+    } else {
+      previewElement.pause();
+    }
+    
+    // Sincronizar tiempo
+    if (!isPlaying && videoRef.current) {
+      previewElement.currentTime = videoRef.current.currentTime;
+    }
+    
+    // Limpiar manejadores al desmontar
+    return () => {
+      previewElement.removeEventListener('canplay', handlePreviewCanPlay);
+      previewElement.removeEventListener('error', handlePreviewError);
+    };
+  }, [isPlaying, previewLoaded, videoUrl, currentTime]);
 
   // Notificar cambios en los clips
   useEffect(() => {
@@ -889,16 +917,26 @@ export function TimelineEditor({
         
         {/* Panel principal de timeline - se adapta mejor en móvil */}
         <div className="timeline-panel flex-1 overflow-hidden">
-          {/* Panel de Vista Previa de Video */}
+          {/* Panel de Vista Previa de Video - Rediseñado para mejor visibilidad */}
           {videoUrl && showPreview && (
             <div className={cn(
-              "video-preview-panel border-b border-border relative overflow-hidden bg-black/90",
+              "video-preview-panel border-b border-border relative overflow-hidden bg-black/95",
               "w-full h-auto max-h-[300px] md:max-h-[400px] transition-all duration-300",
-              !previewLoaded && "h-0 max-h-0"
+              !previewLoaded && "opacity-70" // Mostrar siempre pero con opacidad reducida mientras carga
             )}>
-              <div className="relative w-full aspect-video max-w-3xl mx-auto">
+              <div className="relative w-full aspect-video max-w-3xl mx-auto p-1">
+                {/* Texto "Cargando" mientras se prepara el video */}
+                {!previewLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10 text-white">
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                      <span className="text-sm">Cargando vista previa...</span>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Capa de Video */}
-                <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
+                <div className="relative w-full h-full overflow-hidden flex items-center justify-center bg-black rounded-sm">
                   {/* Video de vista previa optimizado con referencia propia */}
                   <video 
                     ref={previewVideoRef}
@@ -908,8 +946,8 @@ export function TimelineEditor({
                     muted={isMuted}
                     loop={false}
                     className={cn(
-                      "h-auto max-h-full max-w-full object-contain",
-                      !previewLoaded && "opacity-0"
+                      "h-auto max-h-full max-w-full object-contain z-20",
+                      !previewLoaded && "opacity-30" // Baja opacidad mientras carga
                     )}
                     onClick={togglePlay}
                     style={{ width: "100%" }}
