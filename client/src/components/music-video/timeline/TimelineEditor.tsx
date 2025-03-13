@@ -408,6 +408,25 @@ export function TimelineEditor({
                     <TooltipContent>Duplicate Clip</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => {
+                          if (selectedClip) {
+                            handleClipOperation(selectedClip, ClipOperation.CUT);
+                          }
+                        }}
+                      >
+                        <Scissors size={16} className="text-yellow-500" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Cut Clip</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               
                 <TooltipProvider>
                   <Tooltip>

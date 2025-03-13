@@ -1,13 +1,42 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { 
   ClipOperation, 
-  CLIP_HANDLE_WIDTH 
+  CLIP_HANDLE_WIDTH, 
+  ClipType,
+  LAYER_TYPES,
+  PIXELS_PER_SECOND
 } from '../../constants/timeline-constants';
+import { TimelineClip } from '../../components/music-video/timeline/TimelineEditor';
 
 /**
  * Opciones para configurar las interacciones con clips
  */
 export interface ClipInteractionsOptions {
+  /**
+   * Lista de clips del timeline
+   */
+  clips: TimelineClip[];
+  
+  /**
+   * Función para actualizar los clips
+   */
+  setClips: React.Dispatch<React.SetStateAction<TimelineClip[]>>;
+  
+  /**
+   * ID del clip seleccionado
+   */
+  selectedClip: number | null;
+  
+  /**
+   * Función para establecer el clip seleccionado
+   */
+  setSelectedClip: React.Dispatch<React.SetStateAction<number | null>>;
+  
+  /**
+   * Función que se llama cuando se cambian los clips
+   */
+  onClipsChange?: (clips: TimelineClip[]) => void;
+  
   /**
    * Función que se llama cuando un clip se mueve
    */
@@ -36,12 +65,12 @@ export interface ClipInteractionsOptions {
   /**
    * Función para convertir píxeles a segundos según el zoom actual
    */
-  pixelsToSeconds: (pixels: number) => number;
+  pixelsToSeconds?: (pixels: number) => number;
   
   /**
    * Función para convertir segundos a píxeles según el zoom actual
    */
-  secondsToPixels: (seconds: number) => number;
+  secondsToPixels?: (seconds: number) => number;
   
   /**
    * Ancho del controlador de redimensionamiento en píxeles
