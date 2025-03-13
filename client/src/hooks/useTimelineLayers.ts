@@ -422,5 +422,7 @@ function useTimelineLayers(
   };
 }
 
-// Exportar el hook principal y sus tipos asociados
-export { useTimelineLayers, LayerConfig };
+// Exportar el hook principal
+export { useTimelineLayers };
+
+// NO volvemos a exportar los tipos porque ya están exportados arriba

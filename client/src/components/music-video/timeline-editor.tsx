@@ -367,7 +367,7 @@ export function TimelineEditor({
       const validationResult = isolatedLayers.validateClipOperation(
         updatedClip,
         clips.filter(c => c.id !== id),
-        IsolatedLayerOperation.RESIZE,
+        IsolatedLayerOperation.RESIZE_END, // Usamos RESIZE_END en lugar de RESIZE que no existe
         layers.find(l => l.id === updatedClip.layer)?.type
       );
       
@@ -769,9 +769,9 @@ export function TimelineEditor({
                           width: `${clip.duration * PIXELS_PER_SECOND * zoom}px`,
                           top: '4px',
                           height: 'calc(100% - 8px)',
-                          backgroundColor: CLIP_COLORS[layer.type]?.background || '#e0e0e0',
-                          borderColor: CLIP_COLORS[layer.type]?.border || '#c0c0c0',
-                          color: CLIP_COLORS[layer.type]?.text || '#333333',
+                          backgroundColor: CLIP_COLORS[layer.type as LayerType]?.background || '#e0e0e0',
+                          borderColor: CLIP_COLORS[layer.type as LayerType]?.border || '#c0c0c0',
+                          color: CLIP_COLORS[layer.type as LayerType]?.text || '#333333',
                         }}
                         onClick={(e) => {
                           e.stopPropagation();

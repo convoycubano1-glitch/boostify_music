@@ -58,7 +58,8 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
   const validateClipOperation = useCallback((
     clip: TimelineClip,
     existingClips: TimelineClip[],
-    operation: ClipOperation
+    operation: ClipOperation,
+    layerType?: string // Parámetro opcional para compatibilidad
   ): ValidationResult => {
     // Resultado por defecto
     const result: ValidationResult = { isValid: true };
