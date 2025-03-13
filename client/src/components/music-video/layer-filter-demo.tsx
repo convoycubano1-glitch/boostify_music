@@ -310,6 +310,141 @@ export function LayerFilterDemo() {
             </div>
           </div>
           
+          {/* Panel de edición para el clip seleccionado */}
+          {selectedClipId !== null && (
+            <div className="mb-6 bg-muted p-4 rounded-lg border-2 border-primary">
+              <h3 className="text-lg font-medium mb-3">Clip Seleccionado</h3>
+              {(() => {
+                const selectedClip = sampleClips.find(clip => clip.id === selectedClipId);
+                if (!selectedClip) return <p>No se encontró el clip seleccionado</p>;
+                
+                return (
+                  <div className="space-y-4">
+                    <div className={`${selectedClip.color} p-4 rounded-lg text-white`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {layerIcons[selectedClip.layer as keyof typeof layerIcons]}
+                          <span className="font-medium">{selectedClip.title}</span>
+                        </div>
+                        <span className="text-xs bg-black/20 px-2 py-1 rounded">
+                          ID: {selectedClip.id}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                        <div>
+                          <p className="opacity-80">Tiempo Inicio:</p>
+                          <p className="font-bold">{formatTime(selectedClip.startTime)}</p>
+                        </div>
+                        <div>
+                          <p className="opacity-80">Duración:</p>
+                          <p className="font-bold">{formatTime(selectedClip.duration)}</p>
+                        </div>
+                        <div>
+                          <p className="opacity-80">Tiempo Final:</p>
+                          <p className="font-bold">{formatTime(selectedClip.startTime + selectedClip.duration)}</p>
+                        </div>
+                        <div>
+                          <p className="opacity-80">Capa:</p>
+                          <p className="font-bold">{layerNames[selectedClip.layer as keyof typeof layerNames]}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Controles de tiempo y duración */}
+                    <div className="grid grid-cols-2 gap-4 my-4">
+                      <div>
+                        <label htmlFor="startTime" className="text-sm font-medium mb-1 block">
+                          Tiempo de inicio
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            id="startTime"
+                            type="range" 
+                            min={0} 
+                            max={TOTAL_DURATION - selectedClip.duration} 
+                            step={0.1}
+                            value={selectedClip.startTime}
+                            className="w-full accent-primary"
+                            onChange={(e) => {
+                              // Modificar el clip seleccionado
+                              const newTime = parseFloat(e.target.value);
+                              // Esta implementación solo muestra la interacción
+                              // En la versión real, modificaría el arreglo de clips
+                              setCurrentTime(newTime);
+                            }}
+                          />
+                          <span className="text-xs">{formatTime(selectedClip.startTime)}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="duration" className="text-sm font-medium mb-1 block">
+                          Duración
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            id="duration"
+                            type="range" 
+                            min={0.5} 
+                            max={Math.min(30, TOTAL_DURATION - selectedClip.startTime)} 
+                            step={0.1}
+                            value={selectedClip.duration}
+                            className="w-full accent-primary"
+                            onChange={(e) => {
+                              // Modificar la duración del clip seleccionado
+                              // Esta implementación solo muestra la interacción
+                              const newDuration = parseFloat(e.target.value);
+                              console.log(`Duración cambiada a: ${newDuration}s`);
+                            }}
+                          />
+                          <span className="text-xs">{formatTime(selectedClip.duration)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Acciones del clip */}
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        size="sm" 
+                        className="flex items-center gap-1"
+                        onClick={() => {
+                          setCurrentTime(selectedClip.startTime);
+                        }}
+                      >
+                        <Play className="h-4 w-4" />
+                        Ir al inicio
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => {
+                          // En la implementación completa, esto eliminaría el clip del arreglo
+                          setSelectedClipId(null);
+                          console.log(`Eliminar clip: ${selectedClip.id}`);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                        Eliminar
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                        onClick={() => {
+                          // Deseleccionar el clip
+                          setSelectedClipId(null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                        Cerrar
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          
           {/* Lista de clips activos */}
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-3">Clips Activos en Tiempo Actual ({activeClips.length})</h3>
@@ -317,7 +452,8 @@ export function LayerFilterDemo() {
               {activeClips.map(clip => (
                 <div 
                   key={clip.id} 
-                  className={`${clip.color} p-3 rounded-lg text-white flex items-center justify-between`}
+                  className={`${clip.color} p-3 rounded-lg text-white flex items-center justify-between cursor-pointer ${selectedClipId === clip.id ? 'ring-2 ring-white' : ''}`}
+                  onClick={() => setSelectedClipId(clip.id)}
                 >
                   <div className="flex items-center gap-2">
                     {layerIcons[clip.layer as keyof typeof layerIcons]}
