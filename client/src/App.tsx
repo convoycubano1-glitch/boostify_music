@@ -88,6 +88,7 @@ import SubscriptionExamplePage from "./pages/subscription-example";
 import ProfessionalEditorPage from "./pages/professional-editor";
 import LayerFilterDemoPage from "./pages/layer-filter-demo";
 import TimelineDemoPage from "./pages/timeline-demo";
+import TimelineEditorTest from "./pages/timeline-editor-test";
 import TimelineVideoDemoPage from "./pages/timeline-video-demo";
 
 interface ErrorBoundaryState {
