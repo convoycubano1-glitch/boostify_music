@@ -12,6 +12,87 @@ import { TimelineClip, LayerType, ClipType } from '../../../interfaces/timeline'
 import { MAX_CLIP_DURATION } from '../../../constants/timeline-constants';
 
 /**
+ * Re-exportar MAX_CLIP_DURATION desde aquí para compatibilidad con professional-editor.tsx
+ */
+export { MAX_CLIP_DURATION };
+
+/**
+ * Enumerar los tipos de capas disponibles
+ * (Esta es una adaptación para compatibilidad con professional-editor.tsx)
+ */
+export const LAYER_TYPES = {
+  AUDIO: 5,              // Capa de audio
+  VIDEO_IMAGE: 1,        // Capa de video/imagen principal
+  TEXT: 4,               // Capa de texto
+  AI_GENERATED: 7        // Capa de imágenes generadas por IA
+};
+
+/**
+ * Aplica todas las restricciones a un conjunto de clips en el timeline.
+ * Esta función garantiza que se cumplan todas las reglas definidas:
+ * - Duración máxima de clips (5 segundos)
+ * - Restricción de capa para imágenes generadas por IA (solo capa 7)
+ * - No solapamiento de clips en la misma capa
+ * 
+ * @param clips Lista de clips a validar y ajustar
+ * @returns Lista de clips con las restricciones aplicadas
+ */
+export function enforceAllConstraints(clips: TimelineClip[]): TimelineClip[] {
+  // Aplicamos restricciones a cada clip individualmente
+  return clips.map(clip => {
+    // 1. Restricción de duración máxima (5 segundos)
+    if (clip.duration > MAX_CLIP_DURATION) {
+      clip = {
+        ...clip,
+        duration: MAX_CLIP_DURATION
+      };
+      console.log(`Clip [${clip.id}] ajustado a duración máxima de ${MAX_CLIP_DURATION} segundos`);
+    }
+    
+    // 2. Restricción de capa para imágenes generadas por IA (solo en capa 7)
+    if (clip.type === 'image' && clip.imagePrompt && clip.layer !== LAYER_TYPES.AI_GENERATED) {
+      clip = {
+        ...clip,
+        layer: LAYER_TYPES.AI_GENERATED
+      };
+      console.log(`Clip generado [${clip.id}] movido a la capa IA [${LAYER_TYPES.AI_GENERATED}]`);
+    }
+    
+    return clip;
+  }).map((currentClip, index, updatedClips) => {
+    // 3. Restricción de no solapamiento
+    // Para cada clip, verificamos si hay colisión con los clips previos
+    // y lo movemos si es necesario
+    
+    // Buscar clips de la misma capa
+    const sameLayerClips = updatedClips.filter((c, i) => 
+      i !== index && c.layer === currentClip.layer
+    );
+    
+    let adjustedClip = { ...currentClip };
+    let needsAdjustment = false;
+    
+    // Verificar colisiones
+    for (const otherClip of sameLayerClips) {
+      const currentStart = adjustedClip.start;
+      const currentEnd = currentStart + adjustedClip.duration;
+      const otherStart = otherClip.start;
+      const otherEnd = otherStart + otherClip.duration;
+      
+      // Si hay solapamiento
+      if (currentStart < otherEnd && currentEnd > otherStart) {
+        needsAdjustment = true;
+        // Mover después del clip existente
+        adjustedClip.start = otherEnd + 0.1; // Pequeño margen para evitar solapamientos exactos
+        console.log(`Clip [${adjustedClip.id}] reposicionado para evitar solapamiento con [${otherClip.id}]`);
+      }
+    }
+    
+    return needsAdjustment ? adjustedClip : currentClip;
+  });
+}
+
+/**
  * Valida la duración máxima de un clip (máximo 5 segundos)
  * @param duration Duración del clip en segundos
  * @returns True si es válida, false si excede el límite
