@@ -25,6 +25,14 @@ import {
   ThumbnailData
 } from '../professional-editor-types';
 
+// Definimos una interfaz para WorkflowData para mayor tipado
+export interface WorkflowData {
+  steps?: { id: string; status: 'pending' | 'in-progress' | 'completed' | 'skipped'; timestamp?: Date }[];
+  activeTimeline?: boolean;
+  timelineProgress?: number;
+  [key: string]: any; // Para permitir campos adicionales específicos
+}
+
 // Tipo para el contexto del editor
 export interface EditorContextType {
   // Estado global
@@ -166,13 +174,6 @@ const EditorContext = createContext<EditorContextType | null>(null);
 // Proveedor del contexto
 export function EditorProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(initialEditorState);
-  // Definimos una interfaz para WorkflowData para mayor tipado
-  interface WorkflowData {
-    steps?: { id: string; status: 'pending' | 'in-progress' | 'completed' | 'skipped'; timestamp?: Date }[];
-    activeTimeline?: boolean;
-    timelineProgress?: number;
-    [key: string]: any; // Para permitir campos adicionales específicos
-  }
   
   // Estado para manejar datos del workflow separados del estado principal
   const [workflowData, setWorkflowData] = useState<WorkflowData>({});
