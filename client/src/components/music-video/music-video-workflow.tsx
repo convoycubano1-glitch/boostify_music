@@ -320,8 +320,22 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       return [];
     }
     
-    // Determinar la duración de cada segmento
-    const segmentDuration = audioDuration / mediaFiles.length;
+    // Crear primero el clip para el audio - Asegurar que esté presente desde el principio
+    const audioClip: TimelineClip = {
+      id: 1, // ID 1 para el audio principal, siempre primero
+      start: 0,
+      startTime: 0, // Asegurar que se utilizan ambas propiedades para compatibilidad
+      duration: audioDuration,
+      endTime: audioDuration, // Añadir endTime explícitamente
+      type: 'audio',
+      layer: 0, // Capa de audio (primera capa, siempre visible)
+      name: audioFile.name.replace(/\.[^/.]+$/, ""),
+      audioUrl: URL.createObjectURL(audioFile),
+    };
+    
+    // Determinar la duración de cada segmento basada en el audio
+    const segmentDuration = audioDuration / Math.max(8, mediaFiles.length);
+    let nextId = 2; // Empezamos desde 2 porque el audio es el ID 1
     
     // Crear clips para los archivos principales
     const mainClips: TimelineClip[] = mediaFiles.map((file, index) => {
@@ -330,9 +344,11 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       const isVideo = file.type.includes('video');
       
       return {
-        id: index + 1,
+        id: nextId++,
         start,
+        startTime: start, // Añadir startTime explícitamente
         duration,
+        endTime: start + duration, // Añadir endTime explícitamente 
         type: isVideo ? 'video' : 'image',
         layer: 1, // Capa de video/imagen
         name: extractLabel(file.name),
@@ -346,30 +362,22 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       };
     });
     
-    // Crear clip para el audio
-    const audioClip: TimelineClip = {
-      id: mainClips.length + 1,
-      start: 0,
-      duration: audioDuration,
-      type: 'audio',
-      layer: 0, // Capa de audio
-      name: audioFile.name.replace(/\.[^/.]+$/, ""),
-      audioUrl: URL.createObjectURL(audioFile),
-    };
-    
-    // Crear clips para B-roll si existen
+    // Crear clips para B-roll si existen, garantizando que se coloquen correctamente en la línea de tiempo
     const bRollClips: TimelineClip[] = [];
     if (bRollFiles.length > 0) {
       const interval = Math.floor(audioDuration / (bRollFiles.length + 1));
       
       bRollFiles.forEach((file, index) => {
         const start = (index + 1) * interval;
+        const duration = 5; // Duración fija para B-roll
         const isVideo = file.type.includes('video');
         
         bRollClips.push({
-          id: mainClips.length + 2 + index,
+          id: nextId++,
           start,
-          duration: 5, // Duración fija para B-roll
+          startTime: start, // Añadir startTime explícitamente
+          duration,
+          endTime: start + duration, // Añadir endTime explícitamente
           type: isVideo ? 'video' : 'image',
           layer: 1, // Capa de video/imagen
           name: `B-Roll ${index + 1}`,
@@ -383,7 +391,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       });
     }
     
-    // Combinar todos los clips
+    // Combinar todos los clips, asegurando que el audio esté primero
     const allClips = [audioClip, ...mainClips, ...bRollClips];
     
     // Si la transcripción contiene "estribillo", marcar un clip central como estribillo
@@ -396,6 +404,12 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
         }
       }
     }
+    
+    // Mostrar notificación de éxito
+    toast({
+      title: "Línea de tiempo generada",
+      description: `Audio y ${mainClips.length} clips de imagen/video añadidos a la línea de tiempo`,
+    });
     
     return allClips;
   }, [audioFile, imageFiles, videoFiles, bRollFiles, transcription]);
