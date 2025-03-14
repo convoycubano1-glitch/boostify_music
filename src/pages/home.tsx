@@ -283,43 +283,48 @@ const MainNav = () => {
       <div className="container mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link href="/">
-              <div className="flex items-center cursor-pointer">
-                <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center mr-2">
-                  <Music2 className="h-4 w-4 text-white" />
-                </div>
-                <span className="text-xl font-bold text-white">Boostify</span>
+            <div 
+              className="flex items-center cursor-pointer" 
+              onClick={() => window.location.href = '/'}
+            >
+              <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center mr-2">
+                <Music2 className="h-4 w-4 text-white" />
               </div>
-            </Link>
+              <span className="text-xl font-bold text-white">Boostify</span>
+            </div>
             <nav className="ml-8 hidden md:flex space-x-6">
-              <Link href="/features">
-                <span className={`text-sm font-medium hover:text-orange-400 transition-colors ${
+              <button 
+                onClick={() => window.location.href = '/features'}
+                className={`text-sm font-medium hover:text-orange-400 transition-colors ${
                   location === '/features' ? 'text-orange-400' : 'text-white/80'
-                }`}>
-                  Características
-                </span>
-              </Link>
-              <Link href="/pricing">
-                <span className={`text-sm font-medium hover:text-orange-400 transition-colors ${
+                }`}
+              >
+                Características
+              </button>
+              <button 
+                onClick={() => window.location.href = '/pricing'}
+                className={`text-sm font-medium hover:text-orange-400 transition-colors ${
                   location === '/pricing' ? 'text-orange-400' : 'text-white/80'
-                }`}>
-                  Precios
-                </span>
-              </Link>
-              <Link href="/ecosystem">
-                <span className={`text-sm font-medium hover:text-orange-400 transition-colors ${
+                }`}
+              >
+                Precios
+              </button>
+              <button 
+                onClick={() => window.location.href = '/ecosystem'}
+                className={`text-sm font-medium hover:text-orange-400 transition-colors ${
                   location === '/ecosystem' ? 'text-orange-400' : 'text-white/80'
-                }`}>
-                  Ecosistema
-                </span>
-              </Link>
-              <Link href="/contact">
-                <span className={`text-sm font-medium hover:text-orange-400 transition-colors ${
+                }`}
+              >
+                Ecosistema
+              </button>
+              <button 
+                onClick={() => window.location.href = '/contact'}
+                className={`text-sm font-medium hover:text-orange-400 transition-colors ${
                   location === '/contact' ? 'text-orange-400' : 'text-white/80'
-                }`}>
-                  Contacto
-                </span>
-              </Link>
+                }`}
+              >
+                Contacto
+              </button>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
@@ -329,11 +334,13 @@ const MainNav = () => {
             
             {user ? (
               <div className="flex items-center space-x-4">
-                <Link href="/dashboard">
-                  <Button variant="outline" className="bg-transparent border-white/20 text-white hover:bg-white/10">
-                    Panel de control
-                  </Button>
-                </Link>
+                <Button 
+                  variant="outline" 
+                  className="bg-transparent border-white/20 text-white hover:bg-white/10"
+                  onClick={() => window.location.href = '/dashboard'}
+                >
+                  Panel de control
+                </Button>
                 <button
                   onClick={signOut}
                   className="text-sm font-medium text-white/80 hover:text-orange-400 transition-colors"
@@ -425,11 +432,13 @@ const HeroSection = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4"
           >
-            <Link href="/signup">
-              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white px-8">
-                Comienza gratis <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8"
+              onClick={() => window.location.href = '/signup'}
+            >
+              Comienza gratis <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
             <Button 
               variant="outline" 
               size="lg" 
@@ -713,9 +722,12 @@ const FeatureCard = ({ title, description, icon: Icon, color, link }: FeatureCar
       </div>
       <h3 className="text-xl font-semibold text-white mb-3">{title}</h3>
       <p className="text-gray-400 mb-4">{description}</p>
-      <Link href={link} className={`inline-flex items-center ${colorStyle.text} hover:underline`}>
+      <button 
+        onClick={() => window.location.href = link} 
+        className={`inline-flex items-center ${colorStyle.text} hover:underline`}
+      >
         Explorar <ChevronRight className="ml-1 h-4 w-4" />
-      </Link>
+      </button>
     </motion.div>
   );
 };
@@ -900,11 +912,13 @@ const TestimonialSection = () => {
           </div>
           
           <div className="mt-10">
-            <Link href="/testimonials">
-              <Button variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10 text-white">
-                Ver más historias <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              className="border-white/20 bg-white/5 hover:bg-white/10 text-white"
+              onClick={() => window.location.href = '/testimonials'}
+            >
+              Ver más historias <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -949,11 +963,12 @@ const TechnologySection = () => {
           </div>
           
           <div className="mt-10">
-            <Link href="/technology">
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                Explorar tecnología <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button 
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={() => window.location.href = '/technology'}
+            >
+              Explorar tecnología <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </div>
         
@@ -1142,18 +1157,17 @@ const PricingCard = ({
           </ul>
         </div>
         
-        <Link href={buttonLink}>
-          <Button 
-            variant={buttonVariant} 
-            className={`w-full ${
-              buttonVariant === 'default' 
-                ? 'bg-orange-500 hover:bg-orange-600' 
-                : 'border-white/20 hover:bg-white/10'
-            }`}
-          >
-            {buttonText}
-          </Button>
-        </Link>
+        <Button 
+          variant={buttonVariant} 
+          className={`w-full ${
+            buttonVariant === 'default' 
+              ? 'bg-orange-500 hover:bg-orange-600' 
+              : 'border-white/20 hover:bg-white/10'
+          }`}
+          onClick={() => window.location.href = buttonLink}
+        >
+          {buttonText}
+        </Button>
       </div>
     </Card>
   );
@@ -1174,16 +1188,21 @@ const CallToActionSection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="bg-white text-orange-600 hover:bg-white/90">
-                Comenzar gratis <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/demo">
-              <Button variant="outline" size="lg" className="border-white/40 hover:bg-white/10">
-                Solicitar demo
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="bg-white text-orange-600 hover:bg-white/90"
+              onClick={() => window.location.href = '/signup'}
+            >
+              Comenzar gratis <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="border-white/40 hover:bg-white/10"
+              onClick={() => window.location.href = '/demo'}
+            >
+              Solicitar demo
+            </Button>
           </div>
           
           <div className="mt-8 flex items-center space-x-2 text-white/80">
@@ -1347,11 +1366,13 @@ const FAQSection = () => {
         
         <div className="mt-12 text-center">
           <p className="text-gray-600 mb-4">¿No encuentras lo que buscas?</p>
-          <Link href="/contact">
-            <Button variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50">
-              Contactar con soporte
-            </Button>
-          </Link>
+          <Button 
+            variant="outline" 
+            className="border-orange-500 text-orange-600 hover:bg-orange-50"
+            onClick={() => window.location.href = '/contact'}
+          >
+            Contactar con soporte
+          </Button>
         </div>
       </div>
     </LightSection>
@@ -1385,7 +1406,12 @@ const WaitlistSection = () => {
         </Button>
         
         <p className="mt-6 text-gray-400">
-          ¿Ya eres usuario? <Link href="/login" className="text-orange-400 hover:underline">Inicia sesión</Link>
+          ¿Ya eres usuario? <span 
+            onClick={() => window.location.href = '/login'} 
+            className="text-orange-400 hover:underline cursor-pointer"
+          >
+            Inicia sesión
+          </span>
         </p>
       </div>
       
