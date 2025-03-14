@@ -94,11 +94,15 @@ export function useClipOperations({
         return false;
       }
       
+      // Obtener valores seguros para startTime y endTime
+      const clipEndTime = clip.endTime || (clip.start + clip.duration);
+      const clipStartTime = clip.startTime || clip.start;
+      
       // Verificar superposición: ¿el nuevo clip comienza antes de que termine un clip existente
       // Y termina después de que comienza un clip existente?
       return (
-        (startTime < clip.endTime) && 
-        (endTime > clip.startTime)
+        (startTime < clipEndTime) && 
+        (endTime > clipStartTime)
       );
     });
   }, [clipsByLayer, allowOverlap]);
@@ -320,8 +324,8 @@ export function useClipOperations({
     const snappedTime = findSnapPosition(newTime);
     
     // Calcular nuevos tiempos
-    let newStartTime = targetClip.startTime;
-    let newEndTime = targetClip.endTime;
+    let newStartTime = targetClip.startTime || targetClip.start;
+    let newEndTime = targetClip.endTime || (targetClip.start + targetClip.duration);
     
     if (isStart) {
       // Redimensionar desde el inicio
@@ -404,8 +408,12 @@ export function useClipOperations({
       return false;
     }
     
+    // Obtener valores seguros para startTime y endTime
+    const clipStartTime = targetClip.startTime || targetClip.start;
+    const clipEndTime = targetClip.endTime || (targetClip.start + targetClip.duration);
+    
     // Validar que el tiempo de división esté dentro del clip
-    if (splitTime <= targetClip.startTime || splitTime >= targetClip.endTime) {
+    if (splitTime <= clipStartTime || splitTime >= clipEndTime) {
       onError('El punto de división debe estar dentro del clip');
       return false;
     }
@@ -480,22 +488,40 @@ export function useClipOperations({
       return false;
     }
     
+    // Crear copias seguras de los clips
+    let firstClip = { ...clip1 };
+    let secondClip = { ...clip2 };
+    
+    // Obtener valores seguros para startTime y endTime
+    const firstClipStartTime = firstClip.startTime || firstClip.start;
+    const firstClipEndTime = firstClip.endTime || (firstClip.start + firstClip.duration);
+    const secondClipStartTime = secondClip.startTime || secondClip.start;
+    const secondClipEndTime = secondClip.endTime || (secondClip.start + secondClip.duration);
+    
     // Ordenar los clips por tiempo
-    if (clip1.startTime > clip2.startTime) {
-      const temp = clip1;
-      clip1 = clip2;
-      clip2 = temp;
+    if (firstClipStartTime > secondClipStartTime) {
+      const temp = firstClip;
+      firstClip = secondClip;
+      secondClip = temp;
+      // No es necesario intercambiar tiempos calculados, ya que vamos a recalcularlos
     }
+    
+    // Recalcular valores seguros después del posible intercambio
+    const startTime = firstClip.startTime || firstClip.start;
+    const endTime = secondClip.endTime || (secondClip.start + secondClip.duration);
     
     // Verificar que sean adyacentes (con un pequeño margen de tolerancia)
     const ADJACENCY_TOLERANCE = 0.1; // segundos
-    if (Math.abs(clip1.endTime - clip2.startTime) > ADJACENCY_TOLERANCE) {
+    const firstEndTime = firstClip.endTime || (firstClip.start + firstClip.duration);
+    const secondStartTime = secondClip.startTime || secondClip.start;
+    
+    if (Math.abs(firstEndTime - secondStartTime) > ADJACENCY_TOLERANCE) {
       onError('Los clips deben ser adyacentes para combinarlos');
       return false;
     }
     
     // Verificar si la duración resultante es válida
-    const combinedDuration = clip2.endTime - clip1.startTime;
+    const combinedDuration = endTime - startTime;
     if (combinedDuration > MAX_CLIP_DURATION) {
       onError(ERROR_MESSAGES.MAX_DURATION_EXCEEDED);
       return false;
@@ -506,19 +532,22 @@ export function useClipOperations({
       const newClipsByLayer = { ...prev };
       const layerClips = [...newClipsByLayer[layerId!]];
       
-      const clip1Index = layerClips.findIndex(c => c.id === clip1!.id);
-      const clip2Index = layerClips.findIndex(c => c.id === clip2!.id);
+      const firstClipIndex = layerClips.findIndex(c => c.id === firstClip.id);
+      const secondClipIndex = layerClips.findIndex(c => c.id === secondClip.id);
       
-      if (clip1Index !== -1 && clip2Index !== -1) {
+      if (firstClipIndex !== -1 && secondClipIndex !== -1) {
         // Crear un clip combinado con las propiedades del primer clip
         const combinedClip: TimelineClip = {
-          ...clip1!,
-          endTime: clip2!.endTime
+          ...firstClip,
+          startTime,
+          endTime,
+          start: startTime,
+          duration: combinedDuration
         };
         
         // Reemplazar el primer clip con el combinado y eliminar el segundo
-        layerClips[clip1Index] = combinedClip;
-        layerClips.splice(clip2Index, 1);
+        layerClips[firstClipIndex] = combinedClip;
+        layerClips.splice(secondClipIndex, 1);
         
         newClipsByLayer[layerId!] = layerClips;
       }
@@ -552,11 +581,15 @@ export function useClipOperations({
       return null;
     }
     
+    // Obtener valores seguros para startTime y endTime
+    const clipStartTime = targetClip.startTime || targetClip.start;
+    const clipEndTime = targetClip.endTime || (targetClip.start + targetClip.duration);
+    
     // Calcular los nuevos tiempos para el duplicado
-    const duration = targetClip.endTime - targetClip.startTime;
+    const duration = clipEndTime - clipStartTime;
     const newStartTime = offsetTime > 0 
-      ? targetClip.startTime + offsetTime 
-      : targetClip.endTime + 0.1; // Si no se especifica offset, colocar justo después
+      ? clipStartTime + offsetTime 
+      : clipEndTime + 0.1; // Si no se especifica offset, colocar justo después
     
     // Crear un duplicado 
     return addClip(
