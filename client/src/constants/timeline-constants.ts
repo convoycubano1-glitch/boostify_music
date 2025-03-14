@@ -15,7 +15,9 @@ export enum LayerType {
   TEXT = 'text',
   EFFECT = 'effect',
   TRANSITION = 'transition',
-  AI_PLACEHOLDER = 'ai_placeholder'
+  AI_PLACEHOLDER = 'ai_placeholder',
+  VIDEO_IMAGE = 'video_image', // Para compatibilidad
+  EFFECTS = 'effects'          // Para compatibilidad
 }
 
 /**
@@ -40,6 +42,13 @@ export const MIN_CLIP_DURATION = 0.5; // Segundos
 export const MAX_CLIP_DURATION = 600; // 10 minutos
 export const SNAP_THRESHOLD = 0.5; // Segundos
 export const LAYER_HEIGHT = 50; // Altura de cada capa en píxeles
+export const PLAYHEAD_WIDTH = 2; // Ancho del playhead en píxeles
+export const WAVEFORM_HEIGHT = 30; // Altura de la forma de onda en píxeles
+
+/**
+ * Tipo para clips de timeline
+ */
+export type ClipType = 'audio' | 'video' | 'image' | 'text' | 'effect' | 'transition' | 'ai_placeholder';
 
 /**
  * Colores para los diferentes tipos de capas
@@ -82,6 +91,62 @@ export const CLIP_COLORS = {
     selected: '#90EE90'
   },
   [LayerType.AI_PLACEHOLDER]: {
+    background: '#BA55D3',
+    border: '#DDA0DD',
+    text: '#FFFFFF',
+    selected: '#DA70D6'
+  },
+  // Agregar tipos compatibles
+  [LayerType.VIDEO_IMAGE]: {
+    background: '#4169E1',
+    border: '#1E90FF',
+    text: '#FFFFFF',
+    selected: '#6495ED'
+  },
+  [LayerType.EFFECTS]: {
+    background: '#FFD700',
+    border: '#FFA500',
+    text: '#000000',
+    selected: '#FFDB58'
+  },
+  // Tipos de clips adicionales
+  'audio': {
+    background: '#8A2BE2',
+    border: '#7B68EE',
+    text: '#FFFFFF',
+    selected: '#9370DB'
+  },
+  'video': {
+    background: '#4169E1',
+    border: '#1E90FF',
+    text: '#FFFFFF',
+    selected: '#6495ED'
+  },
+  'image': {
+    background: '#20B2AA',
+    border: '#48D1CC',
+    text: '#FFFFFF',
+    selected: '#40E0D0'
+  },
+  'text': {
+    background: '#FF6347',
+    border: '#FF7F50',
+    text: '#FFFFFF',
+    selected: '#FF8C69'
+  },
+  'effect': {
+    background: '#FFD700',
+    border: '#FFA500',
+    text: '#000000',
+    selected: '#FFDB58'
+  },
+  'transition': {
+    background: '#32CD32',
+    border: '#3CB371',
+    text: '#FFFFFF',
+    selected: '#90EE90'
+  },
+  'ai_placeholder': {
     background: '#BA55D3',
     border: '#DDA0DD',
     text: '#FFFFFF',
