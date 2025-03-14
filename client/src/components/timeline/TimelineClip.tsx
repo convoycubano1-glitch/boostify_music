@@ -1,288 +1,316 @@
 /**
- * Componente TimelineClip
- * 
- * Este componente renderiza un clip individual en la línea de tiempo.
- * Maneja la visualización, selección, arrastre y redimensionamiento de clips.
+ * Componente para representar clips individuales en la línea de tiempo
+ * Maneja la renderización visual de todo tipo de clips (audio, imagen, video, texto)
  */
 
-import React, { useState, useRef } from 'react';
+import React from 'react';
+import { cn } from '../../lib/utils';
 import { 
-  Trash2, 
-  Copy, 
-  Scissors, 
-  Play, 
-  Lock, 
-  Info, 
-  AlertTriangle 
+  Trash, Copy, Play, Link, Image, Video, Music, Text, 
+  Eye, EyeOff, Lock, Unlock, RefreshCw, FileText, 
+  Scissors, Move, Film, Type
 } from 'lucide-react';
-import { CLIP_COLORS, LayerType } from '../../constants/timeline-constants';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
+import { TimelineClip } from '../music-video/TimelineEditor';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
-/**
- * Tipo para un clip de la línea de tiempo
- */
-export interface TimelineClip {
-  id: number;
-  title?: string; 
-  name?: string;
-  type: string;
-  layer: number;
-  start: number;
-  duration: number;
-  // Campos adicionales para compatibilidad con hook useClipOperations
-  startTime?: number;  // Alias de start 
-  endTime?: number;    // Calculado como start + duration
-  selected?: boolean;
-  audioUrl?: string;
-  videoUrl?: string;
-  imageUrl?: string;
-  thumbnail?: string;
-  url?: string;        // URL genérico para cualquier recurso multimedia
-  metadata?: {
-    isAIGenerated?: boolean;
-    thumbnail?: string;
-    source?: string;
-    section?: string;
-    sourceIndex?: number;
-    [key: string]: any;
-  };
-}
-
-/**
- * Props para el componente TimelineClip
- */
-interface TimelineClipProps {
+interface TimelineClipComponentProps {
   clip: TimelineClip;
   selected: boolean;
   timeToPixels: (time: number) => number;
-  disabled?: boolean;
-  pixelsPerSecond?: number;
-  minWidth?: number;
   onSelect: (id: number, multiSelect?: boolean) => void;
-  onDelete?: (id: number) => void;
+  onMouseDown: (e: React.MouseEvent, clipId: number, handle?: 'start' | 'end' | 'body') => void;
+  onDelete: (id: number) => void;
   onDuplicate?: (id: number) => void;
-  onSplit?: (id: number, time: number) => void;
   onPreview?: (id: number) => void;
-  onMouseDown?: (e: React.MouseEvent, clipId: number, handle?: 'start' | 'end' | 'body') => void;
-  onMouseMove?: (e: React.MouseEvent, clipId: number) => void;
-  onMouseUp?: (e: React.MouseEvent, clipId: number) => void;
+  onRegenerate?: (id: number) => void;
+  onSplit?: (id: number, time: number) => void;
 }
 
 /**
- * Componente que muestra un clip en la línea de tiempo
+ * Componente para clips de línea de tiempo
+ * Maneja la interacción y visualización de clips en la línea de tiempo
  */
-export const TimelineClipComponent: React.FC<TimelineClipProps> = ({
+export function TimelineClipComponent({
   clip,
   selected,
   timeToPixels,
-  disabled = false,
-  pixelsPerSecond = 100,
-  minWidth = 5,
   onSelect,
+  onMouseDown,
   onDelete,
   onDuplicate,
-  onSplit,
   onPreview,
-  onMouseDown,
-  onMouseMove,
-  onMouseUp
-}) => {
-  // Referencias y estado
-  const clipRef = useRef<HTMLDivElement>(null);
-  const [showControls, setShowControls] = useState(false);
+  onRegenerate,
+  onSplit
+}: TimelineClipComponentProps) {
+  // Calculamos la posición y ancho del clip basándonos en start y duration
+  const left = timeToPixels(clip.start);
+  const width = timeToPixels(clip.duration);
   
-  // Calcular las dimensiones y posición del clip
-  const clipWidth = Math.max(timeToPixels(clip.duration), minWidth);
-  const clipLeft = timeToPixels(clip.start);
-  
-  // Determinar los colores basados en el tipo de clip
-  const colors = CLIP_COLORS[clip.type as LayerType] || CLIP_COLORS.video;
-  
-  // Manejar el clic en el clip
-  const handleClipClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const multiSelect = e.ctrlKey || e.metaKey;
-    onSelect(clip.id, multiSelect);
-  };
-  
-  // Manejar acciones del menú de clip
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDelete) onDelete(clip.id);
-  };
-  
-  const handleDuplicate = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDuplicate) onDuplicate(clip.id);
-  };
-  
-  const handleSplit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onSplit) {
-      // Calcular el punto medio para dividir
-      const splitPoint = clip.start + (clip.duration / 2);
-      onSplit(clip.id, splitPoint);
+  // Determinar el ícono basado en el tipo de clip
+  const getClipIcon = () => {
+    switch (clip.type) {
+      case 'video':
+        return <Video className="h-3 w-3" />;
+      case 'image':
+        return <Image className="h-3 w-3" />;
+      case 'audio':
+        return <Music className="h-3 w-3" />;
+      case 'text':
+        return <Text className="h-3 w-3" />;
+      case 'effect':
+        return <Film className="h-3 w-3" />;
+      case 'transition':
+        return <Type className="h-3 w-3" />;
+      default:
+        return <FileText className="h-3 w-3" />;
     }
   };
-  
-  const handlePreview = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onPreview) onPreview(clip.id);
+
+  // Determinar el color del clip basado en el tipo
+  const getClipColor = () => {
+    switch (clip.type) {
+      case 'video':
+        return 'bg-blue-900 border-blue-500';
+      case 'image':
+        return 'bg-indigo-900 border-indigo-500';
+      case 'audio':
+        return 'bg-rose-900 border-rose-500';
+      case 'text':
+        return 'bg-green-900 border-green-500';
+      case 'effect':
+        return 'bg-purple-900 border-purple-500';
+      case 'transition':
+        return 'bg-amber-900 border-amber-500';
+      default:
+        return 'bg-gray-800 border-gray-500';
+    }
   };
-  
-  // Manejar eventos del mouse para drag & resize
-  const handleMouseDown = (e: React.MouseEvent, handle?: 'start' | 'end' | 'body') => {
-    if (disabled) return;
+
+  // Manejar clic en clip
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onMouseDown) onMouseDown(e, clip.id, handle);
+    onSelect(clip.id, e.ctrlKey || e.metaKey);
   };
-  
-  // Determinar si el clip es un placeholder de IA
-  const isAIPlaceholder = clip.metadata?.isAIGenerated || clip.type === LayerType.AI_PLACEHOLDER;
-  
+
+  // Verificar si el clip tiene imagen o miniatura
+  const hasImage = clip.thumbnail || clip.imageUrl;
+
   return (
     <div
-      ref={clipRef}
-      className={`absolute rounded-md flex flex-col overflow-hidden transition-colors h-full
-        ${selected ? 'ring-2 ring-primary z-10' : 'z-1'}
-        ${disabled ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
-      `}
+      className={cn(
+        "absolute rounded-sm overflow-hidden border select-none",
+        getClipColor(),
+        selected ? 'border-2 ring-2 ring-primary ring-opacity-50 z-10' : 'border',
+        clip.visible === false ? 'opacity-50' : 'opacity-100',
+        clip.locked ? 'cursor-not-allowed' : 'cursor-pointer',
+      )}
       style={{
-        left: `${clipLeft}px`,
-        width: `${clipWidth}px`,
-        backgroundColor: selected ? colors.selected : colors.background,
-        borderColor: colors.border,
-        borderWidth: '1px',
+        left: `${left}px`,
+        width: `${width}px`,
+        height: '40px',
+        top: '4px',
+        transition: 'border-color 0.1s ease',
       }}
-      onClick={handleClipClick}
-      onMouseEnter={() => setShowControls(true)}
-      onMouseLeave={() => setShowControls(false)}
-      onMouseDown={(e) => handleMouseDown(e, 'body')}
-      onMouseMove={(e) => onMouseMove && onMouseMove(e, clip.id)}
-      onMouseUp={(e) => onMouseUp && onMouseUp(e, clip.id)}
+      onClick={handleClick}
+      onMouseDown={(e) => !clip.locked && onMouseDown(e, clip.id, 'body')}
     >
-      {/* Manejador de resize izquierdo */}
-      {!disabled && (
-        <div
-          className="absolute left-0 top-0 w-3 h-full cursor-w-resize z-20"
-          onMouseDown={(e) => handleMouseDown(e, 'start')}
-        />
+      {/* Manijas para redimensionar */}
+      {!clip.locked && (
+        <>
+          <div
+            className="absolute left-0 top-0 w-2 h-full bg-gray-800 bg-opacity-50 cursor-ew-resize z-10"
+            onMouseDown={(e) => onMouseDown(e, clip.id, 'start')}
+          />
+          <div
+            className="absolute right-0 top-0 w-2 h-full bg-gray-800 bg-opacity-50 cursor-ew-resize z-10"
+            onMouseDown={(e) => onMouseDown(e, clip.id, 'end')}
+          />
+        </>
       )}
-      
-      {/* Contenido del clip */}
-      <div className="flex items-center p-1 overflow-hidden h-full">
-        {/* Icono o thumbnail */}
-        {clip.metadata?.thumbnail ? (
-          <div className="w-6 h-6 mr-1 flex-shrink-0">
-            <img 
-              src={clip.metadata.thumbnail} 
-              alt={clip.title} 
-              className="w-full h-full object-cover rounded-sm"
-            />
+
+      {/* Contenido principal del clip */}
+      <div className="relative h-full flex flex-col">
+        {/* Barra superior con controles */}
+        <div className="absolute top-0 left-0 right-0 h-5 bg-black bg-opacity-40 flex items-center justify-between px-1 text-white z-20">
+          <div className="flex items-center space-x-1 text-xs truncate max-w-[70%]">
+            {getClipIcon()}
+            <span className="truncate">{clip.title || `Clip ${clip.id}`}</span>
           </div>
-        ) : (
-          isAIPlaceholder && (
-            <div className="w-5 h-5 mr-1 flex-shrink-0 text-purple-200">
-              <AlertTriangle size={16} />
+          
+          <div className="flex items-center space-x-1">
+            {clip.visible === false ? (
+              <EyeOff className="h-3 w-3 text-gray-400" />
+            ) : (
+              <Eye className="h-3 w-3" />
+            )}
+            
+            {clip.locked && (
+              <Lock className="h-3 w-3 text-gray-400" />
+            )}
+          </div>
+        </div>
+
+        {/* Cuerpo del clip - Mostrar miniatura si está disponible */}
+        <div className="flex-1 overflow-hidden">
+          {hasImage ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img
+                src={clip.thumbnail || clip.imageUrl}
+                alt={clip.title}
+                className="w-full h-full object-cover"
+                style={{ opacity: 0.8 }}
+              />
             </div>
-          )
-        )}
-        
-        {/* Título del clip */}
-        <div 
-          className="text-sm font-medium truncate text-white flex-1"
-          style={{ color: colors.text }}
-        >
-          {clip.title}
-        </div>
-        
-        {/* Indicadores de estado */}
-        {isAIPlaceholder && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="ml-1 text-purple-200">
-                  <Info size={14} />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              {clip.type === 'audio' && clip.waveform ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  {/* Visualización simplificada de la forma de onda */}
+                  <div className="flex h-[70%] items-end space-x-[1px]">
+                    {clip.waveform.slice(0, Math.min(50, clip.waveform.length)).map((value, i) => (
+                      <div
+                        key={`waveform-${clip.id}-${i}`}
+                        className="w-[2px] bg-rose-400"
+                        style={{ height: `${value * 100}%` }}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Placeholder IA (máx. 5 segundos)</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              ) : (
+                <div className="text-xs text-gray-400">
+                  {clip.shotType || clip.description || clip.type}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Controles que aparecen cuando el clip está seleccionado */}
+        {selected && (
+          <div className="absolute bottom-0 left-0 right-0 h-5 bg-black bg-opacity-60 flex items-center justify-center space-x-1 z-20">
+            <TooltipProvider>
+              {onPreview && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-4 w-4 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPreview(clip.id);
+                      }}
+                    >
+                      <Play className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Vista previa</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {onDuplicate && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-4 w-4 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicate(clip.id);
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Duplicar</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {onDelete && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-4 w-4 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(clip.id);
+                      }}
+                    >
+                      <Trash className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Eliminar</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {clip.type === 'image' && onRegenerate && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-4 w-4 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRegenerate(clip.id);
+                      }}
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Regenerar imagen</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {onSplit && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-4 w-4 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Dividir en el punto medio
+                        const midPoint = clip.start + (clip.duration / 2);
+                        onSplit(clip.id, midPoint);
+                      }}
+                    >
+                      <Scissors className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Dividir clip</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </TooltipProvider>
+          </div>
+        )}
+
+        {/* Información adicional / etiquetas */}
+        {clip.metadata?.section && (
+          <Badge
+            variant="outline"
+            className="absolute top-5 right-0 text-[10px] h-4 pointer-events-none"
+          >
+            {clip.metadata.section}
+          </Badge>
         )}
       </div>
-      
-      {/* Barra de duración */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800 opacity-30">
-        <div 
-          className="h-full"
-          style={{ 
-            width: `${(clip.duration / 60) * 100}%`,
-            backgroundColor: selected ? colors.selected : colors.border,
-            opacity: 0.6
-          }}
-        />
-      </div>
-      
-      {/* Controles flotantes */}
-      {showControls && !disabled && (
-        <div className="absolute top-0 right-0 p-1 flex gap-1 bg-black bg-opacity-50 rounded-bl-md z-20">
-          {/* Previsualizar clip */}
-          <button
-            onClick={handlePreview}
-            className="text-white hover:text-blue-400 p-0.5"
-            title="Previsualizar"
-          >
-            <Play size={14} />
-          </button>
-          
-          {/* Duplicar clip */}
-          <button
-            onClick={handleDuplicate}
-            className="text-white hover:text-green-400 p-0.5"
-            title="Duplicar"
-          >
-            <Copy size={14} />
-          </button>
-          
-          {/* Dividir clip */}
-          <button
-            onClick={handleSplit}
-            className="text-white hover:text-yellow-400 p-0.5"
-            title="Dividir"
-          >
-            <Scissors size={14} />
-          </button>
-          
-          {/* Eliminar clip */}
-          <button
-            onClick={handleDelete}
-            className="text-white hover:text-red-400 p-0.5"
-            title="Eliminar"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      )}
-      
-      {/* Indicador de clip bloqueado */}
-      {disabled && (
-        <div className="absolute top-0 right-0 p-1">
-          <Lock size={14} className="text-gray-400" />
-        </div>
-      )}
-      
-      {/* Manejador de resize derecho */}
-      {!disabled && (
-        <div
-          className="absolute right-0 top-0 w-3 h-full cursor-e-resize z-20"
-          onMouseDown={(e) => handleMouseDown(e, 'end')}
-        />
-      )}
     </div>
   );
-};
-
-export { TimelineClipComponent as TimelineClip };
-export default TimelineClipComponent;
+}
