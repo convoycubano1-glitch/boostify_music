@@ -357,35 +357,41 @@ export function TimelineEditor({
 
   // Obtener color para un clip según su tipo
   const getClipColorByType = (clipType: string): { background: string; border: string; text: string; selected: string; } => {
-    // Intentar obtener del enum LayerType primero
-    let enumKey: LayerType | null = null;
+    // Para depurar el tipo de clip que se está procesando
+    console.log('Tipo de clip a procesar:', clipType);
     
-    // Convertir la string a enum si es posible
-    Object.values(LayerType).forEach(value => {
-      if (value === clipType) {
-        enumKey = value;
-      }
-    });
-    
-    // Si encontramos una coincidencia en el enum, usamos CLIP_COLORS
-    if (enumKey && CLIP_COLORS[enumKey]) {
-      return CLIP_COLORS[enumKey];
+    // Si es una cadena vacía o undefined, usar un valor por defecto
+    if (!clipType) {
+      console.warn('Tipo de clip inválido (vacío/undefined)');
+      return STRING_CLIP_COLORS['video']; // Valor por defecto seguro
     }
     
-    // Sino, buscamos en STRING_CLIP_COLORS por compatibilidad
-    if (STRING_CLIP_COLORS[clipType as keyof typeof STRING_CLIP_COLORS]) {
-      return STRING_CLIP_COLORS[clipType as keyof typeof STRING_CLIP_COLORS];
+    // Primero verificar en STRING_CLIP_COLORS directamente para compatibilidad máxima
+    if (STRING_CLIP_COLORS[clipType]) {
+      return STRING_CLIP_COLORS[clipType];
+    }
+    
+    // Intentar con enum LayerType 
+    if (CLIP_COLORS[clipType as LayerType]) {
+      return CLIP_COLORS[clipType as LayerType];
     }
     
     // Color por defecto basado en el layer si no hay coincidencia
-    const defaultColors = {
+    const defaultColors: Record<number, { background: string; border: string; text: string; selected: string }> = {
       0: STRING_CLIP_COLORS['audio'],
       1: STRING_CLIP_COLORS['video'],
       2: STRING_CLIP_COLORS['text'],
       3: STRING_CLIP_COLORS['effect']
     };
     
+    // Intentar convertir a número para usar en el mapa de layers por defecto
+    const layerNumber = parseInt(clipType);
+    if (!isNaN(layerNumber) && defaultColors[layerNumber]) {
+      return defaultColors[layerNumber];
+    }
+    
     // Color por defecto en caso de que todo falle
+    console.warn('Usando color por defecto para tipo desconocido:', clipType);
     return {
       background: '#4169E1', // Azul por defecto
       border: '#1E90FF',
