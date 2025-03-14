@@ -632,9 +632,12 @@ export function TimelineEditor({
       return;
     }
     
-    // Crear nuevo clip
+    // Crear nuevo clip asegurando compatibilidad con name y title
     const newClip: TimelineClip = {
       id: nextClipId,
+      // Asegurar que name y title estén sincronizados si se proporciona alguno
+      name: clipData.name || clipData.title || 'Clip',
+      title: clipData.title || clipData.name || 'Clip',
       ...clipData
     };
     
@@ -642,9 +645,15 @@ export function TimelineEditor({
     setNextClipId(prev => prev + 1);
     setSelectedClipId(newClip.id);
     
-    // Notificar adición
+    // Notificar adición con los datos sincronizados
     if (onAddClip) {
-      onAddClip(clipData);
+      // Asegurarnos de que se envíen los datos completos incluyendo name y title
+      const notificationData = {
+        ...clipData,
+        name: newClip.name,
+        title: newClip.title
+      };
+      onAddClip(notificationData);
     }
     
     return newClip.id;
@@ -718,14 +727,27 @@ export function TimelineEditor({
       }
     }
     
-    // Actualizar clip
+    // Sincronizar title y name si se actualiza alguno de ellos
+    let finalUpdates = { ...updates };
+    
+    // Si se actualiza el título, actualizar también el nombre
+    if (updates.title !== undefined && updates.name === undefined) {
+      finalUpdates.name = updates.title;
+    }
+    
+    // Si se actualiza el nombre, actualizar también el título
+    if (updates.name !== undefined && updates.title === undefined) {
+      finalUpdates.title = updates.name;
+    }
+    
+    // Actualizar clip con los cambios sincronizados
     setClips(prev => 
-      prev.map(clip => clip.id === id ? { ...clip, ...updates } : clip)
+      prev.map(clip => clip.id === id ? { ...clip, ...finalUpdates } : clip)
     );
     
-    // Notificar actualización
+    // Notificar actualización con los cambios sincronizados
     if (onUpdateClip) {
-      onUpdateClip(id, updates);
+      onUpdateClip(id, finalUpdates);
     }
   }, [
     readOnly, 
@@ -1250,7 +1272,7 @@ export function TimelineEditor({
                       >
                         {/* Contenido del clip (diferente según el tipo) - optimizado para pantallas pequeñas */}
                         <div className="clip-content text-xs md:font-medium px-1 truncate w-full text-center">
-                          {clip.title || (clip.type === 'audio' ? 'Audio' : 
+                          {clip.title || clip.name || (clip.type === 'audio' ? 'Audio' : 
                             clip.type === 'image' ? 'Imagen' : 
                             clip.type === 'text' ? 'Texto' : 
                             clip.type === 'effect' ? 'Efecto' : 'Clip')}
@@ -1325,8 +1347,14 @@ export function TimelineEditor({
                 <Input 
                   id="clip-title"
                   className="col-span-2 h-9 md:h-8"
-                  value={clips.find(c => c.id === selectedClipId)?.title || ''}
-                  onChange={(e) => updateClip(selectedClipId, { title: e.target.value })}
+                  value={clips.find(c => c.id === selectedClipId)?.title || clips.find(c => c.id === selectedClipId)?.name || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    updateClip(selectedClipId, { 
+                      title: value,
+                      name: value // Actualizar ambos campos para mantener la compatibilidad
+                    });
+                  }}
                   disabled={readOnly}
                 />
               </div>
