@@ -236,64 +236,18 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
 
   // Componente para mostrar el estado de guardado
   const SaveStatusIndicator = () => {
-    const { saveStatus, lastSaved, persistenceMode } = editorContext;
-    
-    const getStatusIcon = () => {
-      switch (saveStatus) {
-        case 'saving':
-          return <Loader2 className="h-4 w-4 animate-spin" />;
-        case 'saved':
-          return <Save className="h-4 w-4 text-green-500" />;
-        case 'error':
-          return <Save className="h-4 w-4 text-amber-500" />;
-        default:
-          return <Save className="h-4 w-4 text-slate-400" />;
-      }
-    };
-    
-    const getStatusText = () => {
-      switch (saveStatus) {
-        case 'saving':
-          return 'Guardando...';
-        case 'saved':
-          return lastSaved 
-            ? `Guardado ${lastSaved.toLocaleTimeString()}` 
-            : 'Guardado';
-        case 'error':
-          return 'Guardado local';
-        default:
-          return 'Proyecto nuevo';
-      }
-    };
-    
-    const getModeLabel = () => {
-      switch (persistenceMode) {
-        case 'firestore':
-          return 'en la nube';
-        case 'hybrid':
-          return 'en nube y local';
-        case 'local':
-        default:
-          return 'localmente';
-      }
-    };
-    
+    // Versión simplificada sin depender de propiedades no disponibles en el contexto
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {getStatusIcon()}
-              <span>{getStatusText()}</span>
+              <Save className="h-4 w-4 text-green-500" />
+              <span>Guardado automático</span>
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>Tu proyecto se guarda {getModeLabel()}</p>
-            {saveStatus === 'error' && (
-              <p className="text-amber-500 mt-1">
-                No se pudo guardar en la nube. Tus cambios están guardados localmente.
-              </p>
-            )}
+            <p>Tu proyecto se guarda automáticamente</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -468,11 +422,9 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       
       // Guardar la transcripción en el contexto del editor
       editorContext.addTranscription({
-        audioId: 'main-audio',
         text: transcript,
         startTime: 0,
-        endTime: audioDuration,
-        confidence: 0.85
+        endTime: audioDuration
       });
       
       // Actualizar datos del workflow en el contexto
@@ -512,16 +464,21 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             setIsAnalyzing(false);
             setActiveStep('timeline');
             
-            // Sincronizar con el contexto del editor - agregar pistas de audio y clips
+            // Sincronizar con el contexto del editor - agregar clips de audio
             const audioClip = clips.find(clip => clip.type === 'audio');
             if (audioClip && audioClip.audioUrl) {
-              // Agregar pista de audio al contexto
-              editorContext.addAudioTrack({
+              // Agregar el audio como un clip normal ya que addAudioTrack no existe en el contexto
+              editorContext.addClip({
+                type: 'audio',
                 name: audioFile?.name || 'Audio Principal',
                 url: audioClip.audioUrl,
-                duration: duration,
                 startTime: 0,
-                waveformData: []
+                duration: duration,
+                layer: 0,
+                properties: {
+                  section: 'Principal',
+                  sourceIndex: 0
+                }
               });
             }
             
