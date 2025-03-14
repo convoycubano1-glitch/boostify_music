@@ -9,7 +9,8 @@ import {
   Music, Image as ImageIcon, Video, Scissors, 
   Layers, Plus, ArrowLeftRight, Film, Wand2,
   Text, ArrowUpDown, Sparkles, AudioLines,
-  LineChart, BarChart4, MoveHorizontal, RefreshCw
+  LineChart, BarChart4, MoveHorizontal, RefreshCw,
+  Type, Maximize2, Minimize2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
@@ -702,9 +703,10 @@ export function TimelineEditor({
                         className="h-6 w-6 p-1 text-gray-300 hover:text-white hover:bg-gray-700"
                       >
                         {layer.type === LayerType.AUDIO && <AudioLines className="h-4 w-4" />}
-                        {layer.type === LayerType.VIDEO_IMAGE && <Video className="h-4 w-4" />}
+                        {layer.type === LayerType.VIDEO && <Video className="h-4 w-4" />}
+                        {layer.type === LayerType.IMAGE && <ImageIcon className="h-4 w-4" />}
                         {layer.type === LayerType.TEXT && <Type className="h-4 w-4" />}
-                        {layer.type === LayerType.EFFECTS && <Sparkles className="h-4 w-4" />}
+                        {layer.type === LayerType.EFFECT && <Sparkles className="h-4 w-4" />}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>{layer.name}</TooltipContent>
