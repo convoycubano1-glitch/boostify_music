@@ -2553,52 +2553,61 @@ ${transcription}`;
   return (
     <div className="min-h-screen bg-background">
       <ProgressSteps 
-        currentStep={currentStep} 
+        currentStep={String(currentStep)} 
         steps={[
           {
-            title: "Transcripción de Audio",
+            id: "transcription",
+            name: "Transcripción de Audio",
             description: "Analizando y transcribiendo la letra de tu canción",
-            status: currentStep > 1 ? "completed" : currentStep === 1 ? "current" : "pending"
+            status: currentStep > 1 ? "completed" : currentStep === 1 ? "in-progress" : "pending"
           },
           {
-            title: "Generación de Guion",
+            id: "script",
+            name: "Generación de Guion",
             description: "Creando un guion visual basado en tu música",
-            status: currentStep > 2 ? "completed" : currentStep === 2 ? "current" : "pending"
+            status: currentStep > 2 ? "completed" : currentStep === 2 ? "in-progress" : "pending"
           },
           {
-            title: "Sincronización",
+            id: "sync",
+            name: "Sincronización",
             description: "Sincronizando el video con el ritmo de la música",
-            status: currentStep > 3 ? "completed" : currentStep === 3 ? "current" : "pending"
+            status: currentStep > 3 ? "completed" : currentStep === 3 ? "in-progress" : "pending"
           },
           {
-            title: "Generación de Escenas",
+            id: "scenes",
+            name: "Generación de Escenas",
             description: "Creando las escenas del video musical",
-            status: currentStep > 4 ? "completed" : currentStep === 4 ? "current" : "pending"
+            status: currentStep > 4 ? "completed" : currentStep === 4 ? "in-progress" : "pending"
           },
           {
-            title: "Personalización",
+            id: "customization",
+            name: "Personalización",
             description: "Ajustando el estilo visual a tus preferencias",
-            status: currentStep > 5 ? "completed" : currentStep === 5 ? "current" : "pending"
+            status: currentStep > 5 ? "completed" : currentStep === 5 ? "in-progress" : "pending"
           },
           {
-            title: "Integración de Movimiento",
+            id: "movement",
+            name: "Integración de Movimiento",
             description: "Añadiendo coreografías y dinámicas visuales",
-            status: currentStep > 6 ? "completed" : currentStep === 6 ? "current" : "pending"
+            status: currentStep > 6 ? "completed" : currentStep === 6 ? "in-progress" : "pending"
           },
           {
-            title: "Sincronización de Labios",
+            id: "lipsync",
+            name: "Sincronización de Labios",
             description: "Sincronizando labios con la letra de la canción",
-            status: currentStep > 7 ? "completed" : currentStep === 7 ? "current" : "pending"
+            status: currentStep > 7 ? "completed" : currentStep === 7 ? "in-progress" : "pending"
           },
           {
-            title: "Generación de Video",
+            id: "generation",
+            name: "Generación de Video",
             description: "Creando videos con IA a partir de tus escenas",
-            status: currentStep > 8 ? "completed" : currentStep === 8 ? "current" : "pending"
+            status: currentStep > 8 ? "completed" : currentStep === 8 ? "in-progress" : "pending"
           },
           {
-            title: "Renderizado Final",
+            id: "rendering",
+            name: "Renderizado Final",
             description: "Combinando todo en tu video musical",
-            status: currentStep > 9 ? "completed" : currentStep === 9 ? "current" : "pending"
+            status: currentStep > 9 ? "completed" : currentStep === 9 ? "in-progress" : "pending"
           }
         ]}
       />

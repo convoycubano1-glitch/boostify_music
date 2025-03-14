@@ -134,7 +134,7 @@ export function ProgressSteps({
   // Utilizamos la nueva estructura workflowData si está disponible
   // Si no, utilizamos los campos clásicos para retrocompatibilidad
   
-  let currentStepId;
+  let currentStepId: string = '';
   let completedStepIds: string[] = [];
   
   // Primero intentamos obtener los datos del nuevo flujo de trabajo
@@ -155,10 +155,16 @@ export function ProgressSteps({
   // Como fallback, utilizamos la estructura antigua
   else {
     currentStepId = propCurrentStep || 
-      (project && project.currentStep !== undefined ? steps[project.currentStep]?.id : steps[0].id);
+      (project && project.currentStep !== undefined && steps[project.currentStep] 
+        ? steps[project.currentStep].id 
+        : steps.length > 0 ? steps[0].id : '');
       
     completedStepIds = propCompletedSteps || 
-      (project && project.completedSteps ? project.completedSteps.map(index => steps[index]?.id).filter(Boolean) : []);
+      (project && project.completedSteps 
+        ? project.completedSteps
+            .map(index => steps[index]?.id)
+            .filter((id): id is string => Boolean(id)) 
+        : []);
   }
   
   // Manejador de clic en un paso
