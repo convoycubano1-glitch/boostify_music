@@ -1282,6 +1282,24 @@ ${transcription}`;
     </div>
   ), [currentTime, selectedShot]);
 
+  // Calculamos un estimado de duración antes de generar los clips
+  // para evitar la dependencia circular
+  const estimatedDuration = useMemo(() => {
+    // Si tenemos audioBuffer, usamos su duración como fuente principal
+    if (audioBuffer) {
+      return audioBuffer.duration;
+    }
+    
+    // Si tenemos items de timeline, calculamos la duración en base a ellos
+    if (timelineItems.length > 0) {
+      const lastItem = timelineItems[timelineItems.length - 1];
+      return (lastItem.end_time - timelineItems[0].start_time) / 1000; // Convertir a segundos
+    }
+    
+    // Duración predeterminada si no hay otras fuentes
+    return 180; // 3 minutos por defecto
+  }, [audioBuffer, timelineItems]);
+
   // Mapa de clips organizados por capas para el editor profesional multicanal
   const clips: TimelineClip[] = useMemo(() => {
     console.log("🎬 Generando clips para timeline editor, items:", timelineItems.length);
@@ -1290,7 +1308,7 @@ ${transcription}`;
     const audioClips = audioUrl ? [{
       id: 9999, // ID especial para audio principal
       start: 0,
-      duration: totalDuration || 180, // Usar duración total o valor por defecto
+      duration: estimatedDuration, // Usamos la duración estimada
       type: 'audio' as const,
       layer: 0, // Capa de audio (0)
       title: 'Audio Principal',
@@ -1374,9 +1392,12 @@ ${transcription}`;
     
     // Combinar clips de audio con clips visuales
     return [...audioClips, ...visualClips];
-  }, [timelineItems, audioUrl, totalDuration]);
+  }, [timelineItems, audioUrl, estimatedDuration]);
 
-  const totalDuration = clips.reduce((acc, clip) => Math.max(acc, clip.start + clip.duration), 0);
+  // Ahora podemos calcular la duración real basada en los clips
+  const totalDuration = useMemo(() => {
+    return clips.reduce((acc, clip) => Math.max(acc, clip.start + clip.duration), 0);
+  }, [clips]);
 
   const handleTimeUpdate = (time: number) => {
     const baseTime = timelineItems[0]?.start_time || 0;
