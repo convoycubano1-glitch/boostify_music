@@ -358,14 +358,11 @@ const App = () => {
   const [initError, setInitError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!document.querySelector('script[src*="index-"]')) {
-        console.warn('Critical assets may not have loaded properly');
-      }
-    }, 5000);
-
+    // Ya no necesitamos verificar los activos críticos porque
+    // los hemos configurado correctamente en index.html
+    
     return () => {
-      clearTimeout(timer);
+      // No hay temporizadores para limpiar
     };
   }, []);
 

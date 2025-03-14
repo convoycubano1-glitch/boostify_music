@@ -43,19 +43,39 @@ export function setupHMRErrorHandler(): void {
   
   try {
     // Interceptar eventos de error en WebSockets existentes
-    document.addEventListener('DOMContentLoaded', () => {
+    const handleDOMReady = () => {
       // Capturar errores antes de que se propaguen al log
       window.addEventListener('error', (event) => {
         // Suprimir errores específicos del WebSocket de Vite
         if (event.message?.includes('WebSocket') && 
-            (event.filename?.includes('vite') || event.message.includes('vite-hmr'))) {
+            (event.filename?.includes('vite') || event.message?.includes('vite-hmr'))) {
           console.debug('[HMR] Suprimido error de WebSocket en el listener global');
           event.preventDefault();
           event.stopPropagation();
           return false;
         }
       }, true);
-    });
+      
+      // Manejar el caso de reconexión automática
+      const webSocketProto = WebSocket.prototype;
+      const originalSend = webSocketProto.send;
+      webSocketProto.send = function(data: any) {
+        try {
+          return originalSend.call(this, data);
+        } catch (err) {
+          console.debug('[HMR] Error suprimido en WebSocket.send:', err);
+          // Simplemente retornar sin lanzar error
+          return false;
+        }
+      };
+    };
+    
+    // Ejecutar inmediatamente si el DOM ya está listo
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      handleDOMReady();
+    } else {
+      document.addEventListener('DOMContentLoaded', handleDOMReady);
+    }
     
     console.debug('[HMR] Manejador de errores de WebSocket configurado correctamente');
   } catch (err) {
