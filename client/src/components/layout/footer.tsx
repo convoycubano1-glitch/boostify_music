@@ -73,23 +73,23 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Platform Features</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/features" className="hover:text-orange-500 transition-colors">
-                  AI-Powered Marketing
+                <Link href="/features">
+                  <span className="hover:text-orange-500 transition-colors">AI-Powered Marketing</span>
                 </Link>
               </li>
               <li>
-                <Link href="/content" className="hover:text-orange-500 transition-colors">
-                  Content Management
+                <Link href="/content">
+                  <span className="hover:text-orange-500 transition-colors">Content Management</span>
                 </Link>
               </li>
               <li>
-                <Link href="/analytics" className="hover:text-orange-500 transition-colors">
-                  Analytics Dashboard
+                <Link href="/analytics">
+                  <span className="hover:text-orange-500 transition-colors">Analytics Dashboard</span>
                 </Link>
               </li>
               <li>
-                <Link href="/growth" className="hover:text-orange-500 transition-colors">
-                  Audience Growth
+                <Link href="/growth">
+                  <span className="hover:text-orange-500 transition-colors">Audience Growth</span>
                 </Link>
               </li>
             </ul>
@@ -100,28 +100,28 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Services</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/virtual-record-label" className="hover:text-orange-500 transition-colors">
-                  Virtual Record Label
+                <Link href="/virtual-record-label">
+                  <span className="hover:text-orange-500 transition-colors">Virtual Record Label</span>
                 </Link>
               </li>
               <li>
-                <Link href="/record-label-services" className="hover:text-orange-500 transition-colors">
-                  Record Label Services
+                <Link href="/record-label-services">
+                  <span className="hover:text-orange-500 transition-colors">Record Label Services</span>
                 </Link>
               </li>
               <li>
-                <Link href="/youtube-views" className="hover:text-orange-500 transition-colors">
-                  YouTube Views
+                <Link href="/youtube-views">
+                  <span className="hover:text-orange-500 transition-colors">YouTube Views</span>
                 </Link>
               </li>
               <li>
-                <Link href="/instagram-boost" className="hover:text-orange-500 transition-colors">
-                  Instagram Growth
+                <Link href="/instagram-boost">
+                  <span className="hover:text-orange-500 transition-colors">Instagram Growth</span>
                 </Link>
               </li>
               <li>
-                <Link href="/promotion" className="hover:text-orange-500 transition-colors">
-                  Music Promotion
+                <Link href="/promotion">
+                  <span className="hover:text-orange-500 transition-colors">Music Promotion</span>
                 </Link>
               </li>
             </ul>
@@ -132,23 +132,23 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Metafeed & Boostify</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/metaverse" className="hover:text-orange-500 transition-colors">
-                  Metafeed Metaverse
+                <Link href="/metaverse">
+                  <span className="hover:text-orange-500 transition-colors">Metafeed Metaverse</span>
                 </Link>
               </li>
               <li>
-                <Link href="/token" className="hover:text-orange-500 transition-colors">
-                  Metafeed Token
+                <Link href="/token">
+                  <span className="hover:text-orange-500 transition-colors">Metafeed Token</span>
                 </Link>
               </li>
               <li>
-                <Link href="/one-artist-token" className="hover:text-orange-500 transition-colors">
-                  One Artist One Token
+                <Link href="/one-artist-token">
+                  <span className="hover:text-orange-500 transition-colors">One Artist One Token</span>
                 </Link>
               </li>
               <li>
-                <Link href="/ecosystem" className="hover:text-orange-500 transition-colors">
-                  View Ecosystem
+                <Link href="/ecosystem">
+                  <span className="hover:text-orange-500 transition-colors">View Ecosystem</span>
                 </Link>
               </li>
             </ul>
@@ -161,23 +161,23 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Avat Pro & Boostify</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/avatars" className="hover:text-orange-500 transition-colors">
-                  Hyper Realistic Avatars
+                <Link href="/avatars">
+                  <span className="hover:text-orange-500 transition-colors">Hyper Realistic Avatars</span>
                 </Link>
               </li>
               <li>
-                <Link href="/unreal-engine" className="hover:text-orange-500 transition-colors">
-                  Unreal Engine
+                <Link href="/unreal-engine">
+                  <span className="hover:text-orange-500 transition-colors">Unreal Engine</span>
                 </Link>
               </li>
               <li>
-                <Link href="/motion-capture" className="hover:text-orange-500 transition-colors">
-                  Motion Capture
+                <Link href="/motion-capture">
+                  <span className="hover:text-orange-500 transition-colors">Motion Capture</span>
                 </Link>
               </li>
               <li>
-                <Link href="/partnership" className="hover:text-orange-500 transition-colors">
-                  View Partnership
+                <Link href="/partnership">
+                  <span className="hover:text-orange-500 transition-colors">View Partnership</span>
                 </Link>
               </li>
             </ul>
@@ -189,14 +189,14 @@ export function Footer() {
             &copy; {currentYear} Boostify Music. All rights reserved.
           </p>
           <div className="flex gap-6 text-xs text-white/60 mt-4 md:mt-0">
-            <Link href="/terms" className="hover:text-white transition-colors">
-              Terms
+            <Link href="/terms">
+              <span className="hover:text-white transition-colors">Terms</span>
             </Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">
-              Privacy
+            <Link href="/privacy">
+              <span className="hover:text-white transition-colors">Privacy</span>
             </Link>
-            <Link href="/cookies" className="hover:text-white transition-colors">
-              Cookies
+            <Link href="/cookies">
+              <span className="hover:text-white transition-colors">Cookies</span>
             </Link>
           </div>
         </div>
