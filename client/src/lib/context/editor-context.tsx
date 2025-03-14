@@ -1227,17 +1227,34 @@ export function EditorProvider({ children }: { children: ReactNode }) {
    * @param data Datos del flujo de trabajo a actualizar
    */
   const updateWorkflowData = useCallback((data: Partial<WorkflowData>) => {
-    // Actualizamos el estado local para workflowData
-    setWorkflowData((prevData: WorkflowData) => ({
-      ...prevData,
-      ...data
-    }));
+    // Utilizamos una función de actualización de estado para evitar problemas de referencias
+    setWorkflowData(prevData => {
+      // Combinar los datos anteriores con los nuevos
+      const updatedData = {
+        ...prevData,
+        ...data
+      };
+      
+      console.log("WorkflowData actualizado:", updatedData);
+      
+      // Si hay pasos en los datos nuevos, asegurarnos de mantener el formato correcto
+      if (data.steps) {
+        updatedData.steps = data.steps.map(step => ({
+          ...step,
+          // Asegurar que timestamp sea un Date si no lo es
+          timestamp: step.timestamp instanceof Date ? step.timestamp : new Date()
+        }));
+      }
+      
+      return updatedData;
+    });
     
     // También actualizamos los datos en el proyecto si es necesario
     if (state.project) {
       updateProject(prevProject => {
         if (!prevProject) return null;
         
+        // Creamos una copia segura del proyecto
         return {
           ...prevProject,
           // Añadimos un objeto workflowData al proyecto con la información actualizada
