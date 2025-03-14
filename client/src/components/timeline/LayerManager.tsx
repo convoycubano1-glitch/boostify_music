@@ -22,7 +22,13 @@ import {
   Type,
   Sparkles,
   CirclePlus,
-  Menu
+  Menu,
+  Star,
+  Wand2,
+  ImageIcon,
+  Layers,
+  PanelTop,
+  FlaskConical
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../../components/ui/tooltip';
@@ -72,15 +78,19 @@ const LayerTypeIcon: React.FC<{ type: string; className?: string }> = ({ type, c
     case LayerType.VIDEO:
       return <Video className={className} />;
     case LayerType.IMAGE:
-      return <Image className={className} />;
+      return <ImageIcon className={className} />;
     case LayerType.TEXT:
       return <Type className={className} />;
     case LayerType.EFFECT:
-      return <Sparkles className={className} />;
+      return <Wand2 className={className} />;
     case LayerType.TRANSITION:
-      return <CirclePlus className={className} />;
+      return <PanelTop className={className} />;
     case LayerType.AI_PLACEHOLDER:
-      return <Sparkles className={className} />;
+      return <Star className={className} />;
+    case LayerType.VIDEO_IMAGE:
+      return <Layers className={className} />;
+    case LayerType.EFFECTS:
+      return <FlaskConical className={className} />;
     default:
       return <Menu className={className} />;
   }
@@ -295,8 +305,8 @@ const LayerManager: React.FC<LayerManagerProps> = ({
                   className="justify-start"
                   onClick={() => handleAddLayer(LayerType.AI_PLACEHOLDER)}
                 >
-                  <Sparkles size={14} className="mr-2" />
-                  <span>IA Placeholder</span>
+                  <Star size={14} className="mr-2" />
+                  <span>IA Generativa</span>
                 </Button>
               </div>
             </PopoverContent>
