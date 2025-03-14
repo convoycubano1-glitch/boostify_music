@@ -68,45 +68,45 @@ function useTimelineLayers(
     // Crear capas predeterminadas si se solicita
     if (createDefaultLayers) {
       return [
-        // Capa de audio (id 0)
+        // Capa 0: Audio - Aislada y bloqueada
         {
           id: 0,
-          name: 'Audio',
+          name: 'Audio Principal',
           type: LayerType.AUDIO,
-          locked: isolatedLayerTypes.includes(LayerType.AUDIO),
+          locked: true, // Siempre bloqueada
           visible: true,
           height: defaultLayerHeight,
           color: LAYER_COLORS[LayerType.AUDIO]
         },
-        // Capa de video/imágenes (id 1)
+        // Capa 1: Video/Imágenes - Para placeholders AI
         {
           id: 1,
-          name: 'Video',
+          name: 'Video/Imágenes',
           type: LayerType.VIDEO,
           locked: isolatedLayerTypes.includes(LayerType.VIDEO),
           visible: true,
           height: defaultLayerHeight,
           color: LAYER_COLORS[LayerType.VIDEO]
         },
-        // Capa de imágenes (id 2)
+        // Capa 2: Texto - Para edición estándar
         {
           id: 2,
-          name: 'Imágenes',
-          type: LayerType.IMAGE,
-          locked: isolatedLayerTypes.includes(LayerType.IMAGE),
-          visible: true,
-          height: defaultLayerHeight,
-          color: LAYER_COLORS[LayerType.IMAGE]
-        },
-        // Capa de texto (id 3)
-        {
-          id: 3,
           name: 'Texto',
           type: LayerType.TEXT,
           locked: isolatedLayerTypes.includes(LayerType.TEXT),
           visible: true,
           height: defaultLayerHeight,
           color: LAYER_COLORS[LayerType.TEXT]
+        },
+        // Capa 3: Efectos - Para efectos avanzados
+        {
+          id: 3,
+          name: 'Efectos',
+          type: LayerType.EFFECT,
+          locked: isolatedLayerTypes.includes(LayerType.EFFECT),
+          visible: true,
+          height: defaultLayerHeight,
+          color: LAYER_COLORS[LayerType.EFFECT]
         }
       ];
     }
