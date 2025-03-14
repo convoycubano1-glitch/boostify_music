@@ -18,11 +18,10 @@ import {
   Disc,
   Building2
 } from "lucide-react";
-import { useAuth } from "../../hooks/use-auth";
 
 export function Footer() {
-  const { user } = useAuth();
-  const isAdmin = user?.email === "convoycubano@gmail.com";
+  // Simplificado para no depender de useAuth
+  const isAdmin = false;
   
   return (
     <footer className="relative border-t bg-gradient-to-b from-background to-background/80 backdrop-blur-xl">
