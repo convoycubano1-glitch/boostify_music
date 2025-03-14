@@ -22,6 +22,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { TimelineEditor } from './timeline-editor';
+import { TimelineClip } from '../timeline/TimelineClip';
 import { 
   Music, 
   Video, 
@@ -46,7 +48,6 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { VideoGenerator, VideoGenerationSettings } from './video-generator';
 import { VideoGeneratorWithCamera } from './video-generator-with-camera';
-import { TimelineClip } from './timeline-editor';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
 import { ProgressSteps, Step } from './progress-steps';
