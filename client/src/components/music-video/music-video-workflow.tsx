@@ -424,18 +424,27 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       // Crear una URL para el archivo de audio
       const audioUrl = URL.createObjectURL(audioFile);
       
-      // Crear clip de audio para el timeline
+      // Crear clip de audio para el timeline con campos obligatorios y compatibles
       const audioClip: TimelineClip = {
         id: 1,
-        title: audioFile.name || 'Audio Principal',
+        title: audioFile.name || 'Audio Principal', 
+        name: audioFile.name || 'Audio Principal', // Añadimos también el campo name para compatibilidad
         type: 'audio',
         layer: 0, // Capa de audio
-        start: 0,
+        start: 0, 
+        startTime: 0, // Añadimos startTime por compatibilidad
         duration: audioDuration,
+        endTime: audioDuration, // Calculamos endTime para compatibilidad
         audioUrl: audioUrl,
+        url: audioUrl, // URL genérico para compatibilidad
+        source: audioUrl, // Campo source para compatibilidad con interfaz EditorContext
         waveform: [], // Esto se generaría con un análisis real de la forma de onda
         visible: true,
-        locked: false
+        locked: false,
+        trackId: 'audio-track-1', // ID de pista para compatibilidad con interfaz EditorContext
+        trimStart: 0,
+        trimEnd: audioDuration,
+        createdAt: new Date()
       };
       
       // Guardar clips en el estado local

@@ -402,21 +402,53 @@ export function TimelineEditor({
 
   // Renderizado de clips
   const renderClips = () => {
+    // Agregar log para depuración
+    console.log('Renderizando clips:', clips);
+    
     return clips.map(clip => {
-      const clipWidth = timeToPixels(clip.duration);
-      const clipLeft = timeToPixels(clip.start);
-      const isSelected = clip.id === selectedClipId;
-      const layer = getLayerById(clip.layer);
-      
-      // Si la capa está oculta o el clip es invisible, no renderizar
-      if (!layer || !layer.visible || clip.visible === false) {
+      // Verificar que clip y propiedades esenciales existan
+      if (!clip) {
+        console.warn('Clip inválido:', clip);
         return null;
       }
       
+      // Usar start o startTime según esté disponible (compatibilidad)
+      const clipStart = clip.start !== undefined ? clip.start : 
+                       (clip.startTime !== undefined ? clip.startTime : 0);
+      
+      // Verificar que la duración sea válida
+      if (clip.duration === undefined || clip.duration <= 0) {
+        console.warn('Duración inválida para clip:', clip);
+        return null;
+      }
+      
+      const clipWidth = timeToPixels(clip.duration);
+      const clipLeft = timeToPixels(clipStart);
+      const isSelected = clip.id === selectedClipId;
+      const layer = getLayerById(typeof clip.layer === 'number' ? clip.layer : 0);
+      
+      // Log para depuración de capa
+      console.log('Capa para clip:', clip.id, clip.layer, layer);
+      
+      // Si la capa está oculta o el clip es invisible, no renderizar
+      if (!layer || !layer.visible || clip.visible === false) {
+        console.log('Clip no visible:', clip.id, layer?.visible, clip.visible);
+        return null;
+      }
+      
+      // Asegurar que el tipo sea una cadena para evitar errores
+      const clipType = typeof clip.type === 'string' ? clip.type : 'video';
+      
       // Obtener el color adecuado según el tipo de clip
-      const clipColor = getClipColorByType(clip.type);
+      const clipColor = getClipColorByType(clipType);
+      
+      // Si clipColor es undefined por alguna razón, usar un color por defecto
+      if (!clipColor) {
+        console.warn('Color no encontrado para tipo:', clipType);
+      }
+      
       const getClipBackgroundColor = () => {
-        return clip.locked ? `${clipColor.background}80` : clipColor.background;
+        return clip.locked ? `${clipColor?.background || '#4169E1'}80` : (clipColor?.background || '#4169E1');
       };
       
       return (
