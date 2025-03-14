@@ -125,6 +125,11 @@ export interface EditorContextType {
   setCurrentStep: (step: number) => void;
   markStepAsCompleted: (step: number) => void;
   updateWorkflowData: (data: any) => void;
+  workflowData: any; // Estado de datos del workflow
+  
+  // Control de reproducción avanzado
+  setCurrentPlaybackTime: (time: number) => void;
+  setPlaybackState: (isPlaying: boolean) => void;
 }
 
 // Estado inicial del editor

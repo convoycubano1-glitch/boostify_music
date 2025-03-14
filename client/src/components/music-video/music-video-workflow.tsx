@@ -423,8 +423,11 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       // Guardar la transcripción en el contexto del editor
       editorContext.addTranscription({
         text: transcript,
+        type: 'lyrics', // Tipo de transcripción para letras musicales
         startTime: 0,
-        endTime: audioDuration
+        endTime: audioDuration,
+        duration: audioDuration, // Duración en segundos
+        createdAt: new Date()
       });
       
       // Actualizar datos del workflow en el contexto
