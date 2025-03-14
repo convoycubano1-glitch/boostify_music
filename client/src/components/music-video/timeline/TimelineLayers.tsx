@@ -1,10 +1,11 @@
 /**
- * Componente que gestiona las capas del timeline
- * Organiza y muestra las capas (LayerRow) con sus clips
+ * Componente TimelineLayers para el editor de timeline
+ * Organiza y muestra todas las capas del timeline
  */
 import React from 'react';
-import { TimelineClip, LayerConfig } from '../../../interfaces/timeline';
+import { LayerConfig, TimelineClip } from '../../../interfaces/timeline';
 import LayerRow from './LayerRow';
+import ClipItem from './ClipItem';
 
 interface TimelineLayersProps {
   layers: LayerConfig[];
@@ -14,17 +15,21 @@ interface TimelineLayersProps {
   onClipSelect: (clipId: number) => void;
   onClipMoveStart: (clipId: number, e: React.MouseEvent) => void;
   onClipResizeStart: (clipId: number, direction: 'start' | 'end', e: React.MouseEvent) => void;
-  onLayerDrop: (e: React.DragEvent, layerId: number) => void;
-  onAddClip?: (layerId: number, position: number) => void;
   onToggleLayerVisibility: (layerId: number) => void;
   onToggleLayerLock: (layerId: number) => void;
+  isDragging: boolean;
+  isResizing: boolean;
+  draggingClipId: number | null;
+  resizingClipId: number | null;
 }
 
 /**
- * Componente que renderiza todas las capas del timeline
+ * Componente que organiza y muestra todas las capas del timeline
  * 
- * Cada capa (LayerRow) se encarga de mostrar los clips que le corresponden
- * y manejar las interacciones específicas de esa capa
+ * Características:
+ * - Renderiza todas las capas configuradas
+ * - Distribuye los clips en las capas correspondientes
+ * - Maneja la interacción con capas y clips
  */
 const TimelineLayers: React.FC<TimelineLayersProps> = ({
   layers,
@@ -34,15 +39,18 @@ const TimelineLayers: React.FC<TimelineLayersProps> = ({
   onClipSelect,
   onClipMoveStart,
   onClipResizeStart,
-  onLayerDrop,
-  onAddClip,
   onToggleLayerVisibility,
-  onToggleLayerLock
+  onToggleLayerLock,
+  isDragging,
+  isResizing,
+  draggingClipId,
+  resizingClipId
 }) => {
   return (
     <div className="timeline-layers">
-      {layers.map(layer => (
-        <LayerRow 
+      {/* Renderizar cada capa */}
+      {layers.map((layer) => (
+        <LayerRow
           key={layer.id}
           layer={layer}
           clips={clips}
@@ -51,20 +59,25 @@ const TimelineLayers: React.FC<TimelineLayersProps> = ({
           onClipSelect={onClipSelect}
           onClipMoveStart={onClipMoveStart}
           onClipResizeStart={onClipResizeStart}
-          onLayerDrop={onLayerDrop}
-          onAddClip={onAddClip || (() => {})}
           onToggleVisibility={onToggleLayerVisibility}
           onToggleLock={onToggleLayerLock}
+          isDragging={isDragging}
+          isResizing={isResizing}
+          draggingClipId={draggingClipId}
+          resizingClipId={resizingClipId}
+          clipComponent={ClipItem}
         />
       ))}
-      
-      {/* Estilos para el contenedor de capas */}
+
+      {/* Estilos del componente */}
       <style jsx>{`
         .timeline-layers {
-          display: flex;
-          flex-direction: column;
           width: 100%;
           height: 100%;
+          overflow-y: auto;
+          overflow-x: hidden;
+          background-color: #1e1e1e;
+          border-top: 1px solid #3f3f3f;
         }
       `}</style>
     </div>

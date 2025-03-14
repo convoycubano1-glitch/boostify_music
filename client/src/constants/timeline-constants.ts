@@ -1,75 +1,119 @@
 /**
- * Constantes para el timeline editor
- * Contiene valores, dimensiones, tipos y mensajes de error para el editor
+ * Constantes para el editor de timeline
+ * Define valores constantes y enumeraciones para el editor de línea de tiempo
  */
+import { ClipType, LayerType } from '../interfaces/timeline';
 
-// Tipos de capas en el timeline
-export enum LayerType {
-  AUDIO = 'audio',      // Capas de audio (música, efectos, voces)
-  VIDEO = 'video',      // Capas de video (filmaciones, B-roll)
-  IMAGE = 'image',      // Capas de imagen (fotos, ilustraciones, generadas)
-  TEXT = 'text',        // Capas de texto (subtítulos, títulos)
-  EFFECTS = 'effect',   // Capas de efectos (transiciones, filtros)
-  TRANSITION = 'transition', // Capas de transición entre clips
-  AI_PLACEHOLDER = 'ai_placeholder' // Capas para contenido generado por IA
-}
+/**
+ * Altura predeterminada de las capas
+ */
+export const DEFAULT_LAYER_HEIGHT = 60;
 
-// Operaciones posibles con clips
-export enum ClipOperation {
-  ADD = 'add',              // Añadir un nuevo clip
-  REMOVE = 'remove',        // Eliminar un clip existente
-  MOVE = 'move',            // Mover un clip
-  RESIZE = 'resize',        // Cambiar duración de un clip
-  DUPLICATE = 'duplicate'   // Duplicar un clip existente
-}
+/**
+ * Ancho de la cabecera de capas
+ */
+export const LAYER_HEADER_WIDTH = 150;
 
-// Dimensiones del timeline y elementos relacionados
-export const TIMELINE_DIMENSIONS = {
-  LAYER_LABEL_WIDTH: 150,    // Ancho de la etiqueta de la capa
-  DEFAULT_LAYER_HEIGHT: 40,  // Altura predeterminada de las capas
-  BEAT_MARKER_HEIGHT: 10,    // Altura de los marcadores de ritmo
-  MINIMUM_SCALE: 50,         // Escala mínima de píxeles por segundo
-  MAXIMUM_SCALE: 500,        // Escala máxima de píxeles por segundo
-  DEFAULT_SCALE: 100,        // Escala predeterminada para visualización
-  MINIMUM_CLIP_DURATION: 0.1, // Duración mínima de un clip en segundos
-  PIXELS_PER_SECOND: 100,    // Píxeles por segundo (escala base)
-  SNAP_THRESHOLD_PIXELS: 5,  // Umbral para ajuste magnético en píxeles
-}
+/**
+ * Duración máxima permitida para clips (en segundos)
+ */
+export const MAX_CLIP_DURATION = 5; // 5 segundos máximo para clips
 
-// Mensajes de error para validación de clips
-export const VALIDATION_ERRORS = {
-  CLIP_TOO_SHORT: "El clip no puede ser más corto que 0.1 segundos",
-  CLIP_TOO_LONG: "El clip no puede ser más largo que 5 segundos",
-  CLIP_COLLISION: "El clip se superpone con otro clip en la misma capa",
-  INVALID_LAYER: "Tipo de clip no válido para esta capa",
-  AI_IMAGE_WRONG_LAYER: "Las imágenes generadas por IA solo pueden colocarse en la capa 7",
-  POSITION_OUT_OF_BOUNDS: "La posición del clip está fuera de los límites del timeline",
-  CLIP_OVERLAP: "No se permite superposición de clips",
-  INVALID_DURATION: "Duración de clip no válida",
-  MAX_DURATION_EXCEEDED: "Se ha excedido la duración máxima de 5 segundos",
-  AI_PLACEHOLDER_DURATION: "Los marcadores de IA tienen una duración fija",
-  CANNOT_DELETE_ISOLATED_LAYER: "No se puede eliminar un clip en una capa bloqueada",
-  CANNOT_MODIFY_ISOLATED_CLIP: "No se puede modificar un clip bloqueado",
-  INVALID_OPERATION: "Operación no válida para este tipo de clip"
-}
+/**
+ * Duración mínima permitida para clips (en segundos)
+ */
+export const MIN_CLIP_DURATION = 0.1; // 100ms mínimo para clips
 
-// Configuración de duración de los clips
-export const CLIP_DURATION = {
-  DEFAULT: 2.0,          // Duración predeterminada para clips nuevos
-  MINIMUM: 0.1,          // Duración mínima permitida
-  MAXIMUM: 5.0,          // Duración máxima permitida (requerimiento)
-  AI_PLACEHOLDER: 3.0    // Duración fija para marcadores de IA
-}
+/**
+ * Nivel de zoom predeterminado
+ * Determina cuántos píxeles por segundo se muestran en el timeline
+ */
+export const DEFAULT_ZOOM_LEVEL = 100; // 100 píxeles por segundo
 
-// Colores para los diferentes tipos de capas
+/**
+ * Colores predeterminados para cada tipo de capa
+ */
 export const LAYER_COLORS = {
-  audio: '#4299e1',      // Azul para audio
-  video: '#48bb78',      // Verde para video
-  image: '#38b2ac',      // Turquesa para imágenes
-  text: '#ed8936',       // Naranja para texto
-  effect: '#9f7aea',     // Púrpura para efectos
-  ai: '#d69e2e'          // Amarillo para contenido IA
+  [LayerType.VIDEO_PRINCIPAL]: '#4a6bdd', // Azul
+  [LayerType.VIDEO_SECUNDARIO]: '#6e5adc', // Púrpura
+  [LayerType.IMAGEN]: '#4caf50', // Verde
+  [LayerType.TEXTO]: '#ff9800', // Naranja
+  [LayerType.AUDIO]: '#2196f3', // Azul claro
+  [LayerType.EFECTOS]: '#e91e63', // Rosa
+  [LayerType.IA_GENERADA]: '#ff5252', // Rojo
+  [LayerType.TRANSICIONES]: '#9c27b0'  // Púrpura
+};
+
+/**
+ * Nombres de las capas en español
+ */
+export const LAYER_NAMES = {
+  [LayerType.VIDEO_PRINCIPAL]: 'Video Principal',
+  [LayerType.VIDEO_SECUNDARIO]: 'Video Secundario',
+  [LayerType.IMAGEN]: 'Imágenes',
+  [LayerType.TEXTO]: 'Texto',
+  [LayerType.AUDIO]: 'Audio',
+  [LayerType.EFECTOS]: 'Efectos',
+  [LayerType.IA_GENERADA]: 'Imágenes IA',
+  [LayerType.TRANSICIONES]: 'Transiciones'
+};
+
+/**
+ * Nombres de los tipos de clip en español
+ */
+export const CLIP_TYPE_NAMES = {
+  [ClipType.VIDEO]: 'Video',
+  [ClipType.IMAGE]: 'Imagen',
+  [ClipType.AUDIO]: 'Audio',
+  [ClipType.TEXT]: 'Texto',
+  [ClipType.EFFECT]: 'Efecto',
+  [ClipType.GENERATED_IMAGE]: 'Imagen IA',
+  [ClipType.TRANSITION]: 'Transición',
+  [ClipType.PLACEHOLDER]: 'Marcador'
+};
+
+/**
+ * Tipos de operaciones que se pueden realizar en clips
+ */
+export enum ClipOperation {
+  ADD = 'add',
+  REMOVE = 'remove',
+  MOVE = 'move',
+  RESIZE = 'resize',
+  UPDATE = 'update'
 }
 
-// Duración máxima del timeline en segundos
-export const TIMELINE_MAX_DURATION = 300;  // 5 minutos
+/**
+ * Mensajes de error para validación de clips
+ */
+export const ERROR_MESSAGES = {
+  DURATION_EXCEEDED: `La duración máxima permitida es de ${MAX_CLIP_DURATION} segundos.`,
+  DURATION_TOO_SHORT: `La duración mínima permitida es de ${MIN_CLIP_DURATION} segundos.`,
+  OVERLAP_NOT_ALLOWED: 'No se permite la superposición de clips en esta capa.',
+  INVALID_LAYER: 'Este tipo de clip no puede ser colocado en esta capa.',
+  INVALID_POSITION: 'Posición no válida para el clip.',
+  AI_LAYER_RESTRICTION: 'Las imágenes generadas por IA solo pueden colocarse en la capa 7.'
+};
+
+/**
+ * Mapeo de tipos de clips a capas válidas
+ */
+export const VALID_LAYER_TYPES = new Map<ClipType, LayerType[]>([
+  [ClipType.VIDEO, [LayerType.VIDEO_PRINCIPAL, LayerType.VIDEO_SECUNDARIO]],
+  [ClipType.IMAGE, [LayerType.IMAGEN]],
+  [ClipType.AUDIO, [LayerType.AUDIO]],
+  [ClipType.TEXT, [LayerType.TEXTO]],
+  [ClipType.EFFECT, [LayerType.EFECTOS]],
+  [ClipType.GENERATED_IMAGE, [LayerType.IA_GENERADA]],
+  [ClipType.TRANSITION, [LayerType.TRANSICIONES]],
+  [ClipType.PLACEHOLDER, [
+    LayerType.VIDEO_PRINCIPAL, 
+    LayerType.VIDEO_SECUNDARIO,
+    LayerType.IMAGEN,
+    LayerType.TEXTO,
+    LayerType.AUDIO,
+    LayerType.EFECTOS,
+    LayerType.IA_GENERADA, 
+    LayerType.TRANSICIONES
+  ]]
+]);

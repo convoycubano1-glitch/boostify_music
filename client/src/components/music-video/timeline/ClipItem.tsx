@@ -1,20 +1,31 @@
 /**
- * Componente que representa un clip individual en el timeline
- * Gestiona la visualización, selección y operaciones específicas de los clips
+ * Componente ClipItem para el editor de timeline
+ * Representa un clip individual en la línea de tiempo
  */
-import React from 'react';
+import React, { MouseEvent } from 'react';
 import { TimelineClip } from '../../../interfaces/timeline';
+import { CLIP_COLORS } from '../../../constants/timeline-constants';
 
 interface ClipItemProps {
   clip: TimelineClip;
   timeScale: number;
   isSelected: boolean;
-  onSelect: () => void;
-  onMoveStart: (e: React.MouseEvent) => void;
-  onResizeStart: (direction: 'start' | 'end', e: React.MouseEvent) => void;
-  disabled?: boolean;
+  onSelect: (clipId: number) => void;
+  onMoveStart: (clipId: number, e: MouseEvent) => void;
+  onResizeStart: (clipId: number, direction: 'start' | 'end', e: MouseEvent) => void;
+  isDragging: boolean;
+  isResizing: boolean;
 }
 
+/**
+ * Clip individual en el timeline
+ * 
+ * Características:
+ * - Muestra el clip con su duración en la posición correcta
+ * - Permite seleccionar, mover y redimensionar el clip
+ * - Visualiza el estado seleccionado
+ * - Muestra información como el título del clip
+ */
 const ClipItem: React.FC<ClipItemProps> = ({
   clip,
   timeScale,
@@ -22,137 +33,143 @@ const ClipItem: React.FC<ClipItemProps> = ({
   onSelect,
   onMoveStart,
   onResizeStart,
-  disabled = false
+  isDragging,
+  isResizing,
 }) => {
-  // Calcular posición y tamaño del clip en pixels
-  const left = clip.start * timeScale;
-  const width = clip.duration * timeScale;
-  
-  // Iniciar drag and drop
-  const handleDragStart = (e: React.DragEvent) => {
-    if (disabled) {
-      e.preventDefault();
-      return;
-    }
-    
-    e.dataTransfer.setData('clip-id', clip.id.toString());
-    e.dataTransfer.effectAllowed = 'move';
+  // Calcula el estilo del clip basado en su posición y duración
+  const clipStyle = {
+    left: `${clip.start * timeScale}px`,
+    width: `${clip.duration * timeScale}px`,
+    backgroundColor: clip.color || CLIP_COLORS[clip.type] || CLIP_COLORS.default,
+    opacity: clip.opacity !== undefined ? clip.opacity : 1,
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
-  
-  // Manejar clic para seleccionar
-  const handleClick = (e: React.MouseEvent) => {
+
+  /**
+   * Maneja la selección del clip
+   */
+  const handleSelect = (e: MouseEvent) => {
     e.stopPropagation();
-    onSelect();
+    onSelect(clip.id);
   };
-  
-  // Determinar el color del clip según su tipo
-  const getClipColor = (): string => {
-    switch (clip.type) {
-      case 'audio':
-        return '#4299e1'; // Azul
-      case 'video':
-        return '#48bb78'; // Verde
-      case 'image':
-        return clip.generatedImage ? '#d69e2e' : '#38b2ac'; // Amarillo para IA, Turquesa para normal
-      case 'text':
-        return '#ed8936'; // Naranja
-      case 'effect':
-        return '#9f7aea'; // Púrpura
-      default:
-        return '#a0aec0'; // Gris por defecto
-    }
+
+  /**
+   * Inicia el movimiento del clip
+   */
+  const handleMoveStart = (e: MouseEvent) => {
+    e.stopPropagation();
+    onMoveStart(clip.id, e);
   };
-  
-  // Determinar el ícono según el tipo de clip
-  const getClipIcon = (): string => {
-    switch (clip.type) {
-      case 'audio':
-        return '🔊';
-      case 'video':
-        return '🎬';
-      case 'image':
-        return clip.generatedImage ? '🤖' : '🖼️';
-      case 'text':
-        return '📝';
-      case 'effect':
-        return '✨';
-      default:
-        return '📎';
-    }
+
+  /**
+   * Inicia el redimensionamiento del clip
+   */
+  const handleResizeStart = (direction: 'start' | 'end', e: MouseEvent) => {
+    e.stopPropagation();
+    onResizeStart(clip.id, direction, e);
   };
-  
+
+  /**
+   * Formatea la duración para mostrarla en el clip
+   * @param seconds Duración en segundos
+   * @returns Duración formateada (ej: "2.5s")
+   */
+  const formatDuration = (seconds: number): string => {
+    return `${seconds.toFixed(1)}s`;
+  };
+
   return (
     <div
-      className={`timeline-clip ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
-      style={{
-        left: `${left}px`,
-        width: `${Math.max(20, width)}px`,
-        backgroundColor: getClipColor(),
-      }}
-      onClick={handleClick}
-      onMouseDown={disabled ? undefined : onMoveStart}
-      draggable={!disabled}
-      onDragStart={handleDragStart}
+      className={`clip-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''}`}
+      style={clipStyle}
+      onClick={handleSelect}
+      onMouseDown={handleMoveStart}
     >
-      {/* Controlador para redimensionar desde el inicio */}
-      {!disabled && (
-        <div 
-          className="resize-handle resize-start"
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            onResizeStart('start', e);
-          }}
-        />
-      )}
-      
+      {/* Manejador de redimensionamiento (inicio) */}
+      <div
+        className="resize-handle left"
+        onMouseDown={(e) => handleResizeStart('start', e)}
+      />
+
       {/* Contenido del clip */}
       <div className="clip-content">
-        <span className="clip-icon">{getClipIcon()}</span>
-        <div className="clip-info">
-          <div className="clip-title">{clip.title}</div>
-          <div className="clip-duration">{clip.duration.toFixed(1)}s</div>
+        <div className="clip-title" title={clip.title}>
+          {clip.title}
         </div>
+        <div className="clip-duration">
+          {formatDuration(clip.duration)}
+        </div>
+        
+        {/* Indicador de clip generado por IA */}
+        {clip.generatedImage && (
+          <div className="clip-ai-badge" title="Imagen generada por IA">
+            IA
+          </div>
+        )}
+        
+        {/* Indicador de sincronización labial */}
+        {clip.lipsyncApplied && (
+          <div className="clip-lipsync-badge" title="Sincronización labial aplicada">
+            Lip
+          </div>
+        )}
       </div>
-      
-      {/* Controlador para redimensionar desde el final */}
-      {!disabled && (
-        <div 
-          className="resize-handle resize-end"
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            onResizeStart('end', e);
-          }}
-        />
-      )}
-      
-      {/* Estilos para el clip */}
+
+      {/* Manejador de redimensionamiento (fin) */}
+      <div
+        className="resize-handle right"
+        onMouseDown={(e) => handleResizeStart('end', e)}
+      />
+
+      {/* Estilos del componente */}
       <style jsx>{`
-        .timeline-clip {
+        .clip-item {
           position: absolute;
           height: calc(100% - 4px);
-          top: 2px;
+          margin: 2px 0;
           border-radius: 4px;
           overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
           user-select: none;
-          cursor: grab;
-          z-index: 1;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          align-items: stretch;
+          color: white;
+          font-size: 12px;
           transition: box-shadow 0.15s ease;
         }
         
-        .timeline-clip:hover {
-          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-          z-index: 2;
+        .clip-item.selected {
+          box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #3498db;
+          z-index: 10;
         }
         
-        .timeline-clip.selected {
-          box-shadow: 0 0 0 2px white, 0 0 0 4px #3182ce;
-          z-index: 3;
+        .clip-item.dragging {
+          opacity: 0.8;
+          z-index: 100;
         }
         
-        .timeline-clip.disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
+        .clip-content {
+          flex: 1;
+          padding: 4px 8px;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        
+        .clip-title {
+          font-weight: bold;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+        }
+        
+        .clip-duration {
+          font-size: 10px;
+          opacity: 0.9;
+          margin-top: 2px;
         }
         
         .resize-handle {
@@ -161,51 +178,39 @@ const ClipItem: React.FC<ClipItemProps> = ({
           width: 8px;
           height: 100%;
           cursor: col-resize;
-          z-index: 10;
+          z-index: 20;
         }
         
-        .resize-start {
+        .resize-handle.left {
           left: 0;
         }
         
-        .resize-end {
+        .resize-handle.right {
           right: 0;
         }
         
-        .clip-content {
-          display: flex;
-          align-items: center;
-          padding: 4px 6px;
-          height: 100%;
-          color: white;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
-        
-        .clip-icon {
-          font-size: 12px;
-          margin-right: 4px;
-        }
-        
-        .clip-info {
-          flex: 1;
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-          font-size: 10px;
-        }
-        
-        .clip-title {
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        
-        .clip-duration {
+        .clip-ai-badge {
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          background-color: #f1c40f;
+          color: #000;
           font-size: 9px;
-          opacity: 0.8;
+          font-weight: bold;
+          padding: 1px 3px;
+          border-radius: 2px;
+        }
+        
+        .clip-lipsync-badge {
+          position: absolute;
+          bottom: 2px;
+          right: 2px;
+          background-color: #9b59b6;
+          color: #fff;
+          font-size: 9px;
+          font-weight: bold;
+          padding: 1px 3px;
+          border-radius: 2px;
         }
       `}</style>
     </div>
