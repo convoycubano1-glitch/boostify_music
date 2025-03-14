@@ -1,20 +1,26 @@
 /**
- * Componente ProgressSteps
+ * Componente ProgressSteps Mejorado
  * 
  * Este componente muestra un indicador visual de progreso para el flujo de trabajo de 9 pasos
- * utilizado en la creación de videos musicales profesionales. Permite visualizar
- * el estado actual de progreso, los pasos completados y los pendientes.
+ * utilizado en la creación de videos musicales profesionales, con animaciones modernas
+ * y efectos visuales que muestran el proceso avanzando dinámicamente.
  * 
  * Características:
  * - Muestra los 9 pasos del flujo de trabajo con diseño responsivo
- * - Marca pasos como activos o completados con iconos y colores distintivos
- * - Adapta su visualización a diferentes tamaños de pantalla
+ * - Animaciones avanzadas durante transiciones entre pasos
+ * - Iconos animados para representar cada tipo de actividad
+ * - Efectos visuales de partículas y brillos en pasos activos
  * - Se integra con EditorContext para acceder al estado global del proyecto
  */
-import React from 'react';
-import { CheckCircle, Circle, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  CheckCircle, Circle, ArrowRight, Music, FileText, 
+  Timer, Layout, Palette, Move, Mic, Video, Layers,
+  Sparkles
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEditor } from '../../lib/context/editor-context';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export interface Step {
   id: string;
@@ -32,6 +38,76 @@ export interface ProgressStepsProps {
   onComplete?: (stepId: string) => void;
 }
 
+// Iconos específicos para cada paso del proceso de creación de video musical
+const StepIcons = {
+  'transcription': <Music className="h-5 w-5" />,
+  'script': <FileText className="h-5 w-5" />,
+  'sync': <Timer className="h-5 w-5" />,
+  'scenes': <Layout className="h-5 w-5" />,
+  'customization': <Palette className="h-5 w-5" />,
+  'movement': <Move className="h-5 w-5" />,
+  'lipsync': <Mic className="h-5 w-5" />,
+  'generation': <Video className="h-5 w-5" />,
+  'rendering': <Layers className="h-5 w-5" />
+};
+
+// Variantes para las animaciones de los pasos
+const stepVariants = {
+  pending: { 
+    scale: 1,
+    opacity: 0.7
+  },
+  active: { 
+    scale: 1.05,
+    opacity: 1,
+    transition: { 
+      type: "spring",
+      stiffness: 300,
+      damping: 20
+    }
+  },
+  completed: { 
+    scale: 1,
+    opacity: 1
+  }
+};
+
+// Variantes para las animaciones de la descripción
+const descriptionVariants = {
+  hidden: { 
+    opacity: 0,
+    y: 5 
+  },
+  visible: { 
+    opacity: 1,
+    y: 0,
+    transition: { 
+      delay: 0.2,
+      duration: 0.5 
+    }
+  }
+};
+
+// Componente para partículas de brillo
+const Particle = ({ delay = 0 }: { delay?: number }) => (
+  <motion.div
+    className="absolute w-1 h-1 rounded-full bg-orange-400"
+    initial={{ scale: 0, opacity: 0 }}
+    animate={{ 
+      scale: [0, 1.5, 0],
+      opacity: [0, 0.8, 0],
+      x: [0, Math.random() * 20 - 10],
+      y: [0, Math.random() * 20 - 10]
+    }}
+    transition={{
+      duration: 1.5,
+      delay: delay,
+      repeat: Infinity,
+      repeatDelay: Math.random() * 2
+    }}
+  />
+);
+
 export function ProgressSteps({
   steps,
   currentStep: propCurrentStep,
@@ -42,6 +118,18 @@ export function ProgressSteps({
   // Integración con el contexto del editor
   const { state, setCurrentStep, markStepAsCompleted, updateWorkflowData } = useEditor();
   const { project } = state;
+  
+  // Estado para la animación pulsante del paso activo
+  const [pulseActive, setPulseActive] = useState(false);
+  
+  // Efecto para la animación pulsante
+  useEffect(() => {
+    const pulseInterval = setInterval(() => {
+      setPulseActive(prev => !prev);
+    }, 1500);
+    
+    return () => clearInterval(pulseInterval);
+  }, []);
   
   // Utilizamos la nueva estructura workflowData si está disponible
   // Si no, utilizamos los campos clásicos para retrocompatibilidad
@@ -120,59 +208,191 @@ export function ProgressSteps({
     }
   };
 
+  // Determinar el ícono para un paso según su ID
+  const getIconForStep = (stepId: string) => {
+    return StepIcons[stepId as keyof typeof StepIcons] || <Circle className="h-5 w-5" />;
+  };
+
   return (
     <div className="w-full">
-      <div className="space-y-4 md:space-y-0 md:flex md:items-start md:gap-2">
+      <div className="space-y-6 md:space-y-0 md:flex md:items-start md:gap-2 px-2 py-4">
         {steps.map((step, index) => {
           const isActive = step.id === currentStepId;
           const isCompleted = completedStepIds.includes(step.id);
+          const isPending = !isActive && !isCompleted;
+          
+          // Determinar el estado de animación
+          const animationState = isActive ? "active" : isCompleted ? "completed" : "pending";
           
           return (
             <React.Fragment key={step.id}>
               {index > 0 && (
-                <div className="hidden md:flex md:items-center md:self-stretch">
-                  <ArrowRight className="mx-2 h-4 w-4 text-muted-foreground" />
-                </div>
+                <motion.div 
+                  className="hidden md:flex md:items-center md:self-stretch"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <motion.div 
+                    className={cn(
+                      "h-0.5 w-8 mx-1",
+                      isCompleted && index === steps.findIndex(s => s.id === currentStepId) - 1
+                        ? "bg-gradient-to-r from-orange-500 to-primary"
+                        : isCompleted 
+                          ? "bg-primary" 
+                          : "bg-muted-foreground/30"
+                    )}
+                    initial={{ width: 0 }}
+                    animate={{ width: isCompleted ? 32 : 20 }}
+                    transition={{ 
+                      duration: 0.5, 
+                      delay: isCompleted ? index * 0.1 : 0 
+                    }}
+                  />
+                </motion.div>
               )}
               
-              <div 
+              <motion.div 
                 className={cn(
                   "relative flex items-start group cursor-pointer",
-                  "md:flex-col md:items-center md:flex-1",
-                  isActive && "text-primary",
-                  !isActive && !isCompleted && "text-muted-foreground"
+                  "md:flex-col md:items-center md:flex-1"
                 )}
                 onClick={() => handleStepClick(step.id)}
+                initial="pending"
+                animate={animationState}
+                variants={stepVariants}
+                whileHover={{ scale: 1.03 }}
               >
-                <div 
-                  className={cn(
-                    "flex h-8 w-8 mr-3 flex-shrink-0 items-center justify-center rounded-full border-2",
-                    "md:mb-2 md:mr-0",
-                    isActive && "border-primary bg-primary/10",
-                    isCompleted && "border-primary bg-primary text-primary-foreground",
-                    !isActive && !isCompleted && "border-muted-foreground"
-                  )}
-                >
-                  {isCompleted ? (
-                    <CheckCircle className="h-5 w-5" />
-                  ) : (
-                    <Circle className="h-5 w-5" />
+                {/* Contenedor del círculo y los indicadores */}
+                <div className="relative">
+                  <motion.div 
+                    className={cn(
+                      "flex h-10 w-10 mr-3 flex-shrink-0 items-center justify-center rounded-full border-2",
+                      "md:mb-2 md:mr-0",
+                      isActive && "border-orange-500 bg-orange-500/10 shadow-lg shadow-orange-500/20",
+                      isCompleted && "border-primary bg-primary text-primary-foreground",
+                      !isActive && !isCompleted && "border-muted-foreground/50 dark:border-muted-foreground/30"
+                    )}
+                    animate={isActive ? {
+                      boxShadow: pulseActive 
+                        ? "0 0 0 3px rgba(249, 115, 22, 0.3)" 
+                        : "0 0 0 0px rgba(249, 115, 22, 0)"
+                    } : {}}
+                    transition={{ duration: 1.5, ease: "easeInOut" }}
+                  >
+                    {isCompleted ? (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -10 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", duration: 0.5 }}
+                      >
+                        <CheckCircle className="h-6 w-6" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        animate={isActive ? {
+                          scale: pulseActive ? 1.1 : 1,
+                          opacity: pulseActive ? 1 : 0.8
+                        } : {
+                          scale: 1,
+                          opacity: 0.7
+                        }}
+                        transition={{ duration: 1.5, ease: "easeInOut" }}
+                        className="text-orange-500"
+                      >
+                        {getIconForStep(step.id)}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                  
+                  {/* Partículas de brillo para el paso activo */}
+                  {isActive && (
+                    <>
+                      <Particle delay={0} />
+                      <Particle delay={0.5} />
+                      <Particle delay={1} />
+                      <Particle delay={1.5} />
+                    </>
                   )}
                 </div>
                 
                 <div className="md:text-center">
-                  <div className="text-sm font-semibold">{step.name}</div>
-                  <p className="text-xs md:hidden">{step.description}</p>
+                  <motion.div 
+                    className={cn(
+                      "text-sm font-semibold",
+                      isActive && "text-orange-500",
+                      isCompleted && "text-primary",
+                      isPending && "text-muted-foreground"
+                    )}
+                    animate={{ 
+                      opacity: isActive ? 1 : isCompleted ? 0.9 : 0.7
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {step.name}
+                  </motion.div>
+                  
+                  <AnimatePresence mode="wait">
+                    <motion.p 
+                      key={`desc-${step.id}`}
+                      className={cn(
+                        "text-xs md:hidden",
+                        isActive && "text-orange-500/80",
+                        isCompleted && "text-primary/80",
+                        isPending && "text-muted-foreground"
+                      )}
+                      variants={descriptionVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
+                    >
+                      {step.description}
+                    </motion.p>
+                  </AnimatePresence>
                 </div>
-              </div>
+                
+                {/* Indicador de paso activo */}
+                {isActive && (
+                  <motion.div
+                    className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 hidden md:block"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Sparkles className="h-4 w-4 text-orange-500" />
+                  </motion.div>
+                )}
+              </motion.div>
             </React.Fragment>
           );
         })}
       </div>
       
-      <div className="hidden md:block mt-1 text-center text-xs text-muted-foreground">
-        {steps.find(step => step.id === currentStepId)?.description || ''}
-      </div>
+      {/* Descripción del paso actual (visible en pantallas medianas y grandes) */}
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={`step-desc-${currentStepId}`}
+          className="hidden md:block mt-3 text-center text-sm text-muted-foreground bg-orange-500/5 dark:bg-orange-500/10 py-2 px-4 rounded-md border border-orange-500/10"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.span 
+            className="text-orange-500 font-medium"
+            animate={{ 
+              opacity: [0.8, 1, 0.8],
+            }}
+            transition={{ 
+              duration: 3, 
+              repeat: Infinity,
+              ease: "easeInOut" 
+            }}
+          >
+            {steps.find(step => step.id === currentStepId)?.description || ''}
+          </motion.span>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
