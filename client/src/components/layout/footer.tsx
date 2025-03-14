@@ -73,23 +73,23 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Plataforma</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/features">
-                  <a className="hover:text-orange-500 transition-colors">Características</a>
+                <Link href="/features" className="hover:text-orange-500 transition-colors">
+                  Características
                 </Link>
               </li>
               <li>
-                <Link href="/pricing">
-                  <a className="hover:text-orange-500 transition-colors">Precios</a>
+                <Link href="/pricing" className="hover:text-orange-500 transition-colors">
+                  Precios
                 </Link>
               </li>
               <li>
-                <Link href="/blog">
-                  <a className="hover:text-orange-500 transition-colors">Blog</a>
+                <Link href="/blog" className="hover:text-orange-500 transition-colors">
+                  Blog
                 </Link>
               </li>
               <li>
-                <Link href="/about">
-                  <a className="hover:text-orange-500 transition-colors">Sobre nosotros</a>
+                <Link href="/about" className="hover:text-orange-500 transition-colors">
+                  Sobre nosotros
                 </Link>
               </li>
             </ul>
@@ -100,18 +100,18 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Legal</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/terms">
-                  <a className="hover:text-orange-500 transition-colors">Términos de servicio</a>
+                <Link href="/terms" className="hover:text-orange-500 transition-colors">
+                  Términos de servicio
                 </Link>
               </li>
               <li>
-                <Link href="/privacy">
-                  <a className="hover:text-orange-500 transition-colors">Política de privacidad</a>
+                <Link href="/privacy" className="hover:text-orange-500 transition-colors">
+                  Política de privacidad
                 </Link>
               </li>
               <li>
-                <Link href="/cookies">
-                  <a className="hover:text-orange-500 transition-colors">Política de cookies</a>
+                <Link href="/cookies" className="hover:text-orange-500 transition-colors">
+                  Política de cookies
                 </Link>
               </li>
             </ul>
@@ -135,14 +135,14 @@ export function Footer() {
             &copy; {currentYear} Boostify Music. Todos los derechos reservados.
           </p>
           <div className="flex gap-6 text-xs text-white/60 mt-4 md:mt-0">
-            <Link href="/terms">
-              <a className="hover:text-white transition-colors">Términos</a>
+            <Link href="/terms" className="hover:text-white transition-colors">
+              Términos
             </Link>
-            <Link href="/privacy">
-              <a className="hover:text-white transition-colors">Privacidad</a>
+            <Link href="/privacy" className="hover:text-white transition-colors">
+              Privacidad
             </Link>
-            <Link href="/cookies">
-              <a className="hover:text-white transition-colors">Cookies</a>
+            <Link href="/cookies" className="hover:text-white transition-colors">
+              Cookies
             </Link>
           </div>
         </div>
