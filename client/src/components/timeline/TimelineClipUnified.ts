@@ -155,6 +155,11 @@ export class TimelineClipUnified implements TimelineClip {
    * Determina la capa basado en el tipo o grupo
    */
   private determineLayer(data: TimelineItem): number {
+    // Verificar si data.group es un número, usarlo directamente
+    if (data.group !== undefined && !isNaN(Number(data.group))) {
+      return Number(data.group);
+    }
+    
     // Verificar si data.group existe y es una cadena antes de llamar a toLowerCase
     if (data.group && typeof data.group === 'string') {
       const groupLower = data.group.toLowerCase();
