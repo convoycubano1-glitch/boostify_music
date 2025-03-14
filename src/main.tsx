@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "../client/src/App"; // Redireccionamos a la verdadera App
-import "../client/src/index.css"; // Importamos los estilos correctos
+import App from "../client/src/App"; // Apuntamos a la versión completa de App
+import "./index.css";
 import { setupHMRErrorHandler } from "../client/src/utils/hmr-error-handler";
 
 // Configurar el manejador de errores de HMR para prevenir el error
