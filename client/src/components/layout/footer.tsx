@@ -68,78 +68,132 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Navegación rápida */}
+          {/* Platform Features */}
           <div className="space-y-4">
-            <h3 className="text-white font-semibold mb-3">Plataforma</h3>
+            <h3 className="text-white font-semibold mb-3">Platform Features</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/features" className="hover:text-orange-500 transition-colors">
-                  Características
+                  AI-Powered Marketing
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="hover:text-orange-500 transition-colors">
-                  Precios
+                <Link href="/content" className="hover:text-orange-500 transition-colors">
+                  Content Management
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="hover:text-orange-500 transition-colors">
-                  Blog
+                <Link href="/analytics" className="hover:text-orange-500 transition-colors">
+                  Analytics Dashboard
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="hover:text-orange-500 transition-colors">
-                  Sobre nosotros
+                <Link href="/growth" className="hover:text-orange-500 transition-colors">
+                  Audience Growth
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Legales */}
+          {/* Services */}
           <div className="space-y-4">
-            <h3 className="text-white font-semibold mb-3">Legal</h3>
+            <h3 className="text-white font-semibold mb-3">Services</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/terms" className="hover:text-orange-500 transition-colors">
-                  Términos de servicio
+                <Link href="/virtual-record-label" className="hover:text-orange-500 transition-colors">
+                  Virtual Record Label
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-orange-500 transition-colors">
-                  Política de privacidad
+                <Link href="/record-label-services" className="hover:text-orange-500 transition-colors">
+                  Record Label Services
                 </Link>
               </li>
               <li>
-                <Link href="/cookies" className="hover:text-orange-500 transition-colors">
-                  Política de cookies
+                <Link href="/youtube-views" className="hover:text-orange-500 transition-colors">
+                  YouTube Views
+                </Link>
+              </li>
+              <li>
+                <Link href="/instagram-boost" className="hover:text-orange-500 transition-colors">
+                  Instagram Growth
+                </Link>
+              </li>
+              <li>
+                <Link href="/promotion" className="hover:text-orange-500 transition-colors">
+                  Music Promotion
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contacto */}
+          {/* Metafeed & Boostify */}
           <div className="space-y-4">
-            <h3 className="text-white font-semibold mb-3">Contacto</h3>
+            <h3 className="text-white font-semibold mb-3">Metafeed & Boostify</h3>
             <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-1">
-                <span>hello@boostifymusic.com</span>
-                <ExternalLink size={14} className="text-white/50" />
+              <li>
+                <Link href="/metaverse" className="hover:text-orange-500 transition-colors">
+                  Metafeed Metaverse
+                </Link>
               </li>
-              <li>Barcelona, España</li>
+              <li>
+                <Link href="/token" className="hover:text-orange-500 transition-colors">
+                  Metafeed Token
+                </Link>
+              </li>
+              <li>
+                <Link href="/one-artist-token" className="hover:text-orange-500 transition-colors">
+                  One Artist One Token
+                </Link>
+              </li>
+              <li>
+                <Link href="/ecosystem" className="hover:text-orange-500 transition-colors">
+                  View Ecosystem
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Avat Pro & Boostify */}
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div className="space-y-4">
+            <h3 className="text-white font-semibold mb-3">Avat Pro & Boostify</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/avatars" className="hover:text-orange-500 transition-colors">
+                  Hyper Realistic Avatars
+                </Link>
+              </li>
+              <li>
+                <Link href="/unreal-engine" className="hover:text-orange-500 transition-colors">
+                  Unreal Engine
+                </Link>
+              </li>
+              <li>
+                <Link href="/motion-capture" className="hover:text-orange-500 transition-colors">
+                  Motion Capture
+                </Link>
+              </li>
+              <li>
+                <Link href="/partnership" className="hover:text-orange-500 transition-colors">
+                  View Partnership
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-zinc-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-xs text-white/60">
-            &copy; {currentYear} Boostify Music. Todos los derechos reservados.
+            &copy; {currentYear} Boostify Music. All rights reserved.
           </p>
           <div className="flex gap-6 text-xs text-white/60 mt-4 md:mt-0">
             <Link href="/terms" className="hover:text-white transition-colors">
-              Términos
+              Terms
             </Link>
             <Link href="/privacy" className="hover:text-white transition-colors">
-              Privacidad
+              Privacy
             </Link>
             <Link href="/cookies" className="hover:text-white transition-colors">
               Cookies
