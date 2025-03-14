@@ -10,7 +10,8 @@ import {
   Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut,
   Music, Volume2, Volume1, VolumeX, Layers, Lock, Eye, Trash, 
   Plus, Save, Download, Upload, Share2, Loader2, ChevronLeft, 
-  ChevronRight, EyeOff, LockOpen, Unlock, Image, RefreshCw
+  ChevronRight, EyeOff, LockOpen, Unlock, Image, RefreshCw,
+  Video, Wand2, Text, Image as ImageLucide, Sparkles as SparklesIcon
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -550,14 +551,17 @@ export function TimelineEditor({
       
       {/* Área principal del timeline */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Panel lateral de capas */}
-        <div className="w-32 min-w-32 border-r border-gray-700 bg-gray-800">
-          <div className="p-2 border-b border-gray-700 text-xs font-medium">
-            Capas
+        {/* Panel lateral de capas con mejor organización */}
+        <div className="w-40 min-w-40 border-r border-gray-700 bg-gray-800 overflow-hidden">
+          <div className="bg-gray-900 p-2 border-b border-gray-700 text-xs font-semibold flex items-center justify-between">
+            <span>Capas</span>
+            <Badge variant="outline" className="text-[9px] bg-gray-800">
+              {Object.keys(clipsByLayer).length} activas
+            </Badge>
           </div>
           
-          <div className="space-y-1 p-1">
-            {/* Encabezados de capas */}
+          <div className="space-y-1 p-1 max-h-[calc(100vh-12rem)] overflow-y-auto">
+            {/* Encabezados de capas con iconos y mejores estilos */}
             {Object.keys(clipsByLayer).length > 0 ? (
               Object.keys(clipsByLayer)
                 .map(Number)
@@ -570,18 +574,56 @@ export function TimelineEditor({
                                   layerId === 3 ? 'Efectos' :
                                   layerId === 7 ? 'Imágenes Generadas' : 'Capa ' + layerId;
                   
+                  // Seleccionar ícono según tipo de capa
+                  const layerIcon = layerId === 0 ? <Music className="h-3 w-3 mr-1" /> : 
+                               layerId === 1 ? <Video className="h-3 w-3 mr-1" /> : 
+                               layerId === 2 ? <Text className="h-3 w-3 mr-1" /> : 
+                               layerId === 3 ? <Wand2 className="h-3 w-3 mr-1" /> :
+                               layerId === 7 ? <ImageIcon className="h-3 w-3 mr-1" /> : 
+                               <Layers className="h-3 w-3 mr-1" />;
+                  
+                  // Destacar la capa 7 con un estilo especial
+                  const isGeneratedImagesLayer = layerId === 7;
+                  
                   return (
                     <div 
                       key={`layer-${layerId}`}
-                      className="flex items-center p-1 text-xs rounded-sm"
-                      style={{ backgroundColor: layerColor.bg, color: layerColor.text }}
+                      className={cn(
+                        "flex flex-col p-1.5 text-xs rounded-sm", 
+                        isGeneratedImagesLayer ? "border-l-2 border-amber-500" : ""
+                      )}
+                      style={{ 
+                        background: isGeneratedImagesLayer 
+                          ? "linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(234, 88, 12, 0.1))" 
+                          : layerColor.bg,
+                        color: layerColor.text
+                      }}
                     >
-                      {layerName}
+                      <div className="flex items-center">
+                        {layerIcon}
+                        <span className="font-medium">{layerName}</span>
+                      </div>
+                      
+                      <div className="ml-4 mt-0.5 text-[9px] text-gray-300">
+                        {clipsByLayer[layerId].length} elementos
+                      </div>
+                      
+                      {isGeneratedImagesLayer && (
+                        <div className="mt-1 flex items-center">
+                          <Badge variant="outline" className="text-[8px] bg-amber-950 text-amber-200 border-amber-700">
+                            <SparklesIcon className="h-2 w-2 mr-0.5" />
+                            IA
+                          </Badge>
+                          <div className="text-[8px] ml-1 text-amber-200">
+                            Límite: 5s
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })
             ) : (
-              <div className="text-gray-500 text-xs p-2">
+              <div className="text-gray-500 text-xs p-2 italic">
                 No hay capas disponibles
               </div>
             )}
