@@ -314,10 +314,8 @@ export function TimelineEditor({
     }
     
     // Sincronizar con EditorContext
-    editor.updatePlayhead({
-      time: currentTime,
-      isPlaying: isPlaying
-    });
+    editor.setCurrentPlaybackTime(currentTime);
+    editor.setPlaybackState(isPlaying);
     
     // Si está reproduciendo, no hacer nada más (el audio controla el tiempo)
     if (isPlaying) return;
@@ -425,11 +423,17 @@ export function TimelineEditor({
       onClipsChange(clips);
     }
     
-    // Actualizar los clips en el contexto del editor
-    if (editor.project && editor.updateProject) {
-      editor.updateProject({
-        clips: clips
-      });
+    // Sincronizar los clips con el EditorContext
+    // Usamos state.project para verificar si hay un proyecto activo
+    if (editor.state?.project) {
+      // Actualizamos el proyecto con los clips actuales
+      // Esto mantendrá sincronizado el timeline en todo el contexto
+      editor.updateTracks?.(
+        editor.state.project.tracks.map(track => ({
+          ...track,
+          clips: clips.filter(clip => clip.trackId === track.id)
+        }))
+      );
     }
   }, [clips, onClipsChange, editor]);
 
