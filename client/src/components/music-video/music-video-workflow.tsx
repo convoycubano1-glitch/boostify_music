@@ -419,6 +419,27 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       
       // Calcular duración aproximada del audio
       const audioDuration = audioFile.size > 1000000 ? 180 : 120; // Aproximación según tamaño
+      setDuration(audioDuration); // Asegurarnos de actualizar la duración para el timeline
+      
+      // Crear una URL para el archivo de audio
+      const audioUrl = URL.createObjectURL(audioFile);
+      
+      // Crear clip de audio para el timeline
+      const audioClip: TimelineClip = {
+        id: 1,
+        title: audioFile.name || 'Audio Principal',
+        type: 'audio',
+        layer: 0, // Capa de audio
+        start: 0,
+        duration: audioDuration,
+        audioUrl: audioUrl,
+        waveform: [], // Esto se generaría con un análisis real de la forma de onda
+        visible: true,
+        locked: false
+      };
+      
+      // Guardar clips en el estado local
+      setTimelineData(prevClips => [audioClip]);
       
       // Guardar la transcripción en el contexto del editor
       editorContext.addTranscription({
@@ -430,9 +451,21 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
         createdAt: new Date()
       });
       
+      // Agregar audio al contexto del editor (para asegurar que aparezca en el timeline)
+      editorContext.addClip({
+        name: audioFile.name || 'Audio Principal',
+        startTime: 0,
+        duration: audioDuration,
+        source: audioUrl,
+        trackId: 'audio-track-1',
+        trimStart: 0,
+        trimEnd: audioDuration,
+        createdAt: new Date()
+      });
+      
       // Actualizar datos del workflow en el contexto
       editorContext.updateWorkflowData({
-        audioFile: URL.createObjectURL(audioFile),
+        audioFile: audioUrl,
         transcription: transcript,
         transcriptionSegments: [
           { start: 0, end: audioDuration, text: transcript }
