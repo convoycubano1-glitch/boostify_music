@@ -28,6 +28,7 @@ import { Progress } from '../../components/ui/progress';
 import LayerManager from '../timeline/LayerManager';
 import { useTimelineLayers, LayerConfig } from '../../hooks/useTimelineLayers';
 import { useIsolatedLayers, IsolatedLayerOperation } from '../../hooks/useIsolatedLayers';
+import { useEditor } from '../../lib/context/editor-context';
 import { 
   LayerType, 
   PIXELS_PER_SECOND, 
@@ -108,21 +109,28 @@ export function TimelineEditor({
   initialTime = 0,
   maxTime = 0
 }: TimelineEditorProps): JSX.Element {
-  // Estado para clips
-  const [clips, setClips] = useState<TimelineClip[]>(initialClips);
-  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
+  // Obtener el contexto del editor
+  const editor = useEditor();
+  
+  // Estado para clips - usando estado del editor si está disponible
+  const [clips, setClips] = useState<TimelineClip[]>(
+    editor.project?.clips || initialClips
+  );
+  const [selectedClipId, setSelectedClipId] = useState<number | null>(
+    editor.selectedClipId ? Number(editor.selectedClipId) : null
+  );
   const [nextClipId, setNextClipId] = useState<number>(
-    Math.max(...initialClips.map(c => c.id), 0) + 1
+    Math.max(...(editor.project?.clips || initialClips).map(c => c.id), 0) + 1
   );
   
-  // Estado para reproducción de audio
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(initialTime);
+  // Estado para reproducción de audio - sincronizado con playhead del editor
+  const [isPlaying, setIsPlaying] = useState(editor.playhead.isPlaying || false);
+  const [currentTime, setCurrentTime] = useState(editor.playhead.time || initialTime);
   const [volume, setVolume] = useState(1.0);
   const [isMuted, setIsMuted] = useState(false);
   
-  // Estado para UI y navegación
-  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+  // Estado para UI y navegación - sincronizado con timelineView del editor
+  const [zoom, setZoom] = useState(editor.timelineView.scale || DEFAULT_ZOOM);
   const [showAllLayers, setShowAllLayers] = useState(true);
   const [snap, setSnap] = useState(true);
   const [activeOperation, setActiveOperation] = useState<ClipOperation>(ClipOperation.NONE);
@@ -305,6 +313,12 @@ export function TimelineEditor({
       onTimeChange(currentTime);
     }
     
+    // Sincronizar con EditorContext
+    editor.updatePlayhead({
+      time: currentTime,
+      isPlaying: isPlaying
+    });
+    
     // Si está reproduciendo, no hacer nada más (el audio controla el tiempo)
     if (isPlaying) return;
     
@@ -317,7 +331,7 @@ export function TimelineEditor({
     if (videoRef.current) {
       videoRef.current.currentTime = currentTime;
     }
-  }, [currentTime, onTimeChange]);
+  }, [currentTime, isPlaying, onTimeChange, editor]);
   
   // Efecto para sincronizar video de referencia
   useEffect(() => {
@@ -410,7 +424,14 @@ export function TimelineEditor({
     if (onClipsChange) {
       onClipsChange(clips);
     }
-  }, [clips, onClipsChange]);
+    
+    // Actualizar los clips en el contexto del editor
+    if (editor.project && editor.updateProject) {
+      editor.updateProject({
+        clips: clips
+      });
+    }
+  }, [clips, onClipsChange, editor]);
 
   // Funciones para reproducción
   const togglePlay = useCallback(() => {
@@ -590,17 +611,46 @@ export function TimelineEditor({
 
   // Funciones para navegación y zoom
   const zoomIn = useCallback(() => {
-    setZoom(prev => Math.min(prev * 1.2, 5.0));
-  }, []);
+    const newZoom = Math.min(zoom * 1.2, 5.0);
+    setZoom(newZoom);
+    
+    // Sincronizar con EditorContext
+    editor.setTimelineView({
+      scale: newZoom
+    });
+  }, [zoom, editor]);
   
   const zoomOut = useCallback(() => {
-    setZoom(prev => Math.max(prev / 1.2, 0.1));
-  }, []);
+    const newZoom = Math.max(zoom / 1.2, 0.1);
+    setZoom(newZoom);
+    
+    // Sincronizar con EditorContext
+    editor.setTimelineView({
+      scale: newZoom
+    });
+  }, [zoom, editor]);
   
   const resetZoom = useCallback(() => {
     setZoom(DEFAULT_ZOOM);
-  }, []);
+    
+    // Sincronizar con EditorContext
+    editor.setTimelineView({
+      scale: DEFAULT_ZOOM
+    });
+  }, [editor]);
 
+  // Función para seleccionar clip
+  const selectClip = useCallback((id: number | null) => {
+    setSelectedClipId(id);
+    
+    // Actualizar la selección en el contexto del editor
+    if (id !== null) {
+      editor.setSelectedClip(String(id));
+    } else {
+      editor.setSelectedClip(null);
+    }
+  }, [editor]);
+  
   // Funciones para gestión de clips
   const addClip = useCallback((clipData: Omit<TimelineClip, 'id'>) => {
     if (readOnly) return;
