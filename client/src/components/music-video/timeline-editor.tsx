@@ -113,24 +113,20 @@ export function TimelineEditor({
   const editor = useEditor();
   
   // Estado para clips - usando estado del editor si está disponible
-  const [clips, setClips] = useState<TimelineClip[]>(
-    editor.project?.clips || initialClips
-  );
-  const [selectedClipId, setSelectedClipId] = useState<number | null>(
-    editor.selectedClipId ? Number(editor.selectedClipId) : null
-  );
+  const [clips, setClips] = useState<TimelineClip[]>(initialClips);
+  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
   const [nextClipId, setNextClipId] = useState<number>(
-    Math.max(...(editor.project?.clips || initialClips).map(c => c.id), 0) + 1
+    Math.max(...initialClips.map(c => c.id), 0) + 1
   );
   
   // Estado para reproducción de audio - sincronizado con playhead del editor
-  const [isPlaying, setIsPlaying] = useState(editor.playhead.isPlaying || false);
-  const [currentTime, setCurrentTime] = useState(editor.playhead.time || initialTime);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(initialTime);
   const [volume, setVolume] = useState(1.0);
   const [isMuted, setIsMuted] = useState(false);
   
   // Estado para UI y navegación - sincronizado con timelineView del editor
-  const [zoom, setZoom] = useState(editor.timelineView.scale || DEFAULT_ZOOM);
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [showAllLayers, setShowAllLayers] = useState(true);
   const [snap, setSnap] = useState(true);
   const [activeOperation, setActiveOperation] = useState<ClipOperation>(ClipOperation.NONE);
@@ -423,17 +419,29 @@ export function TimelineEditor({
       onClipsChange(clips);
     }
     
-    // Sincronizar los clips con el EditorContext
-    // Usamos state.project para verificar si hay un proyecto activo
+    // Sincronizar los clips con el EditorContext si es necesario
     if (editor.state?.project) {
-      // Actualizamos el proyecto con los clips actuales
-      // Esto mantendrá sincronizado el timeline en todo el contexto
-      editor.updateTracks?.(
-        editor.state.project.tracks.map(track => ({
-          ...track,
-          clips: clips.filter(clip => clip.trackId === track.id)
-        }))
-      );
+      // Actualizamos las pistas individualmente con los clips correspondientes
+      const tracks = editor.state.project.tracks || [];
+      
+      // Por cada pista, actualizamos sus clips asociados
+      tracks.forEach(track => {
+        const trackClips = clips.filter(clip => clip.layer === track.id); // Usar 'layer' en lugar de 'trackId'
+        
+        if (trackClips.length > 0) {
+          // Convertir clips a formato esperado por el editor
+          const formattedClips = trackClips.map(clip => ({
+            ...clip,
+            id: String(clip.id), // Convertir IDs numéricos a strings
+            trackId: clip.layer // Mapear 'layer' a 'trackId' para compatibilidad
+          }));
+          
+          // Actualizar la pista con los clips correspondientes
+          editor.updateTrack(track.id, {
+            clips: formattedClips
+          });
+        }
+      });
     }
   }, [clips, onClipsChange, editor]);
 
