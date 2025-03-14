@@ -467,18 +467,16 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             // Sincronizar con el contexto del editor - agregar clips de audio
             const audioClip = clips.find(clip => clip.type === 'audio');
             if (audioClip && audioClip.audioUrl) {
-              // Agregar el audio como un clip normal ya que addAudioTrack no existe en el contexto
+              // Agregar el audio como un clip normal usando la estructura esperada por EditorContext
               editorContext.addClip({
-                type: 'audio',
                 name: audioFile?.name || 'Audio Principal',
-                url: audioClip.audioUrl,
                 startTime: 0,
                 duration: duration,
-                layer: 0,
-                properties: {
-                  section: 'Principal',
-                  sourceIndex: 0
-                }
+                source: audioClip.audioUrl,
+                trackId: 'audio-track-1',
+                trimStart: 0,
+                trimEnd: duration,
+                createdAt: new Date()
               });
             }
             
@@ -486,17 +484,17 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
             clips
               .filter(clip => clip.type !== 'audio')
               .forEach(clip => {
+                // Crear clip usando la estructura esperada por EditorContext
+                const mediaUrl = clip.videoUrl || clip.imageUrl || '';
                 editorContext.addClip({
-                  type: clip.type as 'video' | 'image',
-                  url: clip.videoUrl || clip.imageUrl || '',
-                  name: clip.name,
-                  startTime: clip.start,
-                  duration: clip.duration,
-                  layer: clip.layer,
-                  properties: {
-                    section: clip.metadata?.section || '',
-                    sourceIndex: clip.metadata?.sourceIndex || 0
-                  }
+                  name: clip.name || 'Clip',
+                  source: mediaUrl,
+                  startTime: clip.start || 0,
+                  duration: clip.duration || 5,
+                  trackId: `track-${clip.layer || 1}`,
+                  trimStart: 0,
+                  trimEnd: clip.duration || 5,
+                  createdAt: new Date()
                 });
               });
             
