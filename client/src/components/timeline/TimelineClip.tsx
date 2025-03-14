@@ -10,7 +10,7 @@ import {
   Eye, EyeOff, Lock, Unlock, RefreshCw, FileText, 
   Scissors, Move, Film, Type, Info
 } from 'lucide-react';
-import { TimelineClip } from '../music-video/TimelineEditor';
+import { TimelineClip as TimelineClipType } from '../music-video/TimelineEditor';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -23,8 +23,8 @@ import {
   DialogTitle 
 } from '../../components/ui/dialog';
 
-interface TimelineClipComponentProps {
-  clip: TimelineClip;
+interface TimelineClipProps {
+  clip: TimelineClipType;
   selected: boolean;
   timeToPixels: (time: number) => number;
   onSelect: (id: number, multiSelect?: boolean) => void;
@@ -40,7 +40,7 @@ interface TimelineClipComponentProps {
  * Componente para clips de línea de tiempo
  * Maneja la interacción y visualización de clips en la línea de tiempo
  */
-export function TimelineClipComponent({
+export function TimelineClip({
   clip,
   selected,
   timeToPixels,
@@ -51,7 +51,7 @@ export function TimelineClipComponent({
   onPreview,
   onRegenerate,
   onSplit
-}: TimelineClipComponentProps) {
+}: TimelineClipProps) {
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   
   // Calculamos la posición y ancho del clip basándonos en start y duration
