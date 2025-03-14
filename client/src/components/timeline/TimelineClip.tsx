@@ -23,16 +23,23 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../
  */
 export interface TimelineClip {
   id: number;
-  title: string; 
+  title?: string; 
+  name?: string;
   type: string;
   layer: number;
   start: number;
   duration: number;
   selected?: boolean;
+  audioUrl?: string;
+  videoUrl?: string;
+  imageUrl?: string;
+  thumbnail?: string;
   metadata?: {
     isAIGenerated?: boolean;
     thumbnail?: string;
     source?: string;
+    section?: string;
+    sourceIndex?: number;
     [key: string]: any;
   };
 }
