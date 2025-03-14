@@ -98,8 +98,14 @@ export function WaveformTimeline({
     // Limpiar al desmontar
     return () => {
       if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-        wavesurferRef.current = null;
+        try {
+          // Usar un try-catch para evitar que el error de "signal is aborted" interrumpa la aplicación
+          wavesurferRef.current.destroy();
+        } catch (err) {
+          console.log("Error al destruir WaveSurfer, esto es normal durante actualizaciones en desarrollo:", err);
+        } finally {
+          wavesurferRef.current = null;
+        }
       }
     };
   }, [audioUrl, onTimeUpdate]);
