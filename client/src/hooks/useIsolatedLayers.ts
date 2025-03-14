@@ -44,7 +44,12 @@ interface ValidationResult {
 function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
   // Opciones por defecto
   const {
-    restrictedLayerTypes = [],
+    restrictedLayerTypes = [
+      LayerType.AUDIO,  // Capa de audio completamente aislada
+      LayerType.VIDEO,  // Capa de video con restricciones de edición
+      LayerType.TEXT,   // Capa de texto con edición estándar
+      LayerType.EFFECT  // Capa de efectos avanzados
+    ],
     maxAIPlaceholderDuration = 5, // 5 segundos por defecto
     allowOverlap = false
   } = options;

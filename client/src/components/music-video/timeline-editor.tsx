@@ -158,7 +158,12 @@ export function TimelineEditor({
     canAddClipToLayer
   } = useTimelineLayers([], { 
     createDefaultLayers: true, 
-    isolatedLayerTypes: [LayerType.AUDIO]
+    isolatedLayerTypes: [
+      LayerType.AUDIO,   // Capa 0: Audio aislada y bloqueada
+      LayerType.VIDEO,   // Capa 1: Video/imágenes con placeholders AI
+      LayerType.TEXT,    // Capa 2: Texto para edición estándar
+      LayerType.EFFECT   // Capa 3: Efectos avanzados
+    ]
   });
 
   // Validar cambios en los clips iniciales
