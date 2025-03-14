@@ -1,142 +1,75 @@
 /**
- * Constantes y configuraciones para el sistema de timeline del editor de videos
- * Este archivo centraliza todas las constantes utilizadas en los componentes del timeline
+ * Constantes para el timeline editor
+ * Contiene valores, dimensiones, tipos y mensajes de error para el editor
  */
 
-/**
- * Enum para identificar tipos de capas en la línea de tiempo
- */
+// Tipos de capas en el timeline
 export enum LayerType {
-  AUDIO = 0,
-  VIDEO_IMAGE = 1,
-  TEXT = 2,
-  EFFECTS = 3,
-  AI_GENERATED = 4
+  AUDIO = 'audio',      // Capas de audio (música, efectos, voces)
+  VIDEO = 'video',      // Capas de video (filmaciones, B-roll)
+  IMAGE = 'image',      // Capas de imagen (fotos, ilustraciones, generadas)
+  TEXT = 'text',        // Capas de texto (subtítulos, títulos)
+  EFFECTS = 'effect',   // Capas de efectos (transiciones, filtros)
+  TRANSITION = 'transition', // Capas de transición entre clips
+  AI_PLACEHOLDER = 'ai_placeholder' // Capas para contenido generado por IA
 }
 
-/**
- * Duración mínima permitida para un clip (en segundos)
- */
-export const MIN_CLIP_DURATION = 0.5;
-
-/**
- * Duración máxima permitida para un clip (en segundos)
- */
-export const MAX_CLIP_DURATION = 5;
-
-/**
- * Umbral para el ajuste automático (snap) en segundos
- */
-export const SNAP_THRESHOLD = 0.25;
-
-/**
- * Colores para tipos de clips específicos
- */
-export const CLIP_COLORS = {
-  audio: '#4CAF50',  // Verde
-  video: '#2196F3',  // Azul
-  image: '#9C27B0',  // Púrpura
-  text: '#FF9800',   // Naranja
-  effect: '#F44336', // Rojo
-  ai: '#E91E63'      // Rosado
-};
-
-/**
- * Zoom predeterminado para la visualización del timeline
- */
-export const DEFAULT_ZOOM = 1.0;
-
-/**
- * Propiedades de configuración para cada tipo de capa
- */
-export const LAYER_PROPERTIES: Record<LayerType, {
-  name: string;
-  color: string;
-  height: number;
-  allowedTypes: ('audio' | 'video' | 'image' | 'text' | 'effect')[];
-}> = {
-  [LayerType.AUDIO]: {
-    name: 'Audio',
-    color: '#4CAF50',
-    height: 60,
-    allowedTypes: ['audio']
-  },
-  [LayerType.VIDEO_IMAGE]: {
-    name: 'Video e Imagen',
-    color: '#2196F3',
-    height: 80,
-    allowedTypes: ['video', 'image']
-  },
-  [LayerType.TEXT]: {
-    name: 'Texto',
-    color: '#FF9800',
-    height: 60,
-    allowedTypes: ['text']
-  },
-  [LayerType.EFFECTS]: {
-    name: 'Efectos',
-    color: '#F44336',
-    height: 60,
-    allowedTypes: ['effect']
-  },
-  [LayerType.AI_GENERATED]: {
-    name: 'Imágenes IA',
-    color: '#E91E63',
-    height: 80,
-    allowedTypes: ['image']
-  }
-};
-
-/**
- * Tipos de operaciones que se pueden realizar con clips
- */
+// Operaciones posibles con clips
 export enum ClipOperation {
-  NONE = 'none',
-  MOVE = 'move',
-  RESIZE_START = 'resize-start',
-  RESIZE_END = 'resize-end',
-  SPLIT = 'split',
-  DELETE = 'delete',
-  COPY = 'copy',
-  PASTE = 'paste'
+  ADD = 'add',              // Añadir un nuevo clip
+  REMOVE = 'remove',        // Eliminar un clip existente
+  MOVE = 'move',            // Mover un clip
+  RESIZE = 'resize',        // Cambiar duración de un clip
+  DUPLICATE = 'duplicate'   // Duplicar un clip existente
 }
 
-/**
- * Mensajes de error para diversas operaciones del timeline
- */
-export const ERROR_MESSAGES = {
-  CLIP_TOO_SHORT: `La duración mínima del clip es ${MIN_CLIP_DURATION} segundos.`,
-  CLIP_TOO_LONG: `La duración máxima del clip es ${MAX_CLIP_DURATION} segundos.`,
-  CLIP_COLLISION: 'El clip colisiona con otro clip en la misma capa.',
-  INVALID_LAYER: 'Este tipo de clip no está permitido en esta capa.',
-  AI_IMAGE_WRONG_LAYER: 'Las imágenes generadas por IA deben estar en la capa específica para IA.',
-  POSITION_OUT_OF_BOUNDS: 'La posición del clip está fuera de los límites permitidos.'
-};
-
-/**
- * Formato para etiquetas de tiempo en el timeline
- */
-export const TIME_FORMAT = {
-  FULL: 'mm:ss.S',  // Minutos:segundos.décimas 
-  SHORT: 'ss.S'     // Segundos.décimas
-};
-
-/**
- * Dimensiones del timeline para renderizado
- */
+// Dimensiones del timeline y elementos relacionados
 export const TIMELINE_DIMENSIONS = {
-  RULER_HEIGHT: 30,
-  LAYER_LABEL_WIDTH: 120,
-  MIN_CLIP_WIDTH: 50,
-  PLAYHEAD_WIDTH: 2
-};
-
-/**
- * Métodos de interpolación para el movimiento de clips
- */
-export enum InterpolationMethod {
-  LINEAR = 'linear',
-  EASE_IN = 'ease-in',
-  EASE_OUT = 'ease-out',
-  EASE_IN_OUT = 'ease-in-out'
+  LAYER_LABEL_WIDTH: 150,    // Ancho de la etiqueta de la capa
+  DEFAULT_LAYER_HEIGHT: 40,  // Altura predeterminada de las capas
+  BEAT_MARKER_HEIGHT: 10,    // Altura de los marcadores de ritmo
+  MINIMUM_SCALE: 50,         // Escala mínima de píxeles por segundo
+  MAXIMUM_SCALE: 500,        // Escala máxima de píxeles por segundo
+  DEFAULT_SCALE: 100,        // Escala predeterminada para visualización
+  MINIMUM_CLIP_DURATION: 0.1, // Duración mínima de un clip en segundos
+  PIXELS_PER_SECOND: 100,    // Píxeles por segundo (escala base)
+  SNAP_THRESHOLD_PIXELS: 5,  // Umbral para ajuste magnético en píxeles
 }
+
+// Mensajes de error para validación de clips
+export const VALIDATION_ERRORS = {
+  CLIP_TOO_SHORT: "El clip no puede ser más corto que 0.1 segundos",
+  CLIP_TOO_LONG: "El clip no puede ser más largo que 5 segundos",
+  CLIP_COLLISION: "El clip se superpone con otro clip en la misma capa",
+  INVALID_LAYER: "Tipo de clip no válido para esta capa",
+  AI_IMAGE_WRONG_LAYER: "Las imágenes generadas por IA solo pueden colocarse en la capa 7",
+  POSITION_OUT_OF_BOUNDS: "La posición del clip está fuera de los límites del timeline",
+  CLIP_OVERLAP: "No se permite superposición de clips",
+  INVALID_DURATION: "Duración de clip no válida",
+  MAX_DURATION_EXCEEDED: "Se ha excedido la duración máxima de 5 segundos",
+  AI_PLACEHOLDER_DURATION: "Los marcadores de IA tienen una duración fija",
+  CANNOT_DELETE_ISOLATED_LAYER: "No se puede eliminar un clip en una capa bloqueada",
+  CANNOT_MODIFY_ISOLATED_CLIP: "No se puede modificar un clip bloqueado",
+  INVALID_OPERATION: "Operación no válida para este tipo de clip"
+}
+
+// Configuración de duración de los clips
+export const CLIP_DURATION = {
+  DEFAULT: 2.0,          // Duración predeterminada para clips nuevos
+  MINIMUM: 0.1,          // Duración mínima permitida
+  MAXIMUM: 5.0,          // Duración máxima permitida (requerimiento)
+  AI_PLACEHOLDER: 3.0    // Duración fija para marcadores de IA
+}
+
+// Colores para los diferentes tipos de capas
+export const LAYER_COLORS = {
+  audio: '#4299e1',      // Azul para audio
+  video: '#48bb78',      // Verde para video
+  image: '#38b2ac',      // Turquesa para imágenes
+  text: '#ed8936',       // Naranja para texto
+  effect: '#9f7aea',     // Púrpura para efectos
+  ai: '#d69e2e'          // Amarillo para contenido IA
+}
+
+// Duración máxima del timeline en segundos
+export const TIMELINE_MAX_DURATION = 300;  // 5 minutos

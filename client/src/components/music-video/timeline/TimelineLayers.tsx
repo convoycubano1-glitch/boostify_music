@@ -1,11 +1,10 @@
 /**
- * Componente para renderizar todas las capas del timeline
- * Gestiona la organización y visualización de capas y sus clips
+ * Componente que gestiona las capas del timeline
+ * Organiza y muestra las capas (LayerRow) con sus clips
  */
-import React, { useCallback, useMemo } from 'react';
-import { LayerConfig, TimelineClip } from '../../../interfaces/timeline';
+import React from 'react';
+import { TimelineClip, LayerConfig } from '../../../interfaces/timeline';
 import LayerRow from './LayerRow';
-import { TIMELINE_DIMENSIONS } from '../../../constants/timeline-constants';
 
 interface TimelineLayersProps {
   layers: LayerConfig[];
@@ -17,10 +16,16 @@ interface TimelineLayersProps {
   onClipResizeStart: (clipId: number, direction: 'start' | 'end', e: React.MouseEvent) => void;
   onLayerDrop: (e: React.DragEvent, layerId: number) => void;
   onAddClip?: (layerId: number, position: number) => void;
-  onToggleLayerVisibility?: (layerId: number) => void;
-  onToggleLayerLock?: (layerId: number) => void;
+  onToggleLayerVisibility: (layerId: number) => void;
+  onToggleLayerLock: (layerId: number) => void;
 }
 
+/**
+ * Componente que renderiza todas las capas del timeline
+ * 
+ * Cada capa (LayerRow) se encarga de mostrar los clips que le corresponden
+ * y manejar las interacciones específicas de esa capa
+ */
 const TimelineLayers: React.FC<TimelineLayersProps> = ({
   layers,
   clips,
@@ -34,74 +39,36 @@ const TimelineLayers: React.FC<TimelineLayersProps> = ({
   onToggleLayerVisibility,
   onToggleLayerLock
 }) => {
-  // Calcular la altura total de todas las capas
-  const totalHeight = useMemo(() => {
-    return layers.reduce((total, layer) => total + layer.height, 0);
-  }, [layers]);
-
-  // Función para renderizar las acciones de capa (visibilidad, bloqueo)
-  const renderLayerActions = useCallback((layerId: number, isVisible: boolean, isLocked: boolean) => {
-    if (!onToggleLayerVisibility && !onToggleLayerLock) return null;
-
-    return (
-      <div className="layer-actions">
-        {onToggleLayerVisibility && (
-          <button 
-            className={`visibility-toggle ${isVisible ? 'visible' : 'hidden'}`}
-            onClick={() => onToggleLayerVisibility(layerId)}
-            title={isVisible ? 'Ocultar capa' : 'Mostrar capa'}
-          >
-            {isVisible ? '👁️' : '👁️‍🗨️'}
-          </button>
-        )}
-        
-        {onToggleLayerLock && (
-          <button 
-            className={`lock-toggle ${isLocked ? 'locked' : 'unlocked'}`}
-            onClick={() => onToggleLayerLock(layerId)}
-            title={isLocked ? 'Desbloquear capa' : 'Bloquear capa'}
-          >
-            {isLocked ? '🔒' : '🔓'}
-          </button>
-        )}
-      </div>
-    );
-  }, [onToggleLayerVisibility, onToggleLayerLock]);
-
   return (
-    <div className="timeline-layers" style={{ height: `${totalHeight}px` }}>
-      <div className="layer-headers" style={{ width: `${TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH}px` }}>
-        {layers.map(layer => (
-          <div 
-            key={layer.id}
-            className="layer-header"
-            style={{ height: `${layer.height}px` }}
-          >
-            <span className="layer-name">{layer.name}</span>
-            {renderLayerActions(layer.id, layer.visible, layer.locked)}
-          </div>
-        ))}
-      </div>
-
-      <div className="layers-container">
-        {layers.map(layer => (
-          <LayerRow
-            key={layer.id}
-            config={layer}
-            clips={clips}
-            timeScale={timeScale}
-            selectedClipId={selectedClipId}
-            height={layer.height}
-            onClipSelect={onClipSelect}
-            onClipMoveStart={onClipMoveStart}
-            onClipResizeStart={onClipResizeStart}
-            onDrop={onLayerDrop}
-            onAddClip={onAddClip}
-          />
-        ))}
-      </div>
+    <div className="timeline-layers">
+      {layers.map(layer => (
+        <LayerRow 
+          key={layer.id}
+          layer={layer}
+          clips={clips}
+          timeScale={timeScale}
+          selectedClipId={selectedClipId}
+          onClipSelect={onClipSelect}
+          onClipMoveStart={onClipMoveStart}
+          onClipResizeStart={onClipResizeStart}
+          onLayerDrop={onLayerDrop}
+          onAddClip={onAddClip || (() => {})}
+          onToggleVisibility={onToggleLayerVisibility}
+          onToggleLock={onToggleLayerLock}
+        />
+      ))}
+      
+      {/* Estilos para el contenedor de capas */}
+      <style jsx>{`
+        .timeline-layers {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          height: 100%;
+        }
+      `}</style>
     </div>
   );
 };
 
-export default React.memo(TimelineLayers);
+export default TimelineLayers;

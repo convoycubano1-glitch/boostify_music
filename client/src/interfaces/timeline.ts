@@ -1,160 +1,131 @@
 /**
- * Interfaces para el sistema de timeline del editor de videos musicales
- * Centraliza todas las definiciones de tipos utilizadas en el timeline
+ * Interfaces para el timeline editor de videos musicales
+ * Define los tipos de datos principales usados en el timeline
  */
+import { LayerType } from '../constants/timeline-constants';
 
 /**
- * Representa un clip en la línea de tiempo
- * Los clips son los elementos básicos que conforman un video musical
+ * Representa un clip en el timeline
+ * Puede ser de diferentes tipos: audio, video, imagen, texto, efecto
  */
 export interface TimelineClip {
-  // Identificadores
-  id: number;
-  title: string;
-  
-  // Metadatos
-  type: 'audio' | 'video' | 'image' | 'text' | 'effect';
-  layer: number;
-  
-  // Posición y duración
-  start: number;
-  duration: number;
-  
-  // Estado del clip
-  visible: boolean;
-  locked: boolean;
-  
-  // Propiedades específicas por tipo
-  audioUrl?: string;
-  videoUrl?: string;
-  imageUrl?: string;
-  textContent?: string;
-  
-  // Propiedades para imágenes generadas por IA
-  generatedImage?: boolean;
-  generationPrompt?: string;
-  
-  // Propiedades para efectos especiales
-  effectParams?: {
-    intensity?: number;
-    type?: string;
-    [key: string]: any;
-  };
-  
-  // Propiedades para control de transiciones
-  transition?: {
-    type: string;
-    duration: number;
-  };
-  
-  // Metadatos adicionales
-  createdAt: Date;
-  updatedAt?: Date;
-  
-  // Propiedades adicionales para la sincronización de labios (LipSync)
-  lipsyncApplied?: boolean;
-  lipsyncVideoUrl?: string;
-  lipsyncProgress?: number;
-  
-  // Propiedades para movimientos de cámara
-  cameraMovement?: {
-    type: string;
-    intensity: number;
-    direction?: string;
-  };
-  
-  // Campo genérico para propiedades adicionales específicas
-  [key: string]: any;
+  id: number;                 // ID único del clip
+  title: string;              // Título descriptivo
+  start: number;              // Tiempo de inicio en segundos
+  duration: number;           // Duración en segundos
+  type: string;               // Tipo de clip (audio, video, imagen, etc.)
+  layerId: number;            // ID de la capa a la que pertenece
+  url?: string;               // URL del recurso (audio, video, imagen)
+  text?: string;              // Texto para clips de tipo texto
+  generatedImage?: boolean;   // Indica si es una imagen generada por IA
+  color?: string;             // Color personalizado (opcional)
+  volume?: number;            // Volumen para clips de audio/video (0-1)
+  opacity?: number;           // Opacidad para clips visuales (0-1)
+  lipsyncVideoUrl?: string;   // URL del video procesado con lipsync
+  lipsyncApplied?: boolean;   // Indica si se aplicó sincronización labial
+  lipsyncProgress?: number;   // Progreso de procesamiento de lipsync (0-100)
+  properties?: any;           // Propiedades adicionales específicas del tipo
 }
 
 /**
- * Configuración de una capa en la línea de tiempo
+ * Configuración de una capa en el timeline
  */
 export interface LayerConfig {
-  id: number;
-  name: string;
-  type: number;
-  color: string;
-  height: number;
-  visible: boolean;
-  locked: boolean;
+  id: number;                 // ID único de la capa
+  name: string;               // Nombre descriptivo
+  type: LayerType;            // Tipo de capa (audio, video, etc.)
+  visible: boolean;           // Visibilidad de la capa
+  locked: boolean;            // Si la capa está bloqueada para edición
+  height?: number;            // Altura personalizada (opcional)
+  color?: string;             // Color personalizado (opcional)
+  maxClips?: number;          // Número máximo de clips permitidos
+  allowedTypes?: string[];    // Tipos de clips permitidos en esta capa
 }
 
 /**
- * Estado de edición de un clip en la línea de tiempo
+ * Definición de la escala de tiempo para el timeline
  */
-export interface ClipEditState {
-  clipId: number | null;
-  operation: 'move' | 'resize-start' | 'resize-end' | 'none';
-  startX: number;
-  startTime: number;
-  clipStartPosition: number;
-  clipDuration: number;
+export interface TimelineScale {
+  pixelsPerSecond: number;    // Píxeles por segundo (zoom)
+  visibleStartTime: number;   // Tiempo inicial visible en la ventana
+  visibleEndTime: number;     // Tiempo final visible en la ventana
+  totalDuration: number;      // Duración total del proyecto
 }
 
 /**
- * Errores específicos del timeline
+ * Estado del playhead (cabezal de reproducción)
  */
-export interface TimelineError {
-  code: string;
-  message: string;
-  clipId?: number;
-  layerId?: number;
-  timestamp: Date;
+export interface PlayheadState {
+  time: number;               // Posición actual en segundos
+  isPlaying: boolean;         // Si está reproduciendo
+  speed: number;              // Velocidad de reproducción (0.5, 1, 1.5, 2)
 }
 
 /**
- * Marcadores de tiempo (beats, compases, etc.)
+ * Estado completo del timeline
  */
-export interface TimeMarker {
-  time: number;
-  type: 'beat' | 'bar' | 'section' | 'custom';
-  label?: string;
+export interface TimelineState {
+  clips: TimelineClip[];      // Clips en el timeline
+  layers: LayerConfig[];      // Configuración de capas
+  scale: TimelineScale;       // Escala y configuración visual
+  playhead: PlayheadState;    // Estado del playhead
+  selectedClipId: number | null; // ID del clip seleccionado
+  selectedLayerId: number | null; // ID de la capa seleccionada
+  audioUrl?: string;          // URL del audio principal
+  videoUrl?: string;          // URL del video principal
+  beatMarkers?: number[];     // Marcadores de ritmo para sincronización
+  historyIndex?: number;      // Índice actual en el historial para undo/redo
+  history?: TimelineState[];  // Historial de estados para undo/redo
 }
 
 /**
- * Estado del reproductor de la línea de tiempo
+ * Restricciones de timeline para validación de clips
  */
-export interface PlaybackState {
-  isPlaying: boolean;
-  currentTime: number;
+export interface TimelineConstraints {
+  minClipDuration: number;    // Duración mínima de un clip
+  maxClipDuration: number;    // Duración máxima de un clip
+  maxOverlappingClips: number; // Máximo de clips superpuestos
+  totalDuration: number;      // Duración máxima del timeline
+  allowClipOverlap: boolean;  // Si permite superposición de clips
+  aiGeneratedImageLayer: number; // Capa específica para imágenes generadas
+}
+
+/**
+ * Props para el componente principal TimelineEditor
+ */
+export interface TimelineEditorProps {
+  clips: TimelineClip[];
+  layers?: LayerConfig[];
   duration: number;
-  speed: number;
+  onClipsChange: (updatedClips: TimelineClip[]) => void;
+  onTimeChange: (time: number) => void;
+  onPlaybackStateChange: (isPlaying: boolean) => void;
+  selectedClipId?: number | null;
+  onSelectClip?: (clipId: number | null) => void;
+  onAddClip?: (clip: Omit<TimelineClip, 'id'>) => void;
+  onDeleteClip?: (clipId: number) => void;
+  beatMarkers?: number[];
+  showBeatGrid?: boolean;
+  autoScroll?: boolean;
+  initialTime?: number;
+  readOnly?: boolean;
 }
 
 /**
- * Historia de acciones para deshacer/rehacer
+ * Posición y tamaño visual de un clip en el timeline
  */
-export interface TimelineAction {
-  type: 'add' | 'remove' | 'update' | 'move' | 'resize';
-  clipId: number;
-  before: Partial<TimelineClip>;
-  after: Partial<TimelineClip>;
-  timestamp: Date;
+export interface ClipVisualPosition {
+  left: number;        // Posición X en píxeles
+  width: number;       // Ancho en píxeles
+  layerIndex: number;  // Índice vertical (capa) 
 }
 
 /**
- * Requisitos de rendimiento del video
+ * Resultado de una operación sobre clips
  */
-export interface RenderSettings {
-  resolution: {
-    width: number;
-    height: number;
-  };
-  format: 'mp4' | 'webm' | 'gif';
-  quality: 'low' | 'medium' | 'high';
-  fps: number;
-  exportAudio: boolean;
-  includeSubtitles: boolean;
-}
-
-/**
- * Proyección de la línea de tiempo para visualizar clips filtrados
- */
-export interface TimelineView {
-  startTime: number;
-  endTime: number;
-  visibleLayers: number[];
-  filterTags?: string[];
-  zoom: number;
+export interface ClipOperationResult {
+  success: boolean;
+  clips?: TimelineClip[];
+  error?: string;
+  clipId?: number;
 }

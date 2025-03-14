@@ -1,106 +1,221 @@
 /**
- * Componente para renderizar una fila/capa completa del timeline con sus clips
- * Cada capa tiene un tipo definido y solo acepta ciertos tipos de clips
+ * Componente que representa una fila (capa) en el timeline
+ * Gestiona la visualización y las operaciones específicas de la capa
  */
-import React, { useCallback, useMemo } from 'react';
-import { LayerConfig, TimelineClip } from '../../../interfaces/timeline';
+import React from 'react';
+import { TimelineClip, LayerConfig } from '../../../interfaces/timeline';
+import { Button } from "../../../components/ui/button";
+import { EyeIcon, EyeOffIcon, LockIcon, UnlockIcon, PlusIcon } from 'lucide-react';
+import { TIMELINE_DIMENSIONS } from '../../../constants/timeline-constants';
 import ClipItem from './ClipItem';
-import { LAYER_PROPERTIES } from '../../../constants/timeline-constants';
 
 interface LayerRowProps {
-  config: LayerConfig;
+  layer: LayerConfig;
   clips: TimelineClip[];
   timeScale: number;
   selectedClipId: number | null;
-  height: number;
   onClipSelect: (clipId: number) => void;
   onClipMoveStart: (clipId: number, e: React.MouseEvent) => void;
   onClipResizeStart: (clipId: number, direction: 'start' | 'end', e: React.MouseEvent) => void;
-  onDrop: (e: React.DragEvent, layerId: number) => void;
-  onAddClip?: (layerId: number, position: number) => void;
+  onLayerDrop: (e: React.DragEvent, layerId: number) => void;
+  onAddClip: (layerId: number, position: number) => void;
+  onToggleVisibility: (layerId: number) => void;
+  onToggleLock: (layerId: number) => void;
 }
 
 const LayerRow: React.FC<LayerRowProps> = ({
-  config,
+  layer,
   clips,
   timeScale,
   selectedClipId,
-  height,
   onClipSelect,
   onClipMoveStart,
   onClipResizeStart,
-  onDrop,
-  onAddClip
+  onLayerDrop,
+  onAddClip,
+  onToggleVisibility,
+  onToggleLock
 }) => {
-  // Filtrar clips que pertenecen a esta capa
-  const layerClips = useMemo(() => {
-    return clips.filter(clip => clip.layer === config.id);
-  }, [clips, config.id]);
-
-  // Manejador para arrastar y soltar clips
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  // Filtrar los clips que pertenecen a esta capa
+  const layerClips = clips.filter(clip => clip.layer === layer.id);
+  
+  // Manejar drag & drop
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  };
+  
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    onDrop(e, config.id);
-  }, [config.id, onDrop]);
-
-  // Manejador para añadir un nuevo clip
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    if (onAddClip) {
-      const layerEl = e.currentTarget as HTMLDivElement;
-      const rect = layerEl.getBoundingClientRect();
-      const position = (e.clientX - rect.left) / timeScale;
-      onAddClip(config.id, position);
+    onLayerDrop(e, layer.id);
+  };
+  
+  // Manejar clic en la capa para añadir un nuevo clip
+  const handleLayerClick = (e: React.MouseEvent) => {
+    if (layer.locked) return;
+    
+    // Obtener la posición del clic relativa al inicio del timeline
+    const timelineStart = TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH;
+    const clickPosition = e.nativeEvent.offsetX - timelineStart;
+    
+    // Convertir la posición a tiempo
+    const clickTime = Math.max(0, clickPosition / timeScale);
+    
+    // Verificar si el clic fue en un área vacía (no en un clip existente)
+    const isEmptyArea = !layerClips.some(clip => {
+      const clipStartX = clip.start * timeScale;
+      const clipEndX = (clip.start + clip.duration) * timeScale;
+      return clickPosition >= clipStartX && clickPosition <= clipEndX;
+    });
+    
+    if (isEmptyArea) {
+      onAddClip(layer.id, clickTime);
     }
-  }, [config.id, onAddClip, timeScale]);
-
-  // Obtener propiedades de la capa desde constantes
-  const layerProperties = useMemo(() => {
-    return LAYER_PROPERTIES[config.type] || {
-      name: 'Capa desconocida',
-      color: '#666',
-      allowedTypes: []
-    };
-  }, [config.type]);
-
+  };
+  
   return (
-    <div className="timeline-layer" style={{ height: `${height}px` }}>
+    <div 
+      className={`timeline-layer ${layer.locked ? 'locked' : ''}`}
+      style={{ height: `${layer.height}px` }}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Etiqueta de capa */}
       <div 
         className="layer-label" 
         style={{ 
-          backgroundColor: config.locked ? '#666' : layerProperties.color,
-          opacity: config.visible ? 1 : 0.5 
+          width: `${TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH}px`,
+          background: layer.color 
         }}
       >
-        <span className="layer-name">{config.name}</span>
-        {config.locked && <span className="layer-lock-indicator">🔒</span>}
-        {!config.visible && <span className="layer-visibility-indicator">👁️</span>}
+        <span className="layer-name">{layer.name}</span>
+        <div className="layer-controls">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onToggleVisibility(layer.id)}
+            className="layer-button"
+            title={layer.visible ? "Ocultar capa" : "Mostrar capa"}
+          >
+            {layer.visible ? <EyeIcon size={14} /> : <EyeOffIcon size={14} />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onToggleLock(layer.id)}
+            className="layer-button"
+            title={layer.locked ? "Desbloquear capa" : "Bloquear capa"}
+          >
+            {layer.locked ? <LockIcon size={14} /> : <UnlockIcon size={14} />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={layer.locked}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddClip(layer.id, 0);
+            }}
+            className="layer-button"
+            title="Añadir clip"
+          >
+            <PlusIcon size={14} />
+          </Button>
+        </div>
       </div>
       
+      {/* Área de clips */}
       <div 
-        className="layer-content"
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onDoubleClick={handleDoubleClick}
+        className={`layer-content ${!layer.visible ? 'hidden' : ''}`}
+        onClick={handleLayerClick}
       >
+        {/* Renderizar los clips de esta capa */}
         {layerClips.map(clip => (
-          <ClipItem
+          <ClipItem 
             key={clip.id}
             clip={clip}
             timeScale={timeScale}
-            selected={selectedClipId === clip.id}
-            onSelect={onClipSelect}
-            onMoveStart={onClipMoveStart}
-            onResizeStart={onClipResizeStart}
+            isSelected={clip.id === selectedClipId}
+            onSelect={() => onClipSelect(clip.id)}
+            onMoveStart={(e) => onClipMoveStart(clip.id, e)}
+            onResizeStart={(direction, e) => onClipResizeStart(clip.id, direction, e)}
+            disabled={layer.locked}
           />
         ))}
       </div>
+      
+      {/* Estilos para la capa */}
+      <style jsx>{`
+        .timeline-layer {
+          display: flex;
+          position: relative;
+          border-bottom: 1px solid #e2e8f0;
+          background-color: #f8fafc;
+        }
+        
+        .timeline-layer.locked {
+          background-color: #f1f5f9;
+          opacity: 0.8;
+        }
+        
+        .layer-label {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 8px;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 500;
+          position: sticky;
+          left: 0;
+          z-index: 10;
+          box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .layer-name {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .layer-controls {
+          display: flex;
+          gap: 2px;
+        }
+        
+        .layer-button {
+          padding: 2px;
+          height: 22px;
+          width: 22px;
+          background-color: rgba(255, 255, 255, 0.2);
+          border-radius: 3px;
+          color: white;
+        }
+        
+        .layer-button:hover {
+          background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .layer-content {
+          flex: 1;
+          position: relative;
+          overflow: visible;
+          min-height: 30px;
+        }
+        
+        .layer-content.hidden {
+          opacity: 0.5;
+          background-image: repeating-linear-gradient(
+            45deg,
+            rgba(0, 0, 0, 0.03),
+            rgba(0, 0, 0, 0.03) 10px,
+            rgba(0, 0, 0, 0.05) 10px,
+            rgba(0, 0, 0, 0.05) 20px
+          );
+        }
+      `}</style>
     </div>
   );
 };
 
-export default React.memo(LayerRow);
+export default LayerRow;

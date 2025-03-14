@@ -1,564 +1,645 @@
 /**
- * Componente para la edición profesional de la línea de tiempo de videos musicales
- * Implementa todas las restricciones y validaciones necesarias
+ * Editor de timeline principal
+ * Componente principal para la edición de videos con timeline multiples capas
  */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent } from '../../ui/card';
-import { Button } from '../../ui/button';
-import { ScrollArea } from '../../ui/scroll-area';
-import { Slider } from '../../ui/slider';
-import { Input } from '../../ui/input';
-import { Play, Pause, Plus, Trash2, AlignJustify, Image, Music, Type, Wand2 } from 'lucide-react';
-import { cn } from '../../../lib/utils';
-import { WaveformTimeline } from './WaveformTimeline';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { Label } from '../../ui/label';
-import { useToast } from '../../../hooks/use-toast';
-import { TimelineClip, LayerConfig } from '../../../interfaces/timeline';
-import { LayerType, LAYER_PROPERTIES, MAX_CLIP_DURATION, MIN_CLIP_DURATION } from '../../../constants/timeline-constants';
-import { hasValidDuration, clipsCollide, findClipCollisions, isInCorrectLayer, isAIGeneratedImage } from './TimelineConstraints';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { TimelineClip, LayerConfig, TimeMarker } from '../../../interfaces/timeline';
+import TimelineLayers from './TimelineLayers';
+import { DEFAULT_ZOOM, TIMELINE_DIMENSIONS, LayerType } from '../../../constants/timeline-constants';
+import { enforceAllConstraints } from './TimelineConstraints';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { PlayIcon, PauseIcon, ZoomInIcon, ZoomOutIcon, UndoIcon, RedoIcon } from 'lucide-react';
 
+// Definir los colores para las marcas de tiempo
+const MARKER_COLORS = {
+  beat: '#ff9800',
+  section: '#e91e63',
+  custom: '#2196f3'
+};
+
+// Props para el componente TimelineEditor
 interface TimelineEditorProps {
   clips: TimelineClip[];
   duration: number;
-  onClipsChange: (updatedClips: TimelineClip[]) => void;
-  onTimeChange: (time: number) => void;
-  onPlaybackStateChange: (isPlaying: boolean) => void;
+  markers?: TimeMarker[];
+  onClipsChange: (clips: TimelineClip[]) => void;
+  onTimeChange?: (time: number) => void;
+  onPlaybackStateChange?: (isPlaying: boolean) => void;
   showBeatGrid?: boolean;
   autoScroll?: boolean;
-  audioTrack?: string;
+  readOnly?: boolean;
 }
 
-/**
- * Editor de línea de tiempo profesional para videos musicales
- */
-export function TimelineEditor({
+const TimelineEditor: React.FC<TimelineEditorProps> = ({
   clips,
   duration,
+  markers = [],
   onClipsChange,
   onTimeChange,
   onPlaybackStateChange,
   showBeatGrid = false,
   autoScroll = true,
-  audioTrack
-}: TimelineEditorProps) {
-  // Estados para reproducción y posición del tiempo
+  readOnly = false
+}) => {
+  // Estado para el editor
+  const [timeScale, setTimeScale] = useState(DEFAULT_ZOOM);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [zoom, setZoom] = useState(1);
+  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
+  const [dragOperation, setDragOperation] = useState<{
+    type: 'move' | 'resize-start' | 'resize-end' | null;
+    clipId: number | null;
+    startX: number;
+    startTime: number;
+    startDuration?: number;
+  }>({ type: null, clipId: null, startX: 0, startTime: 0 });
   
-  // Estado para capas visibles y seleccionadas
+  // Referencia al contenedor del timeline para cálculos de posición
+  const timelineRef = useRef<HTMLDivElement>(null);
+  
+  // Definir las capas del timeline
   const [layers, setLayers] = useState<LayerConfig[]>([
-    { id: LayerType.AUDIO, name: LAYER_PROPERTIES[LayerType.AUDIO].name, type: LayerType.AUDIO, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.AUDIO].height, color: LAYER_PROPERTIES[LayerType.AUDIO].color },
-    { id: LayerType.VIDEO_IMAGE, name: LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].name, type: LayerType.VIDEO_IMAGE, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].height, color: LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].color },
-    { id: LayerType.TEXT, name: LAYER_PROPERTIES[LayerType.TEXT].name, type: LayerType.TEXT, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.TEXT].height, color: LAYER_PROPERTIES[LayerType.TEXT].color },
-    { id: LayerType.EFFECTS, name: LAYER_PROPERTIES[LayerType.EFFECTS].name, type: LayerType.EFFECTS, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.EFFECTS].height, color: LAYER_PROPERTIES[LayerType.EFFECTS].color },
-    { id: LayerType.AI_GENERATED, name: LAYER_PROPERTIES[LayerType.AI_GENERATED].name, type: LayerType.AI_GENERATED, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.AI_GENERATED].height, color: LAYER_PROPERTIES[LayerType.AI_GENERATED].color }
+    { id: LayerType.AUDIO, name: 'Audio', type: LayerType.AUDIO, height: 60, visible: true, locked: false },
+    { id: LayerType.VIDEO_IMAGE, name: 'Video', type: LayerType.VIDEO_IMAGE, height: 80, visible: true, locked: false },
+    { id: LayerType.TEXT, name: 'Texto', type: LayerType.TEXT, height: 60, visible: true, locked: false },
+    { id: LayerType.EFFECTS, name: 'Efectos', type: LayerType.EFFECTS, height: 60, visible: true, locked: false },
+    { id: LayerType.AI_GENERATED, name: 'IA', type: LayerType.AI_GENERATED, height: 80, visible: true, locked: false }
   ]);
   
-  // Estados para selección y edición de clips
-  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [newClipType, setNewClipType] = useState<'audio' | 'video' | 'image' | 'text' | 'effect'>('image');
-  const [newClipLayer, setNewClipLayer] = useState<number>(LayerType.VIDEO_IMAGE);
-  const [draggedClip, setDraggedClip] = useState<{ id: number, offsetX: number } | null>(null);
+  // Historial de operaciones para undo/redo
+  const [history, setHistory] = useState<{
+    past: TimelineClip[][];
+    future: TimelineClip[][];
+  }>({ past: [], future: [] });
   
-  // Referencias
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const playTimerRef = useRef<number | null>(null);
-  
-  // Toast para notificaciones
-  const { toast } = useToast();
-  
-  // Manejar cambios en el tiempo actual
+  // Aplicar restricciones cuando cambian los clips
   useEffect(() => {
-    setCurrentTime(prevTime => {
-      // Solo actualizar si hay un cambio significativo
-      if (Math.abs(prevTime - currentTime) > 0.01) {
-        return currentTime;
+    const constrainedClips = enforceAllConstraints([...clips]);
+    
+    // Solo actualizar si hay diferencias
+    if (JSON.stringify(constrainedClips) !== JSON.stringify(clips)) {
+      onClipsChange(constrainedClips);
+    }
+  }, [clips, onClipsChange]);
+  
+  // Actualizar tiempo de reproducción cuando está reproduciéndose
+  useEffect(() => {
+    let animationFrame: number;
+    let lastTimestamp = 0;
+    
+    const updatePlayhead = (timestamp: number) => {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      
+      const elapsed = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+      
+      if (isPlaying) {
+        setCurrentTime(prevTime => {
+          const newTime = prevTime + elapsed;
+          // Reiniciar cuando llega al final
+          if (newTime >= duration) {
+            return 0;
+          }
+          return newTime;
+        });
+        animationFrame = requestAnimationFrame(updatePlayhead);
       }
-      return prevTime;
-    });
-  }, [currentTime]);
-  
-  // Manejar la reproducción
-  useEffect(() => {
+    };
+    
     if (isPlaying) {
-      const startTime = performance.now();
-      const startPosition = currentTime;
-      
-      const updatePlayback = () => {
-        const elapsed = (performance.now() - startTime) / 1000;
-        const newTime = Math.min(duration, startPosition + elapsed);
-        
-        setCurrentTime(newTime);
-        onTimeChange(newTime);
-        
-        if (newTime < duration) {
-          playTimerRef.current = requestAnimationFrame(updatePlayback);
-        } else {
-          setIsPlaying(false);
-          onPlaybackStateChange(false);
-        }
-      };
-      
-      playTimerRef.current = requestAnimationFrame(updatePlayback);
-    } else if (playTimerRef.current) {
-      cancelAnimationFrame(playTimerRef.current);
-      playTimerRef.current = null;
+      animationFrame = requestAnimationFrame(updatePlayhead);
     }
     
     return () => {
-      if (playTimerRef.current) {
-        cancelAnimationFrame(playTimerRef.current);
-        playTimerRef.current = null;
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
       }
     };
-  }, [isPlaying, currentTime, duration, onTimeChange, onPlaybackStateChange]);
+  }, [isPlaying, duration]);
   
-  // Función para alternar entre reproducción y pausa
-  const togglePlayback = useCallback(() => {
-    setIsPlaying(playing => !playing);
-    onPlaybackStateChange(!isPlaying);
+  // Notificar cambios de tiempo
+  useEffect(() => {
+    if (onTimeChange) {
+      onTimeChange(currentTime);
+    }
+  }, [currentTime, onTimeChange]);
+  
+  // Notificar cambios en el estado de reproducción
+  useEffect(() => {
+    if (onPlaybackStateChange) {
+      onPlaybackStateChange(isPlaying);
+    }
   }, [isPlaying, onPlaybackStateChange]);
   
-  // Función para añadir un nuevo clip
-  const addNewClip = useCallback((type: 'audio' | 'video' | 'image' | 'text' | 'effect', layerId: number) => {
-    // Determinar la capa correcta basada en el tipo
-    let targetLayer = layerId;
+  // Manejar la selección de un clip
+  const handleClipSelect = useCallback((clipId: number) => {
+    setSelectedClipId(clipId);
+  }, []);
+  
+  // Iniciar operación de mover un clip
+  const handleClipMoveStart = useCallback((clipId: number, e: React.MouseEvent) => {
+    if (readOnly) return;
     
-    // Validar que el tipo de clip sea compatible con la capa seleccionada
-    switch (type) {
-      case 'audio':
-        targetLayer = LayerType.AUDIO;
-        break;
-      case 'video':
-      case 'image':
-        // Si no es capa de AI generada, usar VIDEO_IMAGE
-        if (targetLayer !== LayerType.AI_GENERATED) {
-          targetLayer = LayerType.VIDEO_IMAGE;
+    e.preventDefault();
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip || clip.locked) return;
+    
+    // Guardar el estado actual para el historial antes de la modificación
+    setHistory(prev => ({
+      past: [...prev.past, [...clips]],
+      future: []
+    }));
+    
+    setDragOperation({
+      type: 'move',
+      clipId,
+      startX: e.clientX,
+      startTime: clip.start
+    });
+    
+    // Agregar manejadores de eventos al documento
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!timelineRef.current) return;
+      const timelineBounds = timelineRef.current.getBoundingClientRect();
+      const deltaX = moveEvent.clientX - e.clientX;
+      const deltaTime = deltaX / timeScale;
+      
+      // Actualizar posición temporal del clip
+      const updatedClips = clips.map(c => {
+        if (c.id === clipId) {
+          const newStart = Math.max(0, clip.start + deltaTime);
+          return { ...c, start: newStart };
         }
-        break;
-      case 'text':
-        targetLayer = LayerType.TEXT;
-        break;
-      case 'effect':
-        targetLayer = LayerType.EFFECTS;
-        break;
-    }
-    
-    // Buscar un espacio adecuado en la capa para el nuevo clip
-    const clipsInLayer = clips.filter(clip => clip.layer === targetLayer);
-    let startPosition = 0;
-    
-    // Si hay clips en la capa, encontrar un espacio libre
-    if (clipsInLayer.length > 0) {
-      // Ordenar clips por posición inicial
-      const sortedClips = [...clipsInLayer].sort((a, b) => a.start - b.start);
+        return c;
+      });
       
-      // Buscar espacio entre clips o después del último
-      let foundSpace = false;
-      
-      // Verificar espacio al inicio
-      if (sortedClips[0].start >= MAX_CLIP_DURATION) {
-        startPosition = 0;
-        foundSpace = true;
-      }
-      
-      // Verificar espacios entre clips
-      if (!foundSpace) {
-        for (let i = 0; i < sortedClips.length - 1; i++) {
-          const endOfCurrent = sortedClips[i].start + sortedClips[i].duration;
-          const startOfNext = sortedClips[i + 1].start;
-          
-          if (startOfNext - endOfCurrent >= MAX_CLIP_DURATION) {
-            startPosition = endOfCurrent;
-            foundSpace = true;
-            break;
-          }
-        }
-      }
-      
-      // Si no hay espacios, colocar después del último clip
-      if (!foundSpace) {
-        const lastClip = sortedClips[sortedClips.length - 1];
-        startPosition = lastClip.start + lastClip.duration;
-      }
-    }
-    
-    // Crear nuevo clip con valores por defecto según el tipo
-    const newClip: TimelineClip = {
-      id: Date.now(), // ID único basado en timestamp
-      type,
-      layer: targetLayer,
-      start: startPosition,
-      duration: type === 'text' ? 2 : MAX_CLIP_DURATION, // Duración más corta para textos
-      title: `Nuevo ${type === 'audio' ? 'Audio' : 
-              type === 'video' ? 'Video' : 
-              type === 'image' ? 'Imagen' : 
-              type === 'text' ? 'Texto' : 'Efecto'}`,
-      visible: true,
-      locked: false,
-      
-      // Propiedades específicas por tipo
-      ...(type === 'audio' && { audioUrl: '' }),
-      ...(type === 'video' && { videoUrl: '' }),
-      ...(type === 'image' && { imageUrl: '' }),
-      ...(type === 'text' && { textContent: 'Texto de ejemplo' }),
-      
-      // Si es imagen generada por IA, marcarla como tal
-      ...(type === 'image' && targetLayer === LayerType.AI_GENERATED && { generatedImage: true }),
-      
-      createdAt: new Date()
+      // Aplicar restricciones
+      const constrainedClips = enforceAllConstraints(updatedClips);
+      onClipsChange(constrainedClips);
     };
     
-    // Actualizar los clips y cerrar el diálogo
-    onClipsChange([...clips, newClip]);
-    setDialogOpen(false);
+    const handleMouseUp = () => {
+      setDragOperation({ type: null, clipId: null, startX: 0, startTime: 0 });
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
     
-    // Mostrar toast de confirmación
-    toast({
-      title: "Elemento añadido",
-      description: `Se ha añadido un nuevo elemento de tipo ${type} a la línea de tiempo.`,
-      variant: "default"
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [clips, timeScale, readOnly, onClipsChange]);
+  
+  // Iniciar operación de redimensionar un clip
+  const handleClipResizeStart = useCallback((clipId: number, direction: 'start' | 'end', e: React.MouseEvent) => {
+    if (readOnly) return;
+    
+    e.preventDefault();
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip || clip.locked) return;
+    
+    // Guardar el estado actual para el historial antes de la modificación
+    setHistory(prev => ({
+      past: [...prev.past, [...clips]],
+      future: []
+    }));
+    
+    setDragOperation({
+      type: direction === 'start' ? 'resize-start' : 'resize-end',
+      clipId,
+      startX: e.clientX,
+      startTime: clip.start,
+      startDuration: clip.duration
     });
     
-    // Seleccionar el clip recién creado
-    setSelectedClipId(newClip.id);
-  }, [clips, onClipsChange, toast]);
-  
-  // Función para eliminar un clip
-  const deleteClip = useCallback((id: number) => {
-    onClipsChange(clips.filter(clip => clip.id !== id));
-    
-    if (selectedClipId === id) {
-      setSelectedClipId(null);
-    }
-    
-    toast({
-      title: "Elemento eliminado",
-      description: "Se ha eliminado el elemento seleccionado de la línea de tiempo.",
-      variant: "destructive"
-    });
-  }, [clips, onClipsChange, selectedClipId, toast]);
-  
-  // Función para actualizar un clip existente
-  const updateClip = useCallback((id: number, updates: Partial<TimelineClip>) => {
-    const updatedClips = clips.map(clip => 
-      clip.id === id ? { ...clip, ...updates } : clip
-    );
-    
-    onClipsChange(updatedClips);
-  }, [clips, onClipsChange]);
-  
-  // Manejar la selección de un clip
-  const handleClipSelect = (id: number) => {
-    setSelectedClipId(id === selectedClipId ? null : id);
-  };
-  
-  // Convertir tiempo a píxeles para la visualización
-  const timeToPixels = (time: number) => time * 100 * zoom;
-  
-  // Formatear tiempo en formato mm:ss.ms
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    const ms = Math.floor((time % 1) * 10);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms}`;
-  };
-  
-  // Aplicar todas las restricciones cada vez que cambian los clips
-  useEffect(() => {
-    // Validar que los clips cumplen con las restricciones
-    let hasViolations = false;
-    
-    for (const clip of clips) {
-      // Verificar que la duración no exceda el máximo
-      if (clip.duration > MAX_CLIP_DURATION) {
-        hasViolations = true;
-        console.warn(`Clip ${clip.id} excede la duración máxima permitida`);
-      }
+    // Agregar manejadores de eventos al documento
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!timelineRef.current) return;
+      const deltaX = moveEvent.clientX - e.clientX;
+      const deltaTime = deltaX / timeScale;
       
-      // Verificar que el tipo de clip es adecuado para su capa
-      if (!isInCorrectLayer(clip)) {
-        hasViolations = true;
-        console.warn(`Clip ${clip.id} está en una capa incorrecta para su tipo ${clip.type}`);
-      }
-      
-      // Verificar colisiones con otros clips
-      const collisions = findClipCollisions(clip, clips);
-      if (collisions.length > 0) {
-        hasViolations = true;
-        console.warn(`Clip ${clip.id} colisiona con otros clips en la misma capa`);
-      }
-    }
-    
-    if (hasViolations) {
-      toast({
-        title: "Advertencia de línea de tiempo",
-        description: "Algunos clips no cumplen con las restricciones establecidas.",
-        variant: "destructive"
+      const updatedClips = clips.map(c => {
+        if (c.id === clipId) {
+          if (direction === 'start') {
+            // Ajustar el inicio y duración al redimensionar desde el inicio
+            const newStart = Math.max(0, clip.start + deltaTime);
+            const deltaStart = newStart - clip.start;
+            const newDuration = clip.duration - deltaStart;
+            return {
+              ...c,
+              start: newStart,
+              duration: Math.max(0.5, newDuration)
+            };
+          } else {
+            // Ajustar solo la duración al redimensionar desde el final
+            const newDuration = Math.max(0.5, clip.duration + deltaTime);
+            return { ...c, duration: newDuration };
+          }
+        }
+        return c;
       });
-    }
-  }, [clips, toast]);
-  
-  // Renderizar marcas de tiempo (regla) en la parte superior
-  const renderTimeMarkers = () => {
-    const markers = [];
-    const step = zoom < 0.5 ? 10 : zoom < 1 ? 5 : zoom < 2 ? 1 : 0.5;
-    
-    for (let t = 0; t <= Math.ceil(duration); t += step) {
-      const position = timeToPixels(t);
       
-      markers.push(
-        <div 
-          key={`marker-${t}`}
-          className="absolute top-0 h-5 border-l border-gray-500"
-          style={{ left: `${position}px` }}
-        >
-          <span className="absolute -left-3 text-xs text-gray-400">
-            {formatTime(t)}
-          </span>
-        </div>
-      );
+      // Aplicar restricciones
+      const constrainedClips = enforceAllConstraints(updatedClips);
+      onClipsChange(constrainedClips);
+    };
+    
+    const handleMouseUp = () => {
+      setDragOperation({ type: null, clipId: null, startX: 0, startTime: 0 });
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [clips, timeScale, readOnly, onClipsChange]);
+  
+  // Manejar el arrastrar y soltar clips entre capas
+  const handleLayerDrop = useCallback((e: React.DragEvent, layerId: number) => {
+    if (readOnly) return;
+    
+    const clipIdString = e.dataTransfer.getData('clip-id');
+    if (!clipIdString) return;
+    
+    const clipId = parseInt(clipIdString, 10);
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip || clip.locked) return;
+    
+    // Calcular la posición en el timeline donde se soltó
+    if (timelineRef.current) {
+      const timelineBounds = timelineRef.current.getBoundingClientRect();
+      const dropX = e.clientX - timelineBounds.left;
+      const dropTime = dropX / timeScale;
+      
+      // Guardar el estado actual para el historial antes de la modificación
+      setHistory(prev => ({
+        past: [...prev.past, [...clips]],
+        future: []
+      }));
+      
+      // Actualizar el clip con la nueva capa y posición
+      const updatedClips = clips.map(c => {
+        if (c.id === clipId) {
+          return { ...c, layer: layerId, start: dropTime };
+        }
+        return c;
+      });
+      
+      // Aplicar restricciones
+      const constrainedClips = enforceAllConstraints(updatedClips);
+      onClipsChange(constrainedClips);
+    }
+  }, [clips, timeScale, readOnly, onClipsChange]);
+  
+  // Añadir un nuevo clip
+  const handleAddClip = useCallback((layerId: number, position: number) => {
+    if (readOnly) return;
+    
+    // Determinar el tipo de clip según la capa
+    let clipType: 'audio' | 'video' | 'image' | 'text' | 'effect' = 'video';
+    switch (layerId) {
+      case LayerType.AUDIO:
+        clipType = 'audio';
+        break;
+      case LayerType.VIDEO_IMAGE:
+        clipType = 'video';
+        break;
+      case LayerType.TEXT:
+        clipType = 'text';
+        break;
+      case LayerType.EFFECTS:
+        clipType = 'effect';
+        break;
+      case LayerType.AI_GENERATED:
+        clipType = 'image';
+        break;
     }
     
-    return markers;
+    // Crear un nuevo clip
+    const newClip: TimelineClip = {
+      id: Math.max(0, ...clips.map(c => c.id)) + 1,
+      start: position,
+      duration: 3,
+      type: clipType,
+      layer: layerId,
+      title: `Nuevo ${clipType}`,
+      visible: true,
+      locked: false
+    };
+    
+    // Si es una imagen generada por IA
+    if (layerId === LayerType.AI_GENERATED) {
+      newClip.generatedImage = true;
+      newClip.imagePrompt = 'Escriba su descripción aquí';
+    }
+    
+    // Guardar el estado actual para el historial antes de la modificación
+    setHistory(prev => ({
+      past: [...prev.past, [...clips]],
+      future: []
+    }));
+    
+    // Añadir el nuevo clip y aplicar restricciones
+    const updatedClips = [...clips, newClip];
+    const constrainedClips = enforceAllConstraints(updatedClips);
+    onClipsChange(constrainedClips);
+    
+    // Seleccionar el nuevo clip
+    setSelectedClipId(newClip.id);
+  }, [clips, readOnly, onClipsChange]);
+  
+  // Togglear la visibilidad de una capa
+  const handleToggleLayerVisibility = useCallback((layerId: number) => {
+    setLayers(prev => prev.map(layer => 
+      layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
+    ));
+  }, []);
+  
+  // Togglear el bloqueo de una capa
+  const handleToggleLayerLock = useCallback((layerId: number) => {
+    setLayers(prev => prev.map(layer => 
+      layer.id === layerId ? { ...layer, locked: !layer.locked } : layer
+    ));
+  }, []);
+  
+  // Manejar el clic en el timeline para mover el playhead
+  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
+    if (!timelineRef.current) return;
+    
+    const timelineBounds = timelineRef.current.getBoundingClientRect();
+    const clickX = e.clientX - timelineBounds.left - TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH;
+    const clickTime = Math.max(0, Math.min(duration, clickX / timeScale));
+    
+    setCurrentTime(clickTime);
+  }, [timeScale, duration]);
+  
+  // Manejar zoom in/out
+  const handleZoomIn = useCallback(() => {
+    setTimeScale(prev => Math.min(prev * 1.2, 200));
+  }, []);
+  
+  const handleZoomOut = useCallback(() => {
+    setTimeScale(prev => Math.max(prev / 1.2, 20));
+  }, []);
+  
+  // Manejar deshacer/rehacer
+  const handleUndo = useCallback(() => {
+    if (history.past.length === 0) return;
+    
+    const newPast = [...history.past];
+    const prevClips = newPast.pop();
+    
+    if (prevClips) {
+      setHistory({
+        past: newPast,
+        future: [clips, ...history.future]
+      });
+      
+      onClipsChange(prevClips);
+    }
+  }, [history, clips, onClipsChange]);
+  
+  const handleRedo = useCallback(() => {
+    if (history.future.length === 0) return;
+    
+    const newFuture = [...history.future];
+    const nextClips = newFuture.shift();
+    
+    if (nextClips) {
+      setHistory({
+        past: [...history.past, clips],
+        future: newFuture
+      });
+      
+      onClipsChange(nextClips);
+    }
+  }, [history, clips, onClipsChange]);
+  
+  // Togglear la reproducción
+  const togglePlayback = useCallback(() => {
+    setIsPlaying(prev => !prev);
+  }, []);
+  
+  // Renderizar las marcas de tiempo (beats y secciones)
+  const renderTimeMarkers = () => {
+    return markers.map((marker, index) => {
+      const left = marker.time * timeScale;
+      const color = MARKER_COLORS[marker.type] || MARKER_COLORS.custom;
+      
+      return (
+        <div
+          key={index}
+          className="timeline-marker"
+          style={{
+            left: `${left}px`,
+            backgroundColor: color
+          }}
+          title={marker.label}
+        />
+      );
+    });
   };
   
-  // Renderizar la línea de playhead (posición actual)
+  // Renderizar la posición actual del playhead
   const renderPlayhead = () => {
-    const position = timeToPixels(currentTime);
+    const left = currentTime * timeScale;
     
     return (
       <div 
-        className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-20"
-        style={{ left: `${position}px` }}
-      >
-        <div className="absolute -top-6 -left-8 bg-gray-900 px-1 py-0.5 rounded text-xs text-white whitespace-nowrap">
-          {formatTime(currentTime)}
-        </div>
-      </div>
+        className="timeline-playhead" 
+        style={{ 
+          left: `${left}px`,
+          width: `${TIMELINE_DIMENSIONS.PLAYHEAD_WIDTH}px`
+        }}
+      />
     );
   };
   
-  // Renderizar capas y clips en cada capa
-  const renderLayers = () => {
-    return layers.map(layer => (
-      <div 
-        key={`layer-${layer.id}`}
-        className={cn(
-          "relative border-t border-gray-800 mb-1",
-          layer.locked && "opacity-70",
-          !layer.visible && "opacity-30"
-        )}
-        style={{ height: `${layer.height}px` }}
-      >
-        {/* Etiqueta de la capa */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gray-800 flex items-center px-2 z-10">
-          <div 
-            className="w-3 h-3 rounded-full mr-2"
-            style={{ backgroundColor: layer.color }}
-          />
-          <span className="text-sm font-medium truncate">{layer.name}</span>
+  // Renderizar el componente completo
+  return (
+    <div className="timeline-editor">
+      {/* Barra de herramientas */}
+      <div className="timeline-toolbar">
+        <div className="toolbar-group">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={togglePlayback}
+            className="toolbar-button"
+          >
+            {isPlaying ? <PauseIcon size={16} /> : <PlayIcon size={16} />}
+          </Button>
+          <Badge variant="outline" className="current-time">
+            {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
+          </Badge>
         </div>
         
-        {/* Contenido de la capa (clips) */}
-        <div className="absolute left-32 right-0 top-0 bottom-0">
-          {clips
-            .filter(clip => clip.layer === layer.id && layer.visible)
-            .map(clip => (
-              <div
-                key={`clip-${clip.id}`}
-                className={cn(
-                  "absolute top-1 bottom-1 rounded px-2 py-1 cursor-pointer border-2 flex items-center overflow-hidden",
-                  selectedClipId === clip.id ? "border-white" : "border-transparent",
-                  clip.locked && "opacity-60 cursor-not-allowed"
-                )}
-                style={{
-                  left: `${timeToPixels(clip.start)}px`,
-                  width: `${timeToPixels(clip.duration)}px`,
-                  backgroundColor: clip.type === 'audio' ? LAYER_PROPERTIES[LayerType.AUDIO].color :
-                                  clip.type === 'video' ? LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].color :
-                                  clip.type === 'image' && clip.layer === LayerType.AI_GENERATED ? LAYER_PROPERTIES[LayerType.AI_GENERATED].color :
-                                  clip.type === 'image' ? LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].color :
-                                  clip.type === 'text' ? LAYER_PROPERTIES[LayerType.TEXT].color :
-                                  LAYER_PROPERTIES[LayerType.EFFECTS].color
-                }}
-                onClick={() => handleClipSelect(clip.id)}
-              >
-                {/* Icono según el tipo de clip */}
-                <span className="mr-1">
-                  {clip.type === 'audio' && <Music className="h-4 w-4" />}
-                  {clip.type === 'video' && <Play className="h-4 w-4" />}
-                  {clip.type === 'image' && <Image className="h-4 w-4" />}
-                  {clip.type === 'text' && <Type className="h-4 w-4" />}
-                  {clip.type === 'effect' && <Wand2 className="h-4 w-4" />}
-                </span>
-                
-                {/* Título del clip */}
-                <span className="text-xs truncate">
-                  {clip.title}
-                </span>
-              </div>
-            ))
-          }
+        <div className="toolbar-group">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleZoomIn}
+            className="toolbar-button"
+          >
+            <ZoomInIcon size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleZoomOut}
+            className="toolbar-button"
+          >
+            <ZoomOutIcon size={16} />
+          </Button>
+          <Badge variant="outline" className="zoom-level">
+            {Math.round(timeScale)}x
+          </Badge>
+        </div>
+        
+        <div className="toolbar-group">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleUndo}
+            disabled={history.past.length === 0}
+            className="toolbar-button"
+          >
+            <UndoIcon size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRedo}
+            disabled={history.future.length === 0}
+            className="toolbar-button"
+          >
+            <RedoIcon size={16} />
+          </Button>
         </div>
       </div>
-    ));
-  };
-  
-  return (
-    <Card className="w-full h-full bg-gray-900 text-white overflow-hidden border-gray-800">
-      <CardContent className="p-0 flex flex-col h-full">
-        {/* Barra de herramientas superior */}
-        <div className="flex items-center justify-between p-2 border-b border-gray-800">
-          <div className="flex items-center space-x-2">
-            {/* Control de reproducción */}
-            <Button
-              size="sm"
-              variant={isPlaying ? "destructive" : "default"}
-              onClick={togglePlayback}
-            >
-              {isPlaying ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-              {isPlaying ? "Pausar" : "Reproducir"}
-            </Button>
-            
-            {/* Tiempo actual / duración */}
-            <div className="text-sm">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            {/* Control de zoom */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm">Zoom:</span>
-              <Slider
-                className="w-32"
-                min={0.5}
-                max={5}
-                step={0.5}
-                value={[zoom]}
-                onValueChange={(values) => setZoom(values[0])}
-              />
-              <span className="text-sm">{zoom.toFixed(1)}x</span>
-            </div>
-            
-            {/* Botón para añadir nuevo clip */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Añadir Clip
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-gray-900 text-white border-gray-700">
-                <DialogHeader>
-                  <DialogTitle>Añadir nuevo elemento</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="clip-type">Tipo de elemento</Label>
-                    <Select 
-                      value={newClipType} 
-                      onValueChange={(value: any) => setNewClipType(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="audio">Audio</SelectItem>
-                        <SelectItem value="video">Video</SelectItem>
-                        <SelectItem value="image">Imagen</SelectItem>
-                        <SelectItem value="text">Texto</SelectItem>
-                        <SelectItem value="effect">Efecto</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Solo mostrar selección de capa para imágenes (puede ser normal o generada) */}
-                  {newClipType === 'image' && (
-                    <div className="grid gap-2">
-                      <Label htmlFor="clip-layer">Capa</Label>
-                      <Select 
-                        value={String(newClipLayer)} 
-                        onValueChange={(value) => setNewClipLayer(Number(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar capa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={String(LayerType.VIDEO_IMAGE)}>Video e Imagen</SelectItem>
-                          <SelectItem value={String(LayerType.AI_GENERATED)}>Imagen Generada IA</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-end">
-                  <Button onClick={() => addNewClip(newClipType, newClipLayer)}>Añadir</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            {/* Botón para eliminar clip seleccionado */}
-            <Button 
-              variant="destructive" 
-              size="sm"
-              disabled={selectedClipId === null}
-              onClick={() => selectedClipId && deleteClip(selectedClipId)}
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Eliminar
-            </Button>
-          </div>
+      
+      {/* Contenedor principal del timeline */}
+      <div 
+        className="timeline-container" 
+        ref={timelineRef}
+        onClick={handleTimelineClick}
+      >
+        {/* Regla de tiempo */}
+        <div 
+          className="timeline-ruler"
+          style={{ height: `${TIMELINE_DIMENSIONS.RULER_HEIGHT}px` }}
+        >
+          {/* Aquí renderizar las marcas de la regla */}
         </div>
         
-        {/* Panel de forma de onda (WaveformTimeline) */}
-        {audioTrack && (
-          <div className="h-64 border-b border-gray-800">
-            <WaveformTimeline
-              audioUrl={audioTrack}
-              duration={duration}
-              currentTime={currentTime}
-              clips={clips}
-              onClipUpdate={updateClip}
-              onTimeUpdate={setCurrentTime}
-              isPlaying={isPlaying}
-              onPlayPause={togglePlayback}
-            />
-          </div>
-        )}
-        
-        {/* Área principal del timeline */}
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div 
-              ref={timelineRef}
-              className="relative"
-              style={{ 
-                width: `${timeToPixels(duration) + 100}px`, 
-                minHeight: `${layers.length * 80 + 30}px`
-              }}
-            >
-              {/* Regla de tiempo */}
-              <div className="h-8 border-b border-gray-800 pl-32 relative">
-                {renderTimeMarkers()}
-              </div>
-              
-              {/* Línea que muestra la posición actual */}
-              {renderPlayhead()}
-              
-              {/* Capas del timeline */}
-              <div className="relative">
-                {renderLayers()}
-              </div>
-            </div>
-          </ScrollArea>
+        {/* Marcas de tiempo (beats, secciones) */}
+        <div className="time-markers">
+          {renderTimeMarkers()}
         </div>
-      </CardContent>
-    </Card>
+        
+        {/* Playhead */}
+        {renderPlayhead()}
+        
+        {/* Capas y clips */}
+        <TimelineLayers
+          layers={layers}
+          clips={clips}
+          timeScale={timeScale}
+          selectedClipId={selectedClipId}
+          onClipSelect={handleClipSelect}
+          onClipMoveStart={handleClipMoveStart}
+          onClipResizeStart={handleClipResizeStart}
+          onLayerDrop={handleLayerDrop}
+          onAddClip={handleAddClip}
+          onToggleLayerVisibility={handleToggleLayerVisibility}
+          onToggleLayerLock={handleToggleLayerLock}
+        />
+      </div>
+      
+      {/* Información del clip seleccionado */}
+      {selectedClipId !== null && (
+        <div className="selected-clip-info">
+          {/* Aquí mostrar propiedades del clip seleccionado */}
+        </div>
+      )}
+      
+      {/* Estilos CSS para el timeline */}
+      <style jsx>{`
+        .timeline-editor {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          font-family: system-ui, -apple-system, sans-serif;
+          color: #333;
+          background-color: #f5f5f5;
+          border-radius: 6px;
+          overflow: hidden;
+        }
+        
+        .timeline-toolbar {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 16px;
+          background-color: #fff;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .toolbar-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .timeline-container {
+          position: relative;
+          flex: 1;
+          overflow: auto;
+          background-color: #f9f9fb;
+        }
+        
+        .timeline-ruler {
+          position: sticky;
+          top: 0;
+          left: 0;
+          right: 0;
+          background-color: #fff;
+          border-bottom: 1px solid #e2e8f0;
+          z-index: 10;
+        }
+        
+        .time-markers {
+          position: absolute;
+          top: 0;
+          left: ${TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH}px;
+          right: 0;
+          bottom: 0;
+          pointer-events: none;
+        }
+        
+        .timeline-marker {
+          position: absolute;
+          top: 0;
+          width: 1px;
+          height: 100%;
+          pointer-events: none;
+        }
+        
+        .timeline-playhead {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          background-color: #ff0000;
+          z-index: 100;
+          pointer-events: none;
+        }
+        
+        .selected-clip-info {
+          padding: 8px 16px;
+          background-color: #fff;
+          border-top: 1px solid #e2e8f0;
+        }
+      `}</style>
+    </div>
   );
-}
+};
+
+export default TimelineEditor;
