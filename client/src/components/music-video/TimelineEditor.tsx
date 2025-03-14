@@ -378,10 +378,14 @@ export function TimelineEditor({
   // Determinar el color de una capa
   const getLayerColor = (layer: number) => {
     const colors = [
-      { bg: '#3730a3', text: 'white' },  // Audio - Índigo
-      { bg: '#0369a1', text: 'white' },  // Video - Azul
-      { bg: '#15803d', text: 'white' },  // Texto - Verde
-      { bg: '#9f1239', text: 'white' }   // Efectos - Rojo
+      { bg: '#3730a3', text: 'white' },  // 0: Audio - Índigo
+      { bg: '#0369a1', text: 'white' },  // 1: Video - Azul
+      { bg: '#15803d', text: 'white' },  // 2: Texto - Verde
+      { bg: '#9f1239', text: 'white' },  // 3: Efectos - Rojo
+      { bg: '#7e22ce', text: 'white' },  // 4: Reservada - Púrpura
+      { bg: '#b91c1c', text: 'white' },  // 5: Reservada - Rojo oscuro
+      { bg: '#854d0e', text: 'white' },  // 6: Reservada - Ámbar oscuro
+      { bg: '#f97316', text: 'white' }   // 7: Imágenes generadas - Naranja
     ];
     
     return colors[layer % colors.length];
@@ -484,7 +488,9 @@ export function TimelineEditor({
                   const layerColor = getLayerColor(layerId);
                   const layerName = layerId === 0 ? 'Audio' : 
                                   layerId === 1 ? 'Video/Imagen' : 
-                                  layerId === 2 ? 'Texto' : 'Efectos';
+                                  layerId === 2 ? 'Texto' : 
+                                  layerId === 3 ? 'Efectos' :
+                                  layerId === 7 ? 'Imágenes Generadas' : 'Capa ' + layerId;
                   
                   return (
                     <div 
