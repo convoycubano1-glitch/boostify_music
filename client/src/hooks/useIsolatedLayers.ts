@@ -9,10 +9,6 @@
 
 import { useState, useCallback } from 'react';
 import { LayerType, ERROR_MESSAGES, ClipOperation } from '../constants/timeline-constants';
-
-/**
- * Importamos el tipo TimelineClip desde el componente
- */
 import { TimelineClip } from '../components/timeline/TimelineClip';
 
 /**
