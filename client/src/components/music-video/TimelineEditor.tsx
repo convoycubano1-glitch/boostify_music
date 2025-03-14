@@ -10,8 +10,8 @@ import {
   Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut,
   Music, Volume2, Volume1, VolumeX, Layers, Lock, Eye, Trash, 
   Plus, Save, Download, Upload, Share2, Loader2, ChevronLeft, 
-  ChevronRight, EyeOff, LockOpen, Unlock, Image, RefreshCw,
-  Video, Wand2, Text, Image as ImageLucide, Sparkles as SparklesIcon
+  ChevronRight, EyeOff, LockOpen, Unlock, Image as ImageIcon, RefreshCw,
+  Video, Wand2, Text, Sparkles as SparklesIcon, Star
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
