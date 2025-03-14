@@ -1349,6 +1349,12 @@ ${transcription}`;
         clipType = 'video';
         clipLayer = 1; // Capa de video/imagen (1)
       }
+      // Si es una imagen generada por IA (isGeneratedImage=true o tiene generatedImage)
+      else if (item.isGeneratedImage || item.generatedImage) {
+        clipType = 'image';
+        clipLayer = 7; // Colocar imágenes generadas en la capa 7
+        console.log(`🎨 Imagen generada detectada: ${item.id} - Asignando a capa 7`);
+      }
       
       // URL del recurso: priorizar video, luego imagen
       const url = item.videoUrl || 
@@ -1869,10 +1875,17 @@ ${transcription}`;
             else if (energy > averageEnergy * 1.5) mood = 'intense';
             else if (energy < averageEnergy * 0.7) mood = 'calm';
 
+            // Aseguramos que la duración no exceda los 5 segundos (MAX_CLIP_DURATION de timeline-constants.ts)
+            const maxDuration = 5; // 5 segundos como límite máximo
+            if (segmentDuration > maxDuration) {
+              segmentDuration = maxDuration;
+              console.log(`Duración del segmento ajustada a ${maxDuration} segundos según límite máximo`);
+            }
+            
             // Creamos segmento base
             const segmentBase = {
               id: segments.length + 1,
-              group: 1,
+              group: 7, // Colocamos las imágenes generadas en la capa 7 según especificación
               title: `Escena ${segments.length + 1}`,
               start_time: lastBeatTime * 1000,
               end_time: (lastBeatTime + segmentDuration) * 1000,
@@ -1892,7 +1905,9 @@ ${transcription}`;
               timecode: secondsToTimecode(lastBeatTime),
               endTimecode: secondsToTimecode(lastBeatTime + segmentDuration),
               normalizedEnergy: normalizedEnergy,
-              isDownbeat: isDownbeat
+              isDownbeat: isDownbeat,
+              // Indicador de que es una imagen generada por IA
+              isGeneratedImage: true
             };
             
             // Usamos ensureCompatibleClip para garantizar compatibilidad con TimelineClipUnified
@@ -1909,22 +1924,39 @@ ${transcription}`;
         if (lastSegment.end_time / 1000 < totalDuration) {
           const finalShotType = weightedSelection(shotTypes);
           
+          // Verificar que la duración del segmento final no exceda el máximo permitido
+          let finalSegmentDuration = (totalDuration * 1000) - lastSegment.end_time;
+          const maxDurationMs = 5000; // 5 segundos en milisegundos
+          
+          if (finalSegmentDuration > maxDurationMs) {
+            console.log(`Duración del segmento final ajustada de ${finalSegmentDuration}ms a ${maxDurationMs}ms según límite máximo`);
+            finalSegmentDuration = maxDurationMs;
+            // Ajustar también el tiempo de finalización
+            const newEndTime = lastSegment.end_time + maxDurationMs;
+            if (newEndTime < totalDuration * 1000) {
+              // Si aún queda espacio después del segmento final ajustado, dejaremos un hueco
+              console.log(`Ajuste de tiempo final: ${newEndTime}ms (tiempo total: ${totalDuration * 1000}ms)`);
+            }
+          }
+          
           // Crear segmento final usando la misma estructura unificada
           const finalSegmentBase = {
             id: segments.length + 1,
-            group: 1,
+            group: 7, // Colocamos las imágenes generadas en la capa 7 según especificación
             title: `Escena Final`,
             start_time: lastSegment.end_time,
-            end_time: totalDuration * 1000,
+            end_time: lastSegment.end_time + finalSegmentDuration,
             description: finalShotType.description,
             shotType: finalShotType.type,
-            duration: (totalDuration * 1000) - lastSegment.end_time,
+            duration: finalSegmentDuration,
             transition: "fade",
             imagePrompt: finalShotType.prompt,
             // Campos adicionales para compatibilidad con TimelineClip
             start: lastSegment.end_time / 1000,
             type: 'image' as const,
-            mood: 'conclusive'
+            mood: 'conclusive',
+            // Indicador de que es una imagen generada por IA
+            isGeneratedImage: true
           };
           
           // Usar ensureCompatibleClip para garantizar compatibilidad

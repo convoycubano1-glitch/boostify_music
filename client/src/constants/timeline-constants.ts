@@ -39,7 +39,8 @@ export enum ClipOperation {
  */
 export const CLIP_HANDLE_WIDTH = 8;
 export const MIN_CLIP_DURATION = 0.5; // Segundos
-export const MAX_CLIP_DURATION = 600; // 10 minutos
+export const MAX_CLIP_DURATION = 5; // Máximo 5 segundos por corte
+export const MAX_PROJECT_DURATION = 600; // 10 minutos para todo el proyecto
 export const SNAP_THRESHOLD = 0.5; // Segundos
 export const LAYER_HEIGHT = 50; // Altura de cada capa en píxeles
 export const PLAYHEAD_WIDTH = 2; // Ancho del playhead en píxeles
