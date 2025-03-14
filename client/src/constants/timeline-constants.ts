@@ -33,12 +33,13 @@ export enum ClipOperation {
 }
 
 /**
- * Constantes para manejo de clips
+ * Constantes para manejo de clips y visualización
  */
 export const CLIP_HANDLE_WIDTH = 8;
 export const MIN_CLIP_DURATION = 0.5; // Segundos
 export const MAX_CLIP_DURATION = 600; // 10 minutos
 export const SNAP_THRESHOLD = 0.5; // Segundos
+export const LAYER_HEIGHT = 50; // Altura de cada capa en píxeles
 
 /**
  * Colores para los diferentes tipos de capas
