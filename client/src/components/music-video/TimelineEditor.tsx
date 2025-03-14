@@ -382,25 +382,73 @@ export function TimelineEditor({
     const clip = clips.find(c => c.id === (draggingClip || selectedClip));
     if (!clip) return;
     
+    // Verificar colisiones con otros clips en la misma capa
+    const otherClipsInLayer = clips.filter(c => c.layer === clip.layer && c.id !== clip.id);
+    
     if (draggingClip) {
       // Mover el clip completo
       const newStart = Math.max(0, clipStartPosition + deltaTime);
-      handleClipUpdate(clip.id, { start: newStart });
+      
+      // Comprobar si hay colisión al mover
+      const wouldCollide = otherClipsInLayer.some(otherClip => {
+        const clipEnd = newStart + clip.duration;
+        return (newStart < otherClip.start + otherClip.duration && 
+                clipEnd > otherClip.start);
+      });
+      
+      if (!wouldCollide) {
+        handleClipUpdate(clip.id, { start: newStart });
+      } else {
+        // Mostrar mensaje de colisión
+        toast({
+          title: "Superposición detectada",
+          description: "No se permite superposición entre clips en la misma capa",
+          variant: "destructive",
+        });
+      }
     } else if (resizingSide === 'start') {
       // Redimensionar desde el inicio
       const maxNewStart = clipStartPosition + clip.duration - 0.1;
-      const newStart = Math.min(maxNewStart, Math.max(0, clipStartPosition + deltaTime));
-      const newDuration = clip.duration - (newStart - clipStartPosition);
+      let newStart = Math.min(maxNewStart, Math.max(0, clipStartPosition + deltaTime));
+      const newDuration = Math.min(5, clip.duration - (newStart - clipStartPosition));
       
-      handleClipUpdate(clip.id, { 
-        start: newStart,
-        duration: newDuration
+      // Comprobar si hay colisión al redimensionar desde el inicio
+      const wouldCollide = otherClipsInLayer.some(otherClip => {
+        return (newStart < otherClip.start + otherClip.duration && 
+                otherClip.start < clipStartPosition);
       });
+      
+      if (!wouldCollide) {
+        handleClipUpdate(clip.id, { 
+          start: newStart,
+          duration: newDuration
+        });
+      } else {
+        toast({
+          title: "Superposición detectada",
+          description: "No se permite superposición entre clips en la misma capa",
+          variant: "destructive",
+        });
+      }
     } else if (resizingSide === 'end') {
-      // Redimensionar desde el final
-      // Limitar la duración a MAX_CLIP_DURATION (5 segundos)
-      const newDuration = Math.min(5, Math.max(0.1, clip.duration + deltaTime));
-      handleClipUpdate(clip.id, { duration: newDuration });
+      // Redimensionar desde el final - limitar a 5 segundos exactos como máximo
+      let newDuration = Math.min(5, Math.max(0.1, clip.duration + deltaTime));
+      
+      // Comprobar si hay colisión al redimensionar desde el final
+      const wouldCollide = otherClipsInLayer.some(otherClip => {
+        const newEnd = clip.start + newDuration;
+        return (newEnd > otherClip.start && otherClip.start > clip.start);
+      });
+      
+      if (!wouldCollide) {
+        handleClipUpdate(clip.id, { duration: newDuration });
+      } else {
+        toast({
+          title: "Superposición detectada",
+          description: "No se permite superposición entre clips en la misma capa",
+          variant: "destructive",
+        });
+      }
       
       // Mostrar mensaje si intenta exceder la duración máxima
       if (clip.duration + deltaTime > 5) {
