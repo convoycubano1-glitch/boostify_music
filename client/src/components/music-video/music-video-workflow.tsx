@@ -932,65 +932,45 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
               </TabsContent>
               
               <TabsContent value="timeline" className="space-y-4 mt-4">
-                <div className="bg-muted rounded-md p-4 h-[400px] overflow-auto">
-                  <div className="text-center text-muted-foreground mb-4">
-                    Aquí se mostraría una vista completa de la línea de tiempo
-                  </div>
-                  
-                  {/* Simulación visual de la línea de tiempo */}
-                  <div className="space-y-4">
-                    {/* Capa de Audio */}
-                    <div className="relative h-16 bg-black/5 rounded-md">
-                      <div className="absolute left-0 top-0 h-full bg-orange-500/20 rounded-l-md" style={{ width: '100%' }}>
-                        <div className="flex items-center h-full px-2">
-                          <Music className="h-4 w-4 text-orange-500 mr-2" />
-                          <span className="text-xs font-medium">
-                            {timelineData.find(clip => clip.type === 'audio')?.title || 'Audio Track'}
-                          </span>
-                        </div>
-                      </div>
+                <div className="bg-muted rounded-md p-4 h-[500px] overflow-hidden">
+                  {/* Editor de línea de tiempo real */}
+                  {timelineData.length > 0 ? (
+                    <TimelineEditor
+                      clips={timelineData}
+                      audioUrl={timelineData.find(clip => clip.type === 'audio')?.audioUrl}
+                      videoUrl={timelineData.find(clip => clip.type === 'video')?.videoUrl}
+                      duration={duration}
+                      onClipsChange={(updatedClips) => {
+                        setTimelineData(updatedClips);
+                        // Guardar en el contexto del editor
+                        editorContext.updateWorkflowData({
+                          ...editorContext.workflowData,
+                          generatedSegments: updatedClips.filter(clip => clip.type !== 'audio')
+                        });
+                      }}
+                      onTimeChange={(time) => {
+                        // Actualizar tiempo actual en el contexto
+                        editorContext.setCurrentPlaybackTime(time);
+                      }}
+                      onPlaybackStateChange={(isPlaying) => {
+                        // Actualizar estado de reproducción en el contexto
+                        editorContext.setPlaybackState(isPlaying);
+                      }}
+                      showBeatGrid={true}
+                      autoScroll={true}
+                    />
+                  ) : (
+                    <div className="text-center text-muted-foreground mb-4 h-full flex flex-col items-center justify-center">
+                      <div className="mb-4">Aún no hay clips en la línea de tiempo</div>
+                      <Button 
+                        variant="default" 
+                        onClick={() => setActiveStep('upload')}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Importar Archivos
+                      </Button>
                     </div>
-                    
-                    {/* Capa de Video/Imágenes */}
-                    <div className="relative h-16 bg-black/5 rounded-md flex items-center">
-                      <div className="absolute top-0 left-0 h-full w-full">
-                        {timelineData
-                          .filter(clip => clip.type !== 'audio')
-                          .map(clip => (
-                            <div
-                              key={clip.id}
-                              className="absolute top-0 h-full bg-blue-500/30 rounded-md border border-blue-500/50"
-                              style={{
-                                left: `${(clip.start / duration) * 100}%`,
-                                width: `${(clip.duration / duration) * 100}%`
-                              }}
-                            >
-                              <div className="flex items-center h-full px-2 overflow-hidden">
-                                <span className="text-xs font-medium whitespace-nowrap">
-                                  {clip.title}
-                                </span>
-                              </div>
-                            </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* Escala de tiempo */}
-                    <div className="relative h-8 mt-2">
-                      {Array.from({ length: Math.ceil(duration / 30) + 1 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute top-0 -translate-x-1/2"
-                          style={{ left: `${(i * 30 / duration) * 100}%` }}
-                        >
-                          <div className="h-3 w-0.5 bg-gray-300"></div>
-                          <div className="text-[10px] text-muted-foreground mt-1">
-                            {i * 30}s
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  )}
                 </div>
                 
                 <div className="flex justify-end gap-2">
