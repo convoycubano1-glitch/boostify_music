@@ -146,7 +146,7 @@ export function useClipOperations({
     clipType: ClipType,
     startTime: number,
     duration: number,
-    properties: Partial<Omit<TimelineClip, 'id' | 'type' | 'startTime' | 'endTime' | 'layerId'>> = {}
+    properties: Partial<Omit<TimelineClip, 'id' | 'type' | 'startTime' | 'endTime' | 'layer'>> = {}
   ): TimelineClip | null => {
     // Validaciones
     if (duration < MIN_CLIP_DURATION) {
@@ -173,9 +173,11 @@ export function useClipOperations({
     const newClip: TimelineClip = {
       id: generateClipId(),
       type: clipType,
-      startTime: snappedStartTime,
-      endTime: endTime,
-      layerId,
+      start: snappedStartTime,
+      duration: endTime - snappedStartTime,
+      startTime: snappedStartTime,  // Campo adicional sincronizado
+      endTime: endTime,             // Campo adicional sincronizado
+      layer: layerId,
       ...properties
     };
     
@@ -250,7 +252,9 @@ export function useClipOperations({
     const snappedStartTime = findSnapPosition(newStartTime);
     
     // Calcular nueva posición final
-    const duration = targetClip.endTime - targetClip.startTime;
+    const duration = targetClip.duration || 
+                    (targetClip.endTime && targetClip.startTime ? 
+                     targetClip.endTime - targetClip.startTime : 0);
     const newEndTime = snappedStartTime + duration;
     
     // Verificar si la nueva posición es válida
@@ -268,8 +272,10 @@ export function useClipOperations({
       if (clipIndex !== -1) {
         layerClips[clipIndex] = {
           ...layerClips[clipIndex],
-          startTime: snappedStartTime,
-          endTime: newEndTime
+          start: snappedStartTime,      // Campo primario
+          duration: duration,           // Campo primario
+          startTime: snappedStartTime,  // Campo secundario sincronizado
+          endTime: newEndTime           // Campo secundario sincronizado
         };
         
         newClipsByLayer[layerId!] = layerClips;
@@ -560,7 +566,7 @@ export function useClipOperations({
       duration,
       // Filtrar las propiedades específicas de TimelineClip
       Object.entries(targetClip)
-        .filter(([key]) => !['id', 'type', 'startTime', 'endTime', 'layerId'].includes(key))
+        .filter(([key]) => !['id', 'type', 'startTime', 'endTime', 'layer'].includes(key))
         .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {})
     );
   }, [clipsByLayer, addClip, onError]);
@@ -612,7 +618,16 @@ export function useClipOperations({
         
         // Añadir a la nueva capa
         const newLayerClips = [...(newClipsByLayer[newLayerId] || [])];
-        const movedClip = { ...targetClip!, layerId: newLayerId };
+        const movedClip = { 
+          ...targetClip!, 
+          layer: newLayerId,  // Usar layer en lugar de layerId
+          startTime: targetClip!.startTime, 
+          endTime: targetClip!.endTime,
+          start: targetClip!.start || targetClip!.startTime,
+          duration: targetClip!.duration || 
+                   (targetClip!.endTime && targetClip!.startTime ? 
+                   targetClip!.endTime - targetClip!.startTime : 0)
+        };
         newLayerClips.push(movedClip);
         newClipsByLayer[newLayerId] = newLayerClips;
       }
@@ -698,15 +713,16 @@ export function useClipOperations({
     const newClipsByLayer: { [layerId: number]: TimelineClip[] } = { ...clipsByLayer };
     
     importedClips.forEach(clip => {
-      if (!newClipsByLayer[clip.layerId]) {
-        newClipsByLayer[clip.layerId] = [];
+      const layerId = clip.layer; // Usar layer en lugar de layerId
+      if (!newClipsByLayer[layerId]) {
+        newClipsByLayer[layerId] = [];
       }
       
-      newClipsByLayer[clip.layerId].push({
+      newClipsByLayer[layerId].push({
         ...clip,
         // Asegurar que tenga las propiedades necesarias
-        startTime: clip.startTime || 0,
-        endTime: clip.endTime || 0
+        startTime: clip.startTime || clip.start,
+        endTime: clip.endTime || (clip.start + clip.duration)
       });
     });
     

@@ -70,20 +70,41 @@ export function ClipsLayer({
             }}
             onDoubleClick={() => onPreviewClip(clip)}
           >
-            {/* Miniatura o previsualización */}
-            {clip.type === "image" && clip.url && (
+            {/* Miniatura o previsualización para imágenes */}
+            {clip.type === "image" && (clip.url || clip.imageUrl) && (
               <div className="absolute left-0 top-0 h-full w-full opacity-30">
                 <img
-                  src={clip.url}
-                  alt={clip.name || "Clip"}
+                  src={clip.url || clip.imageUrl}
+                  alt={clip.title || clip.name || "Clip"}
                   className="h-full w-full object-cover"
                 />
               </div>
             )}
             
+            {/* Previsualización para videos */}
+            {clip.type === "video" && (clip.url || clip.videoUrl) && (
+              <div className="absolute left-0 top-0 h-full w-full opacity-30">
+                <video 
+                  src={clip.url || clip.videoUrl} 
+                  muted 
+                  playsInline 
+                  className="h-full w-full object-cover" 
+                />
+              </div>
+            )}
+            
+            {/* Previsualización para audio */}
+            {clip.type === "audio" && (clip.url || clip.audioUrl) && (
+              <div className="absolute left-0 top-0 h-full w-full flex items-center justify-center opacity-30">
+                <div className="w-6 h-6 rounded-full bg-blue-400 flex items-center justify-center">
+                  <span className="text-xs">♪</span>
+                </div>
+              </div>
+            )}
+            
             {/* Título del clip */}
             <div className="z-10 max-w-[calc(100%-20px)] truncate text-xs font-medium text-white">
-              {clip.name || `Clip ${clip.id}`}
+              {clip.title || clip.name || `Clip ${clip.id}`}
             </div>
             
             {/* Controles de redimensionado */}

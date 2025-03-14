@@ -33,15 +33,12 @@ export enum ClipOperation {
 }
 
 /**
- * Mensajes de error para diferentes operaciones
+ * Constantes para manejo de clips
  */
-export const ERROR_MESSAGES = {
-  CLIP_OVERLAP: 'No se permite solapamiento entre clips',
-  AI_PLACEHOLDER_DURATION: 'La duración máxima para placeholders de IA es',
-  CANNOT_DELETE_ISOLATED_LAYER: 'No se puede eliminar este clip de capa aislada',
-  CANNOT_MODIFY_ISOLATED_CLIP: 'No se pueden modificar clips en capas aisladas',
-  INVALID_OPERATION: 'Operación no válida'
-};
+export const CLIP_HANDLE_WIDTH = 8;
+export const MIN_CLIP_DURATION = 0.5; // Segundos
+export const MAX_CLIP_DURATION = 600; // 10 minutos
+export const SNAP_THRESHOLD = 0.5; // Segundos
 
 /**
  * Colores para los diferentes tipos de capas
@@ -109,9 +106,14 @@ export const SCROLL_POSITION_FORWARD = 1.0;
 export const SCROLL_POSITION_BACKWARD = 0.0;
 
 /**
- * Constantes para manejo de clips
+ * Mensajes de error para diferentes operaciones
  */
-export const CLIP_HANDLE_WIDTH = 8;
-export const MIN_CLIP_DURATION = 0.5; // Segundos
-export const MAX_CLIP_DURATION = 600; // 10 minutos
-export const SNAP_THRESHOLD = 0.5; // Segundos
+export const ERROR_MESSAGES = {
+  CLIP_OVERLAP: 'No se permite solapamiento entre clips',
+  AI_PLACEHOLDER_DURATION: 'La duración máxima para placeholders de IA es',
+  CANNOT_DELETE_ISOLATED_LAYER: 'No se puede eliminar este clip de capa aislada',
+  CANNOT_MODIFY_ISOLATED_CLIP: 'No se pueden modificar clips en capas aisladas',
+  INVALID_OPERATION: 'Operación no válida',
+  INVALID_DURATION: 'La duración del clip no es válida',
+  MAX_DURATION_EXCEEDED: `La duración máxima es ${MAX_CLIP_DURATION} segundos`
+};
