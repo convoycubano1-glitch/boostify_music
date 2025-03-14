@@ -256,8 +256,8 @@ const Router = () => {
     <>
       <Switch>
         {/* Rutas públicas - accesibles sin autenticación */}
-        {getRouteComponent("/", WrappedAuthPage, null)}
-        {getRouteComponent("/home", WrappedHomePage, null)}
+        {getRouteComponent("/", WrappedHomePage, null)}
+        {getRouteComponent("/auth", WrappedAuthPage, null)}
         {getRouteComponent("/terms", WrappedTermsPage, null)}
         {getRouteComponent("/privacy", WrappedPrivacyPage, null)}
         {getRouteComponent("/cookies", WrappedCookiesPage, null)}
