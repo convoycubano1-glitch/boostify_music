@@ -1,16 +1,22 @@
-<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M110 220C170.751 220 220 170.751 220 110C220 49.2487 170.751 0 110 0C49.2487 0 0 49.2487 0 110C0 170.751 49.2487 220 110 220Z" fill="url(#paint0_linear)"/>
-  <path d="M145 83C145 90.732 138.732 97 131 97C123.268 97 117 90.732 117 83C117 75.268 123.268 69 131 69C138.732 69 145 75.268 145 83Z" fill="white"/>
-  <path d="M75 83C75 90.732 68.732 97 61 97C53.268 97 47 90.732 47 83C47 75.268 53.268 69 61 69C68.732 69 75 75.268 75 83Z" fill="white"/>
-  <rect x="100" y="58" width="12" height="104" rx="6" fill="white"/>
-  <rect x="75" y="75" width="12" height="70" rx="6" fill="white"/>
-  <rect x="125" y="75" width="12" height="70" rx="6" fill="white"/>
-  <rect x="50" y="95" width="12" height="30" rx="6" fill="white"/>
-  <rect x="150" y="95" width="12" height="30" rx="6" fill="white"/>
-  <defs>
-    <linearGradient id="paint0_linear" x1="0" y1="0" x2="220" y2="220" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FF7A00"/>
-      <stop offset="1" stop-color="#FF3D00"/>
-    </linearGradient>
-  </defs>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="800px" viewBox="0 0 800 800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g stroke="none" fill="none" fill-rule="evenodd">
+    <!-- Base Cloud Shape -->
+    <path d="M650,350 C650,244.77152 563.22848,160 460,160 C376.348,160 305.589,213.526 281.407,287.114 C267.84,281.959 253.174,279 238,279 C171.726,279 118,332.726 118,399 C118,403.248 118.227,407.448 118.672,411.585 C70.575,430.49 36,476.38 36,530 C36,600.692 93.308,658 164,658 L636,658 C706.692,658 764,600.692 764,530 C764,462.581 712.91,407.497 646.576,401.26 C648.837,384.638 650,367.489 650,350 Z" fill="#FF6B00" fill-rule="nonzero"></path>
+    
+    <!-- Audio Wave 1 (Smallest) -->
+    <path d="M330,450 L330,550" stroke="#FFFFFF" stroke-width="25" stroke-linecap="round"></path>
+    
+    <!-- Audio Wave 2 (Medium) -->
+    <path d="M400,400 L400,600" stroke="#FFFFFF" stroke-width="25" stroke-linecap="round"></path>
+    
+    <!-- Audio Wave 3 (Tallest) -->
+    <path d="M470,370 L470,630" stroke="#FFFFFF" stroke-width="25" stroke-linecap="round"></path>
+    
+    <!-- Audio Wave 4 (Medium) -->
+    <path d="M540,400 L540,600" stroke="#FFFFFF" stroke-width="25" stroke-linecap="round"></path>
+    
+    <!-- Audio Wave 5 (Smallest) -->
+    <path d="M610,450 L610,550" stroke="#FFFFFF" stroke-width="25" stroke-linecap="round"></path>
+  </g>
 </svg>
