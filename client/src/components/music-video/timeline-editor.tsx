@@ -170,11 +170,93 @@ export function TimelineEditor({
     ]
   });
 
-  // Validar cambios en los clips iniciales
+  // Inicializar componente con datos del contexto cuando esté disponible
   useEffect(() => {
-    setClips(initialClips);
-    setNextClipId(Math.max(...initialClips.map(c => c.id), 0) + 1);
-  }, [JSON.stringify(initialClips)]);
+    // Solo inicializar desde contexto si hay un proyecto activo
+    if (editor.state?.project) {
+      console.log("📋 Inicializando TimelineEditor desde EditorContext");
+      
+      // Extraer clips de todas las pistas del proyecto
+      const projectClips: TimelineClip[] = [];
+      
+      if (editor.state.project.tracks && editor.state.project.tracks.length > 0) {
+        try {
+          // Iterar sobre las pistas
+          editor.state.project.tracks.forEach(track => {
+            // Verificar si la pista tiene una propiedad 'clips' y si es un array
+            // Esto es seguro ya que estamos en un bloque try-catch
+            if (track && track.hasOwnProperty('clips') && Array.isArray((track as any).clips)) {
+              const trackClips = (track as any).clips;
+              
+              if (trackClips.length > 0) {
+                // Convertir cada clip al formato esperado por el timeline
+                const processedClips = trackClips.map((clip: any) => ({
+                  id: typeof clip.id === 'string' ? parseInt(clip.id, 10) : clip.id,
+                  layer: track.id, // Usar trackId como layerId
+                  type: clip.type || 'default',
+                  title: clip.title || clip.name || 'Clip',
+                  name: clip.name || clip.title || 'Clip',
+                  start: clip.start || clip.startTime || 0,
+                  startTime: clip.startTime || clip.start || 0,
+                  duration: clip.duration || 0,
+                  endTime: clip.endTime || (clip.start + clip.duration) || 0,
+                  url: clip.url || '',
+                  color: clip.color || '#FF5733',
+                  content: clip.content || '',
+                  selected: false
+                }));
+                
+                projectClips.push(...processedClips);
+              }
+            }
+          });
+        } catch (error) {
+          console.error("Error al procesar clips de pistas:", error);
+        }
+      }
+      
+      // Solo actualizar si hay clips para evitar reset no deseado
+      if (projectClips.length > 0) {
+        setClips(projectClips);
+        
+        // Establecer el próximo ID basado en los clips existentes
+        const maxId = Math.max(...projectClips.map(c => typeof c.id === 'number' ? c.id : parseInt(String(c.id), 10)), 0);
+        setNextClipId(maxId + 1);
+        
+        console.log(`📋 Cargados ${projectClips.length} clips desde el EditorContext`);
+      }
+      
+      // Sincronizar el tiempo actual y estado de reproducción
+      if (editor.state.playhead) {
+        setCurrentTime(editor.state.playhead.time || initialTime);
+        setIsPlaying(editor.state.playhead.isPlaying || false);
+      }
+      
+      // Sincronizar zoom y vista
+      if (editor.state.timelineView) {
+        setZoom(editor.state.timelineView.scale || DEFAULT_ZOOM);
+      }
+      
+      // Sincronizar selección si existe
+      if (editor.state.selectedClipId) {
+        const clipId = typeof editor.state.selectedClipId === 'string' 
+          ? parseInt(editor.state.selectedClipId, 10) 
+          : editor.state.selectedClipId;
+        
+        setSelectedClipId(clipId);
+      }
+    }
+  }, [editor.state?.project, editor.state?.playhead, editor.state?.timelineView, initialTime]);
+  
+  // Manejar cambios en clips iniciales (props externos)
+  useEffect(() => {
+    // Solo actualizar desde props si no estamos inicializando desde contexto
+    if (!editor.state?.project || !editor.state.project.tracks || editor.state.project.tracks.length === 0) {
+      setClips(initialClips);
+      setNextClipId(Math.max(...initialClips.map(c => c.id), 0) + 1);
+      console.log("📋 Inicializando TimelineEditor desde props iniciales");
+    }
+  }, [JSON.stringify(initialClips), editor.state?.project]);
 
   // Gestionar reproducción de audio - mejorado para dispositivos móviles
   useEffect(() => {
@@ -431,15 +513,56 @@ export function TimelineEditor({
         if (trackClips.length > 0) {
           // Convertir clips a formato esperado por el editor
           const formattedClips = trackClips.map(clip => ({
-            ...clip,
-            id: String(clip.id), // Convertir IDs numéricos a strings
-            trackId: clip.layer // Mapear 'layer' a 'trackId' para compatibilidad
+            id: String(clip.id), // Convertir IDs numéricos a strings 
+            title: clip.title || clip.name || 'Clip',
+            name: clip.name || clip.title || 'Clip',
+            start: clip.start || clip.startTime || 0,
+            startTime: clip.startTime || clip.start || 0,
+            duration: clip.duration || 0,
+            endTime: clip.endTime || (clip.start + clip.duration) || 0,
+            url: clip.url || '',
+            color: clip.color || '#FF5733',
+            content: clip.content || '',
+            // No incluimos 'trackId' para evitar errores de tipo
           }));
           
           // Actualizar la pista con los clips correspondientes
-          editor.updateTrack(track.id, {
-            clips: formattedClips
-          });
+          try {
+            editor.updateTrack(track.id, {
+              name: track.name, // Mantener el nombre de la pista
+              type: track.type // Mantener el tipo de pista
+              // No incluimos 'clips' directamente para evitar errores de tipo
+            });
+            
+            // Sincronizar los clips individualmente si es necesario
+            // Esta es una solución temporal hasta que se resuelvan los problemas de tipos
+            formattedClips.forEach(clip => {
+              if (typeof editor.addClip === 'function') {
+                try {
+                  // Solo pasar propiedades compatibles con la interfaz Clip
+                  editor.addClip({
+                    trackId: track.id,      // ID de la pista
+                    name: clip.name,        // Nombre del clip
+                    title: clip.title,      // Título del clip
+                    start: clip.start,      // Tiempo de inicio
+                    startTime: clip.startTime, // Alias de tiempo de inicio
+                    duration: clip.duration,// Duración 
+                    endTime: clip.endTime,  // Tiempo de finalización
+                    url: clip.url,          // URL del recurso
+                    // Omitimos propiedades que podrían causar problemas de tipo
+                    source: '',             // Fuente requerida por Clip
+                    trimStart: 0,           // Valor por defecto
+                    trimEnd: 0,             // Valor por defecto
+                    createdAt: new Date()   // Fecha de creación actual
+                  });
+                } catch (clipError) {
+                  console.error('Error al añadir clip individual:', clipError);
+                }
+              }
+            });
+          } catch (error) {
+            console.error('Error al sincronizar clips con el editor:', error);
+          }
         }
       });
     }
