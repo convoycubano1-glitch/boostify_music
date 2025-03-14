@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../ui/textarea";
 import { TimelineEditor } from "./TimelineEditor";
 import type { TimelineClip } from "./TimelineEditor";
+import { TimelineClipUnified, ensureCompatibleClip } from "../timeline/TimelineClipUnified";
 import { Slider } from "../ui/slider";
 import { Card } from "../ui/card";
 import Editor from "@monaco-editor/react";
@@ -1305,18 +1306,20 @@ ${transcription}`;
     console.log("🎬 Generando clips para timeline editor, items:", timelineItems.length);
     
     // Asegurar que siempre hay un clip de audio en la capa 0 si existe audioUrl
-    const audioClips = audioUrl ? [{
-      id: 9999, // ID especial para audio principal
-      start: 0,
-      duration: estimatedDuration, // Usamos la duración estimada
-      type: 'audio' as const,
-      layer: 0, // Capa de audio (0)
-      title: 'Audio Principal',
-      description: 'Pista de audio importada',
-      audioUrl: audioUrl,
-      visible: true,
-      locked: false
-    }] : [];
+    const audioClips = audioUrl ? [
+      ensureCompatibleClip({
+        id: 9999, // ID especial para audio principal
+        start: 0,
+        duration: estimatedDuration, // Usamos la duración estimada
+        type: 'audio' as const,
+        layer: 0, // Capa de audio (0)
+        title: 'Audio Principal',
+        description: 'Pista de audio importada',
+        audioUrl: audioUrl,
+        visible: true,
+        locked: false
+      })
+    ] : [];
     
     console.log("🔊 Audio importado:", audioUrl ? "SI" : "NO");
     
@@ -1357,7 +1360,8 @@ ${transcription}`;
       
       console.log(`📍 Clip ${item.id} - Tipo: ${clipType}, Capa: ${clipLayer}, URL: ${url ? "SI" : "NO"}`);
       
-      return {
+      // Crear un objeto base con todas las propiedades necesarias
+      const clipBase = {
         id: item.id,
         start: (item.start_time - timelineItems[0]?.start_time || 0) / 1000,
         duration: item.duration / 1000,
@@ -1388,6 +1392,9 @@ ${transcription}`;
           lipsync: item.metadata?.lipsync
         }
       };
+      
+      // Usar ensureCompatibleClip para garantizar compatibilidad con la interfaz unificada
+      return ensureCompatibleClip(clipBase);
     });
     
     // Combinar clips de audio con clips visuales
@@ -1489,7 +1496,8 @@ ${transcription}`;
     const relativeStartInClip = splitTime - ((clipToSplit.start_time - timelineItems[0].start_time) / 1000);
     
     // Nuevo clip (segunda parte)
-    const newClip: TimelineItem = {
+    // Creamos primero un objeto base TimelineItem
+    const newClipBase: TimelineItem = {
       ...clipToSplit,
       id: newClipId,
       start_time: absoluteSplitTime,
@@ -1500,15 +1508,20 @@ ${transcription}`;
       title: `${clipToSplit.title} (parte 2)`,
     };
     
+    // Aseguramos que el nuevo clip es compatible con TimelineClipUnified
+    const newClip = ensureCompatibleClip(newClipBase);
+    
     // Actualizar la lista de clips
     const updatedItems = timelineItems.map(item => {
       if (item.id === clipId) {
         // Actualizar el clip original (primera parte)
-        return {
+        const updatedItemBase = {
           ...item,
           duration: relativeStartInClip,
           end_time: absoluteSplitTime
         };
+        // Asegurar que el clip original modificado también sea compatible con TimelineClipUnified
+        return ensureCompatibleClip(updatedItemBase);
       }
       return item;
     });
@@ -1856,7 +1869,8 @@ ${transcription}`;
             else if (energy > averageEnergy * 1.5) mood = 'intense';
             else if (energy < averageEnergy * 0.7) mood = 'calm';
 
-            segments.push({
+            // Creamos segmento base
+            const segmentBase = {
               id: segments.length + 1,
               group: 1,
               title: `Escena ${segments.length + 1}`,
@@ -1869,7 +1883,7 @@ ${transcription}`;
               imagePrompt: shotType.prompt,
               // Campos adicionales para compatibilidad con TimelineClip
               start: lastBeatTime,
-              type: 'image',
+              type: 'image' as const, // Usamos type assertion para asegurar compatibilidad
               mood: mood,
               // Datos para análisis
               energy: energy,
@@ -1879,7 +1893,10 @@ ${transcription}`;
               endTimecode: secondsToTimecode(lastBeatTime + segmentDuration),
               normalizedEnergy: normalizedEnergy,
               isDownbeat: isDownbeat
-            });
+            };
+            
+            // Usamos ensureCompatibleClip para garantizar compatibilidad con TimelineClipUnified
+            segments.push(ensureCompatibleClip(segmentBase));
 
             lastBeatTime = currentTime;
           }
@@ -1891,7 +1908,9 @@ ${transcription}`;
         const lastSegment = segments[segments.length - 1];
         if (lastSegment.end_time / 1000 < totalDuration) {
           const finalShotType = weightedSelection(shotTypes);
-          segments.push({
+          
+          // Crear segmento final usando la misma estructura unificada
+          const finalSegmentBase = {
             id: segments.length + 1,
             group: 1,
             title: `Escena Final`,
@@ -1904,9 +1923,12 @@ ${transcription}`;
             imagePrompt: finalShotType.prompt,
             // Campos adicionales para compatibilidad con TimelineClip
             start: lastSegment.end_time / 1000,
-            type: 'image',
+            type: 'image' as const,
             mood: 'conclusive'
-          });
+          };
+          
+          // Usar ensureCompatibleClip para garantizar compatibilidad
+          segments.push(ensureCompatibleClip(finalSegmentBase));
         }
       }
 
