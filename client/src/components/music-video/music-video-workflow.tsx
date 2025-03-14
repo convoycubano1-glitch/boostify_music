@@ -275,50 +275,59 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       return [];
     }
     
-    // Crear primero el clip para el audio - Asegurar que esté presente desde el principio
-    const audioClip: TimelineClip = {
+    // Crear primero el clip para el audio utilizando nuestra función ensureCompatibleClip
+    const audioClipBase = {
       id: 1, // ID 1 para el audio principal, siempre primero
       start: 0,
-      startTime: 0, // Asegurar que se utilizan ambas propiedades para compatibilidad
       duration: audioDuration,
-      endTime: audioDuration, // Añadir endTime explícitamente
-      type: 'audio',
+      type: 'audio' as const,
       layer: 0, // Capa de audio (primera capa, siempre visible)
+      title: audioFile.name.replace(/\.[^/.]+$/, ""),
       name: audioFile.name.replace(/\.[^/.]+$/, ""),
       audioUrl: URL.createObjectURL(audioFile),
+      visible: true
     };
+    
+    // Asegurar que el clip es compatible con nuestra interfaz unificada
+    const audioClip = ensureCompatibleClip(audioClipBase);
     
     // Determinar la duración de cada segmento basada en el audio
     const segmentDuration = audioDuration / Math.max(8, mediaFiles.length);
     let nextId = 2; // Empezamos desde 2 porque el audio es el ID 1
     
-    // Crear clips para los archivos principales
-    const mainClips: TimelineClip[] = mediaFiles.map((file, index) => {
+    // Crear clips para los archivos principales utilizando la interfaz unificada
+    const mainClips = mediaFiles.map((file, index) => {
       const start = Math.floor(index * segmentDuration);
       const duration = Math.floor(segmentDuration);
       const isVideo = file.type.includes('video');
+      const fileUrl = URL.createObjectURL(file);
+      const name = extractLabel(file.name);
       
-      return {
+      // Crear un clip base con los campos necesarios
+      const clipBase = {
         id: nextId++,
         start,
-        startTime: start, // Añadir startTime explícitamente
         duration,
-        endTime: start + duration, // Añadir endTime explícitamente 
-        type: isVideo ? 'video' : 'image',
+        type: isVideo ? 'video' as const : 'image' as const,
         layer: 1, // Capa de video/imagen
-        name: extractLabel(file.name),
-        thumbnail: URL.createObjectURL(file),
-        imageUrl: !isVideo ? URL.createObjectURL(file) : undefined,
-        videoUrl: isVideo ? URL.createObjectURL(file) : undefined,
+        name,
+        title: name, // Importante: añadir título para la interfaz unificada
+        thumbnail: fileUrl,
+        imageUrl: !isVideo ? fileUrl : undefined,
+        videoUrl: isVideo ? fileUrl : undefined,
+        visible: true,
         metadata: {
           section: index % 2 === 0 ? 'Verso' : 'Coro',
           sourceIndex: index
         }
       };
+      
+      // Asegurar compatibilidad con la interfaz unificada
+      return ensureCompatibleClip(clipBase);
     });
     
     // Crear clips para B-roll si existen, garantizando que se coloquen correctamente en la línea de tiempo
-    const bRollClips: TimelineClip[] = [];
+    const bRollClips = [];
     if (bRollFiles.length > 0) {
       const interval = Math.floor(audioDuration / (bRollFiles.length + 1));
       
@@ -326,23 +335,29 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
         const start = (index + 1) * interval;
         const duration = 5; // Duración fija para B-roll
         const isVideo = file.type.includes('video');
+        const fileUrl = URL.createObjectURL(file);
+        const name = `B-Roll ${index + 1}`;
         
-        bRollClips.push({
+        // Crear clip base con los campos necesarios
+        const clipBase = {
           id: nextId++,
           start,
-          startTime: start, // Añadir startTime explícitamente
           duration,
-          endTime: start + duration, // Añadir endTime explícitamente
-          type: isVideo ? 'video' : 'image',
+          type: isVideo ? 'video' as const : 'image' as const,
           layer: 1, // Capa de video/imagen
-          name: `B-Roll ${index + 1}`,
-          thumbnail: URL.createObjectURL(file),
-          imageUrl: !isVideo ? URL.createObjectURL(file) : undefined,
-          videoUrl: isVideo ? URL.createObjectURL(file) : undefined,
+          name,
+          title: name, // Importante: añadir título para la interfaz unificada
+          thumbnail: fileUrl,
+          imageUrl: !isVideo ? fileUrl : undefined,
+          videoUrl: isVideo ? fileUrl : undefined,
+          visible: true,
           metadata: {
             section: 'B-Roll'
           }
-        });
+        };
+        
+        // Asegurar compatibilidad con la interfaz unificada
+        bRollClips.push(ensureCompatibleClip(clipBase));
       });
     }
     
@@ -425,28 +440,28 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
       // Crear una URL para el archivo de audio
       const audioUrl = URL.createObjectURL(audioFile);
       
-      // Crear clip de audio para el timeline con campos obligatorios y compatibles
-      const audioClip: TimelineClip = {
+      // Crear clip de audio para el timeline y asegurar compatibilidad con nuestra interfaz unificada
+      const audioClipBase = {
         id: 1,
         title: audioFile.name || 'Audio Principal', 
-        name: audioFile.name || 'Audio Principal', // Añadimos también el campo name para compatibilidad
-        type: 'audio',
-        layer: 0, // Capa de audio
-        start: 0, 
-        startTime: 0, // Añadimos startTime por compatibilidad
+        name: audioFile.name || 'Audio Principal',
+        type: 'audio' as const,
+        layer: 0,
+        start: 0,
         duration: audioDuration,
-        endTime: audioDuration, // Calculamos endTime para compatibilidad
-        audioUrl: audioUrl,
-        url: audioUrl, // URL genérico para compatibilidad
-        source: audioUrl, // Campo source para compatibilidad con interfaz EditorContext
-        waveform: [], // Esto se generaría con un análisis real de la forma de onda
+        audioUrl,
+        url: audioUrl,
+        waveform: [],
         visible: true,
         locked: false,
-        trackId: 'audio-track-1', // ID de pista para compatibilidad con interfaz EditorContext
+        trackId: 'audio-track-1',
         trimStart: 0,
         trimEnd: audioDuration,
         createdAt: new Date()
       };
+      
+      // Utilizar ensureCompatibleClip para garantizar compatibilidad completa con TimelineClipUnified
+      const audioClip = ensureCompatibleClip(audioClipBase);
       
       // Guardar clips en el estado local
       setTimelineData(prevClips => [audioClip]);

@@ -1,136 +1,182 @@
 /**
- * Interfaz TimelineClip unificada para garantizar compatibilidad entre diferentes
- * componentes del sistema de edición de video
- */
-
-import { LayerType } from '../../constants/timeline-constants';
-
-/**
- * TimelineClip - Interfaz unificada para clips en la línea de tiempo
- * Compatible tanto con useTimelineLayers como con el EditorContext
+ * Interfaz unificada para clips de línea de tiempo
+ * 
+ * Esta interfaz proporciona una estructura común para todos los tipos de clips
+ * en el editor de línea de tiempo, garantizando compatibilidad entre componentes.
  */
 export interface TimelineClipUnified {
-  // Identificadores (soporta string o number para compatibilidad)
-  id: number | string;
+  // Propiedades básicas de identificación y tiempo
+  id: number;
+  title: string;
+  name?: string; // Para compatibilidad con implementaciones anteriores
+  description?: string;
   
-  // Datos de track
-  trackId?: string;              // ID de pista (para EditorContext)
-  layer: number;                 // Capa/layer numérica (0=audio, 1=video/imagen, etc)
+  // Propiedades de posición y duración
+  start: number;
+  startTime?: number; // Para compatibilidad con implementaciones anteriores
+  duration: number;
+  endTime?: number; // Para compatibilidad con implementaciones anteriores
   
-  // Tiempo y duración
-  start?: number;                // Tiempo de inicio (alias para compatibilidad) 
-  startTime: number;             // Tiempo de inicio estandarizado
-  duration: number;              // Duración del clip
-  endTime?: number;              // Tiempo de finalización (calculado)
-  trimStart?: number;            // Punto de inicio del trim
-  trimEnd?: number;              // Punto de finalización del trim
+  // Tipo y capa
+  type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
+  layer: number; // 0=audio, 1=video/imagen, 2=texto, 3=efectos
   
-  // Información básica
-  title?: string;                // Título para visualización
-  name?: string;                 // Nombre (alias para compatibilidad)
-  description?: string;          // Descripción opcional
-  type: string | LayerType;      // Tipo de clip (admite string o enum)
+  // Propiedades visuales
+  thumbnail?: string;
+  waveform?: number[];
+  imagePrompt?: string;
+  shotType?: string;
   
-  // Estado y control
-  visible?: boolean;             // Si el clip es visible
-  locked?: boolean;              // Si el clip está bloqueado para edición
+  // Propiedades de visibilidad y bloqueo
+  visible?: boolean;
+  locked?: boolean;
   
   // URLs de recursos
-  url?: string;                  // URL genérica del recurso
-  source?: string;               // URL del recurso (alias para compatibilidad)
-  audioUrl?: string;             // URL específica para audio
-  videoUrl?: string;             // URL específica para video
-  imageUrl?: string;             // URL específica para imagen
-  movementUrl?: string;          // URL para datos de movimiento
+  url?: string;         // URL genérica para compatibilidad
+  source?: string;      // Source para compatibilidad con editor-context
+  imageUrl?: string;    // URL específica para imágenes
+  videoUrl?: string;    // URL específica para videos
+  movementUrl?: string; // URL específica para movimientos
+  audioUrl?: string;    // URL específica para audio
   
-  // Visualización
-  thumbnail?: string;            // URL de miniatura
-  waveform?: number[];           // Datos de forma de onda para audio
-  shotType?: string;             // Tipo de plano (closeup, wide, etc)
-  
-  // Propiedades de texto
-  textContent?: string;          // Contenido para clips de texto
-  textStyle?: string;            // Estilo del texto
-  textColor?: string;            // Color del texto
-  
-  // Propiedades de efecto
-  effectType?: string;           // Tipo de efecto
-  effectIntensity?: number;      // Intensidad del efecto
+  // Propiedades de sincronización labial migrando a metadata
+  // Estas propiedades están siendo deprecadas en favor de metadata.lipsync
+  lipsyncApplied?: boolean;
+  lipsyncVideoUrl?: string; 
+  lipsyncProgress?: number;
   
   // Propiedades de transición
-  transitionType?: string;       // Tipo de transición
-  transitionDuration?: number;   // Duración de la transición
+  transitionType?: 'crossfade' | 'wipe' | 'fade' | 'slide' | 'zoom';
+  transitionDuration?: number;
+  
+  // Propiedades de efecto
+  effectType?: 'blur' | 'glow' | 'sepia' | 'grayscale' | 'saturation' | 'custom';
+  effectIntensity?: number;
+  
+  // Propiedades de texto
+  textContent?: string;
+  textStyle?: 'normal' | 'bold' | 'italic' | 'title' | 'subtitle' | 'caption';
+  textColor?: string;
   
   // Metadatos adicionales
   metadata?: {
-    section?: string;            // Sección musical (coro, verso, etc)
-    movementApplied?: boolean;   // Si tiene aplicado movimiento de cámara
-    movementPattern?: string;    // Patrón de movimiento
-    movementIntensity?: number;  // Intensidad del movimiento
-    lipsync?: {                  // Datos de sincronización labial
+    section?: string;    // Sección musical (coro, verso, etc.)
+    sourceIndex?: number; // Índice en el guion original
+    
+    // Propiedades de movimiento
+    movementApplied?: boolean;
+    movementPattern?: string;
+    movementIntensity?: number;
+    
+    // Propiedades de intercambio de caras
+    faceSwapApplied?: boolean;
+    
+    // Integración de músico
+    musicianIntegrated?: boolean;
+    
+    // Propiedades de sincronización de labios en metadata (recomendado)
+    lipsync?: {
       applied: boolean;
       videoUrl?: string;
       progress?: number;
+      timestamp?: string;
     };
-    [key: string]: any;          // Propiedades adicionales
   };
   
-  // Propiedades adicionales para compatibilidad
-  imagePrompt?: string;          // Prompt para generación de imagen
-  createdAt?: Date;              // Fecha de creación
+  // Propiedades para compatibilidad con interfaces de track
+  trackId?: string;
+  trimStart?: number;
+  trimEnd?: number;
+  
+  // Información de tiempo
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 /**
- * Función para convertir clips entre formatos
- * Asegura que un clip tenga todas las propiedades mínimas necesarias
+ * Asegura que un objeto clip sea compatible con la interfaz TimelineClipUnified
+ * Esta función toma un objeto y garantiza que tenga todas las propiedades
+ * requeridas por TimelineClipUnified, agregando propiedades faltantes con valores por defecto.
+ * 
+ * @param clip Objeto clip a validar y normalizar
+ * @returns Objeto clip compatible con TimelineClipUnified
  */
 export function ensureCompatibleClip(clip: any): TimelineClipUnified {
-  // Asegurarnos que tenga los campos básicos
-  const compatibleClip: TimelineClipUnified = {
-    id: clip.id || Math.floor(Math.random() * 10000),
-    layer: typeof clip.layer === 'number' ? clip.layer : 
-           (clip.trackId === 'audio-track-1' ? 0 : 1),
+  if (!clip) {
+    throw new Error('El clip proporcionado es nulo o undefined');
+  }
+
+  // Asegurar propiedades básicas
+  const id = clip.id !== undefined ? clip.id : Math.floor(Math.random() * 10000);
+  
+  // Asegurar propiedades básicas para el manejo en la línea de tiempo
+  // Priorizar valores existentes para garantizar compatibilidad
+  const start = clip.start !== undefined ? clip.start : 
+               clip.startTime !== undefined ? clip.startTime : 0;
+  
+  const duration = clip.duration !== undefined ? clip.duration : 
+                  (clip.endTime !== undefined && clip.start !== undefined) ?
+                  clip.endTime - clip.start : 5; // Valor por defecto
+  
+  // Asegurar propiedades adicionales que se requieren
+  const result: TimelineClipUnified = {
+    id,
+    title: clip.title || clip.name || `Clip ${id}`,
+    name: clip.name || clip.title || `Clip ${id}`, // Compatibilidad para ambos campos
+    description: clip.description || '',
+    
+    // Propiedades de tiempo con valores normalizados
+    start,
+    startTime: start, // Compatibilidad con interfaz anterior
+    duration,
+    endTime: start + duration, // Compatibilidad con interfaz anterior
+    
+    // Tipo y capa
     type: clip.type || 'video',
-    startTime: clip.startTime !== undefined ? clip.startTime : 
-               (clip.start !== undefined ? clip.start : 0),
-    duration: clip.duration || 5,
-    title: clip.title || clip.name || 'Clip',
-    name: clip.name || clip.title || 'Clip',
+    layer: typeof clip.layer === 'number' ? clip.layer : 1,
+    
+    // Visibilidad
     visible: clip.visible !== undefined ? clip.visible : true,
-    locked: clip.locked || false,
+    locked: clip.locked !== undefined ? clip.locked : false,
+    
+    // URLs y recursos
+    url: clip.url || clip.imageUrl || clip.videoUrl || clip.audioUrl || undefined,
+    source: clip.source || clip.url || clip.imageUrl || clip.videoUrl || clip.audioUrl || undefined,
+    
+    // Copiar propiedades específicas
+    ...clip
   };
   
-  // Calcular endTime si no existe
-  compatibleClip.endTime = clip.endTime || (compatibleClip.startTime + compatibleClip.duration);
-  
-  // Asegurar que start también esté definido para compatibilidad
-  compatibleClip.start = compatibleClip.startTime;
-  
-  // Copiar URL del recurso con compatibilidad
-  if (clip.url) compatibleClip.url = clip.url;
-  if (clip.source) compatibleClip.source = clip.source;
-  
-  // URLs específicas por tipo
-  if (clip.audioUrl) compatibleClip.audioUrl = clip.audioUrl;
-  if (clip.videoUrl) compatibleClip.videoUrl = clip.videoUrl;
-  if (clip.imageUrl) compatibleClip.imageUrl = clip.imageUrl;
-  
-  // Si tenemos alguna URL pero no la genérica, usamos la primera disponible
-  if (!compatibleClip.url && !compatibleClip.source) {
-    compatibleClip.url = clip.audioUrl || clip.videoUrl || clip.imageUrl || '';
-    compatibleClip.source = compatibleClip.url;
+  // Asegurar que metadata exista
+  if (!result.metadata) {
+    result.metadata = {};
   }
   
-  // Copia el resto de propiedades si existen
-  if (clip.trackId) compatibleClip.trackId = clip.trackId;
-  if (clip.thumbnail) compatibleClip.thumbnail = clip.thumbnail;
-  if (clip.waveform) compatibleClip.waveform = clip.waveform;
-  if (clip.textContent) compatibleClip.textContent = clip.textContent;
-  if (clip.metadata) compatibleClip.metadata = clip.metadata;
-  if (clip.trimStart !== undefined) compatibleClip.trimStart = clip.trimStart;
-  if (clip.trimEnd !== undefined) compatibleClip.trimEnd = clip.trimEnd;
-  if (clip.shotType) compatibleClip.shotType = clip.shotType;
-  if (clip.createdAt) compatibleClip.createdAt = clip.createdAt;
+  // Migrar propiedades de lipsync a metadata si existen en el clip original
+  if (clip.lipsyncApplied && !result.metadata.lipsync) {
+    result.metadata.lipsync = {
+      applied: clip.lipsyncApplied || false,
+      videoUrl: clip.lipsyncVideoUrl,
+      progress: clip.lipsyncProgress
+    };
+  }
   
-  return compatibleClip;
+  // Log para depuración de desarrollo
+  console.log('Clip normalizado:', result);
+  
+  return result;
+}
+
+/**
+ * Convierte un array de clips a un formato compatible con TimelineClipUnified
+ * 
+ * @param clips Array de clips a normalizar
+ * @returns Array de clips compatibles con TimelineClipUnified
+ */
+export function normalizeClips(clips: any[]): TimelineClipUnified[] {
+  if (!clips || !Array.isArray(clips)) {
+    return [];
+  }
+  
+  return clips.map(clip => ensureCompatibleClip(clip));
 }
