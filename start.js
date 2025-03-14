@@ -1,10 +1,13 @@
 /**
  * Script for starting both the server and client
  * Includes improved error handling and process management
+ * Updated to work with the current project structure
  */
 
 import { spawn } from 'child_process';
 import process from 'node:process';
+import fs from 'fs';
+import path from 'path';
 
 // Colors for console output
 const colors = {
@@ -86,25 +89,55 @@ function startProcess(command, args, prefix, color) {
   return childProcess;
 }
 
-// Try to start the server first, then start the client
-console.log(`${colors.blue}Starting application in development mode...${colors.reset}`);
-
-// Start server using tsx for TypeScript execution
-const server = startProcess('npx', ['tsx', 'server/index.ts'], 'SERVER', colors.cyan);
-
-// Wait a bit for server to initialize before starting client
-setTimeout(() => {
-  // Start client using vite
-  const client = startProcess('cd', ['client', '&&', 'npx', 'vite'], 'CLIENT', colors.green);
+// Detect if server/index.ts exists or find the proper server entry point
+function findServerEntryPoint() {
+  const possibleServerFiles = [
+    'server/index.ts',
+    'server/index.js',
+    'server.js',
+    'server.ts'
+  ];
   
-  // Handle clean termination
-  process.on('SIGINT', () => {
-    console.log('\nStopping processes...');
-    server.kill();
-    client.kill();
-    process.exit(0);
-  });
-}, 2000);
+  for (const file of possibleServerFiles) {
+    if (fs.existsSync(path.resolve(process.cwd(), file))) {
+      return file;
+    }
+  }
+  
+  // Default if none found
+  return 'server/index.ts';
+}
+
+// Start the application
+function startApplication() {
+  console.log(`${colors.blue}Starting application in development mode...${colors.reset}`);
+  
+  const serverFile = findServerEntryPoint();
+  console.log(`${colors.cyan}Using server entry point: ${serverFile}${colors.reset}`);
+  
+  // Start server using tsx or node depending on the file extension
+  const isTypeScript = serverFile.endsWith('.ts');
+  const serverCommand = isTypeScript ? 'npx tsx' : 'node';
+  const server = startProcess(serverCommand, [serverFile], 'SERVER', colors.cyan);
+  
+  // Wait a bit for server to initialize before starting client
+  setTimeout(() => {
+    // Check if client directory exists, otherwise assume Vite is configured to serve from root
+    const hasClientDir = fs.existsSync(path.resolve(process.cwd(), 'client'));
+    const clientCmd = hasClientDir ? 'cd client && npx vite' : 'npx vite';
+    
+    // Start client using vite
+    const client = startProcess(clientCmd, [], 'CLIENT', colors.green);
+    
+    // Handle clean termination
+    process.on('SIGINT', () => {
+      console.log('\nStopping processes...');
+      server.kill();
+      client.kill();
+      process.exit(0);
+    });
+  }, 2000);
+}
 
 // Handle any uncaught exceptions
 process.on('uncaughtException', (err) => {
@@ -114,3 +147,6 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
   console.log(`${colors.red}Unhandled promise rejection:${colors.reset}`, reason);
 });
+
+// Start the application
+startApplication();
