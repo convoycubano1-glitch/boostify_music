@@ -45,65 +45,15 @@ import {
 } from '../../constants/timeline-constants';
 
 /**
- * Interfaz para clips de línea de tiempo con soporte para múltiples capas
- * Estructura profesional inspirada en editores como CapCut y Premiere
+ * Importamos la interfaz unificada TimelineClipUnified en lugar de definir 
+ * otra interfaz similar. Esto garantiza compatibilidad entre componentes.
  */
-export interface TimelineClip {
-  id: number;
-  start: number;
-  duration: number;
-  // Tipo de clip con soporte para múltiples formatos
-  type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
-  // Layer al que pertenece: 0=audio, 1=video/imagen, 2=texto, 3=efectos
-  layer: number;
-  // Propiedades visuales
-  thumbnail?: string;
-  title: string;
-  description?: string;
-  waveform?: number[];
-  imagePrompt?: string;
-  shotType?: string;
-  // Propiedades de visibilidad y bloqueo
-  visible?: boolean;
-  locked?: boolean;
-  // URLs de recursos
-  imageUrl?: string;
-  videoUrl?: string;
-  movementUrl?: string;
-  audioUrl?: string;
-  // DEPRECADO: Estas propiedades están siendo migradas a metadata.lipsync
-  // Mantener por retrocompatibilidad, pero usar metadata.lipsync en su lugar
-  lipsyncApplied?: boolean; 
-  lipsyncVideoUrl?: string;
-  lipsyncProgress?: number;
-  // Propiedades de transición
-  transitionType?: 'crossfade' | 'wipe' | 'fade' | 'slide' | 'zoom';
-  transitionDuration?: number;
-  // Propiedades de efecto
-  effectType?: 'blur' | 'glow' | 'sepia' | 'grayscale' | 'saturation' | 'custom';
-  effectIntensity?: number;
-  // Propiedades de texto
-  textContent?: string;
-  textStyle?: 'normal' | 'bold' | 'italic' | 'title' | 'subtitle' | 'caption';
-  textColor?: string;
-  // Metadatos adicionales
-  metadata?: {
-    section?: string;    // Sección musical (coro, verso, etc.)
-    movementApplied?: boolean;
-    movementPattern?: string;
-    movementIntensity?: number;
-    faceSwapApplied?: boolean;
-    musicianIntegrated?: boolean;
-    sourceIndex?: number; // Índice en el guion original
-    // Propiedades de sincronización de labios en metadata
-    lipsync?: {
-      applied: boolean;
-      videoUrl?: string;
-      progress?: number;
-      timestamp?: string;
-    };
-  };
-}
+import { TimelineClipUnified, ensureCompatibleClip } from '../timeline/TimelineClipUnified';
+
+/**
+ * Utilizamos TimelineClipUnified como nuestro tipo estándar para clips
+ */
+export type TimelineClip = TimelineClipUnified;
 
 // Interfaz para los datos de beat detectados
 export interface BeatData {
