@@ -78,23 +78,28 @@ export function TimelineClip({
     }
   };
 
-  // Determinar el color del clip basado en el tipo
+  // Determinar el color del clip basado en el tipo y la capa
   const getClipColor = () => {
+    // Destacar las imágenes generadas en la capa 7 con un color especial
+    if (clip.layer === 7 && clip.type === 'image') {
+      return 'bg-gradient-to-r from-orange-900 to-amber-800 border-amber-500';
+    }
+    
     switch (clip.type) {
       case 'video':
-        return 'bg-blue-900 border-blue-500';
+        return 'bg-gradient-to-r from-blue-950 to-blue-900 border-blue-500';
       case 'image':
-        return 'bg-indigo-900 border-indigo-500';
+        return 'bg-gradient-to-r from-indigo-950 to-indigo-900 border-indigo-500';
       case 'audio':
-        return 'bg-rose-900 border-rose-500';
+        return 'bg-gradient-to-r from-rose-950 to-rose-900 border-rose-500';
       case 'text':
-        return 'bg-green-900 border-green-500';
+        return 'bg-gradient-to-r from-green-950 to-green-900 border-green-500';
       case 'effect':
-        return 'bg-purple-900 border-purple-500';
+        return 'bg-gradient-to-r from-purple-950 to-purple-900 border-purple-500';
       case 'transition':
-        return 'bg-amber-900 border-amber-500';
+        return 'bg-gradient-to-r from-amber-950 to-amber-900 border-amber-500';
       default:
-        return 'bg-gray-800 border-gray-500';
+        return 'bg-gradient-to-r from-gray-900 to-gray-800 border-gray-500';
     }
   };
 

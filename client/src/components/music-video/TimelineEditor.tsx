@@ -215,38 +215,106 @@ export function TimelineEditor({
     }
   }, [audioBuffer, duration, zoom, showWaveform, timeToPixels]);
 
-  // Renderizar marcas de tiempo
+  // Renderizar marcas de tiempo y guías para límites de clips
   const renderTimeMarkers = () => {
     const markers = [];
-    const step = zoom < 0.5 ? 10 : zoom < 1 ? 5 : 1; // Ajustar según el zoom
+    // Ajusta la frecuencia de las marcas según el nivel de zoom
+    const majorStep = zoom < 0.5 ? 10 : zoom < 1 ? 5 : zoom < 2 ? 1 : 0.5; 
+    const minorStep = majorStep / 5;
     
-    for (let i = 0; i <= Math.ceil(duration); i += step) {
+    // Añadir cuadrícula horizontal
+    markers.push(
+      <div 
+        key="grid-base" 
+        className="absolute top-12 left-0 right-0 w-full border-t border-gray-700" 
+      />
+    );
+    
+    // Añadir marcadores de tiempo principales y secundarios
+    for (let i = 0; i <= Math.ceil(duration); i += minorStep) {
       const position = timeToPixels(i);
+      const isMajor = Math.abs(i % majorStep) < 0.001; // Usar una pequeña tolerancia para evitar errores de punto flotante
+      const isHalfSecond = Math.abs(i % 0.5) < 0.001;
+      
       markers.push(
         <div 
           key={`marker-${i}`}
-          className="absolute h-full border-l border-gray-600 flex flex-col items-center"
+          className={cn(
+            "absolute",
+            isMajor ? "border-l border-gray-500 h-12" : 
+                     isHalfSecond ? "border-l border-gray-700 h-8" : 
+                     "border-l border-gray-800 h-4"
+          )}
           style={{ left: `${position}px` }}
         >
-          <div className="text-xs text-gray-400 mt-1">{formatTime(i)}</div>
+          {isMajor && (
+            <div className="text-xs text-gray-400 font-medium ml-1">{formatTime(i)}</div>
+          )}
         </div>
+      );
+    }
+    
+    // Añadir marcadores especiales para los límites de 5 segundos
+    for (let i = 0; i <= Math.ceil(duration); i += 5) {
+      const position = timeToPixels(i);
+      
+      markers.push(
+        <div 
+          key={`limit-${i}`}
+          className="absolute top-12 bottom-0 border-l border-amber-800 border-dashed opacity-40 z-5"
+          style={{ left: `${position}px` }}
+        >
+          <div className="absolute -rotate-90 text-[10px] text-amber-500 transform -translate-x-6 mt-4 opacity-80 whitespace-nowrap">
+            {i === 0 ? "Inicio" : `${i}s (límite de clip)`}
+          </div>
+        </div>
+      );
+    }
+    
+    // Añadir marcadores para la posición actual de reproducción
+    if (currentTime > 0) {
+      const currentPosition = timeToPixels(currentTime);
+      markers.push(
+        <div 
+          key="current-position-line"
+          className="absolute top-0 bottom-0 border-l border-primary opacity-25 z-5"
+          style={{ left: `${currentPosition}px` }}
+        />
       );
     }
     
     return markers;
   };
 
-  // Renderizar línea actual de reproducción
+  // Renderizar línea actual de reproducción con indicadores mejorados
   const renderPlayhead = () => {
     return (
       <div 
         className="absolute top-0 h-full border-l-2 border-primary z-30 pointer-events-none"
         style={{ 
           left: `${timeToPixels(currentTime)}px`,
-          transition: isPlaying ? 'none' : 'left 0.1s ease'
+          transition: isPlaying ? 'none' : 'left 0.1s ease',
+          filter: "drop-shadow(0 0 3px rgba(255,255,255,0.3))"
         }}
       >
-        <div className="absolute -left-2 -top-2 w-4 h-4 bg-primary rounded-full" />
+        {/* Indicador superior con tiempo actual */}
+        <div className="absolute -left-[18px] -top-2 flex flex-col items-center">
+          <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center shadow-lg">
+            {isPlaying ? 
+              <Pause className="h-4 w-4 text-white" /> : 
+              <Play className="h-4 w-4 text-white" />
+            }
+          </div>
+          <div className="text-[9px] font-bold bg-primary text-white px-2 py-0.5 rounded mt-1 whitespace-nowrap">
+            {formatTime(currentTime)}
+          </div>
+        </div>
+        
+        {/* Línea vertical con efecto de brillo */}
+        <div className="absolute top-0 left-0 w-full h-full bg-primary opacity-25" style={{width: '1px'}} />
+        
+        {/* Indicador inferior */}
+        <div className="absolute -left-1 bottom-0 w-2 h-4 bg-primary rounded-t-sm" />
       </div>
     );
   };
@@ -329,10 +397,20 @@ export function TimelineEditor({
       });
     } else if (resizingSide === 'end') {
       // Redimensionar desde el final
-      const newDuration = Math.max(0.1, clip.duration + deltaTime);
+      // Limitar la duración a MAX_CLIP_DURATION (5 segundos)
+      const newDuration = Math.min(5, Math.max(0.1, clip.duration + deltaTime));
       handleClipUpdate(clip.id, { duration: newDuration });
+      
+      // Mostrar mensaje si intenta exceder la duración máxima
+      if (clip.duration + deltaTime > 5) {
+        toast({
+          title: "Límite de duración",
+          description: "La duración máxima de un clip es de 5 segundos",
+          variant: "warning",
+        });
+      }
     }
-  }, [draggingClip, resizingSide, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, handleClipUpdate]);
+  }, [draggingClip, resizingSide, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, handleClipUpdate, toast]);
 
   // Manejar fin del arrastre
   const handleMouseUp = useCallback(() => {
