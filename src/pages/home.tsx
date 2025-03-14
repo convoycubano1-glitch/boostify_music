@@ -141,22 +141,22 @@ const HomePage = () => {
               <div>
                 <h4 className="font-bold mb-3">Producto</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/features"><span className="text-gray-400 hover:text-white">Características</span></Link></li>
-                  <li><Link href="/pricing"><span className="text-gray-400 hover:text-white">Precios</span></Link></li>
+                  <li><button onClick={() => window.location.href = '/features'} className="text-gray-400 hover:text-white">Características</button></li>
+                  <li><button onClick={() => window.location.href = '/pricing'} className="text-gray-400 hover:text-white">Precios</button></li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-bold mb-3">Empresa</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/about"><span className="text-gray-400 hover:text-white">Sobre nosotros</span></Link></li>
-                  <li><Link href="/contact"><span className="text-gray-400 hover:text-white">Contacto</span></Link></li>
+                  <li><button onClick={() => window.location.href = '/about'} className="text-gray-400 hover:text-white">Sobre nosotros</button></li>
+                  <li><button onClick={() => window.location.href = '/contact'} className="text-gray-400 hover:text-white">Contacto</button></li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-bold mb-3">Legal</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/privacy"><span className="text-gray-400 hover:text-white">Privacidad</span></Link></li>
-                  <li><Link href="/terms"><span className="text-gray-400 hover:text-white">Términos</span></Link></li>
+                  <li><button onClick={() => window.location.href = '/privacy'} className="text-gray-400 hover:text-white">Privacidad</button></li>
+                  <li><button onClick={() => window.location.href = '/terms'} className="text-gray-400 hover:text-white">Términos</button></li>
                 </ul>
               </div>
             </div>
