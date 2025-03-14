@@ -12,7 +12,7 @@ import {
   Plus, Save, Download, Upload, Share2, Loader2, ChevronLeft, 
   ChevronRight, EyeOff, LockOpen, Unlock, Image, RefreshCw
 } from 'lucide-react';
-import { TimelineClipComponent } from '../timeline/TimelineClip';
+import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Slider } from '../../components/ui/slider';
 import { Button } from '../../components/ui/button';
@@ -551,7 +551,7 @@ export function TimelineEditor({
                       >
                         {/* Clips en esta capa */}
                         {clipsByLayer[layerId].map(clip => (
-                          <TimelineClipComponent
+                          <TimelineClip
                             key={`clip-${clip.id}`}
                             clip={clip}
                             selected={selectedClip === clip.id}
