@@ -616,7 +616,7 @@ export function useClipOperations({
       const numLayerId = parseInt(lId);
       const clip = clipsByLayer[numLayerId].find(c => c.id === clipId);
       if (clip) {
-        targetClip = clip;
+        targetClip = { ...clip }; // Crear copia para evitar mutaciones
         currentLayerId = numLayerId;
         break;
       }
@@ -632,8 +632,12 @@ export function useClipOperations({
       return true;
     }
     
-    // Verificar superposición en la nueva capa
-    if (checkOverlap(newLayerId, targetClip.startTime, targetClip.endTime)) {
+    // Obtener valores seguros para startTime y endTime
+    const clipStartTime = targetClip.startTime || targetClip.start;
+    const clipEndTime = targetClip.endTime || (targetClip.start + targetClip.duration);
+    
+    // Verificar superposición en la nueva capa usando los valores calculados
+    if (checkOverlap(newLayerId, clipStartTime, clipEndTime)) {
       onError(ERROR_MESSAGES.CLIP_OVERLAP);
       return false;
     }
@@ -649,18 +653,22 @@ export function useClipOperations({
         currentLayerClips.splice(clipIndex, 1);
         newClipsByLayer[currentLayerId!] = currentLayerClips;
         
-        // Añadir a la nueva capa
+        // Añadir a la nueva capa con valores calculados
         const newLayerClips = [...(newClipsByLayer[newLayerId] || [])];
-        const movedClip = { 
-          ...targetClip!, 
+        
+        // Calcular duración de forma segura
+        const duration = clipEndTime - clipStartTime;
+        
+        // Crear el clip movido con propiedades estandarizadas
+        const movedClip: TimelineClip = { 
+          ...targetClip, 
           layer: newLayerId,  // Usar layer en lugar de layerId
-          startTime: targetClip!.startTime, 
-          endTime: targetClip!.endTime,
-          start: targetClip!.start || targetClip!.startTime,
-          duration: targetClip!.duration || 
-                   (targetClip!.endTime && targetClip!.startTime ? 
-                   targetClip!.endTime - targetClip!.startTime : 0)
+          startTime: clipStartTime, 
+          endTime: clipEndTime,
+          start: clipStartTime,
+          duration: duration
         };
+        
         newLayerClips.push(movedClip);
         newClipsByLayer[newLayerId] = newLayerClips;
       }
@@ -706,11 +714,26 @@ export function useClipOperations({
     
     for (const layerId in clipsByLayer) {
       clipsByLayer[layerId].forEach(clip => {
-        // Un clip está en el rango si alguna parte del clip está dentro del rango
-        if (
-          (clip.startTime <= endTime && clip.endTime >= startTime)
-        ) {
-          results.push(clip);
+        // Solo procesar si tenemos al menos un conjunto de tiempos válidos
+        if ((clip.startTime !== undefined && clip.endTime !== undefined) || 
+            (clip.start !== undefined && clip.duration !== undefined)) {
+          
+          // Calcular tiempos de inicio y fin de forma segura
+          let clipStartTime = 0;
+          let clipEndTime = 0;
+          
+          if (clip.startTime !== undefined && clip.endTime !== undefined) {
+            clipStartTime = clip.startTime;
+            clipEndTime = clip.endTime;
+          } else if (clip.start !== undefined && clip.duration !== undefined) {
+            clipStartTime = clip.start;
+            clipEndTime = clip.start + clip.duration;
+          }
+          
+          // Un clip está en el rango si alguna parte del clip está dentro del rango
+          if (clipStartTime <= endTime && clipEndTime >= startTime) {
+            results.push(clip);
+          }
         }
       });
     }
@@ -746,17 +769,55 @@ export function useClipOperations({
     const newClipsByLayer: { [layerId: number]: TimelineClip[] } = { ...clipsByLayer };
     
     importedClips.forEach(clip => {
-      const layerId = clip.layer; // Usar layer en lugar de layerId
+      // Asegurar que el clip tenga una capa (layer) asignada
+      const layerId = clip.layer || clip.layerId || 0; // Retrocompatibilidad con layerId
+      
+      // Asegurar que exista el array para esta capa
       if (!newClipsByLayer[layerId]) {
         newClipsByLayer[layerId] = [];
       }
       
-      newClipsByLayer[layerId].push({
+      // Obtener valores seguros para tiempos
+      let clipStartTime = 0;
+      let clipEndTime = 0;
+      let clipDuration = 0;
+      
+      // Calcular los valores para startTime, endTime y duration
+      if (clip.startTime !== undefined && clip.endTime !== undefined) {
+        // Si ambos están definidos, usarlos directamente
+        clipStartTime = clip.startTime;
+        clipEndTime = clip.endTime;
+        clipDuration = clipEndTime - clipStartTime;
+      } else if (clip.start !== undefined && clip.duration !== undefined) {
+        // Si start y duration están definidos, calcular endTime
+        clipStartTime = clip.start;
+        clipDuration = clip.duration;
+        clipEndTime = clipStartTime + clipDuration;
+      } else if (clip.startTime !== undefined && clip.duration !== undefined) {
+        // Si startTime y duration están definidos, calcular endTime
+        clipStartTime = clip.startTime;
+        clipDuration = clip.duration;
+        clipEndTime = clipStartTime + clipDuration;
+      } else if (clip.start !== undefined && clip.endTime !== undefined) {
+        // Si start y endTime están definidos, calcular duration
+        clipStartTime = clip.start;
+        clipEndTime = clip.endTime;
+        clipDuration = clipEndTime - clipStartTime;
+      }
+      
+      // Crear un clip normalizado con todas las propiedades necesarias
+      const normalizedClip: TimelineClip = {
         ...clip,
-        // Asegurar que tenga las propiedades necesarias
-        startTime: clip.startTime || clip.start,
-        endTime: clip.endTime || (clip.start + clip.duration)
-      });
+        id: clip.id,
+        type: clip.type,
+        layer: layerId,
+        startTime: clipStartTime,
+        endTime: clipEndTime,
+        start: clipStartTime, // Duplicación para compatibilidad
+        duration: clipDuration
+      };
+      
+      newClipsByLayer[layerId].push(normalizedClip);
     });
     
     setClipsByLayer(newClipsByLayer);
