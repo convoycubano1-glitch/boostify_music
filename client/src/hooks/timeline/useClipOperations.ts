@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { 
-  ClipType, 
   LayerType, 
   MAX_CLIP_DURATION, 
   MIN_CLIP_DURATION,
@@ -8,8 +7,11 @@ import {
   SNAP_THRESHOLD
 } from '../../constants/timeline-constants';
 
-// Importar tipo desde nuestro componente TimelineEditor para asegurar consistencia
-import { TimelineClip } from '../../components/music-video/timeline/TimelineEditor';
+// Importar tipo desde la definición centralizada para asegurar consistencia
+import { TimelineClip } from '../../components/timeline/TimelineClip';
+
+// Tipo para diferenciar los tipos de clips
+export type ClipType = 'audio' | 'video' | 'image' | 'text' | 'effect' | 'transition' | 'ai_placeholder';
 
 export interface ClipOperationsOptions {
   /**

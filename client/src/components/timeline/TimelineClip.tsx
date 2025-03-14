@@ -29,11 +29,15 @@ export interface TimelineClip {
   layer: number;
   start: number;
   duration: number;
+  // Campos adicionales para compatibilidad con hook useClipOperations
+  startTime?: number;  // Alias de start 
+  endTime?: number;    // Calculado como start + duration
   selected?: boolean;
   audioUrl?: string;
   videoUrl?: string;
   imageUrl?: string;
   thumbnail?: string;
+  url?: string;        // URL genérico para cualquier recurso multimedia
   metadata?: {
     isAIGenerated?: boolean;
     thumbnail?: string;

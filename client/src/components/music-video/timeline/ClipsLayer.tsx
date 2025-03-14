@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../../lib/utils';
-import { TimelineClip } from '../timeline-editor';
+import { TimelineClip } from '../../../components/timeline/TimelineClip';
 
 interface ClipsLayerProps {
   clips: TimelineClip[];
