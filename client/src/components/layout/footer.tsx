@@ -92,6 +92,11 @@ export function Footer() {
                   Audience Growth
                 </Link>
               </li>
+              <li>
+                <Link href="/video-creator" className="hover:text-orange-500 transition-colors">
+                  AI Video Creator
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -155,7 +160,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Avat Pro & Boostify */}
+        {/* Avat Pro & Boostify y Recursos */}
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="space-y-4">
             <h3 className="text-white font-semibold mb-3">Avat Pro & Boostify</h3>
@@ -178,6 +183,60 @@ export function Footer() {
               <li>
                 <Link href="/partnership" className="hover:text-orange-500 transition-colors">
                   View Partnership
+                </Link>
+              </li>
+            </ul>
+          </div>
+          
+          {/* Recursos */}
+          <div className="space-y-4">
+            <h3 className="text-white font-semibold mb-3">Recursos</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/blog" className="hover:text-orange-500 transition-colors">
+                  Blog y Tutoriales
+                </Link>
+              </li>
+              <li>
+                <Link href="/guides" className="hover:text-orange-500 transition-colors">
+                  Guías para Artistas
+                </Link>
+              </li>
+              <li>
+                <Link href="/tools" className="hover:text-orange-500 transition-colors">
+                  Herramientas Gratuitas
+                </Link>
+              </li>
+              <li>
+                <Link href="/academy" className="hover:text-orange-500 transition-colors">
+                  Academia Musical
+                </Link>
+              </li>
+            </ul>
+          </div>
+          
+          {/* Soporte */}
+          <div className="space-y-4">
+            <h3 className="text-white font-semibold mb-3">Soporte</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/help" className="hover:text-orange-500 transition-colors">
+                  Centro de Ayuda
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-orange-500 transition-colors">
+                  Contacto
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="hover:text-orange-500 transition-colors">
+                  Preguntas Frecuentes
+                </Link>
+              </li>
+              <li>
+                <Link href="/status" className="hover:text-orange-500 transition-colors">
+                  Estado del Servicio
                 </Link>
               </li>
             </ul>

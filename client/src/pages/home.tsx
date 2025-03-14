@@ -1,5 +1,4 @@
 import React from 'react';
-import { WaitlistModal } from "../components/marketing/waitlist-modal";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -380,8 +379,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <WaitlistModal />
-
       {/* Hero Section - Modern and Eye-catching */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
         {/* Background video with overlay */}
