@@ -1,43 +1,176 @@
 import React from 'react';
-import { WaitlistModal } from "../components/marketing/waitlist-modal";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { SiGoogle } from "react-icons/si";
-import {
-  Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
-  MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, 
-  Play, Volume2, ChevronRight, ArrowRight, Headphones, MoveRight, MousePointer,
-  Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause, PlaySquare
-} from "lucide-react";
-import { Link, useLocation } from "wouter";
-import { motion, useAnimation } from "framer-motion";
-import { useAuth } from "../hooks/use-auth";
-import { useToast } from "../hooks/use-toast";
-import { Footer } from "../components/layout/footer";
-import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
-import { useState, useEffect, useRef } from "react";
-// Comentando los siguientes imports temporalmente ya que no son esenciales para la página inicial
-// import { SuperAgent } from "../components/agents/super-agent";
-// import { PricingPlans } from "../components/subscription/pricing-plans";
+import { Link } from "wouter";
 
-/* =============================
-   VARIANTES PARA ANIMACIONES
-============================= */
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+// Página de inicio muy simplificada para la demo
+const HomePage = () => {
+  return (
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      <header className="bg-black/80 py-4 sticky top-0 z-50">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <span className="text-2xl font-bold text-orange-500">Boostify Music</span>
+            </div>
+            <nav className="hidden md:flex gap-6">
+              <Link href="/features">
+                <span className="text-gray-300 hover:text-orange-400">Características</span>
+              </Link>
+              <Link href="/pricing">
+                <span className="text-gray-300 hover:text-orange-400">Precios</span>
+              </Link>
+              <Link href="/contact">
+                <span className="text-gray-300 hover:text-orange-400">Contacto</span>
+              </Link>
+            </nav>
+            <div>
+              <button className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">
+                Iniciar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <main className="flex-grow">
+        <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+          <div className="container mx-auto px-4 text-center">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">Impulsa tu música con IA</h1>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10">
+              Transforma tu carrera musical con herramientas de IA para videos, marketing y producción.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/signup">
+                <button className="bg-orange-500 text-white px-6 py-3 rounded-md hover:bg-orange-600">
+                  Comenzar gratis
+                </button>
+              </Link>
+              <Link href="/demo">
+                <button className="bg-gray-800 text-white px-6 py-3 rounded-md hover:bg-gray-700">
+                  Ver demo
+                </button>
+              </Link>
+            </div>
+          </div>
+        </section>
+        
+        <section className="py-16 bg-gray-800">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12">Características principales</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-gray-700/50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold mb-4">Creador de Videos Musicales</h3>
+                <p className="text-gray-300">Genera videos musicales profesionales en minutos usando IA avanzada.</p>
+              </div>
+              <div className="bg-gray-700/50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold mb-4">Generador de Música</h3>
+                <p className="text-gray-300">Crea pistas originales y voces sintéticas para tus canciones.</p>
+              </div>
+              <div className="bg-gray-700/50 p-6 rounded-lg">
+                <h3 className="text-xl font-semibold mb-4">Marketing Musical</h3>
+                <p className="text-gray-300">Estrategias personalizadas y promoción automatizada para tu música.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <section className="py-16 bg-gray-900">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-8">Planes de precios</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2">Básico</h3>
+                  <p className="text-3xl font-bold mb-4">Gratis</p>
+                  <ul className="text-left space-y-2 mb-8">
+                    <li>5 videos por mes</li>
+                    <li>1 proyecto de música</li>
+                    <li>Análisis básico</li>
+                  </ul>
+                  <Link href="/signup">
+                    <button className="block w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-600">
+                      Empezar
+                    </button>
+                  </Link>
+                </div>
+              </div>
+              <div className="bg-gray-800 border border-orange-500 rounded-lg overflow-hidden">
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2">Pro</h3>
+                  <p className="text-3xl font-bold mb-4">$29/mes</p>
+                  <ul className="text-left space-y-2 mb-8">
+                    <li>50 videos por mes</li>
+                    <li>20 proyectos de música</li>
+                    <li>Análisis avanzado</li>
+                  </ul>
+                  <Link href="/signup">
+                    <button className="block w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600">
+                      Prueba gratuita
+                    </button>
+                  </Link>
+                </div>
+              </div>
+              <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2">Business</h3>
+                  <p className="text-3xl font-bold mb-4">$79/mes</p>
+                  <ul className="text-left space-y-2 mb-8">
+                    <li>Videos ilimitados</li>
+                    <li>Proyectos ilimitados</li>
+                    <li>Estrategia personalizada</li>
+                  </ul>
+                  <Link href="/contact">
+                    <button className="block w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-600">
+                      Contactar
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      
+      <footer className="bg-black py-10">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-6 md:mb-0">
+              <p className="text-xl font-bold text-orange-500">Boostify Music</p>
+              <p className="text-gray-400">Transformando la industria musical con IA</p>
+            </div>
+            <div className="flex gap-8">
+              <div>
+                <h4 className="font-bold mb-3">Producto</h4>
+                <ul className="space-y-2">
+                  <li><Link href="/features"><span className="text-gray-400 hover:text-white">Características</span></Link></li>
+                  <li><Link href="/pricing"><span className="text-gray-400 hover:text-white">Precios</span></Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-bold mb-3">Empresa</h4>
+                <ul className="space-y-2">
+                  <li><Link href="/about"><span className="text-gray-400 hover:text-white">Sobre nosotros</span></Link></li>
+                  <li><Link href="/contact"><span className="text-gray-400 hover:text-white">Contacto</span></Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-bold mb-3">Legal</h4>
+                <ul className="space-y-2">
+                  <li><Link href="/privacy"><span className="text-gray-400 hover:text-white">Privacidad</span></Link></li>
+                  <li><Link href="/terms"><span className="text-gray-400 hover:text-white">Términos</span></Link></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+            <p className="text-gray-500">© {new Date().getFullYear()} Boostify Music. Todos los derechos reservados.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 };
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { duration: 0.5 } }
-};
-
-/* =============================
-   COMPONENTES DE LA PÁGINA
-============================= */
+export default HomePage;
 
 // Componente para secciones con fondo oscuro
 const DarkSection = ({ 
