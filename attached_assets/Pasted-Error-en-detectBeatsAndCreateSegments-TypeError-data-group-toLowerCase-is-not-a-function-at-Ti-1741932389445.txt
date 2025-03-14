@@ -1,0 +1,69 @@
+Error en detectBeatsAndCreateSegments: TypeError: data.group.toLowerCase is not a function
+    at TimelineClipUnified.determineLayer (TimelineClipUnified.ts:151:26)
+    at new TimelineClipUnified (TimelineClipUnified.ts:84:25)
+    at ensureCompatibleClip (TimelineClipUnified.ts:220:10)
+    at detectBeatsAndCreateSegments (music-video-ai.tsx:1899:27)
+    at syncAudioWithTimeline (music-video-ai.tsx:457:30)
+    at HTMLUnknownElement.callCallback2 (chunk-U53NH74P.js?v=2bd52775:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-U53NH74P.js?v=2bd52775:3699:24)
+    at invokeGuardedCallback (chunk-U53NH74P.js?v=2bd52775:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (chunk-U53NH74P.js?v=2bd52775:3736:33)
+    at executeDispatch (chunk-U53NH74P.js?v=2bd52775:7014:11)
+detectBeatsAndCreateSegments @ music-video-ai.tsx:1951Understand this errorAI
+music-video-ai.tsx:470 Error sincronizando audio: Error: No se detectaron segmentos en el audio
+    at syncAudioWithTimeline (music-video-ai.tsx:467:15)
+syncAudioWithTimeline @ music-video-ai.tsx:470Understand this errorAI
+
+                
+          
+          
+          
+         Chrome is moving towards a new experience that allows users to choose to browse without third-party cookies.Understand this warningAI
+music-video-ai.tsx:1796 Estadísticas de energía: max=0.2627, mediana=0.1049, p75=0.1324, threshold=0.1573
+music-video-ai.tsx:1951 Error en detectBeatsAndCreateSegments: TypeError: data.group.toLowerCase is not a function
+    at TimelineClipUnified.determineLayer (TimelineClipUnified.ts:151:26)
+    at new TimelineClipUnified (TimelineClipUnified.ts:84:25)
+    at ensureCompatibleClip (TimelineClipUnified.ts:220:10)
+    at detectBeatsAndCreateSegments (music-video-ai.tsx:1899:27)
+    at syncAudioWithTimeline (music-video-ai.tsx:457:30)
+    at HTMLUnknownElement.callCallback2 (chunk-U53NH74P.js?v=2bd52775:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-U53NH74P.js?v=2bd52775:3699:24)
+    at invokeGuardedCallback (chunk-U53NH74P.js?v=2bd52775:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (chunk-U53NH74P.js?v=2bd52775:3736:33)
+    at executeDispatch (chunk-U53NH74P.js?v=2bd52775:7014:11)
+detectBeatsAndCreateSegments @ music-video-ai.tsx:1951
+syncAudioWithTimeline @ music-video-ai.tsx:457
+callCallback2 @ chunk-U53NH74P.js?v=2bd52775:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=2bd52775:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=2bd52775:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=2bd52775:3736
+executeDispatch @ chunk-U53NH74P.js?v=2bd52775:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=2bd52775:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=2bd52775:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=2bd52775:7051
+(anonymous) @ chunk-U53NH74P.js?v=2bd52775:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=2bd52775:18881
+batchedUpdates @ chunk-U53NH74P.js?v=2bd52775:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=2bd52775:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=2bd52775:5478
+dispatchEvent @ chunk-U53NH74P.js?v=2bd52775:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=2bd52775:5449Understand this errorAI
+music-video-ai.tsx:470 Error sincronizando audio: Error: No se detectaron segmentos en el audio
+    at syncAudioWithTimeline (music-video-ai.tsx:467:15)
+syncAudioWithTimeline @ music-video-ai.tsx:470
+await in syncAudioWithTimeline
+callCallback2 @ chunk-U53NH74P.js?v=2bd52775:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=2bd52775:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=2bd52775:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=2bd52775:3736
+executeDispatch @ chunk-U53NH74P.js?v=2bd52775:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=2bd52775:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=2bd52775:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=2bd52775:7051
+(anonymous) @ chunk-U53NH74P.js?v=2bd52775:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=2bd52775:18881
+batchedUpdates @ chunk-U53NH74P.js?v=2bd52775:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=2bd52775:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=2bd52775:5478
+dispatchEvent @ chunk-U53NH74P.js?v=2bd52775:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=2bd52775:5449Understand this errorAI

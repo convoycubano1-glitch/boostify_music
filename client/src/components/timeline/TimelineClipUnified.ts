@@ -120,8 +120,10 @@ export class TimelineClipUnified implements TimelineClip {
    * Determina el tipo de clip basado en las propiedades disponibles
    */
   private determineType(data: TimelineItem): 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text' {
-    if (data.type) {
-      switch (data.type.toLowerCase()) {
+    // Verificar si data.type existe y es una cadena
+    if (data.type && typeof data.type === 'string') {
+      const typeLower = data.type.toLowerCase();
+      switch (typeLower) {
         case 'video': return 'video';
         case 'audio': return 'audio';
         case 'text': return 'text';
@@ -131,13 +133,19 @@ export class TimelineClipUnified implements TimelineClip {
       }
     }
 
+    // Verificar por URLs
     if (data.videoUrl) return 'video';
     if (data.audioUrl) return 'audio';
     if (data.imageUrl || data.thumbnail) return 'image';
     
-    // Determinación por grupo
-    if (data.group === 'audio') return 'audio';
-    if (data.group === 'text') return 'text';
+    // Determinación por grupo (si existe y es una cadena)
+    if (data.group && typeof data.group === 'string') {
+      const groupLower = data.group.toLowerCase();
+      if (groupLower === 'audio') return 'audio';
+      if (groupLower === 'text') return 'text';
+      if (groupLower === 'video') return 'video';
+      if (groupLower === 'image') return 'image';
+    }
     
     // Por defecto asumimos imagen
     return 'image';
@@ -147,8 +155,10 @@ export class TimelineClipUnified implements TimelineClip {
    * Determina la capa basado en el tipo o grupo
    */
   private determineLayer(data: TimelineItem): number {
-    if (data.group) {
-      switch (data.group.toLowerCase()) {
+    // Verificar si data.group existe y es una cadena antes de llamar a toLowerCase
+    if (data.group && typeof data.group === 'string') {
+      const groupLower = data.group.toLowerCase();
+      switch (groupLower) {
         case 'audio': return 0;
         case 'video': return 1;
         case 'image': return 1;
