@@ -1680,6 +1680,79 @@ ${transcription}`;
     }
   };
 
+  /**
+   * Aplica todas las restricciones requeridas a los clips del timeline:
+   * 1. Duración máxima de clips (5 segundos)
+   * 2. Imágenes generadas por IA solo en capa 7
+   * 3. No solapamiento de imágenes en la misma capa
+   * @param clips Lista de clips a verificar
+   * @returns Lista de clips con restricciones aplicadas
+   */
+  const enforceAllConstraints = (clips: TimelineItem[]): TimelineItem[] => {
+    if (!clips || !clips.length) return [];
+    
+    // Crear una copia de los clips para no modificar los originales
+    const processedClips = [...clips];
+    const MAX_CLIP_DURATION = 5 * 1000; // 5 segundos en milisegundos
+    
+    // Ordenamos los clips por tiempo de inicio para facilitar la detección de solapamientos
+    processedClips.sort((a, b) => a.start_time - b.start_time);
+    
+    // Recorremos todos los clips
+    for (let i = 0; i < processedClips.length; i++) {
+      const currentClip = processedClips[i];
+      
+      // 1. Restricción de duración - limitar a 5 segundos máximo
+      if (currentClip.duration > MAX_CLIP_DURATION) {
+        console.log(`Ajustando clip ${currentClip.id} de ${currentClip.duration}ms a ${MAX_CLIP_DURATION}ms`);
+        currentClip.duration = MAX_CLIP_DURATION;
+        currentClip.end_time = currentClip.start_time + MAX_CLIP_DURATION;
+      }
+      
+      // 2. Restricción de capa para imágenes generadas por IA - siempre en capa 7
+      if (currentClip.isGeneratedImage || currentClip.generatedImage) {
+        if (currentClip.group !== 7) {
+          console.log(`Moviendo clip de imagen generada ${currentClip.id} a capa 7`);
+          currentClip.group = 7;
+        }
+      }
+      
+      // 3. Prevenir solapamiento de clips en la misma capa
+      // Solo necesitamos verificar contra los clips que siguen, ya que estamos ordenados
+      for (let j = i + 1; j < processedClips.length; j++) {
+        const nextClip = processedClips[j];
+        
+        // Si están en la misma capa y hay solapamiento
+        if (currentClip.group === nextClip.group && 
+            currentClip.end_time > nextClip.start_time) {
+          
+          console.log(`Detectado solapamiento entre clips ${currentClip.id} y ${nextClip.id} en capa ${currentClip.group}`);
+          
+          // Ajustar la duración del clip actual para evitar el solapamiento
+          const newEndTime = nextClip.start_time;
+          const newDuration = newEndTime - currentClip.start_time;
+          
+          // Solo aplicar el cambio si la nueva duración es razonable (más de 0.1 segundos)
+          if (newDuration >= 100) {
+            console.log(`Ajustando fin de clip ${currentClip.id} de ${currentClip.end_time}ms a ${newEndTime}ms`);
+            currentClip.end_time = newEndTime;
+            currentClip.duration = newDuration;
+          }
+          // Si la duración resultante es demasiado pequeña, movemos el clip siguiente
+          else if (newDuration < 100) {
+            // Calculamos el nuevo start_time para el clip siguiente
+            const newStartTime = currentClip.end_time;
+            console.log(`Ajustando inicio de clip ${nextClip.id} de ${nextClip.start_time}ms a ${newStartTime}ms`);
+            nextClip.start_time = newStartTime;
+            nextClip.duration = nextClip.end_time - newStartTime;
+          }
+        }
+      }
+    }
+    
+    return processedClips;
+  };
+
   const detectBeatsAndCreateSegments = async (): Promise<TimelineItem[]> => {
     if (!audioBuffer) return [];
 
@@ -1977,8 +2050,12 @@ ${transcription}`;
       // Generar el JSON con los beats detectados
       generateBeatsJSON(detectedBeats, songMetadata);
       
+      // Aplicar todas las restricciones a los segmentos generados
+      const processedSegments = enforceAllConstraints(segments);
+      
       console.log(`Generados ${segments.length} segmentos y ${detectedBeats.length} beats detectados para una duración de ${totalDuration.toFixed(2)} segundos`);
-      return segments;
+      console.log(`Segmentos procesados con restricciones: ${processedSegments.length}`);
+      return processedSegments;
     } catch (error) {
       console.error("Error en detectBeatsAndCreateSegments:", error);
       toast({
