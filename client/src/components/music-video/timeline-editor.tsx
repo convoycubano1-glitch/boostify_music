@@ -632,13 +632,29 @@ export function TimelineEditor({
       return;
     }
     
-    // Crear nuevo clip asegurando compatibilidad con name y title
+    // Crear nuevo clip asegurando compatibilidad con name/title y start/startTime/endTime
+    let syncedClipData = { ...clipData };
+    
+    // Sincronizar name y title
+    syncedClipData.name = clipData.name || clipData.title || 'Clip';
+    syncedClipData.title = clipData.title || clipData.name || 'Clip';
+    
+    // Sincronizar startTime y start
+    if (syncedClipData.start !== undefined && syncedClipData.startTime === undefined) {
+      syncedClipData.startTime = syncedClipData.start;
+    } else if (syncedClipData.startTime !== undefined && syncedClipData.start === undefined) {
+      syncedClipData.start = syncedClipData.startTime;
+    }
+    
+    // Calcular endTime basado en start y duration
+    if (syncedClipData.start !== undefined && syncedClipData.duration !== undefined) {
+      syncedClipData.endTime = syncedClipData.start + syncedClipData.duration;
+    }
+    
+    // Crear el clip con los datos sincronizados
     const newClip: TimelineClip = {
       id: nextClipId,
-      // Asegurar que name y title estén sincronizados si se proporciona alguno
-      name: clipData.name || clipData.title || 'Clip',
-      title: clipData.title || clipData.name || 'Clip',
-      ...clipData
+      ...syncedClipData
     };
     
     setClips(prev => [...prev, newClip]);
@@ -727,17 +743,38 @@ export function TimelineEditor({
       }
     }
     
-    // Sincronizar title y name si se actualiza alguno de ellos
+    // Sincronizar todos los campos relacionados
     let finalUpdates = { ...updates };
     
-    // Si se actualiza el título, actualizar también el nombre
+    // Sincronizar title y name
     if (updates.title !== undefined && updates.name === undefined) {
       finalUpdates.name = updates.title;
     }
     
-    // Si se actualiza el nombre, actualizar también el título
     if (updates.name !== undefined && updates.title === undefined) {
       finalUpdates.title = updates.name;
+    }
+    
+    // Sincronizar start/startTime
+    if (updates.start !== undefined && updates.startTime === undefined) {
+      finalUpdates.startTime = updates.start;
+    }
+    
+    if (updates.startTime !== undefined && updates.start === undefined) {
+      finalUpdates.start = updates.startTime;
+    }
+    
+    // Calcular o actualizar endTime si tenemos start y duration
+    if ((updates.start !== undefined || clipToUpdate.start !== undefined) && 
+        (updates.duration !== undefined || clipToUpdate.duration !== undefined)) {
+      const newStart = updates.start ?? clipToUpdate.start;
+      const newDuration = updates.duration ?? clipToUpdate.duration;
+      finalUpdates.endTime = newStart + newDuration;
+    }
+    
+    // Calcular duration desde startTime/endTime si ambos están disponibles
+    if (updates.startTime !== undefined && updates.endTime !== undefined) {
+      finalUpdates.duration = updates.endTime - updates.startTime;
     }
     
     // Actualizar clip con los cambios sincronizados
