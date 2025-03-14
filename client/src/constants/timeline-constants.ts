@@ -1,119 +1,147 @@
 /**
  * Constantes para el editor de timeline
- * Define valores constantes y enumeraciones para el editor de línea de tiempo
+ * 
+ * Definición de constantes utilizadas en el editor de línea de tiempo
+ * para vídeos musicales. Incluye configuraciones por defecto y valores límite.
  */
-import { ClipType, LayerType } from '../interfaces/timeline';
+
+import { LayerType, ClipType } from '../interfaces/timeline';
 
 /**
- * Altura predeterminada de las capas
+ * Ancho en píxeles de la cabecera de cada capa
  */
-export const DEFAULT_LAYER_HEIGHT = 60;
+export const LAYER_HEADER_WIDTH = 160;
 
 /**
- * Ancho de la cabecera de capas
+ * Altura por defecto en píxeles de cada capa en el timeline
  */
-export const LAYER_HEADER_WIDTH = 150;
+export const DEFAULT_LAYER_HEIGHT = 50;
 
 /**
- * Duración máxima permitida para clips (en segundos)
+ * Duración máxima en segundos para los clips (restricción de 5 segundos)
  */
-export const MAX_CLIP_DURATION = 5; // 5 segundos máximo para clips
+export const MAX_CLIP_DURATION = 5.0;
 
 /**
- * Duración mínima permitida para clips (en segundos)
+ * Factor de zoom por defecto (píxeles por segundo)
  */
-export const MIN_CLIP_DURATION = 0.1; // 100ms mínimo para clips
+export const DEFAULT_ZOOM_FACTOR = 100;
 
 /**
- * Nivel de zoom predeterminado
- * Determina cuántos píxeles por segundo se muestran en el timeline
+ * Mínimo factor de zoom permitido
  */
-export const DEFAULT_ZOOM_LEVEL = 100; // 100 píxeles por segundo
+export const MIN_ZOOM_FACTOR = 20;
 
 /**
- * Colores predeterminados para cada tipo de capa
+ * Máximo factor de zoom permitido
  */
-export const LAYER_COLORS = {
-  [LayerType.VIDEO_PRINCIPAL]: '#4a6bdd', // Azul
-  [LayerType.VIDEO_SECUNDARIO]: '#6e5adc', // Púrpura
-  [LayerType.IMAGEN]: '#4caf50', // Verde
-  [LayerType.TEXTO]: '#ff9800', // Naranja
-  [LayerType.AUDIO]: '#2196f3', // Azul claro
-  [LayerType.EFECTOS]: '#e91e63', // Rosa
-  [LayerType.IA_GENERADA]: '#ff5252', // Rojo
-  [LayerType.TRANSICIONES]: '#9c27b0'  // Púrpura
-};
+export const MAX_ZOOM_FACTOR = 300;
 
 /**
- * Nombres de las capas en español
+ * Altura mínima permitida para capas
  */
-export const LAYER_NAMES = {
-  [LayerType.VIDEO_PRINCIPAL]: 'Video Principal',
-  [LayerType.VIDEO_SECUNDARIO]: 'Video Secundario',
-  [LayerType.IMAGEN]: 'Imágenes',
-  [LayerType.TEXTO]: 'Texto',
-  [LayerType.AUDIO]: 'Audio',
-  [LayerType.EFECTOS]: 'Efectos',
-  [LayerType.IA_GENERADA]: 'Imágenes IA',
-  [LayerType.TRANSICIONES]: 'Transiciones'
-};
+export const MIN_LAYER_HEIGHT = 30;
 
 /**
- * Nombres de los tipos de clip en español
+ * Altura máxima permitida para capas
  */
-export const CLIP_TYPE_NAMES = {
-  [ClipType.VIDEO]: 'Video',
-  [ClipType.IMAGE]: 'Imagen',
-  [ClipType.AUDIO]: 'Audio',
-  [ClipType.TEXT]: 'Texto',
-  [ClipType.EFFECT]: 'Efecto',
-  [ClipType.GENERATED_IMAGE]: 'Imagen IA',
-  [ClipType.TRANSITION]: 'Transición',
-  [ClipType.PLACEHOLDER]: 'Marcador'
-};
+export const MAX_LAYER_HEIGHT = 200;
 
 /**
- * Tipos de operaciones que se pueden realizar en clips
+ * Operaciones disponibles sobre clips
  */
 export enum ClipOperation {
-  ADD = 'add',
-  REMOVE = 'remove',
-  MOVE = 'move',
-  RESIZE = 'resize',
-  UPDATE = 'update'
+  MOVE = 'MOVE',         // Mover un clip
+  RESIZE = 'RESIZE',     // Redimensionar un clip
+  SPLIT = 'SPLIT',       // Dividir un clip
+  JOIN = 'JOIN',         // Unir dos clips
+  DUPLICATE = 'DUPLICATE', // Duplicar un clip
+  DELETE = 'DELETE',     // Eliminar un clip
+  CREATE = 'CREATE',     // Crear un nuevo clip
+  UPDATE = 'UPDATE',     // Actualizar propiedades de un clip
+  ADD = 'ADD'            // Añadir un clip
 }
 
 /**
- * Mensajes de error para validación de clips
+ * Colores por defecto para las capas según su tipo
  */
-export const ERROR_MESSAGES = {
-  DURATION_EXCEEDED: `La duración máxima permitida es de ${MAX_CLIP_DURATION} segundos.`,
-  DURATION_TOO_SHORT: `La duración mínima permitida es de ${MIN_CLIP_DURATION} segundos.`,
-  OVERLAP_NOT_ALLOWED: 'No se permite la superposición de clips en esta capa.',
-  INVALID_LAYER: 'Este tipo de clip no puede ser colocado en esta capa.',
-  INVALID_POSITION: 'Posición no válida para el clip.',
-  AI_LAYER_RESTRICTION: 'Las imágenes generadas por IA solo pueden colocarse en la capa 7.'
+export const DEFAULT_LAYER_COLORS: Record<LayerType, string> = {
+  [LayerType.VIDEO_PRINCIPAL]: '#5E35B1',   // Morado
+  [LayerType.VIDEO_SECUNDARIO]: '#1E88E5',  // Azul
+  [LayerType.IMAGEN]: '#43A047',            // Verde
+  [LayerType.TEXTO]: '#F4511E',             // Naranja
+  [LayerType.AUDIO]: '#FB8C00',             // Ámbar
+  [LayerType.EFECTOS]: '#8E24AA',           // Púrpura
+  [LayerType.IA_GENERADA]: '#D81B60',       // Rosa
+  [LayerType.TRANSICIONES]: '#546E7A'       // Gris azulado
 };
 
 /**
- * Mapeo de tipos de clips a capas válidas
+ * Configuración inicial predeterminada para capas
  */
-export const VALID_LAYER_TYPES = new Map<ClipType, LayerType[]>([
-  [ClipType.VIDEO, [LayerType.VIDEO_PRINCIPAL, LayerType.VIDEO_SECUNDARIO]],
-  [ClipType.IMAGE, [LayerType.IMAGEN]],
-  [ClipType.AUDIO, [LayerType.AUDIO]],
-  [ClipType.TEXT, [LayerType.TEXTO]],
-  [ClipType.EFFECT, [LayerType.EFECTOS]],
-  [ClipType.GENERATED_IMAGE, [LayerType.IA_GENERADA]],
-  [ClipType.TRANSITION, [LayerType.TRANSICIONES]],
-  [ClipType.PLACEHOLDER, [
-    LayerType.VIDEO_PRINCIPAL, 
-    LayerType.VIDEO_SECUNDARIO,
-    LayerType.IMAGEN,
-    LayerType.TEXTO,
-    LayerType.AUDIO,
-    LayerType.EFECTOS,
-    LayerType.IA_GENERADA, 
-    LayerType.TRANSICIONES
-  ]]
-]);
+export const DEFAULT_LAYERS = [
+  {
+    id: 1,
+    name: 'Video Principal',
+    type: LayerType.VIDEO_PRINCIPAL,
+    color: DEFAULT_LAYER_COLORS[LayerType.VIDEO_PRINCIPAL],
+    visible: true,
+    locked: false
+  },
+  {
+    id: 2,
+    name: 'Video B-Roll',
+    type: LayerType.VIDEO_SECUNDARIO,
+    color: DEFAULT_LAYER_COLORS[LayerType.VIDEO_SECUNDARIO],
+    visible: true,
+    locked: false
+  },
+  {
+    id: 3,
+    name: 'Imágenes',
+    type: LayerType.IMAGEN,
+    color: DEFAULT_LAYER_COLORS[LayerType.IMAGEN],
+    visible: true,
+    locked: false
+  },
+  {
+    id: 4,
+    name: 'Textos',
+    type: LayerType.TEXTO,
+    color: DEFAULT_LAYER_COLORS[LayerType.TEXTO],
+    visible: true,
+    locked: false
+  },
+  {
+    id: 5,
+    name: 'Audio',
+    type: LayerType.AUDIO,
+    color: DEFAULT_LAYER_COLORS[LayerType.AUDIO],
+    visible: true,
+    locked: false
+  },
+  {
+    id: 6,
+    name: 'Efectos',
+    type: LayerType.EFECTOS,
+    color: DEFAULT_LAYER_COLORS[LayerType.EFECTOS],
+    visible: true,
+    locked: false
+  },
+  {
+    id: 7,
+    name: 'IA Generada',
+    type: LayerType.IA_GENERADA,
+    color: DEFAULT_LAYER_COLORS[LayerType.IA_GENERADA],
+    visible: true,
+    locked: false
+  },
+  {
+    id: 8,
+    name: 'Transiciones',
+    type: LayerType.TRANSICIONES,
+    color: DEFAULT_LAYER_COLORS[LayerType.TRANSICIONES],
+    visible: true,
+    locked: false
+  }
+];

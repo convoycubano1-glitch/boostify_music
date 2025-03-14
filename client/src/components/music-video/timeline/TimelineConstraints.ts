@@ -1,125 +1,102 @@
 /**
- * Sistema de validación y limitación para clips del timeline
- * Implementa las restricciones para asegurar que los clips cumplan con las reglas establecidas
+ * Restricciones para el timeline de producción de vídeos musicales
+ * 
+ * Este archivo define las funciones y restricciones que se aplican
+ * al editor de timeline para asegurar que se cumplan los requisitos específicos:
+ * - Clips de máximo 5 segundos
+ * - Imágenes generadas solo en la capa 7 (IA_GENERADA)
+ * - No solapamiento de imágenes
  */
-import { TimelineClip } from '../../../interfaces/timeline';
-import { 
-  MAX_CLIP_DURATION, 
-  MIN_CLIP_DURATION, 
-  LayerType as LAYER_TYPES 
-} from '../../../constants/timeline-constants';
 
-// Exportamos las constantes para que puedan ser usadas desde otros archivos
-export { MAX_CLIP_DURATION, MIN_CLIP_DURATION, LAYER_TYPES };
+import { TimelineClip, LayerType, ClipType } from '../../../interfaces/timeline';
+import { MAX_CLIP_DURATION } from '../../../constants/timeline-constants';
 
 /**
- * Verifica y limita la duración máxima de los clips según las restricciones
- * @param clips Lista de clips a verificar y limitar
- * @returns Lista de clips con duraciones ajustadas
+ * Valida la duración máxima de un clip (máximo 5 segundos)
+ * @param duration Duración del clip en segundos
+ * @returns True si es válida, false si excede el límite
  */
-export function enforceDurationConstraints(clips: TimelineClip[]): TimelineClip[] {
-  return clips.map(clip => {
-    if (clip.duration > MAX_CLIP_DURATION) {
-      return { ...clip, duration: MAX_CLIP_DURATION };
-    }
-    if (clip.duration < MIN_CLIP_DURATION) {
-      return { ...clip, duration: MIN_CLIP_DURATION };
-    }
-    return clip;
-  });
+export function validateClipDuration(duration: number): boolean {
+  return duration <= MAX_CLIP_DURATION;
 }
 
 /**
- * Verifica que no haya solapamiento entre clips en la misma capa
- * Si hay solapamiento, ajusta la posición del clip
- * @param clips Lista de clips a verificar
- * @returns Lista de clips con posiciones ajustadas
- */
-export function enforceNoOverlap(clips: TimelineClip[]): TimelineClip[] {
-  // Copia segura de los clips para no modificar el original
-  const safeClips = [...clips];
-  
-  // Para cada capa, verificamos solapamientos
-  const layers = [...new Set(clips.map(clip => clip.layer))];
-  
-  layers.forEach(layer => {
-    // Obtener clips de esta capa
-    const layerClips = safeClips.filter(clip => clip.layer === layer);
-    
-    // Ordenar clips por posición inicial
-    layerClips.sort((a, b) => a.start - b.start);
-    
-    // Verificar solapamientos
-    for (let i = 1; i < layerClips.length; i++) {
-      const prevClip = layerClips[i - 1];
-      const currentClip = layerClips[i];
-      
-      // Si hay solapamiento
-      if (prevClip.start + prevClip.duration > currentClip.start) {
-        // Ajustar posición del clip actual
-        const newStart = prevClip.start + prevClip.duration;
-        
-        // Encontrar el índice real del clip en la lista original
-        const clipIndex = safeClips.findIndex(c => c.id === currentClip.id);
-        if (clipIndex !== -1) {
-          safeClips[clipIndex] = { ...safeClips[clipIndex], start: newStart };
-        }
-      }
-    }
-  });
-  
-  return safeClips;
-}
-
-/**
- * Verifica que las imágenes generadas por IA estén en la capa correcta
- * Si no lo están, las mueve a la capa de IA
- * @param clips Lista de clips a verificar
- * @returns Lista de clips con capas ajustadas
- */
-export function enforceAILayerConstraint(clips: TimelineClip[]): TimelineClip[] {
-  return clips.map(clip => {
-    // Si es una imagen generada por IA pero no está en la capa correcta
-    if (clip.type === 'image' && clip.generatedImage && clip.layer !== LAYER_TYPES.AI_GENERATED) {
-      return { ...clip, layer: LAYER_TYPES.AI_GENERATED };
-    }
-    return clip;
-  });
-}
-
-/**
- * Aplica todas las restricciones a la lista de clips
- * @param clips Lista de clips a verificar y ajustar
- * @returns Lista de clips con todas las restricciones aplicadas
- */
-export function enforceAllConstraints(clips: TimelineClip[]): TimelineClip[] {
-  // Aplicar restricciones en secuencia
-  let result = [...clips];
-  result = enforceDurationConstraints(result);
-  result = enforceNoOverlap(result);
-  result = enforceAILayerConstraint(result);
-  return result;
-}
-
-/**
- * Valida si un clip puede colocarse en una capa específica según su tipo
- * @param clipType Tipo de clip a validar
+ * Valida que las imágenes generadas por IA solo estén en la capa IA_GENERADA (capa 7)
+ * @param clip Clip a validar
  * @param layerType Tipo de capa donde se quiere colocar
- * @returns true si el clip es válido para esa capa, false en caso contrario
+ * @returns True si es una colocación válida según restricciones
  */
-export function isClipValidForLayer(clipType: string, layerType: LAYER_TYPES): boolean {
-  switch (layerType) {
-    case LAYER_TYPES.AUDIO:
-      return clipType === 'audio';
-    case LAYER_TYPES.VIDEO_IMAGE:
-      return clipType === 'video' || clipType === 'image';
-    case LAYER_TYPES.TEXT:
-      return clipType === 'text';
-    case LAYER_TYPES.EFFECTS:
-      return clipType === 'effect';
-    case LAYER_TYPES.AI_GENERATED:
-      return clipType === 'image' && Boolean(clipType);
-    default:
-      return false;
+export function validateGeneratedImageLayer(clip: TimelineClip, layerType: LayerType): boolean {
+  // Si es una imagen generada pero no está en la capa IA_GENERADA, no es válido
+  if (clip.type === ClipType.GENERATED_IMAGE && layerType !== LayerType.IA_GENERADA) {
+    return false;
   }
+  
+  // Si es otro tipo de clip, no hay restricción de capa específica
+  return true;
+}
+
+/**
+ * Verifica si hay colisión entre un clip y otro clip existente
+ * @param newClip Nuevo clip o clip a mover
+ * @param existingClip Clip existente en el timeline
+ * @returns True si hay solapamiento, false si no colisionan
+ */
+export function checkClipOverlap(newClip: TimelineClip, existingClip: TimelineClip): boolean {
+  // Si no están en la misma capa, no pueden solaparse
+  if (newClip.layerId !== existingClip.layerId) {
+    return false;
+  }
+  
+  // Verificar si hay solapamiento temporal
+  const newStart = newClip.start;
+  const newEnd = newClip.start + newClip.duration;
+  const existingStart = existingClip.start;
+  const existingEnd = existingClip.start + existingClip.duration;
+  
+  // Comprueba si el nuevo clip comienza antes de que termine el existente
+  // y termina después de que comience el existente
+  return (newStart < existingEnd && newEnd > existingStart);
+}
+
+/**
+ * Valida la colocación de un clip en el timeline según restricciones
+ * @param clip Clip a validar
+ * @param clips Lista de clips existentes en el timeline
+ * @param layerType Tipo de capa donde se quiere colocar
+ * @returns True si cumple todas las restricciones, false si alguna falla
+ */
+export function validateClipPlacement(
+  clip: TimelineClip, 
+  clips: TimelineClip[], 
+  layerType: LayerType
+): boolean {
+  // Validar duración máxima
+  if (!validateClipDuration(clip.duration)) {
+    console.warn('Clip excede la duración máxima permitida (5 segundos)');
+    return false;
+  }
+  
+  // Validar restricción de capa para imágenes generadas
+  if (!validateGeneratedImageLayer(clip, layerType)) {
+    console.warn('Las imágenes generadas solo pueden colocarse en la capa 7 (IA_GENERADA)');
+    return false;
+  }
+  
+  // Validar no solapamiento con otros clips en la misma capa
+  for (const existingClip of clips) {
+    // Ignorar el mismo clip (para casos de movimiento)
+    if (existingClip.id === clip.id) {
+      continue;
+    }
+    
+    // Si hay solapamiento y están en la misma capa, no es válido
+    if (checkClipOverlap(clip, existingClip)) {
+      console.warn('No se permite el solapamiento de clips en la misma capa');
+      return false;
+    }
+  }
+  
+  // Si pasa todas las validaciones, es una colocación válida
+  return true;
 }

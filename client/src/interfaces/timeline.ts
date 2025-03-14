@@ -1,104 +1,137 @@
 /**
- * Interfaces y tipos para el editor de timeline
- * Define la estructura y tipado de datos para los componentes del timeline
+ * Interfaces para el editor de timeline
+ * 
+ * Este archivo define las interfaces principales utilizadas por el editor de 
+ * línea de tiempo para vídeos musicales.
  */
 
 /**
- * Tipo de clip en el timeline
- * Define los diferentes tipos de contenido que pueden existir en la línea de tiempo
- */
-export enum ClipType {
-  VIDEO = 'video',
-  IMAGE = 'image',
-  AUDIO = 'audio',
-  TEXT = 'text',
-  EFFECT = 'effect',
-  GENERATED_IMAGE = 'generated_image',
-  TRANSITION = 'transition',
-  PLACEHOLDER = 'placeholder'
-}
-
-/**
- * Tipo de capa en el timeline
- * Define los diferentes tipos de capas que pueden existir en la línea de tiempo
+ * Tipos de capas disponibles en el timeline
  */
 export enum LayerType {
-  VIDEO_PRINCIPAL = 1,  // Capa principal de video
-  VIDEO_SECUNDARIO = 2, // Capa para videos secundarios o b-roll
-  IMAGEN = 3,           // Capa para imágenes estáticas
-  TEXTO = 4,            // Capa para textos y títulos
-  AUDIO = 5,            // Capa para audio
-  EFECTOS = 6,          // Capa para efectos visuales
-  IA_GENERADA = 7,      // Capa exclusiva para imágenes generadas por IA
-  TRANSICIONES = 8      // Capa para transiciones entre clips
+  VIDEO_PRINCIPAL = 'VIDEO_PRINCIPAL',   // Capa principal de video
+  VIDEO_SECUNDARIO = 'VIDEO_SECUNDARIO', // Videos secundarios o B-roll
+  IMAGEN = 'IMAGEN',                     // Imágenes estáticas
+  TEXTO = 'TEXTO',                       // Textos y títulos
+  AUDIO = 'AUDIO',                       // Pistas de audio
+  EFECTOS = 'EFECTOS',                   // Efectos visuales
+  IA_GENERADA = 'IA_GENERADA',           // Imágenes generadas por IA (capa 7)
+  TRANSICIONES = 'TRANSICIONES'          // Transiciones entre clips
 }
 
 /**
- * Interfaz para un clip en el timeline
- * Representa un elemento individual en la línea de tiempo
+ * Tipos de clips que pueden agregarse al timeline
  */
-export interface TimelineClip {
-  id: number;             // Identificador único del clip
-  type: ClipType;         // Tipo de clip (video, imagen, audio, etc.)
-  layerId: number;        // ID de la capa a la que pertenece
-  start: number;          // Tiempo de inicio en segundos
-  duration: number;       // Duración en segundos
-  title: string;          // Título o nombre del clip
-  url?: string;           // URL del recurso asociado (video, audio, imagen)
-  color?: string;         // Color de visualización del clip
-  opacity?: number;       // Opacidad visual del clip (0-1)
-  generatedImage?: boolean; // Indica si es una imagen generada por IA
-  lipsyncApplied?: boolean; // Indica si tiene sincronización labial aplicada
-  lipsyncVideoUrl?: string; // URL del video con sincronización labial
-  lipsyncProgress?: number; // Progreso de la sincronización labial (0-100)
-  metadata?: {             // Metadatos adicionales
-    [key: string]: any;
-  };
+export enum ClipType {
+  VIDEO = 'VIDEO',                     // Clips de vídeo
+  IMAGE = 'IMAGE',                     // Imágenes
+  AUDIO = 'AUDIO',                     // Audio
+  TEXT = 'TEXT',                       // Texto
+  EFFECT = 'EFFECT',                   // Efecto
+  GENERATED_IMAGE = 'GENERATED_IMAGE', // Imagen generada por IA
+  TRANSITION = 'TRANSITION',           // Transición
+  PLACEHOLDER = 'PLACEHOLDER'          // Marcador de posición
 }
 
 /**
- * Interfaz para la configuración de una capa en el timeline
- * Define una capa individual que puede contener clips
+ * Configuración de una capa en el timeline
  */
 export interface LayerConfig {
-  id: number;             // Identificador único de la capa
-  name: string;           // Nombre descriptivo de la capa
-  type: LayerType;        // Tipo de capa
-  locked: boolean;        // Indica si la capa está bloqueada para edición
-  visible: boolean;       // Indica si la capa es visible
-  height: number;         // Altura en píxeles de la capa en el timeline
-  color: string;          // Color de visualización de la capa
-  metadata?: {            // Metadatos adicionales
-    [key: string]: any;
+  id: number;              // ID único de la capa
+  name: string;            // Nombre de la capa
+  type: LayerType;         // Tipo de capa
+  color: string;           // Color de la capa en la UI
+  visible: boolean;        // Si la capa es visible
+  locked: boolean;         // Si la capa está bloqueada
+  height?: number;         // Altura opcional de la capa (píxeles)
+  collapsible?: boolean;   // Si la capa puede colapsarse
+  collapsed?: boolean;     // Si la capa está colapsada
+}
+
+/**
+ * Clip de timeline (elemento colocable en una capa)
+ */
+export interface TimelineClip {
+  id: number;               // ID único del clip
+  layerId: number;          // ID de la capa donde está el clip
+  type: ClipType;           // Tipo de clip
+  start: number;            // Tiempo de inicio (segundos)
+  duration: number;         // Duración (segundos)
+  url?: string;             // URL del recurso (vídeo, audio, imagen)
+  text?: string;            // Texto (para clips de tipo TEXT)
+  color?: string;           // Color personalizado
+  title?: string;           // Título descriptivo del clip
+  effects?: ClipEffect[];   // Efectos aplicados al clip
+  metadata?: any;           // Metadatos adicionales
+  thumbnailUrl?: string;    // URL de la miniatura
+  transition?: {            // Configuración de transición
+    type: string;           // Tipo de transición
+    duration: number;       // Duración de la transición
   };
+  volume?: number;          // Volumen para clips de audio o vídeo (0.0 - 1.0)
+  opacity?: number;         // Opacidad (0.0 - 1.0)
+  scale?: number;           // Escala (1.0 = 100%)
+  position?: {              // Posición dentro del frame
+    x: number;              // Posición X (0-1)
+    y: number;              // Posición Y (0-1)
+  };
+  locked?: boolean;         // Si el clip está bloqueado
+  generated?: boolean;      // Si fue generado automáticamente
+  generatedImage?: boolean; // Si es una imagen generada por IA
 }
 
 /**
- * Interfaz para el estado del timeline
- * Representa el estado completo del editor de línea de tiempo
+ * Efecto aplicable a un clip
  */
-export interface TimelineState {
-  clips: TimelineClip[];         // Lista de clips en el timeline
-  layers: LayerConfig[];         // Configuración de capas
-  currentTime: number;           // Tiempo actual de reproducción en segundos
-  duration: number;              // Duración total del proyecto en segundos
-  selectedClipId: number | null; // ID del clip seleccionado actualmente
-  isDragging: boolean;           // Indica si se está arrastrando un clip
-  isResizing: boolean;           // Indica si se está redimensionando un clip
-  zoom: number;                  // Nivel de zoom del timeline (1 = 100%)
-  beatGridEnabled: boolean;      // Indica si la cuadrícula de ritmo está habilitada
+export interface ClipEffect {
+  id: string;               // ID único del efecto
+  type: string;             // Tipo de efecto
+  params: any;              // Parámetros del efecto
+  start: number;            // Tiempo de inicio relativo al clip (0.0 - 1.0)
+  end: number;              // Tiempo de fin relativo al clip (0.0 - 1.0)
+  intensity: number;        // Intensidad del efecto (0.0 - 1.0)
 }
 
 /**
- * Interfaz para reglas de validación de clips
- * Define las restricciones a aplicar a los clips del timeline
+ * Proyecto de timeline
  */
-export interface ClipConstraints {
-  maxDuration: number;               // Duración máxima de un clip en segundos
-  minDuration: number;               // Duración mínima de un clip en segundos
-  allowOverlap: boolean;             // Permite que los clips se superpongan en una capa
-  allowMultiLayer: boolean;          // Permite que un clip ocupe varias capas
-  restrictAIToLayer?: LayerType;     // Restringe imágenes generadas por IA a una capa específica
-  maxClipsPerLayer?: number;         // Número máximo de clips por capa
-  validLayerTypes: Map<ClipType, LayerType[]>; // Mapa de tipos de clips a capas válidas
+export interface TimelineProject {
+  id: string;                // ID único del proyecto
+  name: string;              // Nombre del proyecto
+  duration: number;          // Duración total (segundos)
+  layers: LayerConfig[];     // Capas del proyecto
+  clips: TimelineClip[];     // Clips en el timeline
+  resolution: {              // Resolución del proyecto
+    width: number;           // Ancho en píxeles
+    height: number;          // Alto en píxeles
+  };
+  frameRate: number;         // Tasa de frames por segundo
+  audioTracks: AudioTrack[]; // Pistas de audio
+  metadata: any;             // Metadatos adicionales
+  createdAt: Date;           // Fecha de creación
+  updatedAt: Date;           // Fecha de última modificación
+}
+
+/**
+ * Pista de audio en el proyecto
+ */
+export interface AudioTrack {
+  id: string;                // ID único de la pista
+  name: string;              // Nombre de la pista
+  url: string;               // URL del archivo de audio
+  volume: number;            // Volumen (0.0 - 1.0)
+  muted: boolean;            // Si está silenciada
+  start: number;             // Tiempo de inicio (segundos)
+  duration: number;          // Duración (segundos)
+}
+
+/**
+ * Marcador en la línea de tiempo
+ */
+export interface TimelineMarker {
+  id: string;                // ID único del marcador
+  time: number;              // Tiempo en segundos
+  label: string;             // Etiqueta del marcador
+  color: string;             // Color del marcador
+  type: string;              // Tipo de marcador
 }
