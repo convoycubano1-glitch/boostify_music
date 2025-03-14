@@ -3,17 +3,25 @@
  * Maneja la renderización visual de todo tipo de clips (audio, imagen, video, texto)
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '../../lib/utils';
 import { 
   Trash, Copy, Play, Link, Image, Video, Music, Text, 
   Eye, EyeOff, Lock, Unlock, RefreshCw, FileText, 
-  Scissors, Move, Film, Type
+  Scissors, Move, Film, Type, Info
 } from 'lucide-react';
 import { TimelineClip } from '../music-video/TimelineEditor';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '../../components/ui/dialog';
 
 interface TimelineClipComponentProps {
   clip: TimelineClip;
@@ -44,6 +52,8 @@ export function TimelineClipComponent({
   onRegenerate,
   onSplit
 }: TimelineClipComponentProps) {
+  const [showPromptDialog, setShowPromptDialog] = useState(false);
+  
   // Calculamos la posición y ancho del clip basándonos en start y duration
   const left = timeToPixels(clip.start);
   const width = timeToPixels(clip.duration);
@@ -91,31 +101,92 @@ export function TimelineClipComponent({
   // Manejar clic en clip
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Si es una imagen y tiene prompt, mostrar el diálogo
+    if (clip.type === 'image' && clip.imagePrompt) {
+      setShowPromptDialog(true);
+    }
+    
     onSelect(clip.id, e.ctrlKey || e.metaKey);
+  };
+  
+  // Manejar regeneración desde el diálogo
+  const handleRegenerateFromDialog = () => {
+    if (onRegenerate) {
+      onRegenerate(clip.id);
+    }
+    setShowPromptDialog(false);
   };
 
   // Verificar si el clip tiene imagen o miniatura
   const hasImage = clip.thumbnail || clip.imageUrl;
 
   return (
-    <div
-      className={cn(
-        "absolute rounded-sm overflow-hidden border select-none",
-        getClipColor(),
-        selected ? 'border-2 ring-2 ring-primary ring-opacity-50 z-10' : 'border',
-        clip.visible === false ? 'opacity-50' : 'opacity-100',
-        clip.locked ? 'cursor-not-allowed' : 'cursor-pointer',
-      )}
-      style={{
-        left: `${left}px`,
-        width: `${width}px`,
-        height: '40px',
-        top: '4px',
-        transition: 'border-color 0.1s ease',
-      }}
-      onClick={handleClick}
-      onMouseDown={(e) => !clip.locked && onMouseDown(e, clip.id, 'body')}
-    >
+    <>
+      {/* Diálogo para mostrar el prompt de la imagen */}
+      <Dialog open={showPromptDialog} onOpenChange={setShowPromptDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Prompt de imagen: {clip.title || `Clip ${clip.id}`}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            {clip.imageUrl && (
+              <div className="flex justify-center mb-4">
+                <img 
+                  src={clip.imageUrl} 
+                  alt="Imagen generada" 
+                  className="max-h-[40vh] object-contain rounded-md border border-gray-300"
+                />
+              </div>
+            )}
+            
+            <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-md">
+              <h4 className="text-sm font-medium mb-2">Prompt utilizado:</h4>
+              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-sm">
+                {clip.imagePrompt || "No hay prompt disponible para esta imagen."}
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            {clip.type === 'image' && onRegenerate && (
+              <Button 
+                onClick={handleRegenerateFromDialog}
+                className="mr-2"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Regenerar imagen
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPromptDialog(false)}
+            >
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <div
+        className={cn(
+          "absolute rounded-sm overflow-hidden border select-none",
+          getClipColor(),
+          selected ? 'border-2 ring-2 ring-primary ring-opacity-50 z-10' : 'border',
+          clip.visible === false ? 'opacity-50' : 'opacity-100',
+          clip.locked ? 'cursor-not-allowed' : 'cursor-pointer',
+        )}
+        style={{
+          left: `${left}px`,
+          width: `${width}px`,
+          height: '40px',
+          top: '4px',
+          transition: 'border-color 0.1s ease',
+        }}
+        onClick={handleClick}
+        onMouseDown={(e) => !clip.locked && onMouseDown(e, clip.id, 'body')}
+      >
       {/* Manijas para redimensionar */}
       {!clip.locked && (
         <>
@@ -312,5 +383,6 @@ export function TimelineClipComponent({
         )}
       </div>
     </div>
+    </>
   );
 }
