@@ -38,6 +38,7 @@ import {
   PLAYHEAD_WIDTH,
   WAVEFORM_HEIGHT,
   CLIP_COLORS,
+  STRING_CLIP_COLORS,
   SNAP_THRESHOLD,
   LAYER_HEIGHT,
   ClipOperation
@@ -368,6 +369,30 @@ export function TimelineEditor({
         return null;
       }
       
+      // Obtener el color adecuado según el tipo de clip
+      const getClipBackgroundColor = () => {
+        // Primero verificamos si el tipo está en el objeto CLIP_COLORS (enum)
+        if (typeof clipColor === 'object' && clipColor && 'background' in clipColor) {
+          return clip.locked ? `${clipColor.background}80` : clipColor.background;
+        }
+        
+        // Si no, buscamos en STRING_CLIP_COLORS para compatibilidad con strings
+        const stringType = clip.type.toString();
+        if (stringType in STRING_CLIP_COLORS) {
+          const color = STRING_CLIP_COLORS[stringType as keyof typeof STRING_CLIP_COLORS];
+          return clip.locked ? `${color.background}80` : color.background;
+        }
+        
+        // Asignar color por defecto basado en la capa si todo lo demás falla
+        switch(clip.layer) {
+          case 0: return STRING_CLIP_COLORS['audio'].background;
+          case 1: return STRING_CLIP_COLORS['video'].background;
+          case 2: return STRING_CLIP_COLORS['text'].background;
+          case 3: return STRING_CLIP_COLORS['effect'].background;
+          default: return "#4169E1"; // Color por defecto (azul)
+        }
+      };
+      
       return (
         <div
           key={`clip-${clip.id}`}
@@ -382,7 +407,7 @@ export function TimelineEditor({
             width: `${clipWidth}px`,
             top: `${clip.layer * (layer.height || LAYER_HEIGHT)}px`,
             height: `${layer.height || LAYER_HEIGHT}px`,
-            backgroundColor: clip.locked ? `${clipColor}80` : clipColor
+            backgroundColor: getClipBackgroundColor()
           }}
           onMouseDown={(e) => handleClipMouseDown(e, clip.id)}
         >

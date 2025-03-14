@@ -96,7 +96,7 @@ export const CLIP_COLORS = {
     text: '#FFFFFF',
     selected: '#DA70D6'
   },
-  // Agregar tipos compatibles
+  // Agregar tipos compatibles adicionales
   [LayerType.VIDEO_IMAGE]: {
     background: '#4169E1',
     border: '#1E90FF',
@@ -108,8 +108,13 @@ export const CLIP_COLORS = {
     border: '#FFA500',
     text: '#000000',
     selected: '#FFDB58'
-  },
-  // Tipos de clips adicionales
+  }
+};
+
+/**
+ * Colores para strings de tipos de clips (compatibilidad)
+ */
+export const STRING_CLIP_COLORS = {
   'audio': {
     background: '#8A2BE2',
     border: '#7B68EE',
