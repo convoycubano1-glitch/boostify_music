@@ -355,13 +355,51 @@ export function TimelineEditor({
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Obtener color para un clip según su tipo
+  const getClipColorByType = (clipType: string): { background: string; border: string; text: string; selected: string; } => {
+    // Intentar obtener del enum LayerType primero
+    let enumKey: LayerType | null = null;
+    
+    // Convertir la string a enum si es posible
+    Object.values(LayerType).forEach(value => {
+      if (value === clipType) {
+        enumKey = value;
+      }
+    });
+    
+    // Si encontramos una coincidencia en el enum, usamos CLIP_COLORS
+    if (enumKey && CLIP_COLORS[enumKey]) {
+      return CLIP_COLORS[enumKey];
+    }
+    
+    // Sino, buscamos en STRING_CLIP_COLORS por compatibilidad
+    if (STRING_CLIP_COLORS[clipType as keyof typeof STRING_CLIP_COLORS]) {
+      return STRING_CLIP_COLORS[clipType as keyof typeof STRING_CLIP_COLORS];
+    }
+    
+    // Color por defecto basado en el layer si no hay coincidencia
+    const defaultColors = {
+      0: STRING_CLIP_COLORS['audio'],
+      1: STRING_CLIP_COLORS['video'],
+      2: STRING_CLIP_COLORS['text'],
+      3: STRING_CLIP_COLORS['effect']
+    };
+    
+    // Color por defecto en caso de que todo falle
+    return {
+      background: '#4169E1', // Azul por defecto
+      border: '#1E90FF',
+      text: '#FFFFFF',
+      selected: '#6495ED'
+    };
+  };
+
   // Renderizado de clips
   const renderClips = () => {
     return clips.map(clip => {
       const clipWidth = timeToPixels(clip.duration);
       const clipLeft = timeToPixels(clip.start);
       const isSelected = clip.id === selectedClipId;
-      const clipColor = CLIP_COLORS[clip.type as keyof typeof CLIP_COLORS];
       const layer = getLayerById(clip.layer);
       
       // Si la capa está oculta o el clip es invisible, no renderizar
@@ -370,27 +408,9 @@ export function TimelineEditor({
       }
       
       // Obtener el color adecuado según el tipo de clip
+      const clipColor = getClipColorByType(clip.type);
       const getClipBackgroundColor = () => {
-        // Primero verificamos si el tipo está en el objeto CLIP_COLORS (enum)
-        if (typeof clipColor === 'object' && clipColor && 'background' in clipColor) {
-          return clip.locked ? `${clipColor.background}80` : clipColor.background;
-        }
-        
-        // Si no, buscamos en STRING_CLIP_COLORS para compatibilidad con strings
-        const stringType = clip.type.toString();
-        if (stringType in STRING_CLIP_COLORS) {
-          const color = STRING_CLIP_COLORS[stringType as keyof typeof STRING_CLIP_COLORS];
-          return clip.locked ? `${color.background}80` : color.background;
-        }
-        
-        // Asignar color por defecto basado en la capa si todo lo demás falla
-        switch(clip.layer) {
-          case 0: return STRING_CLIP_COLORS['audio'].background;
-          case 1: return STRING_CLIP_COLORS['video'].background;
-          case 2: return STRING_CLIP_COLORS['text'].background;
-          case 3: return STRING_CLIP_COLORS['effect'].background;
-          default: return "#4169E1"; // Color por defecto (azul)
-        }
+        return clip.locked ? `${clipColor.background}80` : clipColor.background;
       };
       
       return (
@@ -497,8 +517,20 @@ export function TimelineEditor({
     const beatArray = beatsData?.beats || beats;
     
     return beatArray.map((beat, index) => {
-      const beatTime = 'time' in beat ? beat.time : beat;
-      const isDownbeat = 'isDownbeat' in beat ? beat.isDownbeat : index % 4 === 0;
+      // Convertir el tiempo del beat a número para evitar problemas de tipado
+      let beatTime: number;
+      let isDownbeat: boolean;
+      
+      // Determinar si es un objeto BeatData o simplemente un número
+      if (typeof beat === 'object' && beat !== null && 'time' in beat) {
+        // Es un objeto BeatData
+        beatTime = (beat as BeatData).time;
+        isDownbeat = (beat as BeatData).isDownbeat || false;
+      } else {
+        // Es un número simple
+        beatTime = Number(beat);
+        isDownbeat = index % 4 === 0;
+      }
       
       return (
         <div 

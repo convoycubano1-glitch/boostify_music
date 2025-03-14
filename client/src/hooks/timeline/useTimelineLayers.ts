@@ -351,7 +351,8 @@ export function useTimelineLayers({
 /**
  * Obtiene un color adecuado según el tipo de capa
  */
-function getLayerColorByType(type: LayerType): string {
+function getLayerColorByType(type: LayerType | string): string {
+  // Primero intentamos con el enum LayerType
   switch (type) {
     case LayerType.AUDIO:
       return '#3498db'; // Azul
@@ -359,11 +360,35 @@ function getLayerColorByType(type: LayerType): string {
       return '#9b59b6'; // Púrpura
     case LayerType.TEXT:
       return '#f39c12'; // Ámbar
-    case LayerType.EFFECTS:
+    case LayerType.EFFECT:
       return '#2ecc71'; // Verde
-    default:
-      return '#7f8c8d'; // Gris
+    case LayerType.EFFECTS: // Compatibilidad
+      return '#2ecc71'; // Verde
+    case LayerType.IMAGE:
+      return '#e74c3c'; // Rojo
+    case LayerType.TRANSITION:
+      return '#1abc9c'; // Turquesa
+    case LayerType.AI_PLACEHOLDER:
+      return '#d35400'; // Naranja
+    case LayerType.VIDEO_IMAGE: // Compatibilidad
+      return '#9b59b6'; // Púrpura
   }
+  
+  // Si no es un enum, probamos con string
+  const typeStr = type.toString();
+  const layerColors: Record<string, string> = {
+    'audio': '#3498db',
+    'video': '#9b59b6',
+    'text': '#f39c12',
+    'effect': '#2ecc71',
+    'effects': '#2ecc71',
+    'image': '#e74c3c',
+    'transition': '#1abc9c', 
+    'ai_placeholder': '#d35400',
+    'video_image': '#9b59b6'
+  };
+  
+  return layerColors[typeStr] || '#7f8c8d'; // Gris por defecto
 }
 
 /**

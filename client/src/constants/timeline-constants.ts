@@ -113,8 +113,10 @@ export const CLIP_COLORS = {
 
 /**
  * Colores para strings de tipos de clips (compatibilidad)
+ * Estos colores se utilizan cuando el tipo de clip viene como string
+ * en lugar de como enum LayerType.
  */
-export const STRING_CLIP_COLORS = {
+export const STRING_CLIP_COLORS: Record<string, { background: string; border: string; text: string; selected: string }> = {
   'audio': {
     background: '#8A2BE2',
     border: '#7B68EE',
@@ -156,6 +158,19 @@ export const STRING_CLIP_COLORS = {
     border: '#DDA0DD',
     text: '#FFFFFF',
     selected: '#DA70D6'
+  },
+  // Tipos adicionales para compatibilidad
+  'video_image': {
+    background: '#4169E1',
+    border: '#1E90FF',
+    text: '#FFFFFF',
+    selected: '#6495ED'
+  },
+  'effects': {
+    background: '#FFD700',
+    border: '#FFA500',
+    text: '#000000',
+    selected: '#FFDB58'
   }
 };
 
