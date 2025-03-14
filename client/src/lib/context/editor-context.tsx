@@ -124,8 +124,8 @@ export interface EditorContextType {
   // Acciones para Workflow UI
   setCurrentStep: (step: number) => void;
   markStepAsCompleted: (step: number) => void;
-  updateWorkflowData: (data: any) => void;
-  workflowData: any; // Estado de datos del workflow
+  updateWorkflowData: (data: Partial<WorkflowData>) => void;
+  workflowData: WorkflowData; // Estado de datos del workflow
   
   // Control de reproducción avanzado
   setCurrentPlaybackTime: (time: number) => void;
@@ -166,6 +166,16 @@ const EditorContext = createContext<EditorContextType | null>(null);
 // Proveedor del contexto
 export function EditorProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(initialEditorState);
+  // Definimos una interfaz para WorkflowData para mayor tipado
+  interface WorkflowData {
+    steps?: { id: string; status: 'pending' | 'in-progress' | 'completed' | 'skipped'; timestamp?: Date }[];
+    activeTimeline?: boolean;
+    timelineProgress?: number;
+    [key: string]: any; // Para permitir campos adicionales específicos
+  }
+  
+  // Estado para manejar datos del workflow separados del estado principal
+  const [workflowData, setWorkflowData] = useState<WorkflowData>({});
   
   // Actualizar el estado
   const updateState = useCallback((updates: Partial<typeof state>) => {
@@ -1212,63 +1222,32 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }, [updateProject]);
   
   /**
-   * Actualiza los datos del flujo de trabajo en el proyecto
+   * Actualiza los datos del flujo de trabajo
    * @param data Datos del flujo de trabajo a actualizar
    */
-  const updateWorkflowData = useCallback((data: {
-    steps?: { id: string; status: 'pending' | 'in-progress' | 'completed' | 'skipped'; timestamp?: Date }[];
-    activeTimeline?: boolean;
-    timelineProgress?: number;
-  }) => {
-    updateProject(prevProject => {
-      if (!prevProject) return null;
-      
-      // Si hay steps en los datos nuevos y el proyecto ya tenía steps,
-      // realizamos una combinación más inteligente
-      let mergedSteps;
-      if (data.steps && prevProject.workflowData?.steps) {
-        // Combinamos los pasos por ID para no perder información
-        const stepMap = new Map();
+  const updateWorkflowData = useCallback((data: Partial<WorkflowData>) => {
+    // Actualizamos el estado local para workflowData
+    setWorkflowData((prevData: WorkflowData) => ({
+      ...prevData,
+      ...data
+    }));
+    
+    // También actualizamos los datos en el proyecto si es necesario
+    if (state.project) {
+      updateProject(prevProject => {
+        if (!prevProject) return null;
         
-        // Primero agregamos los pasos existentes
-        prevProject.workflowData.steps.forEach(step => {
-          stepMap.set(step.id, step);
-        });
-        
-        // Luego actualizamos o agregamos los nuevos pasos
-        data.steps.forEach(step => {
-          if (stepMap.has(step.id)) {
-            stepMap.set(step.id, {
-              ...stepMap.get(step.id),
-              ...step,
-              // Aseguramos que si el paso pasa a 'completed', se registre el timestamp
-              ...(step.status === 'completed' && !step.timestamp ? { timestamp: new Date() } : {})
-            });
-          } else {
-            stepMap.set(step.id, step);
+        return {
+          ...prevProject,
+          // Añadimos un objeto workflowData al proyecto con la información actualizada
+          workflowData: {
+            ...(prevProject.workflowData || {}),
+            ...data
           }
-        });
-        
-        // Convertimos el mapa de vuelta a un array
-        mergedSteps = Array.from(stepMap.values());
-      }
-      
-      return {
-        ...prevProject,
-        // Actualizamos currentStep si se proporciona un paso activo
-        ...(data.steps?.find(s => s.status === 'in-progress') 
-          ? { currentStep: prevProject.workflowData?.steps?.findIndex(s => 
-              s.id === data.steps?.find(ns => ns.status === 'in-progress')?.id) || 0 } 
-          : {}),
-        workflowData: {
-          ...(prevProject.workflowData || {}),
-          ...data,
-          // Si tenemos steps combinados, los usamos en lugar de los steps directos
-          ...(mergedSteps ? { steps: mergedSteps } : {})
-        }
-      };
-    });
-  }, [updateProject]);
+        };
+      });
+    }
+  }, [updateProject, state.project]);
   
   // === EFECTOS ===
   
@@ -1316,6 +1295,30 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     }
   }, [state.playhead.isPlaying, state.playhead.speed]);
   
+  // === FUNCIONES DE WORKFLOW Y REPRODUCCIÓN AVANZADAS ===
+
+  // Control avanzado de reproducción
+  const setCurrentPlaybackTime = useCallback((time: number) => {
+    setState(prevState => ({
+      ...prevState,
+      playhead: {
+        ...prevState.playhead,
+        time: Math.max(0, Math.min(time, prevState.project?.duration || 60))
+      }
+    }));
+  }, []);
+
+  // Establecer estado de reproducción
+  const setPlaybackState = useCallback((isPlaying: boolean) => {
+    setState(prevState => ({
+      ...prevState,
+      playhead: {
+        ...prevState.playhead,
+        isPlaying
+      }
+    }));
+  }, []);
+
   // === VALOR DEL CONTEXTO ===
   
   const contextValue: EditorContextType = {
@@ -1399,7 +1402,12 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     // Acciones para Workflow UI
     setCurrentStep,
     markStepAsCompleted,
-    updateWorkflowData
+    updateWorkflowData,
+    workflowData,
+    
+    // Control de reproducción avanzado
+    setCurrentPlaybackTime,
+    setPlaybackState
   };
   
   return (
