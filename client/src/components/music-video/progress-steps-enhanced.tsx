@@ -1,51 +1,35 @@
-/**
- * Componente ProgressSteps Mejorado
- * 
- * Este componente muestra un indicador visual de progreso para el flujo de trabajo de 9 pasos
- * utilizado en la creación de videos musicales profesionales, con animaciones modernas
- * y efectos visuales que muestran el proceso avanzando dinámicamente.
- * 
- * Características:
- * - Muestra los 9 pasos del flujo de trabajo con diseño responsivo
- * - Animaciones avanzadas durante transiciones entre pasos
- * - Iconos animados para representar cada tipo de actividad
- * - Efectos visuales de partículas y brillos en pasos activos
- * - Se integra con EditorContext para acceder al estado global del proyecto
- */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { useEditor } from "@/hooks/use-editor";
+
+// Iconos para los diferentes pasos
 import { 
-  CheckCircle, Circle, ArrowRight, Music, FileText, 
-  Timer, Layout, Palette, Move, Mic, Video, Layers,
-  Sparkles
-} from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { useEditor } from '../../lib/context/editor-context';
-import { motion, AnimatePresence } from 'framer-motion';
+  Circle, 
+  Music2, 
+  FileText, 
+  Wand2, 
+  Palette, 
+  Layers, 
+  Video, 
+  CheckCircle, 
+  Sparkles, 
+  RefreshCcw,
+  Users,
+  SlidersHorizontal,
+  Mic
+} from "lucide-react";
 
-export interface Step {
-  id: string;
-  name: string;  // Estandarizado, antes era 'title'
-  description: string;
-  status?: 'pending' | 'in-progress' | 'completed' | 'skipped';  // Agregado para compatibilidad con Project.workflowData.steps
-  timestamp?: Date;  // Momento en que se completó el paso
-}
+import { Step, ProgressStepsProps } from "../types";
 
-export interface ProgressStepsProps {
-  steps: Step[];
-  currentStep?: string;
-  completedSteps?: string[];
-  onChange?: (stepId: string) => void;
-  onComplete?: (stepId: string) => void;
-}
-
-// Iconos específicos para cada paso del proceso de creación de video musical
+// Iconos asignados a cada tipo de paso
 const StepIcons = {
-  'transcription': <Music className="h-5 w-5" />,
+  'transcription': <Music2 className="h-5 w-5" />,
   'script': <FileText className="h-5 w-5" />,
-  'sync': <Timer className="h-5 w-5" />,
-  'scenes': <Layout className="h-5 w-5" />,
+  'sync': <RefreshCcw className="h-5 w-5" />,
+  'scenes': <Wand2 className="h-5 w-5" />,
   'customization': <Palette className="h-5 w-5" />,
-  'movement': <Move className="h-5 w-5" />,
+  'movement': <Users className="h-5 w-5" />,
   'lipsync': <Mic className="h-5 w-5" />,
   'generation': <Video className="h-5 w-5" />,
   'rendering': <Layers className="h-5 w-5" />
@@ -55,11 +39,13 @@ const StepIcons = {
 const stepVariants = {
   pending: { 
     scale: 1,
-    opacity: 0.7
+    opacity: 0.7,
+    filter: "saturate(0.7) brightness(0.9)"
   },
   active: { 
     scale: 1.05,
     opacity: 1,
+    filter: "saturate(1.2) brightness(1.1)",
     transition: { 
       type: "spring",
       stiffness: 300,
@@ -68,7 +54,11 @@ const stepVariants = {
   },
   completed: { 
     scale: 1,
-    opacity: 1
+    opacity: 1,
+    filter: "saturate(1) brightness(1)",
+    transition: {
+      duration: 0.4
+    }
   }
 };
 
@@ -76,14 +66,17 @@ const stepVariants = {
 const descriptionVariants = {
   hidden: { 
     opacity: 0,
-    y: 5 
+    y: 5,
+    height: 0
   },
   visible: { 
     opacity: 1,
     y: 0,
+    height: "auto",
     transition: { 
       delay: 0.2,
-      duration: 0.5 
+      duration: 0.3,
+      ease: "easeOut"
     }
   }
 };
@@ -228,6 +221,56 @@ const HoverTrail = () => {
   );
 };
 
+// Componente de celebración cuando se completan todos los pasos
+const Celebration = () => {
+  // Array con 30 partículas aleatorias para el efecto de confeti
+  return (
+    <motion.div 
+      className="absolute inset-0 z-20 pointer-events-none overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {Array.from({ length: 30 }).map((_, i) => {
+        // Color aleatorio para cada partícula
+        const colors = ["bg-green-500", "bg-orange-500", "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-yellow-500"];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Posición y tamaño aleatorios
+        const left = `${Math.random() * 100}%`;
+        const size = 4 + Math.random() * 6; // Entre 4 y 10px
+        
+        return (
+          <motion.div
+            key={i}
+            className={`absolute rounded-full ${color}`}
+            style={{ 
+              left,
+              width: `${Math.ceil(size/2)}px`,
+              height: `${Math.ceil(size/2)}px`
+            }}
+            initial={{ 
+              top: "-10%", 
+              opacity: 0,
+              rotate: 0
+            }}
+            animate={{ 
+              top: `${30 + Math.random() * 70}%`, 
+              opacity: [0, 1, 0],
+              rotate: Math.random() * 360
+            }}
+            transition={{ 
+              duration: 3 + Math.random() * 3,
+              delay: Math.random() * 2,
+              ease: [0.1, 0.6, 0.8, 1]
+            }}
+          />
+        );
+      })}
+    </motion.div>
+  )
+};
+
 export function ProgressSteps({
   steps,
   currentStep: propCurrentStep,
@@ -286,6 +329,9 @@ export function ProgressSteps({
             .filter((id): id is string => Boolean(id)) 
         : []);
   }
+  
+  // Determinar si todos los pasos están completados para mostrar la celebración
+  const allStepsCompleted = steps.length > 0 && completedStepIds.length === steps.length;
   
   // Manejador de clic en un paso
   const handleStepClick = (stepId: string) => {
@@ -357,6 +403,9 @@ export function ProgressSteps({
           ease: "linear"
         }}
       />
+      
+      {/* Efecto de celebración cuando todos los pasos están completados */}
+      {allStepsCompleted && <Celebration />}
       
       <div className="space-y-6 md:space-y-0 md:flex md:items-start md:gap-2 px-2 py-4 relative z-10">
         {steps.map((step, index) => {
@@ -568,6 +617,9 @@ export function ProgressSteps({
                       <Particle delay={2} color="green" size={1} speed={0.7} />
                     </motion.div>
                   )}
+                  
+                  {/* Rastro al hacer hover */}
+                  <HoverTrail />
                 </div>
                 
                 <div className="md:text-center">
@@ -652,8 +704,6 @@ export function ProgressSteps({
 }
 
 // Definición de los pasos del flujo de trabajo para creación de videos musicales
-// Nota: Definido como constante (no export) para evitar problemas de Fast Refresh de React
-// Re-exportamos para uso en MusicVideoWorkflow
 export const musicVideoWorkflowSteps: Step[] = [
   {
     id: 'transcription',
