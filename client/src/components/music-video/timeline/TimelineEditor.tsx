@@ -1,769 +1,564 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Slider } from '@/components/ui/slider';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  PlayCircle, PauseCircle, ZoomIn, ZoomOut, Plus, Scissors, Trash2, 
-  Music, Image, Text, Video, Layers, MoveVertical, Eye, EyeOff, Lock, Unlock
-} from 'lucide-react';
-
-// Importar nuestros componentes y hooks personalizados 
-import { WaveformLayer } from './WaveformLayer';
-import { BeatsLayer } from './BeatsLayer';
-import { ClipsLayer } from './ClipsLayer';
-import { PlayheadLayer } from './PlayheadLayer';
-import { useWaveSurfer } from '../../../hooks/timeline/useWaveSurfer';
-import { useClipInteractions } from '../../../hooks/timeline/useClipInteractions';
-import { useBeatsVisualization } from '../../../hooks/timeline/useBeatsVisualization';
-import { useTimelineNavigation } from '../../../hooks/timeline/useTimelineNavigation';
-import { usePreviewDialogs } from '../../../hooks/timeline/usePreviewDialogs';
-import { useClipOperations } from '../../../hooks/timeline/useClipOperations';
-import { useTimelineLayers, LayerConfig } from '../../../hooks/timeline/useTimelineLayers';
-
-// Importar constantes
-import {
-  LAYER_TYPES,
-  CLIP_COLORS,
-  ClipOperation,
-  LayerType,
-  SNAP_THRESHOLD
-} from '../../../constants/timeline-constants';
-
-// Interfaces para datos
-export interface TimelineClip {
-  id: number;
-  type: 'video' | 'audio' | 'image' | 'text';
-  start: number;
-  duration: number;
-  layer: number;
-  name: string;
-  url?: string;
-  content?: string;
-}
-
-export interface BeatData {
-  time: number;
-  type: string;
-  intensity: number;
-  isDownbeat: boolean;
-  timecode: string;
-}
-
-export interface BeatMap {
-  beats: BeatData[];
-  metadata?: {
-    bpm: number;
-    timeSignature?: string;
-    key?: string;
-  };
-}
+/**
+ * Componente para la edición profesional de la línea de tiempo de videos musicales
+ * Implementa todas las restricciones y validaciones necesarias
+ */
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Card, CardContent } from '../../ui/card';
+import { Button } from '../../ui/button';
+import { ScrollArea } from '../../ui/scroll-area';
+import { Slider } from '../../ui/slider';
+import { Input } from '../../ui/input';
+import { Play, Pause, Plus, Trash2, AlignJustify, Image, Music, Type, Wand2 } from 'lucide-react';
+import { cn } from '../../../lib/utils';
+import { WaveformTimeline } from './WaveformTimeline';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Label } from '../../ui/label';
+import { useToast } from '../../../hooks/use-toast';
+import { TimelineClip, LayerConfig } from '../../../interfaces/timeline';
+import { LayerType, LAYER_PROPERTIES, MAX_CLIP_DURATION, MIN_CLIP_DURATION } from '../../../constants/timeline-constants';
+import { hasValidDuration, clipsCollide, findClipCollisions, isInCorrectLayer, isAIGeneratedImage } from './TimelineConstraints';
 
 interface TimelineEditorProps {
-  audioUrl?: string;
-  initialClips?: TimelineClip[];
-  initialBeats?: BeatMap;
-  onClipsChange?: (clips: TimelineClip[]) => void;
-  onCurrentTimeChange?: (time: number) => void;
+  clips: TimelineClip[];
+  duration: number;
+  onClipsChange: (updatedClips: TimelineClip[]) => void;
+  onTimeChange: (time: number) => void;
+  onPlaybackStateChange: (isPlaying: boolean) => void;
+  showBeatGrid?: boolean;
+  autoScroll?: boolean;
+  audioTrack?: string;
 }
 
 /**
- * Editor de timeline profesional con múltiples capas y funcionalidades avanzadas
+ * Editor de línea de tiempo profesional para videos musicales
  */
 export function TimelineEditor({
-  audioUrl,
-  initialClips = [],
-  initialBeats,
+  clips,
+  duration,
   onClipsChange,
-  onCurrentTimeChange
+  onTimeChange,
+  onPlaybackStateChange,
+  showBeatGrid = false,
+  autoScroll = true,
+  audioTrack
 }: TimelineEditorProps) {
-  // Estado para el reproductor y clips
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [currentTime, setCurrentTime] = useState<number>(0);
-  const [clips, setClips] = useState<TimelineClip[]>(initialClips);
-  const [selectedClip, setSelectedClip] = useState<number | null>(null);
-  const [beatsData, setBeatsData] = useState<BeatMap | undefined>(initialBeats);
-  const [showLayerManager, setShowLayerManager] = useState<boolean>(false);
+  // Estados para reproducción y posición del tiempo
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [zoom, setZoom] = useState(1);
   
-  // Estado para gestión de capas
-  const [visibleLayers, setVisibleLayers] = useState<string[]>(['audio', 'video', 'text', 'effects']);
-  const [lockedLayers, setLockedLayers] = useState<string[]>([]);
+  // Estado para capas visibles y seleccionadas
+  const [layers, setLayers] = useState<LayerConfig[]>([
+    { id: LayerType.AUDIO, name: LAYER_PROPERTIES[LayerType.AUDIO].name, type: LayerType.AUDIO, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.AUDIO].height, color: LAYER_PROPERTIES[LayerType.AUDIO].color },
+    { id: LayerType.VIDEO_IMAGE, name: LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].name, type: LayerType.VIDEO_IMAGE, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].height, color: LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].color },
+    { id: LayerType.TEXT, name: LAYER_PROPERTIES[LayerType.TEXT].name, type: LayerType.TEXT, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.TEXT].height, color: LAYER_PROPERTIES[LayerType.TEXT].color },
+    { id: LayerType.EFFECTS, name: LAYER_PROPERTIES[LayerType.EFFECTS].name, type: LayerType.EFFECTS, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.EFFECTS].height, color: LAYER_PROPERTIES[LayerType.EFFECTS].color },
+    { id: LayerType.AI_GENERATED, name: LAYER_PROPERTIES[LayerType.AI_GENERATED].name, type: LayerType.AI_GENERATED, locked: false, visible: true, height: LAYER_PROPERTIES[LayerType.AI_GENERATED].height, color: LAYER_PROPERTIES[LayerType.AI_GENERATED].color }
+  ]);
   
-  // Reproducción de audio con visualización de forma de onda
-  const { 
-    waveformContainerRef, 
-    waveformData, 
-    duration,
-    play,
-    pause,
-    seekTo
-  } = useWaveSurfer({
-    audioUrl, 
-    onTimeUpdate: (time) => {
-      setCurrentTime(time);
-      onCurrentTimeChange?.(time);
-    },
-    onPlayPause: (playing) => setIsPlaying(playing),
-    onReady: () => console.log("Waveform ready")
-  });
+  // Estados para selección y edición de clips
+  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newClipType, setNewClipType] = useState<'audio' | 'video' | 'image' | 'text' | 'effect'>('image');
+  const [newClipLayer, setNewClipLayer] = useState<number>(LayerType.VIDEO_IMAGE);
+  const [draggedClip, setDraggedClip] = useState<{ id: number, offsetX: number } | null>(null);
   
-  // Navegación y zoom del timeline
-  const {
-    zoom,
-    setZoom,
-    scrollAreaRef,
-    timeToPixels,
-    pixelsToTime,
-    handleZoomIn,
-    handleZoomOut,
-    updatePlayheadPosition
-  } = useTimelineNavigation({
-    duration,
-    currentTime,
-    isPlaying,
-    selectedClip,
-    clips
-  });
-
-  // Visualización de beats
-  const {
-    visibleBeats,
-    hasBeats,
-    bpmInfo
-  } = useBeatsVisualization({
-    beatsData,
-    timeToPixels,
-    duration,
-    zoom
-  });
+  // Referencias
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const playTimerRef = useRef<number | null>(null);
   
-  // Interacciones con clips (selección, movimiento, redimensionado)
-  const {
-    handleAddClip,
-    handleSelectClip,
-    handleDeleteClip,
-    handleMoveClip,
-    handleResizeClip,
-    handleClipOperation
-  } = useClipInteractions({
-    clips,
-    setClips,
-    selectedClip,
-    setSelectedClip,
-    onClipsChange
-  });
+  // Toast para notificaciones
+  const { toast } = useToast();
   
-  // Diálogos de previsualización
-  const {
-    selectedImagePreview,
-    setSelectedImagePreview,
-    expandedPreview,
-    setExpandedPreview,
-    handleOpenPreview,
-    handleClosePreview,
-    handleToggleExpandPreview
-  } = usePreviewDialogs();
+  // Manejar cambios en el tiempo actual
+  useEffect(() => {
+    setCurrentTime(prevTime => {
+      // Solo actualizar si hay un cambio significativo
+      if (Math.abs(prevTime - currentTime) > 0.01) {
+        return currentTime;
+      }
+      return prevTime;
+    });
+  }, [currentTime]);
   
-  // Operaciones avanzadas para clips (dividir, combinar, duplicar)
-  const {
-    splitClip,
-    combineClips,
-    duplicateClip,
-    findSnapPosition
-  } = useClipOperations({
-    onError: (message) => console.error(message),
-    snapThreshold: SNAP_THRESHOLD,
-    beatPositions: beatsData?.beats?.map(beat => beat.time) || [],
-    beatSnapEnabled: true
-  });
-  
-  // Gestión de capas del timeline
-  const {
-    layers,
-    addLayer,
-    removeLayer,
-    updateLayer,
-    getLayerById
-  } = useTimelineLayers({
-    onLayerChange: (updatedLayers) => {
-      console.log("Capas actualizadas:", updatedLayers);
-    }
-  });
-  
-  // Funciones para gestionar la visibilidad de capas
-  const toggleLayerVisibility = useCallback((layerId: string) => {
-    if (visibleLayers.includes(layerId)) {
-      setVisibleLayers(visibleLayers.filter(id => id !== layerId));
-    } else {
-      setVisibleLayers([...visibleLayers, layerId]);
-    }
-  }, [visibleLayers]);
-  
-  // Funciones para gestionar el bloqueo de capas
-  const toggleLayerLock = useCallback((layerId: string) => {
-    if (lockedLayers.includes(layerId)) {
-      setLockedLayers(lockedLayers.filter(id => id !== layerId));
-    } else {
-      setLockedLayers([...lockedLayers, layerId]);
-    }
-  }, [lockedLayers]);
-  
-  // Verificar si una capa está bloqueada
-  const isLayerLocked = useCallback((layerId: string) => {
-    return lockedLayers.includes(layerId);
-  }, [lockedLayers]);
-  
-  // Control de reproducción
-  const togglePlayPause = useCallback(() => {
+  // Manejar la reproducción
+  useEffect(() => {
     if (isPlaying) {
-      pause();
-    } else {
-      play();
+      const startTime = performance.now();
+      const startPosition = currentTime;
+      
+      const updatePlayback = () => {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const newTime = Math.min(duration, startPosition + elapsed);
+        
+        setCurrentTime(newTime);
+        onTimeChange(newTime);
+        
+        if (newTime < duration) {
+          playTimerRef.current = requestAnimationFrame(updatePlayback);
+        } else {
+          setIsPlaying(false);
+          onPlaybackStateChange(false);
+        }
+      };
+      
+      playTimerRef.current = requestAnimationFrame(updatePlayback);
+    } else if (playTimerRef.current) {
+      cancelAnimationFrame(playTimerRef.current);
+      playTimerRef.current = null;
     }
-  }, [isPlaying, play, pause]);
+    
+    return () => {
+      if (playTimerRef.current) {
+        cancelAnimationFrame(playTimerRef.current);
+        playTimerRef.current = null;
+      }
+    };
+  }, [isPlaying, currentTime, duration, onTimeChange, onPlaybackStateChange]);
   
-  // Actualizar tiempo actual al hacer click en la línea de tiempo
-  const updateCurrentTime = useCallback((time: number) => {
-    setCurrentTime(time);
-    seekTo(time);
-  }, [seekTo]);
+  // Función para alternar entre reproducción y pausa
+  const togglePlayback = useCallback(() => {
+    setIsPlaying(playing => !playing);
+    onPlaybackStateChange(!isPlaying);
+  }, [isPlaying, onPlaybackStateChange]);
   
-  // Manejadores para agregar nuevos clips
-  const addVideoClip = useCallback(() => {
-    handleAddClip({
-      type: 'video',
-      start: currentTime,
-      duration: 2,
-      layer: LAYER_TYPES.VIDEO,
-      name: 'New Video'
+  // Función para añadir un nuevo clip
+  const addNewClip = useCallback((type: 'audio' | 'video' | 'image' | 'text' | 'effect', layerId: number) => {
+    // Determinar la capa correcta basada en el tipo
+    let targetLayer = layerId;
+    
+    // Validar que el tipo de clip sea compatible con la capa seleccionada
+    switch (type) {
+      case 'audio':
+        targetLayer = LayerType.AUDIO;
+        break;
+      case 'video':
+      case 'image':
+        // Si no es capa de AI generada, usar VIDEO_IMAGE
+        if (targetLayer !== LayerType.AI_GENERATED) {
+          targetLayer = LayerType.VIDEO_IMAGE;
+        }
+        break;
+      case 'text':
+        targetLayer = LayerType.TEXT;
+        break;
+      case 'effect':
+        targetLayer = LayerType.EFFECTS;
+        break;
+    }
+    
+    // Buscar un espacio adecuado en la capa para el nuevo clip
+    const clipsInLayer = clips.filter(clip => clip.layer === targetLayer);
+    let startPosition = 0;
+    
+    // Si hay clips en la capa, encontrar un espacio libre
+    if (clipsInLayer.length > 0) {
+      // Ordenar clips por posición inicial
+      const sortedClips = [...clipsInLayer].sort((a, b) => a.start - b.start);
+      
+      // Buscar espacio entre clips o después del último
+      let foundSpace = false;
+      
+      // Verificar espacio al inicio
+      if (sortedClips[0].start >= MAX_CLIP_DURATION) {
+        startPosition = 0;
+        foundSpace = true;
+      }
+      
+      // Verificar espacios entre clips
+      if (!foundSpace) {
+        for (let i = 0; i < sortedClips.length - 1; i++) {
+          const endOfCurrent = sortedClips[i].start + sortedClips[i].duration;
+          const startOfNext = sortedClips[i + 1].start;
+          
+          if (startOfNext - endOfCurrent >= MAX_CLIP_DURATION) {
+            startPosition = endOfCurrent;
+            foundSpace = true;
+            break;
+          }
+        }
+      }
+      
+      // Si no hay espacios, colocar después del último clip
+      if (!foundSpace) {
+        const lastClip = sortedClips[sortedClips.length - 1];
+        startPosition = lastClip.start + lastClip.duration;
+      }
+    }
+    
+    // Crear nuevo clip con valores por defecto según el tipo
+    const newClip: TimelineClip = {
+      id: Date.now(), // ID único basado en timestamp
+      type,
+      layer: targetLayer,
+      start: startPosition,
+      duration: type === 'text' ? 2 : MAX_CLIP_DURATION, // Duración más corta para textos
+      title: `Nuevo ${type === 'audio' ? 'Audio' : 
+              type === 'video' ? 'Video' : 
+              type === 'image' ? 'Imagen' : 
+              type === 'text' ? 'Texto' : 'Efecto'}`,
+      visible: true,
+      locked: false,
+      
+      // Propiedades específicas por tipo
+      ...(type === 'audio' && { audioUrl: '' }),
+      ...(type === 'video' && { videoUrl: '' }),
+      ...(type === 'image' && { imageUrl: '' }),
+      ...(type === 'text' && { textContent: 'Texto de ejemplo' }),
+      
+      // Si es imagen generada por IA, marcarla como tal
+      ...(type === 'image' && targetLayer === LayerType.AI_GENERATED && { generatedImage: true }),
+      
+      createdAt: new Date()
+    };
+    
+    // Actualizar los clips y cerrar el diálogo
+    onClipsChange([...clips, newClip]);
+    setDialogOpen(false);
+    
+    // Mostrar toast de confirmación
+    toast({
+      title: "Elemento añadido",
+      description: `Se ha añadido un nuevo elemento de tipo ${type} a la línea de tiempo.`,
+      variant: "default"
     });
-  }, [currentTime, handleAddClip]);
+    
+    // Seleccionar el clip recién creado
+    setSelectedClipId(newClip.id);
+  }, [clips, onClipsChange, toast]);
   
-  const addAudioClip = useCallback(() => {
-    handleAddClip({
-      type: 'audio',
-      start: currentTime,
-      duration: 2,
-      layer: LAYER_TYPES.AUDIO,
-      name: 'New Audio'
+  // Función para eliminar un clip
+  const deleteClip = useCallback((id: number) => {
+    onClipsChange(clips.filter(clip => clip.id !== id));
+    
+    if (selectedClipId === id) {
+      setSelectedClipId(null);
+    }
+    
+    toast({
+      title: "Elemento eliminado",
+      description: "Se ha eliminado el elemento seleccionado de la línea de tiempo.",
+      variant: "destructive"
     });
-  }, [currentTime, handleAddClip]);
+  }, [clips, onClipsChange, selectedClipId, toast]);
   
-  const addImageClip = useCallback(() => {
-    handleAddClip({
-      type: 'image',
-      start: currentTime,
-      duration: 1,
-      layer: LAYER_TYPES.VIDEO,
-      name: 'New Image'
-    });
-  }, [currentTime, handleAddClip]);
+  // Función para actualizar un clip existente
+  const updateClip = useCallback((id: number, updates: Partial<TimelineClip>) => {
+    const updatedClips = clips.map(clip => 
+      clip.id === id ? { ...clip, ...updates } : clip
+    );
+    
+    onClipsChange(updatedClips);
+  }, [clips, onClipsChange]);
   
-  const addTextClip = useCallback(() => {
-    handleAddClip({
-      type: 'text',
-      start: currentTime,
-      duration: 1.5,
-      layer: LAYER_TYPES.TEXT,
-      name: 'New Text',
-      content: 'Sample Text'
-    });
-  }, [currentTime, handleAddClip]);
+  // Manejar la selección de un clip
+  const handleClipSelect = (id: number) => {
+    setSelectedClipId(id === selectedClipId ? null : id);
+  };
   
-  // Renderizado del componente
+  // Convertir tiempo a píxeles para la visualización
+  const timeToPixels = (time: number) => time * 100 * zoom;
+  
+  // Formatear tiempo en formato mm:ss.ms
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    const ms = Math.floor((time % 1) * 10);
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms}`;
+  };
+  
+  // Aplicar todas las restricciones cada vez que cambian los clips
+  useEffect(() => {
+    // Validar que los clips cumplen con las restricciones
+    let hasViolations = false;
+    
+    for (const clip of clips) {
+      // Verificar que la duración no exceda el máximo
+      if (clip.duration > MAX_CLIP_DURATION) {
+        hasViolations = true;
+        console.warn(`Clip ${clip.id} excede la duración máxima permitida`);
+      }
+      
+      // Verificar que el tipo de clip es adecuado para su capa
+      if (!isInCorrectLayer(clip)) {
+        hasViolations = true;
+        console.warn(`Clip ${clip.id} está en una capa incorrecta para su tipo ${clip.type}`);
+      }
+      
+      // Verificar colisiones con otros clips
+      const collisions = findClipCollisions(clip, clips);
+      if (collisions.length > 0) {
+        hasViolations = true;
+        console.warn(`Clip ${clip.id} colisiona con otros clips en la misma capa`);
+      }
+    }
+    
+    if (hasViolations) {
+      toast({
+        title: "Advertencia de línea de tiempo",
+        description: "Algunos clips no cumplen con las restricciones establecidas.",
+        variant: "destructive"
+      });
+    }
+  }, [clips, toast]);
+  
+  // Renderizar marcas de tiempo (regla) en la parte superior
+  const renderTimeMarkers = () => {
+    const markers = [];
+    const step = zoom < 0.5 ? 10 : zoom < 1 ? 5 : zoom < 2 ? 1 : 0.5;
+    
+    for (let t = 0; t <= Math.ceil(duration); t += step) {
+      const position = timeToPixels(t);
+      
+      markers.push(
+        <div 
+          key={`marker-${t}`}
+          className="absolute top-0 h-5 border-l border-gray-500"
+          style={{ left: `${position}px` }}
+        >
+          <span className="absolute -left-3 text-xs text-gray-400">
+            {formatTime(t)}
+          </span>
+        </div>
+      );
+    }
+    
+    return markers;
+  };
+  
+  // Renderizar la línea de playhead (posición actual)
+  const renderPlayhead = () => {
+    const position = timeToPixels(currentTime);
+    
+    return (
+      <div 
+        className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-20"
+        style={{ left: `${position}px` }}
+      >
+        <div className="absolute -top-6 -left-8 bg-gray-900 px-1 py-0.5 rounded text-xs text-white whitespace-nowrap">
+          {formatTime(currentTime)}
+        </div>
+      </div>
+    );
+  };
+  
+  // Renderizar capas y clips en cada capa
+  const renderLayers = () => {
+    return layers.map(layer => (
+      <div 
+        key={`layer-${layer.id}`}
+        className={cn(
+          "relative border-t border-gray-800 mb-1",
+          layer.locked && "opacity-70",
+          !layer.visible && "opacity-30"
+        )}
+        style={{ height: `${layer.height}px` }}
+      >
+        {/* Etiqueta de la capa */}
+        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gray-800 flex items-center px-2 z-10">
+          <div 
+            className="w-3 h-3 rounded-full mr-2"
+            style={{ backgroundColor: layer.color }}
+          />
+          <span className="text-sm font-medium truncate">{layer.name}</span>
+        </div>
+        
+        {/* Contenido de la capa (clips) */}
+        <div className="absolute left-32 right-0 top-0 bottom-0">
+          {clips
+            .filter(clip => clip.layer === layer.id && layer.visible)
+            .map(clip => (
+              <div
+                key={`clip-${clip.id}`}
+                className={cn(
+                  "absolute top-1 bottom-1 rounded px-2 py-1 cursor-pointer border-2 flex items-center overflow-hidden",
+                  selectedClipId === clip.id ? "border-white" : "border-transparent",
+                  clip.locked && "opacity-60 cursor-not-allowed"
+                )}
+                style={{
+                  left: `${timeToPixels(clip.start)}px`,
+                  width: `${timeToPixels(clip.duration)}px`,
+                  backgroundColor: clip.type === 'audio' ? LAYER_PROPERTIES[LayerType.AUDIO].color :
+                                  clip.type === 'video' ? LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].color :
+                                  clip.type === 'image' && clip.layer === LayerType.AI_GENERATED ? LAYER_PROPERTIES[LayerType.AI_GENERATED].color :
+                                  clip.type === 'image' ? LAYER_PROPERTIES[LayerType.VIDEO_IMAGE].color :
+                                  clip.type === 'text' ? LAYER_PROPERTIES[LayerType.TEXT].color :
+                                  LAYER_PROPERTIES[LayerType.EFFECTS].color
+                }}
+                onClick={() => handleClipSelect(clip.id)}
+              >
+                {/* Icono según el tipo de clip */}
+                <span className="mr-1">
+                  {clip.type === 'audio' && <Music className="h-4 w-4" />}
+                  {clip.type === 'video' && <Play className="h-4 w-4" />}
+                  {clip.type === 'image' && <Image className="h-4 w-4" />}
+                  {clip.type === 'text' && <Type className="h-4 w-4" />}
+                  {clip.type === 'effect' && <Wand2 className="h-4 w-4" />}
+                </span>
+                
+                {/* Título del clip */}
+                <span className="text-xs truncate">
+                  {clip.title}
+                </span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    ));
+  };
+  
   return (
-    <Card className="w-full overflow-hidden">
-      <CardContent className="p-4">
-        {/* Controles superiores */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={togglePlayPause}
-              aria-label={isPlaying ? "Pause" : "Play"}
+    <Card className="w-full h-full bg-gray-900 text-white overflow-hidden border-gray-800">
+      <CardContent className="p-0 flex flex-col h-full">
+        {/* Barra de herramientas superior */}
+        <div className="flex items-center justify-between p-2 border-b border-gray-800">
+          <div className="flex items-center space-x-2">
+            {/* Control de reproducción */}
+            <Button
+              size="sm"
+              variant={isPlaying ? "destructive" : "default"}
+              onClick={togglePlayback}
             >
-              {isPlaying ? <PauseCircle size={20} /> : <PlayCircle size={20} />}
+              {isPlaying ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+              {isPlaying ? "Pausar" : "Reproducir"}
             </Button>
             
-            <div className="ml-4 flex items-center space-x-2">
-              <Button variant="outline" size="icon" onClick={handleZoomOut} aria-label="Zoom Out">
-                <ZoomOut size={18} />
-              </Button>
-              <Button variant="outline" size="icon" onClick={handleZoomIn} aria-label="Zoom In">
-                <ZoomIn size={18} />
-              </Button>
+            {/* Tiempo actual / duración */}
+            <div className="text-sm">
+              {formatTime(currentTime)} / {formatTime(duration)}
             </div>
           </div>
           
-          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-            <span className="w-20 text-right">{formatTimecode(currentTime)}</span>
-            <span>/</span>
-            <span className="w-20">{formatTimecode(duration)}</span>
-          </div>
-          
-          <div className="flex space-x-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={addVideoClip}>
-                    <Video size={16} className="text-purple-500" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Add Video Clip</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          <div className="flex items-center space-x-2">
+            {/* Control de zoom */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm">Zoom:</span>
+              <Slider
+                className="w-32"
+                min={0.5}
+                max={5}
+                step={0.5}
+                value={[zoom]}
+                onValueChange={(values) => setZoom(values[0])}
+              />
+              <span className="text-sm">{zoom.toFixed(1)}x</span>
+            </div>
             
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={addAudioClip}>
-                    <Music size={16} className="text-blue-500" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Add Audio Clip</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={addImageClip}>
-                    <Image size={16} className="text-green-500" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Add Image Clip</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={addTextClip}>
-                    <Text size={16} className="text-amber-500" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Add Text Clip</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => setShowLayerManager(!showLayerManager)}
-                  >
-                    <Layers size={16} className="text-indigo-500" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Manage Layers</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            {selectedClip !== null && (
-              <>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => {
-                          if (selectedClip) {
-                            const clip = clips.find(c => c.id === selectedClip);
-                            if (clip) {
-                              // Calcular punto medio del clip para dividirlo
-                              const clipMiddle = clip.start + (clip.duration / 2);
-                              handleClipOperation(selectedClip, ClipOperation.SPLIT, { splitTime: clipMiddle });
-                            }
-                          }
-                        }}
+            {/* Botón para añadir nuevo clip */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Añadir Clip
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-gray-900 text-white border-gray-700">
+                <DialogHeader>
+                  <DialogTitle>Añadir nuevo elemento</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="clip-type">Tipo de elemento</Label>
+                    <Select 
+                      value={newClipType} 
+                      onValueChange={(value: any) => setNewClipType(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="audio">Audio</SelectItem>
+                        <SelectItem value="video">Video</SelectItem>
+                        <SelectItem value="image">Imagen</SelectItem>
+                        <SelectItem value="text">Texto</SelectItem>
+                        <SelectItem value="effect">Efecto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Solo mostrar selección de capa para imágenes (puede ser normal o generada) */}
+                  {newClipType === 'image' && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="clip-layer">Capa</Label>
+                      <Select 
+                        value={String(newClipLayer)} 
+                        onValueChange={(value) => setNewClipLayer(Number(value))}
                       >
-                        <Scissors size={16} className="text-orange-500" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Split Clip</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => {
-                          if (selectedClip) {
-                            handleClipOperation(selectedClip, ClipOperation.DUPLICATE);
-                          }
-                        }}
-                      >
-                        <Plus size={16} className="text-teal-500" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Duplicate Clip</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => handleDeleteClip(selectedClip)}
-                        className="text-red-500"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Delete Selected Clip</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </>
-            )}
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar capa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={String(LayerType.VIDEO_IMAGE)}>Video e Imagen</SelectItem>
+                          <SelectItem value={String(LayerType.AI_GENERATED)}>Imagen Generada IA</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={() => addNewClip(newClipType, newClipLayer)}>Añadir</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Botón para eliminar clip seleccionado */}
+            <Button 
+              variant="destructive" 
+              size="sm"
+              disabled={selectedClipId === null}
+              onClick={() => selectedClipId && deleteClip(selectedClipId)}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Eliminar
+            </Button>
           </div>
         </div>
         
-        {/* Timeline principal con scroll */}
-        <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-12rem)] overflow-x-auto">
-          <div className="relative min-w-full" style={{ width: `${timeToPixels(duration)}px` }}>
-            {/* Playhead y regla de tiempo */}
-            <PlayheadLayer
+        {/* Panel de forma de onda (WaveformTimeline) */}
+        {audioTrack && (
+          <div className="h-64 border-b border-gray-800">
+            <WaveformTimeline
+              audioUrl={audioTrack}
+              duration={duration}
               currentTime={currentTime}
-              timeToPixels={timeToPixels}
-              duration={duration}
-              setCurrentTime={updateCurrentTime}
+              clips={clips}
+              onClipUpdate={updateClip}
+              onTimeUpdate={setCurrentTime}
               isPlaying={isPlaying}
-              zoom={zoom}
+              onPlayPause={togglePlayback}
             />
-            
-            {/* Forma de onda de audio */}
-            <WaveformLayer
-              waveformData={waveformData}
-              timeToPixels={timeToPixels}
-              waveformContainerRef={waveformContainerRef}
-              duration={duration}
-            />
-            
-            {/* Capa de beats */}
-            <BeatsLayer
-              visibleBeats={visibleBeats}
-              hasBeats={hasBeats}
-              bpmInfo={bpmInfo}
-            />
-            
-            {/* Capas para diferentes tipos de clips */}
-            <div className="mt-1 border-t border-gray-800">
-              {/* Capas predeterminadas */}
-              <div className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1">
-                <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
-                  <span>Audio</span>
-                  <button 
-                    className="ml-2 rounded-full bg-blue-500/20 p-0.5 text-blue-500 hover:bg-blue-500/30"
-                    onClick={() => toggleLayerVisibility('audio')}
-                  >
-                    {isLayerLocked('audio') ? <Lock size={10} /> : (
-                      visibleLayers.includes('audio') ? <Eye size={10} /> : <EyeOff size={10} />
-                    )}
-                  </button>
-                </div>
-                <ClipsLayer
-                  clips={clips.filter(clip => clip.layer === LayerType.AUDIO)}
-                  selectedClip={selectedClip}
-                  timeToPixels={timeToPixels}
-                  onSelectClip={handleSelectClip}
-                  onResizeClip={isLayerLocked('audio') ? undefined : handleResizeClip}
-                  onMoveClip={isLayerLocked('audio') ? undefined : handleMoveClip}
-                  onPreviewClip={handleOpenPreview}
-                  height={40}
-                  disabled={!visibleLayers.includes('audio')}
-                />
-              </div>
-              
-              {/* Capa de video/imagen */}
-              <div className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1">
-                <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
-                  <span>Video/Image</span>
-                  <button 
-                    className="ml-2 rounded-full bg-purple-500/20 p-0.5 text-purple-500 hover:bg-purple-500/30"
-                    onClick={() => toggleLayerVisibility('video')}
-                  >
-                    {isLayerLocked('video') ? <Lock size={10} /> : (
-                      visibleLayers.includes('video') ? <Eye size={10} /> : <EyeOff size={10} />
-                    )}
-                  </button>
-                </div>
-                <ClipsLayer
-                  clips={clips.filter(clip => clip.layer === LayerType.VIDEO)}
-                  selectedClip={selectedClip}
-                  timeToPixels={timeToPixels}
-                  onSelectClip={handleSelectClip}
-                  onResizeClip={isLayerLocked('video') ? undefined : handleResizeClip}
-                  onMoveClip={isLayerLocked('video') ? undefined : handleMoveClip}
-                  onPreviewClip={handleOpenPreview}
-                  height={40}
-                  disabled={!visibleLayers.includes('video')}
-                />
-              </div>
-              
-              {/* Capa de texto */}
-              <div className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1">
-                <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
-                  <span>Text</span>
-                  <button 
-                    className="ml-2 rounded-full bg-amber-500/20 p-0.5 text-amber-500 hover:bg-amber-500/30"
-                    onClick={() => toggleLayerVisibility('text')}
-                  >
-                    {isLayerLocked('text') ? <Lock size={10} /> : (
-                      visibleLayers.includes('text') ? <Eye size={10} /> : <EyeOff size={10} />
-                    )}
-                  </button>
-                </div>
-                <ClipsLayer
-                  clips={clips.filter(clip => clip.layer === LayerType.TEXT)}
-                  selectedClip={selectedClip}
-                  timeToPixels={timeToPixels}
-                  onSelectClip={handleSelectClip}
-                  onResizeClip={isLayerLocked('text') ? undefined : handleResizeClip}
-                  onMoveClip={isLayerLocked('text') ? undefined : handleMoveClip}
-                  onPreviewClip={handleOpenPreview}
-                  height={40}
-                  disabled={!visibleLayers.includes('text')}
-                />
-              </div>
-              
-              {/* Capa de efectos */}
-              <div className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1">
-                <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
-                  <span>Effects</span>
-                  <button 
-                    className="ml-2 rounded-full bg-pink-500/20 p-0.5 text-pink-500 hover:bg-pink-500/30"
-                    onClick={() => toggleLayerVisibility('effects')}
-                  >
-                    {isLayerLocked('effects') ? <Lock size={10} /> : (
-                      visibleLayers.includes('effects') ? <Eye size={10} /> : <EyeOff size={10} />
-                    )}
-                  </button>
-                </div>
-                <ClipsLayer
-                  clips={clips.filter(clip => clip.layer === LayerType.EFFECTS)}
-                  selectedClip={selectedClip}
-                  timeToPixels={timeToPixels}
-                  onSelectClip={handleSelectClip}
-                  onResizeClip={isLayerLocked('effects') ? undefined : handleResizeClip}
-                  onMoveClip={isLayerLocked('effects') ? undefined : handleMoveClip}
-                  onPreviewClip={handleOpenPreview}
-                  height={40}
-                  disabled={!visibleLayers.includes('effects')}
-                />
-              </div>
-              
-              {/* Capas personalizadas */}
-              {layers.filter(layer => getLayerById(layer.id) && visibleLayers.includes(layer.id)).map(layer => (
-                <div 
-                  key={layer.id}
-                  className="relative h-12 border-b border-gray-800 bg-card/10 px-1 py-1"
-                >
-                  <div className="absolute left-2 top-0 flex items-center text-xs font-medium text-muted-foreground">
-                    <span>{layer.name}</span>
-                    <button 
-                      className="ml-2 rounded-full bg-indigo-500/20 p-0.5 text-indigo-500 hover:bg-indigo-500/30"
-                      onClick={() => toggleLayerVisibility(layer.id)}
-                    >
-                      {isLayerLocked(layer.id) ? <Lock size={10} /> : (
-                        visibleLayers.includes(layer.id) ? <Eye size={10} /> : <EyeOff size={10} />
-                      )}
-                    </button>
-                  </div>
-                  <ClipsLayer
-                    clips={clips.filter(clip => clip.layer === layer.id)}
-                    selectedClip={selectedClip}
-                    timeToPixels={timeToPixels}
-                    onSelectClip={handleSelectClip}
-                    onResizeClip={isLayerLocked(layer.id) ? undefined : handleResizeClip}
-                    onMoveClip={isLayerLocked(layer.id) ? undefined : handleMoveClip}
-                    onPreviewClip={handleOpenPreview}
-                    height={40}
-                    disabled={!visibleLayers.includes(layer.id)}
-                  />
-                </div>
-              ))}
-            </div>
           </div>
-        </ScrollArea>
-      </CardContent>
-      
-      {/* Diálogo del administrador de capas */}
-      <Dialog open={showLayerManager} onOpenChange={setShowLayerManager}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Layer Manager</DialogTitle>
-          </DialogHeader>
-          
-          <div className="mt-4 space-y-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-sm font-medium">Timeline Layers</h3>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  // Añadir nueva capa
-                  const layerId = `layer-${Date.now()}`;
-                  const newLayer: LayerConfig = {
-                    id: layerId,
-                    name: `Layer ${layers.length + 1}`,
-                    type: LayerType.VIDEO,
-                    visible: true,
-                    locked: false,
-                    index: layers.length
-                  };
-                  addLayer(newLayer);
-                  
-                  // Agregar a capas visibles automáticamente
-                  if (!visibleLayers.includes(layerId)) {
-                    setVisibleLayers([...visibleLayers, layerId]);
-                  }
-                }}
-              >
-                <Plus size={16} className="mr-1" /> Add Layer
-              </Button>
-            </div>
-            
-            <div className="max-h-80 overflow-y-auto space-y-2 pr-2">
-              {layers.length === 0 ? (
-                <div className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                  No custom layers added yet. Add a layer to get started.
-                </div>
-              ) : (
-                layers.map((layer) => (
-                  <div 
-                    key={layer.id} 
-                    className="flex items-center p-2 border rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{layer.name}</div>
-                      <div className="text-xs text-muted-foreground capitalize">{LayerType[layer.type]}</div>
-                    </div>
-                    
-                    <div className="flex space-x-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7"
-                        onClick={() => toggleLayerVisibility(layer.id)}
-                      >
-                        {isLayerLocked(layer.id) ? 
-                          <Lock size={14} /> : 
-                          (visibleLayers.includes(layer.id) ? <Eye size={14} /> : <EyeOff size={14} />)
-                        }
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7"
-                        onClick={() => toggleLayerLock(layer.id)}
-                      >
-                        {isLayerLocked(layer.id) ? <Lock size={14} /> : <Unlock size={14} />}
-                      </Button>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 text-red-500"
-                        onClick={() => {
-                          removeLayer(layer.id);
-                          // Eliminar de las capas visibles y bloqueadas si existe
-                          setVisibleLayers(visibleLayers.filter(id => id !== layer.id));
-                          setLockedLayers(lockedLayers.filter(id => id !== layer.id));
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            
-            <div className="pt-4 border-t">
-              <h3 className="text-sm font-medium mb-2">Default Layers</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-2 border rounded-md bg-muted/30">
-                  <div className="font-medium text-sm">Audio</div>
-                  <div className="text-xs text-muted-foreground">Base layer for audio clips</div>
-                </div>
-                <div className="p-2 border rounded-md bg-muted/30">
-                  <div className="font-medium text-sm">Video/Image</div>
-                  <div className="text-xs text-muted-foreground">Base layer for visual media</div>
-                </div>
-                <div className="p-2 border rounded-md bg-muted/30">
-                  <div className="font-medium text-sm">Text</div>
-                  <div className="text-xs text-muted-foreground">Titles and captions</div>
-                </div>
-                <div className="p-2 border rounded-md bg-muted/30">
-                  <div className="font-medium text-sm">Effects</div>
-                  <div className="text-xs text-muted-foreground">Visual effects and overlays</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo de previsualización de imágenes/clips */}
-      <Dialog open={!!selectedImagePreview} onOpenChange={(open) => !open && handleClosePreview()}>
-        <DialogContent className={expandedPreview ? "max-w-4xl" : "max-w-md"}>
-          <DialogHeader>
-            <DialogTitle>{selectedImagePreview?.name || "Clip Preview"}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="relative mt-2">
-            {selectedImagePreview?.type === 'image' && selectedImagePreview.url && (
-              <img 
-                src={selectedImagePreview.url} 
-                alt={selectedImagePreview.name}
-                className="w-full rounded object-contain"
-              />
-            )}
-            {selectedImagePreview?.type === 'video' && selectedImagePreview.url && (
-              <video 
-                src={selectedImagePreview.url}
-                controls
-                className="w-full rounded"
-              />
-            )}
-            {selectedImagePreview?.type === 'text' && (
-              <div className="flex h-32 w-full items-center justify-center rounded bg-gray-100 p-4 text-center text-xl">
-                {selectedImagePreview.content || "Text Content"}
-              </div>
-            )}
-            
-            <Button
-              variant="outline"
-              size="sm"
-              className="absolute right-2 top-2"
-              onClick={handleToggleExpandPreview}
+        )}
+        
+        {/* Área principal del timeline */}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div 
+              ref={timelineRef}
+              className="relative"
+              style={{ 
+                width: `${timeToPixels(duration) + 100}px`, 
+                minHeight: `${layers.length * 80 + 30}px`
+              }}
             >
-              {expandedPreview ? "Shrink" : "Expand"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              {/* Regla de tiempo */}
+              <div className="h-8 border-b border-gray-800 pl-32 relative">
+                {renderTimeMarkers()}
+              </div>
+              
+              {/* Línea que muestra la posición actual */}
+              {renderPlayhead()}
+              
+              {/* Capas del timeline */}
+              <div className="relative">
+                {renderLayers()}
+              </div>
+            </div>
+          </ScrollArea>
+        </div>
+      </CardContent>
     </Card>
   );
-}
-
-// Función auxiliar para formatear tiempo en formato mm:ss.ms
-function formatTimecode(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  const milliseconds = Math.floor((seconds % 1) * 10);
-  
-  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${milliseconds}`;
 }

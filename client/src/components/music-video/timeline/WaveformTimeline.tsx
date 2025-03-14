@@ -9,7 +9,7 @@ import { Button } from '../../ui/button';
 import { ScrollArea } from '../../ui/scroll-area';
 import { cn } from '../../../lib/utils';
 import { Play, Pause, ZoomIn, ZoomOut } from 'lucide-react';
-import { TimelineClip } from '../../timeline/TimelineClip';
+import { TimelineClip } from '../../../interfaces/timeline';
 
 interface WaveformTimelineProps {
   audioUrl?: string;
