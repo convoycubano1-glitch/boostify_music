@@ -15,9 +15,9 @@ import {
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Footer } from "../components/layout/footer";
-// No necesitamos importar MainNav ya que la navegación es manejada por el layout principal
+// No need to import MainNav as navigation is handled by the main layout
 
-// Variantes de animación
+// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -56,7 +56,7 @@ const TokenizationHero = () => {
               WEB3 TECHNOLOGY
             </Badge>
             <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 leading-tight mb-6">
-              Tokenización Musical con Web3
+              Web3 Music Tokenization
             </h1>
           </motion.div>
           
@@ -66,7 +66,7 @@ const TokenizationHero = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mt-4 text-xl text-gray-300 max-w-3xl mx-auto"
           >
-            Revoluciona la forma en que monetizas tu música. Convierte tus canciones en activos digitales y conecta directamente con tus fans.
+            Revolutionize the way you monetize your music. Turn your songs into digital assets and connect directly with your fans.
           </motion.p>
           
           <motion.div
@@ -79,14 +79,14 @@ const TokenizationHero = () => {
               size="lg"
               className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
             >
-              Comenzar ahora
+              Get Started
             </Button>
             <Button 
               size="lg"
               variant="outline"
               className="border-orange-500/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/50"
             >
-              Descubrir beneficios
+              Discover Benefits
             </Button>
           </motion.div>
         </div>
@@ -95,53 +95,53 @@ const TokenizationHero = () => {
   );
 };
 
-// Sección de beneficios
+// Benefits section
 const BenefitsSection = () => {
   const benefits = [
     {
       icon: <DollarSign className="h-10 w-10 text-orange-500" />,
-      title: "Ingresos directos",
-      description: "Recibe pagos directamente de tus fans sin intermediarios que reduzcan tus ganancias."
+      title: "Direct Income",
+      description: "Receive payments directly from your fans without intermediaries reducing your earnings."
     },
     {
       icon: <User className="h-10 w-10 text-orange-500" />,
-      title: "Propiedad verificable",
-      description: "Asegura tus derechos de autor con tecnología blockchain inmutable y transparente."
+      title: "Verifiable Ownership",
+      description: "Secure your copyright with immutable and transparent blockchain technology."
     },
     {
       icon: <Users className="h-10 w-10 text-orange-500" />,
-      title: "Comunidad de fans",
-      description: "Construye una comunidad de seguidores comprometidos que invierten directamente en tu éxito."
+      title: "Fan Community",
+      description: "Build a community of engaged followers who invest directly in your success."
     },
     {
       icon: <Share2 className="h-10 w-10 text-orange-500" />,
-      title: "Regalías automáticas",
-      description: "Configura regalías perpetuas que te pagan automáticamente en cada reventa."
+      title: "Automatic Royalties",
+      description: "Set up perpetual royalties that pay you automatically with each resale."
     },
     {
       icon: <Shield className="h-10 w-10 text-orange-500" />,
-      title: "Protección de derechos",
-      description: "Protege tu trabajo creativo con prueba inmutable de propiedad en la blockchain."
+      title: "Rights Protection",
+      description: "Protect your creative work with immutable proof of ownership on the blockchain."
     },
     {
       icon: <Globe className="h-10 w-10 text-orange-500" />,
-      title: "Alcance global",
-      description: "Llega a fans y coleccionistas de todo el mundo sin restricciones geográficas."
+      title: "Global Reach",
+      description: "Reach fans and collectors from around the world without geographical restrictions."
     }
   ];
 
   return (
-    <section id="benefits" className="py-20 bg-gray-50">
+    <section id="benefits" className="py-20 bg-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4 bg-orange-100 text-orange-800 border-orange-200 px-3 py-1">
-            BENEFICIOS
+          <Badge variant="outline" className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
+            BENEFITS
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Por qué tokenizar tu música con <span className="text-orange-500">Boostify</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Why tokenize your music with <span className="text-orange-500">Boostify</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            La tokenización musical ofrece ventajas revolucionarias para artistas independientes y establecidos.
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Music tokenization offers revolutionary advantages for both independent and established artists.
           </p>
         </div>
 
@@ -153,13 +153,13 @@ const BenefitsSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+              className="bg-gray-800 rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
             >
-              <div className="rounded-full bg-orange-50 w-16 h-16 flex items-center justify-center mb-6">
+              <div className="rounded-full bg-gray-700 w-16 h-16 flex items-center justify-center mb-6">
                 {benefit.icon}
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{benefit.title}</h3>
-              <p className="text-gray-600">{benefit.description}</p>
+              <h3 className="text-xl font-bold text-white mb-3">{benefit.title}</h3>
+              <p className="text-gray-300">{benefit.description}</p>
             </motion.div>
           ))}
         </div>
@@ -168,47 +168,47 @@ const BenefitsSection = () => {
   );
 };
 
-// Sección de cómo funciona
+// How it works section
 const HowItWorksSection = () => {
   const steps = [
     {
       number: 1,
-      title: "Conecta tu wallet",
-      description: "Conecta tu billetera digital para iniciar el proceso de tokenización de tu música de forma segura.",
+      title: "Connect Your Wallet",
+      description: "Connect your digital wallet to securely start the music tokenization process.",
       icon: <Wallet className="h-10 w-10 text-orange-500" />
     },
     {
       number: 2,
-      title: "Sube tu música",
-      description: "Carga tus archivos de audio, añade metadatos y configura las regalías que recibirás en cada transacción.",
+      title: "Upload Your Music",
+      description: "Upload your audio files, add metadata and configure the royalties you'll receive on each transaction.",
       icon: <Music2 className="h-10 w-10 text-orange-500" />
     },
     {
       number: 3,
-      title: "Crea tu token",
-      description: "Define la oferta, precio y exclusividad de tu token musical. Puedes crear múltiples niveles de acceso.",
+      title: "Create Your Token",
+      description: "Define your token's offering, pricing, and exclusivity. You can create multiple access tiers.",
       icon: <DollarSign className="h-10 w-10 text-orange-500" />
     },
     {
       number: 4,
-      title: "Promociona y vende",
-      description: "Comparte con tu audiencia y comienza a vender tus tokens musicales directamente a tus fans.",
+      title: "Promote and Sell",
+      description: "Share with your audience and start selling your music tokens directly to your fans.",
       icon: <TrendingUp className="h-10 w-10 text-orange-500" />
     }
   ];
 
   return (
-    <section id="how-it-works" className="py-20 bg-white">
+    <section id="how-it-works" className="py-20 bg-gray-800 text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4 bg-orange-100 text-orange-800 border-orange-200 px-3 py-1">
-            PROCESO SIMPLE
+          <Badge variant="outline" className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
+            SIMPLE PROCESS
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Cómo funciona la <span className="text-orange-500">tokenización</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            How <span className="text-orange-500">tokenization</span> works
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Un proceso intuitivo diseñado para ayudarte a tokenizar tu música sin complicaciones.
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            An intuitive process designed to help you tokenize your music without complications.
           </p>
         </div>
 
@@ -227,16 +227,16 @@ const HowItWorksSection = () => {
                   <div className="absolute -left-4 -top-4 w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
                     {step.number}
                   </div>
-                  <div className="bg-orange-50 rounded-xl p-10 flex items-center justify-center h-64">
-                    <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-lg">
+                  <div className="bg-gray-700 rounded-xl p-10 flex items-center justify-center h-64">
+                    <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center shadow-lg">
                       {step.icon}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="md:w-1/2">
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">{step.title}</h3>
-                <p className="text-gray-600 text-lg">{step.description}</p>
+                <h3 className="text-2xl font-bold text-white mb-4">{step.title}</h3>
+                <p className="text-gray-300 text-lg">{step.description}</p>
               </div>
             </motion.div>
           ))}
@@ -246,34 +246,34 @@ const HowItWorksSection = () => {
   );
 };
 
-// Sección de preguntas frecuentes
+// FAQ section
 const FAQSection = () => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const faqs = [
     {
-      question: "¿Qué es la tokenización musical en Web3?",
-      answer: "La tokenización musical en Web3 es el proceso de convertir tus derechos musicales en tokens digitales únicos (NFTs) en la blockchain. Esto permite a los artistas vender directamente a sus fans, establecer regalías automáticas y crear nuevos modelos de ingresos sin depender de intermediarios tradicionales."
+      question: "What is Web3 music tokenization?",
+      answer: "Web3 music tokenization is the process of converting your music rights into unique digital tokens (NFTs) on the blockchain. This allows artists to sell directly to their fans, establish automatic royalties, and create new income models without relying on traditional intermediaries."
     },
     {
-      question: "¿Cómo se benefician los artistas con la tokenización?",
-      answer: "Los artistas reciben ingresos directos sin intermediarios, obtienen regalías automáticas en cada reventa, mantienen el control total sobre sus derechos, pueden monetizar su música de formas innovadoras y construyen relaciones más directas con sus fans al convertirlos en inversionistas de su carrera."
+      question: "How do artists benefit from tokenization?",
+      answer: "Artists receive direct income without intermediaries, earn automatic royalties on each resale, maintain full control over their rights, can monetize their music in innovative ways, and build more direct relationships with their fans by turning them into investors in their career."
     },
     {
-      question: "¿Qué tipos de tokens musicales puedo crear?",
-      answer: "Puedes crear tokens de acceso exclusivo a tu música, tokens de propiedad parcial que otorguen regalías, tokens de experiencias VIP como conciertos privados, tokens de membresía para contenido exclusivo y tokens coleccionables limitados que pueden aumentar de valor."
+      question: "What types of music tokens can I create?",
+      answer: "You can create exclusive access tokens for your music, partial ownership tokens that grant royalties, VIP experience tokens like private concerts, membership tokens for exclusive content, and limited collectible tokens that can increase in value."
     },
     {
-      question: "¿Necesito conocimientos técnicos para tokenizar mi música?",
-      answer: "No. Boostify simplifica todo el proceso técnico para que puedas enfocarte en tu creatividad. Nuestra plataforma intuitiva maneja toda la complejidad de la blockchain, permitiéndote tokenizar tu música sin necesidad de conocimientos técnicos especializados."
+      question: "Do I need technical knowledge to tokenize my music?",
+      answer: "No. Boostify simplifies the entire technical process so you can focus on your creativity. Our intuitive platform handles all the blockchain complexity, allowing you to tokenize your music without specialized technical knowledge."
     },
     {
-      question: "¿Cómo garantiza Boostify la seguridad de mis activos musicales?",
-      answer: "Utilizamos tecnología blockchain de última generación con contratos inteligentes auditados, almacenamiento descentralizado para tus archivos musicales, sistemas de verificación de identidad para proteger derechos de autor, y múltiples capas de seguridad para proteger tanto a artistas como a compradores."
+      question: "How does Boostify ensure the security of my musical assets?",
+      answer: "We use cutting-edge blockchain technology with audited smart contracts, decentralized storage for your music files, identity verification systems to protect copyright, and multiple layers of security to protect both artists and buyers."
     },
     {
-      question: "¿Qué blockchain utiliza Boostify para la tokenización?",
-      answer: "Boostify opera en múltiples blockchains, incluyendo Ethereum, Polygon, Solana y Binance Smart Chain, permitiéndote elegir la que mejor se adapte a tus necesidades en términos de costos de transacción, velocidad y accesibilidad para tu audiencia específica."
+      question: "Which blockchain does Boostify use for tokenization?",
+      answer: "Boostify operates on multiple blockchains, including Ethereum, Polygon, Solana, and Binance Smart Chain, allowing you to choose the one that best suits your needs in terms of transaction costs, speed, and accessibility for your specific audience."
     }
   ];
 
@@ -286,13 +286,13 @@ const FAQSection = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/20 px-3 py-1">
-            PREGUNTAS FRECUENTES
+            FREQUENTLY ASKED QUESTIONS
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Todo lo que necesitas saber
+            Everything you need to know
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Respuestas a las preguntas más comunes sobre la tokenización musical con Boostify.
+            Answers to the most common questions about music tokenization with Boostify.
           </p>
         </div>
 
@@ -332,31 +332,31 @@ const FAQSection = () => {
   );
 };
 
-// Sección de llamada a la acción
+// Call to Action section
 const CTASection = () => {
   return (
     <section className="py-20 bg-gradient-to-r from-orange-500 to-red-500 text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Revoluciona tu carrera musical con la tokenización
+            Revolutionize your music career with tokenization
           </h2>
           <p className="text-xl mb-10 text-white/90">
-            Únete a la revolución de la industria musical. Tokeniza tu música, conecta directamente con tus fans y maximiza tus ingresos.
+            Join the music industry revolution. Tokenize your music, connect directly with your fans, and maximize your income.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg"
               className="bg-white text-orange-600 hover:bg-gray-100"
             >
-              Comienza a tokenizar
+              Start Tokenizing
             </Button>
             <Button 
               size="lg"
               variant="outline"
               className="border-white text-white hover:bg-white/10"
             >
-              Contáctanos
+              Contact Us
             </Button>
           </div>
         </div>
@@ -365,7 +365,7 @@ const CTASection = () => {
   );
 };
 
-// Componente principal de la página
+// Main page component
 const TokenizationPage = () => {
   return (
     <div>

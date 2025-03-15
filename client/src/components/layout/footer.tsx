@@ -26,7 +26,7 @@ export function Footer() {
               <h2 className="text-xl font-bold text-white">Boostify Music</h2>
             </div>
             <p className="text-sm md:pr-8">
-              La plataforma de IA que está revolucionando cómo los artistas crean, promocionan y crecen en la industria musical.
+              The AI platform revolutionizing how artists create, promote, and grow in the music industry.
             </p>
             <div className="flex space-x-4 pt-2">
               <a
@@ -188,55 +188,55 @@ export function Footer() {
             </ul>
           </div>
           
-          {/* Recursos */}
+          {/* Resources */}
           <div className="space-y-4">
-            <h3 className="text-white font-semibold mb-3">Recursos</h3>
+            <h3 className="text-white font-semibold mb-3">Resources</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/blog" className="hover:text-orange-500 transition-colors">
-                  Blog y Tutoriales
+                  Blog & Tutorials
                 </Link>
               </li>
               <li>
                 <Link href="/guides" className="hover:text-orange-500 transition-colors">
-                  Guías para Artistas
+                  Artist Guides
                 </Link>
               </li>
               <li>
                 <Link href="/tools" className="hover:text-orange-500 transition-colors">
-                  Herramientas Gratuitas
+                  Free Tools
                 </Link>
               </li>
               <li>
                 <Link href="/academy" className="hover:text-orange-500 transition-colors">
-                  Academia Musical
+                  Music Academy
                 </Link>
               </li>
             </ul>
           </div>
           
-          {/* Soporte */}
+          {/* Support */}
           <div className="space-y-4">
-            <h3 className="text-white font-semibold mb-3">Soporte</h3>
+            <h3 className="text-white font-semibold mb-3">Support</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/help" className="hover:text-orange-500 transition-colors">
-                  Centro de Ayuda
+                  Help Center
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-orange-500 transition-colors">
-                  Contacto
+                  Contact Us
                 </Link>
               </li>
               <li>
                 <Link href="/faq" className="hover:text-orange-500 transition-colors">
-                  Preguntas Frecuentes
+                  Frequently Asked Questions
                 </Link>
               </li>
               <li>
                 <Link href="/status" className="hover:text-orange-500 transition-colors">
-                  Estado del Servicio
+                  Service Status
                 </Link>
               </li>
             </ul>
