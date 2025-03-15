@@ -283,7 +283,7 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
               Contract Execution Flow
             </h3>
             
-            <div className="relative h-96 mb-6">
+            <div className="relative h-[500px] mb-6 overflow-y-auto">
               {/* Vertical timeline line */}
               <div className="absolute left-10 top-4 bottom-4 w-1 bg-gray-700"></div>
               
@@ -296,7 +296,7 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
                     opacity: animationStep >= index ? 1 : 0.3,
                     scale: animationStep === index ? 1.05 : 1
                   }}
-                  className={`flex items-start mb-6 relative ${
+                  className={`flex items-start ${index === steps.length - 1 ? 'mb-2' : 'mb-10'} relative ${
                     animationStep >= index ? 'text-white' : 'text-gray-500'
                   }`}
                 >
@@ -314,12 +314,12 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
                     </p>
                   </div>
                   
-                  {/* Connecting arrow */}
+                  {/* Connecting arrow with extra spacing for the last step */}
                   {index < steps.length - 1 && animationStep > index && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="absolute left-10 top-8 h-6 w-6 flex justify-center"
+                      className={`absolute left-10 top-8 ${index === steps.length - 2 ? 'h-14' : 'h-8'} flex justify-center`}
                     >
                       <ArrowDown className="text-orange-500 h-6 w-6" />
                     </motion.div>
