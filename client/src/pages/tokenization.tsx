@@ -15,6 +15,9 @@ import {
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Footer } from "../components/layout/footer";
+import MiniTutorial from "../components/tokenization/mini-tutorial";
+import SmartContractVisualizer from "../components/tokenization/smart-contract-visualizer";
+import ArtistTestimonials from "../components/tokenization/artist-testimonials";
 // No need to import MainNav as navigation is handled by the main layout
 
 // Animation variants
