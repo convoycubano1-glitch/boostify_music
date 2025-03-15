@@ -34,6 +34,13 @@ import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { FinalRendering, type UpscaleOptions } from "./final-rendering";
 import { ProgressSteps } from "./progress-steps";
+import { EnhancedProgressSteps } from "./enhanced-progress-steps";
+import { 
+  ParticleSystem, 
+  AnimatedGradient,
+  GlowEffect,
+  ConfettiEffect 
+} from "./animation-effects";
 import { 
   analyzeImage, 
   generateVideoPromptWithRetry, 
@@ -2550,67 +2557,158 @@ ${transcription}`;
     loadDirectors();
   }, []);
 
+  // Convertir los pasos para el componente EnhancedProgressSteps
+  const workflowSteps = [
+    {
+      id: "transcription",
+      name: "Transcripción de Audio",
+      description: "Analizando y transcribiendo la letra de tu canción",
+      status: currentStep > 1 ? "completed" as const : currentStep === 1 ? "active" as const : "pending" as const
+    },
+    {
+      id: "script",
+      name: "Generación de Guion",
+      description: "Creando un guion visual basado en la letra",
+      status: currentStep > 2 ? "completed" : currentStep === 2 ? "active" : "pending"
+    },
+    {
+      id: "sync",
+      name: "Sincronización",
+      description: "Alineando el contenido visual con el ritmo musical",
+      status: currentStep > 3 ? "completed" : currentStep === 3 ? "active" : "pending"
+    },
+    {
+      id: "scenes",
+      name: "Generación de Escenas",
+      description: "Creando escenas para cada sección",
+      status: currentStep > 4 ? "completed" : currentStep === 4 ? "active" : "pending"
+    },
+    {
+      id: "customization",
+      name: "Personalización",
+      description: "Ajustando el estilo visual a tus preferencias",
+      status: currentStep > 5 ? "completed" : currentStep === 5 ? "active" : "pending"
+    },
+    {
+      id: "movement",
+      name: "Integración de Movimiento",
+      description: "Añadiendo dinámicas visuales y coreografías",
+      status: currentStep > 6 ? "completed" : currentStep === 6 ? "active" : "pending"
+    },
+    {
+      id: "lipsync",
+      name: "Sincronización de Labios",
+      description: "Sincronizando labios con la letra",
+      status: currentStep > 7 ? "completed" : currentStep === 7 ? "active" : "pending"
+    },
+    {
+      id: "generation",
+      name: "Generación de Video",
+      description: "Creando clips de video con IA",
+      status: currentStep > 8 ? "completed" : currentStep === 8 ? "active" : "pending"
+    },
+    {
+      id: "rendering",
+      name: "Renderizado Final",
+      description: "Combinando todo en un video musical completo",
+      status: currentStep > 9 ? "completed" : currentStep === 9 ? "active" : "pending"
+    }
+  ];
+
+  // Calcular el progreso para las animaciones
+  const allStepsCompleted = workflowSteps.every(step => step.status === "completed");
+  
   return (
     <div className="min-h-screen bg-background">
-      <ProgressSteps 
-        currentStep={String(currentStep)} 
-        steps={[
-          {
-            id: "transcription",
-            name: "Transcripción de Audio",
-            description: "Analizando y transcribiendo la letra de tu canción",
-            status: currentStep > 1 ? "completed" : currentStep === 1 ? "in-progress" : "pending"
-          },
-          {
-            id: "script",
-            name: "Generación de Guion",
-            description: "Creando un guion visual basado en tu música",
-            status: currentStep > 2 ? "completed" : currentStep === 2 ? "in-progress" : "pending"
-          },
-          {
-            id: "sync",
-            name: "Sincronización",
-            description: "Sincronizando el video con el ritmo de la música",
-            status: currentStep > 3 ? "completed" : currentStep === 3 ? "in-progress" : "pending"
-          },
-          {
-            id: "scenes",
-            name: "Generación de Escenas",
-            description: "Creando las escenas del video musical",
-            status: currentStep > 4 ? "completed" : currentStep === 4 ? "in-progress" : "pending"
-          },
-          {
-            id: "customization",
-            name: "Personalización",
-            description: "Ajustando el estilo visual a tus preferencias",
-            status: currentStep > 5 ? "completed" : currentStep === 5 ? "in-progress" : "pending"
-          },
-          {
-            id: "movement",
-            name: "Integración de Movimiento",
-            description: "Añadiendo coreografías y dinámicas visuales",
-            status: currentStep > 6 ? "completed" : currentStep === 6 ? "in-progress" : "pending"
-          },
-          {
-            id: "lipsync",
-            name: "Sincronización de Labios",
-            description: "Sincronizando labios con la letra de la canción",
-            status: currentStep > 7 ? "completed" : currentStep === 7 ? "in-progress" : "pending"
-          },
-          {
-            id: "generation",
-            name: "Generación de Video",
-            description: "Creando videos con IA a partir de tus escenas",
-            status: currentStep > 8 ? "completed" : currentStep === 8 ? "in-progress" : "pending"
-          },
-          {
-            id: "rendering",
-            name: "Renderizado Final",
-            description: "Combinando todo en tu video musical",
-            status: currentStep > 9 ? "completed" : currentStep === 9 ? "in-progress" : "pending"
-          }
-        ]}
-      />
+      {/* Efectos visuales para toda la aplicación */}
+      {allStepsCompleted && <ConfettiEffect activated={true} count={200} duration={7} />}
+      
+      {/* Contenedor principal con posicionamiento relativo para los efectos */}
+      <div className="relative">
+        {/* Gradiente animado en el fondo */}
+        <AnimatedGradient 
+          colors={['#4F46E5', '#7C3AED', '#EC4899', '#F97316']} 
+          speed={5} 
+          className="opacity-5"
+        />
+        
+        {/* Componente de pasos mejorado con animaciones */}
+        <EnhancedProgressSteps
+          steps={workflowSteps}
+          currentStepId={workflowSteps.find(s => s.status === "active")?.id || "transcription"}
+          onStepClick={(stepId) => {
+            // Encontrar el índice del paso
+            const stepIndex = workflowSteps.findIndex(s => s.id === stepId);
+            if (stepIndex >= 0) {
+              setCurrentStep(stepIndex + 1);
+            }
+          }}
+          className="p-4 mb-8"
+        />
+        
+        {/* Mantener el ProgressSteps original como fallback (escondido para compatibilidad) */}
+        <div className="hidden">
+          <ProgressSteps 
+            currentStep={String(currentStep)} 
+            steps={[
+              {
+                id: "transcription",
+                name: "Transcripción de Audio",
+                description: "Analizando y transcribiendo la letra de tu canción",
+                status: currentStep > 1 ? "completed" : currentStep === 1 ? "in-progress" : "pending"
+              },
+              {
+                id: "script",
+                name: "Generación de Guion",
+                description: "Creando un guion visual basado en tu música",
+                status: currentStep > 2 ? "completed" : currentStep === 2 ? "in-progress" : "pending"
+              },
+              {
+                id: "sync",
+                name: "Sincronización",
+                description: "Sincronizando el video con el ritmo de la música",
+                status: currentStep > 3 ? "completed" : currentStep === 3 ? "in-progress" : "pending"
+              },
+              {
+                id: "scenes",
+                name: "Generación de Escenas",
+                description: "Creando las escenas del video musical",
+                status: currentStep > 4 ? "completed" : currentStep === 4 ? "in-progress" : "pending"
+              },
+              {
+                id: "customization",
+                name: "Personalización",
+                description: "Ajustando el estilo visual a tus preferencias",
+                status: currentStep > 5 ? "completed" : currentStep === 5 ? "in-progress" : "pending"
+              },
+              {
+                id: "movement",
+                name: "Integración de Movimiento",
+                description: "Añadiendo coreografías y dinámicas visuales",
+                status: currentStep > 6 ? "completed" : currentStep === 6 ? "in-progress" : "pending"
+              },
+              {
+                id: "lipsync",
+                name: "Sincronización de Labios",
+                description: "Sincronizando labios con la letra de la canción",
+                status: currentStep > 7 ? "completed" : currentStep === 7 ? "in-progress" : "pending"
+              },
+              {
+                id: "generation",
+                name: "Generación de Video",
+                description: "Creando videos con IA a partir de tus escenas",
+                status: currentStep > 8 ? "completed" : currentStep === 8 ? "in-progress" : "pending"
+              },
+              {
+                id: "rendering",
+                name: "Renderizado Final",
+                description: "Combinando todo en tu video musical",
+                status: currentStep > 9 ? "completed" : currentStep === 9 ? "in-progress" : "pending"
+              }
+            ]}
+          />
+        </div>
+      </div> {/* Cierre del div className="relative" */}
 
       <div className="container py-6 space-y-8">
         <Card className="p-6">
