@@ -2831,7 +2831,7 @@ ${transcription}`;
                 {/* Indicador de paso completado */}
                 {currentStep >= 2 && (
                   <motion.div 
-                    className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                    className="absolute -top-1 -right-1 p-1 rounded-full bg-orange-100 text-orange-600 z-10"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 20 }}
@@ -2937,7 +2937,7 @@ ${transcription}`;
                   {/* Indicador de paso completado */}
                   {currentStep >= 3 && (
                     <motion.div 
-                      className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-orange-100 text-orange-600 z-10"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 20 }}
@@ -3070,7 +3070,7 @@ ${transcription}`;
                   {/* Indicador de paso completado */}
                   {currentStep >= 4 && (
                     <motion.div 
-                      className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-orange-100 text-orange-600 z-10"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 20 }}
@@ -3228,7 +3228,7 @@ ${transcription}`;
                 </motion.div>
 
                 <motion.div 
-                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-rose-50/30 shadow-sm relative"
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-zinc-900 to-black shadow-sm relative border-zinc-800"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: 1, 
@@ -3240,7 +3240,7 @@ ${transcription}`;
                   {/* Indicador de paso completado */}
                   {currentStep >= 5 && (
                     <motion.div 
-                      className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-orange-100 text-orange-600 z-10"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 20 }}
