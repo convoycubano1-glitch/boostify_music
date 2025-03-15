@@ -34,7 +34,7 @@ import { MovementIntegration } from "./movement-integration";
 import { LipSyncIntegration } from "./lip-sync-integration";
 import { FinalRendering, type UpscaleOptions } from "./final-rendering";
 import { ProgressSteps } from "./progress-steps";
-import { EnhancedProgressSteps } from "./enhanced-progress-steps";
+import { EnhancedProgressSteps, Step } from "./enhanced-progress-steps";
 import { 
   ParticleSystem, 
   AnimatedGradient,
@@ -2558,7 +2558,8 @@ ${transcription}`;
   }, []);
 
   // Convertir los pasos para el componente EnhancedProgressSteps
-  const workflowSteps = [
+  // Definir los pasos del workflow con el tipo Step importado
+  const workflowSteps: Step[] = [
     {
       id: "transcription",
       name: "Transcripción de Audio",
@@ -2569,49 +2570,49 @@ ${transcription}`;
       id: "script",
       name: "Generación de Guion",
       description: "Creando un guion visual basado en la letra",
-      status: currentStep > 2 ? "completed" : currentStep === 2 ? "active" : "pending"
+      status: currentStep > 2 ? "completed" as const : currentStep === 2 ? "active" as const : "pending" as const
     },
     {
       id: "sync",
       name: "Sincronización",
       description: "Alineando el contenido visual con el ritmo musical",
-      status: currentStep > 3 ? "completed" : currentStep === 3 ? "active" : "pending"
+      status: currentStep > 3 ? "completed" as const : currentStep === 3 ? "active" as const : "pending" as const
     },
     {
       id: "scenes",
       name: "Generación de Escenas",
       description: "Creando escenas para cada sección",
-      status: currentStep > 4 ? "completed" : currentStep === 4 ? "active" : "pending"
+      status: currentStep > 4 ? "completed" as const : currentStep === 4 ? "active" as const : "pending" as const
     },
     {
       id: "customization",
       name: "Personalización",
       description: "Ajustando el estilo visual a tus preferencias",
-      status: currentStep > 5 ? "completed" : currentStep === 5 ? "active" : "pending"
+      status: currentStep > 5 ? "completed" as const : currentStep === 5 ? "active" as const : "pending" as const
     },
     {
       id: "movement",
       name: "Integración de Movimiento",
       description: "Añadiendo dinámicas visuales y coreografías",
-      status: currentStep > 6 ? "completed" : currentStep === 6 ? "active" : "pending"
+      status: currentStep > 6 ? "completed" as const : currentStep === 6 ? "active" as const : "pending" as const
     },
     {
       id: "lipsync",
       name: "Sincronización de Labios",
       description: "Sincronizando labios con la letra",
-      status: currentStep > 7 ? "completed" : currentStep === 7 ? "active" : "pending"
+      status: currentStep > 7 ? "completed" as const : currentStep === 7 ? "active" as const : "pending" as const
     },
     {
       id: "generation",
       name: "Generación de Video",
       description: "Creando clips de video con IA",
-      status: currentStep > 8 ? "completed" : currentStep === 8 ? "active" : "pending"
+      status: currentStep > 8 ? "completed" as const : currentStep === 8 ? "active" as const : "pending" as const
     },
     {
       id: "rendering",
       name: "Renderizado Final",
       description: "Combinando todo en un video musical completo",
-      status: currentStep > 9 ? "completed" : currentStep === 9 ? "active" : "pending"
+      status: currentStep > 9 ? "completed" as const : currentStep === 9 ? "active" as const : "pending" as const
     }
   ];
 
