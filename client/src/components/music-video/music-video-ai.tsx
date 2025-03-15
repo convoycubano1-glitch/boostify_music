@@ -3315,7 +3315,7 @@ ${transcription}`;
                         transition={{ duration: 0.3, delay: 0.1 }}
                       >
                         <div className="flex items-center justify-between">
-                          <Label className="font-medium text-rose-900/80">Mood</Label>
+                          <Label className="font-medium text-orange-900/80">Mood</Label>
                           <motion.div 
                             className="h-6 w-6 rounded-full bg-orange-50 flex items-center justify-center text-orange-500"
                             whileHover={{ scale: 1.2, backgroundColor: "rgb(255 237 213 / 1)" }}
@@ -3348,7 +3348,7 @@ ${transcription}`;
                         transition={{ duration: 0.3, delay: 0.2 }}
                       >
                         <div className="flex items-center justify-between">
-                          <Label className="font-medium text-rose-900/80">Paleta de Colores</Label>
+                          <Label className="font-medium text-orange-900/80">Paleta de Colores</Label>
                           <div className="flex space-x-1">
                             <motion.div 
                               className="h-4 w-4 rounded-full bg-red-400"
@@ -3393,7 +3393,7 @@ ${transcription}`;
                         transition={{ duration: 0.3, delay: 0.3 }}
                       >
                         <div className="flex items-center justify-between">
-                          <Label className="font-medium text-rose-900/80">Estilo de Personajes</Label>
+                          <Label className="font-medium text-orange-900/80">Estilo de Personajes</Label>
                           <motion.div 
                             className="h-6 w-6 rounded-full bg-orange-50 flex items-center justify-center text-orange-500"
                             whileHover={{ scale: 1.2, backgroundColor: "rgb(255 237 213 / 1)" }}
@@ -3426,7 +3426,7 @@ ${transcription}`;
                         transition={{ duration: 0.3, delay: 0.4 }}
                       >
                         <div className="flex items-center justify-between">
-                          <Label className="font-medium text-rose-900/80">
+                          <Label className="font-medium text-orange-900/80">
                             Intensidad Visual
                             <span className="ml-2 inline-flex items-center justify-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                               {videoStyle.visualIntensity}%
@@ -3456,7 +3456,7 @@ ${transcription}`;
                       transition={{ duration: 0.3, delay: 0.5 }}
                     >
                       <div className="flex items-center justify-between">
-                        <Label className="font-medium text-rose-900/80">
+                        <Label className="font-medium text-orange-900/80">
                           Intensidad Narrativa 
                           <span className="ml-2 inline-flex items-center justify-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                             {videoStyle.narrativeIntensity}%
@@ -3603,7 +3603,7 @@ ${transcription}`;
                   {/* Indicador de paso completado */}
                   {currentStep >= 6 && (
                     <motion.div 
-                      className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-orange-100 text-orange-600 z-10"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 20 }}
