@@ -959,12 +959,13 @@ const TechnologySection = () => {
           </div>
           
           <div className="mt-10">
-            <Button 
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-              onClick={() => window.location.href = '/technology'}
-            >
-              Explorar tecnología <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <Link href="/technology">
+              <Button 
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Explorar tecnología <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
         
@@ -1153,17 +1154,18 @@ const PricingCard = ({
           </ul>
         </div>
         
-        <Button 
-          variant={buttonVariant} 
-          className={`w-full ${
-            buttonVariant === 'default' 
-              ? 'bg-orange-500 hover:bg-orange-600' 
-              : 'border-white/20 hover:bg-white/10'
-          }`}
-          onClick={() => window.location.href = buttonLink}
-        >
-          {buttonText}
-        </Button>
+        <Link href={buttonLink}>
+          <Button 
+            variant={buttonVariant} 
+            className={`w-full ${
+              buttonVariant === 'default' 
+                ? 'bg-orange-500 hover:bg-orange-600' 
+                : 'border-white/20 hover:bg-white/10'
+            }`}
+          >
+            {buttonText}
+          </Button>
+        </Link>
       </div>
     </Card>
   );
@@ -1184,21 +1186,23 @@ const CallToActionSection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button 
-              size="lg" 
-              className="bg-white text-orange-600 hover:bg-white/90"
-              onClick={() => window.location.href = '/signup'}
-            >
-              Comenzar gratis <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="border-white/40 hover:bg-white/10"
-              onClick={() => window.location.href = '/demo'}
-            >
-              Solicitar demo
-            </Button>
+            <Link href="/signup">
+              <Button 
+                size="lg" 
+                className="bg-white text-orange-600 hover:bg-white/90"
+              >
+                Comenzar gratis <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/demo">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-white/40 hover:bg-white/10"
+              >
+                Solicitar demo
+              </Button>
+            </Link>
           </div>
           
           <div className="mt-8 flex items-center space-x-2 text-white/80">
@@ -1362,13 +1366,14 @@ const FAQSection = () => {
         
         <div className="mt-12 text-center">
           <p className="text-gray-600 mb-4">¿No encuentras lo que buscas?</p>
-          <Button 
-            variant="outline" 
-            className="border-orange-500 text-orange-600 hover:bg-orange-50"
-            onClick={() => window.location.href = '/contact'}
-          >
-            Contactar con soporte
-          </Button>
+          <Link href="/contact">
+            <Button 
+              variant="outline" 
+              className="border-orange-500 text-orange-600 hover:bg-orange-50"
+            >
+              Contactar con soporte
+            </Button>
+          </Link>
         </div>
       </div>
     </LightSection>
@@ -1402,12 +1407,11 @@ const WaitlistSection = () => {
         </Button>
         
         <p className="mt-6 text-gray-400">
-          ¿Ya eres usuario? <span 
-            onClick={() => window.location.href = '/login'} 
-            className="text-orange-400 hover:underline cursor-pointer"
-          >
-            Inicia sesión
-          </span>
+          ¿Ya eres usuario? <Link href="/login">
+            <span className="text-orange-400 hover:underline cursor-pointer">
+              Inicia sesión
+            </span>
+          </Link>
         </p>
       </div>
       
