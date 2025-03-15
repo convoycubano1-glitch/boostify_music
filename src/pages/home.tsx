@@ -54,6 +54,68 @@ const HomePage = () => {
           </div>
         </section>
         
+        {/* Nueva sección en inglés sobre tokenización musical */}
+        <section className="py-16 bg-gradient-to-r from-indigo-900 to-purple-900 text-white">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-center">
+              <div className="md:w-1/2 mb-10 md:mb-0 md:pr-8">
+                <div className="inline-block px-3 py-1 text-xs font-semibold bg-orange-500/20 text-orange-400 rounded-full mb-4 uppercase tracking-wide">
+                  New Feature
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">Tokenize Your Music with Web3</h2>
+                <p className="text-gray-300 text-lg mb-6">
+                  Take control of your music career and monetize your creations like never before. 
+                  Our Web3 tokenization platform allows artists to sell directly to fans, earn royalties 
+                  automatically, and create new revenue streams.
+                </p>
+                <ul className="space-y-2 mb-8 text-gray-300">
+                  <li className="flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Direct fan monetization without intermediaries
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Automatic royalties on every resale
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Full ownership and control of your creative work
+                  </li>
+                </ul>
+                <Link href="/tokenizacion">
+                  <button className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-6 py-3 rounded-md hover:from-orange-600 hover:to-pink-600 transition-all duration-300 shadow-lg flex items-center">
+                    Explore Web3 Tokenization
+                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                  </button>
+                </Link>
+              </div>
+              <div className="md:w-1/2 bg-black/30 rounded-lg p-6 border border-purple-500/20">
+                <div className="aspect-video rounded-lg overflow-hidden relative bg-gradient-to-br from-purple-900/60 to-indigo-900/60 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        <svg className="w-10 h-10 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-2">Music NFT Platform</h3>
+                      <p className="text-gray-300">Connect your wallet and start tokenizing your music in minutes</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
         <section className="py-16 bg-gray-800">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">Características principales</h2>
