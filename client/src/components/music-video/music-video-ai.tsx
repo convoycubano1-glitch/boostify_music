@@ -2581,11 +2581,11 @@ ${transcription}`;
   const allStepsCompleted = workflowSteps.every(step => step.status === "completed");
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Efectos visuales para toda la aplicación */}
       {allStepsCompleted && <motion.div className="confetti-container" />}
       
-      {/* Sistema de partículas dinámicas basadas en el paso actual */}
+      {/* Sistema de partículas dinámicas basadas en el paso actual - Ajustadas a naranja/negro */}
       {currentStep === 1 && (
         <ParticleSystem 
           count={30} 
@@ -2636,17 +2636,17 @@ ${transcription}`;
       
       {/* Contenedor principal con posicionamiento relativo para los efectos */}
       <div className="relative">
-        {/* Gradiente animado en el fondo - Cambia los colores según el paso actual */}
+        {/* Gradiente animado en el fondo - Usando solo naranja y negro */}
         <AnimatedGradient 
           colors={
-            currentStep <= 2 ? ["purple", "blue", "pink", "orange"] :
-            currentStep <= 4 ? ["pink", "orange", "purple", "blue"] :
-            currentStep <= 6 ? ["blue", "pink", "orange", "purple"] :
-            currentStep <= 8 ? ["orange", "blue", "purple", "pink"] :
-            ["amber", "orange", "pink", "purple"]
+            currentStep <= 2 ? ["#FF6B00", "#FF8800", "#FF4500", "#111111"] :
+            currentStep <= 4 ? ["#FF4500", "#FF8800", "#111111", "#222222"] :
+            currentStep <= 6 ? ["#FF7700", "#FF5500", "#111111", "#222222"] :
+            currentStep <= 8 ? ["#FF6B00", "#111111", "#FF4500", "#000000"] :
+            ["#FF8800", "#FF4500", "#111111", "#000000"]
           } 
           speed={currentStep <= 2 ? 5 : currentStep <= 5 ? 8 : 12} 
-          className="opacity-5"
+          className="opacity-20"
         />
         
         {/* Efectos de brillo según la etapa del proceso */}
@@ -2971,7 +2971,7 @@ ${transcription}`;
                       initial={{ opacity: 0.8 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <ScrollArea className="h-[200px] w-full rounded-md border bg-white/80 p-4 shadow-inner">
+                      <ScrollArea className="h-[200px] w-full rounded-md border border-orange-500/20 bg-black/80 p-4 shadow-inner">
                         {transcription ? (
                           <motion.pre 
                             className="text-sm whitespace-pre-wrap font-normal text-slate-700"
@@ -3291,7 +3291,7 @@ ${transcription}`;
                         value={videoStyle.cameraFormat}
                         onValueChange={(value) => setVideoStyle(prev => ({ ...prev, cameraFormat: value }))}
                       >
-                        <SelectTrigger className="bg-white/80 border-rose-200 focus:ring-rose-300 h-11">
+                        <SelectTrigger className="bg-black/90 border-orange-500/20 focus:ring-orange-500 h-11 text-white/90">
                           <SelectValue placeholder="Seleccionar formato de cámara" />
                         </SelectTrigger>
                         <SelectContent>
@@ -3328,7 +3328,7 @@ ${transcription}`;
                           value={videoStyle.mood}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
                         >
-                          <SelectTrigger className="bg-white/80 border-rose-200 focus:ring-rose-300 h-11">
+                          <SelectTrigger className="bg-black/90 border-orange-500/20 focus:ring-orange-500 h-11 text-white/90">
                             <SelectValue placeholder="Seleccionar mood" />
                           </SelectTrigger>
                           <SelectContent>
@@ -3371,7 +3371,7 @@ ${transcription}`;
                           value={videoStyle.colorPalette}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
                         >
-                          <SelectTrigger className="bg-white/80 border-rose-200 focus:ring-rose-300 h-11">
+                          <SelectTrigger className="bg-black/90 border-orange-500/20 focus:ring-orange-500 h-11 text-white/90">
                             <SelectValue placeholder="Seleccionar paleta" />
                           </SelectTrigger>
                           <SelectContent>
@@ -3406,7 +3406,7 @@ ${transcription}`;
                           value={videoStyle.characterStyle}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
                         >
-                          <SelectTrigger className="bg-white/80 border-rose-200 focus:ring-rose-300 h-11">
+                          <SelectTrigger className="bg-black/90 border-orange-500/20 focus:ring-orange-500 h-11 text-white/90">
                             <SelectValue placeholder="Seleccionar estilo" />
                           </SelectTrigger>
                           <SelectContent>
@@ -3591,12 +3591,12 @@ ${transcription}`;
                 </motion.div>
 
                 <motion.div 
-                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-green-50/30 shadow-sm relative"
+                  className="border border-orange-500/30 rounded-lg overflow-hidden p-5 bg-gradient-to-br from-black to-black/70 shadow-sm relative"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: 1, 
                     y: 0,
-                    boxShadow: currentStep >= 6 ? "0 0 0 2px rgba(34, 197, 94, 0.2)" : "none"
+                    boxShadow: currentStep >= 6 ? "0 0 0 2px rgba(255, 98, 0, 0.4)" : "none"
                   }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                 >
@@ -3615,7 +3615,7 @@ ${transcription}`;
                   {/* Título con icono animado */}
                   <div className="flex items-center gap-3 mb-6">
                     <motion.div 
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/20 text-orange-500"
                       whileHover={{ scale: 1.1 }}
                       animate={{ 
                         rotate: [0, -3, 3, 0],
@@ -3628,8 +3628,8 @@ ${transcription}`;
                       <Waves className="h-4 w-4" />
                     </motion.div>
                     <div>
-                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-green-500">5. Sincronizar Beats</Label>
-                      <p className="text-xs text-muted-foreground">Detecta puntos clave para sincronización de video</p>
+                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-300">5. Sincronizar Beats</Label>
+                      <p className="text-xs text-white/70">Detecta puntos clave para sincronización de video</p>
                     </div>
                   </div>
                   
@@ -3641,7 +3641,7 @@ ${transcription}`;
                     <Button
                       onClick={syncAudioWithTimeline}
                       disabled={!audioBuffer || isGeneratingShots || currentStep < 3}
-                      className="w-full mb-3 h-12 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 border-0 shadow-md"
+                      className="w-full mb-3 h-12 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 border-0 shadow-md"
                     >
                       {isGeneratingShots ? (
                         <motion.div className="flex items-center justify-center gap-2" animate={{ opacity: [0.7, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}>
@@ -3666,7 +3666,7 @@ ${transcription}`;
                         <Button
                           onClick={downloadBeatsJSON}
                           variant="outline"
-                          className="w-full mt-2 border-green-200 text-green-700 hover:bg-green-50"
+                          className="w-full mt-2 border-orange-500/20 text-orange-500 hover:bg-orange-500/10"
                         >
                           <Download className="mr-2 h-4 w-4" />
                           <span>Descargar Timecodes JSON</span>
@@ -3678,7 +3678,7 @@ ${transcription}`;
                   {/* Visualización de los beats detectados */}
                   {beatsJsonData && (
                     <motion.div 
-                      className="mt-5 border border-green-200 rounded-lg p-4 bg-green-50/50 overflow-hidden"
+                      className="mt-5 border border-orange-500/20 rounded-lg p-4 bg-black/50 overflow-hidden"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       transition={{ duration: 0.5, delay: 0.3 }}
@@ -3688,16 +3688,16 @@ ${transcription}`;
                           <motion.div 
                             animate={{ scale: [1, 1.1, 1] }}
                             transition={{ duration: 2, repeat: Infinity }}
-                            className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center"
+                            className="h-5 w-5 rounded-full bg-orange-500/20 flex items-center justify-center"
                           >
-                            <Activity className="h-3 w-3 text-green-600" />
+                            <Activity className="h-3 w-3 text-orange-500" />
                           </motion.div>
-                          <h4 className="font-medium text-green-800">Beats Detectados</h4>
+                          <h4 className="font-medium text-white/90">Beats Detectados</h4>
                         </div>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-7 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-100"
+                          className="h-7 px-2 text-xs text-orange-500 hover:text-orange-600 hover:bg-orange-500/10"
                           onClick={() => setShowBeatDetails(prev => !prev)}
                         >
                           {showBeatDetails ? (
@@ -3722,7 +3722,7 @@ ${transcription}`;
                         </Button>
                       </div>
                       
-                      <div className="text-xs text-green-700/80 mt-3 mb-2">
+                      <div className="text-xs text-white/80 mt-3 mb-2">
                         Clasificación por tipo de intensidad:
                       </div>
                       <div className="flex items-center gap-3 mb-3">
@@ -3800,49 +3800,49 @@ ${transcription}`;
                       {/* Panel de detalles de beats */}
                       {showBeatDetails && (
                         <motion.div 
-                          className="mt-4 pt-3 border-t border-green-200 text-xs"
+                          className="mt-4 pt-3 border-t border-orange-500/20 text-xs"
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <div className="flex justify-between mb-3 bg-white/60 p-2 rounded-md shadow-sm">
+                          <div className="flex justify-between mb-3 bg-black/50 p-2 rounded-md shadow-sm">
                             <div className="flex flex-col items-center">
-                              <span className="font-medium text-green-700">Análisis del Ritmo</span>
-                              <span className="text-green-900 text-sm font-semibold">{JSON.parse(beatsJsonData).metadata.beatAnalysis.patternComplexity}</span>
+                              <span className="font-medium text-orange-500">Análisis del Ritmo</span>
+                              <span className="text-white text-sm font-semibold">{JSON.parse(beatsJsonData).metadata.beatAnalysis.patternComplexity}</span>
                             </div>
                             <div className="flex flex-col items-center">
-                              <span className="font-medium text-green-700">BPM Estimado</span>
-                              <span className="text-green-900 text-sm font-semibold">{JSON.parse(beatsJsonData).metadata.bpm}</span>
+                              <span className="font-medium text-orange-500">BPM Estimado</span>
+                              <span className="text-white text-sm font-semibold">{JSON.parse(beatsJsonData).metadata.bpm}</span>
                             </div>
                           </div>
                           
                           <div className="grid grid-cols-3 gap-2 mb-3">
                             <motion.div 
-                              className="flex flex-col items-center border border-red-200 rounded-lg p-2 bg-white/60 shadow-sm"
-                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}
+                              className="flex flex-col items-center border border-red-500/20 rounded-lg p-2 bg-black/40 shadow-sm"
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.2)" }}
                             >
                               <span className="text-red-500 font-bold text-lg">
                                 {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.downbeats}
                               </span>
-                              <span className="text-[10px] text-red-800 font-medium">Downbeats</span>
+                              <span className="text-[10px] text-white/90 font-medium">Downbeats</span>
                             </motion.div>
                             <motion.div 
-                              className="flex flex-col items-center border border-yellow-200 rounded-lg p-2 bg-white/60 shadow-sm"
-                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}
+                              className="flex flex-col items-center border border-yellow-500/20 rounded-lg p-2 bg-black/40 shadow-sm"
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.2)" }}
                             >
                               <span className="text-yellow-500 font-bold text-lg">
                                 {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.accents}
                               </span>
-                              <span className="text-[10px] text-yellow-800 font-medium">Accents</span>
+                              <span className="text-[10px] text-white/90 font-medium">Accents</span>
                             </motion.div>
                             <motion.div 
-                              className="flex flex-col items-center border border-blue-200 rounded-lg p-2 bg-white/60 shadow-sm"
-                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}
+                              className="flex flex-col items-center border border-blue-500/20 rounded-lg p-2 bg-black/40 shadow-sm"
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.2)" }}
                             >
                               <span className="text-blue-500 font-bold text-lg">
                                 {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.regularBeats}
                               </span>
-                              <span className="text-[10px] text-blue-800 font-medium">Beats</span>
+                              <span className="text-[10px] text-white/90 font-medium">Beats</span>
                             </motion.div>
                           </div>
                           
