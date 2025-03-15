@@ -1,353 +1,328 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+/**
+ * Componentes de Efectos de Animación para Music-Video-AI
+ * 
+ * Este archivo contiene componentes reutilizables para crear efectos visuales
+ * animados que mejoran la experiencia del flujo de trabajo de creación de videos musicales.
+ * 
+ * Incluye:
+ * - Animaciones de partículas dinámicas
+ * - Efectos de transición entre pasos
+ * - Mensajes elegantes con animaciones
+ * - Efectos de brillo y gradientes animados
+ */
+import React from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import { Sparkles, Music, Video, FileText, Mic, Palette, Wand2, Layers } from 'lucide-react';
 
-// Componente para sistema de partículas
-export interface ParticleSystemProps {
-  count?: number;
-  colors?: string[];
-  size?: number;
-  speed?: number;
-  className?: string;
-  duration?: number;
-  activated?: boolean;
-}
+// Colores principales de la paleta (sincronizados con la aplicación)
+const COLORS = {
+  orange: "from-orange-500 to-orange-600",
+  purple: "from-purple-500 to-purple-600",
+  blue: "from-blue-500 to-blue-600",
+  teal: "from-teal-500 to-teal-600",
+  pink: "from-pink-500 to-pink-600",
+  amber: "from-amber-500 to-amber-600",
+};
 
-export function ParticleSystem({
-  count = 50,
-  colors = ['#4F46E5', '#7C3AED', '#EC4899', '#F97316'],
-  size = 6,
-  speed = 2,
+// Mensajes descriptivos según la etapa del proceso
+export const STEP_MESSAGES = {
+  'transcription': [
+    "Analizando patrones de audio...",
+    "Reconociendo letras y versos...",
+    "Procesando estructura musical..."
+  ],
+  'script': [
+    "Analizando tono y temática...",
+    "Diseñando narrativa visual...",
+    "Creando secuencia cinematográfica..."
+  ],
+  'sync': [
+    "Identificando beats y ritmos...",
+    "Marcando puntos de sincronización...",
+    "Ajustando tiempos visuales..."
+  ],
+  'scenes': [
+    "Diseñando planos y composiciones...",
+    "Creando escenas para cada verso...",
+    "Estructurando secuencia narrativa..."
+  ],
+  'customization': [
+    "Aplicando estilo visual personalizado...",
+    "Refinando paleta de colores...",
+    "Ajustando ambiente cinematográfico..."
+  ],
+  'movement': [
+    "Incorporando coreografías...",
+    "Añadiendo transiciones dinámicas...",
+    "Diseñando movimientos de cámara..."
+  ],
+  'lipsync': [
+    "Analizando fonemas vocales...",
+    "Sincronizando movimientos labiales...",
+    "Perfeccionando expresiones faciales..."
+  ],
+  'generation': [
+    "Renderizando escenas individuales...",
+    "Generando secuencias visuales...",
+    "Procesando efectos especiales..."
+  ],
+  'rendering': [
+    "Compilando escenas finales...",
+    "Aplicando efectos de post-producción...",
+    "Optimizando calidad de video..."
+  ]
+};
+
+// Componente para el mensaje animado que aparece durante el proceso
+export const AnimatedMessage = ({ 
+  message, 
+  delay = 0,
+  icon 
+}: { 
+  message: string;
+  delay?: number;
+  icon?: React.ReactNode;
+}) => {
+  return (
+    <motion.div
+      className="flex items-center gap-3 text-sm font-medium text-white px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/90 to-purple-500/90 shadow-lg backdrop-blur-sm"
+      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.9 }}
+      transition={{ 
+        duration: 0.5, 
+        delay: delay,
+        type: "spring",
+        stiffness: 100
+      }}
+    >
+      {icon && <div className="text-white">{icon}</div>}
+      <span>{message}</span>
+    </motion.div>
+  );
+};
+
+// Gradiente animado para el fondo
+export const AnimatedGradient = ({ 
   className,
-  duration = 10,
-  activated = false
-}: ParticleSystemProps) {
-  const [particles, setParticles] = useState<Array<{
-    id: number;
-    x: number;
-    y: number;
-    size: number;
-    color: string;
-    speed: number;
-    angle: number;
-  }>>([]);
-
-  useEffect(() => {
-    if (!activated) return;
-    
-    // Crear partículas
-    const newParticles = Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100, // porcentaje de la pantalla
-      y: Math.random() * 100,
-      size: Math.random() * size + 2,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speed: Math.random() * speed + 0.5,
-      angle: Math.random() * 360
-    }));
-    
-    setParticles(newParticles);
-    
-    // Limpiar partículas después de la duración
-    if (duration) {
-      const timer = setTimeout(() => {
-        setParticles([]);
-      }, duration * 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [activated, count, colors, size, speed, duration]);
-  
-  return (
-    <div className={cn(
-      "fixed inset-0 pointer-events-none z-10 overflow-hidden",
-      className
-    )}>
-      <AnimatePresence>
-        {particles.map((particle) => (
-          <motion.div
-            key={particle.id}
-            initial={{ 
-              left: `${particle.x}%`, 
-              top: `${particle.y}%`, 
-              opacity: 0,
-              scale: 0 
-            }}
-            animate={{ 
-              left: `${particle.x + Math.cos(particle.angle) * 20}%`,
-              top: `${particle.y + Math.sin(particle.angle) * 20}%`,
-              opacity: 1,
-              scale: 1
-            }}
-            exit={{ opacity: 0, scale: 0 }}
-            transition={{ 
-              duration: particle.speed * 2,
-              ease: "easeInOut"
-            }}
-            style={{
-              position: "absolute",
-              width: particle.size,
-              height: particle.size,
-              borderRadius: "50%",
-              backgroundColor: particle.color
-            }}
-          />
-        ))}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// Componente para gradiente animado
-export interface AnimatedGradientProps {
-  colors?: string[];
-  speed?: number;
+  colors = ["orange", "purple", "blue"],
+  duration = 8,
+  currentStep = 1
+}: {
   className?: string;
-}
-
-export function AnimatedGradient({
-  colors = ['#4F46E5', '#7C3AED', '#EC4899', '#F97316'],
-  speed = 10,
-  className
-}: AnimatedGradientProps) {
-  const [rotation, setRotation] = useState(0);
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotation(prev => (prev + 1) % 360);
-    }, 1000 / speed);
-    
-    return () => clearInterval(interval);
-  }, [speed]);
-  
-  return (
-    <div className={cn(
-      "absolute inset-0 overflow-hidden rounded-lg",
-      className
-    )}>
-      <div 
-        className="absolute inset-0 opacity-20"
-        style={{
-          background: `linear-gradient(${rotation}deg, ${colors.join(', ')})`,
-          transform: `scale(1.2)`,
-          transition: 'background 0.5s ease'
-        }}
-      />
-    </div>
-  );
-}
-
-// Componente para efecto de brillo
-export interface GlowEffectProps {
-  color?: string;
-  size?: number;
-  x?: number;
-  y?: number;
-  className?: string;
-  pulsate?: boolean;
-}
-
-export function GlowEffect({
-  color = '#4F46E5',
-  size = 200,
-  x = 50,
-  y = 50,
-  className,
-  pulsate = true
-}: GlowEffectProps) {
-  return (
-    <div className={cn(
-      "absolute pointer-events-none overflow-hidden",
-      className
-    )}>
-      <motion.div
-        animate={pulsate ? {
-          scale: [1, 1.2, 1],
-          opacity: [0.3, 0.5, 0.3]
-        } : {}}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        style={{
-          position: "absolute",
-          left: `${x}%`,
-          top: `${y}%`,
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          transform: "translate(-50%, -50%)",
-          background: `radial-gradient(circle, ${color} 0%, rgba(0,0,0,0) 70%)`,
-          filter: "blur(20px)"
-        }}
-      />
-    </div>
-  );
-}
-
-// Componente para efecto de confeti
-export interface ConfettiEffectProps {
-  count?: number;
+  colors?: (keyof typeof COLORS)[];
   duration?: number;
-  activated?: boolean;
-}
-
-export function ConfettiEffect({
-  count = 100,
-  duration = 5,
-  activated = false
-}: ConfettiEffectProps) {
-  const [confetti, setConfetti] = useState<Array<{
-    id: number;
-    x: number;
-    y: number;
-    rotation: number;
-    color: string;
-    size: number;
-    shape: 'square' | 'circle' | 'triangle';
-  }>>([]);
+  currentStep?: number;
+}) => {
+  // Determina los colores según la etapa actual
+  let gradientColors = [...colors];
   
-  const colors = [
-    '#FF3D00', '#2979FF', '#00E676', '#FFEB3B', 
-    '#651FFF', '#FF4081', '#00BCD4', '#FFC107'
-  ];
-  
-  const shapes = ['square', 'circle', 'triangle'] as const;
-  
-  useEffect(() => {
-    if (!activated) return;
-    
-    const newConfetti = Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: -10, // Comenzar arriba de la pantalla
-      rotation: Math.random() * 360,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      size: Math.random() * 8 + 4,
-      shape: shapes[Math.floor(Math.random() * shapes.length)]
-    }));
-    
-    setConfetti(newConfetti);
-    
-    const timer = setTimeout(() => {
-      setConfetti([]);
-    }, duration * 1000);
-    
-    return () => clearTimeout(timer);
-  }, [activated, count, duration]);
-  
-  function getShapeStyle(shape: 'square' | 'circle' | 'triangle', size: number, color: string) {
-    if (shape === 'square') {
-      return {
-        width: size,
-        height: size,
-        backgroundColor: color
-      };
-    } else if (shape === 'circle') {
-      return {
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        backgroundColor: color
-      };
-    } else { // triangle
-      return {
-        width: 0,
-        height: 0,
-        borderLeft: `${size/2}px solid transparent`,
-        borderRight: `${size/2}px solid transparent`,
-        borderBottom: `${size}px solid ${color}`
-      };
-    }
+  // Ajusta los colores según la etapa
+  if (currentStep >= 7) {
+    gradientColors = ["blue", "purple", "teal"];
+  } else if (currentStep >= 4) {
+    gradientColors = ["purple", "pink", "blue"];
+  } else {
+    gradientColors = ["orange", "amber", "purple"];
   }
   
   return (
-    <div className="fixed inset-0 pointer-events-none z-20 overflow-hidden">
-      <AnimatePresence>
-        {confetti.map((piece) => (
-          <motion.div
-            key={piece.id}
-            initial={{ 
-              left: `${piece.x}%`, 
-              top: `${piece.y}%`, 
-              opacity: 1,
-              rotate: 0
-            }}
-            animate={{ 
-              left: [`${piece.x}%`, `${piece.x + (Math.random() * 20 - 10)}%`],
-              top: '110%',
-              opacity: [1, 1, 0],
-              rotate: [0, piece.rotation]
-            }}
-            exit={{ opacity: 0 }}
-            transition={{ 
-              duration: 2 + Math.random() * 3,
-              ease: "easeOut"
-            }}
-            style={{
-              position: "absolute",
-              ...getShapeStyle(piece.shape, piece.size, piece.color)
-            }}
-          />
-        ))}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// Componente para efectos de audio
-export interface AudioVisualizerProps {
-  audioData?: Uint8Array;
-  className?: string;
-  color?: string;
-}
-
-export function AudioVisualizer({
-  audioData,
-  className,
-  color = '#4F46E5'
-}: AudioVisualizerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  useEffect(() => {
-    if (!canvasRef.current || !audioData) return;
-    
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Limpiar canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Dibujar visualización
-    const barWidth = canvas.width / audioData.length;
-    const centerY = canvas.height / 2;
-    
-    ctx.fillStyle = color;
-    
-    for (let i = 0; i < audioData.length; i++) {
-      const barHeight = (audioData[i] / 255) * canvas.height / 2;
-      
-      // Dibujar barras simétricas desde el centro
-      ctx.fillRect(
-        i * barWidth, 
-        centerY - barHeight / 2, 
-        barWidth - 1, 
-        barHeight
-      );
-    }
-  }, [audioData, color]);
-  
-  return (
-    <canvas
-      ref={canvasRef}
+    <motion.div 
       className={cn(
-        "w-full h-24 bg-black/5 rounded-md",
+        "absolute inset-0 -z-10 rounded-xl opacity-20",
         className
       )}
-      width={1000}
-      height={100}
+      animate={{
+        background: [
+          `linear-gradient(45deg, var(--${gradientColors[0]}) 0%, var(--${gradientColors[1]}) 50%, var(--${gradientColors[2]}) 100%)`,
+          `linear-gradient(45deg, var(--${gradientColors[2]}) 0%, var(--${gradientColors[0]}) 50%, var(--${gradientColors[1]}) 100%)`,
+          `linear-gradient(45deg, var(--${gradientColors[1]}) 0%, var(--${gradientColors[2]}) 50%, var(--${gradientColors[0]}) 100%)`
+        ]
+      }}
+      transition={{
+        duration: duration,
+        repeat: Infinity,
+        ease: "linear"
+      }}
+      style={{
+        "--orange": "rgb(249 115 22)",
+        "--purple": "rgb(168 85 247)",
+        "--blue": "rgb(59 130 246)",
+        "--teal": "rgb(20 184 166)",
+        "--pink": "rgb(236 72 153)",
+        "--amber": "rgb(245 158 11)"
+      } as React.CSSProperties}
     />
   );
-}
+};
+
+// Sistema de partículas reactivas al proceso
+export const ParticleSystem = ({ 
+  count = 8, 
+  currentStep = 1,
+  active = true
+}: { 
+  count?: number;
+  currentStep?: number;
+  active?: boolean;
+}) => {
+  // Determine colors based on current step
+  let particleColors: (keyof typeof COLORS)[] = ["orange", "purple", "blue"];
+  if (currentStep >= 7) {
+    particleColors = ["blue", "teal", "purple"];
+  } else if (currentStep >= 4) {
+    particleColors = ["purple", "pink", "blue"];
+  } else {
+    particleColors = ["orange", "amber", "purple"];
+  }
+  
+  if (!active) return null;
+  
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {Array.from({ length: count }).map((_, i) => (
+        <Particle 
+          key={i}
+          delay={i * 0.2} 
+          color={particleColors[i % particleColors.length]}
+          size={(i % 3) + 1}
+          speed={1 + (i % 3) * 0.3}
+          currentStep={currentStep}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Partícula individual
+const Particle = ({ 
+  delay = 0, 
+  color = "orange", 
+  size = 1, 
+  speed = 1,
+  currentStep = 1
+}: { 
+  delay?: number;
+  color?: keyof typeof COLORS;
+  size?: number;
+  speed?: number;
+  currentStep?: number;
+}) => {
+  // Las partículas se vuelven más dinámicas a medida que el proceso avanza
+  const dynamicFactor = Math.min(1 + (currentStep / 10), 2);
+  
+  return (
+    <motion.div
+      className={cn(
+        "absolute rounded-full bg-gradient-to-br",
+        COLORS[color],
+        size === 1 ? "w-1 h-1" : 
+        size === 2 ? "w-1.5 h-1.5" : 
+        "w-2 h-2"
+      )}
+      initial={{ 
+        opacity: 0, 
+        scale: 0,
+        x: "50%",
+        y: "50%"
+      }}
+      animate={{ 
+        opacity: [0, 0.8, 0],
+        scale: [0, 1.2, 0],
+        x: [
+          "50%", 
+          `${50 + (Math.random() * 40 - 20) * dynamicFactor}%`
+        ],
+        y: [
+          "50%", 
+          `${50 + (Math.random() * 40 - 20) * dynamicFactor}%`
+        ]
+      }}
+      transition={{
+        duration: 2 / speed,
+        delay: delay,
+        repeat: Infinity,
+        repeatDelay: Math.random() * (3 - currentStep * 0.2),
+        ease: "easeInOut"
+      }}
+    />
+  );
+};
+
+// Efecto de brillo para pasos avanzados
+export const GlowEffect = ({ 
+  active = false,
+  color = "orange",
+  intensity = 0.3
+}: {
+  active?: boolean;
+  color?: keyof typeof COLORS;
+  intensity?: number;
+}) => {
+  if (!active) return null;
+  
+  return (
+    <motion.div
+      className={cn(
+        "absolute inset-0 -z-10 rounded-xl bg-gradient-to-r",
+        COLORS[color],
+        "opacity-0"
+      )}
+      animate={{ 
+        opacity: [0, intensity, 0]
+      }}
+      transition={{
+        duration: 3,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+    />
+  );
+};
+
+// Componente para mostrar el ícono animado que corresponde a cada paso
+export const StepIcon = ({ 
+  stepId, 
+  active = false,
+  completed = false
+}: { 
+  stepId: string;
+  active?: boolean;
+  completed?: boolean;
+}) => {
+  const icons: Record<string, React.ReactNode> = {
+    'transcription': <Music className="h-5 w-5" />,
+    'script': <FileText className="h-5 w-5" />,
+    'sync': <Music className="h-5 w-5" />,
+    'scenes': <Video className="h-5 w-5" />,
+    'customization': <Palette className="h-5 w-5" />,
+    'movement': <Wand2 className="h-5 w-5" />,
+    'lipsync': <Mic className="h-5 w-5" />,
+    'generation': <Video className="h-5 w-5" />,
+    'rendering': <Layers className="h-5 w-5" />
+  };
+
+  return (
+    <motion.div
+      className={cn(
+        "flex items-center justify-center rounded-full p-2",
+        active ? "text-white bg-gradient-to-br from-orange-500 to-orange-600" : 
+        completed ? "text-white bg-gradient-to-br from-green-500 to-green-600" :
+        "text-muted-foreground bg-muted/50"
+      )}
+      initial={{ scale: 0.8 }}
+      animate={{ 
+        scale: active ? [0.9, 1.1, 0.9] : 1,
+        rotate: completed ? [0, 10, 0] : 0
+      }}
+      transition={{ 
+        duration: active ? 2 : 0.3,
+        repeat: active ? Infinity : 0,
+        ease: "easeInOut"
+      }}
+    >
+      {icons[stepId] || <Sparkles className="h-5 w-5" />}
+    </motion.div>
+  );
+};

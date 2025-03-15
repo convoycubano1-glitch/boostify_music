@@ -39,8 +39,7 @@ import { EnhancedProgressSteps, Step } from "./enhanced-progress-steps";
 import { 
   ParticleSystem, 
   AnimatedGradient,
-  GlowEffect,
-  ConfettiEffect 
+  GlowEffect
 } from "./animation-effects";
 import { 
   analyzeImage, 
@@ -2565,55 +2564,55 @@ ${transcription}`;
       id: "transcription",
       name: "Transcripción de Audio",
       description: "Analizando y transcribiendo la letra de tu canción",
-      status: currentStep > 1 ? "completed" as const : currentStep === 1 ? "active" as const : "pending" as const
+      status: currentStep > 1 ? "completed" : currentStep === 1 ? "in-progress" : "pending"
     },
     {
       id: "script",
       name: "Generación de Guion",
       description: "Creando un guion visual basado en la letra",
-      status: currentStep > 2 ? "completed" as const : currentStep === 2 ? "active" as const : "pending" as const
+      status: currentStep > 2 ? "completed" : currentStep === 2 ? "in-progress" : "pending"
     },
     {
       id: "sync",
       name: "Sincronización",
       description: "Alineando el contenido visual con el ritmo musical",
-      status: currentStep > 3 ? "completed" as const : currentStep === 3 ? "active" as const : "pending" as const
+      status: currentStep > 3 ? "completed" : currentStep === 3 ? "in-progress" : "pending"
     },
     {
       id: "scenes",
       name: "Generación de Escenas",
       description: "Creando escenas para cada sección",
-      status: currentStep > 4 ? "completed" as const : currentStep === 4 ? "active" as const : "pending" as const
+      status: currentStep > 4 ? "completed" : currentStep === 4 ? "in-progress" : "pending"
     },
     {
       id: "customization",
       name: "Personalización",
       description: "Ajustando el estilo visual a tus preferencias",
-      status: currentStep > 5 ? "completed" as const : currentStep === 5 ? "active" as const : "pending" as const
+      status: currentStep > 5 ? "completed" : currentStep === 5 ? "in-progress" : "pending"
     },
     {
       id: "movement",
       name: "Integración de Movimiento",
       description: "Añadiendo dinámicas visuales y coreografías",
-      status: currentStep > 6 ? "completed" as const : currentStep === 6 ? "active" as const : "pending" as const
+      status: currentStep > 6 ? "completed" : currentStep === 6 ? "in-progress" : "pending"
     },
     {
       id: "lipsync",
       name: "Sincronización de Labios",
       description: "Sincronizando labios con la letra",
-      status: currentStep > 7 ? "completed" as const : currentStep === 7 ? "active" as const : "pending" as const
+      status: currentStep > 7 ? "completed" : currentStep === 7 ? "in-progress" : "pending"
     },
     {
       id: "generation",
       name: "Generación de Video",
       description: "Creando clips de video con IA",
-      status: currentStep > 8 ? "completed" as const : currentStep === 8 ? "active" as const : "pending" as const
+      status: currentStep > 8 ? "completed" : currentStep === 8 ? "in-progress" : "pending"
     },
     {
       id: "rendering",
       name: "Renderizado Final",
       description: "Combinando todo en un video musical completo",
-      status: currentStep > 9 ? "completed" as const : currentStep === 9 ? "active" as const : "pending" as const
+      status: currentStep > 9 ? "completed" : currentStep === 9 ? "in-progress" : "pending"
     }
   ];
 
@@ -2733,15 +2732,8 @@ ${transcription}`;
         {/* Componente de pasos mejorado con animaciones */}
         <EnhancedProgressSteps
           steps={workflowSteps}
-          currentStepId={workflowSteps.find(s => s.status === "active")?.id || "transcription"}
-          onStepClick={(stepId) => {
-            // Encontrar el índice del paso
-            const stepIndex = workflowSteps.findIndex(s => s.id === stepId);
-            if (stepIndex >= 0) {
-              setCurrentStep(stepIndex + 1);
-            }
-          }}
-          className="p-4 mb-8"
+          currentStep={workflowSteps.find(s => s.status === "in-progress")?.id || "transcription"}
+          showDescriptions={true}
         />
         
         {/* Mantener el ProgressSteps original como fallback (escondido para compatibilidad) */}

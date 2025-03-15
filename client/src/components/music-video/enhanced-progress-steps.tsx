@@ -1,150 +1,195 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+/**
+ * Componente EnhancedProgressSteps
+ * 
+ * Este componente es una versión mejorada del ProgressSteps original que ofrece:
+ * - Visualización progresiva - solo muestra el paso actual y los siguientes de forma más sutil
+ * - Mensajes descriptivos animados que indican qué está haciendo la IA en cada etapa
+ * - Animaciones fluidas entre pasos con Framer Motion
+ * - Iconos dinámicos y atractivos
+ * 
+ * Se adapta a la paleta de colores de la aplicación y proporciona feedback visual elegante.
+ */
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { Check, ChevronRight, CircleDot } from 'lucide-react';
+
+import { 
+  AnimatedMessage, 
+  StepIcon, 
+  ParticleSystem, 
+  GlowEffect,
+  STEP_MESSAGES
+} from './animation-effects';
 
 export interface Step {
   id: string;
   name: string;
   description: string;
-  status: 'completed' | 'active' | 'pending' | 'error';
+  status: 'pending' | 'in-progress' | 'completed' | 'skipped';
 }
 
-export interface EnhancedProgressStepsProps {
+interface EnhancedProgressStepsProps {
   steps: Step[];
-  currentStepId: string;
-  onStepClick?: (stepId: string) => void;
-  className?: string;
+  currentStep: string;
+  showDescriptions?: boolean;
 }
 
-export function EnhancedProgressSteps({
-  steps,
-  currentStepId,
-  onStepClick,
-  className
+export function EnhancedProgressSteps({ 
+  steps, 
+  currentStep,
+  showDescriptions = true
 }: EnhancedProgressStepsProps) {
-  const [hoveredStepId, setHoveredStepId] = useState<string | null>(null);
+  // Estado para el mensaje actual
+  const [messageIndex, setMessageIndex] = useState(0);
   
-  // Calcular el progreso general (porcentaje de pasos completados)
-  const completedSteps = steps.filter(step => step.status === 'completed').length;
-  const totalProgress = Math.round((completedSteps / steps.length) * 100);
+  // Identificar el paso actual y su índice
+  const currentStepObj = steps.find(s => s.id === currentStep) || steps[0];
+  const currentStepIndex = steps.findIndex(s => s.id === currentStep);
   
-  // Encontrar el índice del paso actual
-  const currentStepIndex = steps.findIndex(step => step.id === currentStepId);
+  // Determinar qué pasos están completados
+  const completedSteps = steps.filter(s => s.status === 'completed');
+  const completedStepIds = completedSteps.map(s => s.id);
+  
+  // Cambiar el mensaje descriptivo cada cierto tiempo
+  useEffect(() => {
+    // Reiniciar índice cuando el paso cambia
+    setMessageIndex(0);
+    
+    // Solo configurar el intervalo si el paso actual está en progreso
+    if (currentStepObj.status === 'in-progress') {
+      const interval = setInterval(() => {
+        // Solo hay 3 mensajes por paso, así que rotamos entre ellos
+        setMessageIndex(prev => (prev + 1) % 3);
+      }, 4000); // Cambiar mensaje cada 4 segundos
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentStep, currentStepObj.status]);
+
+  // Determinar el mensaje actual
+  const currentMessages = STEP_MESSAGES[currentStepObj.id as keyof typeof STEP_MESSAGES] || [];
+  const currentMessage = currentMessages[messageIndex] || "Procesando...";
   
   return (
-    <div className={cn(
-      "rounded-lg border bg-card shadow p-4 space-y-4",
-      className
-    )}>
-      {/* Barra de progreso general */}
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <span className="text-sm font-medium">Progreso general</span>
-          <span className="text-sm text-muted-foreground">{totalProgress}%</span>
-        </div>
-        <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
-          <motion.div
-            className="absolute inset-y-0 left-0 bg-primary"
-            initial={{ width: 0 }}
-            animate={{ width: `${totalProgress}%` }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+    <div className="w-full space-y-6">
+      {/* Solo mostrar el encabezado cuando hay un paso en progreso */}
+      {currentStepObj.status === 'in-progress' && (
+        <motion.div
+          className="relative flex justify-center py-2 overflow-hidden"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+        >
+          <AnimatedMessage 
+            message={currentMessage}
+            icon={<StepIcon stepId={currentStepObj.id} active />}
           />
-        </div>
-      </div>
+        </motion.div>
+      )}
       
-      {/* Pasos del proceso */}
-      <div className="space-y-2">
-        {steps.map((step, index) => {
-          const isCompleted = step.status === 'completed';
-          const isActive = step.status === 'active';
-          const isPending = step.status === 'pending';
-          const isError = step.status === 'error';
-          const isHovered = hoveredStepId === step.id;
-          const isClickable = isCompleted || (index > 0 && steps[index - 1].status === 'completed');
-          
-          return (
-            <motion.div
-              key={step.id}
-              className={cn(
-                "relative border rounded-md p-4 transition-colors",
-                isActive && "border-primary bg-primary/5",
-                isCompleted && "border-green-300 bg-green-50/50",
-                isPending && "border-gray-200 bg-gray-50/50",
-                isError && "border-red-300 bg-red-50/50",
-                isClickable && "cursor-pointer hover:border-primary/50",
-                !isClickable && "opacity-80"
-              )}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              onClick={() => isClickable && onStepClick && onStepClick(step.id)}
-              onMouseEnter={() => setHoveredStepId(step.id)}
-              onMouseLeave={() => setHoveredStepId(null)}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  <div className={cn(
-                    "h-6 w-6 rounded-full flex items-center justify-center text-white",
-                    isCompleted && "bg-green-500",
-                    isActive && "bg-primary",
-                    isPending && "bg-gray-400",
-                    isError && "bg-red-500"
-                  )}>
-                    {isCompleted && <Check className="h-4 w-4" />}
-                    {isActive && <CircleDot className="h-4 w-4" />}
-                    {(isPending || isError) && (
-                      <span className="text-xs font-medium">{index + 1}</span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className={cn(
-                      "font-medium",
-                      isActive && "text-primary",
-                      isCompleted && "text-green-700",
-                      isError && "text-red-700"
-                    )}>
-                      {step.name}
-                    </h4>
-                    
-                    {isClickable && (
-                      <div className={cn(
-                        "opacity-0 transition-opacity",
-                        isHovered && "opacity-100"
-                      )}>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground">{step.description}</p>
-                  
-                  {/* Indicadores visuales adicionales */}
-                  {isActive && (
-                    <motion.div
-                      className="h-1 mt-2 bg-primary rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: "100%" }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        repeatType: "reverse"
-                      }}
-                    />
-                  )}
-                </div>
+      <div className="relative space-y-4 bg-background/80 backdrop-blur-sm p-4 rounded-xl border">
+        {/* Efectos de fondo según el paso actual */}
+        <ParticleSystem 
+          currentStep={currentStepIndex + 1} 
+          active={currentStepObj.status === 'in-progress'} 
+        />
+        <GlowEffect 
+          active={currentStepIndex > 6} 
+          color={currentStepIndex > 6 ? "blue" : "orange"} 
+        />
+        
+        {/* Pasos completados - vista compacta */}
+        {completedSteps.length > 0 && (
+          <motion.div 
+            className="grid grid-cols-3 sm:grid-cols-5 gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            {completedSteps.map((step) => (
+              <motion.div
+                key={step.id}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-muted/40"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring" }}
+              >
+                <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                <span className="text-xs font-medium truncate">{step.name}</span>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+        
+        {/* Paso actual - mostrar prominentemente */}
+        {currentStepObj.status === 'in-progress' && (
+          <motion.div
+            className="relative rounded-lg border bg-card p-4 shadow-lg"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full flex items-center justify-center border-2 border-orange-500/50 bg-orange-500/10">
+                <StepIcon stepId={currentStepObj.id} active />
               </div>
               
-              {/* Línea conector entre pasos */}
-              {index < steps.length - 1 && (
-                <div className="absolute left-7 top-10 bottom-0 w-px bg-gray-200 -mb-4" />
-              )}
-            </motion.div>
-          );
-        })}
+              <div>
+                <h3 className="font-semibold text-lg text-foreground">
+                  {currentStepObj.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {currentStepObj.description}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Próximos pasos - mostrar de forma más sutil */}
+        <AnimatePresence>
+          {steps
+            .filter(step => step.status === 'pending')
+            .filter((_, index) => index < 3) // Mostrar solo los próximos 3 pasos pendientes
+            .map((step, index) => (
+              <motion.div
+                key={step.id}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-lg",
+                  "transition-all duration-300",
+                  index === 0 ? "bg-muted/80" : "bg-muted/40"
+                )}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: index === 0 ? 0.95 : 0.7 - index * 0.2 }}
+                exit={{ y: -20, opacity: 0 }}
+                transition={{ delay: 0.1 + index * 0.05 }}
+              >
+                <div className="h-8 w-8 rounded-full flex items-center justify-center bg-muted/50">
+                  <StepIcon stepId={step.id} />
+                </div>
+                <div>
+                  <p className={cn(
+                    "font-medium",
+                    index === 0 ? "text-foreground" : "text-muted-foreground"
+                  )}>
+                    {step.name}
+                  </p>
+                  {index === 0 && showDescriptions && (
+                    <p className="text-xs text-muted-foreground">{step.description}</p>
+                  )}
+                </div>
+              </motion.div>
+            ))
+          }
+        </AnimatePresence>
+        
+        {/* Indicador de pasos restantes */}
+        {steps.filter(step => step.status === 'pending').length > 3 && (
+          <div className="text-center text-xs text-muted-foreground py-1">
+            Y {steps.filter(step => step.status === 'pending').length - 3} pasos más...
+          </div>
+        )}
       </div>
     </div>
   );
