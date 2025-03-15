@@ -3133,21 +3133,21 @@ ${transcription}`;
                             ease: "easeInOut"
                           }}
                         >
-                          <Film className="h-14 w-14 mb-3 text-purple-200" />
+                          <Film className="h-14 w-14 mb-3 text-orange-400" />
                         </motion.div>
                         <p className="max-w-md font-medium text-gray-600">El guion profesional se generará basado en la transcripción de la letra.</p>
                         <div className="mt-4 grid grid-cols-3 gap-3 max-w-lg">
-                          <div className="flex flex-col items-center p-3 rounded-lg bg-purple-50/50 border border-purple-100">
-                            <span className="text-xs font-semibold text-purple-800 mb-1">Estilo</span>
-                            <span className="text-[10px] text-center text-purple-600">Análisis de género y estética</span>
+                          <div className="flex flex-col items-center p-3 rounded-lg bg-orange-50/50 border border-orange-100">
+                            <span className="text-xs font-semibold text-orange-800 mb-1">Estilo</span>
+                            <span className="text-[10px] text-center text-orange-600">Análisis de género y estética</span>
                           </div>
                           <div className="flex flex-col items-center p-3 rounded-lg bg-amber-50/50 border border-amber-100">
                             <span className="text-xs font-semibold text-amber-800 mb-1">Arco</span>
                             <span className="text-[10px] text-center text-amber-600">Estructura narrativa</span>
                           </div>
-                          <div className="flex flex-col items-center p-3 rounded-lg bg-blue-50/50 border border-blue-100">
-                            <span className="text-xs font-semibold text-blue-800 mb-1">Técnica</span>
-                            <span className="text-[10px] text-center text-blue-600">Dirección escénica</span>
+                          <div className="flex flex-col items-center p-3 rounded-lg bg-orange-50/50 border border-orange-100">
+                            <span className="text-xs font-semibold text-orange-800 mb-1">Técnica</span>
+                            <span className="text-[10px] text-center text-orange-600">Dirección escénica</span>
                           </div>
                         </div>
                       </motion.div>
@@ -3178,7 +3178,7 @@ ${transcription}`;
                           </motion.div>
                           <motion.div 
                             className="bg-gradient-to-br from-zinc-900 to-black p-3 rounded-md border border-orange-800/30 shadow-sm"
-                            whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(139, 92, 246, 0.1)" }}
+                            whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(249, 115, 22, 0.1)" }}
                             transition={{ duration: 0.2 }}
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -3189,7 +3189,7 @@ ${transcription}`;
                           </motion.div>
                           <motion.div 
                             className="bg-gradient-to-br from-zinc-900 to-black p-3 rounded-md border border-orange-800/30 shadow-sm"
-                            whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(99, 102, 241, 0.1)" }}
+                            whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(249, 115, 22, 0.1)" }}
                             transition={{ duration: 0.2 }}
                             initial={{ opacity: 0, x: 10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -3351,17 +3351,17 @@ ${transcription}`;
                           <Label className="font-medium text-orange-900/80">Paleta de Colores</Label>
                           <div className="flex space-x-1">
                             <motion.div 
-                              className="h-4 w-4 rounded-full bg-red-400"
+                              className="h-4 w-4 rounded-full bg-orange-400"
                               whileHover={{ scale: 1.2 }}
                               transition={{ duration: 0.2 }}
                             />
                             <motion.div 
-                              className="h-4 w-4 rounded-full bg-purple-400"
+                              className="h-4 w-4 rounded-full bg-orange-600"
                               whileHover={{ scale: 1.2 }}
                               transition={{ duration: 0.2 }}
                             />
                             <motion.div 
-                              className="h-4 w-4 rounded-full bg-blue-400"
+                              className="h-4 w-4 rounded-full bg-zinc-900"
                               whileHover={{ scale: 1.2 }}
                               transition={{ duration: 0.2 }}
                             />
