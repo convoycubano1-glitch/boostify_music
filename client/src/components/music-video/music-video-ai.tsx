@@ -2819,7 +2819,7 @@ ${transcription}`;
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="space-y-6 order-2 lg:order-1">
               <motion.div 
-                className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-orange-50/30 shadow-sm relative"
+                className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-zinc-900 to-black shadow-sm relative border-zinc-800"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ 
                   opacity: 1, 
@@ -2925,7 +2925,7 @@ ${transcription}`;
 
               <div className="space-y-6">
                 <motion.div 
-                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm relative"
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-zinc-900 to-black shadow-sm relative border-zinc-800"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: 1, 
@@ -3058,7 +3058,7 @@ ${transcription}`;
                 </motion.div>
 
                 <motion.div 
-                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-purple-50/30 shadow-sm relative"
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-zinc-900 to-black shadow-sm relative border-zinc-800"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: 1, 
