@@ -618,13 +618,9 @@ export default function HomePage() {
                 <div className="absolute -right-20 -top-20 w-40 h-40 bg-orange-500/10 rounded-full"></div>
                 <div className="absolute -left-20 -bottom-20 w-40 h-40 bg-red-500/10 rounded-full"></div>
                 <img 
-                  src="/assets/web3-music-illustration.png" 
+                  src="/assets/web3-music-illustration.svg" 
                   alt="Web3 Music Tokenization" 
                   className="w-full h-auto relative z-10 rounded-xl shadow-2xl"
-                  onError={(e) => {
-                    // Fallback para imagen no encontrada
-                    e.currentTarget.src = "https://placehold.co/600x400/orange/white?text=Web3+Music+Tokenization";
-                  }}
                 />
               </div>
             </div>
