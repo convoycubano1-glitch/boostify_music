@@ -3849,43 +3849,43 @@ ${transcription}`;
                           {/* Detalles del beat seleccionado, si hay alguno */}
                           {selectedBeatIndex !== null && (
                             <motion.div 
-                              className="p-3 rounded-lg border border-green-200 bg-white/70 shadow-sm"
+                              className="p-3 rounded-lg border border-orange-500/20 bg-black/60 shadow-sm"
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ duration: 0.3 }}
                             >
-                              <h5 className="font-medium mb-2 flex items-center gap-2 text-green-800">
+                              <h5 className="font-medium mb-2 flex items-center gap-2 text-orange-500">
                                 <Music2 className="h-3 w-3" />
                                 <span>Beat #{selectedBeatIndex + 1}</span>
                               </h5>
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-green-700">Tipo:</span> 
+                                  <span className="text-orange-400">Tipo:</span> 
                                   <span className={
                                     JSON.parse(beatsJsonData).beats[selectedBeatIndex].type === 'downbeat'
-                                      ? 'text-red-500 font-medium bg-red-50 px-1.5 py-0.5 rounded-full text-[10px]'
+                                      ? 'text-red-500 font-medium bg-red-600/20 px-1.5 py-0.5 rounded-full text-[10px]'
                                       : JSON.parse(beatsJsonData).beats[selectedBeatIndex].type === 'accent'
-                                        ? 'text-yellow-500 font-medium bg-yellow-50 px-1.5 py-0.5 rounded-full text-[10px]'
-                                        : 'text-blue-500 font-medium bg-blue-50 px-1.5 py-0.5 rounded-full text-[10px]'
+                                        ? 'text-yellow-500 font-medium bg-yellow-600/20 px-1.5 py-0.5 rounded-full text-[10px]'
+                                        : 'text-blue-500 font-medium bg-blue-600/20 px-1.5 py-0.5 rounded-full text-[10px]'
                                   }>
                                     {JSON.parse(beatsJsonData).beats[selectedBeatIndex].type}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-green-700">Tiempo:</span>
-                                  <span className="font-mono bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full text-[10px]">
+                                  <span className="text-orange-400">Tiempo:</span>
+                                  <span className="font-mono bg-black/40 text-white px-1.5 py-0.5 rounded-full text-[10px]">
                                     {JSON.parse(beatsJsonData).beats[selectedBeatIndex].timecode}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-green-700">Intensidad:</span>
-                                  <span className="font-medium">
+                                  <span className="text-orange-400">Intensidad:</span>
+                                  <span className="font-medium text-white">
                                     {(JSON.parse(beatsJsonData).beats[selectedBeatIndex].intensity * 100).toFixed(0)}%
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-green-700">Energía:</span>
-                                  <span className="font-medium">
+                                  <span className="text-orange-400">Energía:</span>
+                                  <span className="font-medium text-white">
                                     {JSON.parse(beatsJsonData).beats[selectedBeatIndex].energy.toFixed(4)}
                                   </span>
                                 </div>
@@ -3922,19 +3922,19 @@ ${transcription}`;
                 </div>
 
                 <motion.div 
-                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-purple-50/30 shadow-sm relative"
+                  className="border border-orange-500/20 rounded-lg overflow-hidden p-5 bg-gradient-to-br from-black to-black/70 shadow-sm relative"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: 1, 
                     y: 0,
-                    boxShadow: currentStep >= 7 ? "0 0 0 2px rgba(139, 92, 246, 0.2)" : "none"
+                    boxShadow: currentStep >= 7 ? "0 0 0 2px rgba(249, 115, 22, 0.3)" : "none"
                   }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                 >
                   {/* Indicador de paso completado */}
                   {currentStep >= 7 && (
                     <motion.div 
-                      className="absolute -top-1 -right-1 p-1 rounded-full bg-purple-100 text-purple-600 z-10"
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-orange-900 text-orange-400 z-10"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 20 }}
@@ -3946,7 +3946,7 @@ ${transcription}`;
                   {/* Título con icono animado */}
                   <div className="flex items-center gap-3 mb-6">
                     <motion.div 
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-900 text-orange-400"
                       whileHover={{ scale: 1.1 }}
                       animate={{ 
                         rotate: [0, -3, 3, 0],
@@ -3959,8 +3959,8 @@ ${transcription}`;
                       <Megaphone className="h-4 w-4" />
                     </motion.div>
                     <div>
-                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-purple-500">6. Generar Prompts</Label>
-                      <p className="text-xs text-muted-foreground">Crea instrucciones de IA con el estilo definido</p>
+                      <Label className="text-lg font-semibold text-orange-500">6. Generar Prompts</Label>
+                      <p className="text-xs text-white/70">Crea instrucciones de IA con el estilo definido</p>
                     </div>
                   </div>
                   
@@ -3980,7 +3980,7 @@ ${transcription}`;
                         !videoStyle.colorPalette ||
                         !videoStyle.characterStyle
                       }
-                      className="w-full h-12 mt-4 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 border-0 shadow-md"
+                      className="w-full h-12 mt-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 border-0 shadow-md"
                     >
                       {isGeneratingScript ? (
                         <motion.div className="flex items-center justify-center gap-2" animate={{ opacity: [0.7, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}>
@@ -3998,7 +3998,7 @@ ${transcription}`;
                     {/* Fondo decorativo para el botón */}
                     {!isGeneratingScript && (
                       <motion.div 
-                        className="absolute -bottom-2 -right-2 -left-2 h-8 rounded-b-lg opacity-30 bg-gradient-to-t from-purple-200 to-transparent"
+                        className="absolute -bottom-2 -right-2 -left-2 h-8 rounded-b-lg opacity-30 bg-gradient-to-t from-orange-900/40 to-transparent"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 0.3 }}
                         transition={{ duration: 1, delay: 0.5 }}
@@ -4008,19 +4008,19 @@ ${transcription}`;
                 </motion.div>
 
                 <motion.div 
-                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-indigo-50/30 shadow-sm relative"
+                  className="border border-orange-500/20 rounded-lg overflow-hidden p-5 bg-gradient-to-br from-black to-black/70 shadow-sm relative"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 
                     opacity: 1, 
                     y: 0,
-                    boxShadow: currentStep >= 8 ? "0 0 0 2px rgba(99, 102, 241, 0.2)" : "none"
+                    boxShadow: currentStep >= 8 ? "0 0 0 2px rgba(249, 115, 22, 0.3)" : "none"
                   }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                 >
                   {/* Indicador de paso completado */}
                   {currentStep >= 8 && (
                     <motion.div 
-                      className="absolute -top-1 -right-1 p-1 rounded-full bg-indigo-100 text-indigo-600 z-10"
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-orange-900 text-orange-400 z-10"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 20 }}
@@ -4032,7 +4032,7 @@ ${transcription}`;
                   {/* Título con icono animado */}
                   <div className="flex items-center gap-3 mb-6">
                     <motion.div 
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-900 text-orange-400"
                       whileHover={{ scale: 1.1 }}
                       animate={{ 
                         rotate: [0, -3, 3, 0],
@@ -4045,8 +4045,8 @@ ${transcription}`;
                       <ImageIcon className="h-4 w-4" />
                     </motion.div>
                     <div>
-                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-indigo-500">7. Generar Imágenes</Label>
-                      <p className="text-xs text-muted-foreground">Crea visuales impactantes para cada segmento</p>
+                      <Label className="text-lg font-semibold text-orange-500">7. Generar Imágenes</Label>
+                      <p className="text-xs text-white/70">Crea visuales impactantes para cada segmento</p>
                     </div>
                   </div>
                   
@@ -4063,7 +4063,7 @@ ${transcription}`;
                         isGeneratingShots ||
                         currentStep < 5
                       }
-                      className="w-full h-12 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 border-0 shadow-md"
+                      className="w-full h-12 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 border-0 shadow-md"
                     >
                       {isGeneratingShots ? (
                         <motion.div className="flex items-center justify-center gap-2" animate={{ opacity: [0.7, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}>
@@ -4081,7 +4081,7 @@ ${transcription}`;
                     {/* Decoración visual */}
                     {!isGeneratingShots && (
                       <motion.div 
-                        className="absolute -bottom-2 -right-2 -left-2 h-8 rounded-b-lg opacity-30 bg-gradient-to-t from-indigo-200 to-transparent"
+                        className="absolute -bottom-2 -right-2 -left-2 h-8 rounded-b-lg opacity-30 bg-gradient-to-t from-orange-900/40 to-transparent"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 0.3 }}
                         transition={{ duration: 1, delay: 0.5 }}
@@ -4091,13 +4091,13 @@ ${transcription}`;
                   
                   {/* Información de ayuda */}
                   <motion.div 
-                    className="mt-5 bg-white/60 rounded-lg p-3 text-xs text-indigo-700 border border-indigo-100 flex items-start gap-2"
+                    className="mt-5 bg-black/50 rounded-lg p-3 text-xs text-orange-400 border border-orange-500/20 flex items-start gap-2"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.4 }}
                   >
-                    <HelpCircle className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
-                    <div>
+                    <HelpCircle className="h-4 w-4 text-orange-400/70 mt-0.5 flex-shrink-0" />
+                    <div className="text-white/80">
                       Este paso utilizará los prompts generados para crear imágenes para cada segmento del video. 
                       Las imágenes generadas se adaptarán al estilo visual que has definido anteriormente.
                     </div>
@@ -4150,7 +4150,7 @@ ${transcription}`;
                       />
                       {videoId && (
                         <Button 
-                          className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                          className="w-full mt-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 border-0 shadow-md"
                           onClick={() => setCurrentStep(9)}
                         >
                           <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -4174,7 +4174,7 @@ ${transcription}`;
                         onUpdateClip={handleClipUpdate}
                       />
                       <Button 
-                        className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                        className="w-full mt-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 border-0 shadow-md"
                         onClick={() => setCurrentStep(6)}
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -4204,7 +4204,7 @@ ${transcription}`;
                         isLoading={false}
                       />
                       <Button 
-                        className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                        className="w-full mt-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 border-0 shadow-md"
                         onClick={() => setCurrentStep(7)}
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -4243,7 +4243,7 @@ ${transcription}`;
                         isLoading={false}
                       />
                       <Button 
-                        className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                        className="w-full mt-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 border-0 shadow-md"
                         onClick={() => setCurrentStep(8)}
                       >
                         <CheckCircle2 className="mr-2 h-4 w-4" />
