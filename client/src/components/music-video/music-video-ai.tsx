@@ -3083,7 +3083,7 @@ ${transcription}`;
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
                       <motion.div 
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600"
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600"
                         whileHover={{ scale: 1.1 }}
                         animate={scriptContent ? { 
                           scale: [1, 1.05, 1],
@@ -3097,7 +3097,7 @@ ${transcription}`;
                       >
                         <Film className="h-4 w-4" />
                       </motion.div>
-                      <Label className="text-lg font-semibold">3. Guion Profesional</Label>
+                      <Label className="text-lg font-semibold text-orange-500">3. Guion Profesional</Label>
                     </div>
                     
                     {scriptContent && (
