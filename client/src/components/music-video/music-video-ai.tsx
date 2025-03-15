@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -2624,14 +2625,110 @@ ${transcription}`;
       {/* Efectos visuales para toda la aplicación */}
       {allStepsCompleted && <ConfettiEffect activated={true} count={200} duration={7} />}
       
+      {/* Sistema de partículas dinámicas basadas en el paso actual */}
+      {currentStep === 1 && (
+        <ParticleSystem 
+          count={30} 
+          colors={['#FF5722', '#FF9800', '#FFC107']} 
+          size={4} 
+          speed={1.5} 
+          activated={true}
+          className="opacity-50"
+        />
+      )}
+      
+      {currentStep === 2 && (
+        <ParticleSystem 
+          count={40} 
+          colors={['#3F51B5', '#2196F3', '#03A9F4']} 
+          size={3} 
+          speed={1.2} 
+          activated={true}
+          className="opacity-40"
+        />
+      )}
+      
+      {currentStep === 3 && (
+        <ParticleSystem 
+          count={50} 
+          colors={['#4CAF50', '#8BC34A', '#CDDC39']} 
+          size={3} 
+          speed={1} 
+          activated={true}
+          className="opacity-30"
+        />
+      )}
+      
+      {currentStep === 4 && (
+        <ParticleSystem 
+          count={60} 
+          colors={['#9C27B0', '#673AB7', '#3F51B5']} 
+          size={5} 
+          speed={2} 
+          activated={true}
+          className="opacity-35"
+        />
+      )}
+      
+      {currentStep === 6 && (
+        <ParticleSystem 
+          count={80} 
+          colors={['#E91E63', '#F44336', '#FF9800']} 
+          size={4} 
+          speed={2.5} 
+          activated={true}
+          className="opacity-40"
+        />
+      )}
+      
+      {currentStep >= 8 && currentStep < 9 && (
+        <ParticleSystem 
+          count={120} 
+          colors={['#FFEB3B', '#FFC107', '#FF9800', '#FF5722']} 
+          size={6} 
+          speed={3} 
+          activated={true}
+          className="opacity-45"
+        />
+      )}
+      
       {/* Contenedor principal con posicionamiento relativo para los efectos */}
       <div className="relative">
-        {/* Gradiente animado en el fondo */}
+        {/* Gradiente animado en el fondo - Cambia los colores según el paso actual */}
         <AnimatedGradient 
-          colors={['#4F46E5', '#7C3AED', '#EC4899', '#F97316']} 
-          speed={5} 
+          colors={
+            currentStep <= 2 ? ['#4F46E5', '#7C3AED', '#EC4899', '#F97316'] :
+            currentStep <= 4 ? ['#EC4899', '#F97316', '#4F46E5', '#7C3AED'] :
+            currentStep <= 6 ? ['#7C3AED', '#EC4899', '#F97316', '#4F46E5'] :
+            currentStep <= 8 ? ['#F97316', '#4F46E5', '#7C3AED', '#EC4899'] :
+            ['#FFD700', '#FF8C00', '#FF4500', '#FF0000']
+          } 
+          speed={currentStep <= 2 ? 5 : currentStep <= 5 ? 8 : 12} 
           className="opacity-5"
         />
+        
+        {/* Efectos de brillo según la etapa del proceso */}
+        {currentStep >= 5 && currentStep < 7 && (
+          <GlowEffect 
+            color="#7C3AED" 
+            size={300} 
+            x={25} 
+            y={30} 
+            pulsate={true} 
+            className="opacity-10"
+          />
+        )}
+        
+        {currentStep >= 7 && (
+          <GlowEffect 
+            color="#F97316" 
+            size={350} 
+            x={75} 
+            y={40} 
+            pulsate={true} 
+            className="opacity-15"
+          />
+        )}
         
         {/* Componente de pasos mejorado con animaciones */}
         <EnhancedProgressSteps
@@ -2711,8 +2808,33 @@ ${transcription}`;
         </div>
       </div> {/* Cierre del div className="relative" */}
 
-      <div className="container py-6 space-y-8">
-        <Card className="p-6">
+      <motion.div 
+        className="container py-6 space-y-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ 
+            type: "spring",
+            stiffness: 300,
+            damping: 20,
+            delay: 0.1
+          }}
+        >
+          <Card className="p-6 relative overflow-hidden">
+            {/* Efecto de brillo sutil en la esquina */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-radial from-orange-400/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            
+            {/* Línea decorativa animada */}
+            <motion.div 
+              className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-orange-500 via-purple-500 to-blue-500"
+              initial={{ width: "0%" }}
+              animate={{ width: `${(currentStep / 9) * 100}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            ></motion.div>
           <div className="flex items-center gap-4 mb-6">
             <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
               <Video className="h-6 w-6 text-orange-500" />
@@ -3558,7 +3680,8 @@ ${transcription}`;
             </div>
           </div>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
