@@ -108,12 +108,14 @@ export const AnimatedGradient = ({
   className,
   colors = ["orange", "purple", "blue"],
   duration = 8,
-  currentStep = 1
+  currentStep = 1,
+  speed = 5
 }: {
   className?: string;
-  colors?: (keyof typeof COLORS)[];
+  colors?: (keyof typeof COLORS)[] | string[];
   duration?: number;
   currentStep?: number;
+  speed?: number;
 }) => {
   // Determina los colores según la etapa actual
   let gradientColors = [...colors];
@@ -253,12 +255,22 @@ const Particle = ({
 // Efecto de brillo para pasos avanzados
 export const GlowEffect = ({ 
   active = false,
-  color = "orange",
-  intensity = 0.3
+  color = "orange" as keyof typeof COLORS | string,
+  intensity = 0.3,
+  size,
+  x,
+  y,
+  pulsate,
+  className
 }: {
   active?: boolean;
-  color?: keyof typeof COLORS;
+  color?: keyof typeof COLORS | string;
   intensity?: number;
+  size?: number;
+  x?: number;
+  y?: number;
+  pulsate?: boolean;
+  className?: string;
 }) => {
   if (!active) return null;
   
@@ -266,8 +278,9 @@ export const GlowEffect = ({
     <motion.div
       className={cn(
         "absolute inset-0 -z-10 rounded-xl bg-gradient-to-r",
-        COLORS[color],
-        "opacity-0"
+        typeof color === 'string' && color in COLORS ? COLORS[color as keyof typeof COLORS] : 'from-purple-500 to-purple-600',
+        "opacity-0",
+        className
       )}
       animate={{ 
         opacity: [0, intensity, 0]

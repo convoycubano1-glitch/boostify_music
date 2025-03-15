@@ -14,7 +14,8 @@ import Editor from "@monaco-editor/react";
 import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw,
-  Film, CheckCircle2, Share, User
+  Film, CheckCircle2, Share, User, Upload, X, Check, Activity, ChevronUp, ChevronDown,
+  Megaphone, Waves, HelpCircle
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { ScrollArea } from "../ui/scroll-area";
@@ -1356,8 +1357,8 @@ ${transcription}`;
         clipType = 'video';
         clipLayer = 1; // Capa de video/imagen (1)
       }
-      // Si es una imagen generada por IA (isGeneratedImage=true o tiene generatedImage)
-      else if (item.isGeneratedImage || item.generatedImage) {
+      // Si es una imagen generada por IA (tiene generatedImage)
+      else if (item.generatedImage) {
         clipType = 'image';
         clipLayer = 7; // Colocar imágenes generadas en la capa 7
         console.log(`🎨 Imagen generada detectada: ${item.id} - Asignando a capa 7`);
@@ -1717,7 +1718,7 @@ ${transcription}`;
       }
       
       // 2. Restricción de capa para imágenes generadas por IA - siempre en capa 7
-      if (currentClip.isGeneratedImage || currentClip.generatedImage) {
+      if (currentClip.generatedImage) {
         if (currentClip.group !== 7) {
           console.log(`Moviendo clip de imagen generada ${currentClip.id} a capa 7`);
           currentClip.group = 7;
@@ -2622,7 +2623,7 @@ ${transcription}`;
   return (
     <div className="min-h-screen bg-background">
       {/* Efectos visuales para toda la aplicación */}
-      {allStepsCompleted && <ConfettiEffect activated={true} count={200} duration={7} />}
+      {allStepsCompleted && <motion.div className="confetti-container" />}
       
       {/* Sistema de partículas dinámicas basadas en el paso actual */}
       {currentStep === 1 && (
@@ -2678,11 +2679,11 @@ ${transcription}`;
         {/* Gradiente animado en el fondo - Cambia los colores según el paso actual */}
         <AnimatedGradient 
           colors={
-            currentStep <= 2 ? ['#4F46E5', '#7C3AED', '#EC4899', '#F97316'] :
-            currentStep <= 4 ? ['#EC4899', '#F97316', '#4F46E5', '#7C3AED'] :
-            currentStep <= 6 ? ['#7C3AED', '#EC4899', '#F97316', '#4F46E5'] :
-            currentStep <= 8 ? ['#F97316', '#4F46E5', '#7C3AED', '#EC4899'] :
-            ['#FFD700', '#FF8C00', '#FF4500', '#FF0000']
+            currentStep <= 2 ? ["purple", "blue", "pink", "orange"] :
+            currentStep <= 4 ? ["pink", "orange", "purple", "blue"] :
+            currentStep <= 6 ? ["blue", "pink", "orange", "purple"] :
+            currentStep <= 8 ? ["orange", "blue", "purple", "pink"] :
+            ["amber", "orange", "pink", "purple"]
           } 
           speed={currentStep <= 2 ? 5 : currentStep <= 5 ? 8 : 12} 
           className="opacity-5"
@@ -2691,7 +2692,7 @@ ${transcription}`;
         {/* Efectos de brillo según la etapa del proceso */}
         {currentStep >= 5 && currentStep < 7 && (
           <GlowEffect 
-            color="#7C3AED" 
+            color="purple" 
             size={300} 
             x={25} 
             y={30} 
@@ -2702,7 +2703,7 @@ ${transcription}`;
         
         {currentStep >= 7 && (
           <GlowEffect 
-            color="#F97316" 
+            color="orange" 
             size={350} 
             x={75} 
             y={40} 
@@ -2963,99 +2964,374 @@ ${transcription}`;
               </motion.div>
 
               <div className="space-y-6">
-                <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">2. Transcripción</Label>
+                <motion.div 
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-blue-50/30 shadow-sm relative"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    boxShadow: currentStep >= 3 ? "0 0 0 2px rgba(79, 70, 229, 0.2)" : "none"
+                  }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                  {/* Indicador de paso completado */}
+                  {currentStep >= 3 && (
+                    <motion.div 
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </motion.div>
+                  )}
+                  
+                  {/* Título con icono animado */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <motion.div 
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600"
+                      whileHover={{ scale: 1.1 }}
+                      animate={{ 
+                        rotate: isGeneratingScript ? [0, 10, -10, 0] : 0
+                      }}
+                      transition={{ 
+                        rotate: { repeat: Infinity, duration: 1.5, ease: "easeInOut" },
+                        scale: { duration: 0.2 }
+                      }}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </motion.div>
+                    <Label className="text-lg font-semibold">2. Transcripción</Label>
+                  </div>
+                  
                   <div className="space-y-4">
-                    <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                      <pre className="text-sm whitespace-pre-wrap">{transcription || "Sin transcripción"}</pre>
-                    </ScrollArea>
+                    <motion.div 
+                      className="relative"
+                      animate={{ opacity: 1 }}
+                      initial={{ opacity: 0.8 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <ScrollArea className="h-[200px] w-full rounded-md border bg-white/80 p-4 shadow-inner">
+                        {transcription ? (
+                          <motion.pre 
+                            className="text-sm whitespace-pre-wrap font-normal text-slate-700"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            {transcription}
+                          </motion.pre>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-center opacity-60">
+                            <FileText className="h-8 w-8 mb-2 text-slate-400" />
+                            <p className="text-sm text-slate-500">Sube un archivo de audio para ver la transcripción</p>
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </motion.div>
                     
                     {/* Mostrar botón de continuar cuando la transcripción se ha completado pero no se ha avanzado al paso 2 */}
                     {currentStep === 1.5 && (
-                      <Button
-                        onClick={() => setCurrentStep(2)}
-                        className="w-full mb-2 bg-green-600 hover:bg-green-700"
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Continuar al siguiente paso
-                      </Button>
+                        <Button
+                          onClick={() => setCurrentStep(2)}
+                          className="w-full mb-2 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white shadow-md"
+                        >
+                          <motion.div 
+                            className="mr-2"
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ repeat: Infinity, duration: 1.5 }}
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </motion.div>
+                          Continuar al siguiente paso
+                        </Button>
+                      </motion.div>
                     )}
                     
                     <Button
                       onClick={generateScriptFromTranscription}
                       disabled={!transcription || isGeneratingScript || currentStep < 2}
-                      className="w-full"
+                      className={cn(
+                        "w-full group relative overflow-hidden transition-all",
+                        transcription && !isGeneratingScript && currentStep >= 2 
+                          ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md" 
+                          : ""
+                      )}
                     >
                       {isGeneratingScript ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Generando guion...
-                        </>
+                        <motion.div className="flex items-center justify-center w-full">
+                          <motion.div 
+                            className="mr-2"
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                          >
+                            <Loader2 className="h-4 w-4" />
+                          </motion.div>
+                          <span>Generando guion...</span>
+                        </motion.div>
                       ) : (
-                        <>
+                        <motion.div 
+                          className="flex items-center justify-center w-full"
+                          whileHover={{ scale: 1.02 }}
+                          transition={{ duration: 0.2 }}
+                        >
                           <FileText className="mr-2 h-4 w-4" />
-                          Generar Guion Musical
-                        </>
+                          <span>Generar Guion Musical</span>
+                        </motion.div>
+                      )}
+                      
+                      {/* Efecto de brillo al pasar el mouse */}
+                      {transcription && !isGeneratingScript && currentStep >= 2 && (
+                        <motion.div 
+                          className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
+                          animate={{ translateX: ["100%", "-100%"] }}
+                          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", repeatDelay: 0.5 }}
+                        />
                       )}
                     </Button>
                   </div>
-                </div>
+                </motion.div>
 
-                <div className="border rounded-lg p-4">
+                <motion.div 
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-purple-50/30 shadow-sm relative"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    boxShadow: currentStep >= 4 ? "0 0 0 2px rgba(124, 58, 237, 0.2)" : "none"
+                  }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  {/* Indicador de paso completado */}
+                  {currentStep >= 4 && (
+                    <motion.div 
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </motion.div>
+                  )}
+                  
+                  {/* Título con icono animado y badge */}
                   <div className="flex justify-between items-center mb-4">
-                    <Label className="text-lg font-semibold">3. Guion Profesional</Label>
+                    <div className="flex items-center gap-3">
+                      <motion.div 
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600"
+                        whileHover={{ scale: 1.1 }}
+                        animate={scriptContent ? { 
+                          scale: [1, 1.05, 1],
+                          rotate: [0, 2, -2, 0]
+                        } : {}}
+                        transition={{ 
+                          repeat: scriptContent ? Infinity : 0,
+                          repeatDelay: 3,
+                          duration: 1
+                        }}
+                      >
+                        <Film className="h-4 w-4" />
+                      </motion.div>
+                      <Label className="text-lg font-semibold">3. Guion Profesional</Label>
+                    </div>
+                    
                     {scriptContent && (
-                      <Badge variant="outline" className="bg-amber-50 text-amber-800 hover:bg-amber-100">
-                        <Film className="h-3 w-3 mr-1" />
-                        Análisis cinematográfico
-                      </Badge>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Badge variant="outline" className="bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-800 hover:from-amber-100 hover:to-yellow-100 border-amber-200">
+                          <Film className="h-3 w-3 mr-1" />
+                          Análisis cinematográfico
+                        </Badge>
+                      </motion.div>
                     )}
                   </div>
                   
                   <div className="space-y-4">
                     {!scriptContent ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground bg-slate-50 rounded-md">
-                        <FileText className="h-12 w-12 mb-3 text-muted-foreground/50" />
-                        <p className="max-w-md">El guion profesional se generará basado en la transcripción de la letra.</p>
-                        <p className="text-xs mt-2 max-w-md text-muted-foreground/70">
-                          Incluirá análisis de género musical, estructura narrativa, diseño visual y segmentación por escenas con vocabulario cinematográfico.
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
-                            <span className="font-semibold block">Análisis Musical</span>
-                            <span className="text-muted-foreground">Género y estructura</span>
+                      <motion.div 
+                        className="flex flex-col items-center justify-center py-8 text-center rounded-md bg-gradient-to-b from-slate-50 to-white border border-slate-100 shadow-sm"
+                        initial={{ opacity: 0.8 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <motion.div
+                          animate={{ 
+                            y: [0, -5, 0],
+                            opacity: [0.5, 0.8, 0.5]
+                          }}
+                          transition={{ 
+                            repeat: Infinity,
+                            duration: 3,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <Film className="h-14 w-14 mb-3 text-purple-200" />
+                        </motion.div>
+                        <p className="max-w-md font-medium text-gray-600">El guion profesional se generará basado en la transcripción de la letra.</p>
+                        <div className="mt-4 grid grid-cols-3 gap-3 max-w-lg">
+                          <div className="flex flex-col items-center p-3 rounded-lg bg-purple-50/50 border border-purple-100">
+                            <span className="text-xs font-semibold text-purple-800 mb-1">Estilo</span>
+                            <span className="text-[10px] text-center text-purple-600">Análisis de género y estética</span>
                           </div>
-                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
-                            <span className="font-semibold block">Narrativa Visual</span>
-                            <span className="text-muted-foreground">Arco emocional y mensajes</span>
+                          <div className="flex flex-col items-center p-3 rounded-lg bg-amber-50/50 border border-amber-100">
+                            <span className="text-xs font-semibold text-amber-800 mb-1">Arco</span>
+                            <span className="text-[10px] text-center text-amber-600">Estructura narrativa</span>
                           </div>
-                          <div className="bg-amber-50 p-2 rounded-md border border-amber-100">
-                            <span className="font-semibold block">Dirección Técnica</span>
-                            <span className="text-muted-foreground">Planos, transiciones, mood</span>
+                          <div className="flex flex-col items-center p-3 rounded-lg bg-blue-50/50 border border-blue-100">
+                            <span className="text-xs font-semibold text-blue-800 mb-1">Técnica</span>
+                            <span className="text-[10px] text-center text-blue-600">Dirección escénica</span>
                           </div>
                         </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <motion.div 
+                          className="grid grid-cols-3 gap-2 text-xs mb-4"
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ 
+                            duration: 0.5,
+                            staggerChildren: 0.1
+                          }}
+                        >
+                          <motion.div 
+                            className="bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 rounded-md border border-amber-200 shadow-sm"
+                            whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(251, 191, 36, 0.1)" }}
+                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                          >
+                            <span className="font-semibold block text-amber-900">Análisis Musical</span>
+                            <span className="text-amber-700">Género y estructura</span>
+                          </motion.div>
+                          <motion.div 
+                            className="bg-gradient-to-br from-purple-50 to-purple-100/50 p-3 rounded-md border border-purple-200 shadow-sm"
+                            whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(139, 92, 246, 0.1)" }}
+                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            
+                          >
+                            <span className="font-semibold block text-purple-900">Narrativa Visual</span>
+                            <span className="text-purple-700">Arco emocional y mensajes</span>
+                          </motion.div>
+                          <motion.div 
+                            className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3 rounded-md border border-indigo-200 shadow-sm"
+                            whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(99, 102, 241, 0.1)" }}
+                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                          >
+                            <span className="font-semibold block text-indigo-900">Dirección Técnica</span>
+                            <span className="text-indigo-700">Planos, transiciones, mood</span>
+                          </motion.div>
+                        </motion.div>
                         
-                        <ScrollArea className="h-[300px] w-full rounded-md border border-zinc-200 p-4 bg-zinc-950 text-zinc-100">
-                          <pre className="text-sm whitespace-pre-wrap font-mono">{scriptContent}</pre>
-                        </ScrollArea>
-                      </>
+                        <motion.div
+                          className="relative overflow-hidden rounded-lg"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.3, duration: 0.5 }}
+                        >
+                          {/* Efecto de resplandor superior */}
+                          <motion.div 
+                            className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-purple-400/0 via-purple-500/50 to-purple-400/0 z-10"
+                            animate={{ 
+                              opacity: [0.3, 0.7, 0.3]
+                            }}
+                            transition={{ 
+                              duration: 3,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                          />
+                          
+                          <ScrollArea className="h-[300px] w-full rounded-md border border-zinc-800 p-4 bg-gradient-to-b from-zinc-950 to-zinc-900 text-zinc-100 shadow-inner">
+                            <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed">{scriptContent}</pre>
+                          </ScrollArea>
+                        </motion.div>
+                      </motion.div>
                     )}
                   </div>
-                </div>
+                </motion.div>
 
-                <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">4. Estilo Visual</Label>
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label>Formato de Cámara</Label>
+                <motion.div 
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-rose-50/30 shadow-sm relative"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    boxShadow: currentStep >= 5 ? "0 0 0 2px rgba(244, 63, 94, 0.2)" : "none"
+                  }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  {/* Indicador de paso completado */}
+                  {currentStep >= 5 && (
+                    <motion.div 
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </motion.div>
+                  )}
+                  
+                  {/* Título con icono animado */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <motion.div 
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-rose-600"
+                      whileHover={{ scale: 1.1 }}
+                      animate={{ 
+                        rotate: [0, -5, 5, 0],
+                      }}
+                      transition={{ 
+                        rotate: { repeat: Infinity, duration: 5, ease: "easeInOut", repeatDelay: 1 },
+                        scale: { duration: 0.2 }
+                      }}
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                    </motion.div>
+                    <div>
+                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-rose-500">4. Estilo Visual</Label>
+                      <p className="text-xs text-muted-foreground">Define la estética visual de tu video musical</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid gap-5">
+                    <motion.div 
+                      className="space-y-3"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <Label className="font-medium text-rose-900/80">Formato de Cámara</Label>
+                        <motion.div 
+                          className="h-6 w-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-500"
+                          whileHover={{ scale: 1.2, backgroundColor: "rgb(254 205 211 / 1)" }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Film className="h-3 w-3" />
+                        </motion.div>
+                      </div>
                       <Select
                         value={videoStyle.cameraFormat}
                         onValueChange={(value) => setVideoStyle(prev => ({ ...prev, cameraFormat: value }))}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white/80 border-rose-200 focus:ring-rose-300 h-11">
                           <SelectValue placeholder="Seleccionar formato de cámara" />
                         </SelectTrigger>
                         <SelectContent>
@@ -3069,16 +3345,30 @@ ${transcription}`;
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
+                    </motion.div>
 
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Mood</Label>
+                      <motion.div 
+                        className="space-y-3"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <Label className="font-medium text-rose-900/80">Mood</Label>
+                          <motion.div 
+                            className="h-6 w-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-500"
+                            whileHover={{ scale: 1.2, backgroundColor: "rgb(254 205 211 / 1)" }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <span className="text-xs font-semibold">M</span>
+                          </motion.div>
+                        </div>
                         <Select
                           value={videoStyle.mood}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, mood: value }))}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white/80 border-rose-200 focus:ring-rose-300 h-11">
                             <SelectValue placeholder="Seleccionar mood" />
                           </SelectTrigger>
                           <SelectContent>
@@ -3089,15 +3379,39 @@ ${transcription}`;
                             ))}
                           </SelectContent>
                         </Select>
-                      </div>
+                      </motion.div>
 
-                      <div className="space-y-2">
-                        <Label>Paleta de Colores</Label>
+                      <motion.div 
+                        className="space-y-3"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.2 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <Label className="font-medium text-rose-900/80">Paleta de Colores</Label>
+                          <div className="flex space-x-1">
+                            <motion.div 
+                              className="h-4 w-4 rounded-full bg-red-400"
+                              whileHover={{ scale: 1.2 }}
+                              transition={{ duration: 0.2 }}
+                            />
+                            <motion.div 
+                              className="h-4 w-4 rounded-full bg-purple-400"
+                              whileHover={{ scale: 1.2 }}
+                              transition={{ duration: 0.2 }}
+                            />
+                            <motion.div 
+                              className="h-4 w-4 rounded-full bg-blue-400"
+                              whileHover={{ scale: 1.2 }}
+                              transition={{ duration: 0.2 }}
+                            />
+                          </div>
+                        </div>
                         <Select
                           value={videoStyle.colorPalette}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, colorPalette: value }))}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white/80 border-rose-200 focus:ring-rose-300 h-11">
                             <SelectValue placeholder="Seleccionar paleta" />
                           </SelectTrigger>
                           <SelectContent>
@@ -3108,17 +3422,31 @@ ${transcription}`;
                             ))}
                           </SelectContent>
                         </Select>
-                      </div>
+                      </motion.div>
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Estilo de Personajes</Label>
+                      <motion.div 
+                        className="space-y-3"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.3 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <Label className="font-medium text-rose-900/80">Estilo de Personajes</Label>
+                          <motion.div 
+                            className="h-6 w-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-500"
+                            whileHover={{ scale: 1.2, backgroundColor: "rgb(254 205 211 / 1)" }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <User className="h-3 w-3" />
+                          </motion.div>
+                        </div>
                         <Select
                           value={videoStyle.characterStyle}
                           onValueChange={(value) => setVideoStyle(prev => ({ ...prev, characterStyle: value }))}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-white/80 border-rose-200 focus:ring-rose-300 h-11">
                             <SelectValue placeholder="Seleccionar estilo" />
                           </SelectTrigger>
                           <SelectContent>
@@ -3129,31 +3457,69 @@ ${transcription}`;
                             ))}
                           </SelectContent>
                         </Select>
-                      </div>
+                      </motion.div>
 
-                      <div className="space-y-2">
-                        <Label>Intensidad Visual ({videoStyle.visualIntensity}%)</Label>
-                        <Slider
-                          value={[videoStyle.visualIntensity]}
-                          onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
-                          max={100}
-                          step={1}
-                        />
-                      </div>
+                      <motion.div 
+                        className="space-y-3"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.4 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <Label className="font-medium text-rose-900/80">
+                            Intensidad Visual
+                            <span className="ml-2 inline-flex items-center justify-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                              {videoStyle.visualIntensity}%
+                            </span>
+                          </Label>
+                        </div>
+                        <div className="pt-2">
+                          <Slider
+                            value={[videoStyle.visualIntensity]}
+                            onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, visualIntensity: value }))}
+                            max={100}
+                            step={1}
+                            className="py-2"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                            <span>Sutil</span>
+                            <span>Impactante</span>
+                          </div>
+                        </div>
+                      </motion.div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Intensidad Narrativa ({videoStyle.narrativeIntensity}%)</Label>
-                      <p className="text-sm text-muted-foreground">
+                    <motion.div 
+                      className="space-y-3 pt-1"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.5 }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <Label className="font-medium text-rose-900/80">
+                          Intensidad Narrativa 
+                          <span className="ml-2 inline-flex items-center justify-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                            {videoStyle.narrativeIntensity}%
+                          </span>
+                        </Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
                         Ajusta qué tan fielmente el video sigue la narrativa de la letra
                       </p>
-                      <Slider
-                        value={[videoStyle.narrativeIntensity]}
-                        onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, narrativeIntensity: value }))}
-                        max={100}
-                        step={1}
-                      />
-                    </div>
+                      <div className="pt-1">
+                        <Slider
+                          value={[videoStyle.narrativeIntensity]}
+                          onValueChange={([value]) => setVideoStyle(prev => ({ ...prev, narrativeIntensity: value }))}
+                          max={100}
+                          step={1}
+                          className="py-2"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <span>Abstracto</span>
+                          <span>Literal</span>
+                        </div>
+                      </div>
+                    </motion.div>
 
                     <div className="space-y-2">
                       <Label>Imagen de Referencia</Label>
@@ -3262,75 +3628,172 @@ ${transcription}`;
                       )}
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">5. Sincronizar Beats</Label>
-                  <Button
-                    onClick={syncAudioWithTimeline}
-                    disabled={!audioBuffer || isGeneratingShots || currentStep < 3}
-                    className="w-full mb-2"
-                  >
-                    {isGeneratingShots ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Detectando cortes...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCcw className="mr-2 h-4 w-4" />
-                        Detectar Cortes Musicales
-                      </>
-                    )}
-                  </Button>
-                  
-                  {/* Botón para descargar el archivo JSON de timecodes */}
-                  {beatsJsonData && (
-                    <Button
-                      onClick={downloadBeatsJSON}
-                      variant="outline"
-                      className="w-full mt-2"
+                <motion.div 
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-green-50/30 shadow-sm relative"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    boxShadow: currentStep >= 6 ? "0 0 0 2px rgba(34, 197, 94, 0.2)" : "none"
+                  }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  {/* Indicador de paso completado */}
+                  {currentStep >= 6 && (
+                    <motion.div 
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
                     >
-                      <Download className="mr-2 h-4 w-4" />
-                      Descargar Timecodes JSON
-                    </Button>
+                      <CheckCircle2 className="h-4 w-4" />
+                    </motion.div>
                   )}
+                  
+                  {/* Título con icono animado */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <motion.div 
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600"
+                      whileHover={{ scale: 1.1 }}
+                      animate={{ 
+                        rotate: [0, -3, 3, 0],
+                      }}
+                      transition={{ 
+                        rotate: { repeat: Infinity, duration: 4, ease: "easeInOut", repeatDelay: 1 },
+                        scale: { duration: 0.2 }
+                      }}
+                    >
+                      <Waves className="h-4 w-4" />
+                    </motion.div>
+                    <div>
+                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-green-500">5. Sincronizar Beats</Label>
+                      <p className="text-xs text-muted-foreground">Detecta puntos clave para sincronización de video</p>
+                    </div>
+                  </div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Button
+                      onClick={syncAudioWithTimeline}
+                      disabled={!audioBuffer || isGeneratingShots || currentStep < 3}
+                      className="w-full mb-3 h-12 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 border-0 shadow-md"
+                    >
+                      {isGeneratingShots ? (
+                        <motion.div className="flex items-center justify-center gap-2" animate={{ opacity: [0.7, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <span>Detectando patrones rítmicos...</span>
+                        </motion.div>
+                      ) : (
+                        <motion.div className="flex items-center justify-center" whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
+                          <RefreshCcw className="mr-2 h-4 w-4" />
+                          <span>Detectar Cortes Musicales</span>
+                        </motion.div>
+                      )}
+                    </Button>
+                    
+                    {/* Botón para descargar el archivo JSON de timecodes */}
+                    {beatsJsonData && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.2 }}
+                      >
+                        <Button
+                          onClick={downloadBeatsJSON}
+                          variant="outline"
+                          className="w-full mt-2 border-green-200 text-green-700 hover:bg-green-50"
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          <span>Descargar Timecodes JSON</span>
+                        </Button>
+                      </motion.div>
+                    )}
+                  </motion.div>
                   
                   {/* Visualización de los beats detectados */}
                   {beatsJsonData && (
-                    <div className="mt-4 border rounded-lg p-3 bg-muted/30">
+                    <motion.div 
+                      className="mt-5 border border-green-200 rounded-lg p-4 bg-green-50/50 overflow-hidden"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      transition={{ duration: 0.5, delay: 0.3 }}
+                    >
                       <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium">Beats Detectados</h4>
+                        <div className="flex items-center gap-2">
+                          <motion.div 
+                            animate={{ scale: [1, 1.1, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center"
+                          >
+                            <Activity className="h-3 w-3 text-green-600" />
+                          </motion.div>
+                          <h4 className="font-medium text-green-800">Beats Detectados</h4>
+                        </div>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-7 px-2 text-xs"
+                          className="h-7 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-100"
                           onClick={() => setShowBeatDetails(prev => !prev)}
                         >
-                          {showBeatDetails ? "Ocultar detalles" : "Ver detalles"}
+                          {showBeatDetails ? (
+                            <motion.div 
+                              className="flex items-center gap-1"
+                              initial={{ x: 0 }}
+                              whileHover={{ x: -2 }}
+                            >
+                              <ChevronUp className="h-3 w-3" />
+                              <span>Ocultar detalles</span>
+                            </motion.div>
+                          ) : (
+                            <motion.div 
+                              className="flex items-center gap-1"
+                              initial={{ x: 0 }}
+                              whileHover={{ x: 2 }}
+                            >
+                              <span>Ver detalles</span>
+                              <ChevronDown className="h-3 w-3" />
+                            </motion.div>
+                          )}
                         </Button>
                       </div>
                       
-                      <div className="text-xs text-muted-foreground mb-2">
+                      <div className="text-xs text-green-700/80 mt-3 mb-2">
                         Clasificación por tipo de intensidad:
                       </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-red-500 mr-1"></div>
-                          <span className="text-xs">Downbeat</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1"></div>
-                          <span className="text-xs">Accent</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
-                          <span className="text-xs">Beat</span>
-                        </div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <motion.div 
+                          className="flex items-center bg-white/80 px-2 py-1 rounded-full shadow-sm border border-red-200"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <div className="w-3 h-3 rounded-full bg-red-500 mr-1.5"></div>
+                          <span className="text-xs font-medium text-red-700">Downbeat</span>
+                        </motion.div>
+                        <motion.div 
+                          className="flex items-center bg-white/80 px-2 py-1 rounded-full shadow-sm border border-yellow-200"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1.5"></div>
+                          <span className="text-xs font-medium text-yellow-700">Accent</span>
+                        </motion.div>
+                        <motion.div 
+                          className="flex items-center bg-white/80 px-2 py-1 rounded-full shadow-sm border border-blue-200"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-1.5"></div>
+                          <span className="text-xs font-medium text-blue-700">Beat</span>
+                        </motion.div>
                       </div>
                       
                       {/* Visualización gráfica de beats */}
-                      <div className="h-12 border rounded flex items-end p-1 overflow-x-auto relative">
+                      <motion.div 
+                        className="h-16 border rounded-lg shadow-inner bg-white/70 flex items-end p-1 overflow-x-auto relative"
+                        whileHover={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+                      >
                         {JSON.parse(beatsJsonData).beats.map((beat: any, idx: number) => {
                           // Determinar color según tipo de beat
                           const beatColor = beat.type === 'downbeat' 
@@ -3343,87 +3806,137 @@ ${transcription}`;
                           const height = `${Math.max(15, Math.min(100, beat.intensity * 90))}%`;
                           
                           return (
-                            <div 
+                            <motion.div 
                               key={idx} 
                               className={`${beatColor} w-1 mx-[1px] rounded-t hover:w-2 hover:mx-0 transition-all cursor-pointer`} 
                               style={{ height }}
                               title={`${beat.timecode} - ${beat.type} (${beat.intensity.toFixed(2)})`}
                               onClick={() => setSelectedBeatIndex(idx)}
+                              initial={{ y: 20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: idx * 0.001, duration: 0.2 }}
+                              whileHover={{ 
+                                boxShadow: "0 0 8px rgba(0,0,0,0.3)",
+                                filter: "brightness(1.2)"
+                              }}
                             />
                           );
                         })}
                         
                         {/* Indicador de beat seleccionado */}
                         {selectedBeatIndex !== null && (
-                          <div className="absolute bottom-0 border-l-2 border-dashed border-primary h-full" 
+                          <motion.div 
+                            className="absolute bottom-0 border-l-2 border-dashed border-primary h-full" 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
                             style={{ 
                               left: `${selectedBeatIndex * 3 + 4}px`, 
                               transition: 'left 0.2s ease-out' 
                             }} 
                           />
                         )}
-                      </div>
+                      </motion.div>
                       
                       {/* Panel de detalles de beats */}
                       {showBeatDetails && (
-                        <div className="mt-3 pt-3 border-t text-xs">
-                          <div className="flex justify-between mb-2">
-                            <div>
-                              <span className="font-medium">Análisis del Ritmo:</span>{" "}
-                              {JSON.parse(beatsJsonData).metadata.beatAnalysis.patternComplexity}
+                        <motion.div 
+                          className="mt-4 pt-3 border-t border-green-200 text-xs"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <div className="flex justify-between mb-3 bg-white/60 p-2 rounded-md shadow-sm">
+                            <div className="flex flex-col items-center">
+                              <span className="font-medium text-green-700">Análisis del Ritmo</span>
+                              <span className="text-green-900 text-sm font-semibold">{JSON.parse(beatsJsonData).metadata.beatAnalysis.patternComplexity}</span>
                             </div>
-                            <div>
-                              <span className="font-medium">BPM Estimado:</span>{" "}
-                              {JSON.parse(beatsJsonData).metadata.bpm}
+                            <div className="flex flex-col items-center">
+                              <span className="font-medium text-green-700">BPM Estimado</span>
+                              <span className="text-green-900 text-sm font-semibold">{JSON.parse(beatsJsonData).metadata.bpm}</span>
                             </div>
                           </div>
                           
-                          <div className="grid grid-cols-3 gap-2 mb-2">
-                            <div className="flex flex-col items-center border rounded p-1">
-                              <span className="text-red-500 font-medium">
+                          <div className="grid grid-cols-3 gap-2 mb-3">
+                            <motion.div 
+                              className="flex flex-col items-center border border-red-200 rounded-lg p-2 bg-white/60 shadow-sm"
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}
+                            >
+                              <span className="text-red-500 font-bold text-lg">
                                 {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.downbeats}
                               </span>
-                              <span className="text-[10px]">Downbeats</span>
-                            </div>
-                            <div className="flex flex-col items-center border rounded p-1">
-                              <span className="text-yellow-500 font-medium">
+                              <span className="text-[10px] text-red-800 font-medium">Downbeats</span>
+                            </motion.div>
+                            <motion.div 
+                              className="flex flex-col items-center border border-yellow-200 rounded-lg p-2 bg-white/60 shadow-sm"
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}
+                            >
+                              <span className="text-yellow-500 font-bold text-lg">
                                 {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.accents}
                               </span>
-                              <span className="text-[10px]">Accents</span>
-                            </div>
-                            <div className="flex flex-col items-center border rounded p-1">
-                              <span className="text-blue-500 font-medium">
+                              <span className="text-[10px] text-yellow-800 font-medium">Accents</span>
+                            </motion.div>
+                            <motion.div 
+                              className="flex flex-col items-center border border-blue-200 rounded-lg p-2 bg-white/60 shadow-sm"
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}
+                            >
+                              <span className="text-blue-500 font-bold text-lg">
                                 {JSON.parse(beatsJsonData).metadata.beatAnalysis.beatTypes.regularBeats}
                               </span>
-                              <span className="text-[10px]">Beats</span>
-                            </div>
+                              <span className="text-[10px] text-blue-800 font-medium">Beats</span>
+                            </motion.div>
                           </div>
                           
                           {/* Detalles del beat seleccionado, si hay alguno */}
                           {selectedBeatIndex !== null && (
-                            <div className="bg-muted/50 p-2 rounded">
-                              <h5 className="font-medium mb-1">Beat #{selectedBeatIndex + 1}</h5>
-                              <div className="grid grid-cols-2 gap-1">
-                                <div>Tipo: <span className={
-                                  JSON.parse(beatsJsonData).beats[selectedBeatIndex].type === 'downbeat'
-                                    ? 'text-red-500 font-medium'
-                                    : JSON.parse(beatsJsonData).beats[selectedBeatIndex].type === 'accent'
-                                      ? 'text-yellow-500 font-medium'
-                                      : 'text-blue-500 font-medium'
-                                }>
-                                  {JSON.parse(beatsJsonData).beats[selectedBeatIndex].type}
-                                </span></div>
-                                <div>Tiempo: {JSON.parse(beatsJsonData).beats[selectedBeatIndex].timecode}</div>
-                                <div>Intensidad: {(JSON.parse(beatsJsonData).beats[selectedBeatIndex].intensity * 100).toFixed(0)}%</div>
-                                <div>Energía: {JSON.parse(beatsJsonData).beats[selectedBeatIndex].energy.toFixed(4)}</div>
+                            <motion.div 
+                              className="p-3 rounded-lg border border-green-200 bg-white/70 shadow-sm"
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <h5 className="font-medium mb-2 flex items-center gap-2 text-green-800">
+                                <Music2 className="h-3 w-3" />
+                                <span>Beat #{selectedBeatIndex + 1}</span>
+                              </h5>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-green-700">Tipo:</span> 
+                                  <span className={
+                                    JSON.parse(beatsJsonData).beats[selectedBeatIndex].type === 'downbeat'
+                                      ? 'text-red-500 font-medium bg-red-50 px-1.5 py-0.5 rounded-full text-[10px]'
+                                      : JSON.parse(beatsJsonData).beats[selectedBeatIndex].type === 'accent'
+                                        ? 'text-yellow-500 font-medium bg-yellow-50 px-1.5 py-0.5 rounded-full text-[10px]'
+                                        : 'text-blue-500 font-medium bg-blue-50 px-1.5 py-0.5 rounded-full text-[10px]'
+                                  }>
+                                    {JSON.parse(beatsJsonData).beats[selectedBeatIndex].type}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-green-700">Tiempo:</span>
+                                  <span className="font-mono bg-green-50 text-green-700 px-1.5 py-0.5 rounded-full text-[10px]">
+                                    {JSON.parse(beatsJsonData).beats[selectedBeatIndex].timecode}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-green-700">Intensidad:</span>
+                                  <span className="font-medium">
+                                    {(JSON.parse(beatsJsonData).beats[selectedBeatIndex].intensity * 100).toFixed(0)}%
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-green-700">Energía:</span>
+                                  <span className="font-medium">
+                                    {JSON.parse(beatsJsonData).beats[selectedBeatIndex].energy.toFixed(4)}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
+                            </motion.div>
                           )}
-                        </div>
+                        </motion.div>
                       )}
-                    </div>
+                    </motion.div>
                   )}
-                </div>
+                </motion.div>
 
                 <div className="border rounded-lg p-4 mt-4">
                   <Label className="text-lg font-semibold mb-4">Estilo de Edición</Label>
@@ -3448,58 +3961,188 @@ ${transcription}`;
                   </RadioGroup>
                 </div>
 
-                <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">6. Generar Prompts</Label>
-                  <Button
-                    onClick={generatePromptsForSegments}
-                    disabled={
-                      timelineItems.length === 0 ||
-                      isGeneratingScript ||
-                      currentStep < 4 ||
-                      !videoStyle.mood ||
-                      !videoStyle.colorPalette ||
-                      !videoStyle.characterStyle
-                    }
-                    className="w-full mt-4"
+                <motion.div 
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-purple-50/30 shadow-sm relative"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    boxShadow: currentStep >= 7 ? "0 0 0 2px rgba(139, 92, 246, 0.2)" : "none"
+                  }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  {/* Indicador de paso completado */}
+                  {currentStep >= 7 && (
+                    <motion.div 
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-purple-100 text-purple-600 z-10"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </motion.div>
+                  )}
+                  
+                  {/* Título con icono animado */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <motion.div 
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600"
+                      whileHover={{ scale: 1.1 }}
+                      animate={{ 
+                        rotate: [0, -3, 3, 0],
+                      }}
+                      transition={{ 
+                        rotate: { repeat: Infinity, duration: 4, ease: "easeInOut", repeatDelay: 1 },
+                        scale: { duration: 0.2 }
+                      }}
+                    >
+                      <Megaphone className="h-4 w-4" />
+                    </motion.div>
+                    <div>
+                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-purple-500">6. Generar Prompts</Label>
+                      <p className="text-xs text-muted-foreground">Crea instrucciones de IA con el estilo definido</p>
+                    </div>
+                  </div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative"
                   >
-                    {isGeneratingScript ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generando prompts...
-                      </>
-                    ) : (
-                      <>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Generar Prompts con Estilo
-                      </>
+                    <Button
+                      onClick={generatePromptsForSegments}
+                      disabled={
+                        timelineItems.length === 0 ||
+                        isGeneratingScript ||
+                        currentStep < 4 ||
+                        !videoStyle.mood ||
+                        !videoStyle.colorPalette ||
+                        !videoStyle.characterStyle
+                      }
+                      className="w-full h-12 mt-4 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 border-0 shadow-md"
+                    >
+                      {isGeneratingScript ? (
+                        <motion.div className="flex items-center justify-center gap-2" animate={{ opacity: [0.7, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <span>Creando prompts artísticos...</span>
+                        </motion.div>
+                      ) : (
+                        <motion.div className="flex items-center justify-center" whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Generar Prompts con Estilo</span>
+                        </motion.div>
+                      )}
+                    </Button>
+                    
+                    {/* Fondo decorativo para el botón */}
+                    {!isGeneratingScript && (
+                      <motion.div 
+                        className="absolute -bottom-2 -right-2 -left-2 h-8 rounded-b-lg opacity-30 bg-gradient-to-t from-purple-200 to-transparent"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.3 }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                      />
                     )}
-                  </Button>
-                </div>
+                  </motion.div>
+                </motion.div>
 
-                <div className="border rounded-lg p-4">
-                  <Label className="text-lg font-semibold mb-4">7. Generar Imágenes</Label>
-                  <Button
-                    onClick={generateShotImages}
-                    disabled={
-                      !timelineItems.length ||
-                      isGeneratingShots ||
-                      currentStep < 5
-                    }
-                    className="w-full"
+                <motion.div 
+                  className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-indigo-50/30 shadow-sm relative"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    boxShadow: currentStep >= 8 ? "0 0 0 2px rgba(99, 102, 241, 0.2)" : "none"
+                  }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  {/* Indicador de paso completado */}
+                  {currentStep >= 8 && (
+                    <motion.div 
+                      className="absolute -top-1 -right-1 p-1 rounded-full bg-indigo-100 text-indigo-600 z-10"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </motion.div>
+                  )}
+                  
+                  {/* Título con icono animado */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <motion.div 
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600"
+                      whileHover={{ scale: 1.1 }}
+                      animate={{ 
+                        rotate: [0, -3, 3, 0],
+                      }}
+                      transition={{ 
+                        rotate: { repeat: Infinity, duration: 4, ease: "easeInOut", repeatDelay: 1 },
+                        scale: { duration: 0.2 }
+                      }}
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                    </motion.div>
+                    <div>
+                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-indigo-500">7. Generar Imágenes</Label>
+                      <p className="text-xs text-muted-foreground">Crea visuales impactantes para cada segmento</p>
+                    </div>
+                  </div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative mt-4"
                   >
-                    {isGeneratingShots ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generando imágenes...
-                      </>
-                    ) : (
-                      <>
-                        <ImageIcon className="mr-2 h-4 w-4" />
-                        Generar Imágenes
-                      </>
+                    <Button
+                      onClick={generateShotImages}
+                      disabled={
+                        !timelineItems.length ||
+                        isGeneratingShots ||
+                        currentStep < 5
+                      }
+                      className="w-full h-12 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 border-0 shadow-md"
+                    >
+                      {isGeneratingShots ? (
+                        <motion.div className="flex items-center justify-center gap-2" animate={{ opacity: [0.7, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <span>Generando escenas visuales...</span>
+                        </motion.div>
+                      ) : (
+                        <motion.div className="flex items-center justify-center" whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
+                          <ImageIcon className="mr-2 h-4 w-4" />
+                          <span>Generar Imágenes para Escenas</span>
+                        </motion.div>
+                      )}
+                    </Button>
+                    
+                    {/* Decoración visual */}
+                    {!isGeneratingShots && (
+                      <motion.div 
+                        className="absolute -bottom-2 -right-2 -left-2 h-8 rounded-b-lg opacity-30 bg-gradient-to-t from-indigo-200 to-transparent"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.3 }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                      />
                     )}
-                  </Button>
-                </div>
+                  </motion.div>
+                  
+                  {/* Información de ayuda */}
+                  <motion.div 
+                    className="mt-5 bg-white/60 rounded-lg p-3 text-xs text-indigo-700 border border-indigo-100 flex items-start gap-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6, duration: 0.4 }}
+                  >
+                    <HelpCircle className="h-4 w-4 text-indigo-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      Este paso utilizará los prompts generados para crear imágenes para cada segmento del video. 
+                      Las imágenes generadas se adaptarán al estilo visual que has definido anteriormente.
+                    </div>
+                  </motion.div>
+                </motion.div>
 
                 {/* Componente de Generación de Video (Paso 8) */}
                 {currentStep === 8 && (
