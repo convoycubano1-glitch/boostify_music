@@ -1,252 +1,381 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileCode, Copy, ExternalLink, CheckCircle, Shield, Clock, DollarSign, Users } from 'lucide-react';
+import { Terminal, ArrowDown, CheckCircle, XCircle, MessageCircle, User, Shield, Code } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 
-// Sample contract visualizer component
+/**
+ * Smart Contract Visualizer Component
+ * 
+ * This component provides an interactive visualization of how smart contracts
+ * work in the music tokenization process, helping artists understand the technical
+ * aspects in a more accessible way.
+ */
 const SmartContractVisualizer = () => {
-  const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('simplified');
+  // State to track the animation step
+  const [animationStep, setAnimationStep] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const simplifiedContractView = (
-    <div className="rounded-lg bg-gray-900 p-6 text-sm text-gray-300 font-mono">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <FileCode className="h-5 w-5 text-orange-500" />
-          <span className="text-orange-500 font-semibold">MusicToken.sol</span>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={handleCopy} 
-            className="p-1 rounded hover:bg-gray-800 transition-colors"
-            aria-label="Copy contract code"
-          >
-            {copied ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-gray-400" />}
-          </button>
-          <a 
-            href="#" 
-            className="p-1 rounded hover:bg-gray-800 transition-colors"
-            aria-label="View on Etherscan"
-          >
-            <ExternalLink className="h-4 w-4 text-gray-400" />
-          </a>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="p-3 rounded bg-gray-800/50 border border-gray-700">
-          <div className="flex items-start gap-2">
-            <Shield className="h-5 w-5 text-green-500 mt-1 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-green-400">Ownership & Rights</h4>
-              <p className="text-gray-400 text-xs mt-1">
-                Ensures you retain full copyright ownership while granting token holders specific rights defined in the terms.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-3 rounded bg-gray-800/50 border border-gray-700">
-          <div className="flex items-start gap-2">
-            <DollarSign className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-yellow-400">Royalty System</h4>
-              <p className="text-gray-400 text-xs mt-1">
-                Automatically splits 15% of secondary sales between you (10%) and token holders (5%) through ERC-2981.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-3 rounded bg-gray-800/50 border border-gray-700">
-          <div className="flex items-start gap-2">
-            <Clock className="h-5 w-5 text-blue-500 mt-1 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-blue-400">Time-based Access</h4>
-              <p className="text-gray-400 text-xs mt-1">
-                Token grants early access to your new releases and exclusive content for a specified time period.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-3 rounded bg-gray-800/50 border border-gray-700">
-          <div className="flex items-start gap-2">
-            <Users className="h-5 w-5 text-purple-500 mt-1 flex-shrink-0" />
-            <div>
-              <h4 className="font-semibold text-purple-400">Community Governance</h4>
-              <p className="text-gray-400 text-xs mt-1">
-                Token holders can participate in voting on certain aspects of your music career decisions.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const technicalContractView = (
-    <div className="rounded-lg bg-gray-900 p-6 text-sm text-gray-300 font-mono max-h-96 overflow-y-auto">
-      <pre className="text-xs">
-        <code>
-{`// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+  // Contract code snippets for different standards
+  const contractSnippets = {
+    erc721: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/token/common/ERC2981.sol";
 
-contract MusicToken is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable, ERC2981 {
-    using Counters for Counters.Counter;
-
-    Counters.Counter private _tokenIdCounter;
+contract MusicNFT is ERC721, Ownable {
+    // Base URI for metadata
+    string private _baseTokenURI;
     
-    // Music metadata
-    string public artistName;
-    string public musicTitle;
-    string public musicIPFSHash;
-    uint256 public releaseDate;
-    uint256 public maxSupply;
-    uint256 public price;
+    // Royalty percentage (in basis points, 1% = 100)
+    uint256 public royaltyBasisPoints = 1000; // 10%
     
-    // Royalty percentage (in basis points, 100 = 1%)
-    uint96 private constant ARTIST_ROYALTY = 1000; // 10%
-    uint96 private constant HOLDER_ROYALTY = 500;  // 5%
+    // Address that receives royalties
+    address public royaltyReceiver;
     
-    // Events
-    event TokenMinted(address indexed to, uint256 indexed tokenId);
-    event RoyaltyPaid(address indexed artist, uint256 amount);
-
     constructor(
-        string memory _name,
-        string memory _symbol,
-        string memory _artistName,
-        string memory _musicTitle,
-        string memory _musicIPFSHash,
-        uint256 _maxSupply,
-        uint256 _price
-    ) ERC721(_name, _symbol) {
-        artistName = _artistName;
-        musicTitle = _musicTitle;
-        musicIPFSHash = _musicIPFSHash;
-        releaseDate = block.timestamp;
-        maxSupply = _maxSupply;
-        price = _price;
-        
-        // Set default royalty
-        _setDefaultRoyalty(msg.sender, ARTIST_ROYALTY);
+        string memory name,
+        string memory symbol,
+        string memory baseURI,
+        address initialOwner
+    ) ERC721(name, symbol) Ownable(initialOwner) {
+        _baseTokenURI = baseURI;
+        royaltyReceiver = initialOwner;
     }
-
-    function mintToken(address to) public payable returns (uint256) {
-        require(_tokenIdCounter.current() < maxSupply, "Max supply reached");
-        require(msg.value >= price, "Insufficient payment");
-        
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
+    
+    // Mint a new music token
+    function mintMusic(address to, uint256 tokenId) 
+        public 
+        onlyOwner 
+    {
         _safeMint(to, tokenId);
+    }
+    
+    // Royalty information as per EIP-2981
+    function royaltyInfo(uint256 tokenId, uint256 salePrice) 
+        external 
+        view 
+        returns (address, uint256) 
+    {
+        return (royaltyReceiver, (salePrice * royaltyBasisPoints) / 10000);
+    }
+    
+    // URI for token metadata
+    function _baseURI() internal view override returns (string memory) {
+        return _baseTokenURI;
+    }
+}`,
+    erc1155: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract MusicCollection is ERC1155, Ownable {
+    // Mapping for token URIs
+    mapping(uint256 => string) private _tokenURIs;
+    
+    // Mapping for token types (1 = song, 2 = album, 3 = merchandise)
+    mapping(uint256 => uint8) public tokenTypes;
+    
+    // Royalty percentage (in basis points, 1% = 100)
+    uint256 public royaltyBasisPoints = 1000; // 10%
+    
+    constructor(string memory uri, address initialOwner) 
+        ERC1155(uri) 
+        Ownable(initialOwner) 
+    {}
+    
+    // Create a new token type
+    function createToken(
+        uint256 tokenId,
+        uint8 tokenType,
+        string memory tokenURI,
+        uint256 initialSupply
+    ) public onlyOwner {
+        require(bytes(_tokenURIs[tokenId]).length == 0, "Token already exists");
         
-        // Set token URI to music metadata
-        _setTokenURI(tokenId, musicIPFSHash);
+        _tokenURIs[tokenId] = tokenURI;
+        tokenTypes[tokenId] = tokenType;
         
-        emit TokenMinted(to, tokenId);
+        _mint(msg.sender, tokenId, initialSupply, "");
+    }
+    
+    // Royalty information
+    function royaltyInfo(uint256 tokenId, uint256 salePrice) 
+        external 
+        view 
+        returns (address, uint256) 
+    {
+        return (owner(), (salePrice * royaltyBasisPoints) / 10000);
+    }
+    
+    // URI for token metadata
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        string memory tokenURI = _tokenURIs[tokenId];
+        return bytes(tokenURI).length > 0 ? tokenURI : super.uri(tokenId);
+    }
+}`,
+    custom: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract MusicTokenizationPlatform is ERC721, Ownable {
+    // Token counter
+    uint256 private _tokenIdCounter;
+    
+    // Song information
+    struct SongInfo {
+        string title;
+        string artist;
+        uint256 releaseDate;
+        string audioURI;
+        uint256 totalShares;
+        uint256 price;
+        bool isActive;
+    }
+    
+    // Mapping of token ID to song info
+    mapping(uint256 => SongInfo) public songs;
+    
+    // Royalty distribution events
+    event RoyaltiesDistributed(uint256 tokenId, uint256 amount);
+    
+    constructor(string memory name, string memory symbol, address initialOwner) 
+        ERC721(name, symbol) 
+        Ownable(initialOwner) 
+    {}
+    
+    // Register a new song
+    function registerSong(
+        string memory title,
+        string memory artist,
+        string memory audioURI,
+        uint256 price
+    ) public onlyOwner returns (uint256) {
+        uint256 tokenId = _tokenIdCounter;
+        _tokenIdCounter++;
+        
+        songs[tokenId] = SongInfo({
+            title: title,
+            artist: artist,
+            releaseDate: block.timestamp,
+            audioURI: audioURI,
+            totalShares: 0,
+            price: price,
+            isActive: true
+        });
+        
+        _safeMint(msg.sender, tokenId);
         
         return tokenId;
     }
-
-    // ERC165 interface support
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable, ERC2981)
-        returns (bool)
+    
+    // Distribute royalties for a specific song
+    function distributeRoyalties(uint256 tokenId, uint256 amount) 
+        public 
+        onlyOwner 
     {
-        return super.supportsInterface(interfaceId);
+        require(songs[tokenId].isActive, "Song is not active");
+        
+        // Implementation of royalty distribution logic would go here
+        
+        emit RoyaltiesDistributed(tokenId, amount);
     }
-
-    // Override required functions
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
-        internal
-        override(ERC721, ERC721Enumerable)
+    
+    // Get song metadata URI
+    function tokenURI(uint256 tokenId) 
+        public 
+        view 
+        override 
+        returns (string memory) 
     {
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+        require(_exists(tokenId), "Token does not exist");
+        return songs[tokenId].audioURI;
     }
+}`
+  };
 
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
-        super._burn(tokenId);
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
+  // Animation timeline steps
+  const steps = [
     {
-        return super.tokenURI(tokenId);
+      title: "Create Contract",
+      description: "Artist creates a smart contract to govern their music token",
+      icon: <Code className="h-8 w-8 text-orange-500" />
+    },
+    {
+      title: "Set Terms",
+      description: "Defines ownership, royalties, and access rights in code",
+      icon: <Shield className="h-8 w-8 text-orange-500" />
+    },
+    {
+      title: "Deploy Contract",
+      description: "Publishes contract to the blockchain permanently",
+      icon: <Terminal className="h-8 w-8 text-orange-500" />
+    },
+    {
+      title: "Verify Ownership",
+      description: "Blockchain confirms artist's ownership of the music",
+      icon: <CheckCircle className="h-8 w-8 text-green-500" />
+    },
+    {
+      title: "Fan Purchase",
+      description: "Fan buys token, triggering the smart contract",
+      icon: <User className="h-8 w-8 text-blue-500" />
+    },
+    {
+      title: "Automatic Execution",
+      description: "Contract executes automatically when conditions are met",
+      icon: <ArrowDown className="h-8 w-8 text-orange-500" />
+    },
+    {
+      title: "Royalty Distribution",
+      description: "Artist receives payment directly to their wallet",
+      icon: <CheckCircle className="h-8 w-8 text-green-500" />
     }
-}`}
-        </code>
-      </pre>
-    </div>
-  );
+  ];
+
+  const runAnimation = () => {
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+    setAnimationStep(0);
+    
+    // Animation loop
+    const interval = setInterval(() => {
+      setAnimationStep(prev => {
+        if (prev < steps.length - 1) {
+          return prev + 1;
+        } else {
+          clearInterval(interval);
+          setIsAnimating(false);
+          return prev;
+        }
+      });
+    }, 1000);
+  };
 
   return (
-    <section className="py-20 bg-gray-900">
+    <section className="py-24 bg-gray-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <Badge variant="outline" className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
-            SMART CONTRACT
+        <div className="text-center mb-16">
+          <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
+            BLOCKCHAIN TECHNOLOGY
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Your <span className="text-orange-500">musical rights</span> in code
+            Smart Contract <span className="text-orange-500">Visualizer</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            This is a simplified view of the smart contract that powers your music tokenization. It defines how your music rights are managed, royalties are distributed, and what special features token holders receive.
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            See how blockchain smart contracts power music tokenization and ensure your rights are protected
           </p>
-
-          {/* Tabs */}
-          <div className="flex justify-center gap-4 mb-8">
-            <Button 
-              variant={activeTab === 'simplified' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('simplified')}
-              className={activeTab === 'simplified' ? 'bg-orange-500 hover:bg-orange-600' : 'border-gray-700 hover:bg-gray-800'}
-            >
-              Simplified View
-            </Button>
-            <Button 
-              variant={activeTab === 'technical' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('technical')}
-              className={activeTab === 'technical' ? 'bg-orange-500 hover:bg-orange-600' : 'border-gray-700 hover:bg-gray-800'}
-            >
-              Technical View
-            </Button>
-          </div>
         </div>
 
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
-        >
-          {activeTab === 'simplified' ? simplifiedContractView : technicalContractView}
-        </motion.div>
-
-        <div className="mt-12 text-center">
-          <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
-            Our smart contracts are audited by leading security firms and designed to provide maximum protection for both artists and token holders.
-          </p>
-          <Button className="bg-orange-500 hover:bg-orange-600">Learn More About Smart Contracts</Button>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+          {/* Left side: Contract visualization */}
+          <div className="bg-gray-900 rounded-xl p-8 shadow-xl">
+            <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+              <Terminal className="h-6 w-6 mr-2 text-orange-500" />
+              Contract Execution Flow
+            </h3>
+            
+            <div className="relative h-96 mb-6">
+              {/* Vertical timeline line */}
+              <div className="absolute left-10 top-4 bottom-4 w-1 bg-gray-700"></div>
+              
+              {/* Timeline steps */}
+              {steps.map((step, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0.3 }}
+                  animate={{ 
+                    opacity: animationStep >= index ? 1 : 0.3,
+                    scale: animationStep === index ? 1.05 : 1
+                  }}
+                  className={`flex items-start mb-6 relative ${
+                    animationStep >= index ? 'text-white' : 'text-gray-500'
+                  }`}
+                >
+                  <div className={`flex-shrink-0 z-10 w-8 h-8 rounded-full flex items-center justify-center mr-4 transition-colors duration-300 ${
+                    animationStep >= index ? 'bg-gray-800' : 'bg-gray-700'
+                  }`}>
+                    {step.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg">{step.title}</h4>
+                    <p className={`text-sm ${
+                      animationStep >= index ? 'text-gray-300' : 'text-gray-500'
+                    }`}>
+                      {step.description}
+                    </p>
+                  </div>
+                  
+                  {/* Connecting arrow */}
+                  {index < steps.length - 1 && animationStep > index && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute left-10 top-8 h-6 w-6 flex justify-center"
+                    >
+                      <ArrowDown className="text-orange-500 h-6 w-6" />
+                    </motion.div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+            
+            <Button 
+              onClick={runAnimation} 
+              disabled={isAnimating}
+              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+            >
+              {isAnimating ? "Executing Contract..." : "Run Contract Simulation"}
+            </Button>
+          </div>
+          
+          {/* Right side: Code view */}
+          <div className="bg-gray-900 rounded-xl p-8 shadow-xl">
+            <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+              <Code className="h-6 w-6 mr-2 text-orange-500" />
+              Smart Contract Code
+            </h3>
+            
+            <Tabs defaultValue="erc721" className="mb-6">
+              <TabsList className="bg-gray-800 border border-gray-700">
+                <TabsTrigger value="erc721">ERC-721 (NFT)</TabsTrigger>
+                <TabsTrigger value="erc1155">ERC-1155 (Multi)</TabsTrigger>
+                <TabsTrigger value="custom">Custom</TabsTrigger>
+              </TabsList>
+              
+              {Object.entries(contractSnippets).map(([key, code]) => (
+                <TabsContent 
+                  key={key} 
+                  value={key}
+                  className="mt-4 bg-gray-950 rounded-lg p-4 overflow-auto h-80 text-sm font-mono"
+                >
+                  <pre className="text-gray-300 whitespace-pre-wrap">
+                    {code}
+                  </pre>
+                </TabsContent>
+              ))}
+            </Tabs>
+            
+            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h4 className="font-bold text-white mb-2 flex items-center">
+                <MessageCircle className="h-4 w-4 mr-2 text-blue-400" />
+                Expert Insight
+              </h4>
+              <p className="text-gray-300 text-sm">
+                Smart contracts are self-executing agreements with the terms directly written into code.
+                When you tokenize your music, these contracts automatically handle royalty distributions 
+                whenever your music is purchased or resold, without requiring intermediaries.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>

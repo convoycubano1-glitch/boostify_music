@@ -375,6 +375,9 @@ const TokenizationPage = () => {
       <main>
         <TokenizationHero />
         <BenefitsSection />
+        <MiniTutorial />
+        <SmartContractVisualizer />
+        <ArtistTestimonials />
         <HowItWorksSection />
         <FAQSection />
         <CTASection />
