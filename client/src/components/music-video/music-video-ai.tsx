@@ -3265,7 +3265,7 @@ ${transcription}`;
                       <ImageIcon className="h-4 w-4" />
                     </motion.div>
                     <div>
-                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-rose-600 to-rose-500">4. Estilo Visual</Label>
+                      <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-orange-500">4. Estilo Visual</Label>
                       <p className="text-xs text-muted-foreground">Define la estética visual de tu video musical</p>
                     </div>
                   </div>
@@ -3278,10 +3278,10 @@ ${transcription}`;
                       transition={{ duration: 0.3 }}
                     >
                       <div className="flex items-center justify-between">
-                        <Label className="font-medium text-rose-900/80">Formato de Cámara</Label>
+                        <Label className="font-medium text-orange-900/80">Formato de Cámara</Label>
                         <motion.div 
-                          className="h-6 w-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-500"
-                          whileHover={{ scale: 1.2, backgroundColor: "rgb(254 205 211 / 1)" }}
+                          className="h-6 w-6 rounded-full bg-orange-50 flex items-center justify-center text-orange-500"
+                          whileHover={{ scale: 1.2, backgroundColor: "rgb(255 237 213 / 1)" }}
                           transition={{ duration: 0.2 }}
                         >
                           <Film className="h-3 w-3" />
@@ -3317,8 +3317,8 @@ ${transcription}`;
                         <div className="flex items-center justify-between">
                           <Label className="font-medium text-rose-900/80">Mood</Label>
                           <motion.div 
-                            className="h-6 w-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-500"
-                            whileHover={{ scale: 1.2, backgroundColor: "rgb(254 205 211 / 1)" }}
+                            className="h-6 w-6 rounded-full bg-orange-50 flex items-center justify-center text-orange-500"
+                            whileHover={{ scale: 1.2, backgroundColor: "rgb(255 237 213 / 1)" }}
                             transition={{ duration: 0.2 }}
                           >
                             <span className="text-xs font-semibold">M</span>
@@ -3395,8 +3395,8 @@ ${transcription}`;
                         <div className="flex items-center justify-between">
                           <Label className="font-medium text-rose-900/80">Estilo de Personajes</Label>
                           <motion.div 
-                            className="h-6 w-6 rounded-full bg-rose-50 flex items-center justify-center text-rose-500"
-                            whileHover={{ scale: 1.2, backgroundColor: "rgb(254 205 211 / 1)" }}
+                            className="h-6 w-6 rounded-full bg-orange-50 flex items-center justify-center text-orange-500"
+                            whileHover={{ scale: 1.2, backgroundColor: "rgb(255 237 213 / 1)" }}
                             transition={{ duration: 0.2 }}
                           >
                             <User className="h-3 w-3" />
@@ -3428,7 +3428,7 @@ ${transcription}`;
                         <div className="flex items-center justify-between">
                           <Label className="font-medium text-rose-900/80">
                             Intensidad Visual
-                            <span className="ml-2 inline-flex items-center justify-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                            <span className="ml-2 inline-flex items-center justify-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                               {videoStyle.visualIntensity}%
                             </span>
                           </Label>
@@ -3458,7 +3458,7 @@ ${transcription}`;
                       <div className="flex items-center justify-between">
                         <Label className="font-medium text-rose-900/80">
                           Intensidad Narrativa 
-                          <span className="ml-2 inline-flex items-center justify-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                          <span className="ml-2 inline-flex items-center justify-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                             {videoStyle.narrativeIntensity}%
                           </span>
                         </Label>
