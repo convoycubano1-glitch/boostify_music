@@ -560,27 +560,27 @@ export default function HomePage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
             <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-4 py-1 text-sm">
-              NUEVA FUNCIÓN
+              NEW FEATURE
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-orange-500">
-              Tokenización Musical con Web3
+              Web3 Music Tokenization
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Revoluciona la forma en que monetizas tu música. Convierte tus canciones en activos digitales y conecta directamente con tus fans sin intermediarios.
+              Revolutionize how you monetize your music. Turn your songs into digital assets and connect directly with fans without intermediaries.
             </p>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-2xl p-8 shadow-2xl order-2 lg:order-1">
-              <h3 className="text-2xl font-bold mb-4 text-white">Beneficios de la tokenización</h3>
+              <h3 className="text-2xl font-bold mb-4 text-white">Tokenization Benefits</h3>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <span className="inline-flex items-center justify-center bg-orange-500/20 rounded-full p-2 mr-3 mt-1">
                     <DollarSign className="h-5 w-5 text-orange-500" />
                   </span>
                   <div>
-                    <span className="font-bold text-white">Ingresos directos</span>
-                    <p className="text-gray-400">Recibe pagos de tus fans sin intermediarios que reduzcan tus ganancias.</p>
+                    <span className="font-bold text-white">Direct Revenue</span>
+                    <p className="text-gray-400">Receive payments from your fans without intermediaries cutting into your earnings.</p>
                   </div>
                 </li>
                 <li className="flex items-start">
@@ -588,8 +588,8 @@ export default function HomePage() {
                     <Share2 className="h-5 w-5 text-orange-500" />
                   </span>
                   <div>
-                    <span className="font-bold text-white">Regalías automáticas</span>
-                    <p className="text-gray-400">Configura regalías perpetuas que te pagan automáticamente en cada reventa.</p>
+                    <span className="font-bold text-white">Automatic Royalties</span>
+                    <p className="text-gray-400">Set up perpetual royalties that automatically pay you on every resale.</p>
                   </div>
                 </li>
                 <li className="flex items-start">
@@ -597,15 +597,15 @@ export default function HomePage() {
                     <Users className="h-5 w-5 text-orange-500" />
                   </span>
                   <div>
-                    <span className="font-bold text-white">Comunidad de fans</span>
-                    <p className="text-gray-400">Construye una comunidad de seguidores que invierten directamente en tu éxito.</p>
+                    <span className="font-bold text-white">Fan Community</span>
+                    <p className="text-gray-400">Build a community of followers who invest directly in your success.</p>
                   </div>
                 </li>
               </ul>
               <div className="mt-8">
                 <Link href="/tokenization">
                   <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
-                    Explorar tokenización
+                    Explore Tokenization
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -617,9 +617,12 @@ export default function HomePage() {
               <div className="relative bg-zinc-800/50 backdrop-blur border border-zinc-700/50 rounded-2xl p-8 overflow-hidden">
                 <div className="absolute -right-20 -top-20 w-40 h-40 bg-orange-500/10 rounded-full"></div>
                 <div className="absolute -left-20 -bottom-20 w-40 h-40 bg-red-500/10 rounded-full"></div>
-                <img 
-                  src="/assets/web3-music-illustration.svg" 
-                  alt="Web3 Music Tokenization" 
+                <video 
+                  src="/assets/Standard_Mode_Generated_Video (7).mp4" 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
                   className="w-full h-auto relative z-10 rounded-xl shadow-2xl"
                 />
               </div>

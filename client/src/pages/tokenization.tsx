@@ -28,7 +28,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
 
-// Componentes de UI específicos para tokenización
+// UI components specific to tokenization
 const TokenizationHero = () => {
   return (
     <div className="relative overflow-hidden bg-black pt-20 pb-24 text-white">
