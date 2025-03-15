@@ -2628,66 +2628,48 @@ ${transcription}`;
       {currentStep === 1 && (
         <ParticleSystem 
           count={30} 
-          colors={['#FF5722', '#FF9800', '#FFC107']} 
-          size={4} 
-          speed={1.5} 
-          activated={true}
-          className="opacity-50"
+          currentStep={1}
+          active={true}
         />
       )}
       
       {currentStep === 2 && (
         <ParticleSystem 
           count={40} 
-          colors={['#3F51B5', '#2196F3', '#03A9F4']} 
-          size={3} 
-          speed={1.2} 
-          activated={true}
-          className="opacity-40"
+          currentStep={2}
+          active={true}
         />
       )}
       
       {currentStep === 3 && (
         <ParticleSystem 
           count={50} 
-          colors={['#4CAF50', '#8BC34A', '#CDDC39']} 
-          size={3} 
-          speed={1} 
-          activated={true}
-          className="opacity-30"
+          currentStep={3}
+          active={true}
         />
       )}
       
       {currentStep === 4 && (
         <ParticleSystem 
           count={60} 
-          colors={['#9C27B0', '#673AB7', '#3F51B5']} 
-          size={5} 
-          speed={2} 
-          activated={true}
-          className="opacity-35"
+          currentStep={4}
+          active={true}
         />
       )}
       
       {currentStep === 6 && (
         <ParticleSystem 
           count={80} 
-          colors={['#E91E63', '#F44336', '#FF9800']} 
-          size={4} 
-          speed={2.5} 
-          activated={true}
-          className="opacity-40"
+          currentStep={6}
+          active={true}
         />
       )}
       
       {currentStep >= 8 && currentStep < 9 && (
         <ParticleSystem 
-          count={120} 
-          colors={['#FFEB3B', '#FFC107', '#FF9800', '#FF5722']} 
-          size={6} 
-          speed={3} 
-          activated={true}
-          className="opacity-45"
+          count={120}
+          currentStep={8}
+          active={true}
         />
       )}
       
@@ -2816,54 +2798,169 @@ ${transcription}`;
             delay: 0.1
           }}
         >
-          <Card className="p-6 relative overflow-hidden">
-            {/* Efecto de brillo sutil en la esquina */}
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-radial from-orange-400/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          <Card className="p-6 relative overflow-hidden shadow-lg border-none">
+            {/* Efectos decorativos múltiples en la esquina */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-radial from-orange-400/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-radial from-purple-500/15 to-transparent rounded-full -translate-y-1/3 translate-x-1/3 pointer-events-none" />
             
-            {/* Línea decorativa animada */}
+            {/* Línea decorativa animada - versión mejorada */}
             <motion.div 
-              className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-orange-500 via-purple-500 to-blue-500"
-              initial={{ width: "0%" }}
-              animate={{ width: `${(currentStep / 9) * 100}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            ></motion.div>
+              className="absolute bottom-0 left-0 h-1.5 bg-gradient-to-r from-orange-500 via-purple-500 to-blue-500 rounded-full"
+              initial={{ width: "0%", opacity: 0.7 }}
+              animate={{ 
+                width: `${(currentStep / 9) * 100}%`,
+                opacity: [0.7, 0.9, 0.7]
+              }}
+              transition={{ 
+                width: { duration: 0.8, ease: "easeOut" },
+                opacity: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+              }}
+            />
+            
+            {/* Borde brillante animado en la parte superior */}
+            <motion.div 
+              className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-blue-500/0 via-purple-500/30 to-orange-500/0"
+              animate={{ 
+                opacity: [0, 0.8, 0],
+                left: ["-100%", "100%"]
+              }}
+              transition={{ 
+                duration: 3, 
+                repeat: Infinity, 
+                ease: "easeInOut", 
+                repeatDelay: 1
+              }}
+            />
+            
           <div className="flex items-center gap-4 mb-6">
-            <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <Video className="h-6 w-6 text-orange-500" />
-            </div>
+            <motion.div 
+              className="h-14 w-14 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 flex items-center justify-center border border-orange-500/20 shadow-sm"
+              whileHover={{ scale: 1.05 }}
+              animate={{ 
+                boxShadow: ["0 0 0 rgba(249, 115, 22, 0)", "0 0 12px rgba(249, 115, 22, 0.3)", "0 0 0 rgba(249, 115, 22, 0)"] 
+              }}
+              transition={{ 
+                boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" } 
+              }}
+            >
+              <Video className="h-7 w-7 text-orange-500" />
+            </motion.div>
             <div>
-              <h2 className="text-xl font-semibold">Creador de Videos Musicales AI</h2>
-              <p className="text-sm text-muted-foreground">
-                Transforma tu música en experiencias visuales
+              <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-orange-500">
+                Creador de Videos Musicales AI
+              </h2>
+              <p className="text-sm text-muted-foreground/90 tracking-wide">
+                Transforma tu música en experiencias visuales cautivadoras
               </p>
             </div>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="space-y-6 order-2 lg:order-1">
-              <div className="border rounded-lg p-4">
-                <Label className="text-lg font-semibold mb-4">1. Subir Audio</Label>
+              <motion.div 
+                className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-white to-orange-50/30 shadow-sm relative"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  boxShadow: currentStep >= 2 ? "0 0 0 2px rgba(249, 115, 22, 0.2)" : "none"
+                }}
+                transition={{ duration: 0.5 }}
+              >
+                {/* Indicador de paso completado */}
+                {currentStep >= 2 && (
+                  <motion.div 
+                    className="absolute -top-1 -right-1 p-1 rounded-full bg-green-100 text-green-600 z-10"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </motion.div>
+                )}
+                
+                {/* Título con icono animado */}
+                <div className="flex items-center gap-3 mb-4">
+                  <motion.div 
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600"
+                    whileHover={{ scale: 1.1 }}
+                    animate={{ 
+                      rotate: isTranscribing ? [0, 10, -10, 0] : 0
+                    }}
+                    transition={{ 
+                      rotate: { repeat: Infinity, duration: 1.5, ease: "easeInOut" },
+                      scale: { duration: 0.2 }
+                    }}
+                  >
+                    <Music2 className="h-4 w-4" />
+                  </motion.div>
+                  <Label className="text-lg font-semibold">1. Subir Audio</Label>
+                </div>
+                
                 <div className="space-y-4">
-                  <Input
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleFileChange}
-                    disabled={isTranscribing}
-                  />
+                  <motion.div 
+                    className="relative border-2 border-dashed border-orange-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <Input
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleFileChange}
+                      disabled={isTranscribing}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                      <Upload className="h-8 w-8 text-orange-400 mb-1" />
+                      <p className="font-medium text-sm text-center">Arrastra tu archivo de audio o haz clic para seleccionar</p>
+                      <p className="text-xs text-muted-foreground text-center">Soporta MP3, WAV, FLAC, OGG y otros formatos de audio</p>
+                    </div>
+                  </motion.div>
+                  
                   {selectedFile && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Music2 className="h-4 w-4" />
-                      <span>{selectedFile.name}</span>
-                    </div>
+                    <motion.div 
+                      className="flex items-center gap-3 text-sm p-3 bg-orange-50 rounded-md border border-orange-100"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="bg-orange-100 rounded-full p-1.5">
+                        <Music2 className="h-4 w-4 text-orange-600" />
+                      </div>
+                      <div className="flex-1 truncate">
+                        <span className="font-medium">{selectedFile.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </span>
+                      </div>
+                    </motion.div>
                   )}
+                  
                   {isTranscribing && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Transcribiendo audio...</span>
-                    </div>
+                    <motion.div 
+                      className="flex items-center gap-3 text-sm p-3 bg-blue-50 rounded-md"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <div className="bg-blue-100 rounded-full p-1.5 relative">
+                        <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                        <motion.div 
+                          className="absolute inset-0 rounded-full border-2 border-blue-300 border-t-blue-600"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                        />
+                      </div>
+                      <div>
+                        <span className="font-medium">Transcribiendo audio...</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          Procesando datos de voz con IA
+                        </span>
+                      </div>
+                    </motion.div>
                   )}
                 </div>
-              </div>
+              </motion.div>
 
               <div className="space-y-6">
                 <div className="border rounded-lg p-4">
