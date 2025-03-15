@@ -3117,7 +3117,7 @@ ${transcription}`;
                   <div className="space-y-4">
                     {!scriptContent ? (
                       <motion.div 
-                        className="flex flex-col items-center justify-center py-8 text-center rounded-md bg-gradient-to-b from-slate-50 to-white border border-slate-100 shadow-sm"
+                        className="flex flex-col items-center justify-center py-8 text-center rounded-md bg-gradient-to-b from-zinc-900 to-black border border-zinc-800 shadow-sm"
                         initial={{ opacity: 0.8 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.5 }}
@@ -3167,35 +3167,35 @@ ${transcription}`;
                           }}
                         >
                           <motion.div 
-                            className="bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 rounded-md border border-amber-200 shadow-sm"
+                            className="bg-gradient-to-br from-zinc-900 to-black p-3 rounded-md border border-orange-800/30 shadow-sm"
                             whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(251, 191, 36, 0.1)" }}
                             transition={{ duration: 0.2 }}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                           >
-                            <span className="font-semibold block text-amber-900">Análisis Musical</span>
-                            <span className="text-amber-700">Género y estructura</span>
+                            <span className="font-semibold block text-orange-400">Análisis Musical</span>
+                            <span className="text-orange-300">Género y estructura</span>
                           </motion.div>
                           <motion.div 
-                            className="bg-gradient-to-br from-purple-50 to-purple-100/50 p-3 rounded-md border border-purple-200 shadow-sm"
+                            className="bg-gradient-to-br from-zinc-900 to-black p-3 rounded-md border border-orange-800/30 shadow-sm"
                             whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(139, 92, 246, 0.1)" }}
                             transition={{ duration: 0.2 }}
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             
                           >
-                            <span className="font-semibold block text-purple-900">Narrativa Visual</span>
-                            <span className="text-purple-700">Arco emocional y mensajes</span>
+                            <span className="font-semibold block text-orange-400">Narrativa Visual</span>
+                            <span className="text-orange-300">Arco emocional y mensajes</span>
                           </motion.div>
                           <motion.div 
-                            className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3 rounded-md border border-indigo-200 shadow-sm"
+                            className="bg-gradient-to-br from-zinc-900 to-black p-3 rounded-md border border-orange-800/30 shadow-sm"
                             whileHover={{ scale: 1.02, boxShadow: "0 4px 12px rgba(99, 102, 241, 0.1)" }}
                             transition={{ duration: 0.2 }}
                             initial={{ opacity: 0, x: 10 }}
                             animate={{ opacity: 1, x: 0 }}
                           >
-                            <span className="font-semibold block text-indigo-900">Dirección Técnica</span>
-                            <span className="text-indigo-700">Planos, transiciones, mood</span>
+                            <span className="font-semibold block text-orange-400">Dirección Técnica</span>
+                            <span className="text-orange-300">Planos, transiciones, mood</span>
                           </motion.div>
                         </motion.div>
                         
@@ -3207,7 +3207,7 @@ ${transcription}`;
                         >
                           {/* Efecto de resplandor superior */}
                           <motion.div 
-                            className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-purple-400/0 via-purple-500/50 to-purple-400/0 z-10"
+                            className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-orange-400/0 via-orange-500/50 to-orange-400/0 z-10"
                             animate={{ 
                               opacity: [0.3, 0.7, 0.3]
                             }}
@@ -3252,7 +3252,7 @@ ${transcription}`;
                   {/* Título con icono animado */}
                   <div className="flex items-center gap-3 mb-6">
                     <motion.div 
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-rose-600"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600"
                       whileHover={{ scale: 1.1 }}
                       animate={{ 
                         rotate: [0, -5, 5, 0],
