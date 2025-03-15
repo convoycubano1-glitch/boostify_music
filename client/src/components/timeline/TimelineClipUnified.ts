@@ -13,14 +13,15 @@ import { TimelineClip } from '../music-video/TimelineEditor';
  * Esta interfaz representa el formato de timeline antiguo que se usa en algunas partes de la aplicación
  */
 export interface TimelineItem {
-  id: string;
-  group: string;
+  id: string | number;
+  group: string | number;
   start_time: number;
   end_time: number;
   duration?: number;
   title?: string;
   thumbnail?: string;
   content?: string;
+  description?: string;
   imageUrl?: string;
   videoUrl?: string;
   audioUrl?: string;
@@ -31,6 +32,30 @@ export interface TimelineItem {
   className?: string;
   style?: any;
   itemProps?: any;
+  // Campos adicionales para compatibilidad con nueva funcionalidad
+  start?: number;
+  mood?: string;
+  generatedImage?: boolean | string; // Puede ser booleano o URL (string)
+  energy?: number;
+  averageEnergy?: number;
+  timecode?: string;
+  endTimecode?: string;
+  normalizedEnergy?: number;
+  isDownbeat?: boolean;
+  metadata?: any;
+  transition?: string;
+  // Campos adicionales para compatibilidad con music-video-ai.tsx
+  firebaseUrl?: string;
+  lipsyncVideoUrl?: string;
+  lipsyncProgress?: number;
+  lipsyncApplied?: boolean;
+  // Y otros campos que pueden aparecer en la aplicación
+  faceSwapApplied?: boolean;
+  faceSwapImageUrl?: string;
+  movementApplied?: boolean;
+  movementPattern?: string;
+  movementIntensity?: number;
+  movementUrl?: string;
 }
 
 /**
@@ -55,6 +80,10 @@ export class TimelineClipUnified implements TimelineClip {
   videoUrl?: string;
   movementUrl?: string;
   audioUrl?: string;
+  // Propiedades de lipsync
+  lipsyncApplied?: boolean;
+  lipsyncVideoUrl?: string;
+  lipsyncProgress?: number;
   metadata?: {
     section?: string;
     movementApplied?: boolean;
@@ -63,6 +92,7 @@ export class TimelineClipUnified implements TimelineClip {
     faceSwapApplied?: boolean;
     musicianIntegrated?: boolean;
     sourceIndex?: number;
+    isGeneratedImage?: boolean;
     lipsync?: {
       applied: boolean;
       videoUrl?: string;
@@ -77,7 +107,8 @@ export class TimelineClipUnified implements TimelineClip {
   constructor(data: Partial<TimelineClip> | TimelineItem) {
     if ('start_time' in data) {
       // Es un TimelineItem (formato antiguo)
-      this.id = parseInt(data.id) || 0;
+      // Convertir el id a número, asegurándonos de que funcione con string o number
+      this.id = typeof data.id === 'string' ? parseInt(data.id) || 0 : data.id as number;
       this.start = data.start_time;
       this.duration = data.duration || (data.end_time - data.start_time);
       this.type = this.determineType(data);
@@ -185,24 +216,55 @@ export class TimelineClipUnified implements TimelineClip {
 
   /**
    * Convierte a TimelineItem (formato antiguo)
+   * Método mejorado con gestión de tipos de ID y propiedades extendidas
    */
   toTimelineItem(): TimelineItem {
+    // Aseguramos que el id sea compatible con sistemas antiguos
+    const idAsString = typeof this.id === 'number' ? this.id.toString() : this.id;
+    
+    // Creamos un objeto con todos los metadatos necesarios
+    const extendedMetadata = {
+      // Valores por defecto
+      firebaseUrl: this.imageUrl || '',
+      mood: '',
+      energy: 0,
+      averageEnergy: 0,
+      timecode: '',
+      endTimecode: '',
+      normalizedEnergy: 0,
+      isDownbeat: false,
+      section: this.metadata?.section || '',
+      
+      // Combinamos con metadatos existentes si los hay
+      ...(this.metadata || {})
+    };
+    
     return {
-      id: this.id.toString(),
+      id: idAsString,
       group: this.getGroupFromType(),
       start_time: this.start,
       end_time: this.start + this.duration,
       duration: this.duration,
+      start: this.start,
       title: this.title,
       thumbnail: this.thumbnail,
       content: this.description,
+      description: this.description,
       imageUrl: this.imageUrl,
       videoUrl: this.videoUrl,
       audioUrl: this.audioUrl,
       type: this.type,
       imagePrompt: this.imagePrompt,
       shotType: this.shotType,
-      section: this.metadata?.section
+      section: this.metadata?.section,
+      metadata: extendedMetadata,
+      // Propiedades adicionales para completar la compatibilidad
+      generatedImage: this.metadata?.isGeneratedImage || false,
+      transition: "cut",
+      // Propiedades para sincronización de labios
+      lipsyncApplied: this.metadata?.lipsync?.applied || false,
+      lipsyncVideoUrl: this.metadata?.lipsync?.videoUrl,
+      lipsyncProgress: this.metadata?.lipsync?.progress
     };
   }
 

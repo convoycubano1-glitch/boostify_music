@@ -54,6 +54,10 @@ export interface TimelineClip {
   videoUrl?: string;
   movementUrl?: string;
   audioUrl?: string;
+  // Propiedades específicas para la sincronización de labios
+  lipsyncApplied?: boolean;
+  lipsyncVideoUrl?: string;
+  lipsyncProgress?: number;
   // Propiedades adicionales
   metadata?: {
     section?: string;    // Sección musical (coro, verso, etc.)
@@ -63,6 +67,7 @@ export interface TimelineClip {
     faceSwapApplied?: boolean;
     musicianIntegrated?: boolean;
     sourceIndex?: number; // Índice en el guion original
+    isGeneratedImage?: boolean; // Indica si es una imagen generada por IA
     // Propiedades de sincronización de labios en metadata
     lipsync?: {
       applied: boolean;

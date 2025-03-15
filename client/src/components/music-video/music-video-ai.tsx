@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../ui/textarea";
 import { TimelineEditor } from "./TimelineEditor";
 import type { TimelineClip } from "./TimelineEditor";
-import { TimelineClipUnified, ensureCompatibleClip } from "../timeline/TimelineClipUnified";
+import { TimelineClipUnified, ensureCompatibleClip, TimelineItem } from "../timeline/TimelineClipUnified";
 import { Slider } from "../ui/slider";
 import { Card } from "../ui/card";
 import Editor from "@monaco-editor/react";
@@ -193,77 +193,12 @@ const editingStyles = [
   }
 ];
 
-interface TimelineItem {
-  id: number;
-  group: number;
-  title: string;
-  start_time: number;
-  end_time: number;
-  description: string;
-  shotType: string;
-  imagePrompt?: string;
-  generatedImage?: string;
-  duration: number;
-  transition?: string;
-  mood?: string;
-  firebaseUrl?: string;
-  // Campos para análisis de audio
-  energy?: number;
-  averageEnergy?: number;
-  // Información de sincronización y timecodes
-  timecode?: string;
-  endTimecode?: string;
-  normalizedEnergy?: number;
-  isDownbeat?: boolean;
-  // Campos adicionales para compatibilidad con TimelineClip
-  start: number;
-  type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
-  // Layer por defecto (0=audio, 1=imagen, 2=texto, 3=efectos)
-  layer?: number;
-  // Propiedades de visualización
-  thumbnail?: string; // Usaremos generatedImage o firebaseUrl para esto
-  visible?: boolean;
-  locked?: boolean;
-  // URLs de recursos
-  imageUrl?: string;
-  videoUrl?: string;
-  audioUrl?: string;
-  // DEPRECADO: Estas propiedades están siendo migradas a metadata.lipsync
-  // Mantener por retrocompatibilidad, pero no usar directamente
-  lipsyncApplied?: boolean;
-  lipsyncVideoUrl?: string;
-  lipsyncProgress?: number;
-  // Campos para movimiento
-  movementApplied?: boolean;
-  movementPattern?: string;
-  movementIntensity?: number;
-  movementUrl?: string;
-  // Campos para face swap
-  faceSwapApplied?: boolean;
-  faceSwapImageUrl?: string;
-  // Estructura para metadatos
-  metadata?: {
-    section?: string;
-    movementApplied?: boolean;
-    movementPattern?: string;
-    movementIntensity?: number;
-    faceSwapApplied?: boolean;
-    musicianIntegrated?: boolean;
-    lyrics?: string;
-    musical_elements?: string;
-    character?: string;
-    camera_movement?: string;
-    animation_style?: string;
-    textContent?: string;
-    lipsync?: {
-      applied: boolean;
-      timestamp?: string;
-      videoUrl?: string;
-      progress?: number;
-    }
-    [key: string]: any;
-  };
-}
+// Usamos la interfaz TimelineItem importada anteriormente
+// No es necesario importarla de nuevo
+
+// Usamos la interfaz TimelineItem importada para mantener compatibilidad
+// Definimos un tipo específico para nuestra aplicación basado en TimelineItem
+type MusicVideoTimelineItem = TimelineItem;
 
 const groups = [
   { id: 1, title: "Video", stackItems: true },
@@ -693,7 +628,7 @@ ${transcription}`;
           model: FluxModel.FLUX1_DEV,
           taskType: FluxTaskType.TXT2IMG,
           // Usar una semilla específica para cada segmento, pero consistente en regeneraciones
-          seed: seed + item.id
+          seed: seed + (typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id)
         };
 
         // Iniciar la generación de imagen con Flux API
@@ -916,7 +851,11 @@ ${transcription}`;
     if (!item.generatedImage) return null;
 
     try {
-      const response = await fetch(item.generatedImage);
+      // Asegurarnos de que generatedImage sea una URL válida (string)
+      const imageUrl = typeof item.generatedImage === 'string' ? item.generatedImage : '';
+      if (!imageUrl) return null;
+      
+      const response = await fetch(imageUrl);
       const blob = await response.blob();
 
       const storageRef = ref(storage, `videos/${Date.now()}_${item.id}.jpg`);
@@ -1544,10 +1483,15 @@ ${transcription}`;
     updatedItems.push(newClip);
     
     // Ordenar los clips por tiempo de inicio
-    updatedItems.sort((a, b) => a.start_time - b.start_time);
+    updatedItems.sort((a, b) => {
+      // Compatibilidad con ambos formatos (TimelineItem y TimelineClipUnified)
+      const aStart = 'start_time' in a ? a.start_time : a.start;
+      const bStart = 'start_time' in b ? b.start_time : b.start;
+      return aStart - bStart;
+    });
     
     // Actualizar el estado
-    setTimelineItems(updatedItems);
+    setTimelineItems(updatedItems as TimelineItem[]);
     
     console.log(`Clip ${clipId} dividido en: ${clipId} y ${newClipId} en tiempo ${splitTime}s`);
   };
@@ -1704,21 +1648,29 @@ ${transcription}`;
     const MAX_CLIP_DURATION = 5 * 1000; // 5 segundos en milisegundos
     
     // Ordenamos los clips por tiempo de inicio para facilitar la detección de solapamientos
-    processedClips.sort((a, b) => a.start_time - b.start_time);
+    processedClips.sort((a, b) => {
+      // Garantizar que los clips tienen la propiedad start_time
+      const aStart = a.start_time;
+      const bStart = b.start_time;
+      return aStart - bStart;
+    });
     
     // Recorremos todos los clips
     for (let i = 0; i < processedClips.length; i++) {
       const currentClip = processedClips[i];
       
       // 1. Restricción de duración - limitar a 5 segundos máximo
-      if (currentClip.duration > MAX_CLIP_DURATION) {
-        console.log(`Ajustando clip ${currentClip.id} de ${currentClip.duration}ms a ${MAX_CLIP_DURATION}ms`);
+      // Asegurar que la duración esté definida
+      const clipDuration = currentClip.duration || (currentClip.end_time - currentClip.start_time);
+      
+      if (clipDuration > MAX_CLIP_DURATION) {
+        console.log(`Ajustando clip ${currentClip.id} de ${clipDuration}ms a ${MAX_CLIP_DURATION}ms`);
         currentClip.duration = MAX_CLIP_DURATION;
         currentClip.end_time = currentClip.start_time + MAX_CLIP_DURATION;
       }
       
       // 2. Restricción de capa para imágenes generadas por IA - siempre en capa 7
-      if (currentClip.generatedImage) {
+      if (currentClip.generatedImage || (currentClip.metadata && currentClip.metadata.isGeneratedImage)) {
         if (currentClip.group !== 7) {
           console.log(`Moviendo clip de imagen generada ${currentClip.id} a capa 7`);
           currentClip.group = 7;
@@ -1988,11 +1940,15 @@ ${transcription}`;
               normalizedEnergy: normalizedEnergy,
               isDownbeat: isDownbeat,
               // Indicador de que es una imagen generada por IA
-              isGeneratedImage: true
+              metadata: {
+                isGeneratedImage: true
+              }
             };
             
             // Usamos ensureCompatibleClip para garantizar compatibilidad con TimelineClipUnified
-            segments.push(ensureCompatibleClip(segmentBase));
+            const compatibleClip = ensureCompatibleClip(segmentBase);
+            // Convertimos a TimelineItem para mantener compatibilidad
+            segments.push(compatibleClip.toTimelineItem());
 
             lastBeatTime = currentTime;
           }
@@ -2037,11 +1993,15 @@ ${transcription}`;
             type: 'image' as const,
             mood: 'conclusive',
             // Indicador de que es una imagen generada por IA
-            isGeneratedImage: true
+            metadata: {
+              isGeneratedImage: true
+            }
           };
           
           // Usar ensureCompatibleClip para garantizar compatibilidad
-          segments.push(ensureCompatibleClip(finalSegmentBase));
+          const compatibleFinalClip = ensureCompatibleClip(finalSegmentBase);
+          // Convertimos a TimelineItem para mantener compatibilidad
+          segments.push(compatibleFinalClip.toTimelineItem());
         }
       }
 
