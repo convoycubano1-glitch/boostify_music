@@ -2855,12 +2855,12 @@ ${transcription}`;
                   >
                     <Music2 className="h-4 w-4" />
                   </motion.div>
-                  <Label className="text-lg font-semibold">1. Subir Audio</Label>
+                  <Label className="text-lg font-semibold text-orange-500">1. Subir Audio</Label>
                 </div>
                 
                 <div className="space-y-4">
                   <motion.div 
-                    className="relative border-2 border-dashed border-orange-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
+                    className="relative border-2 border-dashed border-orange-300 rounded-lg p-4 hover:border-orange-400 transition-colors bg-black/50"
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                   >
@@ -2949,7 +2949,7 @@ ${transcription}`;
                   {/* Título con icono animado */}
                   <div className="flex items-center gap-3 mb-4">
                     <motion.div 
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600"
                       whileHover={{ scale: 1.1 }}
                       animate={{ 
                         rotate: isGeneratingScript ? [0, 10, -10, 0] : 0
@@ -2961,7 +2961,7 @@ ${transcription}`;
                     >
                       <FileText className="h-4 w-4" />
                     </motion.div>
-                    <Label className="text-lg font-semibold">2. Transcripción</Label>
+                    <Label className="text-lg font-semibold text-orange-500">2. Transcripción</Label>
                   </div>
                   
                   <div className="space-y-4">
@@ -2999,7 +2999,7 @@ ${transcription}`;
                       >
                         <Button
                           onClick={() => setCurrentStep(2)}
-                          className="w-full mb-2 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white shadow-md"
+                          className="w-full mb-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md"
                         >
                           <motion.div 
                             className="mr-2"
@@ -3019,7 +3019,7 @@ ${transcription}`;
                       className={cn(
                         "w-full group relative overflow-hidden transition-all",
                         transcription && !isGeneratingScript && currentStep >= 2 
-                          ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md" 
+                          ? "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md" 
                           : ""
                       )}
                     >
