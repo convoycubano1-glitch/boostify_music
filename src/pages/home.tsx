@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from "wouter";
+import { Footer } from "../components/layout/footer";
 
 // Página de inicio muy simplificada para la demo
 const HomePage = () => {
@@ -130,42 +131,7 @@ const HomePage = () => {
         </section>
       </main>
       
-      <footer className="bg-black py-10">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-6 md:mb-0">
-              <p className="text-xl font-bold text-orange-500">Boostify Music</p>
-              <p className="text-gray-400">Transformando la industria musical con IA</p>
-            </div>
-            <div className="flex gap-8">
-              <div>
-                <h4 className="font-bold mb-3">Producto</h4>
-                <ul className="space-y-2">
-                  <li><Link href="/features" className="text-gray-400 hover:text-orange-500 transition-colors">Características</Link></li>
-                  <li><Link href="/pricing" className="text-gray-400 hover:text-orange-500 transition-colors">Precios</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-bold mb-3">Empresa</h4>
-                <ul className="space-y-2">
-                  <li><Link href="/about" className="text-gray-400 hover:text-orange-500 transition-colors">Sobre nosotros</Link></li>
-                  <li><Link href="/contact" className="text-gray-400 hover:text-orange-500 transition-colors">Contacto</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-bold mb-3">Legal</h4>
-                <ul className="space-y-2">
-                  <li><Link href="/privacy" className="text-gray-400 hover:text-orange-500 transition-colors">Privacidad</Link></li>
-                  <li><Link href="/terms" className="text-gray-400 hover:text-orange-500 transition-colors">Términos</Link></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-            <p className="text-gray-500">© {new Date().getFullYear()} Boostify Music. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
