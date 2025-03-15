@@ -15,7 +15,7 @@ import {
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Footer } from "../components/layout/footer";
-import { MainNav } from "../components/navigation/main-nav";
+// No necesitamos importar MainNav ya que la navegación es manejada por el layout principal
 
 // Variantes de animación
 const containerVariants = {
@@ -369,7 +369,6 @@ const CTASection = () => {
 const TokenizationPage = () => {
   return (
     <div>
-      <MainNav />
       <main>
         <TokenizationHero />
         <BenefitsSection />

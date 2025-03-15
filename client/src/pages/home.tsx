@@ -7,7 +7,8 @@ import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
   MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, 
   Play, Volume2, ChevronRight, ArrowRight, Headphones, MoveRight, MousePointer,
-  Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause, PlaySquare
+  Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause, PlaySquare,
+  DollarSign, Share2, Users
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
@@ -548,6 +549,87 @@ export default function HomePage() {
             ))}
           </div>
         </motion.div>
+      </section>
+
+      {/* Web3 Music Tokenization Section */}
+      <section className="py-20 bg-gradient-to-br from-black to-zinc-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-600/20 rounded-full filter blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-600/20 rounded-full filter blur-3xl"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-12">
+            <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-4 py-1 text-sm">
+              NUEVA FUNCIÓN
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-orange-500">
+              Tokenización Musical con Web3
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Revoluciona la forma en que monetizas tu música. Convierte tus canciones en activos digitales y conecta directamente con tus fans sin intermediarios.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-2xl p-8 shadow-2xl order-2 lg:order-1">
+              <h3 className="text-2xl font-bold mb-4 text-white">Beneficios de la tokenización</h3>
+              <ul className="space-y-4">
+                <li className="flex items-start">
+                  <span className="inline-flex items-center justify-center bg-orange-500/20 rounded-full p-2 mr-3 mt-1">
+                    <DollarSign className="h-5 w-5 text-orange-500" />
+                  </span>
+                  <div>
+                    <span className="font-bold text-white">Ingresos directos</span>
+                    <p className="text-gray-400">Recibe pagos de tus fans sin intermediarios que reduzcan tus ganancias.</p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <span className="inline-flex items-center justify-center bg-orange-500/20 rounded-full p-2 mr-3 mt-1">
+                    <Share2 className="h-5 w-5 text-orange-500" />
+                  </span>
+                  <div>
+                    <span className="font-bold text-white">Regalías automáticas</span>
+                    <p className="text-gray-400">Configura regalías perpetuas que te pagan automáticamente en cada reventa.</p>
+                  </div>
+                </li>
+                <li className="flex items-start">
+                  <span className="inline-flex items-center justify-center bg-orange-500/20 rounded-full p-2 mr-3 mt-1">
+                    <Users className="h-5 w-5 text-orange-500" />
+                  </span>
+                  <div>
+                    <span className="font-bold text-white">Comunidad de fans</span>
+                    <p className="text-gray-400">Construye una comunidad de seguidores que invierten directamente en tu éxito.</p>
+                  </div>
+                </li>
+              </ul>
+              <div className="mt-8">
+                <Link href="/tokenization">
+                  <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
+                    Explorar tokenización
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div className="relative order-1 lg:order-2">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-2xl blur-xl"></div>
+              <div className="relative bg-zinc-800/50 backdrop-blur border border-zinc-700/50 rounded-2xl p-8 overflow-hidden">
+                <div className="absolute -right-20 -top-20 w-40 h-40 bg-orange-500/10 rounded-full"></div>
+                <div className="absolute -left-20 -bottom-20 w-40 h-40 bg-red-500/10 rounded-full"></div>
+                <img 
+                  src="/assets/web3-music-illustration.png" 
+                  alt="Web3 Music Tokenization" 
+                  className="w-full h-auto relative z-10 rounded-xl shadow-2xl"
+                  onError={(e) => {
+                    // Fallback para imagen no encontrada
+                    e.currentTarget.src = "https://placehold.co/600x400/orange/white?text=Web3+Music+Tokenization";
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Key Features Highlight Section */}
