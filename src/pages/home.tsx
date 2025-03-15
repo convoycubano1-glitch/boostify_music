@@ -141,22 +141,22 @@ const HomePage = () => {
               <div>
                 <h4 className="font-bold mb-3">Producto</h4>
                 <ul className="space-y-2">
-                  <li><button onClick={() => window.location.href = '/features'} className="text-gray-400 hover:text-white">Características</button></li>
-                  <li><button onClick={() => window.location.href = '/pricing'} className="text-gray-400 hover:text-white">Precios</button></li>
+                  <li><Link href="/features" className="text-gray-400 hover:text-orange-500 transition-colors">Características</Link></li>
+                  <li><Link href="/pricing" className="text-gray-400 hover:text-orange-500 transition-colors">Precios</Link></li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-bold mb-3">Empresa</h4>
                 <ul className="space-y-2">
-                  <li><button onClick={() => window.location.href = '/about'} className="text-gray-400 hover:text-white">Sobre nosotros</button></li>
-                  <li><button onClick={() => window.location.href = '/contact'} className="text-gray-400 hover:text-white">Contacto</button></li>
+                  <li><Link href="/about" className="text-gray-400 hover:text-orange-500 transition-colors">Sobre nosotros</Link></li>
+                  <li><Link href="/contact" className="text-gray-400 hover:text-orange-500 transition-colors">Contacto</Link></li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-bold mb-3">Legal</h4>
                 <ul className="space-y-2">
-                  <li><button onClick={() => window.location.href = '/privacy'} className="text-gray-400 hover:text-white">Privacidad</button></li>
-                  <li><button onClick={() => window.location.href = '/terms'} className="text-gray-400 hover:text-white">Términos</button></li>
+                  <li><Link href="/privacy" className="text-gray-400 hover:text-orange-500 transition-colors">Privacidad</Link></li>
+                  <li><Link href="/terms" className="text-gray-400 hover:text-orange-500 transition-colors">Términos</Link></li>
                 </ul>
               </div>
             </div>
@@ -283,48 +283,43 @@ const MainNav = () => {
       <div className="container mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <div 
-              className="flex items-center cursor-pointer" 
-              onClick={() => window.location.href = '/'}
-            >
-              <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center mr-2">
-                <Music2 className="h-4 w-4 text-white" />
+            <Link href="/">
+              <div className="flex items-center cursor-pointer">
+                <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center mr-2">
+                  <Music2 className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-xl font-bold text-white">Boostify</span>
               </div>
-              <span className="text-xl font-bold text-white">Boostify</span>
-            </div>
+            </Link>
             <nav className="ml-8 hidden md:flex space-x-6">
-              <button 
-                onClick={() => window.location.href = '/features'}
-                className={`text-sm font-medium hover:text-orange-400 transition-colors ${
+              <Link href="/features">
+                <span className={`text-sm font-medium hover:text-orange-400 transition-colors ${
                   location === '/features' ? 'text-orange-400' : 'text-white/80'
-                }`}
-              >
-                Características
-              </button>
-              <button 
-                onClick={() => window.location.href = '/pricing'}
-                className={`text-sm font-medium hover:text-orange-400 transition-colors ${
+                }`}>
+                  Características
+                </span>
+              </Link>
+              <Link href="/pricing">
+                <span className={`text-sm font-medium hover:text-orange-400 transition-colors ${
                   location === '/pricing' ? 'text-orange-400' : 'text-white/80'
-                }`}
-              >
-                Precios
-              </button>
-              <button 
-                onClick={() => window.location.href = '/ecosystem'}
-                className={`text-sm font-medium hover:text-orange-400 transition-colors ${
+                }`}>
+                  Precios
+                </span>
+              </Link>
+              <Link href="/ecosystem">
+                <span className={`text-sm font-medium hover:text-orange-400 transition-colors ${
                   location === '/ecosystem' ? 'text-orange-400' : 'text-white/80'
-                }`}
-              >
-                Ecosistema
-              </button>
-              <button 
-                onClick={() => window.location.href = '/contact'}
-                className={`text-sm font-medium hover:text-orange-400 transition-colors ${
+                }`}>
+                  Ecosistema
+                </span>
+              </Link>
+              <Link href="/contact">
+                <span className={`text-sm font-medium hover:text-orange-400 transition-colors ${
                   location === '/contact' ? 'text-orange-400' : 'text-white/80'
-                }`}
-              >
-                Contacto
-              </button>
+                }`}>
+                  Contacto
+                </span>
+              </Link>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
@@ -432,13 +427,14 @@ const HeroSection = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4"
           >
-            <Button 
-              size="lg" 
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8"
-              onClick={() => window.location.href = '/signup'}
-            >
-              Comienza gratis <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <Link href="/signup">
+              <Button 
+                size="lg" 
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8"
+              >
+                Comienza gratis <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
             <Button 
               variant="outline" 
               size="lg" 
@@ -722,12 +718,11 @@ const FeatureCard = ({ title, description, icon: Icon, color, link }: FeatureCar
       </div>
       <h3 className="text-xl font-semibold text-white mb-3">{title}</h3>
       <p className="text-gray-400 mb-4">{description}</p>
-      <button 
-        onClick={() => window.location.href = link} 
-        className={`inline-flex items-center ${colorStyle.text} hover:underline`}
-      >
-        Explorar <ChevronRight className="ml-1 h-4 w-4" />
-      </button>
+      <Link href={link}>
+        <span className={`inline-flex items-center ${colorStyle.text} hover:underline cursor-pointer`}>
+          Explorar <ChevronRight className="ml-1 h-4 w-4" />
+        </span>
+      </Link>
     </motion.div>
   );
 };
@@ -912,13 +907,14 @@ const TestimonialSection = () => {
           </div>
           
           <div className="mt-10">
-            <Button 
-              variant="outline" 
-              className="border-white/20 bg-white/5 hover:bg-white/10 text-white"
-              onClick={() => window.location.href = '/testimonials'}
-            >
-              Ver más historias <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <Link href="/testimonials">
+              <Button 
+                variant="outline" 
+                className="border-white/20 bg-white/5 hover:bg-white/10 text-white"
+              >
+                Ver más historias <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
