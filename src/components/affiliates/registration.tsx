@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +14,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import axios from "axios";
 
 // Validation schema for the form
 const affiliateFormSchema = z.object({
@@ -87,20 +86,11 @@ export function AffiliateRegistration() {
     setError(null);
     
     try {
-      // Crear el documento de afiliado en Firestore
-      await setDoc(doc(db, "affiliates", user.uid), {
+      // Enviar solicitud a la API en lugar de escribir directamente en Firestore
+      await axios.post('/api/affiliate/register', {
         ...data,
         userId: user.uid,
         email: user.email,
-        status: "pending", // pending, approved, rejected
-        createdAt: serverTimestamp(),
-        stats: {
-          totalClicks: 0,
-          conversions: 0,
-          earnings: 0,
-          pendingPayment: 0,
-        },
-        level: "Básico", // Básico, Plata, Oro, Platino
       });
 
       setSuccess(true);
