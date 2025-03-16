@@ -36,24 +36,26 @@ const router = express.Router();
 
 // Esquema de validación para registro de afiliado
 const affiliateRegistrationSchema = z.object({
-  firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
-  lastName: z.string().min(2, { message: "El apellido debe tener al menos 2 caracteres" }),
-  email: z.string().email({ message: "Email inválido" }),
-  phone: z.string().optional(),
+  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
+  bio: z.string().min(10, { message: "La biografía debe tener al menos 10 caracteres" }).max(500),
+  email: z.string().email({ message: "Email inválido" }).optional(), // Tomamos el email del usuario autenticado si no se proporciona
   website: z.string().url().optional().or(z.literal('')),
   socialMedia: z.object({
-    instagram: z.string().optional(),
-    twitter: z.string().optional(),
-    youtube: z.string().optional(),
-    tiktok: z.string().optional(),
+    instagram: z.string().optional().or(z.literal("")),
+    twitter: z.string().optional().or(z.literal("")),
+    youtube: z.string().optional().or(z.literal("")),
+    tiktok: z.string().optional().or(z.literal(""))
   }).optional(),
-  promotionChannels: z.array(z.string()),
-  categories: z.array(z.string()),
-  experience: z.string(),
-  paymentMethod: z.string(),
-  taxId: z.string().optional(),
+  categories: z.array(z.string()).min(1, { message: "Debes seleccionar al menos una categoría" }),
+  paymentMethod: z.enum(["paypal", "bank_transfer", "crypto"], { 
+    required_error: "Debes seleccionar un método de pago" 
+  }),
+  paymentEmail: z.string().email({ message: "Email de pago inválido" }),
   termsAccepted: z.boolean().refine(val => val === true, {
     message: "Debes aceptar los términos y condiciones"
+  }),
+  dataProcessingAccepted: z.boolean().refine(val => val === true, {
+    message: "Debes aceptar el acuerdo de procesamiento de datos"
   }),
 });
 

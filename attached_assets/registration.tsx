@@ -80,21 +80,31 @@ export function AffiliateRegistration() {
     setError(null);
     
     try {
-      // Crear el documento de afiliado en Firestore
-      await setDoc(doc(db, "affiliates", user.uid), {
-        ...data,
-        userId: user.uid,
-        email: user.email,
-        status: "pending", // pending, approved, rejected
-        createdAt: serverTimestamp(),
-        stats: {
-          totalClicks: 0,
-          conversions: 0,
-          earnings: 0,
-          pendingPayment: 0,
+      // Enviar datos a través de la API en lugar de escribir directamente en Firestore
+      const response = await fetch('/api/affiliate/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        level: "Básico", // Básico, Plata, Oro, Platino
+        body: JSON.stringify({
+          name: data.name,
+          bio: data.bio,
+          website: data.website,
+          socialMedia: data.socialMedia,
+          categories: data.categories,
+          promotionChannels: data.categories, // Usar las mismas categorías como canales de promoción
+          paymentMethod: data.paymentMethod,
+          paymentEmail: data.paymentEmail,
+          termsAccepted: data.termsAccepted,
+          dataProcessingAccepted: data.dataProcessingAccepted,
+          experience: "intermediate" // Valor por defecto para el campo requerido por el backend
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al registrar como afiliado');
+      }
 
       setSuccess(true);
       alert("Tu solicitud ha sido enviada correctamente");
@@ -105,7 +115,7 @@ export function AffiliateRegistration() {
       }, 2000);
     } catch (err) {
       console.error("Error al registrar afiliado:", err);
-      setError("Ha ocurrido un error al procesar tu solicitud. Por favor, intenta nuevamente.");
+      setError(err instanceof Error ? err.message : "Ha ocurrido un error al procesar tu solicitud. Por favor, intenta nuevamente.");
       alert("Error al enviar la solicitud");
     } finally {
       setIsSubmitting(false);
