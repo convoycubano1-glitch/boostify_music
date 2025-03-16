@@ -827,17 +827,25 @@ export default function InvestorsDashboard() {
     ]
   };
 
-  // Handle investment button click
+  // Handle investment button click - Directs the user to the registration form
   const handleInvestNow = () => {
-    // Redirect to Stripe payment or show payment modal
-    console.log("Redirecting to payment gateway...");
-    alert("Redirecting to Stripe payment gateway... This is a simulation.");
+    console.log("Directing to investment registration form");
+    // Switch to the register tab
+    setSelectedTab("register");
+    // Scroll to the form
+    setTimeout(() => {
+      const registrationForm = document.getElementById("investor-registration-form");
+      if (registrationForm) {
+        registrationForm.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
   };
 
-  // Handle contract download
+  // Handle contract download - Opens the investment contract
   const handleDownloadContract = () => {
-    console.log("Downloading investment contract...");
-    alert("Downloading investment contract template... This is a simulation.");
+    console.log("Opening investment contract...");
+    // Open the contract in a new tab
+    window.open("/investment-contract.html", "_blank");
   };
 
   return (
@@ -1426,7 +1434,9 @@ export default function InvestorsDashboard() {
                     </p>
                   </div>
                   
-                  <InvestorRegistrationForm />
+                  <div id="investor-registration-form">
+                    <InvestorRegistrationForm />
+                  </div>
                   
                   <div className="mt-8 bg-muted p-4 sm:p-6 rounded-lg">
                     <h4 className="text-lg font-medium mb-4">After Registration</h4>
