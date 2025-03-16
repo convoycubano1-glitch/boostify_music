@@ -60,6 +60,7 @@ export function setupAuth(app: Express) {
       '/stripe/publishable-key', // Ruta pública para obtener la clave publicable de Stripe
       '/subscription-plans',  // Ruta pública para obtener información sobre planes de suscripción
       '/stripe/create-product-payment', // Ruta pública para crear sesiones de pago de productos
+      '/stripe/test-guest-checkout', // Ruta de prueba para verificar la integración de compras sin autenticación
     ];
     
     // Patrones de rutas públicas que se verifican con startsWith

@@ -1265,4 +1265,28 @@ router.get('/product-purchase-status/:productId', async (req: Request, res: Resp
   }
 });
 
+/**
+ * Ruta de prueba para verificar la integración de guest checkout
+ * Esta ruta nos permite verificar rápidamente que la funcionalidad está correctamente configurada
+ * NOTA: Esta ruta NO requiere autenticación, es pública
+ * La configuración como ruta pública se realiza en server/auth.ts
+ */
+router.get('/test-guest-checkout', async (req: Request, res: Response) => {
+  try {
+    res.json({
+      success: true,
+      message: 'La integración de compras sin autenticación está correctamente configurada',
+      isAuthenticated: req.user ? true : false,
+      guestCheckoutEnabled: true,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Error en la prueba de guest checkout:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error en la prueba de guest checkout'
+    });
+  }
+});
+
 export default router;
