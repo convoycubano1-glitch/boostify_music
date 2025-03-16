@@ -15,6 +15,7 @@ import NotFound from "./pages/not-found";
 import AdminPage from "./pages/admin";
 import AIAgentsPage from "./pages/ai-agents";
 import AIAdvisorsPage from "./pages/ai-advisors";
+import AIAdvisorsPageV2 from "./pages/ai-advisors-v2";
 import AnalyticsPage from "./pages/analytics";
 import AnalyticsDashboardPage from "./pages/analytics-dashboard";
 import ArtistDashboard from "./pages/artist-dashboard";
@@ -214,6 +215,7 @@ const Router = () => {
   const WrappedRecordLabelServices = withPageWrapper(RecordLabelServices);
   const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
   const WrappedAIAdvisorsPage = withPageWrapper(AIAdvisorsPage);
+  const WrappedAIAdvisorsPageV2 = withPageWrapper(AIAdvisorsPageV2);
   const WrappedArtistImageAdvisor = withPageWrapper(ArtistImageAdvisor);
   const WrappedArtistImageAdvisorImproved = withPageWrapper(ArtistImageAdvisorImproved);
   const WrappedArtistGeneratorPage = withPageWrapper(ArtistGeneratorPage);
@@ -319,6 +321,7 @@ const Router = () => {
         {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
         {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
         {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
+        {getRouteComponent("/ai-advisors-v2", WrappedAIAdvisorsPageV2, 'premium')}
         {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
         {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
         {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
