@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/use-auth';
 import { useToast } from '../../hooks/use-toast';
 import { useSubscription } from '../../lib/context/subscription-context';
-import { advisorCallService, Advisor } from '../../lib/services/advisor-call-service';
+import { advisorCallService, Advisor, ADVISOR_PHONE_NUMBER } from '../../lib/services/advisor-call-service';
 import { useAdvisorAccess } from '../../hooks/use-advisor-access';
 import { motion } from 'framer-motion';
 
@@ -36,9 +36,6 @@ import {
 
 // Máxima duración de llamada en segundos (5 minutos)
 const MAX_CALL_DURATION = 300;
-
-// Número telefónico para todas las llamadas a asesores
-const ADVISOR_PHONE_NUMBER = "+1 941 315 9237";
 
 interface CallModalProps {
   advisor: Advisor | null;
