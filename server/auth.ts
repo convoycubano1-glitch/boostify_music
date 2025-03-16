@@ -58,15 +58,26 @@ export function setupAuth(app: Express) {
       '/video/generate',      // Ruta para generar videos
       '/video/status',        // Ruta para verificar el estado de videos
       '/stripe/publishable-key', // Ruta pública para obtener la clave publicable de Stripe
-      '/subscription-plans'   // Ruta pública para obtener información sobre planes de suscripción
+      '/subscription-plans',  // Ruta pública para obtener información sobre planes de suscripción
+      '/stripe/create-product-payment', // Ruta pública para crear sesiones de pago de productos
+    ];
+    
+    // Patrones de rutas públicas que se verifican con startsWith
+    const publicRoutePatterns = [
+      '/stripe/product-purchase-status/', // Rutas para verificar estado de compra de productos
     ];
     
     // Añadir soporte para coincidencia parcial de rutas públicas
     // Verificar si la ruta actual está en la lista de rutas públicas
     // o comienza con alguna de las rutas públicas parciales definidas
     console.log('DEBUG - Ruta solicitada:', req.path, 'Está en publicRoutes:', publicRoutes.includes(req.path));
-    if (publicRoutes.includes(req.path) || 
-        req.path.startsWith('/proxy/')) {
+    // Verificar si la ruta está en la lista de rutas públicas exactas
+    // o si comienza con alguno de los patrones de rutas públicas
+    const isPublicExactRoute = publicRoutes.includes(req.path);
+    const isPublicPatternRoute = publicRoutePatterns.some(pattern => req.path.startsWith(pattern));
+    const isProxyRoute = req.path.startsWith('/proxy/');
+    
+    if (isPublicExactRoute || isPublicPatternRoute || isProxyRoute) {
       console.log('Ruta pública accedida sin autenticación:', req.path);
       return next();
     }
