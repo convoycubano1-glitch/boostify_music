@@ -45,16 +45,26 @@ export async function getAuthToken(): Promise<string | null> {
 }
 
 // Habilitar persistencia para funcionamiento offline
-try {
-  enableMultiTabIndexedDbPersistence(db)
-    .then(() => {
-      console.log('Firestore initialized with enhanced persistence');
-    })
-    .catch((err) => {
-      console.error('Error enabling Firestore persistence:', err);
-    });
-} catch (error) {
-  console.warn('Could not enable Firestore persistence:', error);
+if (getApps().length === 1) { // Solo intentar una vez durante la inicialización inicial
+  try {
+    enableMultiTabIndexedDbPersistence(db)
+      .then(() => {
+        console.log('Firestore initialized with enhanced persistence');
+      })
+      .catch((err) => {
+        if (err.code === 'failed-precondition') {
+          // Probablemente múltiples pestañas abiertas
+          console.log('Persistence failed: Multiple tabs open');
+        } else if (err.code === 'unimplemented') {
+          // Navegador no compatible
+          console.log('Persistence not available in this browser');
+        } else {
+          console.error('Error enabling Firestore persistence:', err);
+        }
+      });
+  } catch (error) {
+    console.warn('Could not enable Firestore persistence:', error);
+  }
 }
 
 export default app;

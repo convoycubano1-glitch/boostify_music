@@ -1,0 +1,39 @@
+Provider initialised
+TronWeb: 'tronWeb.sidechain' is deprecated and may be removed in the future. Please use the 'sunweb' sdk instead. For more information, see: https://github.com/tronprotocol/sun-network/tree/develop/js-sdk
+TronLink initiated
+[vite] connecting...
+[vite] connected.
+Firestore initialized with enhanced persistence
+Firebase initialized with enhanced network resilience and multi-tab support
+[2025-03-16T03:26:32.045Z]  @firebase/firestore: Firestore (11.2.0): enableMultiTabIndexedDbPersistence() will be deprecated in the future, you can use `FirestoreSettings.cache` instead.
+Environment variables loaded: 
+Object {OPENAI_API_KEY: true, FAL_API_KEY: true, FIREBASE_CONFIG: {…}}
+The fal credentials are exposed in the browser's environment. That's not recommended for production use cases.
+OpenAI API Key available: true
+The fal credentials are exposed in the browser's environment. That's not recommended for production use cases.
+Voice Processing Service initialized with synchronized Revocalize and KITS integration
+Voice Model Service initialized with synchronized API integration
+OpenRouter API key availability check: true
+[HMR] Manejador de errores de WebSocket configurado correctamente
+WebSocket mejorado para prevenir errores de Vite HMR
+Error enabling Firestore persistence: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+code: "failed-precondition"
+customData: undefined
+name: "FirebaseError"
+toString: ƒ () => `${this.name}: [code=${this.code}]: ${this.message}`
+message: "SDK cache is already specified."
+stack: "FirebaseError: SDK cache is already specified."
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+WebSocket mejorado para prevenir errores de Vite HMR
+OpenRouter API key found in environment variables
+Error checking ElevenLabs API availability: 
+ReferenceError {}
+
+WebSocket mejorado para prevenir errores de Vite HMR
+OpenRouter API key found in environment variables
+Error checking ElevenLabs API availability: 
+ReferenceError {}
