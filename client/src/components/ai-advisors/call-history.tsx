@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/use-auth';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '../../hooks/use-toast';
-import { advisorCallService, AdvisorCall } from '../../lib/services/advisor-call-service';
+import { advisorCallService, AdvisorCall, ADVISOR_PHONE_NUMBER } from '../../lib/services/advisor-call-service';
 import { Timestamp } from 'firebase/firestore';
 
 // Importar componentes de UI
@@ -206,7 +206,7 @@ export function CallHistory({
           const date = format(timestamp, 'dd/MM/yyyy HH:mm');
           const duration = formatDuration(call.duration);
           const status = getStatusText(call.status);
-          const phoneNumber = call.phoneNumber || advisorCallService.ADVISOR_PHONE_NUMBER;
+          const phoneNumber = call.phoneNumber || ADVISOR_PHONE_NUMBER;
           
           // Escapar notas (pueden contener comas)
           const notes = call.notes ? `"${call.notes.replace(/"/g, '""')}"` : '';
@@ -638,6 +638,7 @@ export function CallHistory({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Asesor</TableHead>
+                    <TableHead>Teléfono</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead>Duración</TableHead>
                     <TableHead>Estado</TableHead>
@@ -657,6 +658,24 @@ export function CallHistory({
                             <p className="font-medium">{call.advisorName}</p>
                             <p className="text-xs text-muted-foreground">{call.advisorTitle}</p>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="link" 
+                                  className="font-medium text-sm p-0 h-auto"
+                                  onClick={() => window.open(`tel:${(call.phoneNumber || ADVISOR_PHONE_NUMBER).replace(/\s+/g, '')}`, '_blank')}
+                                >
+                                  {call.phoneNumber || ADVISOR_PHONE_NUMBER}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Llamar a este número</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
