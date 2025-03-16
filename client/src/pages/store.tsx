@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Header } from "../components/layout/header";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -464,7 +464,65 @@ export default function StorePage() {
   const [purchasedProducts, setPurchasedProducts] = useState<Record<number, boolean>>({});
   const [purchasedApps, setPurchasedApps] = useState<Record<number, boolean>>({});
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user;
+  const isAuthenticated = !!user;
+  
+  // Cargar el estado de compra de los productos cuando el usuario está autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Verificar productos comprados
+      const checkPurchasedProducts = async () => {
+        try {
+          const purchasedStatusMap: Record<number, boolean> = {};
+          
+          // Verificar cada producto en paralelo
+          const productPromises = products.map(async (product) => {
+            try {
+              const response = await axios.get(`/api/stripe/product-purchase-status/${product.id}`);
+              if (response.data.success && response.data.isPurchased) {
+                purchasedStatusMap[product.id] = true;
+              }
+            } catch (error) {
+              console.error(`Error checking purchase status for product ${product.id}:`, error);
+            }
+          });
+          
+          await Promise.all(productPromises);
+          setPurchasedProducts(purchasedStatusMap);
+        } catch (error) {
+          console.error("Error checking purchased products:", error);
+        }
+      };
+      
+      // Verificar aplicaciones compradas
+      const checkPurchasedApps = async () => {
+        try {
+          const purchasedStatusMap: Record<number, boolean> = {};
+          
+          // Verificar cada aplicación en paralelo
+          const appPromises = mobileApps.map(async (app) => {
+            try {
+              const response = await axios.get(`/api/stripe/product-purchase-status/app_${app.id}`);
+              if (response.data.success && response.data.isPurchased) {
+                purchasedStatusMap[app.id] = true;
+              }
+            } catch (error) {
+              console.error(`Error checking purchase status for app ${app.id}:`, error);
+            }
+          });
+          
+          await Promise.all(appPromises);
+          setPurchasedApps(purchasedStatusMap);
+        } catch (error) {
+          console.error("Error checking purchased apps:", error);
+        }
+      };
+      
+      checkPurchasedProducts();
+      checkPurchasedApps();
+    }
+  }, [isAuthenticated]);
 
   // Iniciar el proceso de pago para un producto (bot)
   const handlePurchaseProduct = async (product: typeof products[0]) => {
@@ -667,9 +725,27 @@ export default function StorePage() {
                               product.platform.charAt(0).toUpperCase() + product.platform.slice(1)}
                           </Badge>
                         </div>
-                        <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                          Purchase Now
-                          <ChevronRight className="ml-2 h-4 w-4" />
+                        <Button 
+                          className="w-full bg-orange-500 hover:bg-orange-600" 
+                          onClick={() => handlePurchaseProduct(product)}
+                          disabled={loadingProducts[product.id] || purchasedProducts[product.id]}
+                        >
+                          {purchasedProducts[product.id] ? (
+                            <>
+                              Purchased
+                              <CheckCircle2 className="ml-2 h-4 w-4" />
+                            </>
+                          ) : loadingProducts[product.id] ? (
+                            <>
+                              Processing...
+                              <span className="ml-2 animate-spin">⚙️</span>
+                            </>
+                          ) : (
+                            <>
+                              Purchase Now
+                              <ChevronRight className="ml-2 h-4 w-4" />
+                            </>
+                          )}
                         </Button>
                       </div>
                     </Card>
@@ -753,9 +829,27 @@ export default function StorePage() {
                             )}
                           </div>
                         </div>
-                        <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                          {app.beta ? "Join Beta" : "Download"}
-                          <Download className="ml-2 h-4 w-4" />
+                        <Button 
+                          className="w-full bg-orange-500 hover:bg-orange-600"
+                          onClick={() => handlePurchaseApp(app)}
+                          disabled={loadingApps[app.id] || purchasedApps[app.id]}
+                        >
+                          {purchasedApps[app.id] ? (
+                            <>
+                              {app.beta ? "Beta Access" : "Download"}
+                              <Download className="ml-2 h-4 w-4" />
+                            </>
+                          ) : loadingApps[app.id] ? (
+                            <>
+                              Processing...
+                              <span className="ml-2 animate-spin">⚙️</span>
+                            </>
+                          ) : (
+                            <>
+                              {app.beta ? "Join Beta" : "Download"}
+                              <ChevronRight className="ml-2 h-4 w-4" />
+                            </>
+                          )}
                         </Button>
                       </div>
                     </Card>
