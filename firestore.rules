@@ -15,6 +15,12 @@ service cloud.firestore {
       allow read: if true; // Todos pueden leer los directores
       allow write: if isAuthenticated(); // Solo usuarios autenticados pueden escribir
     }
+    
+    // Music Video Request collection rules
+    match /music-video-request/{requestId} {
+      allow read: if true; // Todos pueden leer las solicitudes
+      allow write: if isAuthenticated(); // Solo usuarios autenticados pueden escribir
+    }
 
     // Artist Music collection rules
     match /artist_music/{songId} {
@@ -26,7 +32,7 @@ service cloud.firestore {
 
     // Video Director AI collection rules
     match /Video_Director_AI/{docId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if true; // Permitir lectura a todos
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
