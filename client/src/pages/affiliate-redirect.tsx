@@ -1,144 +1,115 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import { ProgressCircular } from "../components/ui/progress-circular";
-import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { ProgressCircular } from "../components/ui/progress-circular";
+import { 
+  AlertTriangle, 
+  ArrowRight, 
+  ExternalLink, 
+  Link, 
+  LinkIcon, 
+  LucideIcon,
+} from "lucide-react";
+import { useLocation, useRoute } from "wouter";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { useToast } from "../hooks/use-toast";
-import { ExclamationTriangleIcon, InfoIcon, LinkIcon, ShoppingCart } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { Separator } from "../components/ui/separator";
 
-export default function AffiliateRedirectPage() {
-  const [location, navigate] = useLocation();
-  const { toast } = useToast();
-  const [countdown, setCountdown] = useState(5);
-  const [redirectComplete, setRedirectComplete] = useState(false);
-  
-  // Obtener parámetros de la URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const linkId = urlParams.get("ref");
+/**
+ * Página de redirección para enlaces de afiliados
+ * 
+ * Esta página se muestra cuando alguien hace clic en un enlace de afiliado.
+ * Registra el clic en la base de datos y luego redirige a la URL final.
+ */
+export default function AffiliateRedirect() {
+  const [, setLocation] = useLocation();
+  const [match, params] = useRoute<{ linkId: string }>("/api/affiliate/track/:linkId");
+  const [redirectData, setRedirectData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(5);
   
   // Obtener información del enlace y registrar el clic
-  const { 
-    data: linkInfo, 
-    isLoading, 
-    isError, 
-    error 
-  } = useQuery({
-    queryKey: ["affiliate", "trackLink", linkId],
-    queryFn: async () => {
-      try {
-        if (!linkId) {
-          throw new Error("ID de enlace no especificado");
-        }
-        const response = await axios.get(`/api/affiliate/track/${linkId}`);
-        return response.data;
-      } catch (error: any) {
-        console.error("Error fetching link info:", error);
-        throw error;
-      }
-    },
-    enabled: !!linkId,
-    retry: 1,
-    staleTime: 0, // No cachear este resultado
-  });
-  
-  // Temporizador de redirección automática
   useEffect(() => {
-    if (linkInfo && !redirectComplete) {
-      // Iniciar temporizador de redirección
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // Redirigir al usuario
-            window.location.href = linkInfo.productUrl;
-            setRedirectComplete(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      return () => {
-        clearInterval(timer);
-      };
+    if (!match || !params?.linkId) {
+      setError("Enlace no válido o no encontrado.");
+      return;
     }
-  }, [linkInfo, redirectComplete]);
+    
+    const fetchLinkData = async () => {
+      try {
+        // Registrar el clic y obtener información del enlace
+        const response = await axios.get(`/api/affiliate/track/${params.linkId}`);
+        setRedirectData(response.data);
+      } catch (error: any) {
+        console.error("Error tracking affiliate link:", error);
+        setError(error.response?.data?.message || "No se pudo procesar el enlace. Por favor, inténtalo de nuevo.");
+      }
+    };
+    
+    fetchLinkData();
+  }, [match, params?.linkId]);
   
-  // Manejar redirección manual
-  const handleRedirect = () => {
-    if (linkInfo) {
-      setRedirectComplete(true);
-      window.location.href = linkInfo.productUrl;
-      
-      toast({
-        title: "Redirigiendo...",
-        description: "Te estamos llevando al destino",
+  // Iniciar temporizador para redirección automática
+  useEffect(() => {
+    if (!redirectData || !redirectData.targetUrl) return;
+    
+    const timer = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(timer);
+          // Redirigir a la URL destino
+          window.location.href = redirectData.targetUrl;
+          return 0;
+        }
+        return prevTime - 1;
       });
-    }
-  };
+    }, 1000);
+    
+    // Limpiar el temporizador si el componente se desmonta
+    return () => clearInterval(timer);
+  }, [redirectData]);
   
-  // Si está cargando
-  if (isLoading) {
+  // Si hay un error, mostrar mensaje de error
+  if (error) {
     return (
-      <div className="container max-w-md mx-auto my-12 p-4">
-        <Card>
-          <CardContent className="pt-6 flex flex-col items-center justify-center min-h-[200px]">
-            <ProgressCircular size="lg" className="mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Preparando tu redirección</h2>
-            <p className="text-center text-muted-foreground">
-              Estamos procesando tu enlace de afiliado...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
-  // Si hay un error
-  if (isError || !linkId) {
-    return (
-      <div className="container max-w-md mx-auto my-12 p-4">
-        <Card className="border-destructive">
+      <div className="container max-w-md mx-auto py-10 px-4">
+        <Card className="border-destructive/50">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <ExclamationTriangleIcon className="h-5 w-5 text-destructive" />
-              <CardTitle>Enlace no válido</CardTitle>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Error en el enlace
+            </CardTitle>
             <CardDescription>
-              No pudimos encontrar la información del enlace solicitado
+              No pudimos procesar este enlace de afiliado
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Alert variant="destructive" className="mb-4">
-              <AlertTitle className="flex items-center">
-                <InfoIcon className="h-4 w-4 mr-2" />
-                Error en la redirección
-              </AlertTitle>
-              <AlertDescription>
-                {error instanceof Error 
-                  ? error.message 
-                  : "El enlace que intentas acceder no es válido o ha expirado"}
-              </AlertDescription>
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
-            <p className="text-sm text-muted-foreground mb-4">
-              Puedes intentar lo siguiente:
-            </p>
-            <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1 mb-4">
-              <li>Verificar que la URL sea correcta</li>
-              <li>Contactar a la persona que te compartió el enlace</li>
-              <li>Volver a la página principal</li>
-            </ul>
+            
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>Posibles razones:</p>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>El enlace puede haber expirado</li>
+                <li>El enlace puede haber sido desactivado</li>
+                <li>El ID del enlace es incorrecto</li>
+              </ul>
+            </div>
           </CardContent>
           <CardFooter>
             <Button 
-              variant="default" 
-              className="w-full"
-              onClick={() => navigate("/")}
+              className="w-full gap-1" 
+              onClick={() => setLocation("/")}
             >
-              Ir a la página principal
+              Volver al inicio
             </Button>
           </CardFooter>
         </Card>
@@ -146,49 +117,113 @@ export default function AffiliateRedirectPage() {
     );
   }
   
-  // Redirección exitosa
+  // Si está cargando, mostrar indicador de carga
+  if (!redirectData) {
+    return (
+      <div className="container max-w-md mx-auto py-10 px-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Procesando enlace</CardTitle>
+            <CardDescription>
+              Estamos procesando tu solicitud
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center py-6">
+            <ProgressCircular size="lg" />
+            <p className="mt-4 text-muted-foreground text-center">
+              Validando el enlace de afiliado...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Mostrar página de redirección
   return (
-    <div className="container max-w-md mx-auto my-12 p-4">
-      <Card className="overflow-hidden">
-        <div className="h-2 bg-gradient-to-r from-green-500 to-emerald-600"></div>
+    <div className="container max-w-md mx-auto py-10 px-4">
+      <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <LinkIcon className="h-5 w-5 text-primary" />
-            <CardTitle>Enlace de afiliado</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <LinkIcon className="h-5 w-5 text-primary" />
+              Enlace verificado
+            </CardTitle>
+            
+            {redirectData.affiliateName && (
+              <div className="text-xs text-muted-foreground">
+                Afiliado: {redirectData.affiliateName}
+              </div>
+            )}
           </div>
           <CardDescription>
-            Enlace verificado correctamente
+            Estás siendo redirigido a:
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-muted/50 rounded-lg p-4 flex items-center gap-3 border">
-            <div className="rounded-full bg-primary/10 p-2">
-              <ShoppingCart className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-medium">
-                {linkInfo?.productName || "Producto"}
-              </h3>
-              <p className="text-xs text-muted-foreground truncate max-w-[250px]">
-                {linkInfo?.productUrl}
-              </p>
-            </div>
+          <div className="border rounded-md p-3 bg-muted/30 flex items-center gap-2 overflow-hidden">
+            <Link className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+            <span className="text-sm font-medium truncate" title={redirectData.targetUrl}>
+              {redirectData.targetUrl}
+            </span>
           </div>
           
-          <p className="text-sm">
-            Serás redirigido automáticamente en <span className="font-semibold">{countdown} segundos</span>.
-          </p>
+          {redirectData.productName && (
+            <div className="flex flex-col gap-1">
+              <h3 className="text-sm font-medium">Producto:</h3>
+              <div className="text-sm">{redirectData.productName}</div>
+            </div>
+          )}
+          
+          <div className="rounded-md border p-4 text-center">
+            <div className="text-2xl font-bold">{timeLeft}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Serás redirigido automáticamente en {timeLeft} segundo{timeLeft !== 1 ? 's' : ''}
+            </p>
+          </div>
+          
+          <Separator />
+          
+          <div className="flex flex-col gap-1 text-center text-xs text-muted-foreground">
+            <p>
+              Este enlace ha sido compartido por uno de nuestros afiliados. 
+              Al continuar, aceptas los términos y condiciones del programa de afiliados.
+            </p>
+            <p>
+              Tu actividad se registrará para la atribución de comisiones.
+            </p>
+          </div>
         </CardContent>
-        <CardFooter>
-          <Button
-            className="w-full" 
-            onClick={handleRedirect}
-            disabled={redirectComplete}
+        <CardFooter className="flex flex-col gap-2">
+          <Button 
+            className="w-full gap-1" 
+            onClick={() => window.location.href = redirectData.targetUrl}
           >
-            Ir ahora
+            Continuar ahora
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full gap-1 text-xs" 
+            onClick={() => setLocation("/")}
+          >
+            Cancelar y volver
           </Button>
         </CardFooter>
       </Card>
+      
+      <div className="mt-4 flex justify-center">
+        <Button 
+          variant="link" 
+          size="sm" 
+          className="text-xs text-muted-foreground"
+          onClick={() => setLocation("/affiliates")}
+        >
+          Convertirse en afiliado
+        </Button>
+      </div>
     </div>
   );
 }

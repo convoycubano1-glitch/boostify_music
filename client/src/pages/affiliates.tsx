@@ -1,131 +1,77 @@
 import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { AffiliateOverview } from "../components/affiliates/overview";
-import { AffiliateLinks } from "../components/affiliates/links";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "../components/ui/card";
+import { 
+  AlertTriangle, 
+  BadgeCheck, 
+  ChevronRight, 
+  LinkIcon, 
+  LineChart, 
+  Share, 
+  Info,
+  Users,
+  BarChart3
+} from "lucide-react";
 import { Button } from "../components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../components/ui/form";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { InfoIcon, Loader2 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { useToast } from "../hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Badge } from "../components/ui/badge";
 import { ProgressCircular } from "../components/ui/progress-circular";
+import { AffiliateOverview } from "../components/affiliates/overview";
+import { AffiliateLinks } from "../components/affiliates/links";
+import { Separator } from "../components/ui/separator";
+import { useNavigate } from "wouter";
 
-// Esquema para el formulario de registro como afiliado
-const affiliateRegistrationSchema = z.object({
-  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
-  email: z.string().email({ message: "Debe ser un correo electrónico válido" }),
-  website: z.string().url({ message: "Debe ser una URL válida" }).optional().or(z.literal("")),
-  socialMediaUrls: z.string().optional(),
-  paymentMethod: z.string().min(1, { message: "Selecciona un método de pago" }),
-  paymentDetails: z.string().min(1, { message: "Los detalles de pago son requeridos" }),
-  comments: z.string().optional(),
-});
-
+/**
+ * Página principal del programa de afiliados
+ * 
+ * Esta página permite:
+ * 1. Registrarse como afiliado
+ * 2. Ver estadísticas y ganancias
+ * 3. Administrar enlaces de afiliado
+ * 4. Acceder a recursos y materiales promocionales
+ */
 export default function AffiliatePage() {
-  const [currentTab, setCurrentTab] = useState("overview");
-  const [isRegistering, setIsRegistering] = useState(false);
-  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [, navigate] = useNavigate();
   
-  // Obtener información del afiliado
-  const { 
-    data: affiliateInfo,
+  // Verificar si el usuario está registrado como afiliado
+  const {
+    data: affiliateData,
     isLoading,
     isError,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: ["affiliate", "me"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/affiliate/me");
         return response.data;
-      } catch (error: any) {
-        // Si el error es 404, significa que el usuario no está registrado como afiliado
-        if (error.response && error.response.status === 404) {
-          return { isAffiliate: false };
+      } catch (error) {
+        // Si el error es 404, el usuario no está registrado como afiliado
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          return { registered: false };
         }
-        console.error("Error fetching affiliate info:", error);
+        console.error("Error fetching affiliate data:", error);
         throw error;
       }
     },
   });
   
-  // Formulario para el registro de afiliado
-  const form = useForm<z.infer<typeof affiliateRegistrationSchema>>({
-    resolver: zodResolver(affiliateRegistrationSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      website: "",
-      socialMediaUrls: "",
-      paymentMethod: "",
-      paymentDetails: "",
-      comments: "",
-    },
-  });
-  
-  // Mutación para el registro de afiliado
-  const registerAffiliateMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof affiliateRegistrationSchema>) => {
-      const response = await axios.post("/api/affiliate/register", data);
-      return response.data;
-    },
-    onSuccess: () => {
-      // Cerrar el diálogo
-      setIsRegistering(false);
-      // Refrescar la información del afiliado
-      refetch();
-      // Mostrar notificación de éxito
-      toast({
-        title: "Registro completado",
-        description: "Tu solicitud de afiliado ha sido procesada correctamente.",
-      });
-    },
-    onError: (error: any) => {
-      console.error("Error registering affiliate:", error);
-      toast({
-        title: "Error en el registro",
-        description: error.response?.data?.message || "Hubo un problema al procesar tu solicitud",
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Manejar envío del formulario
-  const onSubmit = (values: z.infer<typeof affiliateRegistrationSchema>) => {
-    registerAffiliateMutation.mutate(values);
-  };
-  
   // Si está cargando, mostrar indicador de carga
   if (isLoading) {
     return (
-      <div className="container mx-auto py-12">
-        <div className="flex justify-center">
+      <div className="container max-w-6xl mx-auto py-12 px-4">
+        <div className="flex flex-col items-center justify-center py-12">
           <ProgressCircular size="lg" />
+          <p className="mt-4 text-muted-foreground">Cargando información de afiliado...</p>
         </div>
       </div>
     );
@@ -134,377 +80,325 @@ export default function AffiliatePage() {
   // Si hay un error, mostrar mensaje de error
   if (isError) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container max-w-6xl mx-auto py-12 px-4">
         <Alert variant="destructive" className="mb-6">
-          <InfoIcon className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
             No pudimos cargar la información de afiliado. Por favor, intenta de nuevo más tarde.
+            <Button onClick={() => refetch()} className="mt-2" variant="outline" size="sm">
+              Reintentar
+            </Button>
           </AlertDescription>
         </Alert>
-        <Button onClick={() => refetch()}>Reintentar</Button>
       </div>
     );
   }
   
-  // Si el usuario no es afiliado, mostrar página de registro
-  if (!affiliateInfo.isAffiliate) {
-    return (
-      <div className="container mx-auto py-6 max-w-3xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Programa de Afiliados</h1>
-          <p className="text-muted-foreground">
-            Gana dinero promocionando nuestros productos y servicios a tu audiencia
-          </p>
-        </div>
-        
-        <AffiliateFeatures />
-        
-        <div className="mt-8 text-center">
-          <Dialog open={isRegistering} onOpenChange={setIsRegistering}>
-            <DialogTrigger asChild>
-              <Button size="lg">Unirse al programa de afiliados</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Aplicar como afiliado</DialogTitle>
-                <DialogDescription>
-                  Complete el formulario para unirse a nuestro programa de afiliados y comenzar a ganar comisiones.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Nombre */}
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nombre completo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Tu nombre" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {/* Email */}
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Correo electrónico</FormLabel>
-                          <FormControl>
-                            <Input placeholder="tu@email.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Sitio web */}
-                  <FormField
-                    control={form.control}
-                    name="website"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sitio web (Opcional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://tusitio.com" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          El sitio web donde promocionarás nuestros productos
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Redes sociales */}
-                  <FormField
-                    control={form.control}
-                    name="socialMediaUrls"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Redes sociales (Opcional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Instagram: @usuario
-Twitter: @usuario
-YouTube: https://youtube.com/c/canal"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Enumera tus perfiles de redes sociales donde promocionarás
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Método de pago */}
-                    <FormField
-                      control={form.control}
-                      name="paymentMethod"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Método de pago</FormLabel>
-                          <FormControl>
-                            <Input placeholder="PayPal, transferencia bancaria, etc." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {/* Detalles de pago */}
-                    <FormField
-                      control={form.control}
-                      name="paymentDetails"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Detalles de pago</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Correo PayPal o datos bancarios" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Comentarios adicionales */}
-                  <FormField
-                    control={form.control}
-                    name="comments"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Comentarios adicionales (Opcional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Cuéntanos más sobre tu experiencia como afiliado o cómo planeas promocionar nuestros productos" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <DialogFooter className="gap-2 sm:gap-0">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsRegistering(false)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      type="submit"
-                      disabled={registerAffiliateMutation.isPending}
-                    >
-                      {registerAffiliateMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        "Enviar solicitud"
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
-        
-        <div className="mt-12">
-          <h2 className="text-xl font-bold mb-4">Preguntas frecuentes</h2>
-          <AffiliateFAQs />
-        </div>
-      </div>
-    );
+  // Si el usuario no está registrado como afiliado, mostrar página de registro
+  if (!affiliateData?.registered) {
+    return <AffiliateRegistration onRegistered={refetch} />;
   }
   
-  // Si el usuario es afiliado pero está pendiente de aprobación
-  if (affiliateInfo.status === "pending") {
-    return (
-      <div className="container mx-auto py-6 max-w-3xl">
-        <Alert className="mb-6">
-          <InfoIcon className="h-4 w-4" />
-          <AlertTitle>Solicitud en revisión</AlertTitle>
-          <AlertDescription>
-            Tu solicitud para unirte al programa de afiliados está siendo revisada. Te notificaremos por correo electrónico cuando sea aprobada.
-          </AlertDescription>
-        </Alert>
-        
-        <div className="bg-muted/50 rounded-lg p-6 border">
-          <h2 className="text-xl font-bold mb-4">Detalles de tu solicitud</h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Nombre</p>
-                <p className="font-medium">{affiliateInfo.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Correo electrónico</p>
-                <p className="font-medium">{affiliateInfo.email}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Sitio web</p>
-              <p className="font-medium">{affiliateInfo.website || "No especificado"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Estado</p>
-              <Badge variant="outline" className="mt-1 bg-yellow-500/10 text-yellow-700 border-yellow-500/20">
-                Pendiente de aprobación
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Panel principal para afiliados aprobados
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container max-w-6xl mx-auto py-8 px-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Panel de Afiliados</h1>
-          <p className="text-muted-foreground">
-            Gestiona tus enlaces y visualiza tus estadísticas como afiliado
+          <h1 className="text-3xl font-bold tracking-tight">Programa de Afiliados</h1>
+          <p className="text-muted-foreground mt-1">
+            Gestiona tus enlaces, revisa tus estadísticas y aumenta tus ganancias
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
-            {affiliateInfo.level || "Nivel Básico"}
+        <div className="flex gap-2">
+          <Badge variant="outline" className="gap-1 py-1 px-2 border-green-600/40 bg-green-600/10 text-green-700">
+            <BadgeCheck className="h-3.5 w-3.5" />
+            Afiliado Activo
           </Badge>
-          <Badge variant="outline">
-            ID: {affiliateInfo.id.substring(0, 8)}
-          </Badge>
+          
+          {affiliateData?.level && (
+            <Badge variant="outline" className="gap-1 py-1 px-2 border-blue-600/40 bg-blue-600/10 text-blue-700">
+              {affiliateData.level === "pro" ? "Nivel Pro" : 
+               affiliateData.level === "elite" ? "Nivel Elite" : 
+               "Nivel Básico"}
+            </Badge>
+          )}
         </div>
       </div>
       
-      <Tabs defaultValue="overview" value={currentTab} onValueChange={setCurrentTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 md:inline-flex md:w-auto">
+          <TabsTrigger value="overview">Vista General</TabsTrigger>
           <TabsTrigger value="links">Enlaces</TabsTrigger>
-          <TabsTrigger value="payouts">Pagos</TabsTrigger>
-          <TabsTrigger value="settings">Configuración</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="space-y-4">
           <AffiliateOverview />
         </TabsContent>
         
-        <TabsContent value="links">
+        <TabsContent value="links" className="space-y-4">
           <AffiliateLinks />
-        </TabsContent>
-        
-        <TabsContent value="payouts">
-          <div className="text-center py-12 text-muted-foreground">
-            <p>El historial de pagos estará disponible próximamente.</p>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="settings">
-          <div className="text-center py-12 text-muted-foreground">
-            <p>La configuración de cuenta estará disponible próximamente.</p>
-          </div>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-// Componente para mostrar las características del programa de afiliados
-function AffiliateFeatures() {
+interface RegistrationProps {
+  onRegistered: () => void;
+}
+
+function AffiliateRegistration({ onRegistered }: RegistrationProps) {
+  const [isRegistering, setIsRegistering] = useState(false);
+  
+  // Manejar registro como afiliado
+  const handleRegister = async () => {
+    try {
+      setIsRegistering(true);
+      await axios.post("/api/affiliate/register");
+      onRegistered(); // Recargar datos después del registro
+    } catch (error) {
+      console.error("Error registering as affiliate:", error);
+      setIsRegistering(false);
+    }
+  };
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="bg-muted/30 p-6 rounded-lg border">
-        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M16 8l-8 8" />
-            <path d="M8 8l8 8" />
-          </svg>
+    <div className="container max-w-6xl mx-auto py-12 px-4">
+      <div className="flex flex-col md:flex-row items-start gap-6 md:gap-12">
+        <div className="flex-1 space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Programa de Afiliados</h1>
+            <p className="text-muted-foreground mt-2">
+              Gana comisiones promocionando productos y servicios para artistas y creadores musicales.
+            </p>
+          </div>
+          
+          <Alert className="bg-muted/50 border-primary/20">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Todavía no eres afiliado</AlertTitle>
+            <AlertDescription>
+              Únete a nuestro programa de afiliados para empezar a promocionar productos y ganar comisiones.
+            </AlertDescription>
+          </Alert>
+          
+          <Card className="border-primary/20">
+            <CardHeader>
+              <CardTitle>¿Por qué unirse?</CardTitle>
+              <CardDescription>Beneficios del programa de afiliados</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <BenefitCard 
+                  icon={BarChart3}
+                  title="15% de comisión"
+                  description="Obtén hasta el 15% de comisión por cada venta generada a través de tus enlaces"
+                />
+                
+                <BenefitCard 
+                  icon={Users}
+                  title="Sin límite de referidos"
+                  description="Promociona a tantas personas como quieras sin restricciones"
+                />
+                
+                <BenefitCard 
+                  icon={LineChart}
+                  title="Analíticas en tiempo real"
+                  description="Rastrea clics, conversiones y ganancias con estadísticas detalladas"
+                />
+                
+                <BenefitCard 
+                  icon={LinkIcon}
+                  title="Enlaces personalizados"
+                  description="Crea enlaces de seguimiento para cualquier producto o servicio"
+                />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Cómo funciona</CardTitle>
+              <CardDescription>El proceso es simple</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-0">
+              <ol className="space-y-4">
+                <li className="p-4 rounded-lg border">
+                  <div className="flex gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                      1
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Regístrate como afiliado</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Completa un simple registro para activar tu cuenta de afiliado
+                      </p>
+                    </div>
+                  </div>
+                </li>
+                
+                <li className="p-4 rounded-lg border">
+                  <div className="flex gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                      2
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Crea enlaces personalizados</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Genera enlaces únicos para productos y servicios que quieras promocionar
+                      </p>
+                    </div>
+                  </div>
+                </li>
+                
+                <li className="p-4 rounded-lg border">
+                  <div className="flex gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                      3
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Comparte con tu audiencia</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Promociona los enlaces en redes sociales, sitios web, correos electrónicos o cualquier canal
+                      </p>
+                    </div>
+                  </div>
+                </li>
+                
+                <li className="p-4 rounded-lg border">
+                  <div className="flex gap-4">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                      4
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Recibe comisiones</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Gana una comisión por cada compra realizada a través de tus enlaces
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              </ol>
+            </CardContent>
+          </Card>
         </div>
-        <h3 className="text-xl font-bold mb-2">Comisiones atractivas</h3>
-        <p className="text-muted-foreground">
-          Gana hasta un 30% de comisión por cada venta realizada a través de tus enlaces de afiliado.
-        </p>
-      </div>
-      
-      <div className="bg-muted/30 p-6 rounded-lg border">
-        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
-            <path d="M12 2v20" />
-            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          </svg>
+        
+        <div className="md:w-80 lg:w-96 space-y-6">
+          <Card className="border-primary/20">
+            <CardHeader className="pb-2">
+              <CardTitle>Únete hoy mismo</CardTitle>
+              <CardDescription>
+                Regístrate ahora y comienza a ganar comisiones
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <BadgeCheck className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-sm">Registro gratuito</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <BadgeCheck className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-sm">Comisiones hasta del 15%</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <BadgeCheck className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-sm">Pagos mensuales</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <BadgeCheck className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <span className="text-sm">Sin requisitos mínimos</span>
+                </div>
+              </div>
+              
+              <Separator className="my-2" />
+              
+              <div className="bg-muted/30 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Share className="h-4 w-4 text-primary" />
+                  <p className="font-medium text-sm">Programa recomendado</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Más de 1,000 afiliados ya están ganando con nosotros. ¡Únete ahora!
+                </p>
+              </div>
+            </CardContent>
+            <CardContent className="pt-0">
+              <Button 
+                className="w-full gap-1" 
+                size="lg" 
+                onClick={handleRegister}
+                disabled={isRegistering}
+              >
+                {isRegistering ? (
+                  <>
+                    <ProgressCircular className="mr-1" size="sm" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    Registrarme como afiliado
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Términos y condiciones</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm text-muted-foreground space-y-2">
+                <li>Las comisiones se acumulan cuando una compra es completada exitosamente</li>
+                <li>El pago mínimo es de 50€ para recibir un desembolso</li>
+                <li>Los pagos se procesan el día 15 de cada mes</li>
+                <li>Las comisiones por ventas se acreditan después de 30 días para permitir reembolsos</li>
+              </ul>
+              <Button 
+                variant="link" 
+                className="p-0 h-auto mt-2 text-xs" 
+                onClick={() => window.open('/terms', '_blank')}
+              >
+                Ver términos completos
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-        <h3 className="text-xl font-bold mb-2">Pagos mensuales</h3>
-        <p className="text-muted-foreground">
-          Recibe tus ganancias mediante PayPal, transferencia bancaria u otros métodos de pago populares.
-        </p>
-      </div>
-      
-      <div className="bg-muted/30 p-6 rounded-lg border">
-        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
-            <rect width="20" height="14" x="2" y="5" rx="2" />
-            <line x1="2" x2="22" y1="10" y2="10" />
-          </svg>
-        </div>
-        <h3 className="text-xl font-bold mb-2">Herramientas avanzadas</h3>
-        <p className="text-muted-foreground">
-          Accede a un panel con estadísticas detalladas, enlaces personalizados y materiales promocionales.
-        </p>
       </div>
     </div>
   );
 }
 
-// Componente para mostrar preguntas frecuentes
-function AffiliateFAQs() {
+interface BenefitCardProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+}
+
+function BenefitCard({ icon: Icon, title, description }: BenefitCardProps) {
   return (
-    <div className="space-y-4">
-      <div className="bg-muted/30 p-4 rounded-lg">
-        <h3 className="font-medium mb-2">¿Cuáles son los requisitos para ser afiliado?</h3>
-        <p className="text-sm text-muted-foreground">
-          Puedes ser afiliado si tienes un sitio web, blog o presencia en redes sociales relacionados con música, producción, educación o áreas afines. Valoramos la calidad sobre la cantidad.
-        </p>
-      </div>
-      
-      <div className="bg-muted/30 p-4 rounded-lg">
-        <h3 className="font-medium mb-2">¿Cuánto puedo ganar como afiliado?</h3>
-        <p className="text-sm text-muted-foreground">
-          Las comisiones van del 15% al 30% dependiendo del producto y tu nivel como afiliado. Por ejemplo, un curso de $100 puede generarte entre $15 y $30 por cada venta.
-        </p>
-      </div>
-      
-      <div className="bg-muted/30 p-4 rounded-lg">
-        <h3 className="font-medium mb-2">¿Cuándo y cómo recibo mis pagos?</h3>
-        <p className="text-sm text-muted-foreground">
-          Procesamos pagos mensualmente, siempre que hayas alcanzado un mínimo de $50 en comisiones. Puedes elegir entre PayPal, transferencia bancaria u otros métodos disponibles.
-        </p>
-      </div>
-      
-      <div className="bg-muted/30 p-4 rounded-lg">
-        <h3 className="font-medium mb-2">¿Qué productos puedo promocionar?</h3>
-        <p className="text-sm text-muted-foreground">
-          Puedes promocionar todos nuestros productos: cursos, servicios de producción, membresías, plugins, y más. Tendrás acceso a materiales promocionales para cada uno de ellos.
-        </p>
+    <div className="bg-muted/20 p-4 rounded-lg">
+      <div className="flex items-start gap-3">
+        <div className="p-2 rounded-md bg-primary/10">
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h3 className="font-medium">{title}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{description}</p>
+        </div>
       </div>
     </div>
   );
