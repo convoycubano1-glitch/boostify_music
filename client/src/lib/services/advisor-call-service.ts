@@ -212,34 +212,34 @@ class AdvisorCallService {
         let totalDuration = 0;
         
         try {
-          // Primer intento con consulta completa (necesita índice compuesto)
+          console.log('Attempting to execute query without __name__ field');
+          // Primer intento: Usar consulta básica que no requiere índice compuesto con __name__
           const q = query(
             collection(db, 'advisor_calls'),
             where('userId', '==', userId),
-            orderBy('timestamp', 'desc'),
+            // Evitar orderBy + where sin índice correctamente configurado
             limit(maxResults)
           );
           
           const querySnapshot = await getDocs(q);
-          console.log(`Found ${querySnapshot.size} calls in history`);
+          console.log(`Found ${querySnapshot.size} calls in history using simple query`);
           
-          // Procesar resultados
-          querySnapshot.forEach((doc) => {
-            try {
-              const data = doc.data() as DocumentData;
+          // Ordenar manualmente los resultados después de obtenerlos
+          calls = querySnapshot.docs
+            .map(doc => {
+              const data = doc.data();
               
               // Validar campos obligatorios
               if (!data.advisorId || !data.advisorName) {
                 console.warn('Skipping invalid call record:', doc.id);
-                return;
+                return null;
               }
               
-              // Crear objeto de llamada con manejo seguro de datos
-              const call: AdvisorCall = {
+              return {
                 id: doc.id,
                 userId: data.userId || userId,
-                advisorId: data.advisorId,
-                advisorName: data.advisorName,
+                advisorId: data.advisorId || 'unknown',
+                advisorName: data.advisorName || 'Unknown Advisor',
                 advisorTitle: data.advisorTitle || 'Specialist',
                 phoneNumber: data.phoneNumber || ADVISOR_PHONE_NUMBER,
                 duration: typeof data.duration === 'number' ? data.duration : 0,
@@ -252,86 +252,32 @@ class AdvisorCallService {
                 timestamp: data.timestamp instanceof Timestamp 
                   ? data.timestamp 
                   : Timestamp.now(),
-              };
-              
-              calls.push(call);
-              
-              if (call.status === 'completed') {
-                totalDuration += call.duration;
-              }
-            } catch (docError) {
-              console.error('Error processing document:', doc.id, docError);
-              // Continue processing other documents
-            }
-          });
+              } as AdvisorCall;
+            })
+            .filter(call => call !== null) // Eliminar entradas inválidas
+            .sort((a, b) => b!.timestamp.toMillis() - a!.timestamp.toMillis());
+          
+          // Calcular duración total
+          totalDuration = calls.reduce((total, call) => 
+            call.status === 'completed' ? total + call.duration : total, 0);
         } catch (queryError: any) {
           console.error('Error executing Firestore query:', queryError);
           
-          // Verificar si el error es por falta de índice
+          // Registrar el error para diagnóstico
           if (queryError?.code === 'failed-precondition' || 
               (queryError?.message && queryError.message.includes('requires an index'))) {
-            console.log('Index error detected, falling back to basic query without ordering');
+            console.warn('Index error detected, but this should not happen with the current query');
+            console.warn('Error details:', queryError);
             
-            // Segundo intento: consulta simplificada sin ordenamiento (no requiere índice compuesto)
-            try {
-              const basicQuery = query(
-                collection(db, 'advisor_calls'),
-                where('userId', '==', userId),
-                limit(maxResults)
-              );
-              
-              const basicSnapshot = await getDocs(basicQuery);
-              console.log(`Found ${basicSnapshot.size} calls in history (basic query)`);
-              
-              // Procesar resultados
-              const unsortedCalls: AdvisorCall[] = [];
-              basicSnapshot.forEach((doc) => {
-                try {
-                  const data = doc.data() as DocumentData;
-                  
-                  // Crear objeto de llamada
-                  const call: AdvisorCall = {
-                    id: doc.id,
-                    userId: data.userId || userId,
-                    advisorId: data.advisorId || 'unknown',
-                    advisorName: data.advisorName || 'Unknown Advisor',
-                    advisorTitle: data.advisorTitle || 'Specialist',
-                    phoneNumber: data.phoneNumber || ADVISOR_PHONE_NUMBER,
-                    duration: typeof data.duration === 'number' ? data.duration : 0,
-                    status: ['completed', 'cancelled', 'failed'].includes(data.status) 
-                      ? data.status as 'completed' | 'cancelled' | 'failed'
-                      : 'completed',
-                    notes: typeof data.notes === 'string' ? data.notes : '',
-                    topics: Array.isArray(data.topics) ? data.topics : [],
-                    plan: typeof data.plan === 'string' ? data.plan : 'free',
-                    timestamp: data.timestamp instanceof Timestamp 
-                      ? data.timestamp 
-                      : Timestamp.now(),
-                  };
-                  
-                  unsortedCalls.push(call);
-                  
-                  if (call.status === 'completed') {
-                    totalDuration += call.duration;
-                  }
-                } catch (docError) {
-                  console.error('Error processing document in basic query:', doc.id, docError);
-                }
-              });
-              
-              // Ordenar manualmente los resultados
-              calls = unsortedCalls.sort((a, b) => 
-                b.timestamp.toMillis() - a.timestamp.toMillis()
-              );
-              
-            } catch (basicQueryError) {
-              console.error('Error executing basic Firestore query:', basicQueryError);
-              throw basicQueryError;
+            // Si hay URL de creación de índice, mostrarla para referencia
+            if (queryError.message && queryError.message.includes('https://console.firebase.google.com')) {
+              console.warn('Index creation URL:', 
+                queryError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]+/)?.[0] || 'not found');
             }
-          } else {
-            // Si no es error de índice, propagar el error
-            throw queryError;
           }
+          
+          // Propagamos el error para que sea manejado por el bloque catch superior
+          throw queryError;
         }
         
         if (calls.length > 0) {
