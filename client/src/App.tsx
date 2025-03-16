@@ -94,6 +94,7 @@ import ResourcesPage from "./pages/resources";
 import TipsPage from "./pages/tips";
 import GuidesPage from "./pages/guides";
 import ToolsPage from "./pages/tools";
+import FeaturesPage from "./pages/features";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -264,6 +265,7 @@ const Router = () => {
   const WrappedTipsPage = withPageWrapper(TipsPage);
   const WrappedGuidesPage = withPageWrapper(GuidesPage);
   const WrappedToolsPage = withPageWrapper(ToolsPage);
+  const WrappedFeaturesPage = withPageWrapper(FeaturesPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -363,6 +365,7 @@ const Router = () => {
         {getRouteComponent("/tips", WrappedTipsPage, null)}
         {getRouteComponent("/guides", WrappedGuidesPage, null)}
         {getRouteComponent("/tools", WrappedToolsPage, null)}
+        {getRouteComponent("/features", WrappedFeaturesPage, null)}
         {getRouteComponent("/tools/royalty-calculator", WrappedToolsPage, null)}
         {getRouteComponent("/tools/press-kit", WrappedToolsPage, null)}
         {getRouteComponent("/tools/release-planner", WrappedToolsPage, null)}
