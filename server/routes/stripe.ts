@@ -3,7 +3,6 @@ import Stripe from 'stripe';
 import { authenticate } from '../middleware/auth';
 import { findUserByStripeCustomerId } from '../utils/firestore-helpers';
 import { db } from '../firebase';
-import { FieldValue } from 'firebase-admin/firestore';
 
 const router = Router();
 
@@ -304,119 +303,6 @@ router.get('/video-purchase-status/:videoId', authenticate, async (req: Request,
     res.status(500).json({
       success: false,
       message: error.message || 'Error al verificar estado de compra'
-    });
-  }
-});
-
-/**
- * Crear un pago único para una inversión
- * Esta ruta permite procesar pagos de inversiones desde la calculadora de inversores
- */
-router.post('/create-investment-payment', authenticate, async (req: Request, res: Response) => {
-  try {
-    const { investmentId, amount, duration, rate, projectName } = req.body;
-    const userId = req.user?.uid;
-    
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
-    }
-    
-    if (!investmentId) {
-      return res.status(400).json({ success: false, message: 'ID de inversión no especificado' });
-    }
-    
-    if (!amount || isNaN(parseFloat(amount))) {
-      return res.status(400).json({ success: false, message: 'Monto de inversión no válido' });
-    }
-    
-    // Obtener información del usuario de Firestore
-    const userSnap = await db.collection('users').doc(userId).get();
-    const userData = userSnap.data();
-    
-    // Verificar si el usuario ya tiene un customerID en Stripe
-    let customerId = userData?.stripeCustomerId;
-    
-    if (!customerId) {
-      // Crear un nuevo cliente en Stripe si no existe
-      const customer = await stripe.customers.create({
-        email: userData?.email || undefined,
-        name: userData?.displayName || undefined,
-        metadata: { firebaseUserId: userId }
-      });
-      
-      customerId = customer.id;
-      
-      // Guardar el customerId en Firestore
-      await db.collection('users').doc(userId).update({
-        stripeCustomerId: customerId
-      });
-    }
-    
-    // Verificar si ya existe un documento de inversión, sino crearlo
-    const investmentRef = db.collection('investments').doc(investmentId);
-    const investmentDoc = await investmentRef.get();
-    
-    if (!investmentDoc.exists) {
-      // Crear el documento de inversión
-      await investmentRef.set({
-        id: investmentId,
-        userId,
-        amount: parseFloat(amount),
-        duration: parseInt(duration, 10),
-        rate: parseFloat(rate),
-        projectName: projectName || 'Proyecto de inversión',
-        status: 'pending',
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp()
-      });
-    }
-    
-    // Convertir el precio a centavos para Stripe (Stripe trabaja con centavos)
-    const amountInCents = Math.round(parseFloat(amount) * 100);
-    
-    // Crear sesión de checkout para pago único
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Inversión: ${projectName || 'Proyecto'} (${duration} meses)`,
-              description: `Inversión de $${amount} USD a ${rate}% de interés por ${duration} meses`
-            },
-            unit_amount: amountInCents
-          },
-          quantity: 1
-        }
-      ],
-      mode: 'payment',
-      success_url: `${BASE_URL}/investment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/investment-cancelled`,
-      metadata: {
-        userId,
-        investmentId,
-        amount,
-        duration,
-        rate,
-        projectName: projectName || 'Proyecto de inversión',
-        type: 'investment'
-      }
-    });
-    
-    // Actualizar el documento de inversión con la información de la sesión
-    await investmentRef.update({
-      sessionId: session.id,
-      updatedAt: FieldValue.serverTimestamp()
-    });
-    
-    res.json({ success: true, url: session.url });
-  } catch (error: any) {
-    console.error('Error al crear sesión de checkout para inversión:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Error al crear sesión de checkout'
     });
   }
 });
@@ -763,14 +649,11 @@ router.post('/webhook', async (req: Request, res: Response) => {
     case 'checkout.session.completed':
       const session = event.data.object;
       
-      // Determinar el tipo de pago (suscripción, video musical, producto o inversión)
+      // Determinar el tipo de pago (suscripción, video musical o producto)
       if (session.metadata.type === 'music_video') {
         await handleSuccessfulVideoPayment(session);
       } else if (session.metadata.type === 'store_product') {
         await handleSuccessfulProductPayment(session);
-      } else if (session.metadata.type === 'investment') {
-        // Nuevo caso para inversiones
-        await handleSuccessfulInvestmentPayment(session);
       } else {
         // Asumimos que es una suscripción si no tiene un tipo específico
         await handleSuccessfulSubscription(session);
@@ -933,74 +816,6 @@ async function handleSuccessfulProductPayment(session: any) {
     console.log(`Compra de producto ${productId} completada para ${userIdForLog}`);
   } catch (error) {
     console.error('Error al procesar pago de producto:', error);
-  }
-}
-
-/**
- * Manejar pago exitoso de inversión
- */
-async function handleSuccessfulInvestmentPayment(session: any) {
-  try {
-    // Extraer datos de los metadatos
-    const { investmentId, userId, amount, duration, rate } = session.metadata || {};
-    
-    if (!investmentId) {
-      console.error('No se encontró investmentId en los metadatos de la sesión');
-      return;
-    }
-    
-    // Buscar la inversión pendiente por investmentId
-    const investmentRef = db.collection('investments').doc(investmentId);
-    const investmentDoc = await investmentRef.get();
-    
-    if (!investmentDoc.exists) {
-      console.error(`No se encontró la inversión con ID ${investmentId}`);
-      return;
-    }
-    
-    // Calcular la fecha del próximo pago (usando la duración de los metadatos)
-    const durationInMonths = parseInt(duration || '1', 10);
-    const nextPaymentDate = new Date();
-    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + durationInMonths);
-    
-    // Actualizar el estado de la inversión a completada
-    await investmentRef.update({
-      status: 'active',
-      paymentCompleted: true,
-      paymentDate: FieldValue.serverTimestamp(),
-      paymentAmount: session.amount_total / 100, // Convertir de centavos a dólares
-      paymentCurrency: session.currency,
-      stripeSessionId: session.id,
-      nextPaymentDate: nextPaymentDate,
-      customer: {
-        email: session.customer_details?.email,
-        name: session.customer_details?.name,
-        address: session.customer_details?.address
-      }
-    });
-    
-    console.log(`Inversión ${investmentId} completada. Monto: ${amount}, Duración: ${duration} meses, Tasa: ${rate}%`);
-    
-    // Si el usuario está autenticado, asociar la inversión a su perfil
-    if (userId && !userId.startsWith('guest-')) {
-      const userRef = db.collection('users').doc(userId);
-      const userDoc = await userRef.get();
-      
-      if (userDoc.exists) {
-        // Actualizar el historial de inversiones del usuario
-        await userRef.update({
-          investments: FieldValue.arrayUnion(investmentId),
-          lastInvestmentDate: FieldValue.serverTimestamp(),
-          investorStatus: 'active',
-          totalInvestments: FieldValue.increment(1)
-        });
-        
-        console.log(`Inversión asociada al usuario ${userId}`);
-      }
-    }
-    
-  } catch (error) {
-    console.error('Error al procesar pago de inversión:', error);
   }
 }
 
