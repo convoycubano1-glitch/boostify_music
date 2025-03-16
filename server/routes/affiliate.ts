@@ -667,7 +667,7 @@ router.get('/earnings', authenticate, async (req: Request, res: Response) => {
     const paymentsRef = collection(db, "affiliatePayments");
     const paymentsQuery = query(
       paymentsRef, 
-      where("affiliateId", "==", req.user.id),
+      where("affiliateId", "==", userId),
       orderBy("createdAt", "desc")
     );
     const paymentsSnapshot = await getDocs(paymentsQuery);
