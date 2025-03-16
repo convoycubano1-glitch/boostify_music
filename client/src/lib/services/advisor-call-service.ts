@@ -207,70 +207,135 @@ class AdvisorCallService {
       try {
         console.log('Fetching call history from Firestore for user:', userId);
         
-        // Crear consulta optimizada
-        const q = query(
-          collection(db, 'advisor_calls'),
-          where('userId', '==', userId),
-          orderBy('timestamp', 'desc'),
-          limit(maxResults)
-        );
-        
-        // Ejecutar consulta con manejo de errores mejorado
-        let querySnapshot;
-        try {
-          querySnapshot = await getDocs(q);
-          console.log(`Found ${querySnapshot.size} calls in history`);
-        } catch (queryError) {
-          console.error('Error executing Firestore query:', queryError);
-          throw queryError;
-        }
-        
-        // Procesar resultados
-        const calls: AdvisorCall[] = [];
+        // Ejecutar consulta con manejo de errores mejorado para problemas de índice
+        let calls: AdvisorCall[] = [];
         let totalDuration = 0;
         
-        querySnapshot.forEach((doc) => {
-          try {
-            const data = doc.data() as DocumentData;
-            
-            // Validar campos obligatorios
-            if (!data.advisorId || !data.advisorName) {
-              console.warn('Skipping invalid call record:', doc.id);
-              return;
+        try {
+          // Primer intento con consulta completa (necesita índice compuesto)
+          const q = query(
+            collection(db, 'advisor_calls'),
+            where('userId', '==', userId),
+            orderBy('timestamp', 'desc'),
+            limit(maxResults)
+          );
+          
+          const querySnapshot = await getDocs(q);
+          console.log(`Found ${querySnapshot.size} calls in history`);
+          
+          // Procesar resultados
+          querySnapshot.forEach((doc) => {
+            try {
+              const data = doc.data() as DocumentData;
+              
+              // Validar campos obligatorios
+              if (!data.advisorId || !data.advisorName) {
+                console.warn('Skipping invalid call record:', doc.id);
+                return;
+              }
+              
+              // Crear objeto de llamada con manejo seguro de datos
+              const call: AdvisorCall = {
+                id: doc.id,
+                userId: data.userId || userId,
+                advisorId: data.advisorId,
+                advisorName: data.advisorName,
+                advisorTitle: data.advisorTitle || 'Specialist',
+                phoneNumber: data.phoneNumber || ADVISOR_PHONE_NUMBER,
+                duration: typeof data.duration === 'number' ? data.duration : 0,
+                status: ['completed', 'cancelled', 'failed'].includes(data.status) 
+                  ? data.status as 'completed' | 'cancelled' | 'failed'
+                  : 'completed',
+                notes: typeof data.notes === 'string' ? data.notes : '',
+                topics: Array.isArray(data.topics) ? data.topics : [],
+                plan: typeof data.plan === 'string' ? data.plan : 'free',
+                timestamp: data.timestamp instanceof Timestamp 
+                  ? data.timestamp 
+                  : Timestamp.now(),
+              };
+              
+              calls.push(call);
+              
+              if (call.status === 'completed') {
+                totalDuration += call.duration;
+              }
+            } catch (docError) {
+              console.error('Error processing document:', doc.id, docError);
+              // Continue processing other documents
             }
+          });
+        } catch (queryError: any) {
+          console.error('Error executing Firestore query:', queryError);
+          
+          // Verificar si el error es por falta de índice
+          if (queryError?.code === 'failed-precondition' || 
+              (queryError?.message && queryError.message.includes('requires an index'))) {
+            console.log('Index error detected, falling back to basic query without ordering');
             
-            // Crear objeto de llamada con manejo seguro de datos
-            const call: AdvisorCall = {
-              id: doc.id,
-              userId: data.userId || userId,
-              advisorId: data.advisorId,
-              advisorName: data.advisorName,
-              advisorTitle: data.advisorTitle || 'Specialist',
-              phoneNumber: data.phoneNumber || ADVISOR_PHONE_NUMBER,
-              duration: typeof data.duration === 'number' ? data.duration : 0,
-              status: ['completed', 'cancelled', 'failed'].includes(data.status) 
-                ? data.status as 'completed' | 'cancelled' | 'failed'
-                : 'completed',
-              notes: typeof data.notes === 'string' ? data.notes : '',
-              topics: Array.isArray(data.topics) ? data.topics : [],
-              plan: typeof data.plan === 'string' ? data.plan : 'free',
-              timestamp: data.timestamp instanceof Timestamp 
-                ? data.timestamp 
-                : Timestamp.now(),
-            };
-            
-            calls.push(call);
-            
-            if (call.status === 'completed') {
-              totalDuration += call.duration;
+            // Segundo intento: consulta simplificada sin ordenamiento (no requiere índice compuesto)
+            try {
+              const basicQuery = query(
+                collection(db, 'advisor_calls'),
+                where('userId', '==', userId),
+                limit(maxResults)
+              );
+              
+              const basicSnapshot = await getDocs(basicQuery);
+              console.log(`Found ${basicSnapshot.size} calls in history (basic query)`);
+              
+              // Procesar resultados
+              const unsortedCalls: AdvisorCall[] = [];
+              basicSnapshot.forEach((doc) => {
+                try {
+                  const data = doc.data() as DocumentData;
+                  
+                  // Crear objeto de llamada
+                  const call: AdvisorCall = {
+                    id: doc.id,
+                    userId: data.userId || userId,
+                    advisorId: data.advisorId || 'unknown',
+                    advisorName: data.advisorName || 'Unknown Advisor',
+                    advisorTitle: data.advisorTitle || 'Specialist',
+                    phoneNumber: data.phoneNumber || ADVISOR_PHONE_NUMBER,
+                    duration: typeof data.duration === 'number' ? data.duration : 0,
+                    status: ['completed', 'cancelled', 'failed'].includes(data.status) 
+                      ? data.status as 'completed' | 'cancelled' | 'failed'
+                      : 'completed',
+                    notes: typeof data.notes === 'string' ? data.notes : '',
+                    topics: Array.isArray(data.topics) ? data.topics : [],
+                    plan: typeof data.plan === 'string' ? data.plan : 'free',
+                    timestamp: data.timestamp instanceof Timestamp 
+                      ? data.timestamp 
+                      : Timestamp.now(),
+                  };
+                  
+                  unsortedCalls.push(call);
+                  
+                  if (call.status === 'completed') {
+                    totalDuration += call.duration;
+                  }
+                } catch (docError) {
+                  console.error('Error processing document in basic query:', doc.id, docError);
+                }
+              });
+              
+              // Ordenar manualmente los resultados
+              calls = unsortedCalls.sort((a, b) => 
+                b.timestamp.toMillis() - a.timestamp.toMillis()
+              );
+              
+            } catch (basicQueryError) {
+              console.error('Error executing basic Firestore query:', basicQueryError);
+              throw basicQueryError;
             }
-          } catch (docError) {
-            console.error('Error processing document:', doc.id, docError);
-            // Continue processing other documents
+          } else {
+            // Si no es error de índice, propagar el error
+            throw queryError;
           }
-        });
+        }
         
         if (calls.length > 0) {
+          console.log(`Returning ${calls.length} call records`);
           return {
             calls,
             totalCalls: calls.length,
@@ -290,6 +355,15 @@ class AdvisorCallService {
         
       } catch (firestoreError) {
         console.error('Firestore error getting call history:', firestoreError);
+        
+        // Mostrar mensaje de creación de índice si es ese el error
+        if (firestoreError instanceof FirebaseError && 
+            firestoreError.message && 
+            firestoreError.message.includes('requires an index')) {
+          console.warn('This query requires a composite index. You need to add it to your Firebase project.');
+          console.warn('Index creation URL from error:', 
+            firestoreError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]+/)?.[0] || 'not found');
+        }
         
         // Devolver datos iniciales en caso de error de Firestore
         return {
