@@ -50,6 +50,10 @@ export function useAdvisorAccess(
   advisorId: string,
   freePlanAdvisors: string[] = []
 ): AdvisorAccessResult {
+  // Define all hooks first to maintain consistent order
+  // Single state with initial state defined outside the function to avoid recreations
+  const [state, setState] = useState<AdvisorAccessResult>(INITIAL_STATE);
+  
   // Get subscription information
   const { subscription, isLoading: isSubscriptionLoading, currentPlan } = useSubscription();
   
@@ -57,10 +61,6 @@ export function useAdvisorAccess(
   const normalizedFreePlanAdvisors = useMemo(() => {
     return Array.isArray(freePlanAdvisors) ? freePlanAdvisors : [];
   }, [freePlanAdvisors]);
-  
-  // Single state with initial state defined outside the function
-  // Make sure this is declared after other hooks to maintain hook order
-  const [state, setState] = useState<AdvisorAccessResult>(INITIAL_STATE);
   
   // Effect to verify access
   useEffect(() => {
