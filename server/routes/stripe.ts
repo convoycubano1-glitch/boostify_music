@@ -44,6 +44,16 @@ const PRICE_ID_TO_PLAN = {
 const MUSIC_VIDEO_PRICE_ID = 'price_1Rx28w2LyFplWimfQKxDIuZ3'; // Este ID se debe crear en Stripe
 
 /**
+ * Colección donde se guardan los productos disponibles
+ */
+const PRODUCTS_COLLECTION = 'products';
+
+/**
+ * Colección donde se guardan las compras de productos
+ */
+const PRODUCT_PURCHASES_COLLECTION = 'product_purchases';
+
+/**
  * Crear una sesión de checkout para una nueva suscripción
  */
 router.post('/create-subscription', authenticate, async (req: Request, res: Response) => {
@@ -396,6 +406,168 @@ router.post('/create-music-video-payment', authenticate, async (req: Request, re
 });
 
 /**
+ * Crear un pago único para un producto de la tienda
+ * Esta ruta permite comprar productos como bots de automatización o aplicaciones móviles
+ */
+router.post('/create-product-payment', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { productId, productType, amount, name } = req.body;
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+    
+    if (!productId) {
+      return res.status(400).json({ success: false, message: 'ID de producto no especificado' });
+    }
+
+    if (!amount) {
+      return res.status(400).json({ success: false, message: 'Precio del producto no especificado' });
+    }
+    
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Nombre del producto no especificado' });
+    }
+    
+    // Obtener información del usuario de Firestore
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userData = userSnap.data();
+    
+    // Verificar si el usuario ya tiene un customerID en Stripe
+    let customerId = userData?.stripeCustomerId;
+    
+    if (!customerId) {
+      // Crear un nuevo cliente en Stripe si no existe
+      const customer = await stripe.customers.create({
+        email: userData?.email || undefined,
+        name: userData?.displayName || undefined,
+        metadata: { firebaseUserId: userId }
+      });
+      
+      customerId = customer.id;
+      
+      // Guardar el customerId en Firestore
+      await db.collection('users').doc(userId).update({
+        stripeCustomerId: customerId
+      });
+    }
+    
+    // Verificar si el usuario ya ha comprado este producto
+    const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
+    const existingPurchase = await purchasesRef
+      .where('userId', '==', userId)
+      .where('productId', '==', productId)
+      .where('status', '==', 'completed')
+      .get();
+    
+    if (!existingPurchase.empty) {
+      return res.json({
+        success: true,
+        alreadyPurchased: true,
+        message: 'Este producto ya ha sido comprado anteriormente'
+      });
+    }
+    
+    // Convertir el precio a centavos para Stripe (Stripe trabaja con centavos)
+    const amountInCents = Math.round(amount * 100);
+    
+    // Crear sesión de checkout para pago único
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: name,
+              description: `Compra de ${productType || 'producto'} en Boostify Store`
+            },
+            unit_amount: amountInCents
+          },
+          quantity: 1
+        }
+      ],
+      mode: 'payment',
+      success_url: `${BASE_URL}/product-success?session_id={CHECKOUT_SESSION_ID}&product_id=${productId}`,
+      cancel_url: `${BASE_URL}/product-cancelled?product_id=${productId}`,
+      metadata: {
+        userId,
+        productId,
+        productType: productType || 'store_product',
+        productName: name,
+        type: 'store_product'
+      }
+    });
+    
+    // Crear un registro de la transacción pendiente
+    await purchasesRef.add({
+      userId,
+      productId,
+      productName: name,
+      productType: productType || 'store_product',
+      sessionId: session.id,
+      amount: amount,
+      currency: 'usd',
+      status: 'pending',
+      createdAt: new Date(),
+      type: 'store_product'
+    });
+    
+    res.json({ success: true, url: session.url });
+  } catch (error: any) {
+    console.error('Error al crear sesión de checkout para producto:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al crear sesión de checkout'
+    });
+  }
+});
+
+/**
+ * Verificar si un producto ha sido comprado por el usuario
+ * Esta ruta permite al frontend saber si mostrar opciones de compra o de acceso
+ */
+router.get('/product-purchase-status/:productId', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+    
+    if (!productId) {
+      return res.status(400).json({ success: false, message: 'ID de producto no especificado' });
+    }
+    
+    // Verificar si el usuario ha comprado este producto
+    const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
+    const purchaseQuery = await purchasesRef
+      .where('userId', '==', userId)
+      .where('productId', '==', productId)
+      .where('status', '==', 'completed')
+      .get();
+    
+    // Determinar si el producto fue comprado
+    const isPurchased = !purchaseQuery.empty;
+    
+    res.json({
+      success: true,
+      isPurchased,
+      productId
+    });
+  } catch (error: any) {
+    console.error('Error al verificar estado de compra del producto:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al verificar estado de compra'
+    });
+  }
+});
+
+/**
  * Actualizar la suscripción a un nuevo plan
  */
 router.post('/update-subscription', authenticate, async (req: Request, res: Response) => {
@@ -538,6 +710,11 @@ router.post('/webhook', async (req: Request, res: Response) => {
         else if (session.mode === 'payment' && session.metadata?.type === 'music_video') {
           // Manejar compra de video musical
           await handleSuccessfulVideoPayment(session);
+        }
+        // Verificar si es un pago de producto de la tienda
+        else if (session.mode === 'payment' && session.metadata?.type === 'store_product') {
+          // Manejar compra de producto de la tienda
+          await handleSuccessfulProductPayment(session);
         }
         break;
       }
@@ -883,6 +1060,85 @@ async function handleSuccessfulVideoPayment(session: Stripe.Checkout.Session) {
     }
   } catch (error) {
     console.error('Error al actualizar el video:', error);
+  }
+}
+
+/**
+ * Manejar un pago exitoso para un producto de la tienda
+ */
+async function handleSuccessfulProductPayment(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId;
+  const productId = session.metadata?.productId;
+  const productType = session.metadata?.productType || 'store_product';
+  const productName = session.metadata?.productName;
+  
+  if (!userId || !productId) {
+    console.error('Falta userId o productId en los metadatos de la sesión');
+    return;
+  }
+  
+  // Actualizar el registro de la compra
+  const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
+  const purchases = await purchasesRef
+    .where('userId', '==', userId)
+    .where('productId', '==', productId)
+    .where('sessionId', '==', session.id)
+    .get();
+  
+  if (purchases.empty) {
+    // Si no existe una compra pendiente, crear una nueva
+    await purchasesRef.add({
+      userId,
+      productId,
+      productName,
+      productType,
+      sessionId: session.id,
+      amount: session.amount_total ? session.amount_total / 100 : 0, // Convertir de centavos a dólares
+      currency: session.currency || 'usd',
+      status: 'completed',
+      createdAt: new Date(),
+      completedAt: new Date(),
+      type: 'store_product'
+    });
+  } else {
+    // Actualizar la compra existente
+    await purchases.docs[0].ref.update({
+      status: 'completed',
+      completedAt: new Date(),
+      amount: session.amount_total ? session.amount_total / 100 : 0, // Convertir de centavos a dólares
+    });
+  }
+  
+  // También registrar la transacción
+  await db.collection('transactions').add({
+    userId,
+    type: 'product_purchase',
+    productId,
+    productName,
+    productType,
+    sessionId: session.id,
+    amount: session.amount_total ? session.amount_total / 100 : 0,
+    currency: session.currency || 'usd',
+    timestamp: new Date()
+  });
+  
+  // Opcional: Actualizar el producto para marcarlo como comprado por el usuario
+  try {
+    const productDoc = await db.collection(PRODUCTS_COLLECTION).doc(productId).get();
+    
+    if (productDoc.exists) {
+      const product = productDoc.data();
+      const purchasedBy = product.purchasedBy || [];
+      
+      // Solo agregar el userId si no está ya en la lista
+      if (!purchasedBy.includes(userId)) {
+        await db.collection(PRODUCTS_COLLECTION).doc(productId).update({
+          purchasedBy: [...purchasedBy, userId]
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error al actualizar el producto:', error);
   }
 }
 

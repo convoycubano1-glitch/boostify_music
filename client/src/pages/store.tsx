@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Header } from "../components/layout/header";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -6,6 +6,9 @@ import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { motion } from "framer-motion";
 import { SiInstagram, SiFacebook, SiTelegram, SiTiktok, SiYoutube, SiX, SiLinkedin, SiPinterest, SiAndroid, SiApple } from "react-icons/si";
+import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../hooks/use-auth";
+import axios from "axios";
 import {
   Download,
   Zap,
@@ -456,6 +459,119 @@ const products = [
 ];
 
 export default function StorePage() {
+  const [loadingProducts, setLoadingProducts] = useState<Record<number, boolean>>({});
+  const [loadingApps, setLoadingApps] = useState<Record<number, boolean>>({});
+  const [purchasedProducts, setPurchasedProducts] = useState<Record<number, boolean>>({});
+  const [purchasedApps, setPurchasedApps] = useState<Record<number, boolean>>({});
+  const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
+
+  // Iniciar el proceso de pago para un producto (bot)
+  const handlePurchaseProduct = async (product: typeof products[0]) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Inicia sesión para continuar",
+        description: "Necesitas iniciar sesión para comprar este producto",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Establecer el producto como cargando
+      setLoadingProducts(prev => ({ ...prev, [product.id]: true }));
+
+      // Enviar la solicitud al servidor
+      const response = await axios.post('/api/stripe/create-product-payment', {
+        productId: product.id.toString(),
+        productType: product.platform,
+        amount: product.price,
+        name: product.name
+      });
+
+      // Verificar si el producto ya ha sido comprado
+      if (response.data.alreadyPurchased) {
+        toast({
+          title: "Producto ya adquirido",
+          description: "Ya has comprado este producto anteriormente",
+          variant: "default"
+        });
+        setPurchasedProducts(prev => ({ ...prev, [product.id]: true }));
+        setLoadingProducts(prev => ({ ...prev, [product.id]: false }));
+        return;
+      }
+
+      // Verificar si hay una URL de pago válida
+      if (response.data.success && response.data.url) {
+        // Redirigir al usuario a la página de pago de Stripe
+        window.location.href = response.data.url;
+      } else {
+        throw new Error("No se pudo iniciar el proceso de pago");
+      }
+    } catch (error) {
+      console.error("Error al iniciar el pago:", error);
+      toast({
+        title: "Error de pago",
+        description: "No se pudo iniciar el proceso de pago. Inténtalo nuevamente.",
+        variant: "destructive"
+      });
+      setLoadingProducts(prev => ({ ...prev, [product.id]: false }));
+    }
+  };
+
+  // Iniciar el proceso de pago para una app móvil
+  const handlePurchaseApp = async (app: typeof mobileApps[0]) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Inicia sesión para continuar",
+        description: "Necesitas iniciar sesión para comprar esta aplicación",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Establecer la app como cargando
+      setLoadingApps(prev => ({ ...prev, [app.id]: true }));
+
+      // Enviar la solicitud al servidor
+      const response = await axios.post('/api/stripe/create-product-payment', {
+        productId: `app_${app.id}`,
+        productType: 'mobile_app',
+        amount: app.price,
+        name: app.name
+      });
+
+      // Verificar si la app ya ha sido comprada
+      if (response.data.alreadyPurchased) {
+        toast({
+          title: "Aplicación ya adquirida",
+          description: "Ya has comprado esta aplicación anteriormente",
+          variant: "default"
+        });
+        setPurchasedApps(prev => ({ ...prev, [app.id]: true }));
+        setLoadingApps(prev => ({ ...prev, [app.id]: false }));
+        return;
+      }
+
+      // Verificar si hay una URL de pago válida
+      if (response.data.success && response.data.url) {
+        // Redirigir al usuario a la página de pago de Stripe
+        window.location.href = response.data.url;
+      } else {
+        throw new Error("No se pudo iniciar el proceso de pago");
+      }
+    } catch (error) {
+      console.error("Error al iniciar el pago:", error);
+      toast({
+        title: "Error de pago",
+        description: "No se pudo iniciar el proceso de pago. Inténtalo nuevamente.",
+        variant: "destructive"
+      });
+      setLoadingApps(prev => ({ ...prev, [app.id]: false }));
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
