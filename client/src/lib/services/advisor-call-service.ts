@@ -24,6 +24,7 @@ import {
 import { getUserId } from '../auth-helpers';
 
 // Número telefónico central para todas las llamadas a asesores
+// Este número se usa en toda la interfaz hasta que se asignen números individuales
 export const ADVISOR_PHONE_NUMBER = "+1 941 315 9237";
 
 /**

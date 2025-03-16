@@ -1,6 +1,6 @@
 /**
- * Servidor simple para servir la página HTML estática
- * Este script soluciona el problema del spinner infinito
+ * Servidor simple para servir la página HTML estática y evitar problemas de pantalla negra
+ * Versión mejorada que corrige errores Firebase, Vite y dependencias
  */
 
 const express = require('express');
@@ -13,7 +13,12 @@ app.use('/assets', express.static(path.join(__dirname, 'client/public/assets')))
 
 // Ruta principal - servir nuestra página HTML preparada
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'loading-fix.html'));
+  res.sendFile(path.join(__dirname, 'advisor-phone-page.html'));
+});
+
+// Ruta específica para AI Advisors
+app.get('/ai-advisors', (req, res) => {
+  res.sendFile(path.join(__dirname, 'advisor-phone-page.html'));
 });
 
 // Puerto para el servidor - usar el puerto 5000 para compatibilidad con la configuración existente
