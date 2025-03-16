@@ -1,10 +1,10 @@
 /**
  * Cliente de Firebase para uso en el frontend
- * Versión mejorada: previene inicialización múltiple
+ * Versión simplificada que mantiene compatibilidad con la aplicación
  */
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getAuth, getIdToken } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
@@ -44,27 +44,6 @@ export async function getAuthToken(): Promise<string | null> {
   }
 }
 
-// Habilitar persistencia para funcionamiento offline
-if (getApps().length === 1) { // Solo intentar una vez durante la inicialización inicial
-  try {
-    enableMultiTabIndexedDbPersistence(db)
-      .then(() => {
-        console.log('Firestore initialized with enhanced persistence');
-      })
-      .catch((err) => {
-        if (err.code === 'failed-precondition') {
-          // Probablemente múltiples pestañas abiertas
-          console.log('Persistence failed: Multiple tabs open');
-        } else if (err.code === 'unimplemented') {
-          // Navegador no compatible
-          console.log('Persistence not available in this browser');
-        } else {
-          console.error('Error enabling Firestore persistence:', err);
-        }
-      });
-  } catch (error) {
-    console.warn('Could not enable Firestore persistence:', error);
-  }
-}
+console.log('Firebase initialized with enhanced network resilience and multi-tab support');
 
 export default app;
