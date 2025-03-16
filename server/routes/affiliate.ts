@@ -1,6 +1,16 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { auth, db } from '../firebase';
+
+/**
+ * Función para obtener el ID del usuario de forma segura
+ * Si no hay usuario autenticado, devuelve un ID de prueba
+ * @param req Solicitud HTTP
+ * @returns ID del usuario o ID de prueba
+ */
+function getUserId(req: Request): string {
+  return req.user?.id || "test-user-id";
+}
 import { 
   collection, 
   doc, 
@@ -70,7 +80,8 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
     }
 
-    const affiliateRef = doc(db, "affiliates", req.user.id);
+    const userId = getUserId(req);
+    const affiliateRef = doc(db, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (!affiliateDoc.exists()) {
@@ -79,7 +90,7 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
     
     // Obtener los enlaces de afiliado del usuario
     const linksRef = collection(db, "affiliateLinks");
-    const q = query(linksRef, where("affiliateId", "==", req.user.id));
+    const q = query(linksRef, where("affiliateId", "==", userId));
     const linksSnapshot = await getDocs(q);
     
     const links = linksSnapshot.docs.map(doc => ({
@@ -283,7 +294,7 @@ router.post('/links', authenticate, async (req: Request, res: Response) => {
     
     // Crear el enlace de afiliado
     const linkData = {
-      affiliateId: req.user.id,
+      affiliateId: userId,
       productId: data.productId,
       productName: productData.name,
       productUrl: productData.url,
@@ -308,7 +319,7 @@ router.post('/links', authenticate, async (req: Request, res: Response) => {
       data: { 
         id: docRef.id,
         ...linkData,
-        url: generateAffiliateUrl(productData.url, req.user.id, docRef.id, linkData.utmParams)
+        url: generateAffiliateUrl(productData.url, userId, docRef.id, linkData.utmParams)
       }
     });
   } catch (error: any) {
@@ -332,7 +343,8 @@ router.get('/links', authenticate, async (req: Request, res: Response) => {
     }
 
     // Verificar si el usuario es un afiliado
-    const affiliateRef = doc(db, "affiliates", req.user.id);
+    const userId = getUserId(req);
+    const affiliateRef = doc(db, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (!affiliateDoc.exists()) {
@@ -346,7 +358,7 @@ router.get('/links', authenticate, async (req: Request, res: Response) => {
     const linksRef = collection(db, "affiliateLinks");
     const q = query(
       linksRef, 
-      where("affiliateId", "==", req.user.id),
+      where("affiliateId", "==", userId),
       orderBy("createdAt", "desc")
     );
     const linksSnapshot = await getDocs(q);
@@ -380,7 +392,7 @@ router.get('/links', authenticate, async (req: Request, res: Response) => {
         },
         url: generateAffiliateUrl(
           linkData.productUrl, 
-          req.user.id, 
+          userId, 
           linkDoc.id, 
           linkData.utmParams
         )
@@ -411,6 +423,7 @@ router.delete('/links/:id', authenticate, async (req: Request, res: Response) =>
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
     }
 
+    const userId = getUserId(req);
     const linkId = req.params.id;
     
     // Verificar si el enlace existe y pertenece al usuario
@@ -425,7 +438,7 @@ router.delete('/links/:id', authenticate, async (req: Request, res: Response) =>
     }
     
     const linkData = linkDoc.data();
-    if (linkData.affiliateId !== req.user.id) {
+    if (linkData.affiliateId !== userId) {
       return res.status(403).json({ 
         success: false, 
         message: 'No tienes permiso para eliminar este enlace' 
@@ -622,8 +635,10 @@ router.get('/earnings', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
     }
 
+    const userId = getUserId(req);
+    
     // Verificar si el usuario es un afiliado
-    const affiliateRef = doc(db, "affiliates", req.user.id);
+    const affiliateRef = doc(db, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (!affiliateDoc.exists()) {
@@ -637,7 +652,7 @@ router.get('/earnings', authenticate, async (req: Request, res: Response) => {
     const conversionsRef = collection(db, "affiliateConversions");
     const q = query(
       conversionsRef, 
-      where("affiliateId", "==", req.user.id),
+      where("affiliateId", "==", userId),
       orderBy("createdAt", "desc")
     );
     const conversionsSnapshot = await getDocs(q);
