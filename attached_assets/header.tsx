@@ -1,169 +1,168 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { auth } from '../../firebase';
-import { Link } from 'wouter';
-import { useUser } from '../../hooks/use-user';
-import { useNavigationVisibility } from '../../hooks/use-navigation-visibility';
+import { Link } from "wouter";
+import { useUser } from '@/hooks/use-user';
+import { useAuth } from '@/hooks/use-auth';
+import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { useSubscription } from '@/lib/context/subscription-context';
+import { useLanguageDetection } from '@/hooks/use-language-detection';
+import { useScrollDirection } from '@/hooks/use-scroll-direction';
+import { useNavigationVisibility } from '@/hooks/use-navigation-visibility';
 import { 
-  Users, Search, PieChart, FileText, Home, Music, Video, Rss, 
-  ShoppingBag, Calendar, Headphones, Radio, Shield, ClipboardList, 
-  LogOut, ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
-  Send, MessageSquare, Mic, Zap, Award, BookOpen, BarChart, MoveRight
+  PieChart, FileText, Home, Music, Video, Rss, 
+  ShoppingBag, Shield, ClipboardList, 
+  ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
+  Send, MessageSquare, Zap, Award, BookOpen, BarChart, MoveRight,
+  Disc, Store, Share2, DollarSign, BarChart2, Mic, Briefcase, 
+  Wrench, GraduationCap, Tv, Building2, Brain, Users, 
+  Music2, Instagram, Youtube, Radio
 } from "lucide-react";
-import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
-  const { user, logout } = useUser();
+  const { user } = useAuth();
+  const { logout } = useFirebaseAuth();
+  const { subscription } = useSubscription();
+  const { detectedLanguage } = useLanguageDetection();
+  const { scrollDirection, scrollY } = useScrollDirection();
   const { isVisible, setIsVisible, toggle } = useNavigationVisibility();
-  const [scrollY, setScrollY] = useState(0);
   const [showFullHeader, setShowFullHeader] = useState(true);
-  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const [showHeaderHint, setShowHeaderHint] = useState(false);
-  const headerRef = useRef<HTMLElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(280);
+  const [isMenuExpanded, setIsMenuExpanded] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+  
+  // Indicador de instrucción para móvil (doble clic)
+  const [showHeaderHint, setShowHeaderHint] = useState(true);
 
-  // Mostrar la pista para doble clic después de un tiempo
+  // Handle scroll effect for header
   useEffect(() => {
-    // Solo en dispositivos móviles
-    const isMobile = window.innerWidth < 640;
-    if (isMobile) {
+    if (scrollY > 50) {
+      if (scrollDirection === "down") {
+        setShowFullHeader(false);
+      } else {
+        setShowFullHeader(true);
+      }
+    } else {
+      setShowFullHeader(true);
+    }
+    
+    // No ocultamos automáticamente el header en mobile a menos que el usuario lo haga con doble clic
+    // Este comportamiento ahora se maneja a través del hook global useNavigationVisibility
+  }, [scrollDirection, scrollY]);
+  
+  // Ocultar la indicación de instrucción después de un tiempo
+  useEffect(() => {
+    if (showHeaderHint) {
       const timer = setTimeout(() => {
-        setShowHeaderHint(true);
-      }, 3000);
-      
-      const hideTimer = setTimeout(() => {
         setShowHeaderHint(false);
-      }, 10000);
+      }, 5000); // Ocultar después de 5 segundos
       
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(hideTimer);
-      };
+      return () => clearTimeout(timer);
     }
+  }, [showHeaderHint]);
+  
+  // Default state for menu expansion
+  useEffect(() => {
+    // Start with expanded menu on desktop, collapsed on mobile
+    const isMobile = window.innerWidth < 768;
+    setIsMenuExpanded(!isMobile);
+    
+    // Update menu expansion state on window resize
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setIsMenuExpanded(!isMobile);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // Actualizar la altura del header
+  
+  // Track header height and update spacer
   useEffect(() => {
-    if (headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight);
-    }
-  }, [isMenuExpanded, isVisible, showFullHeader]);
-
-  // Manejar el scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-      
-      // Auto-colapsar el menú expandido al hacer scroll
-      if (window.scrollY > 100 && isMenuExpanded) {
-        setIsMenuExpanded(false);
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.offsetHeight;
+        setHeaderHeight(height);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMenuExpanded]);
-  
-  // Navegar al clic de botones
-  const navigateTo = (path: string) => {
-    // window.location.href = path;
-    console.log("Navigating to", path);
-  };
+    // Update header height on mount and window resize
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    
+    // Also update after a short delay to account for DOM manipulation
+    const timerId = setTimeout(updateHeaderHeight, 500);
 
-  // Elementos de navegación principales
-  const mainNavigation = [
-    { name: "Home", href: "/home", icon: Home },
-    { name: "Artist Dashboard", href: "/artist-dashboard", icon: BarChart },
-    { name: "Campaigns", href: "/campaigns", icon: Rss },
-    { name: "Marketing", href: "/marketing", icon: PieChart },
-    { name: "Promotion", href: "/promotion", icon: MoveRight },
-    { name: "YouTube", href: "/youtube-views", icon: Video },
-  ];
+    return () => {
+      window.removeEventListener('resize', updateHeaderHeight);
+      clearTimeout(timerId);
+    };
+  }, []);
 
-  // Elementos de navegación destacados
+  useEffect(() => {
+    const initTranslate = () => {
+      if (window.google && window.google.translate) {
+        const translateElement = document.getElementById('google_translate_element');
+        if (translateElement && translateElement.innerHTML === '') {
+          console.log('Initializing Google Translate');
+          window.googleTranslateElementInit();
+        }
+      } else {
+        console.log('Google Translate not loaded yet, retrying...');
+        setTimeout(initTranslate, 500);
+      }
+    };
+
+    initTranslate();
+  }, [detectedLanguage]);
+
+  // Grupos de navegación para una mejor organización
   const featuredNavigation = [
-    { name: "AI Tools", href: "/ai-tools", icon: Zap },
-    { name: "Music", href: "/music-generator", icon: Music },
-    { name: "Videos", href: "/videos", icon: Video },
+    { name: "Virtual Record Label", href: "/virtual-record-label", icon: Disc, highlight: true },
+    { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall, highlight: true },
+    { name: "Store", href: "/store", icon: ShoppingBag, highlight: true },
+    { name: "Affiliates", href: "/affiliates", icon: Share2, highlight: true },
+    { name: "Investors", href: "/investors-dashboard", icon: DollarSign, highlight: true },
   ];
 
-  // Elementos de navegación secundarios - "More" section (páginas completas)
-  const secondaryNavigation = [
-    // Navegación principal existente
-    { name: "Store", href: "/store", icon: ShoppingBag },
-    { name: "Education", href: "/education", icon: BookOpen },
-    { name: "PR", href: "/pr", icon: Send },
-    
-    // Secciones de afiliados e inversores
-    { name: "Affiliates", href: "/affiliates", icon: Users },
-    { name: "Investors Dashboard", href: "/investors-dashboard", icon: BarChart },
-    
-    // Secciones de contenido y aprendizaje
-    { name: "Boostify TV", href: "/boostify-tv", icon: Video },
-    { name: "News", href: "/news", icon: Rss },
-    { name: "Resources", href: "/resources", icon: FileText },
-    { name: "Guides", href: "/guides", icon: BookOpen },
-    { name: "Tips", href: "/tips", icon: MessageSquare },
-    
-    // Herramientas y servicios de música
-    { name: "Record Label Services", href: "/record-label-services", icon: Headphones },
-    { name: "Virtual Record Label", href: "/virtual-record-label", icon: Radio },
-    { name: "Music Mastering", href: "/music-mastering", icon: Music },
-    { name: "Music Generator", href: "/music-generator", icon: Music },
-    
-    // Redes sociales y promoción
-    { name: "Instagram Boost", href: "/instagram-boost", icon: Rss },
-    { name: "Spotify", href: "/spotify", icon: Music },
-    { name: "YouTube Views", href: "/youtube-views", icon: Video },
-    { name: "Social Network", href: "/social-network", icon: Users },
-    { name: "Firestore Social", href: "/firestore-social", icon: Users },
-    
-    // Herramientas de AI y creación
-    { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall },
-    { name: "AI Agents", href: "/ai-agents", icon: MessageSquare },
-    { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: FileText },
-    { name: "Image Generator", href: "/image-generator", icon: FileText },
-    { name: "Face Swap", href: "/face-swap", icon: Users },
-    { name: "Try On", href: "/try-on-page", icon: ShoppingBag },
-    { name: "Real-time Translator", href: "/real-time-translator", icon: Globe },
-    
-    // Herramientas profesionales
-    { name: "Producer Tools", href: "/producer-tools", icon: Music },
-    { name: "Manager Tools", href: "/manager-tools", icon: Settings },
-    { name: "Professional Editor", href: "/professional-editor", icon: FileText },
-    { name: "Contracts", href: "/contracts", icon: FileText },
-    { name: "Contacts", href: "/contacts", icon: Users },
-    
-    // Analytics y métricas
-    { name: "Analytics", href: "/analytics", icon: BarChart },
-    { name: "Analytics Dashboard", href: "/analytics-dashboard", icon: BarChart },
-    { name: "Achievements", href: "/achievements-page", icon: Award },
-    { name: "Smart Cards", href: "/smart-cards", icon: FileText },
-    
-    // Otras funcionalidades
-    { name: "Tokenization", href: "/tokenization", icon: Shield },
-    { name: "Events", href: "/events", icon: Calendar },
-    { name: "Merchandise", href: "/merchandise", icon: ShoppingBag },
-    { name: "Plugins", href: "/plugins", icon: Settings },
-    { name: "Tools", href: "/tools", icon: Settings },
-    { name: "Ecosystem", href: "/ecosystem", icon: Globe },
-    { name: "International", href: "/boostify-international", icon: Globe },
-    
-    // Información legal y de la plataforma
-    { name: "Blog", href: "/blog", icon: FileText },
-    { name: "Profile", href: "/profile", icon: Users },
-    { name: "Account", href: "/account", icon: Users },
-    { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Privacy", href: "/privacy", icon: Shield },
-    { name: "Terms", href: "/terms", icon: FileText },
-    { name: "Cookies", href: "/cookies", icon: FileText },
+  const mainNavigation = [
+    { name: "Dashboard", href: "/dashboard", icon: BarChart },
+    { name: "Artist Dashboard", href: "/artist-dashboard", icon: Mic },
+    { name: "Manager Tools", href: "/manager-tools", icon: Briefcase },
+    { name: "Producer Tools", href: "/producer-tools", icon: Settings, highlight: false },
+    { name: "Music Videos", href: "/music-video-creator", icon: Video },
   ];
+  
+  const secondaryNavigation = [
+    { name: "Education", href: "/education", icon: GraduationCap },
+    { name: "Boostify TV", href: "/boostify-tv", icon: Tv },
+    { name: "Record Labels", href: "/record-label-services", icon: Building2 },
+    { name: "AI Agents", href: "/ai-agents", icon: Brain },
+    { name: "Artist Image", href: "/artist-image-advisor", icon: MessageSquare },
+    { name: "Merch", href: "/merchandise", icon: ShoppingBag },
+    { name: "Spotify", href: "/spotify", icon: Music2 },
+    { name: "Instagram", href: "/instagram-boost", icon: Instagram },
+    { name: "YouTube", href: "/youtube-views", icon: Youtube },
+    { name: "Contracts", href: "/contracts", icon: FileText },
+    { name: "PR", href: "/pr", icon: Rss },
+    { name: "Contacts", href: "/contacts", icon: MessageSquare },
+  ];
+
+  // Navigation agrupado para la interfaz de móvil
+  const allNavigation = [
+    { title: "Featured", items: featuredNavigation },
+    { title: "Main", items: mainNavigation },
+    { title: "More", items: secondaryNavigation },
+  ];
+
+  if (!user) return null;
 
   const isAdmin = user?.email === 'convoycubano@gmail.com';
 
@@ -279,62 +278,67 @@ export function Header() {
                     <Menu className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[300px] bg-[#1B1B1B] border-[#2A2A2A]">
-                  {/* Agrupación del menú desplegable por categorías */}
-                  <div className="py-1 px-3 text-xs text-orange-500 font-semibold">Featured</div>
-                  {featuredNavigation.map((item) => (
-                    <Link key={item.name} href={item.href}>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-[300px] bg-[#1B1B1B] border-[#2A2A2A] max-h-[80vh] overflow-hidden"
+                >
+                  <div className="max-h-[80vh] overflow-y-auto custom-scrollbar">
+                    {/* Agrupación del menú desplegable por categorías */}
+                    <div className="py-1 px-3 text-xs text-orange-500 font-semibold sticky top-0 bg-[#1B1B1B] z-10">Featured</div>
+                    {featuredNavigation.map((item) => (
+                      <Link key={item.name} href={item.href}>
+                        <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                          <item.icon className="mr-2 h-4 w-4 text-orange-500" />
+                          {item.name}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                    
+                    <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1 sticky top-7 bg-[#1B1B1B] z-10">Main</div>
+                    {mainNavigation.map((item) => (
+                      <Link key={item.name} href={item.href}>
+                        <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.name}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                    
+                    <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1 sticky top-14 bg-[#1B1B1B] z-10">More</div>
+                    {secondaryNavigation.map((item) => (
+                      <Link key={item.name} href={item.href}>
+                        <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.name}
+                        </DropdownMenuItem>
+                      </Link>
+                    ))}
+                    
+                    {/* Settings link */}
+                    <Link href="/settings">
                       <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                        <item.icon className="mr-2 h-4 w-4 text-orange-500" />
-                        {item.name}
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
                       </DropdownMenuItem>
                     </Link>
-                  ))}
-                  
-                  <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1">Main</div>
-                  {mainNavigation.map((item) => (
-                    <Link key={item.name} href={item.href}>
-                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {item.name}
-                      </DropdownMenuItem>
-                    </Link>
-                  ))}
-                  
-                  <div className="py-1 px-3 text-xs text-gray-400 font-semibold border-t border-gray-800 mt-1">More</div>
-                  {secondaryNavigation.map((item) => (
-                    <Link key={item.name} href={item.href}>
-                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {item.name}
-                      </DropdownMenuItem>
-                    </Link>
-                  ))}
-                  
-                  {/* Settings link */}
-                  <Link href="/settings">
-                    <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
+                    
+                    {/* Admin panel link - only visible to admins */}
+                    {isAdmin && (
+                      <Link href="/admin">
+                        <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Panel
+                        </DropdownMenuItem>
+                      </Link>
+                    )}
+                    
+                    <DropdownMenuItem 
+                      onSelect={() => logout()} 
+                      className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A]"
+                    >
+                      Logout
                     </DropdownMenuItem>
-                  </Link>
-                  
-                  {/* Admin panel link - only visible to admins */}
-                  {isAdmin && (
-                    <Link href="/admin">
-                      <DropdownMenuItem className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A] hover:text-orange-500">
-                        <Shield className="mr-2 h-4 w-4" />
-                        Admin Panel
-                      </DropdownMenuItem>
-                    </Link>
-                  )}
-                  
-                  <DropdownMenuItem 
-                    onSelect={() => logout()} 
-                    className="py-2 text-sm text-gray-200 hover:bg-[#2A2A2A]"
-                  >
-                    Logout
-                  </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -342,7 +346,7 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    {user?.photoURL ? (
+                    {user.photoURL ? (
                       <img
                         src={user.photoURL}
                         alt={user.displayName || "User avatar"}
@@ -351,7 +355,7 @@ export function Header() {
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/10">
                         <span className="text-sm font-medium text-orange-500">
-                          {user?.displayName?.[0] || user?.email?.[0] || "U"}
+                          {user.displayName?.[0] || user.email?.[0] || "U"}
                         </span>
                       </div>
                     )}
@@ -360,14 +364,45 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-56 bg-[#1B1B1B] border-[#2A2A2A]">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      {user?.displayName && (
+                      {user.displayName && (
                         <p className="text-sm font-medium text-white">{user.displayName}</p>
                       )}
-                      {user?.email && (
+                      {user.email && (
                         <p className="text-xs text-gray-400">{user.email}</p>
+                      )}
+                      
+                      {/* Subscription Status Indicator */}
+                      {subscription && (
+                        <div className="mt-1 flex items-center gap-1">
+                          {subscription.currentPlan === 'premium' ? (
+                            <span className="text-xs bg-gradient-to-r from-amber-500 to-amber-300 text-black font-semibold py-0.5 px-2 rounded-full">
+                              Premium
+                            </span>
+                          ) : subscription.currentPlan === 'pro' ? (
+                            <span className="text-xs bg-gradient-to-r from-blue-500 to-blue-400 text-white font-semibold py-0.5 px-2 rounded-full">
+                              Pro
+                            </span>
+                          ) : subscription.currentPlan === 'basic' ? (
+                            <span className="text-xs bg-gradient-to-r from-orange-500 to-orange-400 text-white font-semibold py-0.5 px-2 rounded-full">
+                              Basic
+                            </span>
+                          ) : (
+                            <span className="text-xs bg-gray-700 text-gray-300 font-semibold py-0.5 px-2 rounded-full">
+                              Free
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
+                  
+                  {/* Subscription Management */}
+                  <DropdownMenuItem asChild>
+                    <Link href="/account" className="text-sm text-gray-200 hover:bg-[#2A2A2A]">
+                      Subscription
+                    </Link>
+                  </DropdownMenuItem>
+                  
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="text-sm text-gray-200 hover:bg-[#2A2A2A]">Settings</Link>
                   </DropdownMenuItem>
@@ -481,5 +516,3 @@ export function Header() {
     </>
   );
 }
-
-export default Header;

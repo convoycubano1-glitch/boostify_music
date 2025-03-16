@@ -13,6 +13,7 @@ import {
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
 import { useAuth } from "../hooks/use-auth";
+import { authService } from "../services/auth-service";
 import { useToast } from "../hooks/use-toast";
 import { Footer } from "../components/layout/footer";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
@@ -298,7 +299,6 @@ function StatCard({ value, label, icon }: { value: number, label: string, icon: 
    COMPONENTE PRINCIPAL: HOME PAGE
 ============================= */
 export default function HomePage() {
-  const { login } = useAuth();
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -354,14 +354,15 @@ export default function HomePage() {
 
   const handleGoogleLogin = async () => {
     try {
-      await login('/dashboard');
+      // Usar directamente el servicio de autenticación de Firebase
+      await authService.signInWithGoogle('/dashboard');
       
       toast({
         title: "Success",
         description: "Successfully logged in. Redirecting to dashboard..."
       });
       
-      // No es necesario setLocation ya que el método login maneja la redirección
+      // No es necesario setLocation ya que el método signInWithGoogle maneja la redirección
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
