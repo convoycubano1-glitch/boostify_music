@@ -145,6 +145,57 @@ export async function updateSubscription(priceId: string): Promise<{success: boo
 }
 
 /**
+ * Crea una sesión de pago para una inversión
+ * Esta función requiere autenticación
+ * 
+ * @param investmentData Datos de la inversión
+ * @returns URL de la sesión de checkout para el pago
+ */
+export async function createInvestmentPayment(investmentData: {
+  investmentId: string;
+  amount: number;
+  duration: number;
+  rate: number;
+  projectName?: string;
+}): Promise<string> {
+  try {
+    const response = await apiRequest({
+      url: '/api/stripe/create-investment-payment',
+      method: 'POST',
+      data: investmentData
+    });
+    
+    if (response.success && response.url) {
+      return response.url;
+    } else {
+      throw new Error(response.message || 'No se pudo crear la sesión de pago para la inversión');
+    }
+  } catch (error) {
+    console.error('Error creating investment payment:', error);
+    throw new Error('No se pudo procesar el pago de la inversión. Por favor, inténtalo de nuevo más tarde.');
+  }
+}
+
+/**
+ * Verifica el estado de una inversión por su ID de sesión
+ * 
+ * @param sessionId ID de la sesión de Stripe
+ * @returns Información de la inversión y del estado de la sesión
+ */
+export async function checkInvestmentSessionStatus(sessionId: string) {
+  try {
+    // Hacer la solicitud a la API
+    const response = await fetch(`/api/investors/status/session/${sessionId}`);
+    const data = await response.json();
+    
+    return data;
+  } catch (error) {
+    console.error('Error checking investment session status:', error);
+    throw new Error('No se pudo verificar el estado de la inversión');
+  }
+}
+
+/**
  * Obtiene los planes de suscripción disponibles
  * Esta función no requiere autenticación ya que utiliza un endpoint público
  * 
