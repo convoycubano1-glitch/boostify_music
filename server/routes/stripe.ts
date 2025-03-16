@@ -540,8 +540,11 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
 /**
  * Verificar si un producto ha sido comprado por el usuario
  * Esta ruta permite al frontend saber si mostrar opciones de compra o de acceso
+ * 
+ * NOTA: Esta ruta ha sido reemplazada por una versión pública abajo
+ * Se mantiene para retrocompatibilidad pero está como desactivada
  */
-router.get('/product-purchase-status/:productId', authenticate, async (req: Request, res: Response) => {
+router.get('/product-purchase-status-protected/:productId', authenticate, async (req: Request, res: Response) => {
   try {
     const { productId } = req.params;
     const userId = req.user?.uid;
@@ -1156,6 +1159,66 @@ async function handleSuccessfulProductPayment(session: Stripe.Checkout.Session) 
 
 /**
  * Verificar si un producto ha sido comprado (versión pública)
+ * Esta ruta permite acceso público y solo retorna información básica sin datos sensibles
+ */
+router.get('/product-purchase-status/:productId', async (req: Request, res: Response) => {
+  try {
+    const { productId } = req.params;
+    let userId = null;
+    
+    // Intentar obtener el ID de usuario desde la autenticación si está disponible
+    if (req.user && req.user.uid) {
+      userId = req.user.uid;
+    }
+    
+    if (!productId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'ID de producto no especificado',
+        requiresAuth: false 
+      });
+    }
+    
+    // Si no hay ID de usuario, retornar respuesta para usuario no autenticado
+    if (!userId) {
+      return res.json({
+        success: true,
+        isPurchased: false,
+        productId,
+        requiresAuth: true,
+        message: 'Autenticación requerida para verificar compras'
+      });
+    }
+    
+    // Verificar si el usuario ha comprado este producto
+    const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
+    const purchaseQuery = await purchasesRef
+      .where('userId', '==', userId)
+      .where('productId', '==', productId)
+      .where('status', '==', 'completed')
+      .get();
+    
+    // Determinar si el producto fue comprado
+    const isPurchased = !purchaseQuery.empty;
+    
+    res.json({
+      success: true,
+      isPurchased,
+      productId,
+      requiresAuth: false
+    });
+  } catch (error: any) {
+    console.error('Error al verificar estado de compra del producto:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al verificar el estado de la compra',
+      requiresAuth: false
+    });
+  }
+});
+
+/**
+ * Verificar si un producto ha sido comprado por el usuario (versión pública)
  * Esta ruta permite acceso público y solo retorna información básica sin datos sensibles
  */
 router.get('/product-purchase-status/:productId', async (req: Request, res: Response) => {
