@@ -1,5 +1,34 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
+
+// Define the Guide type based on our existing data structure
+type Guide = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  topics: string[];
+  difficulty: string;
+  author: string;
+  authorRole: string;
+  readTime: string;
+  publishDate: string;
+  image?: string;
+  likes: number;
+  content: string;
+};
+
+// Props for the guide card component
+interface GuideCardProps {
+  guide: Guide;
+  onClick: (guide: Guide) => void;
+}
+
+// Props for the guide details component
+interface GuideDetailsProps {
+  guide: Guide;
+  onBack: (selectedGuide?: Guide | null) => void;
+}
 import {
   ArrowLeft,
   ArrowRight,
@@ -780,7 +809,7 @@ interface GuideCardProps {
 }
 
 // Details view for a full guide
-const GuideDetails = ({ guide, onBack }) => {
+const GuideDetails = ({ guide, onBack }: GuideDetailsProps) => {
   return (
     <div className="space-y-6">
       <button 
@@ -873,35 +902,22 @@ const GuideDetails = ({ guide, onBack }) => {
 
 // Simple function to parse markdown to HTML
 // In a real application, you would use a proper markdown parser like marked or remark
-function parseMarkdown(markdown) {
-  let html = markdown
+function parseMarkdown(markdown: string): string {
+  // Create simplified HTML from markdown
+  const html = markdown
     // Headers
-    .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mt-8 mb-4">$1</h1>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-6 mb-3">$2</h2>')
-    .replace(/^### (.*$)/gim, '<h3 class="text-xl font-semibold mt-5 mb-2">$1</h3>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     // Lists
-    .replace(/^\* (.*$)/gim, '<ul class="list-disc pl-6 mb-4"><li>$1</li></ul>')
-    .replace(/^\d\. (.*$)/gim, '<ol class="list-decimal pl-6 mb-4"><li>$1</li></ol>')
-    // Tables stay as they are, will be styled by prose
+    .replace(/^\* (.*$)/gim, '<li>$1</li>')
     // Bold & Italic
     .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
     .replace(/\*(.*)\*/gim, '<em>$1</em>')
-    // Paragraphs
-    .replace(/^\s*$/gim, '</p><p class="mb-4">')
     // Line breaks
     .replace(/\n/gim, '<br />');
   
-  // Wrap in paragraph if not already
-  if (!html.startsWith('<')) {
-    html = '<p class="mb-4">' + html;
-  }
-  
-  // Close any open paragraph
-  if (!html.endsWith('</p>')) {
-    html = html + '</p>';
-  }
-  
-  return html;
+  return `<div class="markdown-content">${html}</div>`;
 }
 
 // Guide card for the listing page
