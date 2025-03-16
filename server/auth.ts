@@ -61,6 +61,8 @@ export function setupAuth(app: Express) {
       '/subscription-plans',  // Ruta pública para obtener información sobre planes de suscripción
       '/stripe/create-product-payment', // Ruta pública para crear sesiones de pago de productos
       '/stripe/test-guest-checkout', // Ruta de prueba para verificar la integración de compras sin autenticación
+      '/affiliate/register',  // Ruta para registrarse como afiliado (temporal para desarrollo)
+      '/affiliate/me',        // Ruta para obtener información del afiliado (temporal para desarrollo)
     ];
     
     // Patrones de rutas públicas que se verifican con startsWith
