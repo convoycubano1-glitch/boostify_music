@@ -191,7 +191,7 @@ interface ToolCardProps {
     id: string;
     title: string;
     description: string;
-    icon: React.ElementType;
+    icon: any; // Using any to fix type issue with createElement
     color: string;
     buttonText: string;
   };
