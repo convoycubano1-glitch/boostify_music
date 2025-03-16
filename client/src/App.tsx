@@ -321,7 +321,6 @@ const Router = () => {
         {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
         {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
         {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
-        {getRouteComponent("/ai-advisors-v2", WrappedAIAdvisorsPageV2, 'premium')}
         {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
         {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
         {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}

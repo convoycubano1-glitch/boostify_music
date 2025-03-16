@@ -1,11 +1,13 @@
 /**
- * Página de asesores IA con planes de suscripción
+ * AI Advisors Page with Subscription Plans
  * 
- * Esta página permite a los usuarios obtener asesoramiento profesional
- * basado en su plan de suscripción actual.
+ * This page allows users to get professional advice
+ * based on their current subscription plan.
+ * 
+ * Enhanced with sophisticated UI elements, animations, and particle effects.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../hooks/use-auth';
 import { useLocation } from 'wouter';
