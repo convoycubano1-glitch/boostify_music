@@ -420,15 +420,8 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
       userId = req.user.uid;
     }
     
-    // Si no hay usuario autenticado, informamos pero no bloqueamos
-    if (!userId) {
-      return res.json({ 
-        success: true, 
-        requiresAuth: true,
-        productDemo: true,
-        message: 'Para completar la compra, es necesario iniciar sesión'
-      });
-    }
+    // Si no hay usuario autenticado, continuamos con el flujo de checkout público
+    // No es necesario bloquear; cualquiera puede comprar como invitado
     
     if (!productId) {
       return res.status(400).json({ success: false, message: 'ID de producto no especificado' });
@@ -485,8 +478,7 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
     const amountInCents = Math.round(amount * 100);
     
     // Crear sesión de checkout para pago único
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
+    const sessionConfig: any = {
       payment_method_types: ['card'],
       line_items: [
         {
@@ -505,13 +497,21 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
       success_url: `${BASE_URL}/product-success?session_id={CHECKOUT_SESSION_ID}&product_id=${productId}`,
       cancel_url: `${BASE_URL}/product-cancelled?product_id=${productId}`,
       metadata: {
-        userId,
         productId,
         productType: productType || 'store_product',
         productName: name,
-        type: 'store_product'
+        type: 'store_product',
+        guestPurchase: userId ? 'false' : 'true'
       }
-    });
+    };
+    
+    // Solo agregar customerId si el usuario está autenticado
+    if (customerId) {
+      sessionConfig.customer = customerId;
+      sessionConfig.metadata.userId = userId;
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionConfig);
     
     // Crear un registro de la transacción pendiente
     await purchasesRef.add({
