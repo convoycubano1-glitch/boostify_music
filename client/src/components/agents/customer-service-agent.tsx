@@ -184,8 +184,8 @@ export const CustomerServiceAgent: React.FC = () => {
   useEffect(() => {
     const checkApiAvailability = async () => {
       try {
-        // Check for OpenRouter API key in both places (import.meta.env for browser and process.env for server)
-        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
+        // Check for OpenRouter API key
+        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
         
         if (!apiKey) {
           console.error('OpenRouter API key not found in environment variables');
@@ -224,8 +224,8 @@ export const CustomerServiceAgent: React.FC = () => {
     
     const checkElevenLabsAvailability = async () => {
       try {
-        // Check for either VITE_ELEVENLABS_API_KEY or ELEVENLABS_API_KEY
-        const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY;
+        // Check for VITE_ELEVENLABS_API_KEY
+        const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
         
         if (!apiKey) {
           console.log('ElevenLabs API key not found in environment variables - disabling audio features');
@@ -296,8 +296,8 @@ export const CustomerServiceAgent: React.FC = () => {
 
     try {
       // Get AI response using OpenRouter
-      // Check if OpenRouter API key is available (either as VITE_OPENROUTER_API_KEY or OPENROUTER_API_KEY)
-      const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
+      // Check if OpenRouter API key is available
+      const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error('OpenRouter API key is not configured');
       }
@@ -323,8 +323,8 @@ export const CustomerServiceAgent: React.FC = () => {
       // Generate audio if enabled and ElevenLabs API key is configured
       if (audioEnabled) {
         try {
-          // Check if ElevenLabs API key is available (either as VITE_ELEVENLABS_API_KEY or ELEVENLABS_API_KEY)
-          const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY;
+          // Check if ElevenLabs API key is available
+          const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
           if (!apiKey) {
             throw new Error('ElevenLabs API key is not configured');
           }
