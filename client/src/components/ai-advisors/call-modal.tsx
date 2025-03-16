@@ -2,7 +2,7 @@
  * Modal for making calls to AI advisors
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../hooks/use-auth';
 import { useToast } from '../../hooks/use-toast';
 import { useSubscription } from '../../lib/context/subscription-context';
@@ -54,6 +54,10 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
   const [callTimer, setCallTimer] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   
+  // Create a ref to track if we've already triggered the call simulation
+  // This helps prevent the infinite loop by ensuring we only trigger once
+  const hasCalledRef = useRef(false);
+  
   // Verify access to the advisor based on the plan
   // Using empty string as fallback when advisor is null to maintain hook call
   const { hasAccess, hasReachedLimit, callsRemaining, isLoading } = useAdvisorAccess(
@@ -61,78 +65,8 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     ['publicist'] // Advisors available in the free plan
   );
   
-  // If advisor is not defined, don't show the modal but after all hooks are called
-  if (!advisor) return null;
-  
-  // Effect to initiate the call when the modal opens
-  useEffect(() => {
-    if (open && advisor) {
-      // If the user has access, simulate the call
-      if (hasAccess && !isLoading) {
-        simulateCall();
-      }
-    } else {
-      // If the modal is closed, clean up the state
-      resetCallState();
-    }
-    
-    // Clean up when unmounting
-    return () => {
-      if (callTimer) {
-        clearInterval(callTimer);
-      }
-    };
-  }, [open, advisor, hasAccess, isLoading]);
-  
-  // Simulate a call to the advisor
-  const simulateCall = () => {
-    if (!user) return;
-    
-    setCalling(true);
-    
-    // Simulate connection time (2 seconds)
-    setTimeout(() => {
-      setCalling(false);
-      setConnected(true);
-      
-      // Start call duration timer
-      startCallTimer();
-      
-      toast({
-        title: "Call connected",
-        description: `You're talking with ${advisor.name}, your ${advisor.title.toLowerCase()}.`,
-      });
-      
-      // Start the actual phone call to the configured number
-      try {
-        const phoneNumber = ADVISOR_PHONE_NUMBER.replace(/\s+/g, '');
-        window.open(`tel:${phoneNumber}`, '_blank');
-      } catch (error) {
-        console.error('Error initiating phone call:', error);
-      }
-      
-    }, 2000);
-  };
-  
-  // Start call duration timer
-  const startCallTimer = () => {
-    // Start an interval to update duration every second
-    const timer = setInterval(() => {
-      setCallDuration(prev => {
-        // If maximum duration is reached, end the call
-        if (prev >= MAX_CALL_DURATION) {
-          endCall();
-          return MAX_CALL_DURATION;
-        }
-        return prev + 1;
-      });
-    }, 1000);
-    
-    setCallTimer(timer);
-  };
-  
-  // End the call
-  const endCall = async () => {
+  // End call function declaration
+  const endCall = useCallback(async () => {
     // Stop the timer
     if (callTimer) {
       clearInterval(callTimer);
@@ -140,7 +74,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     }
     
     // If the call was connected, register in Firestore
-    if (connected && user) {
+    if (connected && user && advisor) {
       try {
         // Register the call in Firestore
         await advisorCallService.registerCall(
@@ -170,11 +104,63 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     onOpenChange(false);
     
     // Reset the state
-    resetCallState();
-  };
+    setCalling(false);
+    setConnected(false);
+    setNotes('');
+    setCallDuration(0);
+    hasCalledRef.current = false;
+  }, [callTimer, connected, user, advisor, callDuration, notes, currentPlan, toast, onOpenChange]);
+  
+  // Start call timer function
+  const startCallTimer = useCallback(() => {
+    // Start an interval to update duration every second
+    const timer = setInterval(() => {
+      setCallDuration(prev => {
+        // If maximum duration is reached, end the call
+        if (prev >= MAX_CALL_DURATION) {
+          endCall();
+          return MAX_CALL_DURATION;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+    
+    setCallTimer(timer);
+  }, [endCall]);
+  
+  // Simulate call function
+  const simulateCall = useCallback(() => {
+    if (!user || !advisor) return;
+    
+    setCalling(true);
+    
+    // Simulate connection time (2 seconds)
+    setTimeout(() => {
+      setCalling(false);
+      setConnected(true);
+      
+      // Start call duration timer
+      startCallTimer();
+      
+      toast({
+        title: "Call connected",
+        description: `You're talking with ${advisor.name}, your ${advisor.title.toLowerCase()}.`,
+      });
+      
+      // Start the actual phone call to the configured number
+      try {
+        const phoneNumber = ADVISOR_PHONE_NUMBER.replace(/\s+/g, '');
+        window.open(`tel:${phoneNumber}`, '_blank');
+        console.log(`Simulating call to: ${advisor.name} (${advisor.id})`);
+      } catch (error) {
+        console.error('Error initiating phone call:', error);
+      }
+      
+    }, 2000);
+  }, [user, advisor, startCallTimer, toast]);
   
   // Cancel the call
-  const cancelCall = async () => {
+  const cancelCall = useCallback(async () => {
     // Stop the timer
     if (callTimer) {
       clearInterval(callTimer);
@@ -182,7 +168,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     }
     
     // If the call was connected, register as canceled
-    if (connected && user) {
+    if (connected && user && advisor) {
       try {
         // Register the canceled call in Firestore
         await advisorCallService.registerCall(
@@ -202,11 +188,15 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     onOpenChange(false);
     
     // Reset the state
-    resetCallState();
-  };
+    setCalling(false);
+    setConnected(false);
+    setNotes('');
+    setCallDuration(0);
+    hasCalledRef.current = false;
+  }, [callTimer, connected, user, advisor, callDuration, notes, currentPlan, onOpenChange]);
   
-  // Reset the call state
-  const resetCallState = () => {
+  // Reset call state function
+  const resetCallState = useCallback(() => {
     setCalling(false);
     setConnected(false);
     setNotes('');
@@ -215,7 +205,32 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
       clearInterval(callTimer);
       setCallTimer(null);
     }
-  };
+    hasCalledRef.current = false;
+  }, [callTimer]);
+  
+  // Effect to initiate the call when the modal opens
+  useEffect(() => {
+    // Only run the simulation when the modal is open, the user has access,
+    // and we haven't already triggered the call
+    if (open && advisor && hasAccess && !isLoading && !hasCalledRef.current) {
+      hasCalledRef.current = true; // Mark that we've triggered the call
+      simulateCall();
+    } 
+    // If the modal is closed, clean up the state
+    else if (!open) {
+      resetCallState();
+    }
+    
+    // Clean up when unmounting
+    return () => {
+      if (callTimer) {
+        clearInterval(callTimer);
+      }
+    };
+  }, [open, advisor, hasAccess, isLoading, callTimer, simulateCall, resetCallState]);
+  
+  // If advisor is not defined, don't show the modal but after all hooks are called
+  if (!advisor) return null;
   
   // Format duration in minutes:seconds
   const formatDuration = (seconds: number) => {

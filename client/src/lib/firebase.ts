@@ -32,13 +32,25 @@ const firebaseConfig = {
 // This prevents the "app/duplicate-app" error
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firestore with persistence settings to prevent "failed-precondition" errors
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager(),
-    cacheSizeBytes: CACHE_SIZE_UNLIMITED
-  })
-});
+// Initialize Firestore with persistence settings only if it hasn't been initialized yet
+let firestoreDb;
+try {
+  // Try to get existing Firestore instance
+  firestoreDb = getFirestore(app);
+  console.log('Using existing Firestore instance');
+} catch (error) {
+  // If it doesn't exist, initialize with persistence settings
+  console.log('Initializing Firestore with persistence settings');
+  firestoreDb = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+      cacheSizeBytes: CACHE_SIZE_UNLIMITED
+    })
+  });
+}
+
+// Export the Firestore instance
+export const db = firestoreDb;
 
 // Initialize other services
 export const auth = getAuth(app);
