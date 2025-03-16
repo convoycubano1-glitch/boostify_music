@@ -1,95 +1,114 @@
 /**
- * Hook para verificar el acceso a asesores según el plan de suscripción
+ * Hook personalizado para verificar acceso a asesores basado en el plan de suscripción
  */
 
 import { useState, useEffect } from 'react';
-import { useAuth } from './use-auth';
 import { useSubscription } from '../lib/context/subscription-context';
 import { advisorCallService } from '../lib/services/advisor-call-service';
 
-interface AdvisorAccessData {
+/**
+ * Interfaz para el resultado de verificación de acceso
+ */
+export interface AdvisorAccessResult {
+  // Si el usuario tiene acceso al asesor específico
   hasAccess: boolean;
-  isLoading: boolean;
-  error: string | null;
+  // Si ha alcanzado el límite de llamadas
   hasReachedLimit: boolean;
+  // Número de llamadas utilizadas
+  callsUsed: number;
+  // Límite total de llamadas
+  callLimit: number;
+  // Llamadas restantes
   callsRemaining: number;
+  // Si está cargando la verificación
+  isLoading: boolean;
+  // Error si ocurre alguno
+  error: string | null;
+  // Mensaje descriptivo sobre el acceso
+  message: string;
 }
 
 /**
- * Hook personalizado para verificar el acceso de un usuario a un asesor específico
- * 
+ * Hook para verificar si un usuario tiene acceso a un asesor específico
  * @param advisorId ID del asesor a verificar
- * @param freeTierAdvisors Lista de IDs de asesores disponibles en el plan gratuito
- * @returns Objeto con información sobre el acceso
+ * @param freePlanAdvisors Lista de IDs de asesores disponibles en plan gratuito
+ * @returns Resultado de la verificación de acceso
  */
 export function useAdvisorAccess(
   advisorId: string,
-  freeTierAdvisors: string[] = ['publicist']
-): AdvisorAccessData {
-  const { user } = useAuth();
-  const { subscription } = useSubscription();
+  freePlanAdvisors: string[] = []
+): AdvisorAccessResult {
+  const { userSubscription, isLoading: isSubscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
-  const [hasReachedLimit, setHasReachedLimit] = useState(false);
-  const [callsRemaining, setCallsRemaining] = useState(0);
-  
-  // Determinar el plan actual del usuario
-  const userPlan = (subscription?.status === 'active' && subscription.plan)
-    ? subscription.plan 
-    : 'free';
-  
+  const [limitInfo, setLimitInfo] = useState({
+    hasReachedLimit: false,
+    callsUsed: 0,
+    callLimit: 0,
+    callsRemaining: 0
+  });
+  const [message, setMessage] = useState('Verificando acceso...');
+
   useEffect(() => {
     const checkAccess = async () => {
-      if (!user) {
-        setHasAccess(false);
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         setIsLoading(true);
         setError(null);
         
-        // Valor predeterminado para el plan (free) si el plan es nulo
-        const planToUse = userPlan || 'free';
+        // Esperar a que la información de suscripción esté disponible
+        if (isSubscriptionLoading) {
+          return;
+        }
         
-        // Verificar si el asesor está disponible según el plan
-        const isAvailable = advisorCallService.isAdvisorAvailableInPlan(
+        const plan = userSubscription?.plan || 'free';
+        
+        // Verificar si el asesor está disponible en el plan actual
+        const advisorAvailable = advisorCallService.isAdvisorAvailableInPlan(
           advisorId,
-          freeTierAdvisors,
-          planToUse
+          plan,
+          freePlanAdvisors
         );
         
-        // Verificar si se alcanzó el límite de llamadas mensuales
-        const reachedLimit = await advisorCallService.hasReachedMonthlyLimit(planToUse);
+        // Verificar límite de llamadas
+        const limitCheck = await advisorCallService.hasReachedCallLimit(plan);
         
-        // Calcular llamadas restantes
-        const usedCalls = await advisorCallService.getCurrentMonthCallCount();
-        const maxCalls = advisorCallService.getMonthlyCallLimit(planToUse);
-        const remaining = Math.max(0, maxCalls - usedCalls);
+        setHasAccess(advisorAvailable);
+        setLimitInfo({
+          hasReachedLimit: limitCheck.hasReachedLimit,
+          callsUsed: limitCheck.callsUsed,
+          callLimit: limitCheck.callLimit,
+          callsRemaining: limitCheck.callsRemaining
+        });
         
-        // Actualizar estados
-        setHasAccess(isAvailable && !reachedLimit);
-        setHasReachedLimit(reachedLimit);
-        setCallsRemaining(remaining);
+        // Establecer mensaje según el resultado
+        if (!advisorAvailable) {
+          setMessage(`Este asesor solo está disponible en planes superiores. Actualiza tu suscripción para acceder.`);
+        } else if (limitCheck.hasReachedLimit) {
+          setMessage(`Has alcanzado tu límite de ${limitCheck.callLimit} llamadas mensuales. Actualiza tu plan para obtener más.`);
+        } else {
+          setMessage(`Tienes ${limitCheck.callsRemaining} llamadas disponibles este mes.`);
+        }
       } catch (err: any) {
-        console.error('Error checking advisor access:', err);
-        setError(err.message || 'Error al verificar acceso al asesor');
-        setHasAccess(false);
+        console.error('Error verificando acceso a asesor:', err);
+        setError(err.message || 'Error al verificar acceso');
+        setMessage('No se pudo verificar tu acceso. Intenta nuevamente.');
       } finally {
         setIsLoading(false);
       }
     };
     
     checkAccess();
-  }, [user, advisorId, freeTierAdvisors, userPlan]);
+  }, [advisorId, freePlanAdvisors, userSubscription, isSubscriptionLoading]);
   
   return {
     hasAccess,
+    hasReachedLimit: limitInfo.hasReachedLimit,
+    callsUsed: limitInfo.callsUsed,
+    callLimit: limitInfo.callLimit,
+    callsRemaining: limitInfo.callsRemaining,
     isLoading,
     error,
-    hasReachedLimit,
-    callsRemaining
+    message
   };
 }

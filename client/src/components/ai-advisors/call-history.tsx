@@ -1,421 +1,723 @@
 /**
- * Componente para mostrar el historial de llamadas a los asesores
+ * Componente para mostrar el historial de llamadas a asesores
+ * con diferentes opciones de visualización
  */
 
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { format, formatDistance } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Timestamp } from 'firebase/firestore';
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '../ui/table';
-import { Badge } from '../ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Skeleton } from '../ui/skeleton';
-import { Button } from '../ui/button';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  LabelList 
-} from 'recharts';
-import { advisorCallService, AdvisorCall } from '../../lib/services/advisor-call-service';
-import { Clock, Calendar, PhoneCall, User, Download } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { useToast } from '../../hooks/use-toast';
+import { advisorCallService, AdvisorCall } from '../../lib/services/advisor-call-service';
+import { Timestamp } from 'firebase/firestore';
 
-// Colores para los gráficos
-const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5', '#C7CEEA'];
+// Importar componentes de UI
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../../components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { ScrollArea } from '../../components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 
-export function AdvisorCallHistory() {
-  const { toast } = useToast();
+// Importar iconos
+import {
+  MoreVertical,
+  Phone,
+  PhoneCall,
+  Clock,
+  Calendar,
+  Download,
+  Filter,
+  AlertCircle,
+  FileText,
+  User,
+  RefreshCcw
+} from 'lucide-react';
+
+interface CallHistoryProps {
+  maxCalls?: number;
+  variant?: 'default' | 'compact' | 'card';
+  showHeader?: boolean;
+  showFooter?: boolean;
+  showFilters?: boolean;
+  className?: string;
+}
+
+export function CallHistory({
+  maxCalls = 10,
+  variant = 'default',
+  showHeader = true,
+  showFooter = true,
+  showFilters = true,
+  className = '',
+}: CallHistoryProps) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('history');
+  const { toast } = useToast();
+  const [calls, setCalls] = useState<AdvisorCall[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalCalls, setTotalCalls] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
   
-  // Consultar historial de llamadas
-  const { data: callHistory, isLoading, error, refetch } = useQuery({
-    queryKey: ['advisor-calls', user?.uid],
-    queryFn: () => advisorCallService.getUserCallHistory(50),
-    enabled: !!user,
-    refetchOnWindowFocus: false
-  });
+  // Estados para filtrado
+  const [currentTab, setCurrentTab] = useState('all');
+  const [filteredCalls, setFilteredCalls] = useState<AdvisorCall[]>([]);
   
-  // Exportar historial en formato CSV
-  const exportToCSV = () => {
-    try {
-      if (!callHistory || callHistory.calls.length === 0) {
-        toast({
-          title: "No hay datos para exportar",
-          description: "Tu historial de llamadas está vacío",
-          variant: "destructive"
-        });
-        return;
-      }
+  // Cargar historial de llamadas
+  useEffect(() => {
+    const loadCallHistory = async () => {
+      if (!user) return;
       
-      // Crear cabeceras CSV
-      const headers = [
-        'Fecha',
-        'Asesor',
-        'Título',
-        'Duración (min)',
-        'Estado',
-        'Plan'
-      ].join(',');
-      
-      // Crear filas CSV
-      const rows = callHistory.calls.map(call => {
-        const date = call.timestamp instanceof Timestamp 
-          ? call.timestamp.toDate() 
-          : new Date(call.timestamp);
+      try {
+        setIsLoading(true);
+        setError(null);
         
-        return [
-          format(date, 'yyyy-MM-dd HH:mm'),
-          call.advisorName,
-          call.advisorTitle,
-          (call.duration / 60).toFixed(1),
-          call.status,
-          call.plan
-        ].join(',');
-      });
-      
-      // Combinar cabeceras y filas
-      const csv = [headers, ...rows].join('\\n');
-      
-      // Crear y descargar archivo
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `historial-asesores-${format(new Date(), 'yyyyMMdd')}.csv`;
-      link.click();
-      
-      toast({
-        title: "Exportación exitosa",
-        description: "El historial de llamadas se ha descargado correctamente",
-        variant: "default"
-      });
-    } catch (err) {
-      console.error('Error exporting call history:', err);
-      toast({
-        title: "Error al exportar",
-        description: "No se pudo descargar el historial de llamadas",
-        variant: "destructive"
-      });
+        const history = await advisorCallService.getUserCallHistory(maxCalls);
+        
+        setCalls(history.calls);
+        setTotalCalls(history.totalCalls);
+        setTotalDuration(history.totalDuration);
+        setFilteredCalls(history.calls);
+      } catch (err: any) {
+        console.error('Error loading call history:', err);
+        setError(err.message || 'Error al cargar historial de llamadas');
+        
+        toast({
+          title: 'Error',
+          description: 'No se pudo cargar el historial de llamadas',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadCallHistory();
+  }, [user, maxCalls, toast]);
+  
+  // Efecto para filtrar llamadas cuando cambia la pestaña
+  useEffect(() => {
+    if (currentTab === 'all') {
+      setFilteredCalls(calls);
+    } else {
+      setFilteredCalls(calls.filter(call => call.status === currentTab));
     }
-  };
+  }, [currentTab, calls]);
   
-  // Preparar datos para gráficos
-  const getChartData = () => {
-    if (!callHistory || callHistory.calls.length === 0) return { byAdvisor: [], byPlan: [] };
-    
-    // Agrupar por asesor
-    const advisorMap = new Map<string, number>();
-    
-    // Agrupar por plan
-    const planMap = new Map<string, number>();
-    
-    callHistory.calls.forEach(call => {
-      // Datos por asesor
-      const advisorKey = call.advisorName;
-      advisorMap.set(advisorKey, (advisorMap.get(advisorKey) || 0) + 1);
-      
-      // Datos por plan
-      const planKey = call.plan || 'free';
-      planMap.set(planKey, (planMap.get(planKey) || 0) + 1);
-    });
-    
-    // Convertir a arrays para gráficos
-    const byAdvisor = Array.from(advisorMap.entries()).map(([name, count]) => ({
-      name,
-      count
-    }));
-    
-    const byPlan = Array.from(planMap.entries()).map(([name, count]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalizar
-      count
-    }));
-    
-    return { byAdvisor, byPlan };
-  };
-  
-  // Formatear duración en minutos y segundos
+  // Formatear duración de llamada
   const formatDuration = (seconds: number) => {
+    if (seconds < 60) {
+      return `${seconds} seg`;
+    }
+    
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     
-    if (minutes === 0) {
-      return `${remainingSeconds} seg`;
+    if (minutes < 60) {
+      return `${minutes} min${remainingSeconds > 0 ? ` ${remainingSeconds} seg` : ''}`;
     }
     
-    return `${minutes} min ${remainingSeconds} seg`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    
+    return `${hours} h${remainingMinutes > 0 ? ` ${remainingMinutes} min` : ''}`;
   };
   
-  const chartData = getChartData();
+  // Obtener color de estado para badge
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-500/10 text-green-500 hover:bg-green-500/20';
+      case 'cancelled':
+        return 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20';
+      case 'failed':
+        return 'bg-red-500/10 text-red-500 hover:bg-red-500/20';
+      default:
+        return 'bg-muted';
+    }
+  };
   
-  if (error) {
+  // Obtener texto de estado traducido
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'Completada';
+      case 'cancelled':
+        return 'Cancelada';
+      case 'failed':
+        return 'Fallida';
+      default:
+        return 'Desconocido';
+    }
+  };
+  
+  // Exportar historial de llamadas a CSV
+  const exportToCSV = () => {
+    if (calls.length === 0) {
+      toast({
+        title: 'Sin datos',
+        description: 'No hay llamadas para exportar',
+        variant: 'default'
+      });
+      return;
+    }
+    
+    try {
+      // Cabecera del CSV
+      const headers = ['Fecha', 'Asesor', 'Cargo', 'Duración', 'Estado', 'Notas'];
+      
+      // Convertir datos a filas CSV
+      const csvRows = [
+        headers.join(','),
+        ...calls.map(call => {
+          const timestamp = call.timestamp instanceof Timestamp 
+            ? call.timestamp.toDate() 
+            : new Date(call.timestamp);
+            
+          const date = format(timestamp, 'dd/MM/yyyy HH:mm');
+          const duration = formatDuration(call.duration);
+          const status = getStatusText(call.status);
+          
+          // Escapar notas (pueden contener comas)
+          const notes = call.notes ? `"${call.notes.replace(/"/g, '""')}"` : '';
+          
+          return [
+            date,
+            call.advisorName,
+            call.advisorTitle,
+            duration,
+            status,
+            notes
+          ].join(',');
+        })
+      ];
+      
+      // Unir filas con saltos de línea
+      const csvString = csvRows.join('\n');
+      
+      // Crear archivo Blob
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      
+      // Crear URL de descarga
+      const url = URL.createObjectURL(blob);
+      
+      // Crear elemento de ancla para descarga
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `historial-llamadas-${format(new Date(), 'yyyyMMdd')}.csv`);
+      link.style.display = 'none';
+      
+      // Agregar al DOM, hacer clic y luego eliminar
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: 'Exportación completada',
+        description: 'El historial de llamadas se ha descargado correctamente',
+      });
+    } catch (error) {
+      console.error('Error exporting call history:', error);
+      toast({
+        title: 'Error de exportación',
+        description: 'No se pudo exportar el historial de llamadas',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Recargar datos manualmente
+  const handleRefresh = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const history = await advisorCallService.getUserCallHistory(maxCalls);
+      
+      setCalls(history.calls);
+      setTotalCalls(history.totalCalls);
+      setTotalDuration(history.totalDuration);
+      setFilteredCalls(
+        currentTab === 'all' 
+          ? history.calls 
+          : history.calls.filter(call => call.status === currentTab)
+      );
+      
+      toast({
+        title: 'Datos actualizados',
+        description: 'El historial de llamadas se ha recargado correctamente'
+      });
+    } catch (err: any) {
+      console.error('Error refreshing call history:', err);
+      setError(err.message || 'Error al recargar historial de llamadas');
+      
+      toast({
+        title: 'Error',
+        description: 'No se pudo recargar el historial de llamadas',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Versión compacta del componente para paneles
+  if (variant === 'compact') {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Error al cargar historial</CardTitle>
-          <CardDescription>No se pudo cargar el historial de llamadas</CardDescription>
-        </CardHeader>
+      <div className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`}>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center">
+              <PhoneCall className="w-4 h-4 mr-2 text-primary" />
+              <span className="font-medium text-sm">Llamadas recientes</span>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+          
+          {isLoading ? (
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-2">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="space-y-1 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-2 text-center">
+              <AlertCircle className="w-8 h-8 text-destructive mb-2" />
+              <p className="text-xs text-muted-foreground">Error al cargar llamadas</p>
+            </div>
+          ) : filteredCalls.length === 0 ? (
+            <div className="text-center py-3">
+              <p className="text-sm text-muted-foreground">No hay llamadas registradas</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-[160px]">
+              <div className="space-y-2">
+                {filteredCalls.slice(0, 5).map((call) => {
+                  const date = call.timestamp instanceof Timestamp
+                    ? call.timestamp.toDate()
+                    : new Date(call.timestamp);
+                    
+                  return (
+                    <div key={call.id} className="flex items-center py-1">
+                      <div className="flex-shrink-0 mr-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          call.status === 'completed' ? 'bg-green-500/10' :
+                          call.status === 'cancelled' ? 'bg-amber-500/10' :
+                          'bg-red-500/10'
+                        }`}>
+                          <Phone className={`w-4 h-4 ${
+                            call.status === 'completed' ? 'text-green-500' :
+                            call.status === 'cancelled' ? 'text-amber-500' :
+                            'text-red-500'
+                          }`} />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{call.advisorName}</p>
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 text-muted-foreground mr-1" />
+                          <span className="text-xs text-muted-foreground">{formatDuration(call.duration)}</span>
+                          <span className="mx-1 text-muted-foreground text-xs">•</span>
+                          <span className="text-xs text-muted-foreground">{format(date, 'dd MMM', { locale: es })}</span>
+                        </div>
+                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge className={getStatusColor(call.status)} variant="outline">
+                              {getStatusText(call.status).charAt(0)}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {getStatusText(call.status)}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+        {!isLoading && !error && filteredCalls.length > 0 && (
+          <div className="border-t p-3 flex items-center justify-between text-xs text-muted-foreground">
+            <span>{totalCalls} llamadas en total</span>
+            <span>{formatDuration(totalDuration)} acumulados</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // Versión estilo card para dashboard
+  if (variant === 'card') {
+    return (
+      <Card className={className}>
+        {showHeader && (
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Historial de Llamadas</CardTitle>
+                <CardDescription>Registro de tus llamadas a asesores</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isLoading}
+              >
+                <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Actualizar
+              </Button>
+            </div>
+          </CardHeader>
+        )}
         <CardContent>
-          <p className="text-destructive">
-            Se produjo un error al obtener tu historial de llamadas. Por favor, intenta nuevamente.
-          </p>
-          <Button onClick={() => refetch()} className="mt-4">
-            Reintentar
-          </Button>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/5" />
+                    <Skeleton className="h-4 w-4/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <Alert variant="destructive" className="my-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                No se pudo cargar el historial de llamadas. Intenta nuevamente.
+              </AlertDescription>
+            </Alert>
+          ) : filteredCalls.length === 0 ? (
+            <div className="text-center py-8 space-y-3">
+              <Phone className="w-12 h-12 text-muted-foreground mx-auto" />
+              <div>
+                <h3 className="font-medium">No hay llamadas registradas</h3>
+                <p className="text-sm text-muted-foreground">
+                  Tu historial de llamadas a asesores aparecerá aquí.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {showFilters && (
+                <div className="flex justify-between items-center mb-2">
+                  <Tabs 
+                    defaultValue="all" 
+                    value={currentTab}
+                    onValueChange={setCurrentTab}
+                    className="w-full"
+                  >
+                    <TabsList className="grid grid-cols-3 w-full">
+                      <TabsTrigger value="all">Todas</TabsTrigger>
+                      <TabsTrigger value="completed">Completadas</TabsTrigger>
+                      <TabsTrigger value="cancelled">Canceladas</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              )}
+              
+              <ScrollArea className="h-[300px] pr-4">
+                <div className="space-y-3">
+                  {filteredCalls.map((call) => {
+                    const date = call.timestamp instanceof Timestamp
+                      ? call.timestamp.toDate()
+                      : new Date(call.timestamp);
+                      
+                    return (
+                      <div 
+                        key={call.id}
+                        className="flex items-center p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex-shrink-0 mr-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            call.status === 'completed' ? 'bg-green-500/10' :
+                            call.status === 'cancelled' ? 'bg-amber-500/10' :
+                            'bg-red-500/10'
+                          }`}>
+                            <Phone className={`w-5 h-5 ${
+                              call.status === 'completed' ? 'text-green-500' :
+                              call.status === 'cancelled' ? 'text-amber-500' :
+                              'text-red-500'
+                            }`} />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">{call.advisorName}</p>
+                            <Badge className={getStatusColor(call.status)} variant="outline">
+                              {getStatusText(call.status)}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <User className="h-3 w-3 mr-1" />
+                            <span>{call.advisorTitle}</span>
+                            <span className="mx-1">•</span>
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span>{formatDuration(call.duration)}</span>
+                            <span className="mx-1">•</span>
+                            <Calendar className="h-3 w-3 mr-1" />
+                            <span>{format(date, 'dd MMM yyyy, HH:mm', { locale: es })}</span>
+                          </div>
+                          
+                          {call.notes && (
+                            <div className="mt-2 text-xs text-muted-foreground bg-muted p-2 rounded-md">
+                              <div className="flex items-start">
+                                <FileText className="h-3 w-3 mr-1 mt-0.5" />
+                                <p className="line-clamp-2">{call.notes}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
         </CardContent>
+        {showFooter && !isLoading && !error && filteredCalls.length > 0 && (
+          <CardFooter className="flex justify-between items-center border-t pt-3">
+            <div className="text-xs text-muted-foreground">
+              {totalCalls} llamadas • {formatDuration(totalDuration)} tiempo total
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToCSV}
+              disabled={filteredCalls.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     );
   }
   
+  // Versión predeterminada del componente (tabla completa)
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <CardTitle>Historial de Llamadas</CardTitle>
-          <CardDescription>
-            Registro de tus consultas con los asesores IA
-          </CardDescription>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex items-center gap-2"
-          onClick={exportToCSV}
-          disabled={isLoading || !callHistory || callHistory.calls.length === 0}
-        >
-          <Download className="w-4 h-4" />
-          Exportar CSV
-        </Button>
-      </CardHeader>
+    <Card className={className}>
+      {showHeader && (
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Historial completo de llamadas</CardTitle>
+              <CardDescription>Registro de todas tus interacciones con asesores</CardDescription>
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isLoading}
+              >
+                <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Actualizar
+              </Button>
+              {filteredCalls.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportToCSV}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+      )}
+      
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="history">Historial</TabsTrigger>
-            <TabsTrigger value="stats">Estadísticas</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="history">
-            {isLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        ) : error ? (
+          <Alert variant="destructive" className="my-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              No se pudo cargar el historial de llamadas. Intenta nuevamente.
+            </AlertDescription>
+          </Alert>
+        ) : filteredCalls.length === 0 ? (
+          <div className="text-center py-12 space-y-4">
+            <Phone className="w-16 h-16 text-muted-foreground mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium">No hay llamadas registradas</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Tu historial de llamadas a asesores aparecerá aquí.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {showFilters && (
+              <div className="flex justify-between items-center mb-4">
+                <Tabs 
+                  defaultValue="all" 
+                  value={currentTab}
+                  onValueChange={setCurrentTab}
+                  className="w-full max-w-md"
+                >
+                  <TabsList className="grid grid-cols-3 w-full">
+                    <TabsTrigger value="all">Todas</TabsTrigger>
+                    <TabsTrigger value="completed">Completadas</TabsTrigger>
+                    <TabsTrigger value="cancelled">Canceladas</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <div className="flex items-center">
+                  <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {filteredCalls.length} {filteredCalls.length === 1 ? 'llamada' : 'llamadas'} mostradas
+                  </span>
+                </div>
               </div>
-            ) : callHistory?.calls.length === 0 ? (
-              <div className="text-center py-8">
-                <PhoneCall className="w-12 h-12 mx-auto text-muted-foreground opacity-20 mb-4" />
-                <h3 className="text-lg font-medium">No hay llamadas registradas</h3>
-                <p className="text-muted-foreground mt-1">
-                  Tu historial de conversaciones con asesores aparecerá aquí.
-                </p>
-              </div>
-            ) : (
+            )}
+            
+            <div className="rounded-md border">
               <Table>
-                <TableCaption>
-                  Historial de {callHistory?.totalCalls || 0} llamadas a tus asesores IA
-                </TableCaption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Fecha</TableHead>
                     <TableHead>Asesor</TableHead>
-                    <TableHead className="hidden md:table-cell">Duración</TableHead>
-                    <TableHead className="hidden md:table-cell">Plan</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Duración</TableHead>
                     <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {callHistory?.calls.map((call) => {
-                    // Convertir Timestamp a Date si es necesario
-                    const callDate = call.timestamp instanceof Timestamp 
-                      ? call.timestamp.toDate() 
+                  {filteredCalls.map((call) => {
+                    const date = call.timestamp instanceof Timestamp
+                      ? call.timestamp.toDate()
                       : new Date(call.timestamp);
-                    
+                      
                     return (
                       <TableRow key={call.id}>
                         <TableCell>
-                          <div className="font-medium">
-                            {format(callDate, 'dd/MM/yyyy')}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {format(callDate, 'HH:mm')}
+                          <div>
+                            <p className="font-medium">{call.advisorName}</p>
+                            <p className="text-xs text-muted-foreground">{call.advisorTitle}</p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{call.advisorName}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {call.advisorTitle}
+                          <div className="flex flex-col">
+                            <span>{format(date, 'dd/MM/yyyy', { locale: es })}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {format(date, 'HH:mm', { locale: es })}
+                            </span>
                           </div>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {formatDuration(call.duration)}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Badge variant="outline" className="capitalize">
-                            {call.plan}
-                          </Badge>
-                        </TableCell>
+                        <TableCell>{formatDuration(call.duration)}</TableCell>
                         <TableCell>
-                          <Badge 
-                            variant={
-                              call.status === 'completed' ? 'default' : 
-                              call.status === 'cancelled' ? 'secondary' : 
-                              'destructive'
-                            }
-                            className="capitalize"
+                          <Badge
+                            variant="outline"
+                            className={getStatusColor(call.status)}
                           >
-                            {call.status === 'completed' ? 'Completada' : 
-                             call.status === 'cancelled' ? 'Cancelada' : 
-                             'Fallida'}
+                            {getStatusText(call.status)}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem 
+                                      className="flex items-center cursor-pointer"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(call.notes || '');
+                                        toast({
+                                          title: 'Notas copiadas',
+                                          description: 'Las notas se han copiado al portapapeles',
+                                        });
+                                      }}
+                                      disabled={!call.notes}
+                                    >
+                                      <FileText className="mr-2 h-4 w-4" />
+                                      <span>Copiar notas</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Opciones</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </TableCell>
                       </TableRow>
                     );
                   })}
                 </TableBody>
+                <TableCaption>
+                  {totalCalls} llamadas en total • {formatDuration(totalDuration)} de tiempo acumulado
+                </TableCaption>
               </Table>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="stats">
-            {isLoading ? (
-              <div className="space-y-6">
-                <Skeleton className="h-40 w-full" />
-                <Skeleton className="h-40 w-full" />
-              </div>
-            ) : callHistory?.calls.length === 0 ? (
-              <div className="text-center py-8">
-                <BarChart className="w-12 h-12 mx-auto text-muted-foreground opacity-20 mb-4" />
-                <h3 className="text-lg font-medium">No hay datos para mostrar</h3>
-                <p className="text-muted-foreground mt-1">
-                  Las estadísticas se generarán cuando tengas llamadas registradas.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Resumen de uso</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-muted/50 rounded-lg p-4 flex items-center">
-                      <PhoneCall className="w-8 h-8 text-primary mr-3" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total de llamadas</p>
-                        <p className="text-2xl font-bold">{callHistory?.totalCalls || 0}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-muted/50 rounded-lg p-4 flex items-center">
-                      <Clock className="w-8 h-8 text-primary mr-3" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Tiempo total</p>
-                        <p className="text-2xl font-bold">
-                          {Math.floor((callHistory?.totalDuration || 0) / 60)} min
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-muted/50 rounded-lg p-4 flex items-center">
-                      <Calendar className="w-8 h-8 text-primary mr-3" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Primera llamada</p>
-                        {callHistory?.calls.length ? (
-                          <p className="text-lg font-bold">
-                            {format(
-                              callHistory.calls[callHistory.calls.length - 1].timestamp instanceof Timestamp 
-                                ? callHistory.calls[callHistory.calls.length - 1].timestamp.toDate() 
-                                : new Date(callHistory.calls[callHistory.calls.length - 1].timestamp),
-                              'dd/MM/yyyy'
-                            )}
-                          </p>
-                        ) : (
-                          <p className="text-lg font-bold">-</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Gráfico de llamadas por asesor */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Llamadas por asesor</h3>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData.byAdvisor}>
-                          <XAxis dataKey="name" />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip 
-                            formatter={(value) => [`${value} llamadas`, 'Total']}
-                            contentStyle={{ backgroundColor: 'rgba(24, 24, 27, 0.95)', borderColor: 'rgba(63, 63, 70, 0.5)' }}
-                            labelStyle={{ color: 'white' }}
-                          />
-                          <Bar dataKey="count" fill="#FF6B6B" radius={[4, 4, 0, 0]}>
-                            {chartData.byAdvisor.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                  
-                  {/* Gráfico de distribución por plan */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Distribución por plan</h3>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={chartData.byPlan}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={true}
-                            innerRadius={60}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="count"
-                          >
-                            {chartData.byPlan.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={COLORS[index % COLORS.length]} 
-                                stroke="rgba(0, 0, 0, 0.1)"
-                              />
-                            ))}
-                            <LabelList dataKey="name" position="outside" fill="#888" />
-                          </Pie>
-                          <Tooltip 
-                            formatter={(value) => [`${value} llamadas`, 'Total']}
-                            contentStyle={{ backgroundColor: 'rgba(24, 24, 27, 0.95)', borderColor: 'rgba(63, 63, 70, 0.5)' }}
-                            labelStyle={{ color: 'white' }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

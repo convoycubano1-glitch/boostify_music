@@ -1,34 +1,34 @@
 /**
- * Componente para mostrar información sobre límites de llamadas a asesores
+ * Componente para mostrar los límites de llamadas del usuario
+ * según su plan de suscripción actual
  */
 
-import { useEffect, useState } from 'react';
-import { useSubscription } from '../../lib/context/subscription-context';
-import { advisorCallService } from '../../lib/services/advisor-call-service';
-import { Progress } from '../ui/progress';
-import { Badge } from '../ui/badge';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { 
-  AlertCircle, 
-  CheckCircle, 
-  Phone, 
-  Calendar, 
-  ArrowRight,
-  InfoIcon
-} from 'lucide-react';
-import { useToast } from '../../hooks/use-toast';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/use-auth';
+import { useToast } from '../../hooks/use-toast';
 import { useLocation } from 'wouter';
+import { advisorCallService } from '../../lib/services/advisor-call-service';
+import { useSubscription } from '../../lib/context/subscription-context';
 
-export interface CallLimitsProps {
+// Componentes UI
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card';
+import { Progress } from '../../components/ui/progress';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+
+// Iconos
+import { Phone, ArrowRight, AlertCircle, InfoIcon } from 'lucide-react';
+
+interface CallLimitsProps {
   variant?: 'default' | 'compact';
   showUpgradeButton?: boolean;
+  className?: string;
 }
 
-export function CallLimits({ 
-  variant = 'default', 
-  showUpgradeButton = true 
+export function CallLimits({
+  variant = 'default',
+  showUpgradeButton = true,
+  className = '',
 }: CallLimitsProps) {
   const { toast } = useToast();
   const { user } = useAuth();

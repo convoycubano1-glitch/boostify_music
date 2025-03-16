@@ -1,10 +1,16 @@
 /**
- * Componente modal para gestionar llamadas a los asesores
+ * Modal para realizar llamadas a asesores IA
  */
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../hooks/use-auth';
+import { useToast } from '../../hooks/use-toast';
+import { useSubscription } from '../../lib/context/subscription-context';
+import { advisorCallService, Advisor } from '../../lib/services/advisor-call-service';
+import { useAdvisorAccess } from '../../hooks/use-advisor-access';
 import { motion } from 'framer-motion';
-import { Loader2, Phone, PhoneOff, X, MessageSquare, Clock } from 'lucide-react';
+
+// Componentes UI
 import {
   Dialog,
   DialogContent,
@@ -12,20 +18,26 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../ui/dialog';
-import { Button } from '../ui/button';
-import { Textarea } from '../ui/textarea';
-import { Badge } from '../ui/badge';
-import { toast } from '../../hooks/use-toast';
-import { useAuth } from '../../hooks/use-auth';
-import { useSubscription } from '../../lib/context/subscription-context';
-import { useAdvisorAccess } from '../../hooks/use-advisor-access';
-import { Advisor, advisorCallService } from '../../lib/services/advisor-call-service';
-import { Progress } from '../ui/progress';
+} from '../../components/ui/dialog';
+import { Button } from '../../components/ui/button';
+import { Textarea } from '../../components/ui/textarea';
+import { Progress } from '../../components/ui/progress';
+import { Badge } from '../../components/ui/badge';
 
-const MAX_CALL_DURATION = 300; // 5 minutos en segundos
+// Iconos
+import {
+  Phone,
+  PhoneOff,
+  MessageSquare,
+  Clock,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react';
 
-export interface CallModalProps {
+// Máxima duración de llamada en segundos (5 minutos)
+const MAX_CALL_DURATION = 300;
+
+interface CallModalProps {
   advisor: Advisor | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,6 +51,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
   const [notes, setNotes] = useState('');
   const [callDuration, setCallDuration] = useState(0);
   const [callTimer, setCallTimer] = useState<NodeJS.Timeout | null>(null);
+  const { toast } = useToast();
   
   // Si el asesor no está definido, no mostrar el modal
   if (!advisor) return null;

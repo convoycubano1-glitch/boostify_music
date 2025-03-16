@@ -340,5 +340,31 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid
       );
     }
+    
+    // Reglas para suscripciones
+    match /subscriptions/{subscriptionId} {
+      // Solo el usuario propietario puede leer su suscripción
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Solo el servidor o admin puede crear/actualizar suscripciones (protegido)
+      allow create, update, delete: if false; // Se maneja desde funciones cloud
+    }
+    
+    // Reglas para relación usuario-suscripción
+    match /user_subscriptions/{userId} {
+      // Solo el usuario propietario puede leer su registro de suscripción
+      allow read: if isAuthenticated() && userId == request.auth.uid;
+      // Solo el servidor o admin puede crear/actualizar registros (protegido)
+      allow create, update, delete: if false; // Se maneja desde funciones cloud
+    }
+    
+    // Reglas para historial de llamadas con asesores
+    match /advisor_calls/{callId} {
+      // El usuario solo puede leer sus propias llamadas
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // El usuario puede crear registros de llamadas pero no modificarlos después
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Solo el servidor puede actualizar o eliminar registros (protegido)
+      allow update, delete: if false; // Se maneja desde funciones cloud o admin
+    }
   }
 }

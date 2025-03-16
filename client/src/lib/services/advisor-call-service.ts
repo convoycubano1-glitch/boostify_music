@@ -1,115 +1,71 @@
 /**
- * Servicio para gestionar las llamadas a los asesores IA
+ * Servicio para gestionar llamadas a asesores IA
  * 
  * Este servicio se encarga de:
  * - Registrar llamadas en Firestore
  * - Obtener historial de llamadas
- * - Verificar límites de llamadas según el plan de suscripción
+ * - Verificar límites según plan de suscripción
  */
 
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  Timestamp, 
-  DocumentData
-} from 'firebase/firestore';
-import { db } from '../firebase';
 import { LucideIcon } from 'lucide-react';
+import { db } from '../firebase';
+import { getAuth } from 'firebase/auth';
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+  serverTimestamp,
+  Timestamp,
+} from 'firebase/firestore';
 import { getUserId } from '../auth-helpers';
 
+/**
+ * Interfaz de Asesor
+ */
 export interface Advisor {
-  id: string;
-  name: string;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  phoneNumber?: string;
-  color: string;
-  animationDelay?: number;
+  id: string;           // ID único del asesor
+  name: string;         // Nombre completo
+  title: string;        // Cargo o posición
+  description: string;  // Descripción de especialidad
+  icon: LucideIcon;     // Ícono representativo
+  color: string;        // Color distintivo (para UI)
+  animationDelay?: number; // Delay para animaciones UI
 }
 
+/**
+ * Interfaz de llamada a asesor
+ */
 export interface AdvisorCall {
-  id: string;
-  userId: string;
-  advisorId: string;
-  advisorName: string;
-  advisorTitle: string;
-  duration: number;
-  notes: string;
-  topics: string[];
-  timestamp: Timestamp;
-  status: 'completed' | 'cancelled' | 'failed';
-  plan: string;
+  id?: string;          // ID único de la llamada (generado por Firestore)
+  userId: string;       // ID del usuario
+  advisorId: string;    // ID del asesor
+  advisorName: string;  // Nombre del asesor
+  advisorTitle: string; // Cargo del asesor
+  duration: number;     // Duración en segundos
+  status: 'completed' | 'cancelled' | 'failed'; // Estado de la llamada
+  notes?: string;       // Notas del usuario
+  topics: string[];     // Temas tratados
+  plan: string;         // Plan de suscripción usado
+  timestamp: Timestamp; // Fecha y hora
 }
 
-export interface CallHistory {
-  calls: AdvisorCall[];
-  totalCalls: number;
-  totalDuration: number;
-}
-
+/**
+ * Clase de servicio para llamadas a asesores
+ */
 class AdvisorCallService {
-  private readonly COLLECTION_NAME = 'advisor-calls';
-  
   /**
-   * Obtiene los límites de llamadas mensuales para cada plan
-   * @param plan Plan de suscripción (free, basic, pro, premium)
-   * @returns Número máximo de llamadas según el plan
-   */
-  getMonthlyCallLimit(plan: string): number {
-    const limits: Record<string, number> = {
-      'free': 3,
-      'basic': 10,
-      'pro': 30,
-      'premium': 100
-    };
-    
-    return limits[plan.toLowerCase()] || limits.free;
-  }
-  
-  /**
-   * Verifica si un asesor está disponible en un plan específico
-   * @param advisorId ID del asesor
-   * @param freeTierAdvisors Lista de IDs de asesores disponibles en el plan gratuito
-   * @param plan Plan actual del usuario
-   * @returns Booleano indicando si el asesor está disponible
-   */
-  isAdvisorAvailableInPlan(advisorId: string, freeTierAdvisors: string[], plan: string): boolean {
-    // Si el asesor está en la lista de asesores gratuitos, está disponible para todos
-    if (freeTierAdvisors.includes(advisorId)) {
-      return true;
-    }
-    
-    // Para otros asesores, verificar según el plan
-    switch (plan.toLowerCase()) {
-      case 'premium':
-        return true; // Todos los asesores disponibles
-      case 'pro':
-        return true; // Todos los asesores disponibles
-      case 'basic':
-        // En el plan básico, solo algunos asesores están disponibles
-        return ['publicist', 'creative', 'support'].includes(advisorId);
-      case 'free':
-      default:
-        // En el plan gratuito, solo los asesores específicos están disponibles
-        return freeTierAdvisors.includes(advisorId);
-    }
-  }
-  
-  /**
-   * Registra una llamada a un asesor en Firestore
-   * @param advisor Datos del asesor contactado
-   * @param duration Duración de la llamada en segundos
-   * @param notes Notas tomadas durante la llamada
-   * @param topics Temas tratados en la llamada
-   * @param status Estado final de la llamada (completada, cancelada, fallida)
-   * @param plan Plan del usuario al momento de la llamada
-   * @returns ID del documento creado
+   * Registrar una llamada en Firestore
+   * @param advisor Datos del asesor
+   * @param duration Duración en segundos
+   * @param notes Notas opcionales
+   * @param topics Temas tratados
+   * @param status Estado de la llamada
+   * @param plan Plan de suscripción
+   * @returns Promise con el ID del documento creado
    */
   async registerCall(
     advisor: Advisor,
@@ -118,133 +74,173 @@ class AdvisorCallService {
     topics: string[] = [],
     status: 'completed' | 'cancelled' | 'failed' = 'completed',
     plan: string = 'free'
-  ): Promise<string> {
+  ): Promise<string | null> {
     try {
       const userId = getUserId();
       if (!userId) {
-        throw new Error('User not authenticated');
+        console.error('No hay usuario autenticado para registrar llamada');
+        return null;
       }
       
-      const callData = {
+      // Crear objeto de llamada
+      const callData: Omit<AdvisorCall, 'id'> = {
         userId,
         advisorId: advisor.id,
         advisorName: advisor.name,
         advisorTitle: advisor.title,
         duration,
+        status,
         notes,
         topics,
-        timestamp: Timestamp.now(),
-        status,
-        plan: plan.toLowerCase()
+        plan,
+        timestamp: serverTimestamp() as Timestamp,
       };
       
-      const docRef = await addDoc(collection(db, this.COLLECTION_NAME), callData);
+      // Guardar en Firestore
+      const docRef = await addDoc(collection(db, 'advisor_calls'), callData);
       return docRef.id;
     } catch (error) {
-      console.error('Error registering advisor call:', error);
+      console.error('Error al registrar llamada:', error);
       throw error;
     }
   }
   
   /**
-   * Obtiene el historial de llamadas de un usuario
+   * Obtener historial de llamadas del usuario
    * @param maxResults Número máximo de resultados a obtener
-   * @returns Historial de llamadas con estadísticas
+   * @returns Promise con historial de llamadas
    */
-  async getUserCallHistory(maxResults: number = 20): Promise<CallHistory> {
+  async getUserCallHistory(maxResults: number = 100): Promise<{
+    calls: AdvisorCall[];
+    totalCalls: number;
+    totalDuration: number;
+  }> {
     try {
       const userId = getUserId();
       if (!userId) {
-        throw new Error('User not authenticated');
+        console.error('No hay usuario autenticado para obtener historial');
+        return { calls: [], totalCalls: 0, totalDuration: 0 };
       }
       
-      const callsQuery = query(
-        collection(db, this.COLLECTION_NAME),
+      // Consultar Firestore para obtener llamadas del usuario, ordenadas por fecha descendente
+      const q = query(
+        collection(db, 'advisor_calls'),
         where('userId', '==', userId),
         orderBy('timestamp', 'desc'),
         limit(maxResults)
       );
       
-      const snapshot = await getDocs(callsQuery);
+      const querySnapshot = await getDocs(q);
       
-      // Convertir a array de llamadas
-      const calls: AdvisorCall[] = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
+      // Mapear resultados
+      const calls: AdvisorCall[] = [];
+      let totalDuration = 0;
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data() as Omit<AdvisorCall, 'id'>;
+        const call: AdvisorCall = {
           id: doc.id,
-          userId: data.userId,
-          advisorId: data.advisorId,
-          advisorName: data.advisorName,
-          advisorTitle: data.advisorTitle,
-          duration: data.duration,
-          notes: data.notes,
-          topics: data.topics || [],
-          timestamp: data.timestamp,
-          status: data.status,
-          plan: data.plan
+          ...data,
         };
+        calls.push(call);
+        
+        // Sumar duración total (solo de llamadas completadas)
+        if (call.status === 'completed') {
+          totalDuration += call.duration;
+        }
       });
-      
-      // Calcular estadísticas
-      const totalCalls = calls.length;
-      const totalDuration = calls.reduce((sum, call) => sum + call.duration, 0);
       
       return {
         calls,
-        totalCalls,
-        totalDuration
+        totalCalls: querySnapshot.size,
+        totalDuration,
       };
     } catch (error) {
-      console.error('Error getting user call history:', error);
-      return {
-        calls: [],
-        totalCalls: 0,
-        totalDuration: 0
-      };
+      console.error('Error al obtener historial de llamadas:', error);
+      throw error;
     }
   }
   
   /**
-   * Obtiene el número de llamadas realizadas en el mes actual
-   * @returns Número de llamadas del mes actual
+   * Verificar si el usuario ha alcanzado su límite de llamadas
+   * @param plan Plan de suscripción del usuario
+   * @returns Promise con resultado de verificación
    */
-  async getCurrentMonthCallCount(): Promise<number> {
+  async hasReachedCallLimit(plan: string = 'free'): Promise<{
+    hasReachedLimit: boolean;
+    callsUsed: number;
+    callLimit: number;
+    callsRemaining: number;
+  }> {
     try {
-      const userId = getUserId();
-      if (!userId) {
-        throw new Error('User not authenticated');
-      }
+      // Obtener límite según plan
+      const callLimit = this.getMonthlyCallLimit(plan);
       
-      // Calcular el primer día del mes actual
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const firstDayTimestamp = Timestamp.fromDate(firstDayOfMonth);
+      // Obtener historial de llamadas recientes (del último mes)
+      const history = await this.getUserCallHistory();
+      const callsUsed = history.totalCalls;
       
-      // Consultar llamadas desde el inicio del mes
-      const callsQuery = query(
-        collection(db, this.COLLECTION_NAME),
-        where('userId', '==', userId),
-        where('timestamp', '>=', firstDayTimestamp),
-        orderBy('timestamp', 'desc')
-      );
+      // Verificar si ha alcanzado el límite
+      const hasReachedLimit = callsUsed >= callLimit;
+      const callsRemaining = Math.max(0, callLimit - callsUsed);
       
-      const snapshot = await getDocs(callsQuery);
-      return snapshot.size;
+      return {
+        hasReachedLimit,
+        callsUsed,
+        callLimit,
+        callsRemaining,
+      };
     } catch (error) {
-      console.error('Error getting current month call count:', error);
-      return 0;
+      console.error('Error al verificar límite de llamadas:', error);
+      throw error;
     }
   }
   
   /**
-   * Verifica si el usuario ha alcanzado su límite de llamadas mensuales
-   * @param plan Plan de suscripción actual
-   * @returns Booleano indicando si se alcanzó el límite
+   * Obtener límite mensual de llamadas según el plan
+   * @param plan Plan de suscripción
+   * @returns Número de llamadas permitidas por mes
    */
-  async hasReachedMonthlyLimit(plan: string): Promise<boolean> {
-    const currentCount = await this.getCurrentMonthCallCount();
-    const limit = this.getMonthlyCallLimit(plan);
-    return currentCount >= limit;
+  getMonthlyCallLimit(plan: string = 'free'): number {
+    switch (plan.toLowerCase()) {
+      case 'premium':
+        return 100;
+      case 'pro':
+        return 30;
+      case 'basic':
+        return 10;
+      case 'free':
+      default:
+        return 3;
+    }
+  }
+  
+  /**
+   * Verificar si un asesor está disponible en el plan actual
+   * @param advisorId ID del asesor
+   * @param plan Plan de suscripción
+   * @param freePlanAdvisors Lista de IDs de asesores disponibles en plan gratuito
+   * @returns Si el asesor está disponible en el plan
+   */
+  isAdvisorAvailableInPlan(
+    advisorId: string,
+    plan: string = 'free',
+    freePlanAdvisors: string[] = []
+  ): boolean {
+    // Todos los asesores están disponibles en planes premium y pro
+    if (['premium', 'pro'].includes(plan.toLowerCase())) {
+      return true;
+    }
+    
+    // Para plan básico, solo algunos asesores están disponibles
+    if (plan.toLowerCase() === 'basic') {
+      // En este caso, asumimos que los asesores del plan free más algunos adicionales
+      const basicPlanAdvisors = [...freePlanAdvisors, 'creative', 'support'];
+      return basicPlanAdvisors.includes(advisorId);
+    }
+    
+    // Para plan gratuito, solo los asesores específicamente indicados
+    return freePlanAdvisors.includes(advisorId);
   }
 }
 

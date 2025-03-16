@@ -1,41 +1,75 @@
 /**
- * Funciones auxiliares para autenticación
+ * Utilidades para autenticación y gestión de tokens
  */
 
 import { getAuth } from 'firebase/auth';
 
 /**
- * Obtiene el ID del usuario actualmente autenticado
+ * Obtiene el ID del usuario actual autenticado
  * @returns ID del usuario o null si no hay usuario autenticado
  */
 export function getUserId(): string | null {
   const auth = getAuth();
-  return auth.currentUser?.uid || null;
+  const user = auth.currentUser;
+  return user ? user.uid : null;
 }
 
 /**
- * Verifica si el usuario está autenticado
- * @returns Booleano indicando si hay un usuario autenticado
+ * Obtiene el token de autenticación del usuario actual
+ * @returns Promise con el token o null si no hay usuario autenticado
  */
-export function isUserAuthenticated(): boolean {
-  return !!getUserId();
+export async function getAuthToken(): Promise<string | null> {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  
+  if (!user) {
+    return null;
+  }
+  
+  try {
+    const token = await user.getIdToken();
+    return token;
+  } catch (error) {
+    console.error('Error obteniendo token de autenticación:', error);
+    return null;
+  }
+}
+
+/**
+ * Verifica si el usuario actual está autenticado
+ * @returns Si hay un usuario autenticado
+ */
+export function isAuthenticated(): boolean {
+  const auth = getAuth();
+  return !!auth.currentUser;
 }
 
 /**
  * Obtiene el email del usuario autenticado
- * @returns Email del usuario o null si no hay usuario autenticado
+ * @returns Email del usuario o null si no está autenticado
  */
 export function getUserEmail(): string | null {
   const auth = getAuth();
-  return auth.currentUser?.email || null;
+  const user = auth.currentUser;
+  return user?.email || null;
 }
 
 /**
- * Verifica si el usuario actual es un administrador
- * @param adminEmails Lista de emails de administradores
- * @returns Booleano indicando si el usuario es administrador
+ * Obtiene el nombre de visualización del usuario
+ * @returns Nombre del usuario o null si no está autenticado
  */
-export function isUserAdmin(adminEmails: string[] = []): boolean {
-  const email = getUserEmail();
-  return !!email && adminEmails.includes(email);
+export function getUserDisplayName(): string | null {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  return user?.displayName || null;
+}
+
+/**
+ * Obtiene la URL de la foto de perfil del usuario
+ * @returns URL de la foto de perfil o null si no está autenticado o no tiene foto
+ */
+export function getUserPhotoURL(): string | null {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  return user?.photoURL || null;
 }

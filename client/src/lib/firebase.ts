@@ -4,7 +4,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, getIdToken } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
 // Configuración de Firebase disponible en las variables de entorno
@@ -25,6 +25,22 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
+
+// Función para obtener el token de autenticación
+export async function getAuthToken(): Promise<string | null> {
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.warn('No hay usuario autenticado para obtener token');
+      return null;
+    }
+    
+    return await getIdToken(currentUser, true);
+  } catch (error) {
+    console.error('Error al obtener el token de autenticación:', error);
+    return null;
+  }
+}
 
 // Habilitar persistencia para funcionamiento offline
 try {

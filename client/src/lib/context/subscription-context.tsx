@@ -2,110 +2,142 @@
  * Contexto para gestionar la información de suscripción del usuario
  */
 
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/use-auth';
-import { collection, doc, getDoc, onSnapshot, Firestore } from 'firebase/firestore';
 import { db } from '../firebase';
+import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
 
-// Definir tipos para el contexto
+// Tipos de planes disponibles
+export type PlanType = 'free' | 'basic' | 'pro' | 'premium';
+
+// Interfaz para los datos de suscripción
 export interface Subscription {
-  id: string;
-  plan: string;
-  status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete';
-  currentPeriodEnd: Date;
-  cancelAtPeriodEnd: boolean;
-  stripeCustomerId?: string;
-  stripePriceId?: string;
-  trialEndDate?: Date;
-  createdAt: Date;
+  id: string;                 // ID de la suscripción
+  userId: string;             // ID del usuario
+  plan: PlanType;             // Tipo de plan
+  status: 'active' | 'canceled' | 'past_due'; // Estado
+  currentPeriodStart: Date;   // Inicio del período actual
+  currentPeriodEnd: Date;     // Fin del período actual
+  cancelAtPeriodEnd: boolean; // Si se cancelará al final del período
+  stripeCustomerId?: string;  // ID de cliente en Stripe
+  stripeSubscriptionId?: string; // ID de suscripción en Stripe
+  createdAt: Date;            // Fecha de creación
+  updatedAt: Date;            // Fecha de última actualización
 }
 
-export interface SubscriptionContextType {
+// Interfaz para el contexto de suscripción
+interface SubscriptionContextType {
   subscription: Subscription | null;
+  currentPlan: PlanType;
   isLoading: boolean;
   error: string | null;
-  currentPlan: string;
   refreshSubscription: () => Promise<void>;
 }
 
-// Crear contexto con valores por defecto
+// Crear contexto
 const SubscriptionContext = createContext<SubscriptionContextType>({
   subscription: null,
+  currentPlan: 'free',
   isLoading: true,
   error: null,
-  currentPlan: 'free',
   refreshSubscription: async () => {},
 });
 
-// Proveedor del contexto
-export function SubscriptionProvider({ children }: { children: ReactNode }) {
+/**
+ * Proveedor de contexto de suscripción
+ */
+export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Plan actual basado en la suscripción
-  const currentPlan = subscription?.status === 'active' ? subscription.plan : 'free';
+  // Calcular plan actual basado en el estado de la suscripción
+  const currentPlan: PlanType = subscription?.status === 'active' 
+    ? subscription.plan 
+    : 'free';
   
-  // Efecto para cargar los datos de suscripción cuando el usuario cambia
+  // Cargar datos de suscripción cuando cambia el usuario
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
     
     const loadSubscription = async () => {
-      setIsLoading(true);
-      setError(null);
-      
+      // Si no hay usuario, vaciar la suscripción
       if (!user) {
         setSubscription(null);
         setIsLoading(false);
         return;
       }
       
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        // Referencia a la colección de suscripciones
-        const subsCollection = collection(db, 'subscriptions');
-        const userSubDoc = doc(subsCollection, user.uid);
+        // Verificar si existe una suscripción activa para el usuario
+        const subscriptionsRef = collection(db, 'subscriptions');
         
-        // Configurar un listener para actualizaciones en tiempo real
-        unsubscribe = onSnapshot(
-          userSubDoc,
-          (docSnapshot) => {
-            if (docSnapshot.exists()) {
-              const data = docSnapshot.data();
-              // Convertir timestamps a fechas
-              const subData: Subscription = {
-                id: docSnapshot.id,
-                plan: data.plan || 'free',
-                status: data.status || 'canceled',
-                currentPeriodEnd: data.currentPeriodEnd?.toDate() || new Date(),
-                cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
-                stripeCustomerId: data.stripeCustomerId,
-                stripePriceId: data.stripePriceId,
-                trialEndDate: data.trialEndDate?.toDate(),
-                createdAt: data.createdAt?.toDate() || new Date(),
-              };
-              setSubscription(subData);
-            } else {
-              setSubscription(null);
-            }
-            setIsLoading(false);
-          },
-          (err) => {
-            console.error('Error loading subscription data:', err);
-            setError(err.message);
+        // Obtener la primera suscripción activa del usuario
+        // En caso real, se usaría una consulta más precisa con Firestore
+        const subscriptionDoc = await getDoc(doc(db, 'user_subscriptions', user.uid));
+        
+        if (subscriptionDoc.exists()) {
+          // Obtener la suscripción activa
+          const subscriptionId = subscriptionDoc.data().activeSubscriptionId;
+          
+          if (subscriptionId) {
+            // Configurar listener para actualizaciones en tiempo real
+            unsubscribe = onSnapshot(
+              doc(db, 'subscriptions', subscriptionId),
+              (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                  const data = docSnapshot.data();
+                  
+                  setSubscription({
+                    id: docSnapshot.id,
+                    userId: data.userId,
+                    plan: data.plan || 'free',
+                    status: data.status || 'active',
+                    currentPeriodStart: data.currentPeriodStart?.toDate() || new Date(),
+                    currentPeriodEnd: data.currentPeriodEnd?.toDate() || new Date(),
+                    cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+                    stripeCustomerId: data.stripeCustomerId,
+                    stripeSubscriptionId: data.stripeSubscriptionId,
+                    createdAt: data.createdAt?.toDate() || new Date(),
+                    updatedAt: data.updatedAt?.toDate() || new Date(),
+                  });
+                } else {
+                  // No hay suscripción activa
+                  setSubscription(null);
+                }
+                
+                setIsLoading(false);
+              },
+              (err) => {
+                console.error('Error al suscribirse a actualizaciones de suscripción:', err);
+                setError('Error al cargar datos de suscripción');
+                setIsLoading(false);
+              }
+            );
+          } else {
+            // No hay suscripción activa
+            setSubscription(null);
             setIsLoading(false);
           }
-        );
+        } else {
+          // No hay documento de suscripción para el usuario
+          setSubscription(null);
+          setIsLoading(false);
+        }
       } catch (err: any) {
-        console.error('Error setting up subscription listener:', err);
-        setError(err.message);
+        console.error('Error al cargar suscripción:', err);
+        setError(err.message || 'Error al cargar datos de suscripción');
         setIsLoading(false);
       }
     };
     
     loadSubscription();
     
-    // Limpiar al desmontar
+    // Limpiar listener al desmontar
     return () => {
       if (unsubscribe) {
         unsubscribe();
@@ -113,52 +145,63 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
   
-  // Función para refrescar manualmente los datos de suscripción
-  const refreshSubscription = async () => {
-    if (!user) {
-      setSubscription(null);
-      return;
-    }
+  /**
+   * Recargar datos de suscripción bajo demanda
+   */
+  const refreshSubscription = async (): Promise<void> => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    setError(null);
     
     try {
-      setIsLoading(true);
-      setError(null);
+      // Obtener la suscripción activa del usuario
+      const subscriptionDoc = await getDoc(doc(db, 'user_subscriptions', user.uid));
       
-      const subsCollection = collection(db, 'subscriptions');
-      const userSubDoc = doc(subsCollection, user.uid);
-      const docSnapshot = await getDoc(userSubDoc);
-      
-      if (docSnapshot.exists()) {
-        const data = docSnapshot.data();
-        const subData: Subscription = {
-          id: docSnapshot.id,
-          plan: data.plan || 'free',
-          status: data.status || 'canceled',
-          currentPeriodEnd: data.currentPeriodEnd?.toDate() || new Date(),
-          cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
-          stripeCustomerId: data.stripeCustomerId,
-          stripePriceId: data.stripePriceId,
-          trialEndDate: data.trialEndDate?.toDate(),
-          createdAt: data.createdAt?.toDate() || new Date(),
-        };
-        setSubscription(subData);
+      if (subscriptionDoc.exists()) {
+        const subscriptionId = subscriptionDoc.data().activeSubscriptionId;
+        
+        if (subscriptionId) {
+          const subscriptionData = await getDoc(doc(db, 'subscriptions', subscriptionId));
+          
+          if (subscriptionData.exists()) {
+            const data = subscriptionData.data();
+            
+            setSubscription({
+              id: subscriptionData.id,
+              userId: data.userId,
+              plan: data.plan || 'free',
+              status: data.status || 'active',
+              currentPeriodStart: data.currentPeriodStart?.toDate() || new Date(),
+              currentPeriodEnd: data.currentPeriodEnd?.toDate() || new Date(),
+              cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+              stripeCustomerId: data.stripeCustomerId,
+              stripeSubscriptionId: data.stripeSubscriptionId,
+              createdAt: data.createdAt?.toDate() || new Date(),
+              updatedAt: data.updatedAt?.toDate() || new Date(),
+            });
+          } else {
+            setSubscription(null);
+          }
+        } else {
+          setSubscription(null);
+        }
       } else {
         setSubscription(null);
       }
     } catch (err: any) {
-      console.error('Error refreshing subscription data:', err);
-      setError(err.message);
+      console.error('Error al recargar suscripción:', err);
+      setError(err.message || 'Error al recargar datos de suscripción');
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Valor del contexto
   const value = {
     subscription,
+    currentPlan,
     isLoading,
     error,
-    currentPlan,
     refreshSubscription,
   };
   
@@ -169,7 +212,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook personalizado para usar el contexto
-export function useSubscription() {
-  return useContext(SubscriptionContext);
+/**
+ * Hook para utilizar el contexto de suscripción
+ */
+export function useSubscription(): SubscriptionContextType {
+  const context = useContext(SubscriptionContext);
+  
+  if (context === undefined) {
+    throw new Error('useSubscription debe ser usado dentro de un SubscriptionProvider');
+  }
+  
+  return context;
 }
