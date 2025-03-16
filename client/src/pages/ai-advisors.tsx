@@ -17,7 +17,7 @@ import { useSubscription } from '../lib/context/subscription-context';
 // Components
 import { CallHistory } from '../components/ai-advisors/call-history';
 import { CallLimits } from '../components/ai-advisors/call-limits';
-import { CallModal } from '../components/ai-advisors/call-modal';
+import { CallModal } from '../components/ai-advisors/call-modal-fixed';
 
 // UI Components
 import {
