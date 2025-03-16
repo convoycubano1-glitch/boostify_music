@@ -457,14 +457,14 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                           <ShoppingCart className="h-4 w-4 text-green-500" />
                         </div>
                         <div>
-                          <p className="font-medium">{sale.productName}</p>
+                          <p className="font-medium">{sale?.productName || "Producto sin nombre"}</p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(sale.date).toLocaleDateString("es-ES", {
+                            {sale?.date ? new Date(sale.date).toLocaleDateString("es-ES", {
                               day: "numeric",
                               month: "short",
                               hour: "2-digit",
                               minute: "2-digit",
-                            })}
+                            }) : "Fecha no disponible"}
                           </p>
                         </div>
                       </div>
@@ -519,14 +519,14 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                               : "bg-blue-100"
                           } flex items-center justify-center`}
                         >
-                          {click.converted ? (
+                          {click?.converted ? (
                             <ShoppingCart className="h-4 w-4 text-green-500" />
                           ) : (
                             <MousePointerClick className="h-4 w-4 text-blue-500" />
                           )}
                         </div>
                         <div>
-                          <p className="font-medium">{click.productName}</p>
+                          <p className="font-medium">{click?.productName || "Producto sin nombre"}</p>
                           <p className="text-xs text-muted-foreground">
                             {click?.date ? new Date(click.date).toLocaleDateString("es-ES", {
                               day: "numeric",
