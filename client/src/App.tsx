@@ -299,7 +299,7 @@ const Router = () => {
         {getRouteComponent("/events", WrappedEventsPage, 'basic')}
         {getRouteComponent("/videos", WrappedVideosPage, 'basic')}
         {getRouteComponent("/blog", WrappedBlogPage, 'basic')}
-        {getRouteComponent("/store", WrappedStorePage, 'basic')}
+        {getRouteComponent("/store", WrappedStorePage, null)}
         {getRouteComponent("/education", WrappedEducationPage, 'basic')}
         {getRouteComponent("/course/:id", WrappedCourseDetailPage, 'basic')}
         {getRouteComponent("/social-network", WrappedSocialNetworkPage, 'basic')}
