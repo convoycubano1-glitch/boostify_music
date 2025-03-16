@@ -3,13 +3,13 @@
  * Versión ultra simplificada para evitar bucles infinitos
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../hooks/use-auth';
 import { useToast } from '../../hooks/use-toast';
 import { useSubscription } from '../../lib/context/subscription-context';
 import { advisorCallService, Advisor, ADVISOR_PHONE_NUMBER } from '../../lib/services/advisor-call-service';
-import { useAdvisorAccess } from '../../hooks/use-advisor-access';
 import { motion } from 'framer-motion';
+import { useCallLimits } from '../../hooks/use-advisor-call-history';
 
 // UI Components
 import {
@@ -48,24 +48,37 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
   // State
   const { user } = useAuth();
   const { subscription, currentPlan } = useSubscription();
-  const [calling, setCalling] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [callDuration, setCallDuration] = useState(0);
-  const [callTimer, setCallTimer] = useState<NodeJS.Timeout | null>(null);
+  const [calling, setCalling] = React.useState(false);
+  const [connected, setConnected] = React.useState(false);
+  const [notes, setNotes] = React.useState('');
+  const [callDuration, setCallDuration] = React.useState(0);
+  const [callTimer, setCallTimer] = React.useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   
   // Ref to prevent multiple simultaneous calls
   const hasCalledRef = useRef(false);
   
   // Check access permissions
-  const { hasAccess, hasReachedLimit, callsRemaining, isLoading } = useAdvisorAccess(
-    advisor?.id || '',
-    ['publicist']
-  );
+  const { hasReachedLimit, callsRemaining, isLoading } = useCallLimits(currentPlan);
+  
+  // Determine if advisor is available in current plan
+  const hasAccess = React.useMemo(() => {
+    // Only publicist is available in free plan
+    if (currentPlan === 'free') {
+      return advisor?.id === 'publicist';
+    }
+    // Basic plan gets access to first 4 advisors
+    else if (currentPlan === 'basic') {
+      return ['publicist', 'manager', 'producer', 'creative'].includes(advisor?.id || '');
+    }
+    // Pro and premium get access to all advisors
+    else {
+      return true;
+    }
+  }, [advisor?.id, currentPlan]);
   
   // Clean up when unmounting or closing
-  useEffect(() => {
+  React.useEffect(() => {
     if (!open) {
       // Reset state when modal is closed
       setCalling(false);
