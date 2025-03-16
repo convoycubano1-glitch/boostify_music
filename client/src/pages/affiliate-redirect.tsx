@@ -1,119 +1,79 @@
-import { useEffect, useState } from "react";
-import { useParams, useLocation } from "wouter";
-import { CircularProgress } from "../components/ui/progress-circular";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { ExternalLink, ArrowRight } from "lucide-react";
-import { db } from "../lib/firebase";
-import { getDoc, doc, updateDoc, increment, addDoc, collection, serverTimestamp } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { useRoute } from "wouter";
+import { ProgressCircular } from "../components/ui/progress-circular";
+import { Card, CardContent } from "../components/ui/card";
+import axios from "axios";
+import { ExternalLink } from "lucide-react";
 
 export default function AffiliateRedirect() {
-  const [linkId] = useParams();
-  const [, navigate] = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
+  // Extract link ID from URL
+  const [, params] = useRoute("/affiliate/link/:linkId");
+  const linkId = params?.linkId;
+
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [linkData, setLinkData] = useState<any | null>(null);
-  const [countdown, setCountdown] = useState(5);
+  const [destination, setDestination] = useState<string | null>(null);
+  const [productName, setProductName] = useState<string | null>(null);
+  const [countdownValue, setCountdownValue] = useState(3);
 
   useEffect(() => {
-    const fetchLinkData = async () => {
+    const trackLinkClick = async () => {
+      if (!linkId) {
+        setError("Enlace no válido");
+        setLoading(false);
+        return;
+      }
+
       try {
-        if (!linkId) {
-          throw new Error("ID del enlace no proporcionado");
+        // Track the click and get the destination URL
+        const response = await axios.get(`/api/affiliate/track/${linkId}`);
+        
+        if (response.data.success) {
+          setDestination(response.data.destination);
+          setProductName(response.data.productName || "nuestro producto");
+          
+          // Start countdown
+          const countdownInterval = setInterval(() => {
+            setCountdownValue((prev) => {
+              if (prev <= 1) {
+                clearInterval(countdownInterval);
+                // Redirect after countdown
+                window.location.href = response.data.destination;
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+          
+          // Cleanup interval
+          return () => clearInterval(countdownInterval);
+        } else {
+          setError(response.data.message || "No se pudo encontrar el destino del enlace");
         }
-
-        const linkRef = doc(db, "affiliateLinks", linkId);
-        const linkDoc = await getDoc(linkRef);
-
-        if (!linkDoc.exists()) {
-          throw new Error("Enlace no encontrado");
-        }
-
-        const data = linkDoc.data();
-        setLinkData(data);
-
-        // Registrar el clic
-        await updateDoc(linkRef, {
-          clicks: increment(1)
-        });
-
-        // Registrar la analítica del clic
-        await addDoc(collection(db, "affiliateClicks"), {
-          linkId,
-          affiliateId: data.affiliateId,
-          productId: data.productId,
-          timestamp: serverTimestamp()
-        });
-
-        // Actualizar el total de clics en el afiliado
-        const affiliateRef = doc(db, "affiliates", data.affiliateId);
-        await updateDoc(affiliateRef, {
-          "stats.totalClicks": increment(1)
-        });
-
-        // Iniciar cuenta regresiva para redirección
-        const timer = setInterval(() => {
-          setCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              redirectToTarget(data);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-
-        return () => clearInterval(timer);
-      } catch (error: any) {
-        console.error("Error al obtener datos del enlace:", error);
-        setError(error.message || "Error al procesar el enlace");
+      } catch (err) {
+        console.error("Error tracking link click:", err);
+        setError("Error al procesar tu enlace. Por favor intenta nuevamente.");
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
-    fetchLinkData();
-  }, [linkId, navigate]);
+    trackLinkClick();
+  }, [linkId]);
 
-  const redirectToTarget = (data: any) => {
-    if (!data || !data.productUrl) return;
-
-    // Construir la URL de redirección con parámetros UTM
-    const redirectUrl = new URL(data.productUrl);
-
-    // Añadir parámetros UTM
-    if (data.utmParams) {
-      if (data.utmParams.source) {
-        redirectUrl.searchParams.append('utm_source', data.utmParams.source);
-      }
-      if (data.utmParams.medium) {
-        redirectUrl.searchParams.append('utm_medium', data.utmParams.medium);
-      }
-      if (data.utmParams.campaign) {
-        redirectUrl.searchParams.append('utm_campaign', data.utmParams.campaign);
-      }
-    }
-
-    // Añadir identificadores de afiliado
-    redirectUrl.searchParams.append('aff_id', data.affiliateId);
-    redirectUrl.searchParams.append('aff_link', linkId || '');
-
-    // Redireccionar al usuario
-    window.location.href = redirectUrl.toString();
-  };
-
-  const handleManualRedirect = () => {
-    if (linkData) {
-      redirectToTarget(linkData);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
-          <CircularProgress className="h-12 w-12 mb-4" />
-          <p className="text-muted-foreground">Procesando enlace de afiliado...</p>
+          <ProgressCircular 
+            className="mx-auto" 
+            size="lg" 
+            variant="default" 
+          />
+          <h2 className="mt-4 text-xl font-semibold">Procesando tu enlace...</h2>
+          <p className="mt-2 text-muted-foreground">
+            Serás redirigido automáticamente en unos segundos.
+          </p>
         </div>
       </div>
     );
@@ -121,55 +81,62 @@ export default function AffiliateRedirect() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
         <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle>Error en el enlace</CardTitle>
-            <CardDescription>No pudimos procesar el enlace solicitado</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-destructive">{error}</p>
+          <CardContent className="pt-6 text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+              <span className="text-red-600 text-xl">×</span>
+            </div>
+            <h2 className="mt-4 text-xl font-semibold">Enlace no válido</h2>
+            <p className="mt-2 text-muted-foreground">
+              {error}
+            </p>
+            <div className="mt-6">
+              <a href="/" className="text-primary hover:underline">
+                Volver a la página principal
+              </a>
+            </div>
           </CardContent>
-          <CardFooter>
-            <Button variant="outline" onClick={() => navigate("/")}>
-              Volver al inicio
-            </Button>
-          </CardFooter>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-primary/5 to-background">
-      <Card className="max-w-md w-full shadow-lg border-primary/10">
-        <CardHeader className="pb-4">
-          <CardTitle>Redireccionando</CardTitle>
-          <CardDescription>
-            Estás siendo redirigido a {linkData?.productName || "el sitio destino"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pb-4">
-          <div className="flex items-center justify-center py-8">
-            <div className="relative">
-              <CircularProgress value={countdown * 20} className="h-24 w-24" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl font-bold">{countdown}</span>
-              </div>
-            </div>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <Card className="max-w-md w-full">
+        <CardContent className="pt-6 text-center">
+          <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+            <ProgressCircular 
+              value={(3 - countdownValue) * 33.33} 
+              size="default" 
+              variant="default" 
+              showValue={false}
+            />
+            <span className="absolute text-lg font-medium">{countdownValue}</span>
           </div>
-          <p className="text-sm text-muted-foreground text-center">
-            Serás redireccionado automáticamente en {countdown} segundos
+          
+          <h2 className="mt-4 text-xl font-semibold">Redirigiendo...</h2>
+          <p className="mt-2 text-muted-foreground">
+            Estás siendo redirigido a {productName}.
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Si no eres redirigido automáticamente, haz clic en el botón:
+          </p>
+          
+          <div className="mt-6">
+            <a 
+              href={destination || "#"} 
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              Continuar <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
+          
+          <p className="mt-8 text-xs text-muted-foreground">
+            Este enlace fue compartido a través de nuestro programa de afiliados.
           </p>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => navigate("/")}>
-            Cancelar
-          </Button>
-          <Button onClick={handleManualRedirect} className="gap-2">
-            Ir ahora <ArrowRight className="h-4 w-4" />
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );

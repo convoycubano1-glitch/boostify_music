@@ -87,10 +87,19 @@ export default {
             height: "0",
           },
         },
+        "progress-circular": {
+          "0%": {
+            transform: "rotate(-90deg)",
+          },
+          "100%": {
+            transform: "rotate(270deg)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "progress-circular": "progress-circular 1.4s linear infinite",
       },
     },
   },

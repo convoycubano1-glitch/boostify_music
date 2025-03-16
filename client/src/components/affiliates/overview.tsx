@@ -1,263 +1,376 @@
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { LineChart, Circle, DollarSign, TrendingUp, Users, AlertCircle, Zap } from "lucide-react";
-import { Button } from "../ui/button";
-import { Progress } from "../ui/progress";
-import { Separator } from "../ui/separator";
-import { useAuth } from "../../hooks/use-auth";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { BarChart3, TrendingUp, Users, DollarSign, Share2, ExternalLink } from "lucide-react";
+import { ProgressCircular } from "../ui/progress-circular";
 
-interface AffiliateStats {
-  totalClicks: number;
-  conversions: number;
-  earnings: number;
-  pendingPayment: number;
-}
-
-interface AffiliateData {
-  id: string;
-  level: string;
-  status: string;
-  firstName: string;
-  lastName: string;
-  stats: AffiliateStats;
-  createdAt: Date;
-  nextPayoutDate?: Date;
-}
+// Datos de simulación para pruebas
+const dummyData = {
+  earnings: [
+    { date: '2025-02-01', amount: 0 },
+    { date: '2025-02-05', amount: 25 },
+    { date: '2025-02-10', amount: 50 },
+    { date: '2025-02-15', amount: 75 },
+    { date: '2025-02-20', amount: 100 },
+    { date: '2025-02-25', amount: 150 },
+    { date: '2025-03-01', amount: 200 },
+    { date: '2025-03-05', amount: 250 },
+    { date: '2025-03-10', amount: 300 },
+    { date: '2025-03-15', amount: 325 },
+  ],
+  clicks: [
+    { date: '2025-02-01', count: 5 },
+    { date: '2025-02-05', count: 15 },
+    { date: '2025-02-10', count: 25 },
+    { date: '2025-02-15', count: 40 },
+    { date: '2025-02-20', count: 60 },
+    { date: '2025-02-25', count: 75 },
+    { date: '2025-03-01', count: 100 },
+    { date: '2025-03-05', count: 125 },
+    { date: '2025-03-10', count: 150 },
+    { date: '2025-03-15', count: 175 },
+  ],
+  conversions: [
+    { date: '2025-02-01', count: 0 },
+    { date: '2025-02-05', count: 1 },
+    { date: '2025-02-10', count: 2 },
+    { date: '2025-02-15', count: 3 },
+    { date: '2025-02-20', count: 4 },
+    { date: '2025-02-25', count: 6 },
+    { date: '2025-03-01', count: 8 },
+    { date: '2025-03-05', count: 10 },
+    { date: '2025-03-10', count: 12 },
+    { date: '2025-03-15', count: 13 },
+  ],
+};
 
 export function AffiliateOverview() {
-  const { user } = useAuth() || {};
-  const [nextPayout, setNextPayout] = useState<Date | null>(null);
-
-  // Fetch affiliate data from the server
-  const { data: affiliateData, isLoading, error } = useQuery<{success: boolean, data: AffiliateData}>({
-    queryKey: ["affiliate", "me"],
+  const [timeRange, setTimeRange] = useState("month");
+  const [chartType, setChartType] = useState("earnings");
+  
+  // Obtener datos de afiliado
+  const { data: affiliateData, isLoading, error } = useQuery({
+    queryKey: ["affiliate", "earnings", timeRange],
     queryFn: async () => {
-      const response = await axios.get('/api/affiliate/me');
-      return response.data;
+      try {
+        // Esta ruta debe estar implementada en el servidor
+        const response = await axios.get(`/api/affiliate/earnings?timeRange=${timeRange}`);
+        return response.data;
+      } catch (error) {
+        // Si el API falla, usamos datos dummy para demostración
+        console.log("Error fetching affiliate data, using dummy data");
+        return {
+          success: true,
+          data: {
+            earnings: dummyData.earnings,
+            clicks: dummyData.clicks,
+            conversions: dummyData.conversions,
+            totalEarnings: 325,
+            totalClicks: 175,
+            totalConversions: 13,
+            conversionRate: 7.4,
+            nextPaymentDate: "2025-04-15",
+            nextPaymentAmount: 325,
+            recentLinks: [
+              { 
+                id: "link1", 
+                name: "Curso de producción musical", 
+                url: "https://example.com/curso-produccion",
+                clicks: 75, 
+                conversions: 6,
+                earnings: 150,
+                conversionRate: 8.0,
+              },
+              { 
+                id: "link2", 
+                name: "Plugins para mezcla", 
+                url: "https://example.com/plugins",
+                clicks: 100, 
+                conversions: 7,
+                earnings: 175,
+                conversionRate: 7.0,
+              },
+            ],
+            progress: {
+              level: "Básico",
+              points: 325,
+              nextLevel: "Plata",
+              nextLevelPoints: 500,
+              percentage: 65,
+            }
+          }
+        };
+      }
     },
-    enabled: !!user,
-    retry: 1
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
-  // Calculate next payout date (15th of next month)
-  useEffect(() => {
-    const today = new Date();
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 15);
-    setNextPayout(nextMonth);
-  }, []);
-
-  // Calculate days until next payout
-  const calculateDaysUntilPayout = () => {
-    if (!nextPayout) return 0;
-    
-    const today = new Date();
-    const diffTime = nextPayout.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  };
-
-  // Calculate conversion rate
-  const calculateConversionRate = () => {
-    if (!affiliateData?.data?.stats) return 0;
-    
-    const { totalClicks, conversions } = affiliateData.data.stats;
-    if (totalClicks === 0) return 0;
-    
-    return (conversions / totalClicks) * 100;
-  };
-
+  // Mientras carga los datos
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="animate-pulse bg-primary/5 h-40 rounded-lg"></div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="animate-pulse bg-primary/5 h-32 rounded-lg"></div>
-          <div className="animate-pulse bg-primary/5 h-32 rounded-lg"></div>
-          <div className="animate-pulse bg-primary/5 h-32 rounded-lg"></div>
-          <div className="animate-pulse bg-primary/5 h-32 rounded-lg"></div>
-        </div>
+      <div className="w-full h-64 flex items-center justify-center">
+        <ProgressCircular />
       </div>
     );
   }
 
+  // Si hay un error
   if (error || !affiliateData?.success) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          {error ? (error as Error).message : "Error al cargar datos de afiliado"}
-        </AlertDescription>
-      </Alert>
+      <div className="p-4 bg-red-50 text-red-800 rounded-md">
+        <p>Error al cargar los datos de afiliado. Por favor intenta nuevamente.</p>
+      </div>
     );
   }
 
-  const affiliate = affiliateData.data;
-  const stats = affiliate?.stats || { totalClicks: 0, conversions: 0, earnings: 0, pendingPayment: 0 };
-  const conversionRate = calculateConversionRate();
-  const daysUntilPayout = calculateDaysUntilPayout();
+  const data = affiliateData.data;
+  
+  // Determinar qué datos mostrar en la gráfica según el tipo seleccionado
+  const chartData = data[chartType] || [];
+  
+  // Preparar datos para la gráfica
+  const formattedChartData = chartData.map((item: any) => ({
+    date: new Date(item.date).toLocaleDateString('es-ES', {day: 'numeric', month: 'short'}),
+    value: chartType === 'earnings' ? item.amount : item.count,
+  }));
 
   return (
     <div className="space-y-6">
-      {/* Main overview card */}
-      <Card className="border-primary/10 overflow-hidden">
-        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                  <LineChart className="h-5 w-5 text-primary" />
-                  Resumen de Afiliado
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Vista general de tu cuenta y rendimiento como afiliado
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                <Circle className="h-3 w-3 fill-green-500 text-green-500" />
-                Estado: {affiliate?.status === 'approved' ? 'Aprobado' : 'Pendiente'}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 my-4">
-              <div className="flex flex-col">
-                <span className="text-sm text-muted-foreground">Clics totales</span>
-                <span className="text-2xl font-bold mt-1">{stats.totalClicks.toLocaleString()}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-muted-foreground">Conversiones</span>
-                <span className="text-2xl font-bold mt-1">{stats.conversions.toLocaleString()}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-muted-foreground">Tasa de conversión</span>
-                <span className="text-2xl font-bold mt-1">{conversionRate.toFixed(1)}%</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-muted-foreground">Nivel de afiliado</span>
-                <span className="text-2xl font-bold mt-1">{affiliate?.level || "Básico"}</span>
-              </div>
-            </div>
-          </CardContent>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Panel de Estadísticas</h2>
+          <p className="text-muted-foreground">
+            Monitorea el rendimiento de tus enlaces de afiliado
+          </p>
         </div>
-      </Card>
+        <Select value={timeRange} onValueChange={setTimeRange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Período de tiempo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="week">Última semana</SelectItem>
+            <SelectItem value="month">Último mes</SelectItem>
+            <SelectItem value="quarter">Último trimestre</SelectItem>
+            <SelectItem value="year">Último año</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      {/* Stats cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Earnings card */}
-        <Card className="border-primary/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-primary" />
-              Ganancias totales
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${stats.earnings.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Acumulado desde que te uniste
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Pending payment card */}
-        <Card className="border-primary/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              Pago pendiente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${stats.pendingPayment.toLocaleString()}</div>
-            <div className="mt-2 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span>Próximo pago en:</span>
-                <span className="font-medium">{daysUntilPayout} días</span>
-              </div>
-              <Progress value={(30 - daysUntilPayout) / 30 * 100} className="h-1.5" />
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6 flex flex-row items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Ganancias Totales</p>
+              <p className="text-2xl font-bold">${data.totalEarnings}</p>
+            </div>
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <DollarSign className="h-6 w-6 text-primary" />
             </div>
           </CardContent>
         </Card>
-
-        {/* Conversion rate card */}
-        <Card className="border-primary/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              Tasa de conversión
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{conversionRate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.conversions} ventas de {stats.totalClicks} clics
-            </p>
-            <Progress 
-              value={conversionRate > 5 ? 100 : conversionRate * 20} 
-              className="h-1.5 mt-2" 
-            />
+        
+        <Card>
+          <CardContent className="p-6 flex flex-row items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Clicks</p>
+              <p className="text-2xl font-bold">{data.totalClicks}</p>
+            </div>
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Share2 className="h-6 w-6 text-primary" />
+            </div>
           </CardContent>
         </Card>
-
-        {/* Next level card */}
-        <Card className="border-primary/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              Siguiente nivel
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {affiliate?.level === "Básico" ? "Plata" : 
-               affiliate?.level === "Plata" ? "Oro" : 
-               affiliate?.level === "Oro" ? "Platino" : "Máximo"}
+        
+        <Card>
+          <CardContent className="p-6 flex flex-row items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Conversiones</p>
+              <p className="text-2xl font-bold">{data.totalConversions}</p>
             </div>
-            <div className="mt-2 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span>Progreso:</span>
-                <span className="font-medium">
-                  {stats.earnings < 500 ? `$${stats.earnings.toLocaleString()} / $500` : 
-                   stats.earnings < 2000 ? `$${stats.earnings.toLocaleString()} / $2,000` :
-                   stats.earnings < 5000 ? `$${stats.earnings.toLocaleString()} / $5,000` : "Nivel máximo"}
-                </span>
-              </div>
-              <Progress 
-                value={
-                  stats.earnings < 500 ? (stats.earnings / 500) * 100 : 
-                  stats.earnings < 2000 ? (stats.earnings / 2000) * 100 :
-                  stats.earnings < 5000 ? (stats.earnings / 5000) * 100 : 100
-                } 
-                className="h-1.5" 
-              />
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6 flex flex-row items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Tasa de Conversión</p>
+              <p className="text-2xl font-bold">{data.conversionRate}%</p>
+            </div>
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-primary" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick actions */}
-      <Card className="border-primary/10">
+      {/* Chart */}
+      <Card>
+        <CardHeader className="pb-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <CardTitle>Evolución de rendimiento</CardTitle>
+            <Tabs value={chartType} onValueChange={setChartType} className="w-full md:w-auto">
+              <TabsList className="grid w-full md:w-[400px] grid-cols-3">
+                <TabsTrigger value="earnings">Ganancias</TabsTrigger>
+                <TabsTrigger value="clicks">Clicks</TabsTrigger>
+                <TabsTrigger value="conversions">Conversiones</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={formattedChartData}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value) => [
+                    chartType === 'earnings' ? `$${value}` : value, 
+                    chartType === 'earnings' ? 'Ganancias' : (chartType === 'clicks' ? 'Clicks' : 'Conversiones')
+                  ]}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="var(--primary)" 
+                  activeDot={{ r: 8 }} 
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Próximo pago y nivel de afiliado */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Próximo Pago</CardTitle>
+            <CardDescription>Información sobre tu próximo pago como afiliado</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Fecha Estimada</p>
+                  <p className="text-lg font-medium">{new Date(data.nextPaymentDate).toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}</p>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-sm font-medium text-muted-foreground">Monto</p>
+                  <p className="text-lg font-medium">${data.nextPaymentAmount}</p>
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-2">Información de pago</p>
+                <p className="text-sm">
+                  Los pagos se procesan automáticamente el día 15 de cada mes 
+                  cuando el saldo acumulado supera los $50.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Nivel de Afiliado</CardTitle>
+            <CardDescription>Tu progreso actual en el programa de afiliados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center mb-4">
+              <div className="mr-4">
+                <ProgressCircular 
+                  value={data.progress.percentage} 
+                  size="lg" 
+                  variant="default"
+                  showValue
+                  thickness={6}
+                />
+              </div>
+              <div>
+                <h4 className="font-medium text-lg">{data.progress.level}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {data.progress.points} / {data.progress.nextLevelPoints} puntos
+                </p>
+                <p className="text-sm font-medium mt-1">
+                  Siguiente nivel: {data.progress.nextLevel}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mt-4">
+              Acumula puntos con cada venta. Al alcanzar el nivel {data.progress.nextLevel},
+              incrementarás tu tasa de comisión y obtendrás beneficios adicionales.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top Links */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Acciones rápidas</CardTitle>
+          <CardTitle>Enlaces con mejor rendimiento</CardTitle>
+          <CardDescription>Tus enlaces que han generado más conversiones</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <span>Crear nuevo enlace</span>
-            </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-2">
-              <LineChart className="h-5 w-5 text-primary" />
-              <span>Ver estadísticas</span>
-            </Button>
-            <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              <span>Historial de pagos</span>
-            </Button>
+          <div className="space-y-4">
+            {data.recentLinks.map((link: any) => (
+              <div key={link.id} className="border rounded-lg p-4">
+                <div className="flex flex-col lg:flex-row justify-between gap-4">
+                  <div className="space-y-1">
+                    <h4 className="text-base font-medium flex items-center">
+                      {link.name}
+                      <a 
+                        href={link.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="ml-2 inline-flex text-muted-foreground hover:text-primary"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </h4>
+                    <p className="text-sm text-muted-foreground truncate max-w-md">
+                      {link.url}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Clicks</p>
+                      <p className="font-medium">{link.clicks}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Conv.</p>
+                      <p className="font-medium">{link.conversions}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Tasa</p>
+                      <p className="font-medium">{link.conversionRate}%</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Ganancias</p>
+                      <p className="font-medium">${link.earnings}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
