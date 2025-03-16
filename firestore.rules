@@ -9,6 +9,12 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
+    
+    // Directors collection rules
+    match /directors/{directorId} {
+      allow read: if true; // Todos pueden leer los directores
+      allow write: if isAuthenticated(); // Solo usuarios autenticados pueden escribir
+    }
 
     // Artist Music collection rules
     match /artist_music/{songId} {
