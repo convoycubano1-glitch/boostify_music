@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 import {
   Card,
@@ -76,7 +76,7 @@ type AffiliateFormValues = z.infer<typeof affiliateFormSchema>;
 export function AffiliateRegistration() {
   const [language, setLanguage] = useState<"en" | "es">("en");
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation();
 
   // Initialize form with default values
   const form = useForm<AffiliateFormValues>({
