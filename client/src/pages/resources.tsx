@@ -472,9 +472,9 @@ export default function ResourcesPage() {
             </div>
             <div className="text-center">
               <Link href="/tools" className="inline-block">
-                <div className="flex items-center justify-center h-10 px-4 py-2 border border-zinc-700 text-white rounded-md hover:bg-zinc-800 transition-colors">
+                <Button className="bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500">
                   View All Tools <Wrench className="ml-2 h-4 w-4" />
-                </div>
+                </Button>
               </Link>
             </div>
           </TabsContent>
