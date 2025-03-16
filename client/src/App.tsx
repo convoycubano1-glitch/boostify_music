@@ -95,6 +95,7 @@ import TipsPage from "./pages/tips";
 import GuidesPage from "./pages/guides";
 import ToolsPage from "./pages/tools";
 import FeaturesPage from "./pages/features";
+import AIVideoCreationPage from "./pages/ai-video-creation";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -266,6 +267,7 @@ const Router = () => {
   const WrappedGuidesPage = withPageWrapper(GuidesPage);
   const WrappedToolsPage = withPageWrapper(ToolsPage);
   const WrappedFeaturesPage = withPageWrapper(FeaturesPage);
+  const WrappedAIVideoCreationPage = withPageWrapper(AIVideoCreationPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -370,6 +372,7 @@ const Router = () => {
         {getRouteComponent("/tools/press-kit", WrappedToolsPage, null)}
         {getRouteComponent("/tools/release-planner", WrappedToolsPage, null)}
         {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, null)}
+        {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />

@@ -4,7 +4,7 @@
  * Permite edición de prompts, tipos de plano, composición y diálogo.
  */
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "../../ui/card";
 import { 
   RefreshCw, 
   Edit, 
@@ -14,17 +14,17 @@ import {
   Video, 
   Play 
 } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
+import { Textarea } from "../../ui/textarea";
+import { Badge } from "../../ui/badge";
+import { Separator } from "../../ui/separator";
 import { MotionEditor } from './MotionEditor';
 import { ShotTypeSelector } from './ShotTypeSelector';
 import { CompositionEditor } from './CompositionEditor';
 import { CharacterDialogueEditor } from './CharacterDialogueEditor';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../../hooks/use-toast";
 
 export interface SceneData {
   id: string;

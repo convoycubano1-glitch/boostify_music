@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { SceneEditorContainer, TimelineClip } from './SceneEditorContainer';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../../hooks/use-toast";
 import axios from 'axios';
 import * as fal from "@fal-ai/serverless-client";
 

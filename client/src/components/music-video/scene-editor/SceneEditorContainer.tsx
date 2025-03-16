@@ -4,10 +4,10 @@
  */
 import React, { useState, useEffect } from 'react';
 import { SceneEditor, SceneData } from './SceneEditor';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ScrollArea } from "../../ui/scroll-area";
+import { Button } from "../../ui/button";
+import { Input } from "../../ui/input";
+import { Label } from "../../ui/label";
 import { 
   Plus, 
   Save, 
@@ -18,10 +18,10 @@ import {
   ChevronLeft,
   RefreshCw
 } from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "../../ui/card";
+import { useToast } from "../../../hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Separator } from "../../ui/separator";
 
 // Tipos para la integración con el sistema de timeline
 export interface TimelineClip {

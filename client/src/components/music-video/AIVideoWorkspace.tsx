@@ -4,10 +4,10 @@
  * Integra el timeline editor y el editor de escenas
  */
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Separator } from "../ui/separator";
+import { Button } from "../ui/button";
 import { 
   Video, 
   Music, 
@@ -21,7 +21,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { SceneEditorPanel } from './scene-editor';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 
 // Simulación de tipos para timeline hasta que tengamos los componentes reales
 type TimelineClip = {

@@ -3,12 +3,12 @@
  * Editor para gestionar diálogos de personajes en la escena
  */
 import React, { useState } from 'react';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { Label } from "../../ui/label";
+import { Input } from "../../ui/input";
+import { Textarea } from "../../ui/textarea";
+import { Button } from "../../ui/button";
 import { PlusCircle, MessageSquare } from 'lucide-react';
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../../ui/switch";
 
 interface CharacterDialogueEditorProps {
   characterName?: string;

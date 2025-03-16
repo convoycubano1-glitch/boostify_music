@@ -3,8 +3,8 @@
  * Permite seleccionar el tipo de plano para una escena
  */
 import React from 'react';
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "../../ui/label";
+import { RadioGroup, RadioGroupItem } from "../../ui/radio-group";
 import { 
   Maximize2, 
   Users, 

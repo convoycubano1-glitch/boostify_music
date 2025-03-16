@@ -3,19 +3,19 @@
  * Editor para controlar aspectos de movimiento y efectos en la escena
  */
 import React, { useState, useEffect } from 'react';
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Label } from "../../ui/label";
+import { Slider } from "../../ui/slider";
+import { Input } from "../../ui/input";
+import { Button } from "../../ui/button";
 import { RefreshCw, Wand2, Volume2 } from 'lucide-react';
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "../../ui/switch";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../../ui/select";
 
 interface MotionEditorProps {
   settings?: {
