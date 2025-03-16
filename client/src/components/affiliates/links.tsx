@@ -9,29 +9,26 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import {
-  AlertCircle,
-  Copy,
-  ExternalLink,
-  Eye,
-  Link as LinkIcon,
-  Link2,
-  MousePointerClick,
-  Plus,
-  Search,
-  ShoppingCart,
-  Trash2,
-} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Button } from "../ui/button";
+import {
+  Copy,
+  Link as LinkIcon,
+  Plus,
+  ExternalLink,
+  MoreVertical,
+  Trash,
+  ShoppingCart,
+  Edit,
+  ChevronDown,
+  CheckIcon,
+  Clipboard,
+  Share2,
+} from "lucide-react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+import { Badge } from "../ui/badge";
+import { Separator } from "../ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -42,14 +39,20 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import {
   Table,
   TableBody,
@@ -58,611 +61,658 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
-import { Badge } from "../ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { Separator } from "../ui/separator";
 import { ProgressCircular } from "../ui/progress-circular";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useToast } from "../../hooks/use-toast";
 
-// Schema de validación para crear un nuevo enlace
-const newLinkSchema = z.object({
-  productId: z.string().min(1, "Selecciona un producto"),
-  customSlug: z.string().optional(),
-  utmSource: z.string().optional(),
-  utmMedium: z.string().optional(),
-  utmCampaign: z.string().optional(),
-});
+interface AffiliateLink {
+  id: string;
+  userId: string;
+  name: string;
+  slug?: string;
+  productId: string;
+  productName: string;
+  productUrl: string;
+  productImageUrl?: string;
+  productType: string;
+  productPrice?: number;
+  createdAt: string;
+  clicks: number;
+  conversions: number;
+  conversionRate: number;
+  revenue: number;
+  commission: number;
+  lastClickAt?: string;
+  utmParams?: {
+    source?: string;
+    medium?: string;
+    campaign?: string;
+    content?: string;
+  };
+}
 
-type NewLinkFormValues = z.infer<typeof newLinkSchema>;
+interface Product {
+  id: string;
+  name: string;
+  url: string;
+  imageUrl?: string;
+  type: string;
+  price?: number;
+  commissionRate: number;
+  description?: string;
+}
+
+interface AffiliateData {
+  id: string;
+  links: AffiliateLink[];
+}
+
+interface AffiliateLinksProps {
+  affiliateData: AffiliateData;
+}
 
 /**
- * Componente que muestra y gestiona los enlaces de afiliado
+ * Componente para gestionar enlaces de afiliado
  */
-export function AffiliateLinks() {
-  const [filterCategory, setFilterCategory] = useState("all");
+export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [showNewLinkDialog, setShowNewLinkDialog] = useState(false);
+  const [isCreatingLink, setIsCreatingLink] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newLinkData, setNewLinkData] = useState({
+    name: "",
+    productId: "",
+    slug: "",
+    utmSource: "affiliate",
+    utmMedium: "link",
+    utmCampaign: "",
+    utmContent: "",
+  });
+
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  // Formulario para crear nuevo enlace
-  const form = useForm<NewLinkFormValues>({
-    resolver: zodResolver(newLinkSchema),
-    defaultValues: {
-      productId: "",
-      customSlug: "",
-      utmSource: "affiliate",
-      utmMedium: "referral",
-      utmCampaign: "",
-    },
-  });
-  
-  // Consultar enlaces de afiliado
+
+  // Obtener productos disponibles para afiliados
   const {
-    data: linksData,
-    isLoading: linksLoading,
-    isError: linksError,
-  } = useQuery({
-    queryKey: ["affiliate", "links"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get("/api/affiliate/links");
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching affiliate links:", error);
-        throw error;
-      }
-    },
-  });
-  
-  // Consultar productos disponibles para afiliados
-  const {
-    data: productsData,
-    isLoading: productsLoading,
-    isError: productsError,
+    data: products,
+    isLoading: isLoadingProducts,
+    isError: isProductsError,
   } = useQuery({
     queryKey: ["affiliate", "products"],
     queryFn: async () => {
-      try {
-        const response = await axios.get("/api/affiliate/products");
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching affiliate products:", error);
-        throw error;
-      }
+      const response = await axios.get("/api/affiliate/products");
+      return response.data.products as Product[];
     },
   });
-  
+
   // Mutación para crear un nuevo enlace
   const createLinkMutation = useMutation({
-    mutationFn: async (linkData: NewLinkFormValues) => {
-      const response = await axios.post("/api/affiliate/links", linkData);
+    mutationFn: async (linkData: typeof newLinkData) => {
+      const response = await axios.post("/api/affiliate/links", {
+        name: linkData.name,
+        productId: linkData.productId,
+        slug: linkData.slug || undefined,
+        utmParams: {
+          source: linkData.utmSource,
+          medium: linkData.utmMedium,
+          campaign: linkData.utmCampaign || undefined,
+          content: linkData.utmContent || undefined,
+        },
+      });
       return response.data;
     },
     onSuccess: () => {
-      // Cerrar el diálogo y limpiar el formulario
-      setShowNewLinkDialog(false);
-      form.reset();
-      
+      // Cerrar el diálogo y reiniciar el formulario
+      setIsDialogOpen(false);
+      setNewLinkData({
+        name: "",
+        productId: "",
+        slug: "",
+        utmSource: "affiliate",
+        utmMedium: "link",
+        utmCampaign: "",
+        utmContent: "",
+      });
       // Actualizar la lista de enlaces
-      queryClient.invalidateQueries({ queryKey: ["affiliate", "links"] });
-      
-      // Mostrar notificación de éxito
-      toast({
-        title: "Enlace creado",
-        description: "Tu enlace de afiliado ha sido creado con éxito",
-      });
-    },
-    onError: (error: any) => {
-      // Mostrar notificación de error
-      toast({
-        variant: "destructive",
-        title: "Error al crear el enlace",
-        description: error.response?.data?.message || "Ha ocurrido un error",
-      });
+      queryClient.invalidateQueries({ queryKey: ["affiliate", "me"] });
     },
   });
-  
+
   // Mutación para eliminar un enlace
   const deleteLinkMutation = useMutation({
     mutationFn: async (linkId: string) => {
-      const response = await axios.delete(`/api/affiliate/links/${linkId}`);
-      return response.data;
+      await axios.delete(`/api/affiliate/links/${linkId}`);
+      return linkId;
     },
     onSuccess: () => {
       // Actualizar la lista de enlaces
-      queryClient.invalidateQueries({ queryKey: ["affiliate", "links"] });
-      
-      // Mostrar notificación de éxito
-      toast({
-        title: "Enlace eliminado",
-        description: "El enlace ha sido eliminado con éxito",
-      });
-    },
-    onError: (error: any) => {
-      // Mostrar notificación de error
-      toast({
-        variant: "destructive",
-        title: "Error al eliminar el enlace",
-        description: error.response?.data?.message || "Ha ocurrido un error",
-      });
+      queryClient.invalidateQueries({ queryKey: ["affiliate", "me"] });
     },
   });
-  
-  // Manejar envío del formulario de nuevo enlace
-  const onSubmit = (data: NewLinkFormValues) => {
-    createLinkMutation.mutate(data);
-  };
-  
-  // Filtrar enlaces por categoría y término de búsqueda
-  const filteredLinks = linksData
-    ? linksData.filter((link: any) => {
-        const matchesCategory = 
-          filterCategory === "all" || 
-          link.category === filterCategory;
-        
-        const matchesSearch =
-          searchTerm === "" ||
-          link.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          link.productUrl.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (link.customSlug && link.customSlug.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-        return matchesCategory && matchesSearch;
-      })
-    : [];
-  
-  // Extraer categorías únicas de productos
-  const categories = productsData
-    ? Array.from(new Set(productsData.map((product: any) => product.category)))
-    : [];
-  
-  // Estados de carga
-  const isLoading = linksLoading || productsLoading;
-  const isError = linksError || productsError;
-  
-  // Si hay un error, mostrar mensaje de error
-  if (isError) {
+
+  // Filtrar enlaces basados en el término de búsqueda
+  const filteredLinks = (affiliateData?.links || []).filter((link) => {
+    const searchLower = searchTerm.toLowerCase();
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          No pudimos cargar la información de enlaces. Por favor, intenta de nuevo más tarde.
-        </AlertDescription>
-      </Alert>
+      link.name.toLowerCase().includes(searchLower) ||
+      link.productName.toLowerCase().includes(searchLower) ||
+      (link.slug && link.slug.toLowerCase().includes(searchLower))
     );
-  }
-  
-  // Si está cargando, mostrar indicador de carga
-  if (isLoading) {
-    return <LinksSkeleton />;
-  }
-  
+  });
+
   // Función para copiar un enlace al portapapeles
-  const copyToClipboard = (url: string) => {
-    navigator.clipboard.writeText(url);
-    toast({
-      title: "Enlace copiado",
-      description: "El enlace ha sido copiado al portapapeles",
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).catch((err) => {
+      console.error("No se pudo copiar el enlace:", err);
     });
   };
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar enlaces..."
-              className="pl-8 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <Select
-            value={filterCategory}
-            onValueChange={(value) => setFilterCategory(value)}
-          >
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Categoría" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las categorías</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <Dialog open={showNewLinkDialog} onOpenChange={setShowNewLinkDialog}>
-          <DialogTrigger asChild>
-            <Button className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              Crear enlace
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>Crear nuevo enlace de afiliado</DialogTitle>
-              <DialogDescription>
-                Elige un producto para promocionar y personaliza tu enlace.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="productId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Producto</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un producto para promocionar" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {productsData && productsData.map((product: any) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Este producto será promocionado a través de tu enlace de afiliado.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="customSlug"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Slug personalizado (opcional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="mi-enlace-personalizado"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Personaliza la URL de tu enlace para hacerla más fácil de recordar.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="bg-muted/40 p-3 rounded-md space-y-2">
-                  <h4 className="text-sm font-medium flex items-center gap-1">
-                    <LinkIcon className="h-3.5 w-3.5" />
-                    Parámetros UTM (opcional)
-                  </h4>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <FormField
-                      control={form.control}
-                      name="utmSource"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Fuente</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="affiliate"
-                              {...field}
-                              className="h-8 text-xs"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="utmMedium"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Medio</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="referral"
-                              {...field}
-                              className="h-8 text-xs"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="utmCampaign"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Campaña</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="spring2025"
-                              {...field}
-                              className="h-8 text-xs"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    Los parámetros UTM ayudan a rastrear la efectividad de tus campañas.
-                  </p>
-                </div>
-                
-                <DialogFooter className="mt-6">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowNewLinkDialog(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createLinkMutation.isPending}
-                  >
-                    {createLinkMutation.isPending ? (
-                      <>
-                        <ProgressCircular 
-                          size="xs" 
-                          className="mr-2"
-                        />
-                        Creando...
-                      </>
-                    ) : (
-                      'Crear enlace'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      <div className="rounded-md border">
-        {filteredLinks.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[300px]">Producto</TableHead>
-                <TableHead>Enlace</TableHead>
-                <TableHead className="text-right">Estadísticas</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLinks.map((link: any) => (
-                <TableRow key={link.id}>
-                  <TableCell className="py-3">
-                    <div className="flex flex-col">
-                      <span className="font-medium truncate max-w-[260px]">
-                        {link.productName}
-                      </span>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs px-1 h-5 capitalize"
-                        >
-                          {link.category}
-                        </Badge>
-                        <Badge 
-                          variant="secondary" 
-                          className="text-xs px-1 h-5"
-                        >
-                          {link.commission}%
-                        </Badge>
-                      </div>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="py-3">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-1">
-                        <LinkIcon className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground truncate max-w-[180px] sm:max-w-[260px]">
-                          {link.trackingUrl}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5"
-                          onClick={() => copyToClipboard(link.trackingUrl)}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      {link.customSlug && (
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-xs h-5 px-1">
-                            Personalizado
-                          </Badge>
-                          <span className="text-xs">{link.customSlug}</span>
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="text-right py-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <MousePointerClick className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs">
-                          {link.clicks || 0} clics
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-end gap-1.5">
-                        <ShoppingCart className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs">
-                          {link.conversions || 0} ventas
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="text-right py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => window.open(link.trackingUrl, "_blank")}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Ver enlace</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive"
-                              onClick={() => {
-                                if (confirm("¿Estás seguro de que deseas eliminar este enlace?")) {
-                                  deleteLinkMutation.mutate(link.id);
-                                }
-                              }}
-                              disabled={deleteLinkMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Eliminar enlace</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="flex flex-col items-center justify-center p-8 text-center">
-            <div className="mb-3 rounded-full bg-muted/30 p-3">
-              <Link2 className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <h3 className="mb-1 text-base font-medium">No hay enlaces</h3>
-            <p className="mb-4 text-sm text-muted-foreground">
-              {searchTerm || filterCategory !== "all"
-                ? "No hay enlaces que coincidan con tu búsqueda o filtro."
-                : "Aún no has creado ningún enlace de afiliado."}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1"
-              onClick={() => {
-                setSearchTerm("");
-                setFilterCategory("all");
-                setShowNewLinkDialog(true);
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              Crear tu primer enlace
-            </Button>
-          </div>
-        )}
-      </div>
-      
-      <div className="bg-muted/30 rounded-lg p-4 border">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-primary/10 rounded-md">
-            <ExternalLink className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="text-sm font-medium">Consejos para compartir tus enlaces</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Comparte tus enlaces en tus redes sociales, sitios web o blogs. Recuerda que las 
-              personas tienen más probabilidades de hacer clic en enlaces acompañados de una 
-              recomendación personal y honesta.
-            </p>
-            <div className="mt-2">
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs">
-                Ver guía completa de afiliados
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+
+  // Generar URL completa para un enlace
+  const getFullAffiliateUrl = (link: AffiliateLink) => {
+    const baseUrl = window.location.origin;
+    const path = link.slug
+      ? `/aff/${link.slug}`
+      : `/aff/${link.id}`;
+    return `${baseUrl}${path}`;
+  };
+
+  // Manejar envío del formulario de nuevo enlace
+  const handleCreateLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    createLinkMutation.mutate(newLinkData);
+  };
+
+  // Componente para mostrar estadísticas resumidas de cada enlace
+  const LinkStatBadge = ({ label, value, isPercentage = false }: { label: string; value: number; isPercentage?: boolean }) => (
+    <div className="flex flex-col items-center p-2 border rounded-md">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="font-medium">
+        {isPercentage ? `${(value * 100).toFixed(1)}%` : value}
+      </span>
     </div>
   );
-}
 
-// Componente para mostrar un esqueleto durante la carga
-function LinksSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <div className="h-10 bg-muted animate-pulse rounded-md w-full"></div>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle>Enlaces de Afiliado</CardTitle>
+              <CardDescription>
+                Crea y gestiona tus enlaces de promoción
+              </CardDescription>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nuevo Enlace
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[550px]">
+                <DialogHeader>
+                  <DialogTitle>Crear Nuevo Enlace</DialogTitle>
+                  <DialogDescription>
+                    Personaliza tu enlace de afiliado para promocionar un producto
+                  </DialogDescription>
+                </DialogHeader>
+
+                <form onSubmit={handleCreateLink}>
+                  <div className="grid gap-4 py-4">
+                    {/* Nombre del enlace */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="link-name">Nombre del enlace</Label>
+                      <Input
+                        id="link-name"
+                        placeholder="Ej: Promoción Instagram"
+                        value={newLinkData.name}
+                        onChange={(e) =>
+                          setNewLinkData({ ...newLinkData, name: e.target.value })
+                        }
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Un nombre descriptivo para identificar este enlace
+                      </p>
+                    </div>
+
+                    {/* Producto */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="product">Producto</Label>
+                      <Select
+                        value={newLinkData.productId}
+                        onValueChange={(value) =>
+                          setNewLinkData({ ...newLinkData, productId: value })
+                        }
+                        required
+                      >
+                        <SelectTrigger id="product">
+                          <SelectValue placeholder="Selecciona un producto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {isLoadingProducts ? (
+                            <div className="flex items-center justify-center p-4">
+                              <ProgressCircular value={undefined} size="sm" />
+                              <span className="ml-2">Cargando productos...</span>
+                            </div>
+                          ) : (
+                            products?.map((product) => (
+                              <SelectItem key={product.id} value={product.id}>
+                                {product.name}
+                                {product.price && ` - $${product.price}`}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        El producto que promocionarás con este enlace
+                      </p>
+                    </div>
+
+                    {/* URL personalizada */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="custom-slug">URL personalizada (opcional)</Label>
+                      <div className="flex">
+                        <span className="inline-flex items-center px-3 bg-muted border border-r-0 border-input rounded-l-md text-sm text-muted-foreground">
+                          {window.location.origin}/aff/
+                        </span>
+                        <Input
+                          id="custom-slug"
+                          className="rounded-l-none"
+                          placeholder="tu-slug-personalizado"
+                          value={newLinkData.slug}
+                          onChange={(e) =>
+                            setNewLinkData({
+                              ...newLinkData,
+                              slug: e.target.value.replace(/\s+/g, "-").toLowerCase(),
+                            })
+                          }
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Una URL amigable para tu enlace (solo letras, números y guiones)
+                      </p>
+                    </div>
+
+                    {/* Parámetros UTM avanzados (colapsable) */}
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-sm font-medium pb-2 flex items-center">
+                        <ChevronDown className="h-4 w-4 mr-1 inline" />
+                        Parámetros UTM avanzados
+                      </summary>
+                      <div className="pl-2 pt-2 space-y-4 border-l">
+                        <div className="grid gap-2">
+                          <Label htmlFor="utm-source">Fuente (UTM Source)</Label>
+                          <Input
+                            id="utm-source"
+                            placeholder="affiliate"
+                            value={newLinkData.utmSource}
+                            onChange={(e) =>
+                              setNewLinkData({
+                                ...newLinkData,
+                                utmSource: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="utm-medium">Medio (UTM Medium)</Label>
+                          <Input
+                            id="utm-medium"
+                            placeholder="link"
+                            value={newLinkData.utmMedium}
+                            onChange={(e) =>
+                              setNewLinkData({
+                                ...newLinkData,
+                                utmMedium: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="utm-campaign">Campaña (UTM Campaign)</Label>
+                          <Input
+                            id="utm-campaign"
+                            placeholder="summer_sale"
+                            value={newLinkData.utmCampaign}
+                            onChange={(e) =>
+                              setNewLinkData({
+                                ...newLinkData,
+                                utmCampaign: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="utm-content">Contenido (UTM Content)</Label>
+                          <Input
+                            id="utm-content"
+                            placeholder="banner_sidebar"
+                            value={newLinkData.utmContent}
+                            onChange={(e) =>
+                              setNewLinkData({
+                                ...newLinkData,
+                                utmContent: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      disabled={createLinkMutation.isPending}
+                      className="gap-2"
+                    >
+                      {createLinkMutation.isPending ? (
+                        <>
+                          <ProgressCircular value={undefined} size="xs" />
+                          Creando...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          Crear Enlace
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
-          <div className="h-10 bg-muted animate-pulse rounded-md w-full sm:w-40"></div>
-        </div>
-        <div className="h-10 bg-muted animate-pulse rounded-md w-full sm:w-36"></div>
-      </div>
-      
-      <div className="rounded-md border">
-        <div className="p-2">
-          <div className="flex flex-col gap-4">
-            <div className="h-10 bg-muted animate-pulse rounded-md w-full"></div>
-            <div className="space-y-3">
-              {[...Array(3)].map((_, index) => (
-                <div key={index} className="flex justify-between items-center py-3">
-                  <div className="w-1/4 h-12 bg-muted animate-pulse rounded-md"></div>
-                  <div className="w-1/3 h-12 bg-muted animate-pulse rounded-md"></div>
-                  <div className="w-1/6 h-12 bg-muted animate-pulse rounded-md"></div>
-                  <div className="w-[80px] h-12 bg-muted animate-pulse rounded-md"></div>
-                </div>
+        </CardHeader>
+        <CardContent>
+          {/* Buscador */}
+          <div className="mb-4">
+            <Input
+              placeholder="Buscar enlaces..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
+
+          {/* Lista de enlaces */}
+          {filteredLinks.length === 0 ? (
+            <div className="rounded-md border p-8 flex flex-col items-center justify-center text-center">
+              <LinkIcon className="h-12 w-12 text-muted-foreground/70 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">
+                {searchTerm
+                  ? "No se encontraron enlaces"
+                  : "Aún no tienes enlaces de afiliado"}
+              </h3>
+              <p className="text-muted-foreground max-w-md mb-4">
+                {searchTerm
+                  ? `No hay resultados para "${searchTerm}". Intenta con otro término.`
+                  : "Comienza creando tu primer enlace de afiliado para promocionar nuestros productos."}
+              </p>
+              {!searchTerm && (
+                <Button
+                  onClick={() => setIsDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Crear Enlace
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Producto</TableHead>
+                      <TableHead className="hidden md:table-cell">Clics</TableHead>
+                      <TableHead className="hidden md:table-cell">Conversiones</TableHead>
+                      <TableHead className="hidden md:table-cell">Comisión</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLinks.map((link) => (
+                      <TableRow key={link.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span>{link.name}</span>
+                            <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+                              {link.slug ? `/aff/${link.slug}` : `/aff/${link.id}`}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {link.productImageUrl && (
+                              <div className="w-8 h-8 rounded-md overflow-hidden bg-muted">
+                                <img
+                                  src={link.productImageUrl}
+                                  alt={link.productName}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <span className="line-clamp-1">{link.productName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {link.clicks}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-center gap-1">
+                            <span>{link.conversions}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({(link.conversionRate * 100).toFixed(1)}%)
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          ${link.commission.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => copyToClipboard(getFullAffiliateUrl(link))}
+                              title="Copiar enlace"
+                            >
+                              <Copy className="h-4 w-4" />
+                              <span className="sr-only">Copiar</span>
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                  <span className="sr-only">Más opciones</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => copyToClipboard(getFullAffiliateUrl(link))}
+                                >
+                                  <Clipboard className="h-4 w-4 mr-2" />
+                                  Copiar enlace
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => window.open(getFullAffiliateUrl(link), "_blank")}
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  Abrir enlace
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    if (navigator.share) {
+                                      navigator.share({
+                                        title: link.name,
+                                        text: `Echa un vistazo a ${link.productName}`,
+                                        url: getFullAffiliateUrl(link),
+                                      }).catch(console.error);
+                                    } else {
+                                      copyToClipboard(getFullAffiliateUrl(link));
+                                    }
+                                  }}
+                                >
+                                  <Share2 className="h-4 w-4 mr-2" />
+                                  Compartir
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="text-red-500 focus:text-red-500"
+                                  onClick={() => {
+                                    if (confirm("¿Estás seguro de que quieres eliminar este enlace?")) {
+                                      deleteLinkMutation.mutate(link.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash className="h-4 w-4 mr-2" />
+                                  Eliminar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-between pt-2">
+          <p className="text-sm text-muted-foreground">
+            {filteredLinks.length} enlaces en total
+          </p>
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            <span>
+              Clics totales:{" "}
+              <strong>
+                {filteredLinks.reduce((acc, link) => acc + link.clicks, 0)}
+              </strong>
+            </span>
+            <span>
+              Conversiones totales:{" "}
+              <strong>
+                {filteredLinks.reduce((acc, link) => acc + link.conversions, 0)}
+              </strong>
+            </span>
+          </div>
+        </CardFooter>
+      </Card>
+
+      {/* Sección de productos promocionables */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Productos Promocionables</CardTitle>
+          <CardDescription>
+            Productos disponibles para promocionar como afiliado
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingProducts ? (
+            <div className="flex items-center justify-center p-8">
+              <ProgressCircular value={undefined} className="mr-3" />
+              <span>Cargando productos disponibles...</span>
+            </div>
+          ) : products && products.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {products.map((product) => (
+                <Card key={product.id} className="overflow-hidden">
+                  {product.imageUrl && (
+                    <div className="h-32 overflow-hidden">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    <div className="mb-2 flex items-start justify-between">
+                      <h3 className="font-semibold">{product.name}</h3>
+                      {product.price && (
+                        <Badge variant="outline">${product.price}</Badge>
+                      )}
+                    </div>
+                    {product.description && (
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        {product.description}
+                      </p>
+                    )}
+                    <div className="mt-3 flex items-center justify-between">
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                        {product.commissionRate * 100}% comisión
+                      </Badge>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            Crear enlace
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Crear Enlace para {product.name}</DialogTitle>
+                            <DialogDescription>
+                              Personaliza tu enlace para promocionar este producto
+                            </DialogDescription>
+                          </DialogHeader>
+                          {/* Formulario simple con los campos mínimos */}
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="quick-link-name">Nombre del enlace</Label>
+                              <Input id="quick-link-name" placeholder="Ej: Promoción Instagram" />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="quick-slug">URL personalizada (opcional)</Label>
+                              <div className="flex">
+                                <span className="inline-flex items-center px-3 bg-muted border border-r-0 border-input rounded-l-md text-sm text-muted-foreground">
+                                  {window.location.origin}/aff/
+                                </span>
+                                <Input
+                                  id="quick-slug"
+                                  className="rounded-l-none"
+                                  placeholder="tu-slug-personalizado"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button className="gap-2">
+                              <Plus className="h-4 w-4" />
+                              Crear Enlace
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          </div>
-        </div>
-      </div>
+          ) : (
+            <div className="rounded-md border p-8 flex flex-col items-center justify-center text-center">
+              <ShoppingCart className="h-12 w-12 text-muted-foreground/70 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">
+                No hay productos disponibles
+              </h3>
+              <p className="text-muted-foreground max-w-md">
+                Actualmente no hay productos disponibles para promocionar. Por favor, revisa más tarde.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -17,7 +17,8 @@ import {
   increment,
   Timestamp,
   DocumentData,
-  CollectionReference
+  CollectionReference,
+  deleteDoc
 } from 'firebase/firestore';
 import { z } from 'zod';
 
