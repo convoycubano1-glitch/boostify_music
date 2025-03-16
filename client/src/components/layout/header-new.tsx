@@ -8,7 +8,7 @@ import {
   ShoppingBag, Calendar, Headphones, Radio, Shield, ClipboardList, 
   LogOut, ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
   Send, MessageSquare, Mic, Zap, Award, BookOpen, BarChart, MoveRight,
-  User, BarChart2, Layers, Sparkles
+  User, BarChart2, Layers, Sparkles, DollarSign
 } from "lucide-react";
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -96,62 +96,64 @@ export function Header() {
 
   // Elementos de navegación secundarios - "More" section (páginas completas)
   const secondaryNavigation = [
-    // Navegación principal existente
-    { name: "Store", href: "/store", icon: ShoppingBag },
-    { name: "Education", href: "/education", icon: BookOpen },
-    { name: "PR", href: "/pr", icon: Send },
-    
-    // Artist Dashboard and Profile
-    { name: "Artist Dashboard", href: "/artist-dashboard", icon: BarChart2 },
-    { name: "Artist Profile", href: "/artist-profile", icon: User },
-    
-    // Secciones de afiliados e inversores
-    { name: "Affiliates", href: "/affiliates", icon: Users },
-    { name: "Affiliate Dashboard", href: "/affiliate-dashboard", icon: Users },
-    { name: "Investors", href: "/investors", icon: Layers },
-    { name: "Investors Dashboard", href: "/investors-dashboard", icon: BarChart },
-    
-    // Secciones de contenido y aprendizaje
-    { name: "Boostify TV", href: "/boostify-tv", icon: Video },
-    { name: "News", href: "/news", icon: Rss },
-    { name: "Resources", href: "/resources", icon: FileText },
-    { name: "Guides", href: "/guides", icon: BookOpen },
-    { name: "Tips", href: "/tips", icon: MessageSquare },
-    
-    // Herramientas y servicios de música
-    { name: "Record Label Services", href: "/record-label-services", icon: Headphones },
+    // Core Music Industry Tools (Principal)
     { name: "Virtual Record Label", href: "/virtual-record-label", icon: Radio },
-    { name: "Music Mastering", href: "/music-mastering", icon: Music },
-    { name: "Music Generator", href: "/music-generator", icon: Music },
-    { name: "Marketing Plan", href: "/marketing-plan", icon: BarChart },
+    { name: "Record Labels", href: "/record-labels", icon: Headphones },
+    { name: "Dashboard", href: "/dashboard", icon: BarChart },
+    { name: "Artist Dashboard", href: "/artist-dashboard", icon: BarChart2 },
+    { name: "Store", href: "/store", icon: ShoppingBag },
+    { name: "Bring Your Music to Life", href: "/bring-your-music-to-life", icon: Music },
+    
+    // Creator Tools
+    { name: "Manager Tools", href: "/manager-tools", icon: Settings },
+    { name: "Producer Tools", href: "/producer-tools", icon: Music },
+    { name: "Music Videos", href: "/music-videos", icon: Video },
+    { name: "Merchandise", href: "/merchandise", icon: ShoppingBag },
     { name: "Music Distribution", href: "/music-distribution", icon: Music },
     
-    // Redes sociales y promoción
-    { name: "Instagram Boost", href: "/instagram-boost", icon: Rss },
-    { name: "Spotify", href: "/spotify", icon: Music },
-    { name: "YouTube Views", href: "/youtube-views", icon: Video },
-    { name: "Tiktok", href: "/tiktok", icon: Video },
-    { name: "Facebook", href: "/facebook", icon: Rss },
-    { name: "Social Network", href: "/social-network", icon: Users },
-    { name: "Firestore Social", href: "/firestore-social", icon: Users },
-    
-    // Herramientas de AI y creación
+    // Financials and Advisors
+    { name: "Affiliates", href: "/affiliates", icon: Users },
+    { name: "Investors", href: "/investors", icon: Layers },
     { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall },
+    { name: "Marketing Plan", href: "/marketing-plan", icon: BarChart },
+    { name: "PR", href: "/pr", icon: Send },
+    
+    // AI and Creative Tools
     { name: "AI Agents", href: "/ai-agents", icon: MessageSquare },
     { name: "AI Chat", href: "/ai-chat", icon: MessageSquare },
-    { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: FileText },
+    { name: "Artist Image", href: "/artist-image", icon: FileText },
     { name: "Image Generator", href: "/image-generator", icon: FileText },
     { name: "Video Generator", href: "/video-generator", icon: Video },
+    
+    // Education and Media
+    { name: "Education", href: "/education", icon: BookOpen },
+    { name: "Boostify TV", href: "/boostify-tv", icon: Video },
+    
+    // Social Platform Integration
+    { name: "Spotify", href: "/spotify", icon: Music },
+    { name: "Instagram", href: "/instagram", icon: Rss },
+    { name: "YouTube", href: "/youtube", icon: Video },
+    { name: "Tiktok", href: "/tiktok", icon: Video },
+    { name: "Facebook", href: "/facebook", icon: Rss },
+    
+    // Professional and Legal
+    { name: "Contracts", href: "/contracts", icon: FileText },
+    { name: "Contacts", href: "/contacts", icon: Users },
+    
+    // Additional Tools and Services  
+    { name: "Music Mastering", href: "/music-mastering", icon: Music },
+    { name: "Music Generator", href: "/music-generator", icon: Music },
     { name: "Face Swap", href: "/face-swap", icon: Users },
     { name: "Try On", href: "/try-on-page", icon: ShoppingBag },
     { name: "Real-time Translator", href: "/real-time-translator", icon: Globe },
     
-    // Herramientas profesionales
-    { name: "Producer Tools", href: "/producer-tools", icon: Music },
-    { name: "Manager Tools", href: "/manager-tools", icon: Settings },
-    { name: "Professional Editor", href: "/professional-editor", icon: FileText },
-    { name: "Contracts", href: "/contracts", icon: FileText },
-    { name: "Contacts", href: "/contacts", icon: Users },
+    // Secondary Pages
+    { name: "Artist Profile", href: "/artist-profile", icon: User },
+    { name: "Affiliate Dashboard", href: "/affiliate-dashboard", icon: Users },
+    { name: "Investors Dashboard", href: "/investors-dashboard", icon: BarChart },
+    { name: "Social Network", href: "/social-network", icon: Users },
+    { name: "Firestore Social", href: "/firestore-social", icon: Users },
+    { name: "Record Label Services", href: "/record-label-services", icon: Headphones },
     
     // Analytics y métricas
     { name: "Analytics", href: "/analytics", icon: BarChart },
