@@ -1,454 +1,631 @@
 import { useState } from "react";
-import { useAuth } from "../../hooks/use-auth";
-import { db } from "../../lib/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
-import { Checkbox } from "../ui/checkbox";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "wouter";
 
-// Validation schema for the form
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../../components/ui/form";
+import { Badge } from "../../components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { useToast } from "../../hooks/use-toast";
+
+// Define the form schema with validations
 const affiliateFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must have at least 2 characters" }),
-  bio: z.string().min(10, { message: "Bio must have at least 10 characters" }).max(500, { message: "Bio cannot exceed 500 characters" }),
-  website: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal("")),
+  fullName: z.string().min(3, {
+    message: "Name must be at least 3 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  phone: z.string().optional(),
+  website: z.string().url({
+    message: "Please enter a valid URL.",
+  }).optional().or(z.literal("")),
   socialMedia: z.object({
-    instagram: z.string().optional().or(z.literal("")),
-    twitter: z.string().optional().or(z.literal("")),
-    youtube: z.string().optional().or(z.literal("")),
-    tiktok: z.string().optional().or(z.literal(""))
+    instagram: z.string().optional(),
+    youtube: z.string().optional(),
+    tiktok: z.string().optional(),
+    twitter: z.string().optional(),
   }),
-  categories: z.array(z.string()).min(1, { message: "Please select at least one category" }),
-  paymentMethod: z.enum(["paypal", "bank_transfer", "crypto"], { 
-    required_error: "Please select a payment method" 
+  audienceSize: z.string().min(1, {
+    message: "Please select your audience size.",
   }),
-  paymentEmail: z.string().email({ message: "Please enter a valid email address" }),
-  termsAccepted: z.boolean().refine(val => val === true, {
-    message: "You must accept the terms and conditions"
+  marketingExperience: z.string().min(1, {
+    message: "Please describe your marketing experience.",
   }),
-  dataProcessingAccepted: z.boolean().refine(val => val === true, {
-    message: "You must accept the data processing agreement"
+  promotionStrategy: z.string().min(1, {
+    message: "Please describe how you plan to promote our products.",
+  }),
+  language: z.enum(["en", "es"]),
+  agreeTerms: z.literal(true, {
+    errorMap: () => ({ message: "You must agree to the terms and conditions." }),
   }),
 });
 
+// Extract the inferred type from the schema
 type AffiliateFormValues = z.infer<typeof affiliateFormSchema>;
 
 export function AffiliateRegistration() {
-  const { user } = useAuth() || {};
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [language, setLanguage] = useState<"en" | "es">("en");
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // Inicializar useForm con el esquema de validación
+  // Initialize form with default values
   const form = useForm<AffiliateFormValues>({
     resolver: zodResolver(affiliateFormSchema),
     defaultValues: {
-      name: user?.displayName || "",
-      bio: "",
+      fullName: "",
+      email: "",
+      phone: "",
       website: "",
       socialMedia: {
         instagram: "",
-        twitter: "",
         youtube: "",
-        tiktok: ""
+        tiktok: "",
+        twitter: "",
       },
-      categories: [],
-      paymentMethod: "paypal",
-      paymentEmail: user?.email || "",
-      termsAccepted: false,
-      dataProcessingAccepted: false,
+      audienceSize: "",
+      marketingExperience: "",
+      promotionStrategy: "",
+      language: "en",
+      agreeTerms: false,
     },
   });
 
-  const onSubmit = async (data: AffiliateFormValues) => {
-    if (!user?.uid) {
-      setError("Debes iniciar sesión para registrarte como afiliado");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-    
-    try {
-      // Crear el documento de afiliado en Firestore
-      await setDoc(doc(db, "affiliates", user.uid), {
-        ...data,
-        userId: user.uid,
-        email: user.email,
-        status: "pending", // pending, approved, rejected
-        createdAt: serverTimestamp(),
-        stats: {
-          totalClicks: 0,
-          conversions: 0,
-          earnings: 0,
-          pendingPayment: 0,
-        },
-        level: "Básico", // Básico, Plata, Oro, Platino
-      });
-
-      setSuccess(true);
-      alert("Tu solicitud ha sido enviada correctamente");
+  // Setup the mutation for form submission
+  const mutation = useMutation({
+    mutationFn: async (data: AffiliateFormValues) => {
+      // Update language from the form tab selection
+      data.language = language;
       
-      // Recargar la página después de un breve retraso para mostrar el panel de afiliado
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } catch (err) {
-      console.error("Error al registrar afiliado:", err);
-      setError("Ha ocurrido un error al procesar tu solicitud. Por favor, intenta nuevamente.");
-      alert("Error al enviar la solicitud");
-    } finally {
-      setIsSubmitting(false);
-    }
+      // Send data to API
+      const response = await fetch("/api/affiliate/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to register as affiliate");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: language === "en" ? "Registration Successful" : "Registro Exitoso",
+        description: language === "en" 
+          ? "Your affiliate application has been submitted. We'll review it and get back to you soon."
+          : "Tu solicitud de afiliado ha sido enviada. La revisaremos y te contactaremos pronto.",
+        variant: "default",
+      });
+      
+      // Redirect to affiliate dashboard or confirmation page
+      navigate("/affiliates/dashboard");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: language === "en" ? "Registration Failed" : "Error de Registro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Form submission handler
+  const onSubmit = async (data: AffiliateFormValues) => {
+    mutation.mutate(data);
   };
 
-  const categories = [
-    { id: "music_production", label: "Producción Musical" },
-    { id: "music_distribution", label: "Distribución Musical" },
-    { id: "artist_development", label: "Desarrollo Artístico" },
-    { id: "music_marketing", label: "Marketing Musical" },
-    { id: "plugins_software", label: "Plugins y Software" },
-    { id: "merchandise", label: "Mercancía" },
-    { id: "courses", label: "Cursos y Educación" },
-  ];
-
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Affiliate Application</CardTitle>
-        <CardDescription>
-          Complete this form to join the Boostify affiliate program.
-          We'll review your application and notify you when it's approved.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {success ? (
-          <Alert className="bg-primary/20 border-primary">
-            <CheckCircle2 className="h-4 w-4 text-primary" />
-            <AlertTitle>Application Submitted!</AlertTitle>
-            <AlertDescription>
-              Your application has been received and will be reviewed by our team.
-              We'll notify you by email when it's approved.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Personal Information</h3>
-                
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Your first and last name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="bio"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Biography</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Tell us about yourself, your experience, and why you want to be a Boostify affiliate" 
-                          className="min-h-[120px]" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        This information will help us understand your profile as an affiliate
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+    <Tabs defaultValue="en" className="w-full max-w-4xl mx-auto" onValueChange={(value) => setLanguage(value as "en" | "es")}>
+      <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsTrigger value="en">English</TabsTrigger>
+        <TabsTrigger value="es">Español</TabsTrigger>
+      </TabsList>
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Online Presence</h3>
-                
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website or blog (optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://yourwebsite.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
+      {/* English Content */}
+      <TabsContent value="en">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">Affiliate Program Registration</CardTitle>
+            <CardDescription>
+              Join our affiliate program and earn commissions by promoting our financial products and services.
+            </CardDescription>
+            <div className="flex gap-2 mt-2">
+              <Badge variant="secondary">4% Standard Plan</Badge>
+              <Badge variant="secondary">5% Premium Plan</Badge>
+              <Badge variant="secondary">6% Elite Plan</Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="socialMedia.instagram"
+                    name="fullName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Instagram (opcional)</FormLabel>
+                        <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="@username" {...field} />
+                          <Input placeholder="John Doe" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
-                    name="socialMedia.twitter"
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Twitter (opcional)</FormLabel>
+                        <FormLabel>Email Address</FormLabel>
                         <FormControl>
-                          <Input placeholder="@username" {...field} />
+                          <Input type="email" placeholder="john@example.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
-                    name="socialMedia.youtube"
+                    name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Canal de YouTube (opcional)</FormLabel>
+                        <FormLabel>Phone Number (optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="URL del canal" {...field} />
+                          <Input placeholder="+1 (555) 123-4567" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
-                    name="socialMedia.tiktok"
+                    name="website"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>TikTok (opcional)</FormLabel>
+                        <FormLabel>Website (optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="@username" {...field} />
+                          <Input placeholder="https://yourwebsite.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Categorías de interés</h3>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Social Media Profiles (optional)</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="socialMedia.instagram"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Instagram</FormLabel>
+                          <FormControl>
+                            <Input placeholder="@username" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="socialMedia.youtube"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>YouTube</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Channel URL or name" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="socialMedia.tiktok"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>TikTok</FormLabel>
+                          <FormControl>
+                            <Input placeholder="@username" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="socialMedia.twitter"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Twitter</FormLabel>
+                          <FormControl>
+                            <Input placeholder="@username" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="categories"
-                  render={() => (
+                  name="audienceSize"
+                  render={({ field }) => (
                     <FormItem>
-                      <div className="mb-4">
-                        <FormLabel>Selecciona las categorías que te interesa promocionar</FormLabel>
+                      <FormLabel>Audience Size</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your audience size" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="less-1k">Less than 1,000</SelectItem>
+                          <SelectItem value="1k-5k">1,000 - 5,000</SelectItem>
+                          <SelectItem value="5k-10k">5,000 - 10,000</SelectItem>
+                          <SelectItem value="10k-50k">10,000 - 50,000</SelectItem>
+                          <SelectItem value="50k-100k">50,000 - 100,000</SelectItem>
+                          <SelectItem value="100k-1m">100,000 - 1 million</SelectItem>
+                          <SelectItem value="more-1m">More than 1 million</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="marketingExperience"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Marketing Experience</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Describe your experience with affiliate or digital marketing"
+                          className="min-h-[100px]" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="promotionStrategy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Promotion Strategy</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="How do you plan to promote our investment plans? What channels and methods will you use?"
+                          className="min-h-[100px]" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="agreeTerms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 mt-1"
+                          checked={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          I agree to the terms and conditions
+                        </FormLabel>
                         <FormDescription>
-                          Esto nos ayudará a recomendarte los productos más relevantes
+                          By submitting this form, you agree to our <a href="/terms" className="text-primary underline">Terms of Service</a> and <a href="/privacy" className="text-primary underline">Privacy Policy</a>.
                         </FormDescription>
+                        <FormMessage />
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {categories.map((category) => (
-                          <FormField
-                            key={category.id}
-                            control={form.control}
-                            name="categories"
-                            render={({ field }) => {
-                              return (
-                                <FormItem
-                                  key={category.id}
-                                  className="flex flex-row items-start space-x-3 space-y-0"
-                                >
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(category.id)}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([...field.value, category.id])
-                                          : field.onChange(
-                                              field.value?.filter(
-                                                (value) => value !== category.id
-                                              )
-                                            )
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="font-normal cursor-pointer">
-                                    {category.label}
-                                  </FormLabel>
-                                </FormItem>
-                              )
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Información de pago</h3>
-                
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={mutation.isPending}
+                >
+                  {mutation.isPending ? "Submitting..." : "Submit Application"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Spanish Content */}
+      <TabsContent value="es">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">Registro de Programa de Afiliados</CardTitle>
+            <CardDescription>
+              Únete a nuestro programa de afiliados y gana comisiones promocionando nuestros productos y servicios financieros.
+            </CardDescription>
+            <div className="flex gap-2 mt-2">
+              <Badge variant="secondary">Plan Estándar 4%</Badge>
+              <Badge variant="secondary">Plan Premium 5%</Badge>
+              <Badge variant="secondary">Plan Élite 6%</Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre Completo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Juan Pérez" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Correo Electrónico</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="juan@ejemplo.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número de Teléfono (opcional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+34 123 456 789" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sitio Web (opcional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://tusitio.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Perfiles de Redes Sociales (opcional)</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="socialMedia.instagram"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Instagram</FormLabel>
+                          <FormControl>
+                            <Input placeholder="@usuario" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="socialMedia.youtube"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>YouTube</FormLabel>
+                          <FormControl>
+                            <Input placeholder="URL del canal o nombre" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="socialMedia.tiktok"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>TikTok</FormLabel>
+                          <FormControl>
+                            <Input placeholder="@usuario" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="socialMedia.twitter"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Twitter</FormLabel>
+                          <FormControl>
+                            <Input placeholder="@usuario" {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="paymentMethod"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Método de pago preferido</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="paypal" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              PayPal
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="bank_transfer" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              Transferencia bancaria
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="crypto" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              Criptomonedas
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="paymentEmail"
+                  name="audienceSize"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Correo electrónico para pagos</FormLabel>
-                      <FormControl>
-                        <Input type="email" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Usaremos este correo para procesar tus pagos
-                      </FormDescription>
+                      <FormLabel>Tamaño de Audiencia</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona el tamaño de tu audiencia" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="less-1k">Menos de 1.000</SelectItem>
+                          <SelectItem value="1k-5k">1.000 - 5.000</SelectItem>
+                          <SelectItem value="5k-10k">5.000 - 10.000</SelectItem>
+                          <SelectItem value="10k-50k">10.000 - 50.000</SelectItem>
+                          <SelectItem value="50k-100k">50.000 - 100.000</SelectItem>
+                          <SelectItem value="100k-1m">100.000 - 1 millón</SelectItem>
+                          <SelectItem value="more-1m">Más de 1 millón</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Términos y condiciones</h3>
-                
                 <FormField
                   control={form.control}
-                  name="termsAccepted"
+                  name="marketingExperience"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormItem>
+                      <FormLabel>Experiencia en Marketing</FormLabel>
                       <FormControl>
-                        <Checkbox
+                        <Textarea 
+                          placeholder="Describe tu experiencia con marketing de afiliados o marketing digital"
+                          className="min-h-[100px]" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="promotionStrategy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estrategia de Promoción</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="¿Cómo planeas promocionar nuestros planes de inversión? ¿Qué canales y métodos utilizarás?"
+                          className="min-h-[100px]" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="agreeTerms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 mt-1"
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel className="font-normal">
-                          Acepto los <a href="/terms" className="text-primary hover:underline" target="_blank">términos y condiciones</a> del programa de afiliados de Boostify
+                        <FormLabel>
+                          Acepto los términos y condiciones
                         </FormLabel>
+                        <FormDescription>
+                          Al enviar este formulario, aceptas nuestros <a href="/terms" className="text-primary underline">Términos de Servicio</a> y <a href="/privacy" className="text-primary underline">Política de Privacidad</a>.
+                        </FormDescription>
                         <FormMessage />
                       </div>
                     </FormItem>
                   )}
                 />
-                
-                <FormField
-                  control={form.control}
-                  name="dataProcessingAccepted"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="font-normal">
-                          Acepto que mis datos sean procesados de acuerdo con la <a href="/privacy" className="text-primary hover:underline" target="_blank">política de privacidad</a> de Boostify
-                        </FormLabel>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando solicitud...
-                  </>
-                ) : (
-                  "Enviar solicitud"
-                )}
-              </Button>
-            </form>
-          </Form>
-        )}
-      </CardContent>
-    </Card>
+
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={mutation.isPending}
+                >
+                  {mutation.isPending ? "Enviando..." : "Enviar Solicitud"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 }

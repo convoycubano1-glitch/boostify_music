@@ -8,8 +8,8 @@ import {
   LogIn,
   UserCircle 
 } from "lucide-react";
-import { useAuth } from "../../hooks/use-auth";
-import { Button } from "../../components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 export function Header() {
   const [location] = useLocation();

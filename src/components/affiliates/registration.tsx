@@ -86,11 +86,20 @@ export function AffiliateRegistration() {
     setError(null);
     
     try {
-      // Enviar solicitud a la API en lugar de escribir directamente en Firestore
-      await axios.post('/api/affiliate/register', {
+      // Crear el documento de afiliado en Firestore directamente
+      await setDoc(doc(db, "affiliates", user.uid), {
         ...data,
         userId: user.uid,
         email: user.email,
+        status: "pending", // pending, approved, rejected
+        createdAt: serverTimestamp(),
+        stats: {
+          totalClicks: 0,
+          conversions: 0,
+          earnings: 0,
+          pendingPayment: 0,
+        },
+        level: "Básico", // Básico, Plata, Oro, Platino
       });
 
       setSuccess(true);

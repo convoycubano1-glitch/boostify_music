@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { useEditor } from "@/hooks/use-editor";
+import { cn } from "../../lib/utils";
+import { useEditor } from "../../hooks/use-editor";
 
 // Iconos para los diferentes pasos
 import { 

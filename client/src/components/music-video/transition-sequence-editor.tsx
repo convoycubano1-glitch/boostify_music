@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
+import { Slider } from "../../components/ui/slider";
+import { Label } from "../../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
+import { Switch } from "../../components/ui/switch";
 import { 
   ArrowLeftRight, 
   Layers, 
@@ -16,7 +16,7 @@ import {
   ArrowDownIcon,
   Sparkles
 } from "lucide-react";
-import { TransitionType } from "@/lib/professional-editor-types";
+import { TransitionType } from "../../lib/professional-editor-types";
 
 // Tipo para cada transición disponible
 interface TransitionOption {

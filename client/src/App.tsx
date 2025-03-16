@@ -332,7 +332,7 @@ const Router = () => {
         {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
         {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
         {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
-        {getRouteComponent("/affiliates", WrappedAffiliatesPage, 'premium')}
+        {getRouteComponent("/affiliates", WrappedAffiliatesPage, null)}
         {getRouteComponent("/boostify-international", WrappedBoostifyInternationalPage, 'premium')}
         
         {/* Rutas administrativas especiales */}

@@ -1,167 +1,108 @@
 /**
- * Script for fixing path alias imports by creating symlinks in node_modules
- * This ensures that imports with @/ syntax work correctly without modifying vite.config.ts
+ * Script para establecer los enlaces simbólicos necesarios para las importaciones @/
  */
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Get the absolute path of the current directory
+// Obtener la ruta del directorio actual
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Define important paths
-const rootDir = path.resolve(__dirname);
-const clientSrcDir = path.join(rootDir, 'client', 'src');
-const nodeModulesDir = path.join(rootDir, 'node_modules');
-
-console.log('Creating missing directories if needed...');
-
-// Create the styles directory if it doesn't exist
-const stylesDir = path.join(clientSrcDir, 'styles');
-if (!fs.existsSync(stylesDir)) {
-  console.log('Creating styles directory...');
-  fs.mkdirSync(stylesDir, { recursive: true });
+// Crear el enlace simbólico para @/
+function createAliasSymlinks() {
+  // Verificar si existe la carpeta node_modules/@
+  const aliasPath = path.resolve('node_modules/@');
   
-  // Create a default CSS file
-  fs.writeFileSync(path.join(stylesDir, 'mobile-optimization.css'), `
-/* Mobile optimization styles */
-@media (max-width: 768px) {
-  .mobile-responsive {
-    width: 100%;
-    flex-direction: column;
+  if (!fs.existsSync('node_modules')) {
+    fs.mkdirSync('node_modules', { recursive: true });
+    console.log('✅ Carpeta node_modules creada');
   }
-}
-`);
-}
-
-// Create the firebase directory if it doesn't exist
-const firebaseDir = path.join(clientSrcDir, 'firebase');
-if (!fs.existsSync(firebaseDir)) {
-  console.log('Creating firebase directory...');
-  fs.mkdirSync(firebaseDir, { recursive: true });
   
-  // Create a firebase.ts file that re-exports the real implementation
-  const firebaseContent = `/**
- * Main Firebase module
- * This file re-exports the Firebase implementation from src/firebase.ts
- */
-export * from '../firebase';
-`;
-  fs.writeFileSync(path.join(firebaseDir, 'index.ts'), firebaseContent);
-  console.log('Created firebase/index.ts that re-exports from ../firebase.ts');
-}
-
-// Create lib/api directory if needed 
-const apiDir = path.join(clientSrcDir, 'lib', 'api');
-if (!fs.existsSync(apiDir)) {
-  console.log('Creating lib/api directory...');
-  fs.mkdirSync(apiDir, { recursive: true });
-}
-
-// Check and create the missing files in lib/api
-const falAiPath = path.join(apiDir, 'fal-ai.ts');
-if (!fs.existsSync(falAiPath)) {
-  const falAiContent = `/**
- * Fal AI integration service
- * This service handles image generation with Fal AI
- */
-export async function generateImageWithFal({ prompt, negative_prompt = "", width = 512, height = 512, model = "dream-shaper-v8" }) {
+  if (!fs.existsSync(aliasPath)) {
+    fs.mkdirSync(aliasPath, { recursive: true });
+    console.log('✅ Carpeta node_modules/@ creada');
+  }
+  
+  // Crear el enlace simbólico a client/src
+  const targetPath = path.resolve('client/src');
+  console.log(`🔍 Ruta de client/src: ${targetPath}`);
+  
+  // Verificar que exista la carpeta
+  if (!fs.existsSync(targetPath)) {
+    console.error(`❌ Error: La carpeta ${targetPath} no existe`);
+    return;
+  }
+  
+  // Eliminar los enlaces existentes si existen
   try {
-    const response = await fetch('/api/proxy/fal-ai/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt,
-        negative_prompt,
-        width,
-        height,
-        model
-      }),
-    });
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error generating image with Fal AI:', error);
-    throw error;
-  }
-}
-`;
-  fs.writeFileSync(falAiPath, falAiContent);
-  console.log('Created lib/api/fal-ai.ts');
-}
-
-// Create openrouteraiagents.ts if it doesn't exist
-const openrouterPath = path.join(apiDir, 'openrouteraiagents.ts');
-if (!fs.existsSync(openrouterPath)) {
-  const openrouterContent = `/**
- * OpenRouter AI Agents integration
- * Provides access to AI agents for various tasks
- */
-
-export const AGENT_COLLECTIONS = {
-  MANAGERS: 'ai-agents-managers',
-  MARKETERS: 'ai-agents-marketers',
-  COMPOSERS: 'ai-agents-composers',
-  SOCIAL_MEDIA: 'ai-agents-social-media',
-  MERCHANDISE: 'ai-agents-merchandise'
-};
-
-export async function getAgents(collectionName: string) {
-  try {
-    // In a real implementation, this would fetch from Firestore
-    return [];
-  } catch (error) {
-    console.error('Error fetching agents:', error);
-    return [];
-  }
-}
-`;
-  fs.writeFileSync(openrouterPath, openrouterContent);
-  console.log('Created lib/api/openrouteraiagents.ts');
-}
-
-// Create the main alias symlink
-const mainAliasPath = path.join(nodeModulesDir, '@');
-let mainSymlinkExists = false;
-try {
-  const stats = fs.lstatSync(mainAliasPath);
-  mainSymlinkExists = stats.isSymbolicLink();
-  
-  if (mainSymlinkExists) {
-    const currentTarget = fs.readlinkSync(mainAliasPath);
-    if (currentTarget !== clientSrcDir) {
-      console.log(`Main symlink exists but points to ${currentTarget} instead of ${clientSrcDir}`);
+    // Limpiar todos los enlaces existentes en node_modules/@
+    const files = fs.readdirSync(aliasPath);
+    for (const file of files) {
+      const filePath = path.join(aliasPath, file);
       try {
-        fs.unlinkSync(mainAliasPath);
-        mainSymlinkExists = false;
+        const stats = fs.lstatSync(filePath);
+        if (stats.isSymbolicLink()) {
+          fs.unlinkSync(filePath);
+          console.log(`🔄 Enlace simbólico ${file} eliminado`);
+        }
       } catch (err) {
-        console.error('Failed to remove existing symlink:', err);
+        console.error(`Error al procesar ${file}:`, err);
       }
-    } else {
-      console.log(`Main symlink already points to the correct target: ${clientSrcDir}`);
     }
-  }
-} catch (err) {
-  // Likely the symlink doesn't exist
-  if (err.code !== 'ENOENT') {
-    console.error('Error checking main symlink:', err);
-  }
-}
-
-// Create the main alias symlink if it doesn't exist
-if (!mainSymlinkExists) {
-  try {
-    console.log(`Creating main symlink: ${mainAliasPath} -> ${clientSrcDir}`);
-    fs.symlinkSync(clientSrcDir, mainAliasPath, 'dir');
-    console.log('Main symlink created successfully');
   } catch (err) {
-    console.error('Error creating main symlink:', err);
+    console.error('Error al eliminar enlaces simbólicos:', err);
+  }
+  
+  // Crear los enlaces para los componentes principales
+  try {
+    // Lista de carpetas a enlazar desde client/src
+    const foldersToLink = [
+      'components',
+      'hooks',
+      'lib',
+      'utils',
+      'context',
+      'services',
+      'pages',
+      'store',
+      'types'
+    ];
+    
+    // Enlazar cada carpeta individualmente
+    for (const folder of foldersToLink) {
+      const sourcePath = path.join(targetPath, folder);
+      const destPath = path.join(aliasPath, folder);
+      
+      if (fs.existsSync(sourcePath)) {
+        fs.symlinkSync(sourcePath, destPath, 'junction');
+        console.log(`✅ Enlace simbólico @/${folder} creado`);
+      } else {
+        console.log(`⚠️ Carpeta ${folder} no encontrada en client/src`);
+      }
+    }
+    
+    // Enlazar archivos individuales importantes
+    const filesToLink = ['firebase.ts'];
+    for (const file of filesToLink) {
+      const sourceFile = path.join(targetPath, file);
+      const destFile = path.join(aliasPath, file);
+      
+      if (fs.existsSync(sourceFile)) {
+        fs.symlinkSync(sourceFile, destFile, 'file');
+        console.log(`✅ Enlace simbólico @/${file} creado`);
+      } else {
+        console.log(`⚠️ Archivo ${file} no encontrado en client/src`);
+      }
+    }
+    
+    // Crear el enlace global para todo client/src
+    fs.symlinkSync(targetPath, path.join(aliasPath, 'src'), 'junction');
+    console.log('✅ Enlace simbólico general @/src creado correctamente');
+  } catch (err) {
+    console.error('Error al crear enlaces simbólicos:', err);
   }
 }
 
-console.log('Aliases setup is complete');
+createAliasSymlinks();
+console.log('🚀 Configuración de alias completada');
