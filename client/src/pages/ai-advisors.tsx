@@ -4,7 +4,7 @@
  * This page allows users to get professional advice
  * based on their current subscription plan.
  * 
- * Enhanced with sophisticated UI elements, animations, and particle effects.
+ * Enhanced with sophisticated UI elements and native CSS animations.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -14,12 +14,12 @@ import { useLocation } from 'wouter';
 import { Advisor } from '../lib/services/advisor-call-service';
 import { useSubscription } from '../lib/context/subscription-context';
 
-// Componentes
+// Components
 import { CallHistory } from '../components/ai-advisors/call-history';
 import { CallLimits } from '../components/ai-advisors/call-limits';
 import { CallModal } from '../components/ai-advisors/call-modal';
 
-// Componentes UI
+// UI Components
 import {
   Card,
   CardContent,
@@ -39,7 +39,7 @@ import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 
-// Iconos
+// Icons
 import {
   MessageSquare,
   Phone,
@@ -56,15 +56,19 @@ import {
   HandCoins,
   BarChart,
   Rocket,
+  Star,
+  SparkleIcon,
+  BadgeCheck,
+  LightbulbIcon
 } from 'lucide-react';
 
-// Crear lista de asesores
+// Create advisors list
 const advisors: Advisor[] = [
   {
     id: 'publicist',
     name: 'Sarah Mills',
-    title: 'Publicista',
-    description: 'Especialista en relaciones públicas y prensa musical',
+    title: 'Publicist',
+    description: 'Expert in media relations and press management for musicians',
     icon: Megaphone,
     color: 'from-purple-500 to-blue-500',
     animationDelay: 0,
@@ -73,7 +77,7 @@ const advisors: Advisor[] = [
     id: 'manager',
     name: 'Mark Johnson',
     title: 'Manager',
-    description: 'Asesor experto en gestión de carreras artísticas',
+    description: 'Specialist in career planning and artist development',
     icon: Users,
     color: 'from-blue-500 to-cyan-400',
     animationDelay: 0.1,
@@ -81,17 +85,17 @@ const advisors: Advisor[] = [
   {
     id: 'producer',
     name: 'David Williams',
-    title: 'Productor Musical',
-    description: 'Especialista en producción y arreglos musicales',
+    title: 'Music Producer',
+    description: 'Expert in music production and arrangement techniques',
     icon: Music,
     color: 'from-amber-500 to-orange-600',
     animationDelay: 0.2,
   },
   {
     id: 'creative',
-    name: 'Emily Rodríguez',
-    title: 'Directora Creativa',
-    description: 'Experta en imagen visual y conceptualización artística',
+    name: 'Emily Rodriguez',
+    title: 'Creative Director',
+    description: 'Visual arts and creative concept development specialist',
     icon: VideoIcon,
     color: 'from-pink-500 to-rose-500',
     animationDelay: 0.3,
@@ -99,8 +103,8 @@ const advisors: Advisor[] = [
   {
     id: 'business',
     name: 'Robert Chen',
-    title: 'Consultor de Negocios',
-    description: 'Especialista en monetización y estrategias de negocio',
+    title: 'Business Consultant',
+    description: 'Monetization and business strategy specialist',
     icon: BriefcaseBusiness,
     color: 'from-emerald-500 to-green-600',
     animationDelay: 0.4,
@@ -108,8 +112,8 @@ const advisors: Advisor[] = [
   {
     id: 'marketing',
     name: 'Alicia Torres',
-    title: 'Especialista de Marketing',
-    description: 'Asesora de estrategias digitales y campañas promocionales',
+    title: 'Marketing Specialist',
+    description: 'Digital marketing and promotional campaign advisor',
     icon: TrendingUp,
     color: 'from-red-500 to-rose-600',
     animationDelay: 0.5,
@@ -117,17 +121,17 @@ const advisors: Advisor[] = [
   {
     id: 'lawyer',
     name: 'Michael Barnes',
-    title: 'Abogado Musical',
-    description: 'Experto en contratos y propiedad intelectual',
+    title: 'Music Attorney',
+    description: 'Contracts and intellectual property rights expert',
     icon: FileText,
     color: 'from-indigo-500 to-violet-600',
     animationDelay: 0.6,
   },
   {
     id: 'support',
-    name: 'Lucia González',
-    title: 'Soporte al Artista',
-    description: 'Asistente para todas tus necesidades como artista',
+    name: 'Lucia Gonzalez',
+    title: 'Artist Support',
+    description: 'General assistance for all your artist needs',
     icon: HandCoins,
     color: 'from-teal-500 to-green-400',
     animationDelay: 0.7,
@@ -135,8 +139,8 @@ const advisors: Advisor[] = [
   {
     id: 'analytics',
     name: 'Thomas Lee',
-    title: 'Analista de Datos',
-    description: 'Interpretación de métricas y tendencias musicales',
+    title: 'Data Analyst',
+    description: 'Music metrics interpretation and trend analysis',
     icon: BarChart,
     color: 'from-cyan-500 to-blue-600',
     animationDelay: 0.8,
@@ -144,27 +148,72 @@ const advisors: Advisor[] = [
   {
     id: 'strategist',
     name: 'Rebecca Taylor',
-    title: 'Estratega de Crecimiento',
-    description: 'Especialista en expansión y nuevas audiencias',
+    title: 'Growth Strategist',
+    description: 'Audience expansion and new market specialist',
     icon: Rocket,
     color: 'from-orange-500 to-amber-400',
     animationDelay: 0.9,
   },
 ];
 
-// Lista de consejos rápidos
+// Quick tips list
 const quickTips = [
-  "Mantén una presencia constante en redes sociales para aumentar tu visibilidad",
-  "Invierte en material visual de calidad para destacar frente a la competencia",
-  "Construye relaciones genuinas con tus seguidores respondiendo a comentarios",
-  "Colabora con otros artistas para acceder a nuevas audiencias",
-  "Define tu propuesta de valor única: ¿qué te hace diferente?",
-  "Aprovecha herramientas de análisis para entender mejor a tu audiencia",
-  "Establece un calendario de lanzamientos para mantener el interés",
-  "Considera trabajar con un distribuidor digital independiente para tus lanzamientos",
-  "Desarrolla contenido exclusivo para tus seguidores más dedicados",
-  "Registra tus obras en sociedades de gestión de derechos de autor"
+  "Maintain consistent social media presence to increase visibility",
+  "Invest in quality visuals to stand out from competition",
+  "Build genuine relationships with followers by responding to comments",
+  "Collaborate with other artists to access new audiences",
+  "Define your unique value proposition: what makes you different?",
+  "Use analytics tools to better understand your audience",
+  "Establish a release calendar to maintain interest",
+  "Consider working with an independent digital distributor for your releases",
+  "Develop exclusive content for your most dedicated followers",
+  "Register your works with copyright management societies"
 ];
+
+// Subscription features by plan
+const subscriptionFeatures = {
+  free: {
+    title: "Free Plan",
+    description: "Basic access to the platform",
+    price: "$0",
+    features: [
+      "Access to Sarah Mills (Publicist)",
+      "3 advisor calls per month",
+      "Basic community features",
+      "Limited reporting tools"
+    ],
+    color: "from-gray-500 to-slate-600"
+  },
+  basic: {
+    title: "Basic Plan",
+    description: "Essential tools for emerging artists",
+    price: "$59.99",
+    features: [
+      "Access to 4 specialized advisors",
+      "10 advisor calls per month",
+      "Basic analytics dashboard",
+      "Email support within 48 hours",
+      "Content planning tools"
+    ],
+    color: "from-blue-500 to-indigo-600"
+  },
+  pro: {
+    title: "Pro Plan",
+    description: "Complete toolkit for serious musicians",
+    price: "$99.99",
+    features: [
+      "Access to all 10 specialized advisors",
+      "30 advisor calls per month",
+      "Advanced analytics dashboard",
+      "Priority email support within 24 hours",
+      "Content planning & scheduling",
+      "Personalized growth strategy",
+      "AI-enhanced performance insights"
+    ],
+    color: "from-purple-500 to-indigo-600",
+    highlighted: true
+  }
+};
 
 export default function AIAdvisorsPage() {
   const { toast } = useToast();
@@ -172,21 +221,21 @@ export default function AIAdvisorsPage() {
   const [, setLocation] = useLocation();
   const { subscription, currentPlan } = useSubscription();
   
-  // Estado de llamada
+  // Call state
   const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [calling, setCalling] = useState(false);
   
-  // Manejar clic en asesor
+  // Handle advisor click
   const handleAdvisorClick = (advisor: Advisor) => {
     if (!user) {
       toast({
-        title: "Inicia sesión para continuar",
-        description: "Necesitas iniciar sesión para contactar a un asesor",
+        title: "Login required",
+        description: "You need to be logged in to contact an advisor",
         variant: "destructive"
       });
       
-      // Redirigir a login
+      // Redirect to login
       setLocation('/login');
       return;
     }
@@ -195,151 +244,148 @@ export default function AIAdvisorsPage() {
     setModalOpen(true);
   };
   
-  // Componente de efecto de partículas
-const ParticleBackground = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  useEffect(() => {
-    if (!canvasRef.current) return;
+  // Particle background component with native CSS
+  const ParticleBackground = () => {
+    const containerRef = useRef<HTMLDivElement>(null);
     
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Ajustar el tamaño del canvas
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    
-    // Crear partículas
-    const particlesArray: any[] = [];
-    const numberOfParticles = 80;
-    
-    class Particle {
-      x: number;
-      y: number;
-      size: number;
-      speedX: number;
-      speedY: number;
-      color: string;
+    useEffect(() => {
+      // Create particles using DOM elements with CSS animations
+      // This is more efficient than Canvas for a limited number of particles
+      if (!containerRef.current) return;
       
-      constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 3 + 1;
-        this.speedX = Math.random() * 1 - 0.5;
-        this.speedY = Math.random() * 1 - 0.5;
-        this.color = `hsla(${Math.random() * 60 + 200}, 100%, 50%, 0.8)`;
-      }
+      const container = containerRef.current;
+      const particleCount = 40; // Reduced for better performance
       
-      update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
+      // Clear existing particles
+      container.innerHTML = '';
+      
+      // Create particles
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
         
-        if (this.x > canvas.width) this.x = 0;
-        else if (this.x < 0) this.x = canvas.width;
-        if (this.y > canvas.height) this.y = 0;
-        else if (this.y < 0) this.y = canvas.height;
+        // Random properties for variety
+        const size = Math.random() * 6 + 2;
+        const posX = Math.random() * 100;
+        const posY = Math.random() * 100;
+        const delay = Math.random() * 5;
+        const duration = Math.random() * 20 + 10;
+        const hue = Math.random() * 60 + 200; // Blue to purple range
+        
+        // Apply styles
+        particle.className = 'particle';
+        particle.style.cssText = `
+          position: absolute;
+          width: ${size}px;
+          height: ${size}px;
+          border-radius: 50%;
+          background-color: hsla(${hue}, 100%, 70%, 0.6);
+          top: ${posY}%;
+          left: ${posX}%;
+          animation: float ${duration}s ease-in-out infinite;
+          animation-delay: -${delay}s;
+          filter: blur(${size > 5 ? 1 : 0}px);
+          opacity: ${Math.min(0.8, Math.random() + 0.3)};
+          z-index: 0;
+          pointer-events: none;
+        `;
+        
+        // Add to container
+        container.appendChild(particle);
       }
       
-      draw() {
-        if (!ctx) return;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    
-    const init = () => {
-      for (let i = 0; i < numberOfParticles; i++) {
-        particlesArray.push(new Particle());
-      }
-    };
-    
-    const connect = () => {
-      if (!ctx) return;
-      const maxDistance = 150;
-      
-      for (let a = 0; a < particlesArray.length; a++) {
-        for (let b = a; b < particlesArray.length; b++) {
-          const dx = particlesArray[a].x - particlesArray[b].x;
-          const dy = particlesArray[a].y - particlesArray[b].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < maxDistance) {
-            const opacity = 1 - distance / maxDistance;
-            ctx.strokeStyle = `rgba(140, 85, 250, ${opacity * 0.5})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
-            ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
-            ctx.stroke();
+      // Add global animation for float effect 
+      const styleTag = document.createElement('style');
+      styleTag.innerHTML = `
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+          }
+          25% {
+            transform: translateY(-30px) translateX(15px);
+          }
+          50% {
+            transform: translateY(-15px) translateX(-15px);
+          }
+          75% {
+            transform: translateY(30px) translateX(10px);
           }
         }
-      }
-    };
-    
-    const animate = () => {
-      if (!ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      `;
+      document.head.appendChild(styleTag);
       
-      for (let i = 0; i < particlesArray.length; i++) {
-        particlesArray[i].update();
-        particlesArray[i].draw();
-      }
-      
-      connect();
-      requestAnimationFrame(animate);
-    };
+      return () => {
+        document.head.removeChild(styleTag);
+      };
+    }, []);
     
-    init();
-    animate();
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-  
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 z-0 pointer-events-none opacity-30"
-    />
-  );
-};
+    return (
+      <div 
+        ref={containerRef} 
+        className="absolute inset-0 overflow-hidden opacity-40 pointer-events-none"
+      />
+    );
+  };
 
-// Efecto de texto animado para el título
-const AnimatedTitle = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div className="relative overflow-hidden">
-      <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-blue-500 to-indigo-400 animate-gradient-x pb-1">
-        {children}
-      </h1>
-    </div>
-  );
-};
+  // Animated title component with CSS-only effects
+  const AnimatedTitle = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <div className="relative">
+        <h1 
+          className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-blue-500 to-indigo-400 pb-1"
+          style={{
+            backgroundSize: '300% 100%',
+            animation: 'gradientAnimation 6s ease infinite'
+          }}
+        >
+          {children}
+        </h1>
+        {/* Add dynamic gradient animation */}
+        <style>{`
+          @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+        `}</style>
+      </div>
+    );
+  };
 
-return (
+  return (
     <div className="container max-w-6xl py-6 md:py-10 space-y-6 relative">
+      {/* Add global animation for fadeIn effect used on cards */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0) translateX(0); }
+          25% { transform: translateY(-30px) translateX(15px); }
+          50% { transform: translateY(-15px) translateX(-15px); }
+          75% { transform: translateY(30px) translateX(10px); }
+        }
+        @keyframes gradientAnimation {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
+      
       <ParticleBackground />
-      {/* Cabecera */}
+      {/* Header */}
       <div className="space-y-4 relative z-10">
         <AnimatedTitle>AI Advisors</AnimatedTitle>
         <p className="text-muted-foreground text-lg max-w-2xl">
-          Contact specialized advisors in the music industry to boost your career
+          Connect with specialized advisors in the music industry to boost your career
         </p>
       </div>
       
-      {/* Introducción/Banner */}
+      {/* Introduction/Banner */}
       <div className="mb-8 p-6 bg-gradient-to-r from-primary/10 via-background to-blue-500/10 rounded-xl border border-muted/60 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern-light opacity-10 pointer-events-none"></div>
         
-        {/* Efecto de partículas decorativas */}
+        {/* Decorative particle effects */}
         <div className="absolute top-10 right-10 w-20 h-20 bg-primary/10 rounded-full blur-xl"></div>
         <div className="absolute bottom-12 left-32 w-16 h-16 bg-blue-400/10 rounded-full blur-lg"></div>
         
@@ -366,7 +412,7 @@ return (
         </div>
       </div>
       
-      {/* Pestañas mejoradas */}
+      {/* Enhanced tabs */}
       <Tabs defaultValue="advisors" className="w-full">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
           <div className="flex items-center">
@@ -386,7 +432,7 @@ return (
             </TabsList>
           </div>
           
-          {/* Badge de plan actual */}
+          {/* Current plan badge */}
           <div className="flex items-center gap-1.5">
             <span className="text-sm text-muted-foreground">Current subscription:</span>
             <Badge 
@@ -403,35 +449,35 @@ return (
           </div>
         </div>
         
-        {/* Contenido: Tab Asesores */}
+        {/* Content: Advisors Tab */}
         <TabsContent value="advisors" className="pt-4 space-y-6">
-          {/* Alerta de límite (si aplica) */}
+          {/* Access alert (if applicable) */}
           {!user ? (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Acceso limitado</AlertTitle>
+              <AlertTitle>Limited access</AlertTitle>
               <AlertDescription>
-                Inicia sesión para contactar con los asesores y recibir ayuda personalizada.
+                Sign in to contact advisors and receive personalized help.
                 <Button 
                   variant="link" 
                   className="p-0 ml-2 h-auto" 
                   onClick={() => setLocation('/login')}
                 >
-                  Iniciar sesión
+                  Sign in
                 </Button>
               </AlertDescription>
             </Alert>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Panel lateral - Estadísticas y límites */}
+              {/* Side panel - Stats and limits */}
               <div className="space-y-4">
-                {/* Límites de llamadas */}
+                {/* Call limits */}
                 <CallLimits 
                   variant="compact" 
                   showUpgradeButton={true}
                 />
                 
-                {/* Historial reciente compacto */}
+                {/* Compact recent history */}
                 <CallHistory 
                   variant="compact" 
                   maxCalls={5} 
@@ -439,12 +485,12 @@ return (
                   showFooter={false}
                 />
                 
-                {/* Consejos rápidos */}
+                {/* Quick tips */}
                 <Card>
                   <CardHeader className="pb-2">
                     <div className="flex items-center">
-                      <BookOpen className="w-4 h-4 mr-2 text-primary" />
-                      <CardTitle className="text-sm">Consejos rápidos</CardTitle>
+                      <LightbulbIcon className="w-4 h-4 mr-2 text-primary" />
+                      <CardTitle className="text-sm">Quick Tips</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent className="pb-3">
@@ -454,70 +500,80 @@ return (
                   </CardContent>
                   <CardFooter className="pt-0">
                     <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setLocation('/resources')}>
-                      Más recursos
+                      More resources
                       <ChevronRight className="ml-1 h-3 w-3" />
                     </Button>
                   </CardFooter>
                 </Card>
               </div>
               
-              {/* Lista de asesores */}
+              {/* Advisors list */}
               <div className="md:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {advisors.map((advisor, index) => (
-                    <div 
+                    <Card 
                       key={advisor.id}
-                      className="transition-all duration-500"
-                      style={{ 
-                        opacity: 0,
-                        animation: 'fadeIn 0.5s forwards',
-                        animationDelay: `${index * 0.1}s`
+                      className={`group overflow-hidden transition-all duration-300 hover:shadow-md border-border/70
+                        ${advisor.id === 'publicist' ? 'ring-2 ring-primary/20 bg-primary/5' : ''}
+                        ${currentPlan === 'free' && advisor.id !== 'publicist' ? 'opacity-75' : ''}
+                      `}
+                      style={{
+                        animationDelay: `${advisor.animationDelay || 0}s`,
+                        animation: `fadeIn 0.5s ease-out both`
                       }}
                     >
-                      <Card 
-                        className="overflow-hidden advisor-card group hover:shadow-lg transition-all duration-500 relative border-[1.5px] glow-on-hover"
-                      >
-                        {/* Efecto de partículas en la esquina */}
-                        <div className="absolute top-0 right-0 w-32 h-32 opacity-30 pointer-events-none">
-                          <div className="absolute right-0 top-0 w-16 h-16 rounded-full bg-gradient-to-br from-white/5 to-white/20 blur-md"></div>
-                          <div className="absolute right-6 top-6 w-4 h-4 rounded-full bg-white/30 blur-sm animate-pulse-slow"></div>
-                          <div className="absolute right-10 top-2 w-2 h-2 rounded-full bg-white/40 blur-sm animate-pulse-slow delay-700"></div>
-                        </div>
+                      <CardHeader className="pb-3 relative">
+                        <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-gradient-to-br opacity-10 -translate-y-1/2 translate-x-1/2" 
+                          style={{background: `linear-gradient(to bottom right, ${advisor.color.split(' ')[0].replace('from-', '')}, ${advisor.color.split(' ')[1].replace('to-', '')})`}}
+                        />
                         
-                        <CardHeader className={`pb-2 bg-gradient-to-br ${advisor.color} relative`}>
-                          <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                          
-                          <div className="relative z-10 flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-white text-xl drop-shadow-md">{advisor.name}</CardTitle>
-                              <CardDescription className="text-white/90 drop-shadow-sm">
-                                {advisor.title}
-                              </CardDescription>
+                        <div className="flex items-start justify-between relative z-10">
+                          <div className="flex">
+                            <div 
+                              className={`flex items-center justify-center w-12 h-12 rounded-full mr-3 bg-gradient-to-br ${advisor.color}`}
+                            >
+                              {advisor.icon && <advisor.icon className="w-6 h-6 text-white" />}
                             </div>
-                            <div className="p-3 rounded-full bg-white/20 backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300">
-                              <advisor.icon className="h-5 w-5 text-white" />
+                            <div>
+                              <CardTitle>{advisor.name}</CardTitle>
+                              <CardDescription className="text-sm mt-1">{advisor.title}</CardDescription>
                             </div>
                           </div>
-                        </CardHeader>
+                          
+                          {/* Availability Badge */}
+                          {currentPlan === 'free' && advisor.id !== 'publicist' ? (
+                            <Badge variant="outline" className="bg-background border-amber-500/50 text-amber-500 text-xs">
+                              Pro Only
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-background border-green-500/50 text-green-500 text-xs">
+                              Available
+                            </Badge>
+                          )}
+                        </div>
                         
-                        <CardContent className="pt-4 pb-3">
-                          <p className="text-sm leading-relaxed">{advisor.description}</p>
-                        </CardContent>
-                        
-                        <CardFooter className="border-t pt-3">
-                          <Button 
-                            className="w-full group-hover:bg-opacity-90 transition-all duration-300 relative overflow-hidden" 
-                            onClick={() => handleAdvisorClick(advisor)}
-                            disabled={calling}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                            <Phone className="mr-2 h-4 w-4" />
-                            <span>{calling ? 'Calling...' : 'Call now'}</span>
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    </div>
+                        <Separator className="mt-3 bg-border/40" />
+                      </CardHeader>
+                      
+                      <CardContent className="text-sm pb-3">
+                        {advisor.description}
+                      </CardContent>
+                      
+                      <CardFooter className="pt-0">
+                        <Button 
+                          className={`w-full gap-2 ${
+                            advisor.id === 'publicist' ? 
+                            'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700' : 
+                            (currentPlan === 'free' ? 'bg-muted text-muted-foreground hover:bg-muted/80' : '')
+                          }`}
+                          onClick={() => handleAdvisorClick(advisor)}
+                          disabled={currentPlan === 'free' && advisor.id !== 'publicist'}
+                        >
+                          <Phone className="w-4 h-4" />
+                          <span>{currentPlan === 'free' && advisor.id !== 'publicist' ? 'Upgrade to Pro' : 'Contact Advisor'}</span>
+                        </Button>
+                      </CardFooter>
+                    </Card>
                   ))}
                 </div>
               </div>
@@ -525,17 +581,17 @@ return (
           )}
         </TabsContent>
         
-        {/* Contenido: Tab Historial */}
+        {/* Content: History Tab */}
         <TabsContent value="history" className="pt-4">
           {!user ? (
             <div className="text-center py-12">
               <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium">Inicia sesión para ver tu historial</h3>
+              <h3 className="text-lg font-medium">Sign in to view your history</h3>
               <p className="text-muted-foreground mb-6">
-                Necesitas iniciar sesión para ver tu historial de llamadas con asesores
+                You need to sign in to view your advisor call history
               </p>
               <Button onClick={() => setLocation('/login')}>
-                Iniciar sesión
+                Sign in
               </Button>
             </div>
           ) : (
@@ -548,12 +604,12 @@ return (
           )}
         </TabsContent>
         
-        {/* Contenido: Tab Planes */}
+        {/* Content: Plans Tab */}
         <TabsContent value="plans" className="pt-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Plan Free con efectos visuales */}
+            {/* Free Plan with visual effects */}
             <Card className={`border-2 relative overflow-hidden ${currentPlan === 'free' ? 'border-primary' : 'border-transparent'}`}>
-              {/* Efecto sutil de fondo */}
+              {/* Subtle background effect */}
               <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-tr from-blue-300/10 to-transparent rounded-full blur-xl"></div>
               
               <CardHeader className="relative z-10">
@@ -618,9 +674,9 @@ return (
               </CardFooter>
             </Card>
             
-            {/* Plan Basic con efectos visuales */}
+            {/* Basic Plan with visual effects */}
             <Card className={`border-2 relative overflow-hidden ${currentPlan === 'basic' ? 'border-primary' : 'border-transparent'}`}>
-              {/* Efectos de fondo */}
+              {/* Background effects */}
               <div className="absolute -top-24 -right-24 w-36 h-36 bg-gradient-to-bl from-cyan-400/10 to-transparent rounded-full blur-xl"></div>
               <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-tr from-blue-400/10 to-transparent rounded-full blur-xl"></div>
               
@@ -696,13 +752,13 @@ return (
               </CardFooter>
             </Card>
             
-            {/* Plan Pro - Versión mejorada con efectos visuales */}
+            {/* Pro Plan - Enhanced version with visual effects */}
             <Card className={`border-2 relative overflow-hidden ${currentPlan === 'pro' ? 'border-primary' : 'border-transparent'}`}>
-              {/* Efecto de resplandor superior */}
+              {/* Top glow effect */}
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-full blur-xl"></div>
               <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-gradient-to-tr from-blue-500/20 to-transparent rounded-full blur-xl"></div>
               
-              {/* Insignia de recomendado con efecto especial */}
+              {/* Recommended badge with special effect */}
               <div className="absolute -top-1 -right-1 rotate-12">
                 <div className="relative">
                   <Badge 
@@ -733,7 +789,7 @@ return (
               
               <CardContent className="space-y-5 relative z-10">
                 <div className="space-y-3">
-                  {/* Elemento destacado con un borde especial */}
+                  {/* Highlighted element with special border */}
                   <div className="flex items-center border-l-4 border-primary pl-3 py-1 bg-gradient-to-r from-primary/5 to-transparent rounded-sm">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
@@ -805,7 +861,7 @@ return (
                   disabled={currentPlan === 'pro'}
                   onClick={() => setLocation('/pricing')}
                 >
-                  {/* Efecto de brillo animado en hover */}
+                  {/* Animated glowing effect on hover */}
                   <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
                   <span className="relative z-10">
                     {currentPlan === 'pro' ? 'Current Plan' : 'Select Plan'}
@@ -817,7 +873,7 @@ return (
         </TabsContent>
       </Tabs>
       
-      {/* Modal de llamada */}
+      {/* Call modal */}
       <CallModal 
         advisor={selectedAdvisor}
         open={modalOpen}
