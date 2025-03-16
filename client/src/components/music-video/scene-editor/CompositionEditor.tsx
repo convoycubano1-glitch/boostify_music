@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Label } from "../../ui/label";
 import { Button } from "../../ui/button";
-import { PlusCircle, Wand2, RefreshCw, Lightbulb, ColorSwatch, Camera, Sun, Moon } from 'lucide-react';
+import { PlusCircle, Wand2, RefreshCw, Lightbulb, Palette, Camera, Sun, Moon } from 'lucide-react';
 import { Textarea } from "../../ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { useToast } from "../../../hooks/use-toast";
@@ -44,7 +44,7 @@ const COMPOSITION_CATEGORIES = {
   },
   color: {
     label: "Color",
-    icon: ColorSwatch,
+    icon: Palette,
     suggestions: [
       "Esquema de color cálido con tonos dorados y ámbar",
       "Esquema de color frío con tonos azules y cyan",

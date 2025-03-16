@@ -8,7 +8,17 @@ import { Label } from "../../ui/label";
 import { Slider } from "../../ui/slider";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
-import { RefreshCw, Wand2, Volume2, Film, ZoomIn, ChevronsUpDown, Wind, Sparkles } from 'lucide-react';
+import { 
+  RefreshCw, 
+  Wand2, 
+  Volume2, 
+  Film, 
+  ZoomIn, 
+  ChevronsUpDown, 
+  Wind, 
+  Sparkles, 
+  Palette
+} from 'lucide-react';
 import { Switch } from "../../ui/switch";
 import {
   Select,
@@ -51,7 +61,7 @@ const MOTION_PRESETS = [
     id: 'subtle-dolly',
     name: 'Dolly Suave',
     icon: Film,
-    description: 'Movimiento suave de cámara hacia adelante, ideal para momento emotivos',
+    description: 'Movimiento suave de cámara hacia adelante, ideal para momentos emotivos',
     settings: { intensity: 30, duration: '7s' }
   },
   {
