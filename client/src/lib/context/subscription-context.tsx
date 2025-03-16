@@ -32,6 +32,7 @@ interface SubscriptionContextType {
   isLoading: boolean;
   error: string | null;
   refreshSubscription: () => Promise<void>;
+  hasAccess: (requiredPlan: PlanType) => boolean;
 }
 
 // Crear contexto
@@ -41,6 +42,7 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   isLoading: true,
   error: null,
   refreshSubscription: async () => {},
+  hasAccess: () => false, // Por defecto, sin acceso
 });
 
 /**
@@ -197,12 +199,35 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
   };
   
+  /**
+   * Verifica si el plan actual tiene acceso al plan requerido
+   * @param requiredPlan Plan requerido para acceder a cierta funcionalidad
+   * @returns true si el plan actual permite acceso, false en caso contrario
+   */
+  const hasAccess = (requiredPlan: PlanType): boolean => {
+    // Jerarquía de planes por nivel de acceso
+    const planLevels: Record<PlanType, number> = {
+      'free': 0,
+      'basic': 1,
+      'pro': 2,
+      'premium': 3
+    };
+
+    // Obtener nivel del plan actual y el plan requerido
+    const currentLevel = planLevels[currentPlan];
+    const requiredLevel = planLevels[requiredPlan];
+
+    // Verificar si el nivel actual es >= al nivel requerido
+    return currentLevel >= requiredLevel;
+  };
+
   const value = {
     subscription,
     currentPlan,
     isLoading,
     error,
     refreshSubscription,
+    hasAccess,
   };
   
   return (
