@@ -91,6 +91,7 @@ import LayerFilterDemoPage from "./pages/layer-filter-demo";
 import AnimatedWorkflowPage from "./pages/animated-workflow";
 import TokenizationPage from "./pages/tokenization";
 import ResourcesPage from "./pages/resources";
+import TipsPage from "./pages/tips";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -258,6 +259,7 @@ const Router = () => {
   const WrappedAnimatedWorkflowPage = withPageWrapper(AnimatedWorkflowPage);
   const WrappedTokenizationPage = withPageWrapper(TokenizationPage);
   const WrappedResourcesPage = withPageWrapper(ResourcesPage);
+  const WrappedTipsPage = withPageWrapper(TipsPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -354,6 +356,7 @@ const Router = () => {
         {getRouteComponent("/animated-workflow", WrappedAnimatedWorkflowPage, null)}
         {getRouteComponent("/tokenization", WrappedTokenizationPage, null)}
         {getRouteComponent("/resources", WrappedResourcesPage, null)}
+        {getRouteComponent("/tips", WrappedTipsPage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
