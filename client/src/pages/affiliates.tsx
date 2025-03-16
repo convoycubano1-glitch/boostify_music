@@ -1,589 +1,407 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { AffiliateOverview } from "../components/affiliates/overview";
 import { AffiliateLinks } from "../components/affiliates/links";
-import { useAuth } from "../hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { Button } from "../components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../components/ui/form";
 import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Switch } from "../components/ui/switch";
-import { CheckCircle2, AlertCircle, DollarSign, BarChart3, Users, Link2, Settings, ChevronRight } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { InfoIcon, Loader2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "../hooks/use-toast";
+import { Badge } from "../components/ui/badge";
+import { ProgressCircular } from "../components/ui/progress-circular";
+
+// Esquema para el formulario de registro como afiliado
+const affiliateRegistrationSchema = z.object({
+  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
+  email: z.string().email({ message: "Debe ser un correo electrónico válido" }),
+  website: z.string().url({ message: "Debe ser una URL válida" }).optional().or(z.literal("")),
+  socialMediaUrls: z.string().optional(),
+  paymentMethod: z.string().min(1, { message: "Selecciona un método de pago" }),
+  paymentDetails: z.string().min(1, { message: "Los detalles de pago son requeridos" }),
+  comments: z.string().optional(),
+});
 
 export default function AffiliatePage() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const { user } = useAuth() || {};
-  const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    website: "",
-    socialMedia: {
-      instagram: "",
-      twitter: "",
-      youtube: "",
-      tiktok: ""
-    },
-    promotionChannels: [] as string[],
-    categories: [] as string[],
-    experience: "beginner",
-    paymentMethod: "paypal",
-    taxId: "",
-    termsAccepted: false
-  });
-
-  // Check if the user is an affiliate
-  const { data: affiliateData, isLoading, error } = useQuery<{success: boolean, data: any}>({
+  const [currentTab, setCurrentTab] = useState("overview");
+  const [isRegistering, setIsRegistering] = useState(false);
+  const { toast } = useToast();
+  
+  // Obtener información del afiliado
+  const { 
+    data: affiliateInfo,
+    isLoading,
+    isError,
+    refetch
+  } = useQuery({
     queryKey: ["affiliate", "me"],
     queryFn: async () => {
       try {
-        const response = await axios.get('/api/affiliate/me');
+        const response = await axios.get("/api/affiliate/me");
         return response.data;
       } catch (error: any) {
-        // If 404, user is not an affiliate yet
-        if (error.response?.status === 404) {
-          return { success: false, data: null };
+        // Si el error es 404, significa que el usuario no está registrado como afiliado
+        if (error.response && error.response.status === 404) {
+          return { isAffiliate: false };
         }
+        console.error("Error fetching affiliate info:", error);
         throw error;
       }
     },
-    enabled: !!user,
-    retry: false
   });
-
-  // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  // Handle social media input changes
-  const handleSocialChange = (platform: string, value: string) => {
-    setFormData({
-      ...formData,
-      socialMedia: {
-        ...formData.socialMedia,
-        [platform]: value
-      }
-    });
-  };
-
-  // Handle checkbox changes for arrays
-  const handleCheckboxChange = (field: string, value: string, checked: boolean) => {
-    if (checked) {
-      setFormData({
-        ...formData,
-        [field]: [...formData[field as keyof typeof formData] as string[], value]
+  
+  // Formulario para el registro de afiliado
+  const form = useForm<z.infer<typeof affiliateRegistrationSchema>>({
+    resolver: zodResolver(affiliateRegistrationSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      website: "",
+      socialMediaUrls: "",
+      paymentMethod: "",
+      paymentDetails: "",
+      comments: "",
+    },
+  });
+  
+  // Mutación para el registro de afiliado
+  const registerAffiliateMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof affiliateRegistrationSchema>) => {
+      const response = await axios.post("/api/affiliate/register", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      // Cerrar el diálogo
+      setIsRegistering(false);
+      // Refrescar la información del afiliado
+      refetch();
+      // Mostrar notificación de éxito
+      toast({
+        title: "Registro completado",
+        description: "Tu solicitud de afiliado ha sido procesada correctamente.",
       });
-    } else {
-      setFormData({
-        ...formData,
-        [field]: (formData[field as keyof typeof formData] as string[]).filter(item => item !== value)
+    },
+    onError: (error: any) => {
+      console.error("Error registering affiliate:", error);
+      toast({
+        title: "Error en el registro",
+        description: error.response?.data?.message || "Hubo un problema al procesar tu solicitud",
+        variant: "destructive",
       });
-    }
+    },
+  });
+  
+  // Manejar envío del formulario
+  const onSubmit = (values: z.infer<typeof affiliateRegistrationSchema>) => {
+    registerAffiliateMutation.mutate(values);
   };
-
-  // Handle select changes
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  // Handle terms acceptance toggle
-  const handleTermsToggle = (checked: boolean) => {
-    setFormData({
-      ...formData,
-      termsAccepted: checked
-    });
-  };
-
-  // Submit affiliate registration
-  const handleSubmitRegistration = async () => {
-    try {
-      const response = await axios.post('/api/affiliate/register', formData);
-      if (response.data.success) {
-        // Reset form and close dialog
-        setIsRegistrationOpen(false);
-        // Refetch affiliate data to update UI
-        await new Promise(resolve => setTimeout(resolve, 500)); // Small delay to ensure server-side changes are processed
-        window.location.reload(); // Simple way to refresh the entire page and data
-      }
-    } catch (error) {
-      console.error('Error registering as affiliate:', error);
-      alert('Error al registrar como afiliado. Por favor intenta nuevamente.');
-    }
-  };
-
-  // If still loading
+  
+  // Si está cargando, mostrar indicador de carga
   if (isLoading) {
     return (
-      <div className="container mx-auto py-10 space-y-6 animate-pulse">
-        <div className="h-8 bg-primary/10 rounded w-1/3"></div>
-        <div className="h-64 bg-primary/5 rounded"></div>
+      <div className="container mx-auto py-12">
+        <div className="flex justify-center">
+          <ProgressCircular size="lg" />
+        </div>
       </div>
     );
   }
-
-  // If error or user is not authenticated
-  if (error || !user) {
+  
+  // Si hay un error, mostrar mensaje de error
+  if (isError) {
     return (
-      <div className="container mx-auto py-10">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+      <div className="container mx-auto py-6">
+        <Alert variant="destructive" className="mb-6">
+          <InfoIcon className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            {error ? 
-              (error as Error).message || "Error al cargar datos de afiliado" :
-              "Debes iniciar sesión para acceder al programa de afiliados."
-            }
+            No pudimos cargar la información de afiliado. Por favor, intenta de nuevo más tarde.
           </AlertDescription>
         </Alert>
+        <Button onClick={() => refetch()}>Reintentar</Button>
       </div>
     );
   }
-
-  // If user is not an affiliate yet
-  if (!affiliateData?.success || !affiliateData?.data) {
+  
+  // Si el usuario no es afiliado, mostrar página de registro
+  if (!affiliateInfo.isAffiliate) {
     return (
-      <div className="container mx-auto py-10 max-w-5xl">
-        <h1 className="text-3xl font-bold mb-6">Programa de Afiliados</h1>
+      <div className="container mx-auto py-6 max-w-3xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2">Programa de Afiliados</h1>
+          <p className="text-muted-foreground">
+            Gana dinero promocionando nuestros productos y servicios a tu audiencia
+          </p>
+        </div>
         
-        <Card className="border-primary/10 mb-8">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              Conviértete en Afiliado
-            </CardTitle>
-            <CardDescription>
-              Genera ingresos promocionando nuestros productos y servicios
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p>
-              Nuestro programa de afiliados te permite ganar comisiones por cada venta
-              que generes a través de tus enlaces personalizados. Es una excelente manera
-              de monetizar tu audiencia mientras ayudas a artistas y creadores.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-primary/5">
-                <DollarSign className="h-8 w-8 text-primary mb-2" />
-                <h3 className="font-medium">Comisiones Competitivas</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Gana hasta un 30% por cada venta que generes
-                </p>
-              </div>
+        <AffiliateFeatures />
+        
+        <div className="mt-8 text-center">
+          <Dialog open={isRegistering} onOpenChange={setIsRegistering}>
+            <DialogTrigger asChild>
+              <Button size="lg">Unirse al programa de afiliados</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Aplicar como afiliado</DialogTitle>
+                <DialogDescription>
+                  Complete el formulario para unirse a nuestro programa de afiliados y comenzar a ganar comisiones.
+                </DialogDescription>
+              </DialogHeader>
               
-              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-primary/5">
-                <BarChart3 className="h-8 w-8 text-primary mb-2" />
-                <h3 className="font-medium">Análisis Detallado</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Rastrea clics, conversiones y ganancias en tiempo real
-                </p>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Nombre */}
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nombre completo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Tu nombre" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Email */}
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Correo electrónico</FormLabel>
+                          <FormControl>
+                            <Input placeholder="tu@email.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Sitio web */}
+                  <FormField
+                    control={form.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sitio web (Opcional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://tusitio.com" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          El sitio web donde promocionarás nuestros productos
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Redes sociales */}
+                  <FormField
+                    control={form.control}
+                    name="socialMediaUrls"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Redes sociales (Opcional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Instagram: @usuario
+Twitter: @usuario
+YouTube: https://youtube.com/c/canal"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Enumera tus perfiles de redes sociales donde promocionarás
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Método de pago */}
+                    <FormField
+                      control={form.control}
+                      name="paymentMethod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Método de pago</FormLabel>
+                          <FormControl>
+                            <Input placeholder="PayPal, transferencia bancaria, etc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Detalles de pago */}
+                    <FormField
+                      control={form.control}
+                      name="paymentDetails"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Detalles de pago</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Correo PayPal o datos bancarios" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Comentarios adicionales */}
+                  <FormField
+                    control={form.control}
+                    name="comments"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Comentarios adicionales (Opcional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Cuéntanos más sobre tu experiencia como afiliado o cómo planeas promocionar nuestros productos" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsRegistering(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={registerAffiliateMutation.isPending}
+                    >
+                      {registerAffiliateMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        "Enviar solicitud"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        <div className="mt-12">
+          <h2 className="text-xl font-bold mb-4">Preguntas frecuentes</h2>
+          <AffiliateFAQs />
+        </div>
+      </div>
+    );
+  }
+  
+  // Si el usuario es afiliado pero está pendiente de aprobación
+  if (affiliateInfo.status === "pending") {
+    return (
+      <div className="container mx-auto py-6 max-w-3xl">
+        <Alert className="mb-6">
+          <InfoIcon className="h-4 w-4" />
+          <AlertTitle>Solicitud en revisión</AlertTitle>
+          <AlertDescription>
+            Tu solicitud para unirte al programa de afiliados está siendo revisada. Te notificaremos por correo electrónico cuando sea aprobada.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="bg-muted/50 rounded-lg p-6 border">
+          <h2 className="text-xl font-bold mb-4">Detalles de tu solicitud</h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Nombre</p>
+                <p className="font-medium">{affiliateInfo.name}</p>
               </div>
-              
-              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-primary/5">
-                <Users className="h-8 w-8 text-primary mb-2" />
-                <h3 className="font-medium">Programa de Niveles</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Avanza de nivel y obtén mayores comisiones y beneficios
-                </p>
+              <div>
+                <p className="text-sm text-muted-foreground">Correo electrónico</p>
+                <p className="font-medium">{affiliateInfo.email}</p>
               </div>
             </div>
-          </CardContent>
-          <CardFooter>
-            <Dialog open={isRegistrationOpen} onOpenChange={setIsRegistrationOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-full">Solicitar registro como afiliado</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Solicitud de Registro como Afiliado</DialogTitle>
-                  <DialogDescription>
-                    Completa el siguiente formulario para solicitar unirte a nuestro programa de afiliados.
-                    Revisaremos tu solicitud y te notificaremos por correo.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">Nombre</Label>
-                      <Input 
-                        id="firstName" 
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Apellido</Label>
-                      <Input 
-                        id="lastName" 
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Teléfono (opcional)</Label>
-                      <Input 
-                        id="phone" 
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="website">Sitio web (opcional)</Label>
-                    <Input 
-                      id="website" 
-                      name="website"
-                      placeholder="https://tuwebsite.com"
-                      value={formData.website}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Redes sociales (opcional)</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="instagram" className="text-xs">Instagram</Label>
-                        <Input 
-                          id="instagram" 
-                          placeholder="@usuario"
-                          value={formData.socialMedia.instagram}
-                          onChange={(e) => handleSocialChange('instagram', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="twitter" className="text-xs">Twitter</Label>
-                        <Input 
-                          id="twitter" 
-                          placeholder="@usuario"
-                          value={formData.socialMedia.twitter}
-                          onChange={(e) => handleSocialChange('twitter', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <Label htmlFor="youtube" className="text-xs">YouTube</Label>
-                        <Input 
-                          id="youtube" 
-                          placeholder="URL o nombre del canal"
-                          value={formData.socialMedia.youtube}
-                          onChange={(e) => handleSocialChange('youtube', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="tiktok" className="text-xs">TikTok</Label>
-                        <Input 
-                          id="tiktok" 
-                          placeholder="@usuario"
-                          value={formData.socialMedia.tiktok}
-                          onChange={(e) => handleSocialChange('tiktok', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>¿Cómo planeas promocionar nuestros productos?</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { id: 'website', label: 'Sitio web' },
-                        { id: 'social_media', label: 'Redes sociales' },
-                        { id: 'blog', label: 'Blog' },
-                        { id: 'email', label: 'Email marketing' },
-                        { id: 'youtube', label: 'YouTube' },
-                        { id: 'podcast', label: 'Podcast' }
-                      ].map(channel => (
-                        <div className="flex items-center space-x-2" key={channel.id}>
-                          <input
-                            type="checkbox"
-                            id={`channel-${channel.id}`}
-                            checked={formData.promotionChannels.includes(channel.id)}
-                            onChange={(e) => handleCheckboxChange('promotionChannels', channel.id, e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                          />
-                          <Label htmlFor={`channel-${channel.id}`}>{channel.label}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Categorías de interés</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { id: 'music_production', label: 'Producción musical' },
-                        { id: 'recording', label: 'Grabación' },
-                        { id: 'mixing', label: 'Mezcla' },
-                        { id: 'mastering', label: 'Masterización' },
-                        { id: 'songwriting', label: 'Composición' },
-                        { id: 'music_business', label: 'Industria musical' }
-                      ].map(category => (
-                        <div className="flex items-center space-x-2" key={category.id}>
-                          <input
-                            type="checkbox"
-                            id={`category-${category.id}`}
-                            checked={formData.categories.includes(category.id)}
-                            onChange={(e) => handleCheckboxChange('categories', category.id, e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                          />
-                          <Label htmlFor={`category-${category.id}`}>{category.label}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="experience">Experiencia como afiliado</Label>
-                    <Select 
-                      value={formData.experience} 
-                      onValueChange={(value) => handleSelectChange('experience', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona tu nivel de experiencia" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">Principiante (Primera vez)</SelectItem>
-                        <SelectItem value="intermediate">Intermedio (1-2 años)</SelectItem>
-                        <SelectItem value="advanced">Avanzado (3+ años)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Método de pago preferido</Label>
-                    <Select 
-                      value={formData.paymentMethod} 
-                      onValueChange={(value) => handleSelectChange('paymentMethod', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el método de pago" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="paypal">PayPal</SelectItem>
-                        <SelectItem value="bank_transfer">Transferencia bancaria</SelectItem>
-                        <SelectItem value="stripe">Stripe</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="taxId">ID Fiscal / RFC (opcional)</Label>
-                    <Input 
-                      id="taxId" 
-                      name="taxId"
-                      value={formData.taxId}
-                      onChange={handleInputChange}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Para empresas o personas que requieran factura
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Switch 
-                      checked={formData.termsAccepted} 
-                      onCheckedChange={handleTermsToggle} 
-                      id="terms"
-                    />
-                    <Label htmlFor="terms" className="text-sm">
-                      Acepto los <a href="#" className="text-primary underline">términos y condiciones</a> del programa de afiliados
-                    </Label>
-                  </div>
-                </div>
-                
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsRegistrationOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={handleSubmitRegistration}
-                    disabled={!formData.termsAccepted || !formData.firstName || !formData.lastName || !formData.email}
-                  >
-                    Enviar solicitud
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardFooter>
-        </Card>
-        
-        <div className="space-y-8">
-          <h2 className="text-2xl font-bold">Beneficios y Comisiones</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Nivel Básico</CardTitle>
-                <CardDescription>Comienza aquí</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">10%</div>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Comisión base en todos los productos
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Acceso a enlaces de afiliado
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Estadísticas básicas
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-primary">
-              <CardHeader className="pb-3">
-                <div className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded absolute right-4 top-4">Popular</div>
-                <CardTitle className="text-lg">Nivel Plata</CardTitle>
-                <CardDescription>Para afiliados activos</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">15-20%</div>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Comisión aumentada en todos los productos
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Acceso prioritario a nuevos lanzamientos
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Estadísticas detalladas
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Materiales promocionales exclusivos
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Nivel Oro</CardTitle>
-                <CardDescription>Para afiliados premium</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-3xl font-bold">25-30%</div>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Máxima comisión en todos los productos
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Acceso a programa de recompensas
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Soporte personalizado
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Oportunidades de co-marketing
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                    Pagos anticipados
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+            <div>
+              <p className="text-sm text-muted-foreground">Sitio web</p>
+              <p className="font-medium">{affiliateInfo.website || "No especificado"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Estado</p>
+              <Badge variant="outline" className="mt-1 bg-yellow-500/10 text-yellow-700 border-yellow-500/20">
+                Pendiente de aprobación
+              </Badge>
+            </div>
           </div>
         </div>
       </div>
     );
   }
-
-  // If user is an affiliate
+  
+  // Panel principal para afiliados aprobados
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Panel de Afiliado</h1>
-        <div className="flex items-center gap-2 mt-2 sm:mt-0">
-          <div className={`
-            h-2 w-2 rounded-full 
-            ${affiliateData.data.status === 'approved' ? 'bg-green-500' : 'bg-amber-500'}
-          `} />
-          <span className="text-sm">
-            Estado: {affiliateData.data.status === 'approved' ? 'Aprobado' : 'Pendiente de revisión'}
-          </span>
+    <div className="container mx-auto py-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Panel de Afiliados</h1>
+          <p className="text-muted-foreground">
+            Gestiona tus enlaces y visualiza tus estadísticas como afiliado
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+            {affiliateInfo.level || "Nivel Básico"}
+          </Badge>
+          <Badge variant="outline">
+            ID: {affiliateInfo.id.substring(0, 8)}
+          </Badge>
         </div>
       </div>
-
-      {affiliateData.data.status === 'pending' && (
-        <Alert className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Solicitud en revisión</AlertTitle>
-          <AlertDescription>
-            Tu solicitud para unirte al programa de afiliados está siendo revisada. 
-            Te notificaremos por correo electrónico cuando sea aprobada.
-          </AlertDescription>
-        </Alert>
-      )}
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Resumen</span>
-          </TabsTrigger>
-          <TabsTrigger value="links" className="flex items-center gap-2">
-            <Link2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Enlaces</span>
-          </TabsTrigger>
-          <TabsTrigger value="payments" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            <span className="hidden sm:inline">Pagos</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Ajustes</span>
-          </TabsTrigger>
+      <Tabs defaultValue="overview" value={currentTab} onValueChange={setCurrentTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="overview">Resumen</TabsTrigger>
+          <TabsTrigger value="links">Enlaces</TabsTrigger>
+          <TabsTrigger value="payouts">Pagos</TabsTrigger>
+          <TabsTrigger value="settings">Configuración</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
@@ -594,134 +412,100 @@ export default function AffiliatePage() {
           <AffiliateLinks />
         </TabsContent>
         
-        <TabsContent value="payments">
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">Historial de Pagos</h2>
-                <p className="text-muted-foreground">
-                  Consulta tus pagos y facturas
-                </p>
-              </div>
-            </div>
-            
-            <Card className="border-primary/10">
-              <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-3 min-h-[200px]">
-                <div className="rounded-full bg-primary/10 p-3">
-                  <DollarSign className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-medium text-lg">No hay pagos registrados</h3>
-                <p className="text-muted-foreground text-sm max-w-md">
-                  Aún no tienes pagos registrados. Los pagos se procesan el día 15 de cada mes
-                  cuando tu saldo acumulado supera los $50.
-                </p>
-              </CardContent>
-            </Card>
+        <TabsContent value="payouts">
+          <div className="text-center py-12 text-muted-foreground">
+            <p>El historial de pagos estará disponible próximamente.</p>
           </div>
         </TabsContent>
         
         <TabsContent value="settings">
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">Configuración</h2>
-                <p className="text-muted-foreground">
-                  Gestiona tus datos y preferencias como afiliado
-                </p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-primary/10">
-                <CardHeader>
-                  <CardTitle className="text-lg">Información de Perfil</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="text-muted-foreground">Nombre:</div>
-                    <div>{affiliateData.data.firstName} {affiliateData.data.lastName}</div>
-                    
-                    <div className="text-muted-foreground">Email:</div>
-                    <div>{affiliateData.data.email}</div>
-                    
-                    <div className="text-muted-foreground">Teléfono:</div>
-                    <div>{affiliateData.data.phone || "-"}</div>
-                    
-                    <div className="text-muted-foreground">Sitio web:</div>
-                    <div>{affiliateData.data.website || "-"}</div>
-                    
-                    <div className="text-muted-foreground">Nivel:</div>
-                    <div>{affiliateData.data.level}</div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Editar perfil
-                  </Button>
-                </CardFooter>
-              </Card>
-              
-              <Card className="border-primary/10">
-                <CardHeader>
-                  <CardTitle className="text-lg">Método de pago</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="text-muted-foreground">Método actual:</div>
-                    <div>{affiliateData.data.paymentMethod === "paypal" ? "PayPal" : 
-                          affiliateData.data.paymentMethod === "bank_transfer" ? "Transferencia bancaria" : 
-                          "Stripe"}</div>
-                    
-                    <div className="text-muted-foreground">ID Fiscal:</div>
-                    <div>{affiliateData.data.taxId || "-"}</div>
-                    
-                    <div className="text-muted-foreground">Última actualización:</div>
-                    <div>{new Date(affiliateData.data.createdAt).toLocaleDateString()}</div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Actualizar método de pago
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-            
-            <Card className="border-primary/10">
-              <CardHeader>
-                <CardTitle className="text-lg">Notificaciones</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Nuevas conversiones</h4>
-                      <p className="text-sm text-muted-foreground">Recibe notificaciones cuando generes una venta</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Pagos procesados</h4>
-                      <p className="text-sm text-muted-foreground">Recibe notificaciones cuando se procese un pago</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Nuevos productos disponibles</h4>
-                      <p className="text-sm text-muted-foreground">Recibe notificaciones cuando haya nuevos productos para promocionar</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="text-center py-12 text-muted-foreground">
+            <p>La configuración de cuenta estará disponible próximamente.</p>
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Componente para mostrar las características del programa de afiliados
+function AffiliateFeatures() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="bg-muted/30 p-6 rounded-lg border">
+        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M16 8l-8 8" />
+            <path d="M8 8l8 8" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold mb-2">Comisiones atractivas</h3>
+        <p className="text-muted-foreground">
+          Gana hasta un 30% de comisión por cada venta realizada a través de tus enlaces de afiliado.
+        </p>
+      </div>
+      
+      <div className="bg-muted/30 p-6 rounded-lg border">
+        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
+            <path d="M12 2v20" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold mb-2">Pagos mensuales</h3>
+        <p className="text-muted-foreground">
+          Recibe tus ganancias mediante PayPal, transferencia bancaria u otros métodos de pago populares.
+        </p>
+      </div>
+      
+      <div className="bg-muted/30 p-6 rounded-lg border">
+        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
+            <rect width="20" height="14" x="2" y="5" rx="2" />
+            <line x1="2" x2="22" y1="10" y2="10" />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold mb-2">Herramientas avanzadas</h3>
+        <p className="text-muted-foreground">
+          Accede a un panel con estadísticas detalladas, enlaces personalizados y materiales promocionales.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Componente para mostrar preguntas frecuentes
+function AffiliateFAQs() {
+  return (
+    <div className="space-y-4">
+      <div className="bg-muted/30 p-4 rounded-lg">
+        <h3 className="font-medium mb-2">¿Cuáles son los requisitos para ser afiliado?</h3>
+        <p className="text-sm text-muted-foreground">
+          Puedes ser afiliado si tienes un sitio web, blog o presencia en redes sociales relacionados con música, producción, educación o áreas afines. Valoramos la calidad sobre la cantidad.
+        </p>
+      </div>
+      
+      <div className="bg-muted/30 p-4 rounded-lg">
+        <h3 className="font-medium mb-2">¿Cuánto puedo ganar como afiliado?</h3>
+        <p className="text-sm text-muted-foreground">
+          Las comisiones van del 15% al 30% dependiendo del producto y tu nivel como afiliado. Por ejemplo, un curso de $100 puede generarte entre $15 y $30 por cada venta.
+        </p>
+      </div>
+      
+      <div className="bg-muted/30 p-4 rounded-lg">
+        <h3 className="font-medium mb-2">¿Cuándo y cómo recibo mis pagos?</h3>
+        <p className="text-sm text-muted-foreground">
+          Procesamos pagos mensualmente, siempre que hayas alcanzado un mínimo de $50 en comisiones. Puedes elegir entre PayPal, transferencia bancaria u otros métodos disponibles.
+        </p>
+      </div>
+      
+      <div className="bg-muted/30 p-4 rounded-lg">
+        <h3 className="font-medium mb-2">¿Qué productos puedo promocionar?</h3>
+        <p className="text-sm text-muted-foreground">
+          Puedes promocionar todos nuestros productos: cursos, servicios de producción, membresías, plugins, y más. Tendrás acceso a materiales promocionales para cada uno de ellos.
+        </p>
+      </div>
     </div>
   );
 }

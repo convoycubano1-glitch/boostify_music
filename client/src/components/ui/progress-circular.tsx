@@ -1,125 +1,106 @@
 import React from "react";
 import { cn } from "../../lib/utils";
 
-interface ProgressCircularProps {
-  value?: number;
-  size?: "sm" | "default" | "lg";
-  variant?: "default" | "secondary" | "destructive";
-  className?: string;
+export interface ProgressCircularProps extends React.HTMLAttributes<HTMLDivElement> {
+  size?: "sm" | "md" | "lg" | number;
   thickness?: number;
+  value?: number;
   showValue?: boolean;
+  indeterminate?: boolean;
+  color?: string;
 }
 
-export const ProgressCircular = ({
-  value,
-  size = "default",
-  variant = "default",
-  className,
+export function ProgressCircular({
+  size = "md",
   thickness = 4,
+  value = 0,
   showValue = false,
-}: ProgressCircularProps) => {
-  // Si no hay valor, mostrar un spinner de carga indeterminado
-  const indeterminate = value === undefined;
-  
-  // Normalizar valor entre 0 y 100
-  const normalizedValue = Math.min(Math.max(value || 0, 0), 100);
-  
-  // Calcular el tamaño según la prop size
+  indeterminate = true,
+  color,
+  className,
+  ...props
+}: ProgressCircularProps) {
+  // Tamaños predefinidos
   const sizeMap = {
-    sm: 20,
-    default: 40,
-    lg: 64,
+    sm: 24,
+    md: 40,
+    lg: 56,
   };
-  const pixelSize = sizeMap[size];
+
+  // Calcular el tamaño final
+  const finalSize = typeof size === "number" ? size : sizeMap[size];
   
-  // Radio del círculo (menos la mitad del espesor para centrar el trazo)
-  const radius = (pixelSize / 2) - (thickness / 2);
+  // Radio del círculo
+  const radius = (finalSize - thickness) / 2;
   
   // Circunferencia del círculo
   const circumference = 2 * Math.PI * radius;
   
-  // Valor del trazo
-  const strokeDashoffset = indeterminate 
-    ? 0 
-    : circumference - (normalizedValue / 100) * circumference;
+  // Calcular el valor para el círculo de progreso
+  const progressValue = indeterminate ? 0 : Math.min(100, Math.max(0, value));
   
-  // Clase de variante
-  const variantClasses = {
-    default: "stroke-primary",
-    secondary: "stroke-secondary",
-    destructive: "stroke-destructive",
-  };
-  
-  // Animación para progreso indeterminado
-  const indeterminateAnimation = indeterminate 
-    ? "animate-progress-circular" 
-    : "";
+  // Calcular el stroke-dashoffset basado en el valor
+  const strokeDashoffset = circumference - (progressValue / 100) * circumference;
   
   return (
     <div 
       className={cn(
-        "relative inline-flex items-center justify-center", 
+        "relative inline-flex items-center justify-center",
         className
       )}
-      style={{ width: pixelSize, height: pixelSize }}
+      style={{ width: finalSize, height: finalSize }}
+      {...props}
     >
-      {/* Círculo de fondo */}
-      <svg 
+      {/* Círculo base (fondo) */}
+      <svg
         className="absolute inset-0"
-        width={pixelSize} 
-        height={pixelSize}
-        viewBox={`0 0 ${pixelSize} ${pixelSize}`}
+        viewBox={`0 0 ${finalSize} ${finalSize}`}
+        width={finalSize}
+        height={finalSize}
       >
         <circle
-          className="stroke-gray-200 dark:stroke-gray-800 fill-none"
-          cx={pixelSize / 2}
-          cy={pixelSize / 2}
+          className="text-muted-foreground/20"
+          cx={finalSize / 2}
+          cy={finalSize / 2}
           r={radius}
+          fill="none"
           strokeWidth={thickness}
+          stroke="currentColor"
         />
       </svg>
       
       {/* Círculo de progreso */}
-      <svg 
-        className={`absolute inset-0 ${indeterminateAnimation} transform -rotate-90`}
-        width={pixelSize} 
-        height={pixelSize}
-        viewBox={`0 0 ${pixelSize} ${pixelSize}`}
+      <svg
+        className={cn(
+          "absolute inset-0 transform",
+          indeterminate && "animate-spin-slow"
+        )}
+        viewBox={`0 0 ${finalSize} ${finalSize}`}
+        width={finalSize}
+        height={finalSize}
       >
         <circle
-          className={`${variantClasses[variant]} fill-none transition-all duration-200 ease-in-out`}
-          cx={pixelSize / 2}
-          cy={pixelSize / 2}
+          className={color ? "" : "text-primary"}
+          style={{ color }}
+          cx={finalSize / 2}
+          cy={finalSize / 2}
           r={radius}
+          fill="none"
           strokeWidth={thickness}
+          stroke="currentColor"
           strokeDasharray={circumference}
-          strokeDashoffset={indeterminate ? circumference * 0.8 : strokeDashoffset}
+          strokeDashoffset={indeterminate ? circumference * 0.75 : strokeDashoffset}
           strokeLinecap="round"
+          transform={`rotate(-90 ${finalSize/2} ${finalSize/2})`}
         />
       </svg>
       
-      {/* Mostrar valor numérico si showValue es true */}
+      {/* Valor de progreso (opcional) */}
       {showValue && !indeterminate && (
-        <div className={cn(
-          "absolute inset-0 flex items-center justify-center text-center font-medium",
-          size === "sm" ? "text-xs" : (size === "lg" ? "text-lg" : "text-sm")
-        )}>
-          {Math.round(normalizedValue)}%
+        <div className="text-xs font-medium">
+          {Math.round(progressValue)}%
         </div>
       )}
     </div>
   );
-};
-
-// Para que funcione la animación, añadir esto a globals.css o tailwind.config.ts:
-// .animate-progress-circular {
-//   animation: progress-circular 1.4s linear infinite;
-// }
-// @keyframes progress-circular {
-//   0% {
-//     transform: rotate(-90deg);
-//   }
-//   100% {
-//     transform: rotate(270deg);
-//   }
-// }
+}

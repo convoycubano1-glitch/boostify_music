@@ -1,379 +1,460 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { BarChart3, TrendingUp, Users, DollarSign, Share2, ExternalLink } from "lucide-react";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "../ui/card";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { ProgressCircular } from "../ui/progress-circular";
-
-// Datos de simulación para pruebas
-const dummyData = {
-  earnings: [
-    { date: '2025-02-01', amount: 0 },
-    { date: '2025-02-05', amount: 25 },
-    { date: '2025-02-10', amount: 50 },
-    { date: '2025-02-15', amount: 75 },
-    { date: '2025-02-20', amount: 100 },
-    { date: '2025-02-25', amount: 150 },
-    { date: '2025-03-01', amount: 200 },
-    { date: '2025-03-05', amount: 250 },
-    { date: '2025-03-10', amount: 300 },
-    { date: '2025-03-15', amount: 325 },
-  ],
-  clicks: [
-    { date: '2025-02-01', count: 5 },
-    { date: '2025-02-05', count: 15 },
-    { date: '2025-02-10', count: 25 },
-    { date: '2025-02-15', count: 40 },
-    { date: '2025-02-20', count: 60 },
-    { date: '2025-02-25', count: 75 },
-    { date: '2025-03-01', count: 100 },
-    { date: '2025-03-05', count: 125 },
-    { date: '2025-03-10', count: 150 },
-    { date: '2025-03-15', count: 175 },
-  ],
-  conversions: [
-    { date: '2025-02-01', count: 0 },
-    { date: '2025-02-05', count: 1 },
-    { date: '2025-02-10', count: 2 },
-    { date: '2025-02-15', count: 3 },
-    { date: '2025-02-20', count: 4 },
-    { date: '2025-02-25', count: 6 },
-    { date: '2025-03-01', count: 8 },
-    { date: '2025-03-05', count: 10 },
-    { date: '2025-03-10', count: 12 },
-    { date: '2025-03-15', count: 13 },
-  ],
-};
+import { Badge } from "../ui/badge";
+import { 
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from "recharts";
+import { 
+  Calendar, 
+  ChevronRight, 
+  CreditCard, 
+  DollarSign, 
+  InfoIcon, 
+  Link, 
+  RefreshCcw, 
+  TrendingUp, 
+  Users 
+} from "lucide-react";
+import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { es } from "date-fns/locale";
 
 export function AffiliateOverview() {
-  const [timeRange, setTimeRange] = useState("month");
-  const [chartType, setChartType] = useState("earnings");
-  
-  // Obtener datos de afiliado
-  const { data: affiliateData, isLoading, error } = useQuery({
-    queryKey: ["affiliate", "earnings", timeRange],
+  // Obtener ganancias del afiliado
+  const { 
+    data: earningsData,
+    isLoading: isLoadingEarnings,
+    isError: earningsError,
+    refetch: refetchEarnings
+  } = useQuery({
+    queryKey: ["affiliate", "earnings"],
     queryFn: async () => {
       try {
-        // Esta ruta debe estar implementada en el servidor
-        const response = await axios.get(`/api/affiliate/earnings?timeRange=${timeRange}`);
+        const response = await axios.get("/api/affiliate/earnings");
         return response.data;
       } catch (error) {
-        // Si el API falla, usamos datos dummy para demostración
-        console.log("Error fetching affiliate data, using dummy data");
-        return {
-          success: true,
-          data: {
-            earnings: dummyData.earnings,
-            clicks: dummyData.clicks,
-            conversions: dummyData.conversions,
-            totalEarnings: 325,
-            totalClicks: 175,
-            totalConversions: 13,
-            conversionRate: 7.4,
-            nextPaymentDate: "2025-04-15",
-            nextPaymentAmount: 325,
-            recentLinks: [
-              { 
-                id: "link1", 
-                name: "Curso de producción musical", 
-                url: "https://example.com/curso-produccion",
-                clicks: 75, 
-                conversions: 6,
-                earnings: 150,
-                conversionRate: 8.0,
-              },
-              { 
-                id: "link2", 
-                name: "Plugins para mezcla", 
-                url: "https://example.com/plugins",
-                clicks: 100, 
-                conversions: 7,
-                earnings: 175,
-                conversionRate: 7.0,
-              },
-            ],
-            progress: {
-              level: "Básico",
-              points: 325,
-              nextLevel: "Plata",
-              nextLevelPoints: 500,
-              percentage: 65,
-            }
-          }
-        };
+        console.error("Error fetching affiliate earnings:", error);
+        throw error;
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
-
-  // Mientras carga los datos
-  if (isLoading) {
+  
+  // Si está cargando, mostrar indicador de carga
+  if (isLoadingEarnings) {
     return (
-      <div className="w-full h-64 flex items-center justify-center">
+      <div className="w-full py-12 flex justify-center">
         <ProgressCircular />
       </div>
     );
   }
-
-  // Si hay un error
-  if (error || !affiliateData?.success) {
+  
+  // Si hay un error, mostrar mensaje de error
+  if (earningsError) {
     return (
-      <div className="p-4 bg-red-50 text-red-800 rounded-md">
-        <p>Error al cargar los datos de afiliado. Por favor intenta nuevamente.</p>
-      </div>
+      <Alert variant="destructive" className="mb-6">
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          No pudimos cargar tus datos de ganancias. Por favor, intenta de nuevo más tarde.
+        </AlertDescription>
+      </Alert>
     );
   }
-
-  const data = affiliateData.data;
   
-  // Determinar qué datos mostrar en la gráfica según el tipo seleccionado
-  const chartData = data[chartType] || [];
+  // Si no hay datos o el arreglo está vacío
+  if (!earningsData || !earningsData.earnings || earningsData.earnings.length === 0) {
+    return <EmptyEarningsState />;
+  }
   
-  // Preparar datos para la gráfica
-  const formattedChartData = chartData.map((item: any) => ({
-    date: new Date(item.date).toLocaleDateString('es-ES', {day: 'numeric', month: 'short'}),
-    value: chartType === 'earnings' ? item.amount : item.count,
-  }));
-
+  // Procesamiento de datos para los gráficos
+  const chartData = processDataForCharts(earningsData);
+  
+  // Datos de estadísticas generales
+  const statsData = {
+    totalEarnings: earningsData.totalEarnings || 0,
+    pendingPayment: earningsData.pendingPayment || 0,
+    totalClicks: earningsData.totalClicks || 0,
+    totalConversions: earningsData.totalConversions || 0,
+    conversionRate: earningsData.conversionRate || 0,
+    nextPaymentDate: earningsData.nextPaymentDate ? new Date(earningsData.nextPaymentDate) : null,
+  };
+  
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Panel de Estadísticas</h2>
-          <p className="text-muted-foreground">
-            Monitorea el rendimiento de tus enlaces de afiliado
-          </p>
-        </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Período de tiempo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="week">Última semana</SelectItem>
-            <SelectItem value="month">Último mes</SelectItem>
-            <SelectItem value="quarter">Último trimestre</SelectItem>
-            <SelectItem value="year">Último año</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Tarjetas de estadísticas generales */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard 
+          title="Ganancias totales" 
+          value={statsData.totalEarnings} 
+          icon={DollarSign}
+          trend={10}
+          isCurrency
+        />
+        <StatCard 
+          title="Pendiente de pago" 
+          value={statsData.pendingPayment} 
+          icon={CreditCard}
+          trend={5}
+          isCurrency
+        />
+        <StatCard 
+          title="Clics totales" 
+          value={statsData.totalClicks} 
+          icon={Link}
+          trend={15}
+        />
+        <StatCard 
+          title="Tasa de conversión" 
+          value={statsData.conversionRate} 
+          icon={TrendingUp}
+          trend={-2}
+          suffix="%"
+        />
       </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6 flex flex-row items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Ganancias Totales</p>
-              <p className="text-2xl font-bold">${data.totalEarnings}</p>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <DollarSign className="h-6 w-6 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6 flex flex-row items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Clicks</p>
-              <p className="text-2xl font-bold">{data.totalClicks}</p>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Share2 className="h-6 w-6 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6 flex flex-row items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Conversiones</p>
-              <p className="text-2xl font-bold">{data.totalConversions}</p>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6 flex flex-row items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Tasa de Conversión</p>
-              <p className="text-2xl font-bold">{data.conversionRate}%</p>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Chart */}
-      <Card>
-        <CardHeader className="pb-0">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle>Evolución de rendimiento</CardTitle>
-            <Tabs value={chartType} onValueChange={setChartType} className="w-full md:w-auto">
-              <TabsList className="grid w-full md:w-[400px] grid-cols-3">
-                <TabsTrigger value="earnings">Ganancias</TabsTrigger>
-                <TabsTrigger value="clicks">Clicks</TabsTrigger>
-                <TabsTrigger value="conversions">Conversiones</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={formattedChartData}
-                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value) => [
-                    chartType === 'earnings' ? `$${value}` : value, 
-                    chartType === 'earnings' ? 'Ganancias' : (chartType === 'clicks' ? 'Clicks' : 'Conversiones')
-                  ]}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="var(--primary)" 
-                  activeDot={{ r: 8 }} 
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Próximo pago y nivel de afiliado */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Próximo Pago</CardTitle>
-            <CardDescription>Información sobre tu próximo pago como afiliado</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Fecha Estimada</p>
-                  <p className="text-lg font-medium">{new Date(data.nextPaymentDate).toLocaleDateString('es-ES', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}</p>
-                </div>
-                <div className="space-y-1 text-right">
-                  <p className="text-sm font-medium text-muted-foreground">Monto</p>
-                  <p className="text-lg font-medium">${data.nextPaymentAmount}</p>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground mb-2">Información de pago</p>
-                <p className="text-sm">
-                  Los pagos se procesan automáticamente el día 15 de cada mes 
-                  cuando el saldo acumulado supera los $50.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Nivel de Afiliado</CardTitle>
-            <CardDescription>Tu progreso actual en el programa de afiliados</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center mb-4">
-              <div className="mr-4">
-                <ProgressCircular 
-                  value={data.progress.percentage} 
-                  size="lg" 
-                  variant="default"
-                  showValue
-                  thickness={6}
-                />
+      
+      {/* Información de próximo pago */}
+      {statsData.nextPaymentDate && statsData.pendingPayment > 0 && (
+        <Card className="bg-muted/30">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-4">
+              <div className="rounded-full bg-primary/10 p-2">
+                <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h4 className="font-medium text-lg">{data.progress.level}</h4>
+                <h3 className="font-medium">Próximo pago programado</h3>
                 <p className="text-sm text-muted-foreground">
-                  {data.progress.points} / {data.progress.nextLevelPoints} puntos
-                </p>
-                <p className="text-sm font-medium mt-1">
-                  Siguiente nivel: {data.progress.nextLevel}
+                  Recibirás {formatCurrency(statsData.pendingPayment)} el {format(statsData.nextPaymentDate, "d 'de' MMMM 'de' yyyy", { locale: es })}
                 </p>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">
-              Acumula puntos con cada venta. Al alcanzar el nivel {data.progress.nextLevel},
-              incrementarás tu tasa de comisión y obtendrás beneficios adicionales.
-            </p>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Gráficos */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Gráfico de ingresos mensuales */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Ingresos mensuales</CardTitle>
+            <CardDescription>
+              Tus ganancias durante los últimos meses
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData.monthlyEarnings}
+                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="month" />
+                  <YAxis tickFormatter={(value) => `$${value}`} />
+                  <Tooltip formatter={(value) => [`$${value}`, 'Ingresos']} />
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Gráfico de fuentes de conversión */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Fuentes de conversión</CardTitle>
+            <CardDescription>
+              Distribución de conversiones por fuente
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] flex items-center justify-center">
+              {chartData.conversionSources.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData.conversionSources}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={100}
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {chartData.conversionSources.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [`${value} conversiones`, name]} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center text-muted-foreground">
+                  No hay datos suficientes
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Gráfico de rendimiento de enlaces */}
+        <Card className="md:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Rendimiento de enlaces</CardTitle>
+            <CardDescription>
+              Comparativa de clics y conversiones por enlace
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData.linkPerformance}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={70}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="clicks" name="Clics" fill="#8884d8" />
+                  <Bar dataKey="conversions" name="Conversiones" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Top Links */}
+      
+      {/* Historial de transacciones */}
       <Card>
         <CardHeader>
-          <CardTitle>Enlaces con mejor rendimiento</CardTitle>
-          <CardDescription>Tus enlaces que han generado más conversiones</CardDescription>
+          <CardTitle>Historial de pagos</CardTitle>
+          <CardDescription>
+            Registro de todos tus pagos recibidos como afiliado
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {data.recentLinks.map((link: any) => (
-              <div key={link.id} className="border rounded-lg p-4">
-                <div className="flex flex-col lg:flex-row justify-between gap-4">
-                  <div className="space-y-1">
-                    <h4 className="text-base font-medium flex items-center">
-                      {link.name}
-                      <a 
-                        href={link.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="ml-2 inline-flex text-muted-foreground hover:text-primary"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </h4>
-                    <p className="text-sm text-muted-foreground truncate max-w-md">
-                      {link.url}
-                    </p>
+          {earningsData.paymentHistory && earningsData.paymentHistory.length > 0 ? (
+            <div className="space-y-4">
+              {earningsData.paymentHistory.map((payment: any, index: number) => (
+                <div key={index} className="flex items-center justify-between py-3 border-b last:border-0">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-muted p-2">
+                      <CreditCard className="h-4 w-4 text-foreground/70" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Pago de comisiones</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(payment.date), "d 'de' MMMM 'de' yyyy", { locale: es })}
+                      </p>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Clicks</p>
-                      <p className="font-medium">{link.clicks}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Conv.</p>
-                      <p className="font-medium">{link.conversions}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Tasa</p>
-                      <p className="font-medium">{link.conversionRate}%</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Ganancias</p>
-                      <p className="font-medium">${link.earnings}</p>
-                    </div>
+                  <div className="text-right">
+                    <p className="font-medium text-green-600 dark:text-green-400">
+                      +{formatCurrency(payment.amount)}
+                    </p>
+                    <Badge variant="outline" className="mt-1">
+                      {payment.status || "Completado"}
+                    </Badge>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              No hay pagos registrados aún.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
+}
+
+// Componente de tarjeta de estadística
+function StatCard({ 
+  title, 
+  value, 
+  icon: Icon, 
+  trend, 
+  isCurrency = false,
+  suffix = ""
+}: { 
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  trend?: number;
+  isCurrency?: boolean;
+  suffix?: string;
+}) {
+  const formattedValue = isCurrency ? formatCurrency(value) : value.toLocaleString();
+  const trendColor = trend && trend > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400";
+  
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <h3 className="text-2xl font-bold mt-1">
+              {formattedValue}{suffix}
+            </h3>
+          </div>
+          <div className="rounded-full bg-primary/10 p-2">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+        
+        {trend !== undefined && (
+          <div className={`flex items-center mt-4 text-sm ${trendColor}`}>
+            <span className="font-medium">{trend > 0 ? '+' : ''}{trend}%</span>
+            <span className="text-muted-foreground text-xs ml-1">vs. mes anterior</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Estado vacío cuando no hay ganancias
+function EmptyEarningsState() {
+  return (
+    <Card className="py-10">
+      <CardContent className="flex flex-col items-center justify-center text-center">
+        <div className="rounded-full bg-muted w-12 h-12 flex items-center justify-center mb-4">
+          <DollarSign className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <h3 className="font-medium text-lg mb-2">Sin ganancias registradas</h3>
+        <p className="text-sm text-muted-foreground max-w-md mb-6">
+          Aún no tienes ganancias registradas. Comienza creando y compartiendo enlaces de afiliado para empezar a ganar comisiones.
+        </p>
+        <div className="grid gap-3 text-sm max-w-md">
+          <div className="flex items-start">
+            <div className="rounded-full bg-primary/10 w-6 h-6 flex items-center justify-center mr-3 mt-0.5">
+              <span className="text-xs font-medium">1</span>
+            </div>
+            <div className="text-left">
+              <p className="font-medium">Crea enlaces personalizados</p>
+              <p className="text-muted-foreground">
+                Selecciona productos y crea enlaces para promocionar
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start">
+            <div className="rounded-full bg-primary/10 w-6 h-6 flex items-center justify-center mr-3 mt-0.5">
+              <span className="text-xs font-medium">2</span>
+            </div>
+            <div className="text-left">
+              <p className="font-medium">Comparte con tu audiencia</p>
+              <p className="text-muted-foreground">
+                Difunde tus enlaces en redes sociales o sitio web
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start">
+            <div className="rounded-full bg-primary/10 w-6 h-6 flex items-center justify-center mr-3 mt-0.5">
+              <span className="text-xs font-medium">3</span>
+            </div>
+            <div className="text-left">
+              <p className="font-medium">Gana comisiones</p>
+              <p className="text-muted-foreground">
+                Recibe comisiones por cada compra a través de tus enlaces
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Colores para gráficos
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+// Función para formatear cantidades como moneda
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  }).format(amount);
+}
+
+// Función para procesar datos para gráficos
+function processDataForCharts(data: any) {
+  // Ganancias mensuales
+  const monthlyEarnings = data.monthlyEarnings || generateMockMonthlyData();
+  
+  // Fuentes de conversión (mock si no hay datos)
+  const conversionSources = data.conversionSources || [
+    { name: 'Redes sociales', value: 40 },
+    { name: 'Sitio web', value: 30 },
+    { name: 'Email', value: 15 },
+    { name: 'Otros', value: 15 }
+  ];
+  
+  // Rendimiento por enlace (mock si no hay datos)
+  const linkPerformance = data.linkPerformance || [
+    { name: 'Plan Básico', clicks: 50, conversions: 5 },
+    { name: 'Plan Premium', clicks: 35, conversions: 8 },
+    { name: 'Plan Pro', clicks: 20, conversions: 4 },
+    { name: 'Curso de Marketing', clicks: 45, conversions: 12 },
+  ];
+  
+  return {
+    monthlyEarnings,
+    conversionSources,
+    linkPerformance
+  };
+}
+
+// Función para generar datos mensuales simulados para el ejemplo
+function generateMockMonthlyData() {
+  const months = [
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+  ];
+  const currentMonth = new Date().getMonth();
+  
+  return months.slice(0, currentMonth + 1).map((month, index) => ({
+    month,
+    amount: Math.floor(Math.random() * 500) + 50
+  }));
 }
