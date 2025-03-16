@@ -74,6 +74,13 @@ function InvestmentCalculator() {
         return;
       }
       
+      // Mostrar toast de procesamiento
+      toast({
+        title: "Procesando inversión",
+        description: "Estamos preparando tu sesión de pago...",
+        variant: "default"
+      });
+      
       // Preparar datos para la solicitud
       const paymentData = {
         amount: investmentAmount,
@@ -96,8 +103,18 @@ function InvestmentCalculator() {
       const data = await response.json();
       
       if (data.success && data.url) {
-        // Redirigir al usuario a la página de pago de Stripe
-        window.location.href = data.url;
+        // Mostrar mensaje de éxito antes de redirigir
+        toast({
+          title: "Redirigiéndote a Stripe",
+          description: "Te estamos llevando a la página de pago segura...",
+          variant: "default"
+        });
+        
+        // Pequeña pausa para que el usuario vea el mensaje
+        setTimeout(() => {
+          // Redirigir al usuario a la página de pago de Stripe
+          window.location.href = data.url;
+        }, 1500);
       } else {
         throw new Error(data.error || 'Error al crear la sesión de pago');
       }
@@ -120,6 +137,26 @@ function InvestmentCalculator() {
           <h4 className="text-base font-medium mb-6">Adjust Parameters</h4>
           
           <div className="space-y-8">
+            {!user && (
+              <div className="mb-4">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email para recibir información de tu inversión
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  className="mt-1"
+                  required={!user}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Necesitamos tu email para enviarte información sobre tu inversión.
+                </p>
+              </div>
+            )}
+            
             <div>
               <div className="flex justify-between mb-2">
                 <label className="text-sm font-medium">Investment Amount</label>
@@ -908,6 +945,7 @@ function InvestorStats() {
 export default function InvestorsDashboard() {
   const [selectedTab, setSelectedTab] = useState("overview");
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Simulated user investment data
   const investmentData = {

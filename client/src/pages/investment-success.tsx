@@ -1,174 +1,202 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { useEffect, useState } from "react";
 import { Header } from "../components/layout/header";
-import { Footer } from "../components/layout/footer";
-import { Button } from "../components/ui/button";
+import { Link, useLocation } from "wouter";
 import { Card } from "../components/ui/card";
-import { Check, DollarSign, ChevronRight, AlertTriangle } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { CheckCircle, BarChart2, FileText, ChevronRight, ArrowRight } from "lucide-react";
+import { checkInvestmentSessionStatus } from "../lib/api/stripe-service";
 import { useToast } from "../hooks/use-toast";
 
+/**
+ * Página de éxito después de un pago de inversión
+ * 
+ * Esta página se muestra después de completar un pago exitoso a través de Stripe.
+ * Recupera los datos de la inversión utilizando el ID de sesión proporcionado en la URL.
+ */
 export default function InvestmentSuccessPage() {
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
-  const [loading, setLoading] = useState(true);
+  const [, params] = useLocation();
+  const sessionId = new URLSearchParams(params).get("session_id");
   const [investment, setInvestment] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchInvestmentDetails() {
+    // Verificar el estado de la inversión al cargar la página
+    async function verifyInvestment() {
+      if (!sessionId) {
+        setError("No se encontró ID de sesión");
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Obtener el ID de la sesión de los parámetros de la URL
-        const params = new URLSearchParams(window.location.search);
-        const sessionId = params.get("session_id");
-
-        if (!sessionId) {
-          setError("No se encontró información de la transacción.");
-          setLoading(false);
-          return;
-        }
-
-        // Buscar la inversión por su ID de sesión de Stripe
-        const response = await fetch(`/api/investors/status/session/${sessionId}`);
-        const data = await response.json();
-
-        if (data.success && data.investment) {
-          setInvestment(data.investment);
+        const result = await checkInvestmentSessionStatus(sessionId);
+        
+        if (result.success && result.investment) {
+          console.log("Inversión encontrada:", result.investment);
+          setInvestment(result.investment);
         } else {
-          throw new Error(data.error || "No se pudo cargar la información de la inversión");
+          setError(result.error || "No se pudo encontrar la información de la inversión");
         }
       } catch (error: any) {
-        console.error("Error al cargar los detalles de la inversión:", error);
-        setError(error.message || "Ocurrió un error al cargar los detalles de la inversión");
-        
-        // Mostrar un toast de error
-        toast({
-          title: "Error",
-          description: "No pudimos cargar los detalles de tu inversión. Por favor, contacta a soporte.",
-          variant: "destructive"
-        });
+        console.error("Error al verificar la inversión:", error);
+        setError(error.message || "Error al procesar la información de pago");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchInvestmentDetails();
-  }, [toast]);
+    verifyInvestment();
+  }, [sessionId]);
+
+  // Función para formatear una fecha
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "N/A";
+    
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }).format(date);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-24 pb-16">
-        <div className="container max-w-4xl mx-auto px-4">
-          <Card className="p-6 md:p-8 shadow-lg">
+      
+      <main className="flex-1 pt-16">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-3xl mx-auto">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="w-16 h-16 rounded-full border-4 border-t-transparent border-primary animate-spin"></div>
-                <p className="mt-4 text-center text-muted-foreground">
-                  Cargando los detalles de tu inversión...
-                </p>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                  <AlertTriangle className="h-8 w-8 text-red-500" />
+              <Card className="p-8 text-center">
+                <div className="animate-pulse">
+                  <div className="h-24 w-24 rounded-full bg-orange-500/20 mx-auto mb-6 flex items-center justify-center">
+                    <BarChart2 className="h-12 w-12 text-orange-500/50" />
+                  </div>
+                  <h1 className="text-2xl font-bold mb-2">Verificando inversión...</h1>
+                  <p className="text-muted-foreground">
+                    Estamos confirmando los detalles de tu inversión
+                  </p>
                 </div>
-                <h1 className="text-2xl font-bold mb-2">Ocurrió un problema</h1>
-                <p className="text-muted-foreground mb-6 max-w-md">
+              </Card>
+            ) : error ? (
+              <Card className="p-8 text-center">
+                <div className="h-24 w-24 rounded-full bg-red-500/20 mx-auto mb-6 flex items-center justify-center">
+                  <svg className="h-12 w-12 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h1 className="text-2xl font-bold mb-2">Ha ocurrido un problema</h1>
+                <p className="text-muted-foreground mb-6">
                   {error}
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button 
-                    onClick={() => setLocation("/investors-dashboard")}
-                    variant="outline"
-                  >
-                    Volver al panel
-                  </Button>
-                  <Button 
-                    onClick={() => window.location.reload()}
-                  >
-                    Intentar de nuevo
+                <div className="flex justify-center">
+                  <Button asChild variant="outline">
+                    <Link to="/investors-dashboard">
+                      <ChevronRight className="mr-2 h-4 w-4" />
+                      Volver al Dashboard
+                    </Link>
                   </Button>
                 </div>
-              </div>
-            ) : investment ? (
-              <div className="flex flex-col items-center text-center">
-                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6">
-                  <Check className="h-10 w-10 text-green-500" />
-                </div>
-                <h1 className="text-2xl md:text-3xl font-bold mb-2">¡Inversión Exitosa!</h1>
-                <p className="text-muted-foreground mb-8 max-w-md">
-                  Tu inversión ha sido procesada correctamente. Pronto recibirás un correo electrónico con la confirmación y detalles adicionales.
-                </p>
-                
-                <Card className="bg-muted/30 p-6 w-full max-w-md mb-8">
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Monto invertido:</span>
-                      <span className="font-semibold">${investment.amount.toFixed(2)}</span>
+              </Card>
+            ) : (
+              <>
+                <Card className="p-8 text-center mb-6">
+                  <div className="h-24 w-24 rounded-full bg-green-500/20 mx-auto mb-6 flex items-center justify-center">
+                    <CheckCircle className="h-12 w-12 text-green-500" />
+                  </div>
+                  <h1 className="text-3xl font-bold mb-2">¡Inversión confirmada!</h1>
+                  <p className="text-xl text-muted-foreground mb-8">
+                    Tu inversión ha sido procesada exitosamente
+                  </p>
+                  
+                  <div className="grid md:grid-cols-2 gap-4 mb-8">
+                    <div className="bg-background p-4 rounded-lg border">
+                      <p className="text-sm text-muted-foreground">Monto de inversión</p>
+                      <p className="text-2xl font-bold">${investment?.amount?.toLocaleString()}</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Duración:</span>
-                      <span className="font-semibold">{investment.duration} meses</span>
+                    <div className="bg-background p-4 rounded-lg border">
+                      <p className="text-sm text-muted-foreground">Rendimiento mensual</p>
+                      <p className="text-2xl font-bold">${(investment?.amount * investment?.rate / 100).toLocaleString()}</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tasa de retorno:</span>
-                      <span className="font-semibold">{investment.rate}% mensual</span>
+                    <div className="bg-background p-4 rounded-lg border">
+                      <p className="text-sm text-muted-foreground">Duración</p>
+                      <p className="text-2xl font-bold">{investment?.duration} meses</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Retorno estimado:</span>
-                      <span className="font-semibold text-green-500">${investment.estimatedReturn?.toFixed(2)}</span>
+                    <div className="bg-background p-4 rounded-lg border">
+                      <p className="text-sm text-muted-foreground">Retorno estimado</p>
+                      <p className="text-2xl font-bold">${investment?.estimatedReturn?.toLocaleString()}</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fecha:</span>
-                      <span className="font-semibold">
-                        {new Date().toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">ID:</span>
-                      <span className="font-semibold text-xs">{investment.id}</span>
-                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap justify-center gap-4">
+                    <Button asChild>
+                      <Link to="/investors-dashboard">
+                        <BarChart2 className="mr-2 h-5 w-5" />
+                        Ir al Dashboard
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link to="/investors-dashboard?tab=investments">
+                        <FileText className="mr-2 h-5 w-5" />
+                        Ver mis inversiones
+                      </Link>
+                    </Button>
                   </div>
                 </Card>
                 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button 
-                    onClick={() => setLocation("/investors-dashboard")}
-                    variant="outline"
-                  >
-                    <ChevronRight className="mr-2 h-4 w-4" />
-                    Volver al panel
-                  </Button>
-                  <Button 
-                    onClick={() => setLocation("/investors-dashboard?tab=investments")}
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Ver mis inversiones
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
-                  <AlertTriangle className="h-8 w-8 text-amber-500" />
-                </div>
-                <h1 className="text-2xl font-bold mb-2">Información no disponible</h1>
-                <p className="text-muted-foreground mb-6 max-w-md">
-                  No pudimos encontrar los detalles de tu inversión. Si completaste un pago, este ha sido procesado pero necesitamos más información.
-                </p>
-                <Button 
-                  onClick={() => setLocation("/investors-dashboard")}
-                >
-                  <ChevronRight className="mr-2 h-4 w-4" />
-                  Volver al panel
-                </Button>
-              </div>
+                <Card className="p-6">
+                  <h2 className="text-xl font-semibold mb-4">¿Qué sigue ahora?</h2>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="bg-orange-500/10 p-2 rounded">
+                        <span className="text-orange-500 font-bold">1</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Confirmación por correo electrónico</h3>
+                        <p className="text-muted-foreground text-sm">
+                          Recibirás un correo con los detalles de tu inversión y el contrato en los próximos minutos.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="bg-orange-500/10 p-2 rounded">
+                        <span className="text-orange-500 font-bold">2</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Primer pago de rendimientos</h3>
+                        <p className="text-muted-foreground text-sm">
+                          Tu primer pago de rendimientos será depositado en {investment?.nextPaymentDate ? formatDate(investment.nextPaymentDate) : '30 días'}.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="bg-orange-500/10 p-2 rounded">
+                        <span className="text-orange-500 font-bold">3</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Seguimiento en el dashboard</h3>
+                        <p className="text-muted-foreground text-sm">
+                          Podrás seguir el rendimiento de tu inversión en tiempo real desde tu dashboard de inversor.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 pt-6 border-t">
+                    <Link to="/investors-dashboard" className="text-orange-500 hover:text-orange-600 inline-flex items-center font-medium">
+                      Volver al Dashboard de Inversores
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  </div>
+                </Card>
+              </>
             )}
-          </Card>
+          </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
