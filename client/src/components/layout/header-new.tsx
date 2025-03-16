@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { auth } from '../../firebase';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { useUser } from '../../hooks/use-user';
 import { useNavigationVisibility } from '../../hooks/use-navigation-visibility';
 import { 
   Users, Search, PieChart, FileText, Home, Music, Video, Rss, 
   ShoppingBag, Calendar, Headphones, Radio, Shield, ClipboardList, 
   LogOut, ChevronDown, ChevronUp, Settings, Menu, Globe, PhoneCall,
-  Send, MessageSquare, Mic, Zap, Award, BookOpen, BarChart, MoveRight
+  Send, MessageSquare, Mic, Zap, Award, BookOpen, BarChart, MoveRight,
+  User, BarChart2, Layers, Sparkles
 } from "lucide-react";
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -100,8 +101,14 @@ export function Header() {
     { name: "Education", href: "/education", icon: BookOpen },
     { name: "PR", href: "/pr", icon: Send },
     
+    // Artist Dashboard and Profile
+    { name: "Artist Dashboard", href: "/artist-dashboard", icon: BarChart2 },
+    { name: "Artist Profile", href: "/artist-profile", icon: User },
+    
     // Secciones de afiliados e inversores
     { name: "Affiliates", href: "/affiliates", icon: Users },
+    { name: "Affiliate Dashboard", href: "/affiliate-dashboard", icon: Users },
+    { name: "Investors", href: "/investors", icon: Layers },
     { name: "Investors Dashboard", href: "/investors-dashboard", icon: BarChart },
     
     // Secciones de contenido y aprendizaje
@@ -116,19 +123,25 @@ export function Header() {
     { name: "Virtual Record Label", href: "/virtual-record-label", icon: Radio },
     { name: "Music Mastering", href: "/music-mastering", icon: Music },
     { name: "Music Generator", href: "/music-generator", icon: Music },
+    { name: "Marketing Plan", href: "/marketing-plan", icon: BarChart },
+    { name: "Music Distribution", href: "/music-distribution", icon: Music },
     
     // Redes sociales y promoción
     { name: "Instagram Boost", href: "/instagram-boost", icon: Rss },
     { name: "Spotify", href: "/spotify", icon: Music },
     { name: "YouTube Views", href: "/youtube-views", icon: Video },
+    { name: "Tiktok", href: "/tiktok", icon: Video },
+    { name: "Facebook", href: "/facebook", icon: Rss },
     { name: "Social Network", href: "/social-network", icon: Users },
     { name: "Firestore Social", href: "/firestore-social", icon: Users },
     
     // Herramientas de AI y creación
     { name: "AI Advisors", href: "/ai-advisors", icon: PhoneCall },
     { name: "AI Agents", href: "/ai-agents", icon: MessageSquare },
+    { name: "AI Chat", href: "/ai-chat", icon: MessageSquare },
     { name: "Artist Image Advisor", href: "/artist-image-advisor", icon: FileText },
     { name: "Image Generator", href: "/image-generator", icon: FileText },
+    { name: "Video Generator", href: "/video-generator", icon: Video },
     { name: "Face Swap", href: "/face-swap", icon: Users },
     { name: "Try On", href: "/try-on-page", icon: ShoppingBag },
     { name: "Real-time Translator", href: "/real-time-translator", icon: Globe },
@@ -150,6 +163,8 @@ export function Header() {
     { name: "Tokenization", href: "/tokenization", icon: Shield },
     { name: "Events", href: "/events", icon: Calendar },
     { name: "Merchandise", href: "/merchandise", icon: ShoppingBag },
+    { name: "NFT Marketplace", href: "/nft-marketplace", icon: BarChart },
+    { name: "Creators Fund", href: "/creators-fund", icon: DollarSign },
     { name: "Plugins", href: "/plugins", icon: Settings },
     { name: "Tools", href: "/tools", icon: Settings },
     { name: "Ecosystem", href: "/ecosystem", icon: Globe },
