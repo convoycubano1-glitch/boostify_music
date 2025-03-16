@@ -380,10 +380,10 @@ export default function ResourcesPage() {
               ))}
             </div>
             <div className="text-center">
-              <Link href="/tips">
-                <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800">
+              <Link href="/tips" className="inline-block">
+                <div className="flex items-center justify-center h-10 px-4 py-2 border border-zinc-700 text-white rounded-md hover:bg-zinc-800 transition-colors">
                   View All Tips <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                </div>
               </Link>
             </div>
           </TabsContent>
@@ -419,10 +419,10 @@ export default function ResourcesPage() {
               ))}
             </div>
             <div className="text-center">
-              <Link href="/guides">
-                <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800">
+              <Link href="/guides" className="inline-block">
+                <div className="flex items-center justify-center h-10 px-4 py-2 border border-zinc-700 text-white rounded-md hover:bg-zinc-800 transition-colors">
                   Browse All Guides <BookOpen className="ml-2 h-4 w-4" />
-                </Button>
+                </div>
               </Link>
             </div>
           </TabsContent>
