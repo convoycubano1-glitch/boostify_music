@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boostify Store - Productos para Músicos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f97316;
+            --primary-foreground: #ffffff;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .navbar-brand span {
+            color: var(--primary);
+        }
+        
+        .hero {
+            background-color: #fff;
+            padding: 60px 0;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+        
+        .hero h1 span {
+            color: var(--primary);
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .product-card {
+            background-color: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 1px solid #eee;
+            position: relative;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+        
+        .product-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background-color: rgba(249, 115, 22, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .product-icon svg {
+            width: 25px;
+            height: 25px;
+            color: var(--primary);
+        }
+        
+        .product-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .product-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin: 0;
+        }
+        
+        .product-subtitle {
+            font-size: 0.875rem;
+            color: #666;
+            margin: 0;
+        }
+        
+        .product-feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .product-feature svg {
+            color: var(--primary);
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        
+        .product-feature span {
+            font-size: 0.9rem;
+        }
+        
+        .product-price {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 15px;
+        }
+        
+        .product-price-amount {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+        
+        .product-price-period {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        
+        .product-platform {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background-color: rgba(249, 115, 22, 0.1);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid rgba(249, 115, 22, 0.2);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background-color: #e86207;
+            border-color: #e86207;
+        }
+        
+        .badge-popular {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--primary);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+        
+        .badge-premium {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: linear-gradient(45deg, var(--primary), #9333ea);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .section-title h2 span {
+            color: var(--primary);
+        }
+        
+        .section-title p {
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .tabs-container {
+            max-width: 500px;
+            margin: 0 auto 2rem auto;
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: var(--primary);
+        }
+        
+        .nav-pills .nav-link {
+            color: #333;
+            font-weight: 500;
+            border-radius: 30px;
+        }
+        
+        .feature-card {
+            background-color: rgba(249, 115, 22, 0.05);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background-color: rgba(249, 115, 22, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+        }
+        
+        .feature-icon svg {
+            width: 30px;
+            height: 30px;
+            color: var(--primary);
+        }
+        
+        .footer {
+            background-color: #fff;
+            border-top: 1px solid #eee;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">Boostify <span>Store</span></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/store">Tienda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Iniciar Sesión</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Boostify <span>Store</span></h1>
+            <p>Potencia tu carrera musical con nuestra suite de herramientas profesionales, bots y aplicaciones móviles</p>
+        </div>
+    </section>
+
+    <section class="container py-5">
+        <ul class="nav nav-pills mb-4 tabs-container" id="pills-tab" role="tablist">
+            <li class="nav-item flex-grow-1" role="presentation">
+                <button class="nav-link active w-100" id="pills-bots-tab" data-bs-toggle="pill" data-bs-target="#pills-bots" type="button" role="tab">Automation Bots</button>
+            </li>
+            <li class="nav-item flex-grow-1" role="presentation">
+                <button class="nav-link w-100" id="pills-apps-tab" data-bs-toggle="pill" data-bs-target="#pills-apps" type="button" role="tab">Mobile Apps</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-bots" role="tabpanel">
+                <div class="section-title">
+                    <h2>Social Media <span>Automation Bots</span></h2>
+                    <p>Optimiza tu presencia en redes sociales con nuestras herramientas de automatización profesionales</p>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card p-4">
+                            <div class="badge-popular">Popular</div>
+                            <div class="product-header">
+                                <div class="product-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 21H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2.5"></path><path d="M18 9h-6"></path><path d="M18 13h-8"></path><path d="M18 17h-8"></path><path d="M6 9h.01"></path><path d="M6 13h.01"></path><path d="M6 17h.01"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="product-title">ContentFlow</h5>
+                                    <p class="product-subtitle">Automatización de contenido</p>
+                                </div>
+                            </div>
+                            
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Programación automatizada de publicaciones</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Optimización SEO para mayor alcance</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Generación de ideas con IA</span>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-top border-1" style="border-color: rgba(249,115,22,0.2)!important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="product-price">
+                                        <span class="product-price-amount">$49</span>
+                                        <span class="product-price-period">/mes</span>
+                                    </div>
+                                    <span class="product-platform">Todas las plataformas</span>
+                                </div>
+                                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" onclick="redirectToAuth()">
+                                    Comprar Ahora
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card p-4">
+                            <div class="badge-premium">Premium</div>
+                            <div class="product-header">
+                                <div class="product-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0"></path><path d="M12 6l0 6l4 0"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="product-title">EngageBoost</h5>
+                                    <p class="product-subtitle">Optimización de engagement</p>
+                                </div>
+                            </div>
+                            
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Respuestas automáticas personalizadas</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Análisis de audiencia en tiempo real</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Estrategias de hashtags avanzadas</span>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-top border-1" style="border-color: rgba(249,115,22,0.2)!important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="product-price">
+                                        <span class="product-price-amount">$79</span>
+                                        <span class="product-price-period">/mes</span>
+                                    </div>
+                                    <span class="product-platform">Instagram</span>
+                                </div>
+                                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" onclick="redirectToAuth()">
+                                    Comprar Ahora
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card p-4">
+                            <div class="product-header">
+                                <div class="product-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M14 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M10 3l4 4"></path><path d="M10 7l4 -4"></path><path d="M10 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M14 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M12 14m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="product-title">FanGrowth</h5>
+                                    <p class="product-subtitle">Expansión de audiencia</p>
+                                </div>
+                            </div>
+                            
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Identificación de seguidores potenciales</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Interacción automática inteligente</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Reportes de crecimiento semanales</span>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-top border-1" style="border-color: rgba(249,115,22,0.2)!important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="product-price">
+                                        <span class="product-price-amount">$59</span>
+                                        <span class="product-price-period">/mes</span>
+                                    </div>
+                                    <span class="product-platform">Todas las plataformas</span>
+                                </div>
+                                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" onclick="redirectToAuth()">
+                                    Comprar Ahora
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card p-4">
+                            <div class="product-header">
+                                <div class="product-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"></path><path d="M7 10l2 -2l2 2"></path><path d="M13 10l2 -2l2 2"></path><path d="M17 17l-2 2l-2 -2"></path><path d="M11 17l-2 2l-2 -2"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="product-title">InsightBot</h5>
+                                    <p class="product-subtitle">Análisis competitivo</p>
+                                </div>
+                            </div>
+                            
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Monitoreo de competidores 24/7</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Análisis de tendencias del mercado</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Recomendaciones estratégicas</span>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-top border-1" style="border-color: rgba(249,115,22,0.2)!important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="product-price">
+                                        <span class="product-price-amount">$69</span>
+                                        <span class="product-price-period">/mes</span>
+                                    </div>
+                                    <span class="product-platform">Twitter</span>
+                                </div>
+                                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" onclick="redirectToAuth()">
+                                    Comprar Ahora
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="pills-apps" role="tabpanel">
+                <div class="section-title">
+                    <h2>Mobile <span>Apps</span></h2>
+                    <p>Potencia tu creatividad con nuestras aplicaciones móviles profesionales para músicos y creadores de contenido</p>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card p-4">
+                            <div class="badge-popular">Popular</div>
+                            <div class="product-header">
+                                <div class="product-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="product-title">BeatMaker Pro</h5>
+                                    <p class="product-subtitle">Producción musical</p>
+                                </div>
+                            </div>
+                            
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Estudio de grabación completo</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>+1000 samples profesionales</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Exportación en múltiples formatos</span>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-top border-1" style="border-color: rgba(249,115,22,0.2)!important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="product-price">
+                                        <span class="product-price-amount">$24.99</span>
+                                        <span class="product-price-period">/una vez</span>
+                                    </div>
+                                    <div>
+                                        <span class="product-platform me-1">iOS</span>
+                                        <span class="product-platform">Android</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" onclick="redirectToAuth()">
+                                    Descargar
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card p-4">
+                            <div class="badge-premium">Premium</div>
+                            <div class="product-header">
+                                <div class="product-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                                </div>
+                                <div>
+                                    <h5 class="product-title">LyricsMaster</h5>
+                                    <p class="product-subtitle">Creación de letras</p>
+                                </div>
+                            </div>
+                            
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Generación de letras con IA</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Análisis de estructura y métrica</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Diccionario de rimas avanzado</span>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-top border-1" style="border-color: rgba(249,115,22,0.2)!important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="product-price">
+                                        <span class="product-price-amount">$19.99</span>
+                                        <span class="product-price-period">/una vez</span>
+                                    </div>
+                                    <div>
+                                        <span class="product-platform me-1">iOS</span>
+                                        <span class="product-platform">Android</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" onclick="redirectToAuth()">
+                                    Descargar
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card p-4">
+                            <div class="product-header">
+                                <div class="product-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v6l5 -3z"></path><path d="M9 14v6l5 -3z"></path><path d="M9 14v6l5 -3z"></path><path d="M9 14v6l5 -3z"></path><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="product-title">MixMaster</h5>
+                                    <p class="product-subtitle">Mezcla y masterización</p>
+                                </div>
+                            </div>
+                            
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Ecualizador de 32 bandas</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Masterización con IA</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Presets profesionales por género</span>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-top border-1" style="border-color: rgba(249,115,22,0.2)!important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="product-price">
+                                        <span class="product-price-amount">$29.99</span>
+                                        <span class="product-price-period">/una vez</span>
+                                    </div>
+                                    <div>
+                                        <span class="product-platform">iOS</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" onclick="redirectToAuth()">
+                                    Descargar
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card p-4">
+                            <div class="badge-popular">Beta</div>
+                            <div class="product-header">
+                                <div class="product-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h0.01m0 7h0.01m0 7h0.01m7 -14h0.01m0 7h0.01m0 7h0.01m7 -14h0.01m0 7h0.01m0 7h0.01"></path></svg>
+                                </div>
+                                <div>
+                                    <h5 class="product-title">CoverArt Creator</h5>
+                                    <p class="product-subtitle">Diseño gráfico musical</p>
+                                </div>
+                            </div>
+                            
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Generación de portadas con IA</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Plantillas por género musical</span>
+                            </div>
+                            <div class="product-feature">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <span>Tipografías exclusivas para música</span>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-top border-1" style="border-color: rgba(249,115,22,0.2)!important;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="product-price">
+                                        <span class="product-price-amount">$9.99</span>
+                                        <span class="product-price-period">/una vez</span>
+                                    </div>
+                                    <div>
+                                        <span class="product-platform">Android</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" onclick="redirectToAuth()">
+                                    Unirse a Beta
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="container py-5">
+        <h2 class="text-center mb-5">Por qué elegir nuestros <span class="text-primary">productos</span></h2>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3v7h7"></path><path d="M13 3l7 7"></path><path d="M18 13v6a2 2 0 0 1 -2 2h-11a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h6"></path></svg>
+                    </div>
+                    <h3 class="h5 mb-2">Alto Rendimiento</h3>
+                    <p class="text-muted">Optimizados para máxima eficiencia</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"></path></svg>
+                    </div>
+                    <h3 class="h5 mb-2">100% Seguro</h3>
+                    <p class="text-muted">Cumplimos con todas las regulaciones</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8c.4 -.059 .8 -.139 1.2 -.245l1.8 -.498m0 0l-1.8 -.498c-.4 -.106 -.8 -.187 -1.2 -.245m0 0a5 5 0 0 0 -10 0m0 0c-.4 .059 -.8 .139 -1.2 .245l-1.8 .498m0 0l1.8 .498c.4 .106 .8 .187 1.2 .245m0 0a5 5 0 0 0 10 0"></path><path d="M12 16m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M12 16v4"></path><path d="M12 12v1"></path></svg>
+                    </div>
+                    <h3 class="h5 mb-2">Soporte 24/7</h3>
+                    <p class="text-muted">Equipo técnico siempre disponible</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 -9l4 18l3 -9h4"></path></svg>
+                    </div>
+                    <h3 class="h5 mb-2">Actualizaciones Regulares</h3>
+                    <p class="text-muted">Mejoras continuas garantizadas</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <footer class="footer text-center">
+        <div class="container">
+            <p class="mb-0">© 2025 Boostify Store. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function redirectToAuth() {
+            alert("Para completar la compra, necesitas iniciar sesión o registrarte.");
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
