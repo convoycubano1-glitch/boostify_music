@@ -33,6 +33,11 @@ const affiliateFormSchema = z.object({
     required_error: "Please select a payment method" 
   }),
   paymentEmail: z.string().email({ message: "Please enter a valid email address" }),
+  // Campos adicionales
+  promotionChannels: z.array(z.string()).min(1, { message: "Please select at least one promotion channel" }),
+  experience: z.enum(["beginner", "intermediate", "advanced"], {
+    required_error: "Please select your experience level"
+  }),
   termsAccepted: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions"
   }),
@@ -63,6 +68,8 @@ export function AffiliateRegistration() {
         tiktok: ""
       },
       categories: [],
+      promotionChannels: [],
+      experience: "beginner",
       paymentMethod: "paypal",
       paymentEmail: user?.email || "",
       termsAccepted: false,
@@ -120,6 +127,15 @@ export function AffiliateRegistration() {
     { id: "plugins_software", label: "Plugins y Software" },
     { id: "merchandise", label: "Mercancía" },
     { id: "courses", label: "Cursos y Educación" },
+  ];
+
+  const promotionChannels = [
+    { id: "social_media", label: "Redes Sociales" },
+    { id: "blog", label: "Blog o Sitio Web" },
+    { id: "email", label: "Email Marketing" },
+    { id: "youtube", label: "Canal de YouTube" },
+    { id: "podcast", label: "Podcast" },
+    { id: "direct", label: "Marketing Directo" },
   ];
 
   return (
@@ -181,6 +197,32 @@ export function AffiliateRegistration() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="experience"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Experience Level</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your experience level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="beginner">Beginner (0-1 year)</SelectItem>
+                          <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
+                          <SelectItem value="advanced">Advanced (3+ years)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Your level of experience in affiliate marketing
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-4">
@@ -200,15 +242,15 @@ export function AffiliateRegistration() {
                   )}
                 />
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <FormField
                     control={form.control}
                     name="socialMedia.instagram"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Instagram (opcional)</FormLabel>
+                        <FormLabel>Instagram (optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="@username" {...field} />
+                          <Input placeholder="Your Instagram username" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -220,9 +262,9 @@ export function AffiliateRegistration() {
                     name="socialMedia.twitter"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Twitter (opcional)</FormLabel>
+                        <FormLabel>Twitter (optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="@username" {...field} />
+                          <Input placeholder="Your Twitter username" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -234,9 +276,9 @@ export function AffiliateRegistration() {
                     name="socialMedia.youtube"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Canal de YouTube (opcional)</FormLabel>
+                        <FormLabel>YouTube (optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="URL del canal" {...field} />
+                          <Input placeholder="Your YouTube channel URL" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -248,9 +290,9 @@ export function AffiliateRegistration() {
                     name="socialMedia.tiktok"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>TikTok (opcional)</FormLabel>
+                        <FormLabel>TikTok (optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="@username" {...field} />
+                          <Input placeholder="Your TikTok username" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -260,19 +302,20 @@ export function AffiliateRegistration() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Categorías de interés</h3>
+                <h3 className="text-lg font-medium">Marketing Information</h3>
+                
                 <FormField
                   control={form.control}
                   name="categories"
                   render={() => (
                     <FormItem>
-                      <div className="mb-4">
-                        <FormLabel>Selecciona las categorías que te interesa promocionar</FormLabel>
+                      <div className="mb-2">
+                        <FormLabel>Product Categories of Interest</FormLabel>
                         <FormDescription>
-                          Esto nos ayudará a recomendarte los productos más relevantes
+                          Select the product categories you're interested in promoting
                         </FormDescription>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         {categories.map((category) => (
                           <FormField
                             key={category.id}
@@ -294,15 +337,66 @@ export function AffiliateRegistration() {
                                               field.value?.filter(
                                                 (value) => value !== category.id
                                               )
-                                            )
+                                            );
                                       }}
                                     />
                                   </FormControl>
-                                  <FormLabel className="font-normal cursor-pointer">
+                                  <FormLabel className="font-normal">
                                     {category.label}
                                   </FormLabel>
                                 </FormItem>
-                              )
+                              );
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="promotionChannels"
+                  render={() => (
+                    <FormItem>
+                      <div className="mb-2">
+                        <FormLabel>Promotion Channels</FormLabel>
+                        <FormDescription>
+                          Select the channels you plan to use for promotion
+                        </FormDescription>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {promotionChannels.map((channel) => (
+                          <FormField
+                            key={channel.id}
+                            control={form.control}
+                            name="promotionChannels"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={channel.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(channel.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, channel.id])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== channel.id
+                                              )
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {channel.label}
+                                  </FormLabel>
+                                </FormItem>
+                              );
                             }}
                           />
                         ))}
@@ -314,14 +408,14 @@ export function AffiliateRegistration() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Información de pago</h3>
+                <h3 className="text-lg font-medium">Payment Information</h3>
                 
                 <FormField
                   control={form.control}
                   name="paymentMethod"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel>Método de pago preferido</FormLabel>
+                      <FormLabel>Preferred Payment Method</FormLabel>
                       <FormControl>
                         <RadioGroup
                           onValueChange={field.onChange}
@@ -341,7 +435,7 @@ export function AffiliateRegistration() {
                               <RadioGroupItem value="bank_transfer" />
                             </FormControl>
                             <FormLabel className="font-normal">
-                              Transferencia bancaria
+                              Bank Transfer
                             </FormLabel>
                           </FormItem>
                           <FormItem className="flex items-center space-x-3 space-y-0">
@@ -349,7 +443,7 @@ export function AffiliateRegistration() {
                               <RadioGroupItem value="crypto" />
                             </FormControl>
                             <FormLabel className="font-normal">
-                              Criptomonedas
+                              Cryptocurrency
                             </FormLabel>
                           </FormItem>
                         </RadioGroup>
@@ -364,12 +458,12 @@ export function AffiliateRegistration() {
                   name="paymentEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Correo electrónico para pagos</FormLabel>
+                      <FormLabel>Payment Email</FormLabel>
                       <FormControl>
-                        <Input type="email" {...field} />
+                        <Input placeholder="Email for payment purposes" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Usaremos este correo para procesar tus pagos
+                        We'll use this email address for payment notifications and transactions
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -378,7 +472,7 @@ export function AffiliateRegistration() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Términos y condiciones</h3>
+                <h3 className="text-lg font-medium">Terms and Agreements</h3>
                 
                 <FormField
                   control={form.control}
@@ -393,7 +487,10 @@ export function AffiliateRegistration() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="font-normal">
-                          Acepto los <a href="/terms" className="text-primary hover:underline" target="_blank">términos y condiciones</a> del programa de afiliados de Boostify
+                          I have read and agree to the{" "}
+                          <a href="#" className="text-primary underline">
+                            Terms and Conditions
+                          </a>
                         </FormLabel>
                         <FormMessage />
                       </div>
@@ -414,7 +511,10 @@ export function AffiliateRegistration() {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="font-normal">
-                          Acepto que mis datos sean procesados de acuerdo con la <a href="/privacy" className="text-primary hover:underline" target="_blank">política de privacidad</a> de Boostify
+                          I agree to the{" "}
+                          <a href="#" className="text-primary underline">
+                            Data Processing Agreement
+                          </a>
                         </FormLabel>
                         <FormMessage />
                       </div>
@@ -422,7 +522,7 @@ export function AffiliateRegistration() {
                   )}
                 />
               </div>
-              
+
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -430,19 +530,15 @@ export function AffiliateRegistration() {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-              
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isSubmitting}
-              >
+
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando solicitud...
+                    Submitting...
                   </>
                 ) : (
-                  "Enviar solicitud"
+                  "Submit Application"
                 )}
               </Button>
             </form>
