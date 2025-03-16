@@ -13,7 +13,14 @@ import {
   Mail,
   ArrowRight,
   MessageSquare,
-  Share2
+  Share2,
+  BookMarked,
+  ExternalLink,
+  Star,
+  ChevronRight,
+  Clock,
+  Download,
+  Tag
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
@@ -99,24 +106,28 @@ const collaborationOpportunities = [
 // Comprehensive guides
 const guides = [
   {
+    id: "music-distribution",
     title: "The Complete Guide to Music Distribution",
     description: "Everything you need to know about getting your music on streaming platforms and maximizing revenue.",
     readTime: "15 min read",
     color: "border-blue-600",
   },
   {
+    id: "artist-branding",
     title: "Building Your Artist Brand",
     description: "Step-by-step process to define, develop and maintain a consistent artist brand that resonates with fans.",
     readTime: "12 min read",
     color: "border-amber-600",
   },
   {
+    id: "music-marketing-budget",
     title: "Music Marketing on a Budget",
     description: "Effective strategies to promote your music with limited resources and maximize your marketing impact.",
     readTime: "10 min read",
     color: "border-green-600",
   },
   {
+    id: "music-publishing",
     title: "Understanding Music Publishing",
     description: "Comprehensive breakdown of publishing rights, royalties, and how to protect your intellectual property.",
     readTime: "20 min read",
@@ -207,22 +218,27 @@ interface GuideCardProps {
   description: string;
   readTime: string;
   color: string;
+  id?: string;
 }
 
-const GuideCard = ({ title, description, readTime, color }: GuideCardProps) => {
+const GuideCard = ({ title, description, readTime, color, id }: GuideCardProps) => {
   return (
     <Card className={`bg-zinc-950 border-l-4 ${color} border-t-zinc-800 border-r-zinc-800 border-b-zinc-800 text-white h-full flex flex-col`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-xl">{title}</CardTitle>
-        <CardDescription className="text-zinc-500">{readTime}</CardDescription>
+        <CardDescription className="flex items-center text-zinc-500">
+          <Clock className="h-4 w-4 mr-1" /> {readTime}
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-zinc-400">{description}</p>
       </CardContent>
       <CardFooter>
-        <Button variant="outline" className="w-full border-zinc-700 text-white hover:bg-zinc-800">
-          Read Guide <BookOpen className="ml-2 h-4 w-4" />
-        </Button>
+        <Link href={id ? `/guides/${id}` : "/guides"} className="w-full">
+          <Button variant="outline" className="w-full border-zinc-700 text-white hover:bg-zinc-800">
+            Read Guide <BookMarked className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );

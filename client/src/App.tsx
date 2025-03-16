@@ -92,6 +92,7 @@ import AnimatedWorkflowPage from "./pages/animated-workflow";
 import TokenizationPage from "./pages/tokenization";
 import ResourcesPage from "./pages/resources";
 import TipsPage from "./pages/tips";
+import GuidesPage from "./pages/guides";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -260,6 +261,7 @@ const Router = () => {
   const WrappedTokenizationPage = withPageWrapper(TokenizationPage);
   const WrappedResourcesPage = withPageWrapper(ResourcesPage);
   const WrappedTipsPage = withPageWrapper(TipsPage);
+  const WrappedGuidesPage = withPageWrapper(GuidesPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -357,6 +359,7 @@ const Router = () => {
         {getRouteComponent("/tokenization", WrappedTokenizationPage, null)}
         {getRouteComponent("/resources", WrappedResourcesPage, null)}
         {getRouteComponent("/tips", WrappedTipsPage, null)}
+        {getRouteComponent("/guides", WrappedGuidesPage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
