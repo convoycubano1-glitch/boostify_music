@@ -23,6 +23,9 @@ import {
 } from 'firebase/firestore';
 import { getUserId } from '../auth-helpers';
 
+// Número telefónico central para todas las llamadas a asesores
+export const ADVISOR_PHONE_NUMBER = "+1 941 315 9237";
+
 /**
  * Interfaz de Asesor
  */
@@ -34,6 +37,7 @@ export interface Advisor {
   icon: LucideIcon;     // Ícono representativo
   color: string;        // Color distintivo (para UI)
   animationDelay?: number; // Delay para animaciones UI
+  phoneNumber?: string; // Número de teléfono (opcional, se usa el global por defecto)
 }
 
 /**
@@ -45,6 +49,7 @@ export interface AdvisorCall {
   advisorId: string;    // ID del asesor
   advisorName: string;  // Nombre del asesor
   advisorTitle: string; // Cargo del asesor
+  phoneNumber: string;  // Número de teléfono usado para la llamada
   duration: number;     // Duración en segundos
   status: 'completed' | 'cancelled' | 'failed'; // Estado de la llamada
   notes?: string;       // Notas del usuario
@@ -82,12 +87,16 @@ class AdvisorCallService {
         return null;
       }
       
+      // Obtener el número de teléfono a usar (por ahora, siempre usar el número central)
+      const phoneNumber = ADVISOR_PHONE_NUMBER;
+      
       // Crear objeto de llamada
       const callData: Omit<AdvisorCall, 'id'> = {
         userId,
         advisorId: advisor.id,
         advisorName: advisor.name,
         advisorTitle: advisor.title,
+        phoneNumber,
         duration,
         status,
         notes,
@@ -141,6 +150,8 @@ class AdvisorCallService {
         const call: AdvisorCall = {
           id: doc.id,
           ...data,
+          // Asegurar que phoneNumber esté definido para registros antiguos
+          phoneNumber: data.phoneNumber || ADVISOR_PHONE_NUMBER
         };
         calls.push(call);
         
@@ -241,6 +252,31 @@ class AdvisorCallService {
     
     // Para plan gratuito, solo los asesores específicamente indicados
     return freePlanAdvisors.includes(advisorId);
+  }
+  
+  /**
+   * Obtiene el número de teléfono para un asesor específico
+   * 
+   * Actualmente se usa un número único para todos, pero en el futuro
+   * podría asignarse un número diferente a cada asesor.
+   * 
+   * @param advisorId ID del asesor o objeto asesor completo
+   * @returns Número de teléfono para contactar al asesor
+   */
+  getAdvisorPhoneNumber(advisorId: string | Advisor): string {
+    // Por ahora, siempre devuelve el número central
+    return ADVISOR_PHONE_NUMBER;
+    
+    // En el futuro, podría implementarse así:
+    /*
+    if (typeof advisorId === 'object') {
+      return advisorId.phoneNumber || ADVISOR_PHONE_NUMBER;
+    }
+    
+    // Aquí se podría consultar una base de datos para obtener números específicos
+    // Por ahora, devolver el número central para todos
+    return ADVISOR_PHONE_NUMBER;
+    */
   }
 }
 

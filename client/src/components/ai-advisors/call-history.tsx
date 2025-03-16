@@ -193,7 +193,7 @@ export function CallHistory({
     
     try {
       // Cabecera del CSV
-      const headers = ['Fecha', 'Asesor', 'Cargo', 'Duración', 'Estado', 'Notas'];
+      const headers = ['Fecha', 'Asesor', 'Cargo', 'Teléfono', 'Duración', 'Estado', 'Notas'];
       
       // Convertir datos a filas CSV
       const csvRows = [
@@ -206,6 +206,7 @@ export function CallHistory({
           const date = format(timestamp, 'dd/MM/yyyy HH:mm');
           const duration = formatDuration(call.duration);
           const status = getStatusText(call.status);
+          const phoneNumber = call.phoneNumber || advisorCallService.ADVISOR_PHONE_NUMBER;
           
           // Escapar notas (pueden contener comas)
           const notes = call.notes ? `"${call.notes.replace(/"/g, '""')}"` : '';
@@ -214,6 +215,7 @@ export function CallHistory({
             date,
             call.advisorName,
             call.advisorTitle,
+            phoneNumber,
             duration,
             status,
             notes

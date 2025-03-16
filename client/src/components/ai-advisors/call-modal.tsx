@@ -37,6 +37,9 @@ import {
 // Máxima duración de llamada en segundos (5 minutos)
 const MAX_CALL_DURATION = 300;
 
+// Número telefónico para todas las llamadas a asesores
+const ADVISOR_PHONE_NUMBER = "+1 941 315 9237";
+
 interface CallModalProps {
   advisor: Advisor | null;
   open: boolean;
@@ -100,6 +103,14 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
         title: "Llamada conectada",
         description: `Estás hablando con ${advisor.name}, tu ${advisor.title.toLowerCase()}.`,
       });
+      
+      // Iniciar la llamada telefónica real al número configurado
+      try {
+        const phoneNumber = ADVISOR_PHONE_NUMBER.replace(/\s+/g, '');
+        window.open(`tel:${phoneNumber}`, '_blank');
+      } catch (error) {
+        console.error('Error al iniciar llamada telefónica:', error);
+      }
       
     }, 2000);
   };
@@ -267,6 +278,9 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                 <p className="text-center text-sm text-gray-400">
                   Conectando con {advisor.name}, tu {advisor.title.toLowerCase()}...
                 </p>
+                <p className="text-center text-sm font-medium text-gray-200 mt-4">
+                  Marcando: {ADVISOR_PHONE_NUMBER}
+                </p>
               </div>
             ) : connected ? (
               <div className="py-4 space-y-4">
@@ -279,6 +293,9 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                     <p className="text-xs font-medium text-gray-400">{advisor.title}</p>
                     <p className="text-sm text-gray-400 mt-1">
                       {advisor.description}
+                    </p>
+                    <p className="text-xs font-medium text-gray-300 mt-2">
+                      Número de contacto: {ADVISOR_PHONE_NUMBER}
                     </p>
                   </div>
                 </div>
@@ -342,9 +359,15 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm italic text-gray-400">
-                    Este asesor te brindará consejos profesionales en su área de especialidad.
-                  </p>
+                  <div className="text-sm italic text-gray-400 space-y-4">
+                    <p>
+                      Este asesor te brindará consejos profesionales en su área de especialidad.
+                    </p>
+                    <div className="flex items-center justify-center bg-gradient-to-r from-gray-800 to-gray-900 p-3 rounded-md">
+                      <Phone className="h-4 w-4 mr-2 text-amber-500" />
+                      <span className="text-white">Número de contacto: {ADVISOR_PHONE_NUMBER}</span>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -387,6 +410,15 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
               onClick={cancelCall}
             >
               Cancelar
+            </Button>
+          ) : !isLoading && hasAccess ? (
+            <Button
+              type="button" 
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              onClick={simulateCall}
+            >
+              <Phone className="h-4 w-4 mr-2" />
+              Llamar Ahora
             </Button>
           ) : (
             <Button

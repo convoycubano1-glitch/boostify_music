@@ -38,7 +38,7 @@ export function useAdvisorAccess(
   advisorId: string,
   freePlanAdvisors: string[] = []
 ): AdvisorAccessResult {
-  const { userSubscription, isLoading: isSubscriptionLoading } = useSubscription();
+  const { subscription, isLoading: isSubscriptionLoading } = useSubscription();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
@@ -61,7 +61,7 @@ export function useAdvisorAccess(
           return;
         }
         
-        const plan = userSubscription?.plan || 'free';
+        const plan = subscription?.plan || 'free';
         
         // Verificar si el asesor está disponible en el plan actual
         const advisorAvailable = advisorCallService.isAdvisorAvailableInPlan(
@@ -99,7 +99,7 @@ export function useAdvisorAccess(
     };
     
     checkAccess();
-  }, [advisorId, freePlanAdvisors, userSubscription, isSubscriptionLoading]);
+  }, [advisorId, freePlanAdvisors, subscription, isSubscriptionLoading]);
   
   return {
     hasAccess,
