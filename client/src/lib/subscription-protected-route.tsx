@@ -1,5 +1,6 @@
 import { useAuth } from "../hooks/use-auth";
-import { useSubscription, PlanType } from "./context/subscription-context";
+import { useSubscription } from "./context/subscription-context";
+import { SubscriptionPlan } from "./api/subscription-service";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 import React from "react";
@@ -7,7 +8,7 @@ import React from "react";
 interface SubscriptionProtectedRouteProps {
   path: string;
   component: React.ComponentType<any>;
-  requiredPlan: PlanType; // Cambiado a PlanType para ser consistente con el contexto
+  requiredPlan: SubscriptionPlan;
 }
 
 /**
@@ -24,27 +25,9 @@ export function SubscriptionProtectedRoute({
   requiredPlan
 }: SubscriptionProtectedRouteProps) {
   const { user, isLoading: authLoading } = useAuth();
-  const { isLoading: subscriptionLoading, currentPlan } = useSubscription();
+  const { isLoading: subscriptionLoading, hasAccess } = useSubscription();
   
   const isLoading = authLoading || subscriptionLoading;
-
-  // Verificar acceso según jerarquía de planes
-  const hasAccess = React.useCallback((requiredPlan: PlanType): boolean => {
-    // Jerarquía de planes por nivel de acceso
-    const planLevels: Record<PlanType, number> = {
-      'free': 0,
-      'basic': 1,
-      'pro': 2,
-      'premium': 3
-    };
-
-    // Obtener nivel del plan actual y el plan requerido
-    const currentLevel = planLevels[currentPlan];
-    const requiredLevel = planLevels[requiredPlan];
-
-    // Verificar si el nivel actual es >= al nivel requerido
-    return currentLevel >= requiredLevel;
-  }, [currentPlan]);
 
   // Muestra un spinner mientras se cargan los datos pero solo por tiempo limitado
   const [showTimeoutError, setShowTimeoutError] = React.useState(false);
