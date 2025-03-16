@@ -514,8 +514,7 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
     const session = await stripe.checkout.sessions.create(sessionConfig);
     
     // Crear un registro de la transacción pendiente
-    await purchasesRef.add({
-      userId,
+    const purchaseData: any = {
       productId,
       productName: name,
       productType: productType || 'store_product',
@@ -524,8 +523,16 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
       currency: 'usd',
       status: 'pending',
       createdAt: new Date(),
-      type: 'store_product'
-    });
+      type: 'store_product',
+      isGuestPurchase: !userId
+    };
+    
+    // Solo incluir userId si existe (compra autenticada)
+    if (userId) {
+      purchaseData.userId = userId;
+    }
+    
+    await purchasesRef.add(purchaseData);
     
     res.json({ success: true, url: session.url });
   } catch (error: any) {
@@ -1080,30 +1087,48 @@ async function handleSuccessfulVideoPayment(session: Stripe.Checkout.Session) {
 
 /**
  * Manejar un pago exitoso para un producto de la tienda
+ * Soporta tanto usuarios autenticados como compras de invitados
  */
 async function handleSuccessfulProductPayment(session: Stripe.Checkout.Session) {
-  const userId = session.metadata?.userId;
   const productId = session.metadata?.productId;
   const productType = session.metadata?.productType || 'store_product';
   const productName = session.metadata?.productName;
+  const isGuestPurchase = session.metadata?.guestPurchase === 'true';
+  const userId = session.metadata?.userId;
   
-  if (!userId || !productId) {
-    console.error('Falta userId o productId en los metadatos de la sesión');
+  if (!productId) {
+    console.error('Falta productId en los metadatos de la sesión');
     return;
   }
   
   // Actualizar el registro de la compra
   const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
-  const purchases = await purchasesRef
-    .where('userId', '==', userId)
-    .where('productId', '==', productId)
-    .where('sessionId', '==', session.id)
-    .get();
+  let purchases;
+  
+  if (isGuestPurchase) {
+    // Para compras de invitados, buscamos solo por sessionId y productId
+    purchases = await purchasesRef
+      .where('productId', '==', productId)
+      .where('sessionId', '==', session.id)
+      .where('isGuestPurchase', '==', true)
+      .get();
+  } else {
+    // Para usuarios autenticados verificamos userId
+    if (!userId) {
+      console.error('Falta userId en los metadatos para una compra autenticada');
+      return;
+    }
+    
+    purchases = await purchasesRef
+      .where('userId', '==', userId)
+      .where('productId', '==', productId)
+      .where('sessionId', '==', session.id)
+      .get();
+  }
   
   if (purchases.empty) {
     // Si no existe una compra pendiente, crear una nueva
-    await purchasesRef.add({
-      userId,
+    const purchaseData: any = {
       productId,
       productName,
       productType,
@@ -1113,8 +1138,16 @@ async function handleSuccessfulProductPayment(session: Stripe.Checkout.Session) 
       status: 'completed',
       createdAt: new Date(),
       completedAt: new Date(),
-      type: 'store_product'
-    });
+      type: 'store_product',
+      isGuestPurchase
+    };
+    
+    // Solo agregar userId si no es compra de invitado
+    if (!isGuestPurchase && userId) {
+      purchaseData.userId = userId;
+    }
+    
+    await purchasesRef.add(purchaseData);
   } else {
     // Actualizar la compra existente
     await purchases.docs[0].ref.update({
@@ -1125,8 +1158,7 @@ async function handleSuccessfulProductPayment(session: Stripe.Checkout.Session) 
   }
   
   // También registrar la transacción
-  await db.collection('transactions').add({
-    userId,
+  const transactionData: any = {
     type: 'product_purchase',
     productId,
     productName,
@@ -1134,92 +1166,45 @@ async function handleSuccessfulProductPayment(session: Stripe.Checkout.Session) 
     sessionId: session.id,
     amount: session.amount_total ? session.amount_total / 100 : 0,
     currency: session.currency || 'usd',
-    timestamp: new Date()
-  });
+    timestamp: new Date(),
+    isGuestPurchase
+  };
+  
+  // Solo agregar userId si no es compra de invitado
+  if (!isGuestPurchase && userId) {
+    transactionData.userId = userId;
+  }
+  
+  await db.collection('transactions').add(transactionData);
   
   // Opcional: Actualizar el producto para marcarlo como comprado por el usuario
-  try {
-    const productDoc = await db.collection(PRODUCTS_COLLECTION).doc(productId).get();
-    
-    if (productDoc.exists) {
-      const product = productDoc.data();
-      const purchasedBy = product.purchasedBy || [];
+  // Solo se hace para usuarios autenticados
+  if (!isGuestPurchase && userId) {
+    try {
+      const productDoc = await db.collection(PRODUCTS_COLLECTION).doc(productId).get();
       
-      // Solo agregar el userId si no está ya en la lista
-      if (!purchasedBy.includes(userId)) {
-        await db.collection(PRODUCTS_COLLECTION).doc(productId).update({
-          purchasedBy: [...purchasedBy, userId]
-        });
+      if (productDoc.exists) {
+        const product = productDoc.data();
+        const purchasedBy = product?.purchasedBy || [];
+        
+        // Solo agregar el userId si no está ya en la lista
+        if (!purchasedBy.includes(userId)) {
+          await db.collection(PRODUCTS_COLLECTION).doc(productId).update({
+            purchasedBy: [...purchasedBy, userId]
+          });
+        }
       }
+    } catch (error) {
+      console.error('Error al actualizar el producto:', error);
     }
-  } catch (error) {
-    console.error('Error al actualizar el producto:', error);
   }
 }
 
 /**
- * Verificar si un producto ha sido comprado (versión pública)
- * Esta ruta permite acceso público y solo retorna información básica sin datos sensibles
- */
-router.get('/product-purchase-status/:productId', async (req: Request, res: Response) => {
-  try {
-    const { productId } = req.params;
-    let userId = null;
-    
-    // Intentar obtener el ID de usuario desde la autenticación si está disponible
-    if (req.user && req.user.uid) {
-      userId = req.user.uid;
-    }
-    
-    if (!productId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'ID de producto no especificado',
-        requiresAuth: false 
-      });
-    }
-    
-    // Si no hay ID de usuario, retornar respuesta para usuario no autenticado
-    if (!userId) {
-      return res.json({
-        success: true,
-        isPurchased: false,
-        productId,
-        requiresAuth: true,
-        message: 'Autenticación requerida para verificar compras'
-      });
-    }
-    
-    // Verificar si el usuario ha comprado este producto
-    const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
-    const purchaseQuery = await purchasesRef
-      .where('userId', '==', userId)
-      .where('productId', '==', productId)
-      .where('status', '==', 'completed')
-      .get();
-    
-    // Determinar si el producto fue comprado
-    const isPurchased = !purchaseQuery.empty;
-    
-    res.json({
-      success: true,
-      isPurchased,
-      productId,
-      requiresAuth: false
-    });
-  } catch (error: any) {
-    console.error('Error al verificar estado de compra del producto:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Error al verificar el estado de la compra',
-      requiresAuth: false
-    });
-  }
-});
-
-/**
  * Verificar si un producto ha sido comprado por el usuario (versión pública)
  * Esta ruta permite acceso público y solo retorna información básica sin datos sensibles
+ * 
+ * Esta versión soporta invitados (puede usarse sin autenticación)
  */
 router.get('/product-purchase-status/:productId', async (req: Request, res: Response) => {
   try {
@@ -1240,13 +1225,15 @@ router.get('/product-purchase-status/:productId', async (req: Request, res: Resp
     }
     
     // Si no hay ID de usuario, retornar respuesta para usuario no autenticado
+    // Ahora en lugar de requerir autenticación, indicamos que puede proceder a la compra
     if (!userId) {
       return res.json({
         success: true,
         isPurchased: false,
         productId,
-        requiresAuth: true,
-        message: 'Autenticación requerida para verificar compras'
+        requiresAuth: false, // Ya no requiere autenticación
+        canPurchaseAsGuest: true,
+        message: 'Puede proceder a la compra sin autenticación'
       });
     }
     
@@ -1265,7 +1252,8 @@ router.get('/product-purchase-status/:productId', async (req: Request, res: Resp
       success: true,
       isPurchased,
       productId,
-      requiresAuth: false
+      requiresAuth: false,
+      canPurchaseAsGuest: true
     });
   } catch (error: any) {
     console.error('Error al verificar estado de compra del producto:', error);
