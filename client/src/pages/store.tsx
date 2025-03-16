@@ -558,6 +558,22 @@ export default function StorePage() {
         setLoadingProducts(prev => ({ ...prev, [product.id]: false }));
         return;
       }
+      
+      // Verificar si se requiere autenticación
+      if (response.data.requiresAuth && response.data.productDemo) {
+        toast({
+          title: "Autenticación necesaria",
+          description: response.data.message || "Por favor inicia sesión para completar la compra",
+          variant: "default"
+        });
+        setLoadingProducts(prev => ({ ...prev, [product.id]: false }));
+        
+        // Opcionalmente redirigir a iniciar sesión
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+        return;
+      }
 
       // Verificar si hay una URL de pago válida
       if (response.data.success && response.data.url) {
@@ -609,6 +625,22 @@ export default function StorePage() {
         });
         setPurchasedApps(prev => ({ ...prev, [app.id]: true }));
         setLoadingApps(prev => ({ ...prev, [app.id]: false }));
+        return;
+      }
+      
+      // Verificar si se requiere autenticación
+      if (response.data.requiresAuth && response.data.productDemo) {
+        toast({
+          title: "Autenticación necesaria",
+          description: response.data.message || "Por favor inicia sesión para completar la compra",
+          variant: "default"
+        });
+        setLoadingApps(prev => ({ ...prev, [app.id]: false }));
+        
+        // Opcionalmente redirigir a iniciar sesión
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
         return;
       }
 

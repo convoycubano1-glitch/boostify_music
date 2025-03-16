@@ -408,14 +408,26 @@ router.post('/create-music-video-payment', authenticate, async (req: Request, re
 /**
  * Crear un pago único para un producto de la tienda
  * Esta ruta permite comprar productos como bots de automatización o aplicaciones móviles
+ * Versión pública que también funciona sin autenticación
  */
-router.post('/create-product-payment', authenticate, async (req: Request, res: Response) => {
+router.post('/create-product-payment', async (req: Request, res: Response) => {
   try {
     const { productId, productType, amount, name } = req.body;
-    const userId = req.user?.uid;
+    let userId = null;
     
+    // Intentar obtener el ID de usuario si está autenticado
+    if (req.user && req.user.uid) {
+      userId = req.user.uid;
+    }
+    
+    // Si no hay usuario autenticado, informamos pero no bloqueamos
     if (!userId) {
-      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+      return res.json({ 
+        success: true, 
+        requiresAuth: true,
+        productDemo: true,
+        message: 'Para completar la compra, es necesario iniciar sesión'
+      });
     }
     
     if (!productId) {
