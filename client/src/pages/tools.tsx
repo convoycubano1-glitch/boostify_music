@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "wouter";
 import Layout from "../components/layout";
 import {
@@ -199,6 +199,12 @@ interface ToolCardProps {
 }
 
 const ToolCard = ({ tool, onClick }: ToolCardProps) => {
+  const handleButtonClick = () => {
+    // Actualiza la URL y luego llama al callback
+    window.history.pushState({}, '', `/tools/${tool.id}`);
+    onClick(tool.id);
+  };
+
   return (
     <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
       <CardHeader>
@@ -211,7 +217,7 @@ const ToolCard = ({ tool, onClick }: ToolCardProps) => {
       <CardFooter>
         <Button 
           className="w-full"
-          onClick={() => onClick(tool.id)}
+          onClick={handleButtonClick}
         >
           {tool.buttonText}
         </Button>
@@ -702,13 +708,27 @@ const PlaylistSubmission = ({ onBack }: { onBack: () => void }) => {
 
 // Main Tools Page
 export default function ToolsPage() {
+  const [location] = useState<string>(window.location.pathname);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  
+  // Detectar la herramienta seleccionada de la URL
+  useEffect(() => {
+    const toolPath = location.split('/');
+    if (toolPath.length > 2 && toolPath[1] === 'tools') {
+      const toolId = toolPath[2];
+      if (['royalty-calculator', 'press-kit', 'release-planner', 'playlist-submission'].includes(toolId)) {
+        setSelectedTool(toolId);
+      }
+    }
+  }, [location]);
   
   const handleToolClick = (toolId: string) => {
     setSelectedTool(toolId);
   };
   
   const handleBack = () => {
+    // Redirigir a la página principal de herramientas
+    window.history.pushState({}, '', '/tools');
     setSelectedTool(null);
   };
   

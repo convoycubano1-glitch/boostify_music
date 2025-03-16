@@ -363,6 +363,10 @@ const Router = () => {
         {getRouteComponent("/tips", WrappedTipsPage, null)}
         {getRouteComponent("/guides", WrappedGuidesPage, null)}
         {getRouteComponent("/tools", WrappedToolsPage, null)}
+        {getRouteComponent("/tools/royalty-calculator", WrappedToolsPage, null)}
+        {getRouteComponent("/tools/press-kit", WrappedToolsPage, null)}
+        {getRouteComponent("/tools/release-planner", WrappedToolsPage, null)}
+        {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
