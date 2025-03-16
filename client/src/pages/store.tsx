@@ -526,14 +526,7 @@ export default function StorePage() {
 
   // Iniciar el proceso de pago para un producto (bot)
   const handlePurchaseProduct = async (product: typeof products[0]) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Inicia sesión para continuar",
-        description: "Necesitas iniciar sesión para comprar este producto",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Eliminamos la verificación previa para permitir flujo público
 
     try {
       // Establecer el producto como cargando
@@ -559,8 +552,8 @@ export default function StorePage() {
         return;
       }
       
-      // Verificar si se requiere autenticación
-      if (response.data.requiresAuth && response.data.productDemo) {
+      // Verificar si se requiere autenticación y el usuario NO está autenticado
+      if (response.data.requiresAuth && !isAuthenticated) {
         toast({
           title: "Autenticación necesaria",
           description: response.data.message || "Por favor inicia sesión para completar la compra",
@@ -568,7 +561,7 @@ export default function StorePage() {
         });
         setLoadingProducts(prev => ({ ...prev, [product.id]: false }));
         
-        // Opcionalmente redirigir a iniciar sesión
+        // Redirigir a iniciar sesión
         setTimeout(() => {
           window.location.href = '/login';
         }, 2000);
@@ -595,14 +588,7 @@ export default function StorePage() {
 
   // Iniciar el proceso de pago para una app móvil
   const handlePurchaseApp = async (app: typeof mobileApps[0]) => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Inicia sesión para continuar",
-        description: "Necesitas iniciar sesión para comprar esta aplicación",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Eliminamos la verificación previa para permitir flujo público
 
     try {
       // Establecer la app como cargando
@@ -628,8 +614,8 @@ export default function StorePage() {
         return;
       }
       
-      // Verificar si se requiere autenticación
-      if (response.data.requiresAuth && response.data.productDemo) {
+      // Verificar si se requiere autenticación y el usuario NO está autenticado
+      if (response.data.requiresAuth && !isAuthenticated) {
         toast({
           title: "Autenticación necesaria",
           description: response.data.message || "Por favor inicia sesión para completar la compra",
@@ -637,7 +623,7 @@ export default function StorePage() {
         });
         setLoadingApps(prev => ({ ...prev, [app.id]: false }));
         
-        // Opcionalmente redirigir a iniciar sesión
+        // Redirigir a iniciar sesión
         setTimeout(() => {
           window.location.href = '/login';
         }, 2000);
