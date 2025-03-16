@@ -1,10 +1,11 @@
 /**
- * Servicio para gestionar llamadas a asesores IA
+ * Service for managing AI advisor calls
  * 
- * Este servicio se encarga de:
- * - Registrar llamadas en Firestore
- * - Obtener historial de llamadas
- * - Verificar límites según plan de suscripción
+ * This service handles:
+ * - Registering calls in Firestore
+ * - Getting call history
+ * - Verifying limits based on subscription plan
+ * - Error handling for Firestore queries
  */
 
 import { LucideIcon } from 'lucide-react';
@@ -21,8 +22,13 @@ import {
   serverTimestamp,
   Timestamp,
   DocumentData,
+  FirestoreError
 } from 'firebase/firestore';
+import { FirebaseError } from 'firebase/app';
 import { getUserId } from '../auth-helpers';
+
+// Persistence is now handled in main firebase.ts configuration
+// This prevents "failed-precondition" errors when accessing Firestore data
 
 // Número telefónico central para todas las llamadas a asesores
 // Este número se usa en toda la interfaz hasta que se asignen números individuales

@@ -1,0 +1,110 @@
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Call usage: 1/3, remaining: 2
+Error executing Firestore query: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Firestore error getting call history: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
