@@ -165,7 +165,7 @@ router.post('/create-payment', async (req, res) => {
   }
 });
 
-// Route para verificar el estado de una inversión
+// Route para verificar el estado de una inversión por ID
 router.get('/status/:investmentId', async (req, res) => {
   try {
     const { investmentId } = req.params;
@@ -195,6 +195,91 @@ router.get('/status/:investmentId', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to check investment status',
+      details: error.message || 'Unknown error'
+    });
+  }
+});
+
+// Route para verificar el estado de una inversión por sessionId de Stripe
+router.get('/status/session/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Session ID is required'
+      });
+    }
+    
+    // Primero, verificar si la sesión existe en Stripe
+    let session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(sessionId);
+    } catch (stripeError: any) {
+      console.error('Error retrieving Stripe session:', stripeError);
+      return res.status(404).json({
+        success: false,
+        error: 'Stripe session not found',
+        details: stripeError.message
+      });
+    }
+    
+    // Obtener la inversión de Firestore usando el sessionId
+    const investmentsSnapshot = await db.collection('investments')
+      .where('stripeSessionId', '==', sessionId)
+      .limit(1)
+      .get();
+    
+    if (investmentsSnapshot.empty) {
+      return res.status(404).json({
+        success: false,
+        error: 'Investment not found for this session',
+        session: {
+          id: session.id,
+          status: session.status,
+          payment_status: session.payment_status
+        }
+      });
+    }
+    
+    const investmentDoc = investmentsSnapshot.docs[0];
+    const investmentData = investmentDoc.data();
+    
+    // Si el pago fue exitoso en Stripe pero no se ha actualizado en Firestore
+    if (session.payment_status === 'paid' && investmentData.status === 'pending') {
+      // Actualizar el estado de la inversión
+      await db.collection('investments').doc(investmentDoc.id).update({
+        status: 'active',
+        paymentCompleted: true,
+        paymentDate: FieldValue.serverTimestamp(),
+        paymentAmount: session.amount_total ? session.amount_total / 100 : investmentData.amount,
+        paymentCurrency: session.currency || 'usd'
+      });
+      
+      // Actualizar investmentData con los cambios
+      investmentData.status = 'active';
+      investmentData.paymentCompleted = true;
+    }
+    
+    return res.status(200).json({
+      success: true,
+      investment: {
+        id: investmentDoc.id,
+        ...investmentData
+      },
+      session: {
+        id: session.id,
+        status: session.status,
+        payment_status: session.payment_status
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('Error checking investment session status:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to check investment session status',
       details: error.message || 'Unknown error'
     });
   }

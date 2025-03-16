@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { authenticate } from '../middleware/auth';
 import { findUserByStripeCustomerId } from '../utils/firestore-helpers';
 import { db } from '../firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const router = Router();
 
@@ -649,11 +650,14 @@ router.post('/webhook', async (req: Request, res: Response) => {
     case 'checkout.session.completed':
       const session = event.data.object;
       
-      // Determinar el tipo de pago (suscripción, video musical o producto)
+      // Determinar el tipo de pago (suscripción, video musical, producto o inversión)
       if (session.metadata.type === 'music_video') {
         await handleSuccessfulVideoPayment(session);
       } else if (session.metadata.type === 'store_product') {
         await handleSuccessfulProductPayment(session);
+      } else if (session.metadata.type === 'investment') {
+        // Nuevo caso para inversiones
+        await handleSuccessfulInvestmentPayment(session);
       } else {
         // Asumimos que es una suscripción si no tiene un tipo específico
         await handleSuccessfulSubscription(session);
@@ -816,6 +820,75 @@ async function handleSuccessfulProductPayment(session: any) {
     console.log(`Compra de producto ${productId} completada para ${userIdForLog}`);
   } catch (error) {
     console.error('Error al procesar pago de producto:', error);
+  }
+}
+
+/**
+ * Manejar pago exitoso de inversión
+ */
+async function handleSuccessfulInvestmentPayment(session: any) {
+  try {
+    // Extraer datos de los metadatos
+    const { investmentId, userId, amount, duration, rate } = session.metadata;
+    
+    if (!investmentId) {
+      console.error('No se encontró investmentId en los metadatos de la sesión');
+      return;
+    }
+    
+    // Buscar la inversión pendiente por investmentId
+    const investmentRef = db.collection('investments').doc(investmentId);
+    const investmentDoc = await investmentRef.get();
+    
+    if (!investmentDoc.exists) {
+      console.error(`No se encontró la inversión con ID ${investmentId}`);
+      return;
+    }
+    
+    // Calcular la fecha del próximo pago (30 días después)
+    const nextPaymentDate = new Date();
+    nextPaymentDate.setDate(nextPaymentDate.getDate() + 30);
+    
+    // Actualizar el estado de la inversión a completada
+    await investmentRef.update({
+      status: 'active',
+      paymentCompleted: true,
+      paymentDate: FieldValue.serverTimestamp(),
+      paymentAmount: session.amount_total / 100, // Convertir de centavos a dólares
+      paymentCurrency: session.currency,
+      stripeSessionId: session.id,
+      nextPaymentDate: nextPaymentDate,
+      customer: {
+        email: session.customer_details?.email,
+        name: session.customer_details?.name,
+        address: session.customer_details?.address
+      }
+    });
+    
+    console.log(`Inversión ${investmentId} completada. Monto: ${amount}, Duración: ${duration} meses, Tasa: ${rate}%`);
+    
+    // Si el usuario está autenticado, asociar la inversión a su perfil
+    if (userId && !userId.startsWith('guest-')) {
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      
+      if (userDoc.exists) {
+        // Actualizar el campo de inversiones del usuario
+        const investments = userDoc.data()?.investments || [];
+        investments.push(investmentId);
+        
+        await userRef.update({
+          investments,
+          lastInvestmentDate: FieldValue.serverTimestamp(),
+          investorStatus: 'active'
+        });
+        
+        console.log(`Inversión asociada al usuario ${userId}`);
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error al procesar pago de inversión:', error);
   }
 }
 

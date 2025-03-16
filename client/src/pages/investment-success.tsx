@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Header } from "../components/layout/header";
 import { Footer } from "../components/layout/footer";
 import { Button } from "../components/ui/button";
-import { CircularProgress } from "../components/ui/circular-progress";
 import { Card } from "../components/ui/card";
 import { Check, DollarSign, ChevronRight, AlertTriangle } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
@@ -29,7 +28,7 @@ export default function InvestmentSuccessPage() {
         }
 
         // Buscar la inversión por su ID de sesión de Stripe
-        const response = await fetch(`/api/investors/status/${sessionId}`);
+        const response = await fetch(`/api/investors/status/session/${sessionId}`);
         const data = await response.json();
 
         if (data.success && data.investment) {
@@ -63,7 +62,7 @@ export default function InvestmentSuccessPage() {
           <Card className="p-6 md:p-8 shadow-lg">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <CircularProgress size={60} value={80} />
+                <div className="w-16 h-16 rounded-full border-4 border-t-transparent border-primary animate-spin"></div>
                 <p className="mt-4 text-center text-muted-foreground">
                   Cargando los detalles de tu inversión...
                 </p>

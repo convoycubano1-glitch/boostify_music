@@ -1,12 +1,16 @@
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Header } from "../components/layout/header";
 import { Footer } from "../components/layout/footer";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import { ChevronRight, AlertTriangle, DollarSign, Calculator } from "lucide-react";
+import { ChevronRight, X, AlertCircle } from "lucide-react";
 
 export default function InvestmentCancelledPage() {
   const [location, setLocation] = useLocation();
+  
+  // Podríamos agregar lógica más avanzada si necesitamos rastrear cancelaciones
+  // pero por ahora mantenemos una página simple
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -14,36 +18,25 @@ export default function InvestmentCancelledPage() {
       <main className="flex-1 pt-24 pb-16">
         <div className="container max-w-4xl mx-auto px-4">
           <Card className="p-6 md:p-8 shadow-lg">
-            <div className="flex flex-col items-center text-center py-8">
-              <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mb-6">
-                <AlertTriangle className="h-10 w-10 text-amber-500" />
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mb-6">
+                <X className="h-10 w-10 text-red-500" />
               </div>
               <h1 className="text-2xl md:text-3xl font-bold mb-2">Inversión Cancelada</h1>
-              <p className="text-muted-foreground mb-8 max-w-lg">
+              <p className="text-muted-foreground mb-8 max-w-md">
                 Has cancelado el proceso de inversión. No se ha realizado ningún cargo a tu cuenta.
-                Si tienes preguntas o necesitas ayuda, no dudes en contactar a nuestro equipo de soporte.
               </p>
               
-              <div className="bg-muted/30 p-6 w-full max-w-md mb-8 rounded-lg">
-                <h3 className="text-lg font-medium mb-4">¿Por qué invertir con nosotros?</h3>
-                <ul className="space-y-2 text-left">
-                  <li className="flex items-start">
-                    <ChevronRight className="h-5 w-5 text-orange-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Retornos mensuales competitivos del 4% al 6%</span>
-                  </li>
-                  <li className="flex items-start">
-                    <ChevronRight className="h-5 w-5 text-orange-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Diferentes plazos de inversión para adaptarse a tus necesidades</span>
-                  </li>
-                  <li className="flex items-start">
-                    <ChevronRight className="h-5 w-5 text-orange-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Inversión mínima accesible desde $2,000</span>
-                  </li>
-                  <li className="flex items-start">
-                    <ChevronRight className="h-5 w-5 text-orange-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>Panel de inversión exclusivo para seguir tus ganancias</span>
-                  </li>
-                </ul>
+              <div className="bg-muted/30 p-6 w-full max-w-md mb-8 rounded-lg border border-muted">
+                <div className="flex items-start space-x-4">
+                  <AlertCircle className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="text-left">
+                    <h3 className="font-medium mb-2">¿Tienes preguntas sobre cómo invertir?</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Nuestro equipo está disponible para ayudarte a entender las opciones de inversión y responder cualquier duda que puedas tener.
+                    </p>
+                  </div>
+                </div>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
@@ -52,18 +45,14 @@ export default function InvestmentCancelledPage() {
                   variant="outline"
                 >
                   <ChevronRight className="mr-2 h-4 w-4" />
-                  Volver al Panel
+                  Volver al panel
                 </Button>
                 <Button 
-                  onClick={() => setLocation("/investors-dashboard?tab=calculator")}
+                  onClick={() => setLocation("/contact")}
                   className="bg-orange-500 hover:bg-orange-600"
                 >
-                  <Calculator className="mr-2 h-4 w-4" />
-                  Volver a Calculadora
-                </Button>
-                <Button onClick={() => setLocation("/investors-dashboard")}>
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Intentar de Nuevo
+                  <ChevronRight className="mr-2 h-4 w-4" />
+                  Contactar a soporte
                 </Button>
               </div>
             </div>
