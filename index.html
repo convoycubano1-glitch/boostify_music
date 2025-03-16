@@ -1,29 +1,184 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Boostify Music - Music Marketing Platform</title>
-    <meta name="description" content="Intelligent music marketing platform empowering emerging artists" />
-    <link rel="icon" type="image/png" href="/assets/freepik__boostify_music_organe_abstract_icon.png" />
-    <link rel="apple-touch-icon" href="/assets/freepik__boostify_music_organe_abstract_icon.png" />
-    <script type="text/javascript">
-      function googleTranslateElementInit() {
-        // Get the stored language preference or default to browser language
-        const storedLang = localStorage.getItem('preferredLanguage') || navigator.language.split('-')[0];
-
-        new google.translate.TranslateElement({
-          pageLanguage: storedLang || 'en',
-          includedLanguages: 'en,es,fr,de,it,pt,ja,ko,zh-CN,ru',
-          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-          autoDisplay: false
-        }, 'google_translate_element');
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boostify - Plataforma para Artistas</title>
+  <style>
+    :root {
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --background: #1e1e2e;
+      --foreground: #cdd6f4;
+      --border: #313244;
+      --card: #181825;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--background);
+      color: var(--foreground);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    
+    header {
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem 0;
+    }
+    
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: var(--foreground);
+    }
+    
+    p {
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+    
+    .button {
+      display: inline-block;
+      background-color: var(--primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .button:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-left-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
       }
-    </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-  </head>
-  <body class="bg-background min-h-screen text-foreground">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    
+    .feature-card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+    
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+    
+    h3 {
+      margin-bottom: 0.5rem;
+    }
+    
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-content">
+      <div class="logo">Boostify</div>
+    </div>
+  </header>
+  
+  <main class="container">
+    <div class="card">
+      <div class="loading">
+        <h1>Cargando aplicación...</h1>
+        <div class="spinner"></div>
+        <p>Por favor espera mientras preparamos la aplicación.</p>
+        <p>En unos momentos serás redirigido automáticamente.</p>
+        <a href="https://workspace-5173.replit.app" class="button">Acceder a la aplicación</a>
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    // Intentar redireccionar a la aplicación de Vite después de un retraso
+    setTimeout(() => {
+      window.location.href = 'https://workspace-5173.replit.app';
+    }, 5000);
+  </script>
+</body>
 </html>
