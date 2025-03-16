@@ -309,9 +309,9 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
               </CardDescription>
             </div>
             <Badge
-              className={`${levelInfo.bgColor} ${levelInfo.color} border-0 hover:${levelInfo.bgColor}`}
+              className={`${levelInfo?.bgColor || 'bg-primary'} ${levelInfo?.color || 'text-white'} border-0 hover:${levelInfo?.bgColor || 'bg-primary/90'}`}
             >
-              Nivel {levelInfo.title}
+              Nivel {levelInfo?.title || 'Básico'}
             </Badge>
           </div>
         </CardHeader>
@@ -322,15 +322,15 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">
-                      {levelInfo.title}
+                      {levelInfo?.title || 'Básico'}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      ({levelInfo.commission} comisión)
+                      ({levelInfo?.commission || '1%'} comisión)
                     </span>
                   </div>
-                  {stats.levelProgress.nextLevel && (
+                  {stats?.levelProgress?.nextLevel && (
                     <div className="text-sm font-medium">
-                      {stats.levelProgress.nextLevel === "pro"
+                      {stats?.levelProgress?.nextLevel === "pro"
                         ? "Pro"
                         : "Elite"}
                     </div>
@@ -340,16 +340,16 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary rounded-full"
-                    style={{ width: `${stats.levelProgress.progress}%` }}
+                    style={{ width: `${stats?.levelProgress?.progress || 0}%` }}
                   ></div>
                 </div>
 
                 <div className="mt-2 text-xs text-muted-foreground">
-                  {stats.levelProgress.nextLevel ? (
+                  {stats?.levelProgress?.nextLevel ? (
                     <span>
-                      {stats.levelProgress.salesNeeded} ventas más para alcanzar
+                      {stats?.levelProgress?.salesNeeded || 0} ventas más para alcanzar
                       el nivel{" "}
-                      {stats.levelProgress.nextLevel === "pro"
+                      {stats?.levelProgress?.nextLevel === "pro"
                         ? "Pro"
                         : "Elite"}
                     </span>
@@ -364,7 +364,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-muted/30 p-2 rounded-md">
                   <div className="text-xl font-semibold">
-                    {stats.totalClicks}
+                    {stats?.totalClicks || 0}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Clics Totales
@@ -380,7 +380,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                 </div>
                 <div className="bg-muted/30 p-2 rounded-md">
                   <div className="text-xl font-semibold">
-                    ${(stats.pendingCommission || 0).toFixed(2)}
+                    ${(stats?.pendingCommission || 0).toFixed(2)}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Pendiente de Pago
@@ -393,12 +393,12 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
               <div className="flex flex-col items-center justify-center h-full">
                 <div className="relative mb-2">
                   <ProgressCircular
-                    value={stats.levelProgress?.progress || 0}
+                    value={stats?.levelProgress?.progress || 0}
                     size="lg"
                     className="text-primary"
                   >
                     <span className="text-sm font-medium">
-                      {(stats.levelProgress?.progress || 0).toFixed(0)}%
+                      {(stats?.levelProgress?.progress || 0).toFixed(0)}%
                     </span>
                   </ProgressCircular>
                 </div>
@@ -407,19 +407,20 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                   <div className="text-sm font-medium">Próximo pago</div>
                   <div className="text-lg font-bold">
                     $
-                    {stats.nextPayment.amount.toLocaleString(undefined, {
+                    {(stats?.nextPayment?.amount || 0).toLocaleString(undefined, {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(stats.nextPayment.date).toLocaleDateString(
-                      "es-ES",
-                      {
-                        day: "numeric",
-                        month: "long",
-                      }
-                    )}
+                    {stats?.nextPayment?.date ? 
+                      new Date(stats?.nextPayment?.date).toLocaleDateString(
+                        "es-ES",
+                        {
+                          day: "numeric",
+                          month: "long",
+                        }
+                      ) : "No programado"}
                   </div>
                 </div>
               </div>
@@ -444,9 +445,9 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
             </TabsList>
 
             <TabsContent value="sales">
-              {stats.recentSales && stats.recentSales.length > 0 ? (
+              {stats?.recentSales && stats?.recentSales.length > 0 ? (
                 <div className="space-y-4">
-                  {stats.recentSales.map((sale) => (
+                  {stats?.recentSales.map((sale) => (
                     <div
                       key={sale.id}
                       className="flex items-start justify-between py-2 border-b last:border-b-0"
@@ -503,9 +504,9 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
             </TabsContent>
 
             <TabsContent value="clicks">
-              {stats.recentClicks && stats.recentClicks.length > 0 ? (
+              {stats?.recentClicks && stats?.recentClicks.length > 0 ? (
                 <div className="space-y-4">
-                  {stats.recentClicks.map((click) => (
+                  {stats?.recentClicks.map((click) => (
                     <div
                       key={click.id}
                       className="flex items-start justify-between py-2 border-b last:border-b-0"
@@ -513,7 +514,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                       <div className="flex items-start gap-3">
                         <div
                           className={`h-10 w-10 rounded-full ${
-                            click.converted
+                            click?.converted
                               ? "bg-green-100"
                               : "bg-blue-100"
                           } flex items-center justify-center`}
@@ -527,22 +528,22 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                         <div>
                           <p className="font-medium">{click.productName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(click.date).toLocaleDateString("es-ES", {
+                            {click?.date ? new Date(click.date).toLocaleDateString("es-ES", {
                               day: "numeric",
                               month: "short",
                               hour: "2-digit",
                               minute: "2-digit",
-                            })}
+                            }) : "Fecha no disponible"}
                           </p>
                         </div>
                       </div>
 
                       <div>
                         <Badge
-                          variant={click.converted ? "default" : "outline"}
+                          variant={click?.converted ? "default" : "outline"}
                           className="text-xs"
                         >
-                          {click.converted ? "Convertido" : "Solo clic"}
+                          {click?.converted ? "Convertido" : "Solo clic"}
                         </Badge>
                       </div>
                     </div>
