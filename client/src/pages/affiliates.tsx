@@ -2,403 +2,321 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "../components/ui/card";
-import { 
-  AlertTriangle, 
-  BadgeCheck, 
-  ChevronRight, 
-  LinkIcon, 
-  LineChart, 
-  Share, 
-  Info,
-  Users,
-  BarChart3
-} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
-import { Badge } from "../components/ui/badge";
-import { ProgressCircular } from "../components/ui/progress-circular";
+import { ArrowRight, Award, BarChart, Gift, Globe, LinkIcon, Sparkles, Users } from "lucide-react";
+import { Separator } from "../components/ui/separator";
 import { AffiliateOverview } from "../components/affiliates/overview";
 import { AffiliateLinks } from "../components/affiliates/links";
-import { Separator } from "../components/ui/separator";
-import { useNavigate } from "wouter";
 
 /**
  * Página principal del programa de afiliados
- * 
- * Esta página permite:
- * 1. Registrarse como afiliado
- * 2. Ver estadísticas y ganancias
- * 3. Administrar enlaces de afiliado
- * 4. Acceder a recursos y materiales promocionales
+ * Muestra información sobre el programa y permite registrarse/administrar enlaces
  */
 export default function AffiliatePage() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [, navigate] = useNavigate();
-  
-  // Verificar si el usuario está registrado como afiliado
+
+  // Consultar datos del afiliado
   const {
     data: affiliateData,
     isLoading,
     isError,
-    refetch,
+    error,
+    refetch
   } = useQuery({
     queryKey: ["affiliate", "me"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/affiliate/me");
         return response.data;
-      } catch (error) {
-        // Si el error es 404, el usuario no está registrado como afiliado
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          return { registered: false };
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          // No es un afiliado todavía, retornar null
+          return null;
         }
-        console.error("Error fetching affiliate data:", error);
         throw error;
       }
     },
+    refetchOnWindowFocus: false,
   });
+
+  // Determinar si el usuario ya es un afiliado registrado
+  const isAffiliate = affiliateData && affiliateData.id;
   
-  // Si está cargando, mostrar indicador de carga
+  // Si está cargando, mostrar pantalla de carga
   if (isLoading) {
     return (
-      <div className="container max-w-6xl mx-auto py-12 px-4">
-        <div className="flex flex-col items-center justify-center py-12">
-          <ProgressCircular size="lg" />
-          <p className="mt-4 text-muted-foreground">Cargando información de afiliado...</p>
+      <div className="container py-12">
+        <div className="flex flex-col items-center justify-center min-h-[40vh]">
+          <div className="animate-pulse rounded-full h-12 w-12 bg-primary/20 flex items-center justify-center">
+            <LinkIcon className="h-6 w-6 text-primary/40" />
+          </div>
+          <h1 className="mt-4 text-2xl font-bold">Cargando programa de afiliados...</h1>
         </div>
       </div>
     );
   }
-  
-  // Si hay un error, mostrar mensaje de error
-  if (isError) {
-    return (
-      <div className="container max-w-6xl mx-auto py-12 px-4">
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            No pudimos cargar la información de afiliado. Por favor, intenta de nuevo más tarde.
-            <Button onClick={() => refetch()} className="mt-2" variant="outline" size="sm">
-              Reintentar
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+
+  // Si el usuario no es afiliado, mostrar pantalla de registro
+  if (!isAffiliate) {
+    return <AffiliateRegistrationView onRegisterSuccess={refetch} />;
   }
-  
-  // Si el usuario no está registrado como afiliado, mostrar página de registro
-  if (!affiliateData?.registered) {
-    return <AffiliateRegistration onRegistered={refetch} />;
-  }
-  
+
+  // Si es afiliado, mostrar panel de control
   return (
-    <div className="container max-w-6xl mx-auto py-8 px-4">
+    <div className="container py-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Programa de Afiliados</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestiona tus enlaces, revisa tus estadísticas y aumenta tus ganancias
+          <h1 className="text-3xl font-bold">Panel de Afiliado</h1>
+          <p className="text-muted-foreground mt-2">
+            Administra tus enlaces, estadísticas y comisiones como afiliado
           </p>
         </div>
         
-        <div className="flex gap-2">
-          <Badge variant="outline" className="gap-1 py-1 px-2 border-green-600/40 bg-green-600/10 text-green-700">
-            <BadgeCheck className="h-3.5 w-3.5" />
-            Afiliado Activo
-          </Badge>
-          
-          {affiliateData?.level && (
-            <Badge variant="outline" className="gap-1 py-1 px-2 border-blue-600/40 bg-blue-600/10 text-blue-700">
-              {affiliateData.level === "pro" ? "Nivel Pro" : 
-               affiliateData.level === "elite" ? "Nivel Elite" : 
-               "Nivel Básico"}
-            </Badge>
-          )}
-        </div>
+        <Button variant="outline" className="md:w-auto w-full gap-2">
+          <Globe className="h-4 w-4" />
+          Ver guía de afiliados
+        </Button>
       </div>
       
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:inline-flex md:w-auto">
-          <TabsTrigger value="overview">Vista General</TabsTrigger>
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid grid-cols-3 md:w-[400px]">
+          <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="links">Enlaces</TabsTrigger>
+          <TabsTrigger value="payouts">Pagos</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview" className="space-y-4">
-          <AffiliateOverview />
+        <TabsContent value="overview" className="space-y-6">
+          <AffiliateOverview affiliateData={affiliateData} />
         </TabsContent>
         
-        <TabsContent value="links" className="space-y-4">
-          <AffiliateLinks />
+        <TabsContent value="links" className="space-y-6">
+          <AffiliateLinks affiliateData={affiliateData} />
+        </TabsContent>
+        
+        <TabsContent value="payouts" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de pagos</CardTitle>
+              <CardDescription>
+                Revisa tus comisiones y pagos recibidos como afiliado
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border p-8 flex flex-col items-center justify-center text-center">
+                <Gift className="h-12 w-12 text-muted-foreground/70 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Aún no hay pagos disponibles</h3>
+                <p className="text-muted-foreground max-w-md">
+                  Los pagos se generan el día 15 de cada mes. Comienza promocionando tus enlaces para generar comisiones.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-interface RegistrationProps {
-  onRegistered: () => void;
-}
-
-function AffiliateRegistration({ onRegistered }: RegistrationProps) {
+/**
+ * Componente para el registro de nuevos afiliados
+ */
+function AffiliateRegistrationView({ onRegisterSuccess }: { onRegisterSuccess: () => void }) {
   const [isRegistering, setIsRegistering] = useState(false);
   
-  // Manejar registro como afiliado
+  // Función para registrarse como afiliado
   const handleRegister = async () => {
     try {
       setIsRegistering(true);
-      await axios.post("/api/affiliate/register");
-      onRegistered(); // Recargar datos después del registro
+      
+      // Enviar solicitud de registro
+      const response = await axios.post("/api/affiliate/register", {
+        acceptsTerms: true,
+        paymentMethod: "transferencia",
+      });
+      
+      // Si es exitoso, actualizar datos
+      if (response.data) {
+        onRegisterSuccess();
+      }
     } catch (error) {
-      console.error("Error registering as affiliate:", error);
+      console.error("Error al registrarse como afiliado:", error);
+    } finally {
       setIsRegistering(false);
     }
   };
   
   return (
-    <div className="container max-w-6xl mx-auto py-12 px-4">
-      <div className="flex flex-col md:flex-row items-start gap-6 md:gap-12">
-        <div className="flex-1 space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Programa de Afiliados</h1>
-            <p className="text-muted-foreground mt-2">
-              Gana comisiones promocionando productos y servicios para artistas y creadores musicales.
-            </p>
+    <div className="container py-10">
+      <div className="max-w-5xl mx-auto">
+        {/* Cabecera */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center p-2 bg-primary/10 rounded-full mb-4">
+            <Award className="h-8 w-8 text-primary" />
           </div>
-          
-          <Alert className="bg-muted/50 border-primary/20">
-            <Info className="h-4 w-4" />
-            <AlertTitle>Todavía no eres afiliado</AlertTitle>
-            <AlertDescription>
-              Únete a nuestro programa de afiliados para empezar a promocionar productos y ganar comisiones.
-            </AlertDescription>
-          </Alert>
-          
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle>¿Por qué unirse?</CardTitle>
-              <CardDescription>Beneficios del programa de afiliados</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <BenefitCard 
-                  icon={BarChart3}
-                  title="15% de comisión"
-                  description="Obtén hasta el 15% de comisión por cada venta generada a través de tus enlaces"
-                />
-                
-                <BenefitCard 
-                  icon={Users}
-                  title="Sin límite de referidos"
-                  description="Promociona a tantas personas como quieras sin restricciones"
-                />
-                
-                <BenefitCard 
-                  icon={LineChart}
-                  title="Analíticas en tiempo real"
-                  description="Rastrea clics, conversiones y ganancias con estadísticas detalladas"
-                />
-                
-                <BenefitCard 
-                  icon={LinkIcon}
-                  title="Enlaces personalizados"
-                  description="Crea enlaces de seguimiento para cualquier producto o servicio"
-                />
+          <h1 className="text-4xl font-bold mb-4">Programa de Afiliados</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Gana comisiones por cada compra realizada a través de tus enlaces de afiliado
+          </p>
+        </div>
+        
+        {/* Beneficios */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center">
+                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-primary/10 mb-4">
+                  <BarChart className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Comisiones atractivas</h3>
+                <p className="text-muted-foreground">
+                  Gana hasta un 30% por cada venta realizada a través de tus enlaces
+                </p>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader>
-              <CardTitle>Cómo funciona</CardTitle>
-              <CardDescription>El proceso es simple</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-0">
-              <ol className="space-y-4">
-                <li className="p-4 rounded-lg border">
-                  <div className="flex gap-4">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      1
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Regístrate como afiliado</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Completa un simple registro para activar tu cuenta de afiliado
-                      </p>
-                    </div>
-                  </div>
-                </li>
-                
-                <li className="p-4 rounded-lg border">
-                  <div className="flex gap-4">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      2
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Crea enlaces personalizados</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Genera enlaces únicos para productos y servicios que quieras promocionar
-                      </p>
-                    </div>
-                  </div>
-                </li>
-                
-                <li className="p-4 rounded-lg border">
-                  <div className="flex gap-4">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      3
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Comparte con tu audiencia</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Promociona los enlaces en redes sociales, sitios web, correos electrónicos o cualquier canal
-                      </p>
-                    </div>
-                  </div>
-                </li>
-                
-                <li className="p-4 rounded-lg border">
-                  <div className="flex gap-4">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      4
-                    </div>
-                    <div>
-                      <h3 className="font-medium">Recibe comisiones</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Gana una comisión por cada compra realizada a través de tus enlaces
-                      </p>
-                    </div>
-                  </div>
-                </li>
-              </ol>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center">
+                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-primary/10 mb-4">
+                  <Globe className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Herramientas de promoción</h3>
+                <p className="text-muted-foreground">
+                  Acceso a materiales promocionales y enlaces personalizados
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center">
+                <div className="h-12 w-12 rounded-full flex items-center justify-center bg-primary/10 mb-4">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Soporte dedicado</h3>
+                <p className="text-muted-foreground">
+                  Equipo de soporte para maximizar tus resultados
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
         
-        <div className="md:w-80 lg:w-96 space-y-6">
-          <Card className="border-primary/20">
-            <CardHeader className="pb-2">
-              <CardTitle>Únete hoy mismo</CardTitle>
-              <CardDescription>
-                Regístrate ahora y comienza a ganar comisiones
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <BadgeCheck className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="text-sm">Registro gratuito</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <BadgeCheck className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="text-sm">Comisiones hasta del 15%</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <BadgeCheck className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="text-sm">Pagos mensuales</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <BadgeCheck className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="text-sm">Sin requisitos mínimos</span>
-                </div>
-              </div>
-              
-              <Separator className="my-2" />
-              
-              <div className="bg-muted/30 p-4 rounded-lg">
-                <div className="flex items-center gap-2 mb-1">
-                  <Share className="h-4 w-4 text-primary" />
-                  <p className="font-medium text-sm">Programa recomendado</p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Más de 1,000 afiliados ya están ganando con nosotros. ¡Únete ahora!
+        {/* Niveles y comisiones */}
+        <Card className="mb-12">
+          <CardHeader>
+            <CardTitle>Niveles y comisiones</CardTitle>
+            <CardDescription>Aumenta tus ganancias a medida que generas más ventas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="border rounded-lg p-6 relative">
+                <div className="text-sm font-medium text-muted-foreground mb-1">Nivel Básico</div>
+                <div className="text-2xl font-bold mb-2">15%</div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Comisión por cada venta
                 </p>
+                <Separator className="my-4" />
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <span>Acceso al dashboard básico</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <span>Materiales promocionales</span>
+                  </li>
+                </ul>
               </div>
-            </CardContent>
-            <CardContent className="pt-0">
+              
+              <div className="border rounded-lg p-6 relative bg-primary/5 border-primary/20 shadow-sm">
+                <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/3">
+                  <div className="bg-primary px-3 py-1 rounded-full text-xs font-semibold text-primary-foreground">
+                    Popular
+                  </div>
+                </div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">Nivel Pro</div>
+                <div className="text-2xl font-bold mb-2">25%</div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Desde 10 ventas al mes
+                </p>
+                <Separator className="my-4" />
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <span>Todos los beneficios del nivel básico</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <span>Enlaces personalizados</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <span>Estadísticas avanzadas</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="border rounded-lg p-6 relative">
+                <div className="text-sm font-medium text-muted-foreground mb-1">Nivel Elite</div>
+                <div className="text-2xl font-bold mb-2">30%</div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Desde 25 ventas al mes
+                </p>
+                <Separator className="my-4" />
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <span>Todos los beneficios del nivel Pro</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <span>Acceso anticipado a productos</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <span>Soporte prioritario</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* CTA */}
+        <Card>
+          <CardContent className="pt-6 pb-8">
+            <div className="max-w-xl mx-auto text-center">
+              <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary" />
+              <h2 className="text-2xl font-bold mb-3">¿Estás listo para empezar a ganar?</h2>
+              <p className="text-muted-foreground mb-6">
+                Únete a nuestro programa de afiliados y comienza a promocionar nuestros productos para ganar comisiones atractivas.
+              </p>
               <Button 
-                className="w-full gap-1" 
                 size="lg" 
+                className="gap-2"
                 onClick={handleRegister}
                 disabled={isRegistering}
               >
                 {isRegistering ? (
-                  <>
-                    <ProgressCircular className="mr-1" size="sm" />
-                    Procesando...
-                  </>
+                  "Registrando..."
                 ) : (
                   <>
                     Registrarme como afiliado
-                    <ChevronRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </Button>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Términos y condiciones</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-muted-foreground space-y-2">
-                <li>Las comisiones se acumulan cuando una compra es completada exitosamente</li>
-                <li>El pago mínimo es de 50€ para recibir un desembolso</li>
-                <li>Los pagos se procesan el día 15 de cada mes</li>
-                <li>Las comisiones por ventas se acreditan después de 30 días para permitir reembolsos</li>
-              </ul>
-              <Button 
-                variant="link" 
-                className="p-0 h-auto mt-2 text-xs" 
-                onClick={() => window.open('/terms', '_blank')}
-              >
-                Ver términos completos
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface BenefitCardProps {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-}
-
-function BenefitCard({ icon: Icon, title, description }: BenefitCardProps) {
-  return (
-    <div className="bg-muted/20 p-4 rounded-lg">
-      <div className="flex items-start gap-3">
-        <div className="p-2 rounded-md bg-primary/10">
-          <Icon className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <h3 className="font-medium">{title}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
-        </div>
+              
+              <p className="text-xs text-muted-foreground mt-4">
+                Al registrarte, aceptas los términos y condiciones del programa de afiliados.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

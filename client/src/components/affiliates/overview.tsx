@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -8,20 +8,18 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Button } from "../ui/button";
 import {
-  BarChart3,
-  ChevronRight,
-  CircleDollarSign,
-  Clock,
-  Download,
-  HelpCircle,
-  Link,
+  ArrowRight,
+  Coins,
+  DollarSign,
+  TrendingUp,
+  Users,
+  LineChart,
   MousePointerClick,
   ShoppingCart,
-  Users,
 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ProgressCircular } from "../ui/progress-circular";
 import {
   Tooltip,
@@ -29,631 +27,547 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { Separator } from "../ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Badge } from "../ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
+import { Separator } from "../ui/separator";
+
+// Definir interfaces para los datos
+interface AffiliateStats {
+  totalClicks: number;
+  totalSales: number;
+  totalCommission: number;
+  conversionRate: number;
+  clicksThisMonth: number;
+  salesThisMonth: number;
+  commissionThisMonth: number;
+  pendingCommission: number;
+  nextPayment: {
+    date: string;
+    amount: number;
+  };
+  levelProgress: {
+    currentLevel: string;
+    progress: number;
+    nextLevel: string | null;
+    salesNeeded: number;
+  };
+  recentClicks: Array<{
+    id: string;
+    date: string;
+    productName: string;
+    converted: boolean;
+  }>;
+  recentSales: Array<{
+    id: string;
+    date: string;
+    productName: string;
+    amount: number;
+    commission: number;
+    status: "pending" | "paid";
+  }>;
+}
+
+interface AffiliateData {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  status: "active" | "pending" | "suspended";
+  level: "basic" | "pro" | "elite";
+  createdAt: string;
+  payoutMethod: string;
+  payoutDetails?: string;
+  avatarUrl?: string;
+  stats: AffiliateStats;
+}
+
+interface AffiliateOverviewProps {
+  affiliateData: AffiliateData;
+}
 
 /**
- * Componente que muestra una visión general del programa de afiliados
- * incluyendo estadísticas, ganancias, y conversiones recientes.
+ * Panel de resumen del programa de afiliados
+ * Muestra métricas, estadísticas y datos importantes para el afiliado
  */
-export function AffiliateOverview() {
-  const [timeframe, setTimeframe] = useState("30d");
-  const [statsTab, setStatsTab] = useState("general");
-
-  // Obtener estadísticas del afiliado
-  const {
-    data: statsData,
-    isLoading: statsLoading,
-    isError: statsError,
-  } = useQuery({
-    queryKey: ["affiliate", "stats", timeframe],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(`/api/affiliate/stats?period=${timeframe}`);
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching affiliate stats:", error);
-        throw error;
-      }
-    },
-  });
-
-  // Obtener ganancias del afiliado
-  const {
-    data: earningsData,
-    isLoading: earningsLoading,
-    isError: earningsError,
-  } = useQuery({
+export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
+  // Consultar estadísticas actualizadas de afiliados
+  const { data: earningsData, isLoading: isLoadingEarnings } = useQuery({
     queryKey: ["affiliate", "earnings"],
     queryFn: async () => {
-      try {
-        const response = await axios.get("/api/affiliate/earnings");
-        return response.data;
-      } catch (error) {
-        console.error("Error fetching affiliate earnings:", error);
-        throw error;
-      }
+      const response = await axios.get("/api/affiliate/earnings");
+      return response.data;
     },
+    enabled: !!affiliateData,
+    refetchInterval: 60000 * 5, // Actualizar cada 5 minutos
   });
 
-  // Estado de carga para cualquiera de las consultas
-  const isLoading = statsLoading || earningsLoading;
-  
-  // Si hay un error, mostrar mensaje de error
-  if (statsError || earningsError) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Error al cargar los datos</AlertTitle>
-        <AlertDescription>
-          No pudimos cargar la información de afiliado. Por favor, intenta de nuevo más tarde.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  // Si está cargando, mostrar esqueleto
-  if (isLoading) {
-    return <OverviewSkeleton />;
-  }
+  // Extraer datos relevantes
+  const stats = affiliateData?.stats || {
+    totalClicks: 0,
+    totalSales: 0,
+    totalCommission: 0,
+    conversionRate: 0,
+    clicksThisMonth: 0,
+    salesThisMonth: 0,
+    commissionThisMonth: 0,
+    pendingCommission: 0,
+    nextPayment: {
+      date: new Date(
+        new Date().getFullYear(),
+        new Date().getMonth() + 1,
+        15
+      ).toISOString(),
+      amount: 0,
+    },
+    levelProgress: {
+      currentLevel: "basic",
+      progress: 0,
+      nextLevel: "pro",
+      salesNeeded: 10,
+    },
+    recentClicks: [],
+    recentSales: [],
+  };
+
+  // Calcular estadísticas adicionales
+  const averageCommissionPerSale =
+    stats.totalSales > 0 ? stats.totalCommission / stats.totalSales : 0;
+
+  // Obtener detalles del nivel
+  const levelDetails = {
+    basic: {
+      title: "Básico",
+      commission: "15%",
+      next: "pro",
+      color: "text-blue-500",
+      bgColor: "bg-blue-100",
+    },
+    pro: {
+      title: "Pro",
+      commission: "25%",
+      next: "elite",
+      color: "text-purple-500",
+      bgColor: "bg-purple-100",
+    },
+    elite: {
+      title: "Elite",
+      commission: "30%",
+      next: null,
+      color: "text-amber-500",
+      bgColor: "bg-amber-100",
+    },
+  };
+
+  const currentLevel = affiliateData?.level || "basic";
+  const levelInfo = levelDetails[currentLevel as keyof typeof levelDetails];
 
   return (
     <div className="space-y-6">
-      {/* Sección de resumen */}
+      {/* Tarjetas de resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Clics Totales"
-          value={statsData?.totalClicks || 0}
-          description={`${timeframe === "30d" ? "Últimos 30 días" : timeframe === "7d" ? "Últimos 7 días" : "Todo el tiempo"}`}
-          icon={MousePointerClick}
-          iconColor="text-blue-500"
-          iconBgColor="bg-blue-100 dark:bg-blue-900/20"
-          change={statsData?.clicksChange}
-        />
-        
-        <StatCard
-          title="Conversiones"
-          value={statsData?.totalConversions || 0}
-          description={`Tasa de conversión: ${statsData?.conversionRate || 0}%`}
-          icon={ShoppingCart}
-          iconColor="text-green-500"
-          iconBgColor="bg-green-100 dark:bg-green-900/20"
-          change={statsData?.conversionsChange}
-        />
-        
-        <StatCard
-          title="Ingresos Generados"
-          value={formatCurrency(statsData?.totalRevenue || 0)}
-          description="Valor total de ventas generadas"
-          icon={BarChart3}
-          iconColor="text-indigo-500"
-          iconBgColor="bg-indigo-100 dark:bg-indigo-900/20"
-          change={statsData?.revenueChange}
-          isCurrency
-        />
-        
-        <StatCard
-          title="Ganancias"
-          value={formatCurrency(statsData?.totalEarnings || 0)}
-          description="Comisiones acumuladas"
-          icon={CircleDollarSign}
-          iconColor="text-purple-500"
-          iconBgColor="bg-purple-100 dark:bg-purple-900/20"
-          change={statsData?.earningsChange}
-          isCurrency
-        />
-      </div>
-      
-      {/* Sección de ganancias e historial */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <Card className="col-span-1 lg:col-span-5">
-          <CardHeader className="pb-3">
+        <Card>
+          <CardContent className="py-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Ganancias</CardTitle>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <HelpCircle className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-80">
-                    <p>
-                      Las comisiones se procesan el día 15 del mes siguiente al mes de la venta.
-                      Las ventas tienen un período de espera de 30 días para permitir reembolsos.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <CardDescription>Resumen de tus ganancias y pagos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Disponible para cobro</p>
-                  <h3 className="text-2xl font-bold">{formatCurrency(earningsData?.available || 0)}</h3>
-                </div>
-                
-                <Button
-                  size="sm"
-                  disabled={!earningsData?.available || earningsData.available < 50}
-                >
-                  Solicitar pago
-                </Button>
-              </div>
-              
-              <Separator />
-              
-              <div className="flex justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Pendiente</p>
-                  <p className="font-medium">{formatCurrency(earningsData?.pending || 0)}</p>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">Se libera en 30 días</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Pagado (total)</p>
-                  <p className="font-medium">{formatCurrency(earningsData?.paid || 0)}</p>
-                  <div className="flex items-center gap-1">
-                    <Users className="h-3 w-3 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">De {earningsData?.paidCount || 0} pagos</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Próximo pago</p>
-                  <p className="font-medium">{earningsData?.nextPaymentDate || "N/A"}</p>
-                  <div className="flex items-center gap-1">
-                    <CircleDollarSign className="h-3 w-3 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">
-                      {earningsData?.available >= 50
-                        ? "Elegible para cobro"
-                        : earningsData?.available > 0
-                        ? `Necesitas €${50 - earningsData.available} más`
-                        : "Sin fondos"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Historial de pagos</h4>
-                
-                {earningsData?.payments?.length > 0 ? (
-                  <div className="space-y-2">
-                    {earningsData.payments.slice(0, 2).map((payment: any) => (
-                      <div key={payment.id} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                        <div>
-                          <p className="text-sm font-medium">{formatCurrency(payment.amount)}</p>
-                          <p className="text-xs text-muted-foreground">{payment.date}</p>
-                        </div>
-                        <Badge
-                          variant={
-                            payment.status === "completed"
-                              ? "success"
-                              : payment.status === "processing"
-                              ? "outline"
-                              : "secondary"
-                          }
-                        >
-                          {payment.status === "completed"
-                            ? "Completado"
-                            : payment.status === "processing"
-                            ? "Procesando"
-                            : payment.status === "pending"
-                            ? "Pendiente"
-                            : payment.status}
-                        </Badge>
-                      </div>
-                    ))}
-                    
-                    {earningsData.payments.length > 2 && (
-                      <div className="text-center">
-                        <Button variant="link" size="sm" className="text-xs">
-                          Ver todo el historial
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center p-4 text-sm text-muted-foreground">
-                    No hay pagos registrados todavía
-                  </div>
-                )}
-              </div>
-
-              {/* Sección de información sobre métodos de pago */}
-              <div className="bg-muted/30 p-3 rounded-md">
-                <h4 className="text-sm font-medium flex items-center gap-1">
-                  <CircleDollarSign className="h-4 w-4" />
-                  Métodos de pago
-                </h4>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Métodos de pago disponibles: PayPal, transferencia bancaria o crédito en cuenta.
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">
+                  Clics Totales
                 </p>
-                <div className="mt-2">
-                  <Button variant="link" size="sm" className="p-0 h-auto text-xs">
-                    Configurar método de pago
-                  </Button>
+                <div className="text-2xl font-bold">
+                  {stats.totalClicks.toLocaleString()}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span
+                    className={`inline-flex items-center ${
+                      stats.clicksThisMonth > 0
+                        ? "text-green-500"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {stats.clicksThisMonth > 0 && (
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                    )}
+                    {stats.clicksThisMonth} este mes
+                  </span>
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <MousePointerClick className="h-5 w-5 text-blue-500" />
               </div>
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="col-span-1 lg:col-span-7">
-          <CardHeader className="pb-3">
+
+        <Card>
+          <CardContent className="py-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Estadísticas</CardTitle>
-              <Select
-                value={timeframe}
-                onValueChange={(value) => setTimeframe(value)}
-              >
-                <SelectTrigger className="w-36 h-8">
-                  <SelectValue placeholder="Período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7d">Últimos 7 días</SelectItem>
-                  <SelectItem value="30d">Últimos 30 días</SelectItem>
-                  <SelectItem value="90d">Últimos 90 días</SelectItem>
-                  <SelectItem value="all">Todo el tiempo</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">
+                  Ventas Totales
+                </p>
+                <div className="text-2xl font-bold">
+                  {stats.totalSales.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span
+                    className={`inline-flex items-center ${
+                      stats.salesThisMonth > 0
+                        ? "text-green-500"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {stats.salesThisMonth > 0 && (
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                    )}
+                    {stats.salesThisMonth} este mes
+                  </span>
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                <ShoppingCart className="h-5 w-5 text-green-500" />
+              </div>
             </div>
-            <CardDescription>Desempeño de tus enlaces de afiliado</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={statsTab} onValueChange={setStatsTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="products">Por Producto</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="general" className="mt-4 space-y-4">
-                {statsData?.clicksByDay?.length > 0 ? (
-                  <div className="space-y-6">
-                    <div className="h-[200px] w-full bg-muted/30 rounded-md flex items-center justify-center">
-                      <p className="text-sm text-muted-foreground">Gráfica de rendimiento</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Últimas conversiones</h4>
-                      
-                      {statsData?.recentConversions?.length > 0 ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Fecha</TableHead>
-                              <TableHead>Producto</TableHead>
-                              <TableHead className="text-right">Valor</TableHead>
-                              <TableHead className="text-right">Comisión</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {statsData.recentConversions.map((conversion: any) => (
-                              <TableRow key={conversion.id}>
-                                <TableCell className="text-xs">
-                                  {conversion.date}
-                                </TableCell>
-                                <TableCell className="max-w-[200px] truncate text-xs">
-                                  {conversion.productName}
-                                </TableCell>
-                                <TableCell className="text-right text-xs">
-                                  {formatCurrency(conversion.amount)}
-                                </TableCell>
-                                <TableCell className="text-right text-xs">
-                                  {formatCurrency(conversion.commission)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      ) : (
-                        <div className="text-center p-4 text-sm text-muted-foreground">
-                          No hay conversiones registradas en este período
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1 text-xs">
-                            <Download className="h-3.5 w-3.5" />
-                            Exportar datos
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Exportar datos de afiliados</DialogTitle>
-                            <DialogDescription>
-                              Selecciona el formato y el período para exportar tus datos de afiliados.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-medium">Formato</h4>
-                              <div className="flex gap-2">
-                                <Button variant="outline" size="sm" className="gap-1">
-                                  <Download className="h-4 w-4" />
-                                  CSV
-                                </Button>
-                                <Button variant="outline" size="sm" className="gap-1">
-                                  <Download className="h-4 w-4" />
-                                  Excel
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-medium">Período</h4>
-                              <Select defaultValue="30d">
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona un período" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="7d">Últimos 7 días</SelectItem>
-                                  <SelectItem value="30d">Últimos 30 días</SelectItem>
-                                  <SelectItem value="90d">Últimos 90 días</SelectItem>
-                                  <SelectItem value="all">Todo el tiempo</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button variant="outline" className="w-full sm:w-auto">
-                              Descargar informe
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">
+                  Comisión Total
+                </p>
+                <div className="text-2xl font-bold">
+                  ${stats.totalCommission.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span
+                    className={`inline-flex items-center ${
+                      stats.commissionThisMonth > 0
+                        ? "text-green-500"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {stats.commissionThisMonth > 0 && (
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                    )}
+                    ${stats.commissionThisMonth.toFixed(2)} este mes
+                  </span>
+                </p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">
+                  Tasa de Conversión
+                </p>
+                <div className="text-2xl font-bold">
+                  {(stats.conversionRate * 100).toFixed(1)}%
+                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="text-xs text-muted-foreground mt-1 cursor-help">
+                        <span className="underline dotted">¿Qué es esto?</span>
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>
+                        Porcentaje de clics que resultan en ventas. Una tasa más
+                        alta indica mejor efectividad de tus enlaces.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <LineChart className="h-5 w-5 text-amber-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detalles de nivel y progreso */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle>Nivel de Afiliado</CardTitle>
+              <CardDescription>
+                Tu nivel determina el porcentaje de comisión
+              </CardDescription>
+            </div>
+            <Badge
+              className={`${levelInfo.bgColor} ${levelInfo.color} border-0 hover:${levelInfo.bgColor}`}
+            >
+              Nivel {levelInfo.title}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="col-span-2">
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {levelInfo.title}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({levelInfo.commission} comisión)
+                    </span>
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 text-center">
-                    <div className="mb-3 rounded-full bg-muted/30 p-3">
-                      <Link className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <h3 className="mb-1 text-base font-medium">Sin datos aún</h3>
-                    <p className="mb-4 text-sm text-muted-foreground">
-                      Aún no hay estadísticas disponibles para este período.
-                    </p>
-                    <Button variant="outline" size="sm" className="gap-1" asChild>
-                      <a href="/affiliates?tab=links">
-                        Crear enlaces
-                        <ChevronRight className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="products" className="mt-4 space-y-4">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Rendimiento por producto</h4>
-                  
-                  {statsData?.productStats?.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Producto</TableHead>
-                          <TableHead className="text-right">Clics</TableHead>
-                          <TableHead className="text-right">Conversiones</TableHead>
-                          <TableHead className="text-right">Tasa</TableHead>
-                          <TableHead className="text-right">Comisiones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {statsData.productStats.map((product: any) => (
-                          <TableRow key={product.id}>
-                            <TableCell className="max-w-[200px] truncate text-xs">
-                              {product.name}
-                            </TableCell>
-                            <TableCell className="text-right text-xs">{product.clicks}</TableCell>
-                            <TableCell className="text-right text-xs">{product.conversions}</TableCell>
-                            <TableCell className="text-right text-xs">{product.conversionRate}%</TableCell>
-                            <TableCell className="text-right text-xs">
-                              {formatCurrency(product.earnings)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="text-center p-4 text-sm text-muted-foreground">
-                      No hay datos de productos para este período
+                  {stats.levelProgress.nextLevel && (
+                    <div className="text-sm font-medium">
+                      {stats.levelProgress.nextLevel === "pro"
+                        ? "Pro"
+                        : "Elite"}
                     </div>
                   )}
                 </div>
-                
-                <div className="flex justify-end">
-                  <Button variant="link" size="sm" asChild>
-                    <a href="/affiliates?tab=links">Ver todos los productos</a>
+
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full"
+                    style={{ width: `${stats.levelProgress.progress}%` }}
+                  ></div>
+                </div>
+
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {stats.levelProgress.nextLevel ? (
+                    <span>
+                      {stats.levelProgress.salesNeeded} ventas más para alcanzar
+                      el nivel{" "}
+                      {stats.levelProgress.nextLevel === "pro"
+                        ? "Pro"
+                        : "Elite"}
+                    </span>
+                  ) : (
+                    <span className="text-green-500">
+                      ¡Has alcanzado el nivel máximo!
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-muted/30 p-2 rounded-md">
+                  <div className="text-xl font-semibold">
+                    {stats.totalClicks}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Clics Totales
+                  </div>
+                </div>
+                <div className="bg-muted/30 p-2 rounded-md">
+                  <div className="text-xl font-semibold">
+                    ${averageCommissionPerSale.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Comisión Media
+                  </div>
+                </div>
+                <div className="bg-muted/30 p-2 rounded-md">
+                  <div className="text-xl font-semibold">
+                    ${stats.pendingCommission.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Pendiente de Pago
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="flex flex-col items-center justify-center h-full">
+                <div className="relative mb-2">
+                  <ProgressCircular
+                    value={stats.levelProgress.progress}
+                    size="lg"
+                    className="text-primary"
+                  >
+                    <span className="text-sm font-medium">
+                      {stats.levelProgress.progress.toFixed(0)}%
+                    </span>
+                  </ProgressCircular>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-sm font-medium">Próximo pago</div>
+                  <div className="text-lg font-bold">
+                    $
+                    {stats.nextPayment.amount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(stats.nextPayment.date).toLocaleDateString(
+                      "es-ES",
+                      {
+                        day: "numeric",
+                        month: "long",
+                      }
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Actividad Reciente */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Actividad Reciente</CardTitle>
+          <CardDescription>
+            Últimos clics y ventas de tus enlaces de afiliado
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="sales">
+            <TabsList className="mb-4">
+              <TabsTrigger value="sales">Ventas</TabsTrigger>
+              <TabsTrigger value="clicks">Clics</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="sales">
+              {stats.recentSales && stats.recentSales.length > 0 ? (
+                <div className="space-y-4">
+                  {stats.recentSales.map((sale) => (
+                    <div
+                      key={sale.id}
+                      className="flex items-start justify-between py-2 border-b last:border-b-0"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <ShoppingCart className="h-4 w-4 text-green-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{sale.productName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(sale.date).toLocaleDateString("es-ES", {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end">
+                        <div className="font-semibold">
+                          +${sale.commission.toFixed(2)}
+                        </div>
+                        <Badge
+                          variant={
+                            sale.status === "paid" ? "default" : "outline"
+                          }
+                          className="text-xs"
+                        >
+                          {sale.status === "paid" ? "Pagado" : "Pendiente"}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-md border p-8 flex flex-col items-center justify-center text-center">
+                  <Coins className="h-12 w-12 text-muted-foreground/70 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">
+                    Aún no hay ventas
+                  </h3>
+                  <p className="text-muted-foreground max-w-md mb-4">
+                    Comparte tus enlaces con clientes potenciales para empezar a
+                    generar ventas y comisiones.
+                  </p>
+                  <Button variant="secondary" className="gap-2">
+                    Crear nuevo enlace
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
+              )}
+            </TabsContent>
 
-// Formatea un valor numérico como moneda
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 2,
-  }).format(value);
-}
+            <TabsContent value="clicks">
+              {stats.recentClicks && stats.recentClicks.length > 0 ? (
+                <div className="space-y-4">
+                  {stats.recentClicks.map((click) => (
+                    <div
+                      key={click.id}
+                      className="flex items-start justify-between py-2 border-b last:border-b-0"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`h-10 w-10 rounded-full ${
+                            click.converted
+                              ? "bg-green-100"
+                              : "bg-blue-100"
+                          } flex items-center justify-center`}
+                        >
+                          {click.converted ? (
+                            <ShoppingCart className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <MousePointerClick className="h-4 w-4 text-blue-500" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">{click.productName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(click.date).toLocaleDateString("es-ES", {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
 
-// Componente para mostrar una tarjeta de estadística
-interface StatCardProps {
-  title: string;
-  value: number | string;
-  description: string;
-  icon: React.ElementType;
-  iconColor: string;
-  iconBgColor: string;
-  change?: number;
-  isCurrency?: boolean;
-}
-
-function StatCard({
-  title,
-  value,
-  description,
-  icon: Icon,
-  iconColor,
-  iconBgColor,
-  change,
-  isCurrency = false,
-}: StatCardProps) {
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <h3 className="text-2xl font-bold">{value}</h3>
-          </div>
-          
-          <div className={`${iconBgColor} p-2 rounded-md`}>
-            <Icon className={`h-5 w-5 ${iconColor}`} />
-          </div>
-        </div>
-        
-        <div className="mt-2 flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{description}</p>
-          
-          {typeof change === "number" && (
-            <div
-              className={`text-xs font-medium ${
-                change >= 0 ? "text-green-600" : "text-red-600"
-              } flex items-center gap-0.5`}
-            >
-              {change >= 0 ? "+" : ""}
-              {isCurrency
-                ? formatCurrency(change)
-                : `${change.toFixed(1)}%`}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Componente para mostrar un esqueleto durante la carga
-function OverviewSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2">
-                  <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
-                  <div className="h-7 w-16 bg-muted rounded animate-pulse"></div>
+                      <div>
+                        <Badge
+                          variant={click.converted ? "default" : "outline"}
+                          className="text-xs"
+                        >
+                          {click.converted ? "Convertido" : "Solo clic"}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="h-9 w-9 bg-muted rounded animate-pulse"></div>
-              </div>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="h-3 w-24 bg-muted rounded animate-pulse"></div>
-                <div className="h-3 w-10 bg-muted rounded animate-pulse"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <Card className="col-span-1 lg:col-span-5">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div className="h-5 w-24 bg-muted rounded animate-pulse"></div>
-            </div>
-            <div className="h-4 w-40 bg-muted rounded animate-pulse mt-1"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
-                  <div className="h-7 w-24 bg-muted rounded animate-pulse mt-2"></div>
+              ) : (
+                <div className="rounded-md border p-8 flex flex-col items-center justify-center text-center">
+                  <MousePointerClick className="h-12 w-12 text-muted-foreground/70 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">
+                    Aún no hay clics registrados
+                  </h3>
+                  <p className="text-muted-foreground max-w-md mb-4">
+                    Comparte tus enlaces con clientes potenciales y comienza a
+                    rastrear clics en tus enlaces.
+                  </p>
+                  <Button variant="secondary" className="gap-2">
+                    Crear nuevo enlace
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="h-8 w-28 bg-muted rounded animate-pulse"></div>
-              </div>
-              
-              <div className="h-px w-full bg-muted"></div>
-              
-              <div className="flex justify-between">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
-                    <div className="h-5 w-16 bg-muted rounded animate-pulse"></div>
-                    <div className="h-3 w-24 bg-muted rounded animate-pulse"></div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="h-px w-full bg-muted"></div>
-              
-              <div className="flex justify-center">
-                <ProgressCircular />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="col-span-1 lg:col-span-7">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div className="h-5 w-24 bg-muted rounded animate-pulse"></div>
-              <div className="h-8 w-32 bg-muted rounded animate-pulse"></div>
-            </div>
-            <div className="h-4 w-48 bg-muted rounded animate-pulse mt-1"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center mt-8 mb-8">
-              <ProgressCircular size="lg" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

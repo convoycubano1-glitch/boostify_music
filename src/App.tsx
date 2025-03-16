@@ -14,7 +14,7 @@ const App = () => {
         <Route path="/" component={HomePage} />
         <Route path="/tokenizacion" component={TokenizationPage} />
         <Route path="/afiliados" component={AffiliatePage} />
-        <Route path="/affiliate/link/:linkId" component={AffiliateRedirect} />
+        <Route path="/affiliate/:linkId/:slug?" component={AffiliateRedirect} />
         <Route component={NotFound} />
       </Switch>
     </div>

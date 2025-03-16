@@ -1,127 +1,143 @@
-import * as React from "react";
+import React from "react";
 import { cn } from "../../lib/utils";
 
-interface ProgressCircularProps extends React.HTMLAttributes<HTMLDivElement> {
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  thickness?: number;
-  indeterminate?: boolean;
+export interface ProgressCircularProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * El valor de progreso (0-100)
+   * Si se omite, se muestra un spinner indeterminado
+   */
   value?: number;
-  color?: "primary" | "secondary" | "default";
+  
+  /**
+   * El tamaño del componente
+   */
+  size?: "xs" | "sm" | "md" | "lg";
+  
+  /**
+   * Si es true, la animación se detiene
+   */
+  paused?: boolean;
+  
+  /**
+   * Clases CSS adicionales
+   */
+  className?: string;
+  
+  /**
+   * Variante de color
+   */
+  variant?: "default" | "primary" | "secondary" | "muted";
 }
 
 /**
- * Componente de progreso circular
+ * Componente ProgressCircular
  * 
- * @example
- * // Indicador de carga indeterminado (spinner)
- * <ProgressCircular />
- * 
- * @example
- * // Indicador de progreso determinado (muestra el porcentaje)
- * <ProgressCircular value={75} />
- * 
- * @example
- * // Diferentes tamaños
- * <ProgressCircular size="sm" />
- * <ProgressCircular size="lg" />
+ * Muestra un indicador de progreso circular, que puede ser determinado o indeterminado
  */
 export function ProgressCircular({
+  value,
   size = "md",
-  thickness = 3.6,
-  indeterminate = true,
-  value = 0,
-  color = "primary",
+  paused = false,
   className,
+  variant = "primary",
   ...props
 }: ProgressCircularProps) {
-  // Calcular tamaño del círculo según el prop size
-  const sizeMap = {
-    xs: 16,
-    sm: 24,
-    md: 40,
-    lg: 56,
-    xl: 72,
+  // Calcular el valor para el círculo de progreso (para variante determinada)
+  const circleValue = value !== undefined ? Math.min(Math.max(value, 0), 100) : undefined;
+  const circumference = 2 * Math.PI * 45; // 45 es el radio del círculo SVG
+  
+  // Obtener clases de tamaño
+  const sizeClasses = {
+    xs: "h-4 w-4 border-2",
+    sm: "h-5 w-5 border-2",
+    md: "h-8 w-8 border-3",
+    lg: "h-12 w-12 border-4",
   };
   
-  const diameter = sizeMap[size];
-  const radius = diameter / 2;
-  const circumference = 2 * Math.PI * (radius - thickness);
-  const strokeDasharray = circumference.toFixed(3);
-  const strokeDashoffset = indeterminate
-    ? 0
-    : ((100 - Math.min(100, Math.max(0, value))) / 100) * circumference;
-  
-  // Calcular estilos según tamaño
-  const viewBox = `0 0 ${diameter} ${diameter}`;
-  const centerPosition = `${radius}px`;
-  const circleStyles = {
-    cx: radius,
-    cy: radius,
-    r: radius - thickness,
-    strokeWidth: thickness,
-    strokeDasharray,
-    strokeDashoffset: indeterminate ? undefined : strokeDashoffset,
-  };
-  
-  // Seleccionar color
+  // Obtener clases de color
   const colorClasses = {
-    primary: "stroke-primary",
-    secondary: "stroke-secondary",
-    default: "stroke-gray-400 dark:stroke-gray-500",
+    default: "border-muted-foreground/20",
+    primary: "border-primary/20",
+    secondary: "border-secondary/20",
+    muted: "border-muted/20",
   };
   
-  // Animación para progreso indeterminado
-  const spinnerAnimation = indeterminate
-    ? "animate-spin"
-    : "";
+  // Obtener clases de animación
+  const spinnerColorClasses = {
+    default: "border-t-muted-foreground/80",
+    primary: "border-t-primary/80",
+    secondary: "border-t-secondary/80",
+    muted: "border-t-muted/80",
+  };
+  
+  // Si es indeterminado, mostrar spinner
+  if (circleValue === undefined) {
+    return (
+      <div
+        className={cn(
+          "animate-progress-circular rounded-full border-solid",
+          sizeClasses[size],
+          colorClasses[variant],
+          spinnerColorClasses[variant],
+          paused && "!animate-none",
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+  
+  // Para la variante determinada, mostrar un círculo SVG
+  const offset = circumference - (circleValue / 100) * circumference;
   
   return (
     <div
-      role="progressbar"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={indeterminate ? undefined : value}
-      className={cn("inline-block select-none", className)}
+      className={cn(
+        "relative inline-flex items-center justify-center",
+        sizeClasses[size],
+        className
+      )}
       {...props}
     >
-      <svg
-        className={cn(
-          "transform -rotate-90",
-          spinnerAnimation
-        )}
-        viewBox={viewBox}
-        width={diameter}
-        height={diameter}
-        style={{
-          width: diameter,
-          height: diameter,
-        }}
-      >
+      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
         {/* Círculo de fondo */}
         <circle
-          className="stroke-gray-200 dark:stroke-gray-800 fill-none"
-          cx={circleStyles.cx}
-          cy={circleStyles.cy}
-          r={circleStyles.r}
-          strokeWidth={circleStyles.strokeWidth}
+          className={cn(
+            "stroke-current text-muted/20",
+            colorClasses[variant].replace("border-", "text-")
+          )}
+          cx="50"
+          cy="50"
+          r="45"
+          fill="none"
+          strokeWidth="8"
         />
         
         {/* Círculo de progreso */}
         <circle
           className={cn(
-            "transition-all duration-300 ease-in-out fill-none",
-            colorClasses[color],
-            indeterminate && "animate-progress-circular",
+            "stroke-current",
+            spinnerColorClasses[variant].replace("border-t-", "text-")
           )}
-          cx={circleStyles.cx}
-          cy={circleStyles.cy}
-          r={circleStyles.r}
-          strokeWidth={circleStyles.strokeWidth}
-          strokeDasharray={circleStyles.strokeDasharray}
-          strokeDashoffset={circleStyles.strokeDashoffset}
+          cx="50"
+          cy="50"
+          r="45"
+          fill="none"
+          strokeWidth="8"
           strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{
+            transition: "stroke-dashoffset 0.3s ease-in-out",
+          }}
         />
       </svg>
+      
+      {props.children && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          {props.children}
+        </div>
+      )}
     </div>
   );
 }
