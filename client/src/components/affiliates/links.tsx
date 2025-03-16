@@ -1,592 +1,463 @@
 import { useState } from "react";
-import { useAuth } from "../../hooks/use-auth";
-import { db } from "../../lib/firebase";
-import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Badge } from "../ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { Separator } from "../ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "../ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
-import { AlertCircle, CheckCircle2, Loader2, Copy, Link, BarChart, Trash2, PlusCircle, ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { Link, LinkIcon, Plus, Copy, ExternalLink, Trash2, BarChart3, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useToast } from "../../hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { Skeleton } from "../ui/skeleton";
 
-interface AffiliateLinksProps {
-  affiliateData: {
-    id: string;
-    level?: string;
-    name?: string;
-    links?: any[];
-  } | null;
-}
-
-// Validation schema for creating a new link
-const newLinkFormSchema = z.object({
-  productId: z.string({ required_error: "Selecciona un producto" }),
-  campaign: z.string().min(3, { message: "La campaña debe tener al menos 3 caracteres" }).max(50, { message: "La campaña no puede exceder los 50 caracteres" }).optional().or(z.literal("")),
-  utmSource: z.string().optional().or(z.literal("")),
-  utmMedium: z.string().optional().or(z.literal("")),
-  utmCampaign: z.string().optional().or(z.literal("")),
-});
-
-type NewLinkFormValues = z.infer<typeof newLinkFormSchema>;
-
-// Tipo para un enlace de afiliado
-interface AffiliateLink {
-  id: string;
-  affiliateId: string;
-  productId: string;
-  url: string;
-  campaign?: string;
-  utmParams?: {
-    source?: string;
-    medium?: string;
-    campaign?: string;
-  };
-  clicks: number;
-  conversions: number;
-  earnings: number;
-  createdAt: any;
-}
-
-// Tipo para un producto disponible para afiliados
 interface AffiliateProduct {
   id: string;
   name: string;
-  description?: string;
-  url?: string;
+  description: string;
+  url: string;
+  imageUrl: string;
   commissionRate: number;
-  category?: string;
-  imageUrl?: string;
+  type: string;
+  category: string;
 }
 
-export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
-  const { user } = useAuth() || {};
+interface AffiliateLink {
+  id: string;
+  productId: string;
+  campaign: string;
+  url: string;
+  clicks: number;
+  conversions: number;
+  earnings: number;
+  product: {
+    id: string;
+    name: string;
+    url: string;
+    imageUrl: string;
+    commissionRate: number;
+  };
+  createdAt: Date;
+  utmParams: {
+    source: string;
+    medium: string;
+    campaign: string;
+  };
+}
+
+export function AffiliateLinks() {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState("");
+  const [campaign, setCampaign] = useState("");
+  const [utmSource, setUtmSource] = useState("boostify_affiliate");
+  const [utmMedium, setUtmMedium] = useState("affiliate");
+  const [utmCampaign, setUtmCampaign] = useState("");
+  const [tab, setTab] = useState("all");
+
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isCreatingLink, setIsCreatingLink] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [sortColumn, setSortColumn] = useState<string>("createdAt");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  // Inicializar useForm para el formulario de nuevo enlace
-  const form = useForm<NewLinkFormValues>({
-    resolver: zodResolver(newLinkFormSchema),
-    defaultValues: {
-      productId: "",
-      campaign: "",
-      utmSource: "boostify_affiliate",
-      utmMedium: "affiliate",
-      utmCampaign: "",
-    },
-  });
-
-  // Query to get products available to affiliates
-  const { data: products, isLoading: isLoadingProducts } = useQuery({
-    queryKey: ["affiliate-products"],
+  // Fetch affiliate products
+  const { data: productsData, isLoading: isLoadingProducts } = useQuery<{success: boolean, data: AffiliateProduct[]}>({
+    queryKey: ["affiliate", "products"],
     queryFn: async () => {
-      const productsRef = collection(db, "affiliateProducts");
-      const querySnapshot = await getDocs(productsRef);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as AffiliateProduct[];
-    },
+      const response = await axios.get('/api/affiliate/products');
+      return response.data;
+    }
   });
 
-  // Query to get the user's affiliate links
-  const { data: affiliateLinks, isLoading: isLoadingLinks } = useQuery({
-    queryKey: ["affiliate-links", user?.uid],
+  // Fetch affiliate links
+  const { data: linksData, isLoading: isLoadingLinks, error: linksError } = useQuery<{success: boolean, data: AffiliateLink[]}>({
+    queryKey: ["affiliate", "links"],
     queryFn: async () => {
-      if (!user?.uid) return [];
-      
-      const linksRef = collection(db, "affiliateLinks");
-      const q = query(linksRef, where("affiliateId", "==", user.uid));
-      const querySnapshot = await getDocs(q);
-      
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      })) as AffiliateLink[];
-    },
-    enabled: !!user?.uid,
+      const response = await axios.get('/api/affiliate/links');
+      return response.data;
+    }
   });
 
-  // Mutation to create a new affiliate link
+  // Create new affiliate link
   const createLinkMutation = useMutation({
-    mutationFn: async (data: NewLinkFormValues) => {
-      if (!user?.uid) throw new Error("User not authenticated");
-      
-      // Find selected product information
-      const selectedProduct = products?.find(p => p.id === data.productId);
-      if (!selectedProduct) throw new Error("Product not found");
-      
-      // Create link with affiliate parameters
-      let baseUrl = selectedProduct.url || `https://boostify.com/products/${selectedProduct.id}`;
-      
-      // Ensure the base URL has no query parameters
-      const hasQueryParams = baseUrl.includes('?');
-      const baseUrlWithoutParams = hasQueryParams ? baseUrl.split('?')[0] : baseUrl;
-      
-      // Construir los parámetros UTM
-      const queryParams = new URLSearchParams();
-      queryParams.append('ref', user.uid);
-      
-      if (data.utmSource) queryParams.append('utm_source', data.utmSource);
-      if (data.utmMedium) queryParams.append('utm_medium', data.utmMedium);
-      if (data.utmCampaign) queryParams.append('utm_campaign', data.utmCampaign);
-      if (data.campaign) queryParams.append('campaign', data.campaign);
-      
-      const fullUrl = `${baseUrlWithoutParams}?${queryParams.toString()}`;
-      
-      // Guardar el enlace en Firestore
-      const linkData = {
-        affiliateId: user.uid,
-        productId: data.productId,
-        url: fullUrl,
-        campaign: data.campaign || "",
-        utmParams: {
-          source: data.utmSource || "",
-          medium: data.utmMedium || "",
-          campaign: data.utmCampaign || "",
-        },
-        clicks: 0,
-        conversions: 0,
-        earnings: 0,
-        createdAt: serverTimestamp(),
-      };
-      
-      const docRef = await addDoc(collection(db, "affiliateLinks"), linkData);
-      return { id: docRef.id, ...linkData };
+    mutationFn: async (linkData: any) => {
+      const response = await axios.post('/api/affiliate/links', linkData);
+      return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["affiliate-links", user?.uid] });
-      alert("Enlace de afiliado creado correctamente");
-      form.reset();
-      setIsDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["affiliate", "links"] });
+      setIsCreateDialogOpen(false);
+      setCampaign("");
+      setSelectedProduct("");
+      setUtmCampaign("");
+      toast({
+        title: "Enlace creado",
+        description: "Tu enlace de afiliado ha sido creado correctamente",
+        duration: 3000,
+      });
     },
-    onError: (error) => {
-      console.error("Error al crear enlace:", error);
-      alert("Error al crear el enlace de afiliado");
-    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Hubo un error al crear el enlace",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
   });
 
-  // Mutación para eliminar un enlace de afiliado
+  // Delete affiliate link
   const deleteLinkMutation = useMutation({
     mutationFn: async (linkId: string) => {
-      await deleteDoc(doc(db, "affiliateLinks", linkId));
-      return linkId;
+      const response = await axios.delete(`/api/affiliate/links/${linkId}`);
+      return response.data;
     },
-    onSuccess: (linkId) => {
-      queryClient.invalidateQueries({ queryKey: ["affiliate-links", user?.uid] });
-      alert("Enlace de afiliado eliminado correctamente");
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["affiliate", "links"] });
+      toast({
+        title: "Enlace eliminado",
+        description: "El enlace ha sido eliminado correctamente",
+        duration: 3000,
+      });
     },
-    onError: (error) => {
-      console.error("Error al eliminar enlace:", error);
-      alert("Error al eliminar el enlace de afiliado");
-    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Hubo un error al eliminar el enlace",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
   });
 
-  // Función para copiar un enlace al portapapeles
-  const copyLinkToClipboard = (url: string) => {
-    navigator.clipboard.writeText(url)
-      .then(() => {
-        alert("Enlace copiado al portapapeles");
-      })
-      .catch(err => {
-        console.error("Error al copiar enlace:", err);
-        alert("Error al copiar enlace");
+  // Copy link to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Enlace copiado",
+      description: "El enlace ha sido copiado al portapapeles",
+      duration: 3000,
+    });
+  };
+
+  // Handle form submission
+  const handleCreateLink = () => {
+    if (!selectedProduct) {
+      toast({
+        title: "Error",
+        description: "Debes seleccionar un producto",
+        variant: "destructive",
+        duration: 3000,
       });
+      return;
+    }
+
+    createLinkMutation.mutate({
+      productId: selectedProduct,
+      campaign: campaign,
+      utmSource: utmSource,
+      utmMedium: utmMedium,
+      utmCampaign: utmCampaign || campaign,
+    });
   };
 
-  // Función para manejar la ordenación de la tabla
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortDirection("desc");
+  // Handle link deletion with confirmation
+  const handleDeleteLink = (linkId: string) => {
+    if (window.confirm("¿Estás seguro de que quieres eliminar este enlace?")) {
+      deleteLinkMutation.mutate(linkId);
     }
   };
 
-  // Ordenar los enlaces según la columna y dirección seleccionadas
-  const sortedLinks = affiliateLinks ? [...affiliateLinks].sort((a, b) => {
-    let valueA, valueB;
-    
-    // Obtener los valores a comparar según la columna
-    if (sortColumn === "productId") {
-      const productA = products?.find(p => p.id === a.productId);
-      const productB = products?.find(p => p.id === b.productId);
-      valueA = productA?.name || "";
-      valueB = productB?.name || "";
-    } else if (sortColumn === "createdAt") {
-      valueA = new Date(a.createdAt).getTime();
-      valueB = new Date(b.createdAt).getTime();
-    } else if (["clicks", "conversions", "earnings"].includes(sortColumn)) {
-      valueA = a[sortColumn as keyof AffiliateLink] || 0;
-      valueB = b[sortColumn as keyof AffiliateLink] || 0;
-    } else {
-      valueA = a[sortColumn as keyof AffiliateLink] || "";
-      valueB = b[sortColumn as keyof AffiliateLink] || "";
-    }
-    
-    // Comparar según la dirección
-    if (sortDirection === "asc") {
-      return valueA > valueB ? 1 : -1;
-    } else {
-      return valueA < valueB ? 1 : -1;
-    }
-  }) : [];
+  // Filter links based on selected tab
+  const filteredLinks = linksData?.data ? 
+    tab === "all" ? linksData.data :
+    tab === "active" ? linksData.data.filter(link => link.clicks > 0) :
+    tab === "converting" ? linksData.data.filter(link => link.conversions > 0) :
+    linksData.data
+  : [];
 
-  // Función para manejar la creación de un nuevo enlace
-  const onSubmit = (data: NewLinkFormValues) => {
-    setIsCreatingLink(true);
-    createLinkMutation.mutate(data);
-  };
+  if (linksError) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          {(linksError as Error).message || "Error al cargar enlaces de afiliado"}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 rounded-lg border border-primary/10 shadow-sm">
+      {/* Header with create button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Link className="h-5 w-5 text-primary" />
-            Enlaces de Afiliado
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Genera y gestiona tus enlaces de afiliado para promocionar productos
+          <h2 className="text-2xl font-bold tracking-tight">Enlaces de Afiliado</h2>
+          <p className="text-muted-foreground">
+            Crea y gestiona tus enlaces de afiliado para promocionar productos
           </p>
         </div>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
-              <PlusCircle className="h-4 w-4" />
-              Crear nuevo enlace
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              <span>Crear enlace</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Create new affiliate link</DialogTitle>
+              <DialogTitle>Crear nuevo enlace de afiliado</DialogTitle>
               <DialogDescription>
-                Select a product and customize your affiliate link.
+                Selecciona un producto y personaliza tu enlace de afiliado para promocionarlo
               </DialogDescription>
             </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                <FormField
-                  control={form.control}
-                  name="productId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product</FormLabel>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setSelectedProduct(value);
-                        }}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a product" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Available products</SelectLabel>
-                            {isLoadingProducts ? (
-                              <div className="flex items-center justify-center p-2">
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                Loading products...
-                              </div>
-                            ) : (
-                              products?.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                  {product.name} - {product.commissionRate}% commission
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="campaign"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Campaign (optional)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Your campaign name" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Identify this specific campaign (e.g., "Instagram Summer")
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <DialogFooter className="pt-4">
-                  <Button 
-                    type="submit" 
-                    disabled={createLinkMutation.isPending}
-                    className="w-full"
-                  >
-                    {createLinkMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating link...
-                      </>
-                    ) : (
-                      "Create link"
+            <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="product">Producto</Label>
+                <Select
+                  value={selectedProduct}
+                  onValueChange={setSelectedProduct}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un producto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingProducts && (
+                      <div className="p-2">
+                        <Skeleton className="h-5 w-full" />
+                      </div>
                     )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
+                    {productsData?.data && productsData.data.map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="campaign">Campaña (opcional)</Label>
+                <Input
+                  id="campaign"
+                  placeholder="Nombre de tu campaña"
+                  value={campaign}
+                  onChange={(e) => setCampaign(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Un identificador para agrupar enlaces de la misma campaña
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Parámetros UTM personalizados (opcional)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="utmSource" className="text-xs">UTM Source</Label>
+                    <Input
+                      id="utmSource"
+                      placeholder="boostify_affiliate"
+                      value={utmSource}
+                      onChange={(e) => setUtmSource(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="utmMedium" className="text-xs">UTM Medium</Label>
+                    <Input
+                      id="utmMedium"
+                      placeholder="affiliate"
+                      value={utmMedium}
+                      onChange={(e) => setUtmMedium(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="utmCampaign" className="text-xs">UTM Campaign</Label>
+                  <Input
+                    id="utmCampaign"
+                    placeholder={campaign || "partner"}
+                    value={utmCampaign}
+                    onChange={(e) => setUtmCampaign(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateLink} disabled={createLinkMutation.isPending}>
+                {createLinkMutation.isPending ? "Creando..." : "Crear enlace"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Your affiliate links</CardTitle>
-          <CardDescription>
-            Manage and track all your promotional links
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingLinks ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin mr-2" />
-              <span>Loading links...</span>
-            </div>
-          ) : affiliateLinks?.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
-                <Link className="h-6 w-6 text-primary" />
+      {/* Tabs for filtering links */}
+      <Tabs defaultValue="all" value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="all">Todos los enlaces</TabsTrigger>
+          <TabsTrigger value="active">Enlaces activos</TabsTrigger>
+          <TabsTrigger value="converting">Con conversiones</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="mt-4">
+          {renderLinksList(filteredLinks, isLoadingLinks, handleDeleteLink, copyToClipboard)}
+        </TabsContent>
+        <TabsContent value="active" className="mt-4">
+          {renderLinksList(filteredLinks, isLoadingLinks, handleDeleteLink, copyToClipboard)}
+        </TabsContent>
+        <TabsContent value="converting" className="mt-4">
+          {renderLinksList(filteredLinks, isLoadingLinks, handleDeleteLink, copyToClipboard)}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// Helper function to render the links list
+function renderLinksList(
+  links: AffiliateLink[],
+  isLoading: boolean,
+  handleDelete: (id: string) => void,
+  copyToClipboard: (url: string) => void
+) {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="border-primary/10">
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between">
+                  <Skeleton className="h-6 w-1/3" />
+                  <Skeleton className="h-6 w-24" />
+                </div>
+                <Skeleton className="h-4 w-full" />
+                <div className="grid grid-cols-3 gap-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
               </div>
-              <h3 className="text-lg font-semibold">You don't have any affiliate links</h3>
-              <p className="text-sm text-muted-foreground mt-2 mb-4 max-w-md mx-auto">
-                Create your first link to start promoting products and earning commissions.
-              </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                Create first link
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (links.length === 0) {
+    return (
+      <Card className="border-primary/10">
+        <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-3">
+          <div className="rounded-full bg-primary/10 p-3">
+            <Link className="h-6 w-6 text-primary" />
+          </div>
+          <h3 className="font-medium text-lg">No hay enlaces</h3>
+          <p className="text-muted-foreground text-sm max-w-md">
+            Aún no tienes enlaces de afiliado en esta categoría. Crea tu primer enlace para comenzar a promocionar.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {links.map((link) => (
+        <Card key={link.id} className="border-primary/10">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-medium text-lg flex items-center gap-2">
+                      {link.product.name}
+                      {link.campaign && (
+                        <Badge variant="outline" className="ml-2">
+                          {link.campaign}
+                        </Badge>
+                      )}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Creado el {new Date(link.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="secondary" 
+                    className="flex items-center gap-1"
+                  >
+                    {link.product.commissionRate}%
+                  </Badge>
+                </div>
+
+                <div className="bg-muted/30 p-3 rounded-md flex items-center gap-2 group relative">
+                  <div className="overflow-hidden overflow-ellipsis whitespace-nowrap text-sm flex-1">
+                    {link.url}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(link.url)}
+                      title="Copiar enlace"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => window.open(link.url, '_blank')}
+                      title="Abrir enlace"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 items-center md:border-l md:pl-4 md:border-primary/10">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{link.clicks}</div>
+                  <div className="text-xs text-muted-foreground">Clics</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{link.conversions}</div>
+                  <div className="text-xs text-muted-foreground">Conversiones</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">${link.earnings.toFixed(2)}</div>
+                  <div className="text-xs text-muted-foreground">Ganancias</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-4 space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex items-center gap-1"
+                onClick={() => window.open(`#/stats?link=${link.id}`, '_blank')}
+              >
+                <BarChart3 className="h-3.5 w-3.5" />
+                <span>Estadísticas</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="text-xs text-destructive flex items-center gap-1 hover:bg-destructive/10"
+                onClick={() => handleDelete(link.id)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Eliminar</span>
               </Button>
             </div>
-          ) : (
-            <div className="relative overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort("productId")}>
-                      <div className="flex items-center">
-                        Product
-                        {sortColumn === "productId" && (
-                          <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort("campaign")}>
-                      <div className="flex items-center">
-                        Campaign
-                        {sortColumn === "campaign" && (
-                          <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right cursor-pointer" onClick={() => handleSort("clicks")}>
-                      <div className="flex items-center justify-end">
-                        Clicks
-                        {sortColumn === "clicks" && (
-                          <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right cursor-pointer" onClick={() => handleSort("conversions")}>
-                      <div className="flex items-center justify-end">
-                        Conversions
-                        {sortColumn === "conversions" && (
-                          <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right cursor-pointer" onClick={() => handleSort("earnings")}>
-                      <div className="flex items-center justify-end">
-                        Earnings
-                        {sortColumn === "earnings" && (
-                          <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "asc" ? "rotate-180" : ""}`} />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedLinks.map((link) => {
-                    const product = products?.find(p => p.id === link.productId);
-                    return (
-                      <TableRow key={link.id}>
-                        <TableCell className="font-medium">
-                          {product?.name || "Unknown product"}
-                        </TableCell>
-                        <TableCell>
-                          {link.campaign || "No campaign"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {link.clicks || 0}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {link.conversions || 0}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          ${link.earnings?.toFixed(2) || "0.00"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => copyLinkToClipboard(link.url)}
-                              title="Copy link"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this link? This action cannot be undone.")) {
-                                  deleteLinkMutation.mutate(link.id);
-                                }
-                              }}
-                              title="Delete link"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Products available for promotion</CardTitle>
-          <CardDescription>
-            Products you can promote as a Boostify affiliate
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingProducts ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin mr-2" />
-              <span>Loading products...</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products?.map((product) => (
-                <Card key={product.id} className="overflow-hidden">
-                  <div className="h-40 bg-muted">
-                    {product.imageUrl ? (
-                      <img 
-                        src={product.imageUrl} 
-                        alt={product.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-primary/10 to-primary/20">
-                        <BarChart className="h-12 w-12 text-primary/40" />
-                      </div>
-                    )}
-                  </div>
-                  <CardHeader className="p-4">
-                    <CardTitle className="text-lg">{product.name}</CardTitle>
-                    <Badge variant="outline" className="ml-auto">
-                      {product.commissionRate}% commission
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {product.description || "No description"}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0 flex justify-end">
-                    <Button 
-                      onClick={() => {
-                        form.setValue("productId", product.id);
-                        setSelectedProduct(product.id);
-                        setIsDialogOpen(true);
-                      }}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Create link
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
