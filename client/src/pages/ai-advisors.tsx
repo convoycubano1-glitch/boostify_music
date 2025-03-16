@@ -16,7 +16,9 @@ import {
   Users2,
   Search,
   Filter,
-  ArrowRight
+  ArrowRight,
+  BarChart4,
+  History
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { 
@@ -29,6 +31,14 @@ import {
 } from "../components/ui/dialog";
 import { toast } from "../hooks/use-toast";
 import { SubscriptionFeature } from "../components/subscription/subscription-feature";
+import { CallModal } from "../components/ai-advisors/call-modal";
+import { CallLimits } from "../components/ai-advisors/call-limits";
+import { AdvisorCallHistory } from "../components/ai-advisors/call-history";
+import { advisorCallService } from "../lib/services/advisor-call-service";
+import { useAuth } from "../hooks/use-auth";
+import { useSubscription } from "../lib/context/subscription-context";
+import { useAdvisorAccess } from "../hooks/use-advisor-access";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 interface Advisor {
   id: string;
@@ -42,11 +52,13 @@ interface Advisor {
 }
 
 export default function AIAdvisorsPage() {
-  const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const { subscription } = useSubscription();
   const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
-  const [calling, setCalling] = useState(false);
+  const [callModalOpen, setCallModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [activeTab, setActiveTab] = useState<string>("advisors");
   const [, setLocation] = useLocation();
 
   const advisors: Advisor[] = [
