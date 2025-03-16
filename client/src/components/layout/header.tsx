@@ -220,7 +220,7 @@ export function Header() {
                   </Button>
                 </div>
               ) : (
-                <Link href="/auth-page" onClick={closeMenu}>
+                <Link href="/auth" onClick={closeMenu}>
                   <Button className="w-full gap-1">
                     <LogIn className="h-4 w-4" />
                     Login
