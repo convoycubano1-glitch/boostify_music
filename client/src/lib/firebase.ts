@@ -1,8 +1,9 @@
 /**
  * Cliente de Firebase para uso en el frontend
+ * Versión mejorada: previene inicialización múltiple
  */
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth, getIdToken } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
@@ -18,8 +19,9 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Inicializar la aplicación de Firebase
-const app = initializeApp(firebaseConfig);
+// Inicializar la aplicación de Firebase solo si no existe ya
+// Esto previene el error de "app/duplicate-app"
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Inicializar servicios
 export const db = getFirestore(app);
