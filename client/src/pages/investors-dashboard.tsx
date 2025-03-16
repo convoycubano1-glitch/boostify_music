@@ -39,12 +39,17 @@ import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/fires
 import { useToast } from "../hooks/use-toast";
 // Investment Calculator Component
 function InvestmentCalculator() {
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [investmentAmount, setInvestmentAmount] = useState(5000);
   const [returnRate, setReturnRate] = useState(5); // Default to 5%
   const [durationMonths, setDurationMonths] = useState(12);
   const [monthlyReturn, setMonthlyReturn] = useState(0);
   const [totalReturn, setTotalReturn] = useState(0);
   const [finalAmount, setFinalAmount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAuthWarning, setShowAuthWarning] = useState(false);
+  const [email, setEmail] = useState("");
 
   // Recalculate returns whenever inputs change
   useEffect(() => {
@@ -56,6 +61,57 @@ function InvestmentCalculator() {
     setTotalReturn(calculatedTotalReturn);
     setFinalAmount(calculatedFinalAmount);
   }, [investmentAmount, returnRate, durationMonths]);
+
+  // Función para procesar la inversión con Stripe
+  const handleInvestmentPayment = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Si el usuario no está autenticado y no ha proporcionado un email, mostrar advertencia
+      if (!user && !email) {
+        setShowAuthWarning(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Preparar datos para la solicitud
+      const paymentData = {
+        amount: investmentAmount,
+        duration: durationMonths,
+        rate: returnRate,
+        name: `Inversión de $${investmentAmount} por ${durationMonths} meses`,
+        userId: user?.uid,
+        email: email || user?.email
+      };
+      
+      // Enviar solicitud al servidor
+      const response = await fetch('/api/investors/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.url) {
+        // Redirigir al usuario a la página de pago de Stripe
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Error al crear la sesión de pago');
+      }
+    } catch (error: any) {
+      console.error('Error al procesar inversión:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo procesar tu inversión. Inténtalo de nuevo más tarde.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
@@ -117,8 +173,37 @@ function InvestmentCalculator() {
                 />
               </div>
             </div>
+            
+            {!user && (
+              <div className="mt-4">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email para contacto (requerido para no usuarios)
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  className="mt-1"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                {showAuthWarning && !email && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Por favor proporciona un email para continuar
+                  </p>
+                )}
+              </div>
+            )}
 
-            <Button className="w-full" variant="outline">
+            <Button 
+              className="w-full" 
+              variant="outline"
+              onClick={() => {
+                // Solo actualiza los cálculos, mantiene valores actuales
+                const event = new Event('recalculate');
+                window.dispatchEvent(event);
+              }}
+            >
               <Calculator className="mr-2 h-4 w-4" />
               Recalculate
             </Button>
@@ -164,9 +249,27 @@ function InvestmentCalculator() {
               </div>
             </div>
 
-            <Button className="w-full bg-orange-500 hover:bg-orange-600 mt-4">
-              <DollarSign className="mr-2 h-4 w-4" />
-              Invertir Ahora
+            <Button 
+              className="w-full bg-orange-500 hover:bg-orange-600 mt-4"
+              onClick={handleInvestmentPayment}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="animate-spin mr-2">
+                    <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </span>
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  Invertir Ahora
+                </>
+              )}
             </Button>
           </div>
         </Card>
@@ -828,10 +931,70 @@ export default function InvestorsDashboard() {
   };
 
   // Handle investment button click
-  const handleInvestNow = () => {
-    // Redirect to Stripe payment or show payment modal
-    console.log("Redirecting to payment gateway...");
-    alert("Redirecting to Stripe payment gateway... This is a simulation.");
+  const handleInvestNow = async () => {
+    try {
+      // Obtener información del usuario actual
+      if (!user) {
+        // Mostrar un mensaje para que el usuario inicie sesión o vaya a la calculadora
+        toast({
+          title: "Necesitas iniciar sesión",
+          description: "Puedes utilizar nuestra calculadora de inversiones para procesar un pago sin iniciar sesión",
+          variant: "default",
+          action: (
+            <Button 
+              onClick={() => setSelectedTab("calculator")}
+              variant="outline" 
+              size="sm"
+            >
+              Ir a calculadora
+            </Button>
+          )
+        });
+        return;
+      }
+      
+      // Valores predeterminados para inversión rápida
+      const paymentData = {
+        amount: 5000, // Monto predeterminado
+        duration: 12, // 12 meses
+        rate: 5, // 5% mensual
+        name: `Inversión Rápida en Boostify Music`,
+        userId: user.uid,
+        email: user.email
+      };
+      
+      // Iniciar pantalla de carga
+      toast({
+        title: "Preparando pago",
+        description: "Estamos configurando tu sesión de pago...",
+        variant: "default"
+      });
+      
+      // Enviar solicitud al servidor
+      const response = await fetch('/api/investors/create-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.url) {
+        // Redirigir al usuario a la página de pago de Stripe
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Error al crear la sesión de pago');
+      }
+    } catch (error: any) {
+      console.error('Error al procesar inversión rápida:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo procesar tu inversión. Inténtalo usando la calculadora.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Handle contract download
