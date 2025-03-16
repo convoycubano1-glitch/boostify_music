@@ -1,5 +1,5 @@
 /**
- * Modal para realizar llamadas a asesores IA
+ * Modal for making calls to AI advisors
  */
 
 import { useState, useEffect } from 'react';
@@ -10,7 +10,7 @@ import { advisorCallService, Advisor, ADVISOR_PHONE_NUMBER } from '../../lib/ser
 import { useAdvisorAccess } from '../../hooks/use-advisor-access';
 import { motion } from 'framer-motion';
 
-// Componentes UI
+// UI Components
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 
-// Iconos
+// Icons
 import {
   Phone,
   PhoneOff,
@@ -34,7 +34,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-// Máxima duración de llamada en segundos (5 minutos)
+// Maximum call duration in seconds (5 minutes)
 const MAX_CALL_DURATION = 300;
 
 interface CallModalProps {
@@ -44,6 +44,7 @@ interface CallModalProps {
 }
 
 export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
+  // Define all hooks first in the same order on every render
   const { user } = useAuth();
   const { subscription, currentPlan } = useSubscription();
   const [calling, setCalling] = useState(false);
@@ -53,28 +54,29 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
   const [callTimer, setCallTimer] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   
-  // Si el asesor no está definido, no mostrar el modal
-  if (!advisor) return null;
-  
-  // Verificar acceso al asesor según el plan
+  // Verify access to the advisor based on the plan
+  // Using empty string as fallback when advisor is null to maintain hook call
   const { hasAccess, hasReachedLimit, callsRemaining, isLoading } = useAdvisorAccess(
-    advisor.id,
-    ['publicist'] // Asesores disponibles en el plan gratuito
+    advisor?.id || '', // Safe access with fallback
+    ['publicist'] // Advisors available in the free plan
   );
   
-  // Efecto para iniciar la llamada cuando se abre el modal
+  // If advisor is not defined, don't show the modal but after all hooks are called
+  if (!advisor) return null;
+  
+  // Effect to initiate the call when the modal opens
   useEffect(() => {
     if (open && advisor) {
-      // Si el usuario tiene acceso, simular el inicio de la llamada
+      // If the user has access, simulate the call
       if (hasAccess && !isLoading) {
         simulateCall();
       }
     } else {
-      // Si se cierra el modal, limpiar el estado
+      // If the modal is closed, clean up the state
       resetCallState();
     }
     
-    // Limpiar al desmontar
+    // Clean up when unmounting
     return () => {
       if (callTimer) {
         clearInterval(callTimer);
@@ -82,42 +84,42 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     };
   }, [open, advisor, hasAccess, isLoading]);
   
-  // Simular una llamada al asesor
+  // Simulate a call to the advisor
   const simulateCall = () => {
     if (!user) return;
     
     setCalling(true);
     
-    // Simular tiempo de conexión (2 segundos)
+    // Simulate connection time (2 seconds)
     setTimeout(() => {
       setCalling(false);
       setConnected(true);
       
-      // Iniciar temporizador de duración de la llamada
+      // Start call duration timer
       startCallTimer();
       
       toast({
-        title: "Llamada conectada",
-        description: `Estás hablando con ${advisor.name}, tu ${advisor.title.toLowerCase()}.`,
+        title: "Call connected",
+        description: `You're talking with ${advisor.name}, your ${advisor.title.toLowerCase()}.`,
       });
       
-      // Iniciar la llamada telefónica real al número configurado
+      // Start the actual phone call to the configured number
       try {
         const phoneNumber = ADVISOR_PHONE_NUMBER.replace(/\s+/g, '');
         window.open(`tel:${phoneNumber}`, '_blank');
       } catch (error) {
-        console.error('Error al iniciar llamada telefónica:', error);
+        console.error('Error initiating phone call:', error);
       }
       
     }, 2000);
   };
   
-  // Iniciar temporizador de duración de la llamada
+  // Start call duration timer
   const startCallTimer = () => {
-    // Iniciar un intervalo para actualizar la duración cada segundo
+    // Start an interval to update duration every second
     const timer = setInterval(() => {
       setCallDuration(prev => {
-        // Si se alcanza la duración máxima, finalizar la llamada
+        // If maximum duration is reached, end the call
         if (prev >= MAX_CALL_DURATION) {
           endCall();
           return MAX_CALL_DURATION;
@@ -129,60 +131,60 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     setCallTimer(timer);
   };
   
-  // Finalizar la llamada
+  // End the call
   const endCall = async () => {
-    // Detener el temporizador
+    // Stop the timer
     if (callTimer) {
       clearInterval(callTimer);
       setCallTimer(null);
     }
     
-    // Si la llamada estaba conectada, registrar en Firestore
+    // If the call was connected, register in Firestore
     if (connected && user) {
       try {
-        // Registrar la llamada en Firestore
+        // Register the call in Firestore
         await advisorCallService.registerCall(
           advisor,
           callDuration,
           notes,
-          [], // Sin temas específicos por ahora
+          [], // No specific topics for now
           'completed',
           currentPlan
         );
         
         toast({
-          title: "Llamada finalizada",
-          description: `Tu llamada con ${advisor.name} ha sido registrada.`,
+          title: "Call ended",
+          description: `Your call with ${advisor.name} has been recorded.`,
         });
       } catch (error) {
         console.error('Error registering call:', error);
         toast({
-          title: "Error al registrar llamada",
-          description: "No se pudo guardar el registro de la llamada.",
+          title: "Error registering call",
+          description: "Could not save the call record.",
           variant: "destructive"
         });
       }
     }
     
-    // Cerrar el modal
+    // Close the modal
     onOpenChange(false);
     
-    // Resetear el estado
+    // Reset the state
     resetCallState();
   };
   
-  // Cancelar la llamada
+  // Cancel the call
   const cancelCall = async () => {
-    // Detener el temporizador
+    // Stop the timer
     if (callTimer) {
       clearInterval(callTimer);
       setCallTimer(null);
     }
     
-    // Si la llamada estaba conectada, registrar como cancelada
+    // If the call was connected, register as canceled
     if (connected && user) {
       try {
-        // Registrar la llamada cancelada en Firestore
+        // Register the canceled call in Firestore
         await advisorCallService.registerCall(
           advisor,
           callDuration,
@@ -196,14 +198,14 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
       }
     }
     
-    // Cerrar el modal
+    // Close the modal
     onOpenChange(false);
     
-    // Resetear el estado
+    // Reset the state
     resetCallState();
   };
   
-  // Resetear el estado de la llamada
+  // Reset the call state
   const resetCallState = () => {
     setCalling(false);
     setConnected(false);
@@ -215,14 +217,14 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     }
   };
   
-  // Formatear duración en minutos:segundos
+  // Format duration in minutes:seconds
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
   
-  // Calcular porcentaje de tiempo transcurrido
+  // Calculate percentage of elapsed time
   const durationPercentage = (callDuration / MAX_CALL_DURATION) * 100;
   
   return (
@@ -236,11 +238,11 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
             {calling ? (
               <span className="flex items-center">
                 <span className="animate-pulse mr-2">📞</span> 
-                Llamando...
+                Calling...
               </span>
             ) : connected ? (
               <div className="flex items-center justify-between w-full">
-                <span>Conectado con {advisor.name}</span>
+                <span>Connected with {advisor.name}</span>
                 <Badge variant="outline" className="ml-2">
                   <Clock className="w-3 h-3 mr-1" />
                   {formatDuration(callDuration)}
@@ -248,7 +250,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
               </div>
             ) : (
               <span>
-                {hasAccess ? 'Conectando con asesor...' : 'Acceso restringido'}
+                {hasAccess ? 'Connecting to advisor...' : 'Restricted Access'}
               </span>
             )}
           </DialogTitle>
@@ -273,10 +275,10 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                   </div>
                 </div>
                 <p className="text-center text-sm text-gray-400">
-                  Conectando con {advisor.name}, tu {advisor.title.toLowerCase()}...
+                  Connecting with {advisor.name}, your {advisor.title.toLowerCase()}...
                 </p>
                 <p className="text-center text-sm font-medium text-gray-200 mt-4">
-                  Marcando: {ADVISOR_PHONE_NUMBER}
+                  Dialing: {ADVISOR_PHONE_NUMBER}
                 </p>
               </div>
             ) : connected ? (
@@ -292,14 +294,14 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                       {advisor.description}
                     </p>
                     <p className="text-xs font-medium text-gray-300 mt-2">
-                      Número de contacto: {ADVISOR_PHONE_NUMBER}
+                      Contact number: {ADVISOR_PHONE_NUMBER}
                     </p>
                   </div>
                 </div>
                 
                 <div className="space-y-2 mt-4">
                   <div className="flex justify-between text-xs">
-                    <span>Tiempo de llamada restante</span>
+                    <span>Remaining call time</span>
                     <span>{formatDuration(MAX_CALL_DURATION - callDuration)}</span>
                   </div>
                   <Progress 
@@ -313,7 +315,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                 
                 <div className="mt-4">
                   <Textarea
-                    placeholder="Toma notas de tu conversación aquí..."
+                    placeholder="Take notes of your conversation here..."
                     className="h-24 text-sm bg-[#1C1C24] border-[#27272A] resize-none"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -326,7 +328,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                   <div className="flex flex-col items-center justify-center py-6">
                     <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
                     <p className="text-center text-sm text-gray-400 mt-4">
-                      Verificando tu acceso...
+                      Verifying your access...
                     </p>
                   </div>
                 ) : !hasAccess ? (
@@ -334,23 +336,23 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                     {hasReachedLimit ? (
                       <div className="text-center space-y-2">
                         <PhoneOff className="h-12 w-12 text-orange-500 mx-auto mb-2" />
-                        <h3 className="text-lg font-medium text-white">Límite de llamadas alcanzado</h3>
+                        <h3 className="text-lg font-medium text-white">Call limit reached</h3>
                         <p className="text-sm text-gray-400">
-                          Has alcanzado tu límite de {advisorCallService.getMonthlyCallLimit(currentPlan)} llamadas mensuales con tu plan {currentPlan}.
+                          You've reached your limit of {advisorCallService.getMonthlyCallLimit(currentPlan)} monthly calls with your {currentPlan} plan.
                         </p>
                         <p className="text-sm text-gray-400">
-                          Actualiza a un plan superior para obtener más llamadas.
+                          Upgrade to a higher plan to get more calls.
                         </p>
                       </div>
                     ) : (
                       <div className="text-center space-y-2">
                         <PhoneOff className="h-12 w-12 text-orange-500 mx-auto mb-2" />
-                        <h3 className="text-lg font-medium text-white">Asesor no disponible en tu plan</h3>
+                        <h3 className="text-lg font-medium text-white">Advisor not available on your plan</h3>
                         <p className="text-sm text-gray-400">
-                          Este asesor solo está disponible en el plan PRO o superior.
+                          This advisor is only available on the PRO plan or higher.
                         </p>
                         <p className="text-sm text-gray-400">
-                          Actualiza tu plan para acceder a todo el equipo de asesores.
+                          Upgrade your plan to access the full team of advisors.
                         </p>
                       </div>
                     )}
@@ -358,11 +360,11 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                 ) : (
                   <div className="text-sm italic text-gray-400 space-y-4">
                     <p>
-                      Este asesor te brindará consejos profesionales en su área de especialidad.
+                      This advisor will provide professional advice in their area of expertise.
                     </p>
                     <div className="flex items-center justify-center bg-gradient-to-r from-gray-800 to-gray-900 p-3 rounded-md">
                       <Phone className="h-4 w-4 mr-2 text-amber-500" />
-                      <span className="text-white">Número de contacto: {ADVISOR_PHONE_NUMBER}</span>
+                      <span className="text-white">Contact number: {ADVISOR_PHONE_NUMBER}</span>
                     </div>
                   </div>
                 )}
@@ -377,7 +379,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
               className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
               onClick={() => window.location.href = '/pricing'}
             >
-              Actualizar Plan
+              Upgrade Plan
             </Button>
           ) : connected ? (
             <div className="w-full grid grid-cols-2 gap-2">
@@ -388,7 +390,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                 onClick={endCall}
               >
                 <PhoneOff className="h-4 w-4 mr-2" />
-                Finalizar
+                End Call
               </Button>
               <Button
                 type="button" 
@@ -397,7 +399,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
                 onClick={endCall}
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
-                Guardar Notas
+                Save Notes
               </Button>
             </div>
           ) : calling ? (
@@ -406,7 +408,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
               variant="destructive"
               onClick={cancelCall}
             >
-              Cancelar
+              Cancel
             </Button>
           ) : !isLoading && hasAccess ? (
             <Button
@@ -415,7 +417,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
               onClick={simulateCall}
             >
               <Phone className="h-4 w-4 mr-2" />
-              Llamar Ahora
+              Call Now
             </Button>
           ) : (
             <Button
@@ -424,7 +426,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
               className="border-gray-600 text-gray-400 hover:bg-gray-800"
               onClick={() => onOpenChange(false)}
             >
-              Cerrar
+              Close
             </Button>
           )}
         </DialogFooter>
