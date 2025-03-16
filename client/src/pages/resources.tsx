@@ -141,21 +141,25 @@ const tools = [
     title: "Royalty Calculator",
     description: "Estimate your streaming revenue across different platforms based on play counts.",
     buttonText: "Calculate Royalties",
+    link: "/tools/royalty-calculator",
   },
   {
     title: "Press Kit Generator",
     description: "Create a professional electronic press kit with our simple template builder.",
     buttonText: "Create Press Kit",
+    link: "/tools/press-kit",
   },
   {
     title: "Release Planner",
     description: "Step-by-step checklist for planning your next music release for maximum impact.",
     buttonText: "Plan Your Release",
+    link: "/tools/release-planner",
   },
   {
     title: "Playlist Submission Tool",
     description: "Submit your music to curated playlists that match your genre and style.",
     buttonText: "Submit Music",
+    link: "/tools/playlist-submission",
   },
 ];
 
@@ -249,9 +253,10 @@ interface ToolCardProps {
   title: string;
   description: string;
   buttonText: string;
+  link?: string; // Opcional para enlaces específicos
 }
 
-const ToolCard = ({ title, description, buttonText }: ToolCardProps) => {
+const ToolCard = ({ title, description, buttonText, link }: ToolCardProps) => {
   return (
     <Card className="bg-zinc-950 border-zinc-800 text-white h-full flex flex-col">
       <CardHeader className="pb-2">
@@ -261,9 +266,17 @@ const ToolCard = ({ title, description, buttonText }: ToolCardProps) => {
         <p className="text-zinc-400">{description}</p>
       </CardContent>
       <CardFooter>
-        <Button className="w-full bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500">
-          {buttonText}
-        </Button>
+        {link ? (
+          <Link href={link} className="w-full">
+            <Button className="w-full bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500">
+              {buttonText}
+            </Button>
+          </Link>
+        ) : (
+          <Button className="w-full bg-gradient-to-r from-zinc-700 to-zinc-600 hover:from-zinc-600 hover:to-zinc-500">
+            {buttonText}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
@@ -452,8 +465,16 @@ export default function ResourcesPage() {
                   title={tool.title}
                   description={tool.description}
                   buttonText={tool.buttonText}
+                  link={tool.link}
                 />
               ))}
+            </div>
+            <div className="text-center">
+              <Link href="/tools" className="inline-block">
+                <div className="flex items-center justify-center h-10 px-4 py-2 border border-zinc-700 text-white rounded-md hover:bg-zinc-800 transition-colors">
+                  View All Tools <Wrench className="ml-2 h-4 w-4" />
+                </div>
+              </Link>
             </div>
           </TabsContent>
         </Tabs>
