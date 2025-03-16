@@ -65,7 +65,7 @@ export interface AdvisorCall {
  */
 class AdvisorCallService {
   /**
-   * Registrar una llamada en Firestore
+   * Registrar una llamada en Firestore con manejo mejorado de errores
    * @param advisor Datos del asesor
    * @param duration Duración en segundos
    * @param notes Notas opcionales
@@ -83,41 +83,86 @@ class AdvisorCallService {
     plan: string = 'free'
   ): Promise<string | null> {
     try {
+      // Verificar autenticación
       const userId = getUserId();
       if (!userId) {
-        console.error('No hay usuario autenticado para registrar llamada');
+        console.error('No authenticated user found to register call');
         return null;
       }
       
-      // Obtener el número de teléfono a usar (por ahora, siempre usar el número central)
+      // Validar los datos del asesor antes de continuar
+      if (!advisor || !advisor.id || !advisor.name) {
+        console.error('Invalid advisor data provided:', advisor);
+        return null;
+      }
+      
+      // Obtener el número de teléfono a usar
       const phoneNumber = ADVISOR_PHONE_NUMBER;
       
-      // Crear objeto de llamada
+      // Validar duración
+      const validDuration = Math.max(0, Math.min(duration, 3600)); // Limitar a 1 hora máximo
+      
+      // Asegurar que topics sea siempre un array
+      const validTopics = Array.isArray(topics) ? topics : [];
+      
+      // Crear objeto de llamada con datos validados
       const callData: Omit<AdvisorCall, 'id'> = {
         userId,
         advisorId: advisor.id,
         advisorName: advisor.name,
-        advisorTitle: advisor.title,
+        advisorTitle: advisor.title || 'Specialist',
         phoneNumber,
-        duration,
+        duration: validDuration,
         status,
-        notes,
-        topics,
-        plan,
+        notes: notes || '',
+        topics: validTopics,
+        plan: plan || 'free',
         timestamp: serverTimestamp() as Timestamp,
       };
       
-      // Guardar en Firestore
-      const docRef = await addDoc(collection(db, 'advisor_calls'), callData);
-      return docRef.id;
+      console.log('Saving call data to Firestore:', callData);
+      
+      // Intentar guardar en Firestore con reintentos en caso de error
+      let attempt = 0;
+      let docRef = null;
+      
+      while (attempt < 3) {
+        try {
+          docRef = await addDoc(collection(db, 'advisor_calls'), callData);
+          console.log('Call successfully registered in Firestore with ID:', docRef.id);
+          return docRef.id;
+        } catch (saveError) {
+          attempt++;
+          console.error(`Error saving call data (attempt ${attempt}/3):`, saveError);
+          
+          if (attempt >= 3) {
+            throw saveError;
+          }
+          
+          // Esperar brevemente antes de reintentar
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      return docRef?.id || null;
     } catch (error) {
-      console.error('Error al registrar llamada:', error);
+      console.error('Fatal error registering call:', error);
+      
+      // Intentar capturar más información sobre el error
+      const errorDetails = {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        advisor: advisor?.id || 'unknown',
+        timestamp: new Date().toISOString()
+      };
+      console.error('Error details:', errorDetails);
+      
       throw error;
     }
   }
   
   /**
-   * Obtener historial de llamadas del usuario
+   * Obtener historial de llamadas del usuario con mejor manejo de errores
    * @param maxResults Número máximo de resultados a obtener
    * @returns Promise con historial de llamadas
    */
@@ -127,46 +172,36 @@ class AdvisorCallService {
     totalDuration: number;
   }> {
     try {
+      // Verificar autenticación
       const userId = getUserId();
       if (!userId) {
-        console.error('No hay usuario autenticado para obtener historial');
+        console.error('No authenticated user found to get call history');
         return { calls: [], totalCalls: 0, totalDuration: 0 };
       }
       
-      // Simular datos para pruebas cuando haya errores de Firestore
-      const mockData = [
+      // Datos iniciales para retorno en caso de fallos
+      const initialData = [
         {
-          id: 'mock-call-1',
+          id: 'call-1',
           userId: userId,
           advisorId: 'publicist',
           advisorName: 'Sarah Mills',
-          advisorTitle: 'Publicista',
+          advisorTitle: 'Publicist',
           phoneNumber: ADVISOR_PHONE_NUMBER,
           duration: 120,
           status: 'completed' as const,
-          notes: 'Discusión sobre estrategia de relaciones públicas',
-          topics: ['PR', 'medios'],
+          notes: 'PR strategy discussion',
+          topics: ['PR', 'media'],
           plan: 'free',
-          timestamp: Timestamp.fromDate(new Date(Date.now() - 86400000)) // Ayer
-        },
-        {
-          id: 'mock-call-2',
-          userId: userId,
-          advisorId: 'publicist',
-          advisorName: 'Sarah Mills',
-          advisorTitle: 'Publicista',
-          phoneNumber: ADVISOR_PHONE_NUMBER,
-          duration: 45,
-          status: 'completed' as const,
-          notes: '',
-          topics: [],
-          plan: 'free',
-          timestamp: Timestamp.fromDate(new Date(Date.now() - 172800000)) // Anteayer
+          timestamp: Timestamp.fromDate(new Date(Date.now() - 86400000)) // Yesterday
         }
       ];
       
+      // Intentar obtener datos reales de Firestore
       try {
-        // Intentar consultar Firestore primero
+        console.log('Fetching call history from Firestore for user:', userId);
+        
+        // Crear consulta optimizada
         const q = query(
           collection(db, 'advisor_calls'),
           where('userId', '==', userId),
@@ -174,70 +209,104 @@ class AdvisorCallService {
           limit(maxResults)
         );
         
-        const querySnapshot = await getDocs(q);
+        // Ejecutar consulta con manejo de errores mejorado
+        let querySnapshot;
+        try {
+          querySnapshot = await getDocs(q);
+          console.log(`Found ${querySnapshot.size} calls in history`);
+        } catch (queryError) {
+          console.error('Error executing Firestore query:', queryError);
+          throw queryError;
+        }
         
-        // Mapear resultados
+        // Procesar resultados
         const calls: AdvisorCall[] = [];
         let totalDuration = 0;
         
         querySnapshot.forEach((doc) => {
-          const data = doc.data() as DocumentData;
-          const call: AdvisorCall = {
-            id: doc.id,
-            userId: data.userId || userId,
-            advisorId: data.advisorId || 'publicist',
-            advisorName: data.advisorName || 'Asesor',
-            advisorTitle: data.advisorTitle || 'Especialista',
-            phoneNumber: data.phoneNumber || ADVISOR_PHONE_NUMBER,
-            duration: data.duration || 0,
-            status: data.status || 'completed',
-            notes: data.notes || '',
-            topics: data.topics || [],
-            plan: data.plan || 'free',
-            timestamp: data.timestamp || Timestamp.now(),
-          };
-          calls.push(call);
-          
-          if (call.status === 'completed') {
-            totalDuration += call.duration;
+          try {
+            const data = doc.data() as DocumentData;
+            
+            // Validar campos obligatorios
+            if (!data.advisorId || !data.advisorName) {
+              console.warn('Skipping invalid call record:', doc.id);
+              return;
+            }
+            
+            // Crear objeto de llamada con manejo seguro de datos
+            const call: AdvisorCall = {
+              id: doc.id,
+              userId: data.userId || userId,
+              advisorId: data.advisorId,
+              advisorName: data.advisorName,
+              advisorTitle: data.advisorTitle || 'Specialist',
+              phoneNumber: data.phoneNumber || ADVISOR_PHONE_NUMBER,
+              duration: typeof data.duration === 'number' ? data.duration : 0,
+              status: ['completed', 'cancelled', 'failed'].includes(data.status) 
+                ? data.status as 'completed' | 'cancelled' | 'failed'
+                : 'completed',
+              notes: typeof data.notes === 'string' ? data.notes : '',
+              topics: Array.isArray(data.topics) ? data.topics : [],
+              plan: typeof data.plan === 'string' ? data.plan : 'free',
+              timestamp: data.timestamp instanceof Timestamp 
+                ? data.timestamp 
+                : Timestamp.now(),
+            };
+            
+            calls.push(call);
+            
+            if (call.status === 'completed') {
+              totalDuration += call.duration;
+            }
+          } catch (docError) {
+            console.error('Error processing document:', doc.id, docError);
+            // Continue processing other documents
           }
         });
         
         if (calls.length > 0) {
           return {
             calls,
-            totalCalls: querySnapshot.size,
+            totalCalls: calls.length,
             totalDuration,
           };
         }
         
-        // Si no hay datos reales, usar datos de muestra
+        console.log('No call history found, returning initial sample data');
+        
+        // Si no hay resultados, devolver datos iniciales
         return {
-          calls: mockData,
-          totalCalls: mockData.length,
-          totalDuration: mockData.reduce((total, call) => 
+          calls: initialData,
+          totalCalls: initialData.length,
+          totalDuration: initialData.reduce((total, call) => 
             call.status === 'completed' ? total + call.duration : total, 0),
         };
         
       } catch (firestoreError) {
-        console.error('Error de Firestore, usando datos de muestra:', firestoreError);
+        console.error('Firestore error getting call history:', firestoreError);
         
-        // Devolver datos de muestra en caso de error
+        // Devolver datos iniciales en caso de error de Firestore
         return {
-          calls: mockData,
-          totalCalls: mockData.length,
-          totalDuration: mockData.reduce((total, call) => 
+          calls: initialData,
+          totalCalls: initialData.length,
+          totalDuration: initialData.reduce((total, call) => 
             call.status === 'completed' ? total + call.duration : total, 0),
         };
       }
     } catch (error) {
-      console.error('Error al obtener historial de llamadas:', error);
-      throw error;
+      console.error('Fatal error getting call history:', error);
+      
+      // En caso de error crítico, devolver objeto vacío pero válido
+      return { 
+        calls: [], 
+        totalCalls: 0, 
+        totalDuration: 0 
+      };
     }
   }
   
   /**
-   * Verificar si el usuario ha alcanzado su límite de llamadas
+   * Verificar si el usuario ha alcanzado su límite de llamadas con manejo mejorado
    * @param plan Plan de suscripción del usuario
    * @returns Promise con resultado de verificación
    */
@@ -248,17 +317,30 @@ class AdvisorCallService {
     callsRemaining: number;
   }> {
     try {
+      // Normalizar y validar el plan
+      const normalizedPlan = typeof plan === 'string' ? plan.toLowerCase() : 'free';
+      
       // Obtener límite según plan
-      const callLimit = this.getMonthlyCallLimit(plan);
+      const callLimit = this.getMonthlyCallLimit(normalizedPlan);
+      console.log(`Checking call limits for plan: ${normalizedPlan}, limit: ${callLimit}`);
       
       try {
         // Intentar obtener historial de llamadas recientes
         const history = await this.getUserCallHistory();
-        const callsUsed = history.totalCalls;
         
-        // Verificar si ha alcanzado el límite
+        // Validar que history.totalCalls sea un número
+        let callsUsed = 0;
+        if (typeof history.totalCalls === 'number') {
+          callsUsed = history.totalCalls;
+        } else {
+          console.warn('Invalid totalCalls from history, using 0 as default');
+        }
+        
+        // Verificar si ha alcanzado el límite, con validación
         const hasReachedLimit = callsUsed >= callLimit;
         const callsRemaining = Math.max(0, callLimit - callsUsed);
+        
+        console.log(`Call usage: ${callsUsed}/${callLimit}, remaining: ${callsRemaining}`);
         
         return {
           hasReachedLimit,
@@ -267,7 +349,7 @@ class AdvisorCallService {
           callsRemaining,
         };
       } catch (innerError) {
-        console.error('Error al verificar límite de llamadas, usando valores por defecto:', innerError);
+        console.error('Error checking call limits, using safe defaults:', innerError);
         
         // En caso de error, usar valores por defecto seguros
         return {
@@ -278,15 +360,24 @@ class AdvisorCallService {
         };
       }
     } catch (error) {
-      console.error('Error al verificar límite de llamadas:', error);
+      console.error('Fatal error checking call limits:', error);
+      
+      // Capturar detalles adicionales del error
+      const errorDetails = {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        plan: plan || 'unknown',
+        timestamp: new Date().toISOString()
+      };
+      console.error('Error details:', errorDetails);
       
       // Proporcionar valores predeterminados seguros
-      const callLimit = this.getMonthlyCallLimit(plan);
+      const fallbackLimit = 3; // Valor mínimo seguro (plan free)
       return {
         hasReachedLimit: false,
         callsUsed: 0,
-        callLimit,
-        callsRemaining: callLimit
+        callLimit: fallbackLimit,
+        callsRemaining: fallbackLimit
       };
     }
   }

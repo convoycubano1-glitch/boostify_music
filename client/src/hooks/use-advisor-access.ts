@@ -28,6 +28,18 @@ export interface AdvisorAccessResult {
   message: string;
 }
 
+// Estado inicial constante para evitar recreaciones
+const INITIAL_STATE: AdvisorAccessResult = {
+  isLoading: true,
+  error: null,
+  hasAccess: false,
+  hasReachedLimit: false,
+  callsUsed: 0,
+  callLimit: 0,
+  callsRemaining: 0,
+  message: 'Checking access...'
+};
+
 /**
  * Hook para verificar si un usuario tiene acceso a un asesor específico
  * @param advisorId ID del asesor a verificar
@@ -41,17 +53,8 @@ export function useAdvisorAccess(
   // Obtener información de suscripción
   const { subscription, isLoading: isSubscriptionLoading, currentPlan } = useSubscription();
   
-  // Inicializar estados una sola vez
-  const [state, setState] = useState({
-    isLoading: true,
-    error: null as string | null,
-    hasAccess: false,
-    hasReachedLimit: false,
-    callsUsed: 0,
-    callLimit: 0,
-    callsRemaining: 0,
-    message: 'Verificando acceso...'
-  });
+  // Estado único con estado inicial definido fuera de la función
+  const [state, setState] = useState<AdvisorAccessResult>(INITIAL_STATE);
 
   // Usar useMemo para asegurar que freePlanAdvisors sea consistente
   const normalizedFreePlanAdvisors = useMemo(() => {
@@ -63,14 +66,13 @@ export function useAdvisorAccess(
     let isMounted = true;
     
     const checkAccess = async () => {
+      if (!isMounted) return;
+      
+      // Actualizar estado de carga
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      
       try {
-        // Si el componente ya no está montado, no seguir
-        if (!isMounted) return;
-        
-        // Actualizar estado de carga
-        setState(prev => ({ ...prev, isLoading: true, error: null }));
-        
-        // Esperar a que la información de suscripción esté disponible
+        // Si aún estamos cargando la suscripción, esperar
         if (isSubscriptionLoading) return;
         
         // Obtener plan actual
@@ -83,63 +85,58 @@ export function useAdvisorAccess(
           normalizedFreePlanAdvisors
         );
         
+        // Verificar límite de llamadas y manejar posibles errores
+        let limitCheck;
         try {
-          // Verificar límite de llamadas
-          const limitCheck = await advisorCallService.hasReachedCallLimit(plan);
-          
-          if (!isMounted) return;
-          
-          // Establecer mensaje según el resultado
-          let resultMessage = '';
-          if (!advisorAvailable) {
-            resultMessage = `Este asesor solo está disponible en planes superiores. Actualiza tu suscripción para acceder.`;
-          } else if (limitCheck.hasReachedLimit) {
-            resultMessage = `Has alcanzado tu límite de ${limitCheck.callLimit} llamadas mensuales. Actualiza tu plan para obtener más.`;
-          } else {
-            resultMessage = `Tienes ${limitCheck.callsRemaining} llamadas disponibles este mes.`;
-          }
-          
-          // Actualizar estado completo
-          setState({
-            isLoading: false,
-            error: null,
-            hasAccess: advisorAvailable,
-            hasReachedLimit: limitCheck.hasReachedLimit,
-            callsUsed: limitCheck.callsUsed,
-            callLimit: limitCheck.callLimit,
-            callsRemaining: limitCheck.callsRemaining,
-            message: resultMessage
-          });
+          limitCheck = await advisorCallService.hasReachedCallLimit(plan);
         } catch (limitError) {
-          console.error('Error verificando límite de llamadas:', limitError);
+          console.error('Error checking call limits:', limitError);
           
           if (!isMounted) return;
           
-          // En caso de error al verificar límites, establecer valores por defecto seguros
-          setState({
-            isLoading: false,
-            error: 'Error al verificar límites de llamadas',
-            hasAccess: advisorAvailable,
+          // Usar valores seguros en caso de error
+          limitCheck = {
             hasReachedLimit: false,
             callsUsed: 0,
             callLimit: advisorCallService.getMonthlyCallLimit(plan),
-            callsRemaining: advisorCallService.getMonthlyCallLimit(plan),
-            message: advisorAvailable 
-              ? 'Tu asesor está disponible, pero no se pudo verificar el límite de llamadas.' 
-              : 'Este asesor no está disponible en tu plan actual.'
-          });
+            callsRemaining: advisorCallService.getMonthlyCallLimit(plan)
+          };
         }
-      } catch (err: any) {
-        console.error('Error verificando acceso a asesor:', err);
         
         if (!isMounted) return;
         
-        // Actualizar estado en caso de error
+        // Generar mensaje apropiado según el resultado
+        let resultMessage = '';
+        if (!advisorAvailable) {
+          resultMessage = `This advisor is only available on higher tier plans. Upgrade your subscription to access.`;
+        } else if (limitCheck.hasReachedLimit) {
+          resultMessage = `You've reached your limit of ${limitCheck.callLimit} monthly calls. Upgrade your plan for more.`;
+        } else {
+          resultMessage = `You have ${limitCheck.callsRemaining} calls available this month.`;
+        }
+        
+        // Actualizar estado completo
+        setState({
+          isLoading: false,
+          error: null,
+          hasAccess: advisorAvailable,
+          hasReachedLimit: limitCheck.hasReachedLimit,
+          callsUsed: limitCheck.callsUsed,
+          callLimit: limitCheck.callLimit,
+          callsRemaining: limitCheck.callsRemaining,
+          message: resultMessage
+        });
+      } catch (err: any) {
+        console.error('Error verifying advisor access:', err);
+        
+        if (!isMounted) return;
+        
+        // Actualizar estado en caso de error general
         setState(prev => ({
           ...prev,
           isLoading: false,
-          error: err.message || 'Error al verificar acceso',
-          message: 'No se pudo verificar tu acceso. Intenta nuevamente.'
+          error: err.message || 'Error verifying access',
+          message: 'Unable to verify your access. Please try again.'
         }));
       }
     };
