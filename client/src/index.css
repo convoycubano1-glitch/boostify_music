@@ -5,6 +5,62 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Animación para el gradiente de texto */
+@keyframes gradient-x {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 8s ease infinite;
+}
+
+/* Animaciones de tarjetas */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animate-enter {
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+}
+
+.card-animate-enter-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Efectos de hover para tarjetas */
+.advisor-card {
+  transition: all 0.3s ease;
+}
+
+.advisor-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Efecto de brillo en hover */
+.glow-on-hover:hover {
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.7);
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -138,6 +194,13 @@
 .animate-float-delay {
   animation: float-delay 7s ease-in-out infinite;
   animation-delay: 2s;
+}
+
+/* Patrón de cuadrícula para fondos */
+.bg-grid-pattern-light {
+  background-size: 20px 20px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
 }
 
 @layer components {

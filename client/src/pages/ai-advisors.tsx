@@ -195,37 +195,212 @@ export default function AIAdvisorsPage() {
     setModalOpen(true);
   };
   
+  // Componente de efecto de partículas
+const ParticleBackground = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Ajustar el tamaño del canvas
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    
+    // Crear partículas
+    const particlesArray: any[] = [];
+    const numberOfParticles = 80;
+    
+    class Particle {
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+      color: string;
+      
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 1 - 0.5;
+        this.speedY = Math.random() * 1 - 0.5;
+        this.color = `hsla(${Math.random() * 60 + 200}, 100%, 50%, 0.8)`;
+      }
+      
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        
+        if (this.x > canvas.width) this.x = 0;
+        else if (this.x < 0) this.x = canvas.width;
+        if (this.y > canvas.height) this.y = 0;
+        else if (this.y < 0) this.y = canvas.height;
+      }
+      
+      draw() {
+        if (!ctx) return;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    const init = () => {
+      for (let i = 0; i < numberOfParticles; i++) {
+        particlesArray.push(new Particle());
+      }
+    };
+    
+    const connect = () => {
+      if (!ctx) return;
+      const maxDistance = 150;
+      
+      for (let a = 0; a < particlesArray.length; a++) {
+        for (let b = a; b < particlesArray.length; b++) {
+          const dx = particlesArray[a].x - particlesArray[b].x;
+          const dy = particlesArray[a].y - particlesArray[b].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < maxDistance) {
+            const opacity = 1 - distance / maxDistance;
+            ctx.strokeStyle = `rgba(140, 85, 250, ${opacity * 0.5})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+            ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+            ctx.stroke();
+          }
+        }
+      }
+    };
+    
+    const animate = () => {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = 0; i < particlesArray.length; i++) {
+        particlesArray[i].update();
+        particlesArray[i].draw();
+      }
+      
+      connect();
+      requestAnimationFrame(animate);
+    };
+    
+    init();
+    animate();
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
   return (
-    <div className="container max-w-6xl py-6 md:py-10 space-y-6">
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 z-0 pointer-events-none opacity-30"
+    />
+  );
+};
+
+// Efecto de texto animado para el título
+const AnimatedTitle = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="relative overflow-hidden">
+      <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-blue-500 to-indigo-400 animate-gradient-x pb-1">
+        {children}
+      </h1>
+    </div>
+  );
+};
+
+return (
+    <div className="container max-w-6xl py-6 md:py-10 space-y-6 relative">
+      <ParticleBackground />
       {/* Cabecera */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">AI Advisors</h1>
-        <p className="text-muted-foreground">
-          Contacta con asesores especializados en la industria musical para impulsar tu carrera
+      <div className="space-y-4 relative z-10">
+        <AnimatedTitle>AI Advisors</AnimatedTitle>
+        <p className="text-muted-foreground text-lg max-w-2xl">
+          Contact specialized advisors in the music industry to boost your career
         </p>
       </div>
       
-      {/* Pestañas principales */}
+      {/* Introducción/Banner */}
+      <div className="mb-8 p-6 bg-gradient-to-r from-primary/10 via-background to-blue-500/10 rounded-xl border border-muted/60 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern-light opacity-10 pointer-events-none"></div>
+        
+        {/* Efecto de partículas decorativas */}
+        <div className="absolute top-10 right-10 w-20 h-20 bg-primary/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-12 left-32 w-16 h-16 bg-blue-400/10 rounded-full blur-lg"></div>
+        
+        <div className="relative z-10 md:max-w-3xl">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">Expert guidance at your fingertips</h2>
+          <p className="text-muted-foreground text-lg mb-4">
+            Connect with specialized AI advisors to get personalized insights and advice for your music career. Our advisors combine deep industry expertise with AI-powered analytics to help you make informed decisions.
+          </p>
+          
+          <div className="flex flex-wrap gap-3 mt-4">
+            <div className="bg-card/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border/50 flex items-center text-sm">
+              <Phone className="mr-2 h-3.5 w-3.5 text-primary" />
+              One-on-one calls
+            </div>
+            <div className="bg-card/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border/50 flex items-center text-sm">
+              <Users className="mr-2 h-3.5 w-3.5 text-primary" />
+              10 specialized experts
+            </div>
+            <div className="bg-card/50 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border/50 flex items-center text-sm">
+              <TrendingUp className="mr-2 h-3.5 w-3.5 text-primary" />
+              Data-driven insights
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Pestañas mejoradas */}
       <Tabs defaultValue="advisors" className="w-full">
-        <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="advisors">Asesores</TabsTrigger>
-            <TabsTrigger value="history">Historial</TabsTrigger>
-            <TabsTrigger value="plans">Planes</TabsTrigger>
-          </TabsList>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+          <div className="flex items-center">
+            <TabsList className="p-1 bg-muted/60">
+              <TabsTrigger value="advisors" className="rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm text-sm px-4">
+                <Phone className="mr-2 h-4 w-4" />
+                Advisors
+              </TabsTrigger>
+              <TabsTrigger value="history" className="rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm text-sm px-4">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                History
+              </TabsTrigger>
+              <TabsTrigger value="plans" className="rounded-md data-[state=active]:bg-card data-[state=active]:shadow-sm text-sm px-4">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Plans
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           {/* Badge de plan actual */}
-          <Badge 
-            variant={
-              currentPlan === 'premium' ? 'default' : 
-              currentPlan === 'pro' ? 'secondary' : 
-              currentPlan === 'basic' ? 'outline' : 
-              'secondary'
-            }
-            className="hidden md:flex"
-          >
-            Plan {currentPlan.toUpperCase()}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-muted-foreground">Current subscription:</span>
+            <Badge 
+              variant={
+                currentPlan === 'premium' ? 'default' : 
+                currentPlan === 'pro' ? 'secondary' : 
+                currentPlan === 'basic' ? 'outline' : 
+                'secondary'
+              }
+              className="py-1.5 font-medium uppercase tracking-wide"
+            >
+              {currentPlan.toUpperCase()} PLAN
+            </Badge>
+          </div>
         </div>
         
         {/* Contenido: Tab Asesores */}
@@ -289,39 +464,60 @@ export default function AIAdvisorsPage() {
               {/* Lista de asesores */}
               <div className="md:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {advisors.map((advisor) => (
-                    <Card 
+                  {advisors.map((advisor, index) => (
+                    <div 
                       key={advisor.id}
-                      className="overflow-hidden group hover:shadow-md transition-shadow duration-300"
+                      className="transition-all duration-500"
+                      style={{ 
+                        opacity: 0,
+                        animation: 'fadeIn 0.5s forwards',
+                        animationDelay: `${index * 0.1}s`
+                      }}
                     >
-                      <CardHeader className={`pb-2 bg-gradient-to-br ${advisor.color} relative`}>
-                        <div className="absolute inset-0 bg-black/20" />
-                        <div className="relative z-10 flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-white">{advisor.name}</CardTitle>
-                            <CardDescription className="text-white/90">
-                              {advisor.title}
-                            </CardDescription>
-                          </div>
-                          <div className="p-2 rounded-full bg-white/20 backdrop-blur-sm">
-                            <advisor.icon className="h-5 w-5 text-white" />
-                          </div>
+                      <Card 
+                        className="overflow-hidden advisor-card group hover:shadow-lg transition-all duration-500 relative border-[1.5px] glow-on-hover"
+                      >
+                        {/* Efecto de partículas en la esquina */}
+                        <div className="absolute top-0 right-0 w-32 h-32 opacity-30 pointer-events-none">
+                          <div className="absolute right-0 top-0 w-16 h-16 rounded-full bg-gradient-to-br from-white/5 to-white/20 blur-md"></div>
+                          <div className="absolute right-6 top-6 w-4 h-4 rounded-full bg-white/30 blur-sm animate-pulse-slow"></div>
+                          <div className="absolute right-10 top-2 w-2 h-2 rounded-full bg-white/40 blur-sm animate-pulse-slow delay-700"></div>
                         </div>
-                      </CardHeader>
-                      <CardContent className="pt-3">
-                        <p className="text-sm">{advisor.description}</p>
-                      </CardContent>
-                      <CardFooter className="border-t pt-3">
-                        <Button 
-                          className="w-full" 
-                          onClick={() => handleAdvisorClick(advisor)}
-                          disabled={calling}
-                        >
-                          <Phone className="mr-2 h-4 w-4" />
-                          {calling ? 'Llamando...' : 'Llamar ahora'}
-                        </Button>
-                      </CardFooter>
-                    </Card>
+                        
+                        <CardHeader className={`pb-2 bg-gradient-to-br ${advisor.color} relative`}>
+                          <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                          
+                          <div className="relative z-10 flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-white text-xl drop-shadow-md">{advisor.name}</CardTitle>
+                              <CardDescription className="text-white/90 drop-shadow-sm">
+                                {advisor.title}
+                              </CardDescription>
+                            </div>
+                            <div className="p-3 rounded-full bg-white/20 backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300">
+                              <advisor.icon className="h-5 w-5 text-white" />
+                            </div>
+                          </div>
+                        </CardHeader>
+                        
+                        <CardContent className="pt-4 pb-3">
+                          <p className="text-sm leading-relaxed">{advisor.description}</p>
+                        </CardContent>
+                        
+                        <CardFooter className="border-t pt-3">
+                          <Button 
+                            className="w-full group-hover:bg-opacity-90 transition-all duration-300 relative overflow-hidden" 
+                            onClick={() => handleAdvisorClick(advisor)}
+                            disabled={calling}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            <Phone className="mr-2 h-4 w-4" />
+                            <span>{calling ? 'Calling...' : 'Call now'}</span>
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -355,171 +551,265 @@ export default function AIAdvisorsPage() {
         {/* Contenido: Tab Planes */}
         <TabsContent value="plans" className="pt-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Plan Gratuito */}
-            <Card className={`border-2 ${currentPlan === 'free' ? 'border-primary' : 'border-transparent'}`}>
-              <CardHeader>
-                <CardTitle>Plan Gratuito</CardTitle>
-                <CardDescription>Acceso básico a asesores IA</CardDescription>
-                <div className="mt-2">
-                  <span className="text-3xl font-bold">$0</span>
-                  <span className="text-muted-foreground ml-1">/mes</span>
+            {/* Plan Free con efectos visuales */}
+            <Card className={`border-2 relative overflow-hidden ${currentPlan === 'free' ? 'border-primary' : 'border-transparent'}`}>
+              {/* Efecto sutil de fondo */}
+              <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-tr from-blue-300/10 to-transparent rounded-full blur-xl"></div>
+              
+              <CardHeader className="relative z-10">
+                <CardTitle className="text-2xl font-bold">Free Plan</CardTitle>
+                <CardDescription className="text-base">Basic AI advisors access</CardDescription>
+                <div className="mt-3 flex items-end">
+                  <span className="text-4xl font-extrabold">$0</span>
+                  <span className="text-muted-foreground ml-1 mb-1">/month</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
+              
+              <CardContent className="space-y-5 relative z-10">
+                <div className="space-y-3">
                   <div className="flex items-center">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">3 llamadas mensuales</span>
+                    <span>3 monthly calls</span>
                   </div>
+                  
                   <div className="flex items-center">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">Acceso a 1 asesor</span>
+                    <span>Access to 1 advisor</span>
                   </div>
+                  
                   <div className="flex items-center">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">Duración máxima: 5 minutos</span>
+                    <span>Maximum duration: 5 minutes</span>
                   </div>
                 </div>
                 
                 <Separator />
                 
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium">Asesores disponibles:</p>
-                  <p>• Sarah Mills (Publicista)</p>
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm flex items-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mr-2"></div>
+                    Available advisors:
+                  </p>
+                  <div className="text-sm">
+                    <span className="inline-block w-1 h-1 rounded-full bg-primary mr-2"></span>
+                    Sarah Mills (Publicist)
+                  </div>
                 </div>
               </CardContent>
-              <CardFooter>
+              
+              <CardFooter className="relative z-10">
                 <Button 
                   variant={currentPlan === 'free' ? 'outline' : 'default'} 
-                  className="w-full"
+                  className="w-full relative group overflow-hidden"
                   disabled={currentPlan === 'free'}
                   onClick={() => setLocation('/pricing')}
                 >
-                  {currentPlan === 'free' ? 'Plan Actual' : 'Seleccionar Plan'}
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                  <span className="relative z-10">
+                    {currentPlan === 'free' ? 'Current Plan' : 'Select Plan'}
+                  </span>
                 </Button>
               </CardFooter>
             </Card>
             
-            {/* Plan Básico */}
-            <Card className={`border-2 ${currentPlan === 'basic' ? 'border-primary' : 'border-transparent'}`}>
-              <CardHeader>
-                <CardTitle>Plan Básico</CardTitle>
-                <CardDescription>Para artistas emergentes</CardDescription>
-                <div className="mt-2">
-                  <span className="text-3xl font-bold">$9.99</span>
-                  <span className="text-muted-foreground ml-1">/mes</span>
+            {/* Plan Basic con efectos visuales */}
+            <Card className={`border-2 relative overflow-hidden ${currentPlan === 'basic' ? 'border-primary' : 'border-transparent'}`}>
+              {/* Efectos de fondo */}
+              <div className="absolute -top-24 -right-24 w-36 h-36 bg-gradient-to-bl from-cyan-400/10 to-transparent rounded-full blur-xl"></div>
+              <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-gradient-to-tr from-blue-400/10 to-transparent rounded-full blur-xl"></div>
+              
+              <CardHeader className="relative z-10">
+                <CardTitle className="text-2xl font-bold">Basic Plan</CardTitle>
+                <CardDescription className="text-base">For emerging artists</CardDescription>
+                <div className="mt-3 flex items-end">
+                  <span className="text-4xl font-extrabold">$9.99</span>
+                  <span className="text-muted-foreground ml-1 mb-1">/month</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center">
+              
+              <CardContent className="space-y-5 relative z-10">
+                <div className="space-y-3">
+                  <div className="flex items-center border-l-4 border-blue-400/40 pl-3 py-1 bg-gradient-to-r from-blue-400/5 to-transparent rounded-sm">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">10 llamadas mensuales</span>
+                    <span className="font-medium">10 monthly calls</span>
                   </div>
+                  
                   <div className="flex items-center">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">Acceso a 3 asesores</span>
+                    <span>Access to 3 advisors</span>
                   </div>
+                  
                   <div className="flex items-center">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">Duración máxima: 10 minutos</span>
+                    <span>Maximum duration: 10 minutes</span>
                   </div>
                 </div>
                 
                 <Separator />
                 
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium">Asesores disponibles:</p>
-                  <p>• Sarah Mills (Publicista)</p>
-                  <p>• Emily Rodríguez (Directora Creativa)</p>
-                  <p>• Lucia González (Soporte al Artista)</p>
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm flex items-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mr-2"></div>
+                    Available advisors:
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="text-sm flex items-center">
+                      <span className="inline-block w-1 h-1 rounded-full bg-primary mr-2"></span>
+                      Sarah Mills (Publicist)
+                    </div>
+                    <div className="text-sm flex items-center">
+                      <span className="inline-block w-1 h-1 rounded-full bg-primary mr-2"></span>
+                      Emily Rodríguez (Creative Director)
+                    </div>
+                    <div className="text-sm flex items-center">
+                      <span className="inline-block w-1 h-1 rounded-full bg-primary mr-2"></span>
+                      Lucia González (Artist Support)
+                    </div>
+                  </div>
                 </div>
               </CardContent>
-              <CardFooter>
+              
+              <CardFooter className="relative z-10">
                 <Button 
                   variant={currentPlan === 'basic' ? 'outline' : 'default'} 
-                  className="w-full"
+                  className="w-full relative group overflow-hidden"
                   disabled={currentPlan === 'basic'}
                   onClick={() => setLocation('/pricing')}
                 >
-                  {currentPlan === 'basic' ? 'Plan Actual' : 'Seleccionar Plan'}
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                  <span className="relative z-10">
+                    {currentPlan === 'basic' ? 'Current Plan' : 'Select Plan'}
+                  </span>
                 </Button>
               </CardFooter>
             </Card>
             
-            {/* Plan Pro */}
-            <Card className={`border-2 ${currentPlan === 'pro' ? 'border-primary' : 'border-transparent'}`}>
-              <CardHeader>
+            {/* Plan Pro - Versión mejorada con efectos visuales */}
+            <Card className={`border-2 relative overflow-hidden ${currentPlan === 'pro' ? 'border-primary' : 'border-transparent'}`}>
+              {/* Efecto de resplandor superior */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-full blur-xl"></div>
+              <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-gradient-to-tr from-blue-500/20 to-transparent rounded-full blur-xl"></div>
+              
+              {/* Insignia de recomendado con efecto especial */}
+              <div className="absolute -top-1 -right-1 rotate-12">
+                <div className="relative">
+                  <Badge 
+                    variant="default" 
+                    className="px-3 py-1.5 font-semibold uppercase text-xs tracking-wide shadow-md relative z-10"
+                  >
+                    Recommended
+                  </Badge>
+                  <div className="absolute inset-0 bg-primary/20 rounded-sm blur-sm -z-0 scale-110"></div>
+                </div>
+              </div>
+              
+              <CardHeader className="relative z-10">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle>Plan Pro</CardTitle>
-                    <CardDescription>Para artistas profesionales</CardDescription>
+                    <CardTitle className="text-2xl font-bold flex items-center">
+                      Pro Plan
+                      <div className="inline-block ml-2 w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                    </CardTitle>
+                    <CardDescription className="text-base">For professional artists</CardDescription>
                   </div>
-                  <Badge variant="default">Recomendado</Badge>
                 </div>
-                <div className="mt-2">
-                  <span className="text-3xl font-bold">$29.99</span>
-                  <span className="text-muted-foreground ml-1">/mes</span>
+                <div className="mt-3 flex items-end">
+                  <span className="text-4xl font-extrabold">$29.99</span>
+                  <span className="text-muted-foreground ml-1 mb-1">/month</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center">
+              
+              <CardContent className="space-y-5 relative z-10">
+                <div className="space-y-3">
+                  {/* Elemento destacado con un borde especial */}
+                  <div className="flex items-center border-l-4 border-primary pl-3 py-1 bg-gradient-to-r from-primary/5 to-transparent rounded-sm">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">30 llamadas mensuales</span>
+                    <span className="font-medium">30 monthly calls</span>
                   </div>
+                  
                   <div className="flex items-center">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">Acceso a todos los asesores</span>
+                    <span>Access to all advisors</span>
                   </div>
+                  
                   <div className="flex items-center">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">Duración máxima: 20 minutos</span>
+                    <span>Maximum duration: 20 minutes</span>
                   </div>
+                  
                   <div className="flex items-center">
                     <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     </div>
-                    <span className="text-sm">Exportación de historial</span>
+                    <span>Call history export</span>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center mr-2">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                    </div>
+                    <span>Priority support</span>
                   </div>
                 </div>
                 
                 <Separator />
                 
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium">Asesores destacados:</p>
-                  <p>• Mark Johnson (Manager)</p>
-                  <p>• David Williams (Productor Musical)</p>
-                  <p>• Alicia Torres (Especialista Marketing)</p>
-                  <p>• Y todos los demás asesores (10 total)</p>
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm flex items-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mr-2"></div>
+                    Featured advisors:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm flex items-center">
+                      <span className="inline-block w-1 h-1 rounded-full bg-primary mr-2"></span>
+                      Mark Johnson (Manager)
+                    </div>
+                    <div className="text-sm flex items-center">
+                      <span className="inline-block w-1 h-1 rounded-full bg-primary mr-2"></span>
+                      David Williams (Producer)
+                    </div>
+                    <div className="text-sm flex items-center">
+                      <span className="inline-block w-1 h-1 rounded-full bg-primary mr-2"></span>
+                      Alicia Torres (Marketing)
+                    </div>
+                    <div className="text-sm flex items-center">
+                      <span className="inline-block w-1 h-1 rounded-full bg-primary mr-2"></span>
+                      All 10 music advisors
+                    </div>
+                  </div>
                 </div>
               </CardContent>
-              <CardFooter>
+              
+              <CardFooter className="relative z-10">
                 <Button 
                   variant={currentPlan === 'pro' ? 'outline' : 'default'} 
-                  className="w-full"
+                  className="w-full relative group overflow-hidden"
                   disabled={currentPlan === 'pro'}
                   onClick={() => setLocation('/pricing')}
                 >
-                  {currentPlan === 'pro' ? 'Plan Actual' : 'Seleccionar Plan'}
+                  {/* Efecto de brillo animado en hover */}
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                  <span className="relative z-10">
+                    {currentPlan === 'pro' ? 'Current Plan' : 'Select Plan'}
+                  </span>
                 </Button>
               </CardFooter>
             </Card>
