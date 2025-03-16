@@ -173,7 +173,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                   Clics Totales
                 </p>
                 <div className="text-2xl font-bold">
-                  {stats.totalClicks.toLocaleString()}
+                  {(stats.totalClicks || 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   <span
@@ -205,7 +205,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                   Ventas Totales
                 </p>
                 <div className="text-2xl font-bold">
-                  {stats.totalSales.toLocaleString()}
+                  {(stats.totalSales || 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   <span
@@ -237,7 +237,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                   Comisión Total
                 </p>
                 <div className="text-2xl font-bold">
-                  ${stats.totalCommission.toLocaleString(undefined, {
+                  ${(stats.totalCommission || 0).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -253,7 +253,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                     {stats.commissionThisMonth > 0 && (
                       <TrendingUp className="h-3 w-3 mr-1" />
                     )}
-                    ${stats.commissionThisMonth.toFixed(2)} este mes
+                    ${(stats.commissionThisMonth || 0).toFixed(2)} este mes
                   </span>
                 </p>
               </div>
@@ -272,7 +272,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                   Tasa de Conversión
                 </p>
                 <div className="text-2xl font-bold">
-                  {(stats.conversionRate * 100).toFixed(1)}%
+                  {((stats.conversionRate || 0) * 100).toFixed(1)}%
                 </div>
                 <TooltipProvider>
                   <Tooltip>
@@ -372,7 +372,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                 </div>
                 <div className="bg-muted/30 p-2 rounded-md">
                   <div className="text-xl font-semibold">
-                    ${averageCommissionPerSale.toFixed(2)}
+                    ${(averageCommissionPerSale || 0).toFixed(2)}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Comisión Media
@@ -380,7 +380,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
                 </div>
                 <div className="bg-muted/30 p-2 rounded-md">
                   <div className="text-xl font-semibold">
-                    ${stats.pendingCommission.toFixed(2)}
+                    ${(stats.pendingCommission || 0).toFixed(2)}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Pendiente de Pago
@@ -393,12 +393,12 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
               <div className="flex flex-col items-center justify-center h-full">
                 <div className="relative mb-2">
                   <ProgressCircular
-                    value={stats.levelProgress.progress}
+                    value={stats.levelProgress?.progress || 0}
                     size="lg"
                     className="text-primary"
                   >
                     <span className="text-sm font-medium">
-                      {stats.levelProgress.progress.toFixed(0)}%
+                      {(stats.levelProgress?.progress || 0).toFixed(0)}%
                     </span>
                   </ProgressCircular>
                 </div>
