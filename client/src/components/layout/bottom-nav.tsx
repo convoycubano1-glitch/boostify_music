@@ -18,7 +18,34 @@ export function BottomNav() {
   const lastClickTimeRef = useRef<number>(0);
   const doubleClickThreshold = 300; // ms
 
-  // Todos los elementos de navegación
+  // Elementos de navegación para el botón "More" (23 páginas específicas) - Rutas verificadas contra los archivos reales
+  const moreNavItems = [
+    { title: "Virtual Record Label", icon: Radio, href: "/record-label-services", plan: "premium" }, // Actualizado según archivos
+    { title: "AI Advisors", icon: PhoneCall, href: "/ai-advisors", plan: "premium" },
+    { title: "Store", icon: ShoppingBag, href: "/kling-store", plan: "basic" }, // Actualizado según archivos 
+    { title: "Affiliates", icon: Users, href: "/affiliates", plan: "basic" },
+    { title: "Investors", icon: Layers, href: "/investors-dashboard", plan: "pro" },
+    { title: "Dashboard", icon: BarChart, href: "/dashboard", plan: "free" },
+    { title: "Artist Dashboard", icon: BarChart2, href: "/artist-dashboard", plan: "basic" },
+    { title: "Manager Tools", icon: Settings, href: "/manager-tools", plan: "premium" },
+    { title: "Producer Tools", icon: Music2, href: "/producer-tools", plan: "pro" },
+    { title: "Music Videos", icon: Video, href: "/music-video-creator", plan: "premium" },
+    { title: "Education", icon: BookOpen, href: "/education", plan: "basic" },
+    { title: "Boostify TV", icon: Video, href: "/boostify-tv", plan: "basic" },
+    { title: "Record Labels", icon: Headphones, href: "/record-label-services", plan: "premium" },
+    { title: "AI Agents", icon: Bot, href: "/ai-agents", plan: "premium" },
+    { title: "Artist Image", icon: FileText, href: "/artist-image-advisor", plan: "premium" },
+    { title: "Merch", icon: ShoppingBag, href: "/merchandise", plan: "basic" },
+    { title: "Spotify", icon: Music2, href: "/spotify-integration", plan: "basic" }, // Actualizado según archivos
+    { title: "Instagram", icon: Rss, href: "/instagram-boost", plan: "basic" },
+    { title: "YouTube", icon: Video, href: "/youtube-integration", plan: "basic" }, // Actualizado según archivos
+    { title: "Contracts", icon: FileText, href: "/contracts", plan: "premium" },
+    { title: "PR", icon: Send, href: "/pr-services", plan: "premium" }, // Actualizado según archivos
+    { title: "Contacts", icon: Users, href: "/contacts", plan: "basic" },
+    { title: "Settings", icon: Settings, href: "/settings", plan: "free" },
+  ];
+
+  // Todos los elementos de navegación para la barra principal
   const allNavItems = [
     {
       title: "Home",
@@ -187,6 +214,7 @@ export function BottomNav() {
                     ref={scrollContainerRef}
                     className="horizontal-scroll-container flex-1 overflow-x-auto scrollbar-hide flex items-center space-x-3 px-1 py-2"
                   >
+                    {/* Mostrar primero los elementos principales de navegación */}
                     {allNavItems.map((item) => (
                       <Link key={item.title} href={item.href} className="horizontal-scroll-item">
                         <div className={cn(
@@ -204,6 +232,71 @@ export function BottomNav() {
                             />
                             {location === item.href && (
                               <div className="absolute -inset-2 bg-orange-500/20 rounded-full blur animate-pulse" />
+                            )}
+                            
+                            {/* Indicador de nivel de suscripción requerido */}
+                            {item.plan && item.plan !== 'free' && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center">
+                                <div className={cn(
+                                  "text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center",
+                                  item.plan === 'basic' ? "bg-blue-600 text-white" : 
+                                  item.plan === 'pro' ? "bg-purple-600 text-white" : 
+                                  "bg-orange-600 text-white"
+                                )}>
+                                  {item.plan === 'basic' ? 'B' : item.plan === 'pro' ? 'P' : 'P+'}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <span
+                            className={cn(
+                              "text-sm font-medium transition-colors duration-300 whitespace-nowrap mt-2",
+                              location === item.href
+                                ? "text-orange-500"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {item.title}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                    
+                    {/* Separador visual entre navegación principal y opciones de More */}
+                    <div className="w-px h-16 bg-orange-500/20 mx-2"></div>
+                    
+                    {/* Mostrar todas las opciones adicionales de "More" */}
+                    {moreNavItems.map((item) => (
+                      <Link key={item.title} href={item.href} className="horizontal-scroll-item">
+                        <div className={cn(
+                          "nav-btn flex-shrink-0 flex flex-col items-center p-3 min-w-[5rem] rounded-lg",
+                          location === item.href ? "nav-btn-active" : ""
+                        )}>
+                          <div className="relative flex items-center justify-center">
+                            <item.icon
+                              className={cn(
+                                "w-7 h-7 transition-all duration-300",
+                                location === item.href
+                                  ? "text-orange-500"
+                                  : "text-muted-foreground"
+                              )}
+                            />
+                            {location === item.href && (
+                              <div className="absolute -inset-2 bg-orange-500/20 rounded-full blur animate-pulse" />
+                            )}
+                            
+                            {/* Indicador de nivel de suscripción requerido */}
+                            {item.plan && item.plan !== 'free' && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center">
+                                <div className={cn(
+                                  "text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center",
+                                  item.plan === 'basic' ? "bg-blue-600 text-white" : 
+                                  item.plan === 'pro' ? "bg-purple-600 text-white" : 
+                                  "bg-orange-600 text-white"
+                                )}>
+                                  {item.plan === 'basic' ? 'B' : item.plan === 'pro' ? 'P' : 'P+'}
+                                </div>
+                              </div>
                             )}
                           </div>
                           <span
