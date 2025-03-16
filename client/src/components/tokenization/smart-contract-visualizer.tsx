@@ -231,7 +231,8 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
     {
       title: "Automatic Execution",
       description: "Contract executes automatically when conditions are met",
-      icon: <ArrowDown className="h-8 w-8 text-orange-500" />
+      icon: <ArrowDown className="h-8 w-8 text-orange-500" />,
+      extraSpacing: true
     },
     {
       title: "Royalty Distribution",
@@ -296,7 +297,7 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
                     opacity: animationStep >= index ? 1 : 0.3,
                     scale: animationStep === index ? 1.05 : 1
                   }}
-                  className={`flex items-start ${index === steps.length - 1 ? 'mb-2' : 'mb-10'} relative ${
+                  className={`flex items-start ${index === steps.length - 1 ? 'mb-2' : (step.extraSpacing ? 'mb-20' : 'mb-10')} relative ${
                     animationStep >= index ? 'text-white' : 'text-gray-500'
                   }`}
                 >
@@ -314,12 +315,12 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
                     </p>
                   </div>
                   
-                  {/* Connecting arrow with extra spacing for the last step */}
+                  {/* Connecting arrow with extra spacing for steps that need it */}
                   {index < steps.length - 1 && animationStep > index && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className={`absolute left-10 top-8 ${index === steps.length - 2 ? 'h-14' : 'h-8'} flex justify-center`}
+                      className={`absolute left-10 top-8 ${step.extraSpacing ? 'h-24' : (index === steps.length - 2 ? 'h-16' : 'h-8')} flex justify-center`}
                     >
                       <ArrowDown className="text-orange-500 h-6 w-6" />
                     </motion.div>
