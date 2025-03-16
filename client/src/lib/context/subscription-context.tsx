@@ -1,139 +1,165 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  SubscriptionPlan, 
-  SubscriptionStatus, 
-  getSubscriptionStatus,
-  PLAN_HIERARCHY,
-  canAccessFeature
-} from '../api/subscription-service';
-import { useAuth } from './auth-context';
-
 /**
- * Interface for the simplified user in the subscription context
+ * Contexto para gestionar la información de suscripción del usuario
  */
-export interface SubscriptionUser {
-  id?: string;
-  email?: string;
-  displayName?: string;
+
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { useAuth } from '../../hooks/use-auth';
+import { collection, doc, getDoc, onSnapshot, Firestore } from 'firebase/firestore';
+import { db } from '../firebase';
+
+// Definir tipos para el contexto
+export interface Subscription {
+  id: string;
+  plan: string;
+  status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete';
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  stripeCustomerId?: string;
+  stripePriceId?: string;
+  trialEndDate?: Date;
+  createdAt: Date;
 }
 
-/**
- * Type for the subscription context
- */
 export interface SubscriptionContextType {
-  // Subscription state
-  subscription: SubscriptionStatus | null;
+  subscription: Subscription | null;
   isLoading: boolean;
-  isError: boolean;
-  
-  // User information
-  user: SubscriptionUser | null;
-  
-  // Actions
-  refreshSubscription: () => void;
-  
-  // Access verification
-  hasAccess: (requiredPlan: SubscriptionPlan) => boolean;
+  error: string | null;
+  currentPlan: string;
+  refreshSubscription: () => Promise<void>;
 }
 
-// Crear el contexto
+// Crear contexto con valores por defecto
 const SubscriptionContext = createContext<SubscriptionContextType>({
   subscription: null,
-  isLoading: false,
-  isError: false,
-  user: null,
-  refreshSubscription: () => {},
-  hasAccess: () => false
+  isLoading: true,
+  error: null,
+  currentPlan: 'free',
+  refreshSubscription: async () => {},
 });
 
-/**
- * Props for the subscription context provider
- */
-interface SubscriptionProviderProps {
-  children: ReactNode;
-}
-
-/**
- * Subscription context provider
- * Handles subscription logic and state updates
- */
-export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
-  // Get user information from authentication context
-  const { user: authUser, isLoading: authLoading } = useAuth();
+// Proveedor del contexto
+export function SubscriptionProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // State to store user adapted for this context
-  const [user, setUser] = useState<SubscriptionUser | null>(null);
+  // Plan actual basado en la suscripción
+  const currentPlan = subscription?.status === 'active' ? subscription.plan : 'free';
   
-  // Query to get subscription information
-  const {
-    data: subscription,
-    isLoading: subscriptionLoading,
-    isError,
-    refetch: refreshSubscription
-  } = useQuery({
-    queryKey: ['subscription', authUser?.uid],
-    queryFn: getSubscriptionStatus,
-    enabled: !!authUser?.uid, // Only query if there is an authenticated user
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true,
-  });
-  
-  // Update user when authentication changes
+  // Efecto para cargar los datos de suscripción cuando el usuario cambia
   useEffect(() => {
-    if (!authLoading && authUser) {
-      setUser({
-        id: authUser.uid,
-        email: authUser.email || undefined,
-        displayName: authUser.displayName || undefined
-      });
-    } else {
-      setUser(null);
-    }
-  }, [authUser, authLoading]);
-  
-  // Combined loading state
-  // Force isLoading to false after a time to avoid indefinite loading
-  const [forceLoaded, setForceLoaded] = useState(false);
-  
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setForceLoaded(true);
-    }, 3000); // 3 seconds maximum wait
+    let unsubscribe: (() => void) | null = null;
     
-    return () => clearTimeout(timer);
-  }, []);
+    const loadSubscription = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      if (!user) {
+        setSubscription(null);
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        // Referencia a la colección de suscripciones
+        const subsCollection = collection(db, 'subscriptions');
+        const userSubDoc = doc(subsCollection, user.uid);
+        
+        // Configurar un listener para actualizaciones en tiempo real
+        unsubscribe = onSnapshot(
+          userSubDoc,
+          (docSnapshot) => {
+            if (docSnapshot.exists()) {
+              const data = docSnapshot.data();
+              // Convertir timestamps a fechas
+              const subData: Subscription = {
+                id: docSnapshot.id,
+                plan: data.plan || 'free',
+                status: data.status || 'canceled',
+                currentPeriodEnd: data.currentPeriodEnd?.toDate() || new Date(),
+                cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+                stripeCustomerId: data.stripeCustomerId,
+                stripePriceId: data.stripePriceId,
+                trialEndDate: data.trialEndDate?.toDate(),
+                createdAt: data.createdAt?.toDate() || new Date(),
+              };
+              setSubscription(subData);
+            } else {
+              setSubscription(null);
+            }
+            setIsLoading(false);
+          },
+          (err) => {
+            console.error('Error loading subscription data:', err);
+            setError(err.message);
+            setIsLoading(false);
+          }
+        );
+      } catch (err: any) {
+        console.error('Error setting up subscription listener:', err);
+        setError(err.message);
+        setIsLoading(false);
+      }
+    };
+    
+    loadSubscription();
+    
+    // Limpiar al desmontar
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [user]);
   
-  const isLoading = !forceLoaded && (authLoading || (subscriptionLoading && !!authUser));
-  
-  /**
-   * Checks if the user has access to a specific plan
-   * @param requiredPlan Plan required for access
-   * @returns true if the user has access
-   */
-  const hasAccess = (requiredPlan: SubscriptionPlan): boolean => {
-    // If the user is an administrator, always grant access
-    if (user?.email === 'convoycubano@gmail.com') {
-      return true;
+  // Función para refrescar manualmente los datos de suscripción
+  const refreshSubscription = async () => {
+    if (!user) {
+      setSubscription(null);
+      return;
     }
     
-    // If no subscription exists, only allow access to the free plan
-    if (!subscription) {
-      return requiredPlan === 'free';
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const subsCollection = collection(db, 'subscriptions');
+      const userSubDoc = doc(subsCollection, user.uid);
+      const docSnapshot = await getDoc(userSubDoc);
+      
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        const subData: Subscription = {
+          id: docSnapshot.id,
+          plan: data.plan || 'free',
+          status: data.status || 'canceled',
+          currentPeriodEnd: data.currentPeriodEnd?.toDate() || new Date(),
+          cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+          stripeCustomerId: data.stripeCustomerId,
+          stripePriceId: data.stripePriceId,
+          trialEndDate: data.trialEndDate?.toDate(),
+          createdAt: data.createdAt?.toDate() || new Date(),
+        };
+        setSubscription(subData);
+      } else {
+        setSubscription(null);
+      }
+    } catch (err: any) {
+      console.error('Error refreshing subscription data:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Use the canAccessFeature utility to verify access
-    return canAccessFeature(subscription.currentPlan, requiredPlan);
   };
   
-  // Values for the context
-  const value: SubscriptionContextType = {
-    subscription: subscription || null,
+  // Valor del contexto
+  const value = {
+    subscription,
     isLoading,
-    isError,
-    user,
+    error,
+    currentPlan,
     refreshSubscription,
-    hasAccess
   };
   
   return (
@@ -141,19 +167,9 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       {children}
     </SubscriptionContext.Provider>
   );
-};
+}
 
-/**
- * Hook to access the subscription context
- */
-export const useSubscription = () => {
-  const context = useContext(SubscriptionContext);
-  
-  if (!context) {
-    throw new Error('useSubscription must be used within a SubscriptionProvider');
-  }
-  
-  return context;
-};
-
-export default SubscriptionContext;
+// Hook personalizado para usar el contexto
+export function useSubscription() {
+  return useContext(SubscriptionContext);
+}

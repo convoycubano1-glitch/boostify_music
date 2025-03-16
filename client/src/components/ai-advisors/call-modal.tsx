@@ -33,7 +33,7 @@ export interface CallModalProps {
 
 export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
   const { user } = useAuth();
-  const { currentPlan } = useSubscription();
+  const { subscription, currentPlan } = useSubscription();
   const [calling, setCalling] = useState(false);
   const [connected, setConnected] = useState(false);
   const [notes, setNotes] = useState('');

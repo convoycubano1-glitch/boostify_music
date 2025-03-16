@@ -33,7 +33,7 @@ export function CallLimits({
   const { toast } = useToast();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const { currentPlan, subscription } = useSubscription();
+  const { subscription, currentPlan } = useSubscription();
   const [callsUsed, setCallsUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
