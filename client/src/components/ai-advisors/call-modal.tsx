@@ -1,8 +1,9 @@
 /**
  * Modal for making calls to AI advisors
+ * Fixed version with optimized useEffect hooks to prevent infinite loops
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '../../hooks/use-auth';
 import { useToast } from '../../hooks/use-toast';
 import { useSubscription } from '../../lib/context/subscription-context';
@@ -65,7 +66,12 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     ['publicist'] // Advisors available in the free plan
   );
   
-  // End call function declaration
+  // Create stable advisor values first that won't change every render (preventing infinite loops)
+  const advisorId = useMemo(() => advisor?.id || '', [advisor?.id]);
+  const advisorName = useMemo(() => advisor?.name || 'Advisor', [advisor?.id]);
+  const advisorTitle = useMemo(() => advisor?.title || 'Specialist', [advisor?.id]);
+  
+  // End call function declaration - memoized with stable values
   const endCall = useCallback(async () => {
     // Stop the timer
     if (callTimer) {
@@ -88,7 +94,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
         
         toast({
           title: "Call ended",
-          description: `Your call with ${advisor.name} has been recorded.`,
+          description: `Your call with ${advisorName} has been recorded.`,
         });
       } catch (error) {
         console.error('Error registering call:', error);
@@ -109,7 +115,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     setNotes('');
     setCallDuration(0);
     hasCalledRef.current = false;
-  }, [callTimer, connected, user, advisor, callDuration, notes, currentPlan, toast, onOpenChange]);
+  }, [callTimer, connected, user, advisorId, advisorName, callDuration, notes, currentPlan, toast, onOpenChange]);
   
   // Start call timer function
   const startCallTimer = useCallback(() => {
@@ -128,7 +134,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     setCallTimer(timer);
   }, [endCall]);
   
-  // Simulate call function
+  // Simulate call function - memoized with stable dependencies
   const simulateCall = useCallback(() => {
     if (!user || !advisor) return;
     
@@ -144,22 +150,22 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
       
       toast({
         title: "Call connected",
-        description: `You're talking with ${advisor.name}, your ${advisor.title.toLowerCase()}.`,
+        description: `You're talking with ${advisorName}, your ${advisorTitle.toLowerCase()}.`,
       });
       
       // Start the actual phone call to the configured number
       try {
         const phoneNumber = ADVISOR_PHONE_NUMBER.replace(/\s+/g, '');
         window.open(`tel:${phoneNumber}`, '_blank');
-        console.log(`Simulating call to: ${advisor.name} (${advisor.id})`);
+        console.log(`Simulating call to: ${advisorName} (${advisorId})`);
       } catch (error) {
         console.error('Error initiating phone call:', error);
       }
       
     }, 2000);
-  }, [user, advisor, startCallTimer, toast]);
+  }, [user, advisorId, advisorName, advisorTitle, startCallTimer, toast]);
   
-  // Cancel the call
+  // Cancel the call - memoized with stable dependencies
   const cancelCall = useCallback(async () => {
     // Stop the timer
     if (callTimer) {
@@ -193,7 +199,7 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
     setNotes('');
     setCallDuration(0);
     hasCalledRef.current = false;
-  }, [callTimer, connected, user, advisor, callDuration, notes, currentPlan, onOpenChange]);
+  }, [callTimer, connected, user, advisorId, callDuration, notes, currentPlan, onOpenChange]);
   
   // Reset call state function
   const resetCallState = useCallback(() => {
@@ -227,7 +233,10 @@ export function CallModal({ advisor, open, onOpenChange }: CallModalProps) {
         clearInterval(callTimer);
       }
     };
-  }, [open, advisor, hasAccess, isLoading, callTimer, simulateCall, resetCallState]);
+  // Remove simulateCall from dependencies to avoid infinite renders 
+  // since it changes on every render due to advisor dependency
+  // We use hasCalledRef to track if we've run it already
+  }, [open, advisor?.id, hasAccess, isLoading, resetCallState]);
   
   // If advisor is not defined, don't show the modal but after all hooks are called
   if (!advisor) return null;
