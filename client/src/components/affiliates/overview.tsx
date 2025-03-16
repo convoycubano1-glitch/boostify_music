@@ -471,7 +471,7 @@ export function AffiliateOverview({ affiliateData }: AffiliateOverviewProps) {
 
                       <div className="flex flex-col items-end">
                         <div className="font-semibold">
-                          +${sale.commission.toFixed(2)}
+                          +${(sale?.commission || 0).toFixed(2)}
                         </div>
                         <Badge
                           variant={

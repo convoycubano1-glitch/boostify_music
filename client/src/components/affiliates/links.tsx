@@ -507,12 +507,12 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                           <div className="flex items-center gap-1">
                             <span>{link.conversions}</span>
                             <span className="text-xs text-muted-foreground">
-                              ({(link.conversionRate * 100).toFixed(1)}%)
+                              ({((link?.conversionRate || 0) * 100).toFixed(1)}%)
                             </span>
                           </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          ${link.commission.toFixed(2)}
+                          ${(link?.commission || 0).toFixed(2)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -640,7 +640,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                   )}
                   <CardContent className="p-4">
                     <div className="mb-2 flex items-start justify-between">
-                      <h3 className="font-semibold">{product.name}</h3>
+                      <h3 className="font-semibold">{product?.name || "Producto sin nombre"}</h3>
                       {product.price && (
                         <Badge variant="outline">${product.price}</Badge>
                       )}
@@ -652,7 +652,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                     )}
                     <div className="mt-3 flex items-center justify-between">
                       <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                        {product.commissionRate * 100}% comisión
+                        {(product?.commissionRate || 0) * 100}% comisión
                       </Badge>
                       <Dialog>
                         <DialogTrigger asChild>
@@ -662,7 +662,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Crear Enlace para {product.name}</DialogTitle>
+                            <DialogTitle>Crear Enlace para {product?.name || "Producto"}</DialogTitle>
                             <DialogDescription>
                               Personaliza tu enlace para promocionar este producto
                             </DialogDescription>
