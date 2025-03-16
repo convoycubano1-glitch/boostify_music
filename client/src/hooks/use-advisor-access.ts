@@ -1,5 +1,5 @@
 /**
- * Hook personalizado para verificar acceso a asesores basado en el plan de suscripción
+ * Custom hook to verify access to advisors based on subscription plan
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,28 +7,28 @@ import { useSubscription } from '../lib/context/subscription-context';
 import { advisorCallService } from '../lib/services/advisor-call-service';
 
 /**
- * Interfaz para el resultado de verificación de acceso
+ * Interface for access verification result
  */
 export interface AdvisorAccessResult {
-  // Si el usuario tiene acceso al asesor específico
+  // Whether the user has access to the specific advisor
   hasAccess: boolean;
-  // Si ha alcanzado el límite de llamadas
+  // Whether they've reached the call limit
   hasReachedLimit: boolean;
-  // Número de llamadas utilizadas
+  // Number of calls used
   callsUsed: number;
-  // Límite total de llamadas
+  // Total call limit
   callLimit: number;
-  // Llamadas restantes
+  // Remaining calls
   callsRemaining: number;
-  // Si está cargando la verificación
+  // Whether verification is loading
   isLoading: boolean;
-  // Error si ocurre alguno
+  // Error if any
   error: string | null;
-  // Mensaje descriptivo sobre el acceso
+  // Descriptive message about the access
   message: string;
 }
 
-// Estado inicial constante para evitar recreaciones
+// Constant initial state to avoid recreations
 const INITIAL_STATE: AdvisorAccessResult = {
   isLoading: true,
   error: null,
@@ -41,51 +41,52 @@ const INITIAL_STATE: AdvisorAccessResult = {
 };
 
 /**
- * Hook para verificar si un usuario tiene acceso a un asesor específico
- * @param advisorId ID del asesor a verificar
- * @param freePlanAdvisors Lista de IDs de asesores disponibles en plan gratuito
- * @returns Resultado de la verificación de acceso
+ * Hook to verify if a user has access to a specific advisor
+ * @param advisorId ID of the advisor to verify
+ * @param freePlanAdvisors List of advisor IDs available in the free plan
+ * @returns Result of the access verification
  */
 export function useAdvisorAccess(
   advisorId: string,
   freePlanAdvisors: string[] = []
 ): AdvisorAccessResult {
-  // Obtener información de suscripción
+  // Get subscription information
   const { subscription, isLoading: isSubscriptionLoading, currentPlan } = useSubscription();
   
-  // Estado único con estado inicial definido fuera de la función
-  const [state, setState] = useState<AdvisorAccessResult>(INITIAL_STATE);
-
-  // Usar useMemo para asegurar que freePlanAdvisors sea consistente
+  // Ensure consistent freePlanAdvisors
   const normalizedFreePlanAdvisors = useMemo(() => {
     return Array.isArray(freePlanAdvisors) ? freePlanAdvisors : [];
   }, [freePlanAdvisors]);
   
-  // Efecto para verificar acceso
+  // Single state with initial state defined outside the function
+  // Make sure this is declared after other hooks to maintain hook order
+  const [state, setState] = useState<AdvisorAccessResult>(INITIAL_STATE);
+  
+  // Effect to verify access
   useEffect(() => {
     let isMounted = true;
     
     const checkAccess = async () => {
       if (!isMounted) return;
       
-      // Actualizar estado de carga
+      // Update loading state
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       try {
-        // Si aún estamos cargando la suscripción, esperar
+        // If we're still loading the subscription, wait
         if (isSubscriptionLoading) return;
         
-        // Obtener plan actual
+        // Get current plan
         const plan = currentPlan || 'free';
         
-        // Verificar si el asesor está disponible en el plan actual
+        // Verify if the advisor is available in the current plan
         const advisorAvailable = advisorCallService.isAdvisorAvailableInPlan(
           advisorId,
           plan,
           normalizedFreePlanAdvisors
         );
         
-        // Verificar límite de llamadas y manejar posibles errores
+        // Verify call limit and handle possible errors
         let limitCheck;
         try {
           limitCheck = await advisorCallService.hasReachedCallLimit(plan);
@@ -94,7 +95,7 @@ export function useAdvisorAccess(
           
           if (!isMounted) return;
           
-          // Usar valores seguros en caso de error
+          // Use safe values in case of error
           limitCheck = {
             hasReachedLimit: false,
             callsUsed: 0,
@@ -105,7 +106,7 @@ export function useAdvisorAccess(
         
         if (!isMounted) return;
         
-        // Generar mensaje apropiado según el resultado
+        // Generate appropriate message according to the result
         let resultMessage = '';
         if (!advisorAvailable) {
           resultMessage = `This advisor is only available on higher tier plans. Upgrade your subscription to access.`;
@@ -115,7 +116,7 @@ export function useAdvisorAccess(
           resultMessage = `You have ${limitCheck.callsRemaining} calls available this month.`;
         }
         
-        // Actualizar estado completo
+        // Update complete state
         setState({
           isLoading: false,
           error: null,
@@ -131,7 +132,7 @@ export function useAdvisorAccess(
         
         if (!isMounted) return;
         
-        // Actualizar estado en caso de error general
+        // Update state in case of general error
         setState(prev => ({
           ...prev,
           isLoading: false,
@@ -141,10 +142,10 @@ export function useAdvisorAccess(
       }
     };
     
-    // Ejecutar verificación
+    // Execute verification
     checkAccess();
     
-    // Limpieza al desmontar
+    // Cleanup when unmounting
     return () => {
       isMounted = false;
     };
