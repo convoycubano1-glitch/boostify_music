@@ -1,37 +1,29 @@
 
-# Large media files to exclude from deployment
-**/client/public/assets/indications/*.mp4
-**/client/public/assets/tv/*.mp4
-**/client/src/images/videos/*.mp4
-**/client/dist/assets/indications/*.mp4
-**/client/dist/assets/tv/*.mp4
-**/public/assets/indications/*.mp4
-**/public/assets/tv/*.mp4
-**/assets/*.mp4
-**/assets/videos/*.mp4
-**/*.mp4
-**/*.mov
-**/*.avi
-**/*.mkv
-**/*.webm
-**/*.flv
-**/*.ogg
+# Files and directories to exclude from deployment that cause size issues
+# Node.js development files
+**/.npm
+**/.npmrc
+**/node_modules/.cache
+**/node_modules/.bin
+**/node_modules/.vite
 
-# Audio files (can be large too)
-**/*.wav
-**/*.mp3
-**/*.flac
+# Large development files
+**/.git
+**/.github
+**/.vscode
+**/.idea
+**/.DS_Store
+**/.Thumbs.db
 
-# Large image files
+# Only exclude raw/source design files
 **/*.psd
 **/*.ai
-**/*.tif
-**/*.tiff
+**/*.sketch
+**/*.fig
+**/*.xd
 
-# Other large assets
-**/client/dist/assets/Standard_Mode_Generated_Video*
-**/client/public/assets/Standard_Mode_Generated_Video*
-**/assets/Standard_Mode_Generated_Video*
+# IMPORTANT: No longer excluding video files (134MB total)
+# Temp/cache files and directories
 **/node_modules/.cache
 **/.git
 
