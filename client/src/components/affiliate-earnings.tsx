@@ -36,7 +36,8 @@ import {
 } from "./ui/popover";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon } from "@radix-ui/react-icons";
+// @radix-ui/react-icons mock
+import { ArrowUpIcon, ArrowDownIcon, CheckIcon, Cross1Icon, QuestionMarkCircledIcon } from '../mocks/radix-icons-mock';
 import { Calendar as CalendarComponent } from "./ui/calendar";
 
 interface AffiliateEarningsProps {

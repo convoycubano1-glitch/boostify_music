@@ -60,14 +60,31 @@ Estos scripts automatizan el proceso de preparación para producción:
 | Script | Descripción |
 |--------|-------------|
 | `production-check.js` | Verifica la aplicación para detectar problemas de seguridad y rendimiento |
+| `fix-typescript-errors.js` | Corrige errores comunes de TypeScript para permitir la compilación |
 | `secure-build.js` | Construye la aplicación con medidas de seguridad adicionales |
 | `performance-test.js` | Realiza pruebas de rendimiento en el entorno de producción |
-| `build-for-replit.js` | Script optimizado para compilar la aplicación para entornos Replit |
+| `production-build.sh` | Script automatizado que ejecuta todo el proceso de compilación segura |
 | `startup.sh` | Script para iniciar la aplicación en producción con verificaciones |
 
-### 1. Verificación Pre-Producción
+### Opción recomendada: Proceso completo automatizado
 
-Ejecuta el script de verificación antes del despliegue para detectar posibles problemas:
+La forma más sencilla de compilar para producción es usar el script automatizado que maneja todo el proceso:
+
+```bash
+./production-build.sh
+```
+
+Este script ejecutará automáticamente todos los pasos necesarios:
+1. Verificar prerrequisitos (Node.js compatible)
+2. Ejecutar verificaciones previas a la producción
+3. Corregir errores de TypeScript
+4. Ejecutar la compilación segura
+
+### Pasos manuales (alternativa)
+
+Si prefieres ejecutar los pasos manualmente, sigue esta secuencia:
+
+#### 1. Verificación Pre-Producción
 
 ```bash
 node production-check.js
@@ -79,9 +96,18 @@ Este script verificará:
 - Configuración de seguridad
 - Optimizaciones de rendimiento
 
-### 2. Construcción Segura para Producción
+#### 2. Corregir errores de TypeScript (si es necesario)
 
-Para compilar la aplicación con las medidas de seguridad recomendadas:
+```bash
+node fix-typescript-errors.js
+```
+
+Este script corrige automáticamente:
+- Módulos de tipos faltantes
+- Errores de tipado en componentes específicos
+- Dependencias faltantes con soluciones provisionales
+
+#### 3. Construcción Segura para Producción
 
 ```bash
 node secure-build.js
@@ -93,7 +119,7 @@ Este script realizará automáticamente:
 - Creación de archivo .env.production seguro
 - Actualización del servidor con medidas de seguridad
 
-### 3. Iniciar en Producción
+#### 4. Iniciar en Producción
 
 Para iniciar la aplicación en producción:
 
