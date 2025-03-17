@@ -1,6 +1,16 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { auth, db } from '../firebase';
+
+/**
+ * Función para obtener el ID del usuario de forma segura
+ * Si no hay usuario autenticado, devuelve un ID de prueba
+ * @param req Solicitud HTTP
+ * @returns ID del usuario o ID de prueba
+ */
+function getUserId(req: Request): string {
+  return req.user?.id || "test-user-id";
+}
 import { 
   collection, 
   doc, 
@@ -17,56 +27,9 @@ import {
   increment,
   Timestamp,
   DocumentData,
-  CollectionReference
+  CollectionReference,
+  deleteDoc
 } from 'firebase/firestore';
-import { z } from 'zod';
-
-/**
- * Función para obtener el ID del usuario de forma segura
- * Si no hay usuario autenticado, devuelve un ID de prueba
- * @param req Solicitud HTTP
- * @returns ID del usuario o ID de prueba
- */
-function getUserId(req: Request): string {
-  return req.user?.id || "test-user-id";
-}
-
-// Interfaces para tipos de Firestore
-interface AffiliateStats {
-  totalClicks: number;
-  conversions: number;
-  earnings: number;
-  pendingPayment: number;
-}
-
-interface AffiliateData {
-  id: string;
-  userId: string;
-  name: string;
-  bio: string;
-  email?: string;
-  website?: string;
-  socialMedia?: {
-    instagram?: string;
-    twitter?: string;
-    youtube?: string;
-    tiktok?: string;
-  };
-  status: 'pending' | 'approved' | 'rejected';
-  level: string;
-  stats: AffiliateStats;
-  createdAt: Timestamp;
-}
-
-interface AffiliateProduct {
-  id: string;
-  name: string;
-  description?: string;
-  url?: string;
-  commissionRate: number;
-  category?: string;
-  imageUrl?: string;
-}
 import { z } from 'zod';
 
 // Interfaces para tipos de Firestore
@@ -828,5 +791,5 @@ function generateAffiliateUrl(baseUrl: string, affiliateId: string, linkId: stri
   }
 }
 
-
+import { deleteDoc } from 'firebase/firestore';
 export default router;
