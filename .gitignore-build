@@ -1,0 +1,41 @@
+
+# Large media files to exclude from deployment
+**/client/public/assets/indications/*.mp4
+**/client/public/assets/tv/*.mp4
+**/client/src/images/videos/*.mp4
+**/client/dist/assets/indications/*.mp4
+**/client/dist/assets/tv/*.mp4
+**/public/assets/indications/*.mp4
+**/public/assets/tv/*.mp4
+**/assets/*.mp4
+**/assets/videos/*.mp4
+**/*.mp4
+**/*.mov
+**/*.avi
+**/*.mkv
+**/*.webm
+**/*.flv
+**/*.ogg
+
+# Audio files (can be large too)
+**/*.wav
+**/*.mp3
+**/*.flac
+
+# Large image files
+**/*.psd
+**/*.ai
+**/*.tif
+**/*.tiff
+
+# Other large assets
+**/client/dist/assets/Standard_Mode_Generated_Video*
+**/client/public/assets/Standard_Mode_Generated_Video*
+**/assets/Standard_Mode_Generated_Video*
+**/node_modules/.cache
+**/.git
+
+# Caches and logs
+**/.cache
+**/logs
+**/*.log
