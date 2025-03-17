@@ -8,7 +8,7 @@ import { Label } from "../../ui/label";
 import { Slider } from "../../ui/slider";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
-import { RefreshCw, Wand2, Volume2, Film, ZoomIn, ChevronsUpDown, Wind, Sparkles } from 'lucide-react';
+import { RefreshCw, Wand2, Volume2, Film, ZoomIn, ChevronsUpDown, Wind, Sparkles, Palette } from 'lucide-react';
 import { Switch } from "../../ui/switch";
 import {
   Select,
