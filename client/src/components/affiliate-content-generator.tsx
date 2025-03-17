@@ -51,7 +51,7 @@ interface AffiliateProduct {
   name: string;
   description?: string;
   url?: string;
-  commissionRate?: number;
+  commissionRate: number;
   category?: string;
   imageUrl?: string;
 }
@@ -66,7 +66,7 @@ interface AffiliateContent {
   productName: string;
   contentType: string;
   platform: string;
-  createdAt: any; // Idealmente debería ser Timestamp de Firestore
+  createdAt: any; // Este tipo debería ser Timestamp de Firestore, pero para simplificar
 }
 
 // Esquema de validación para el formulario de generación de contenido
