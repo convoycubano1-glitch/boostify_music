@@ -5,8 +5,8 @@ import { Footer } from "../components/layout/footer";
 // Página de inicio muy simplificada para la demo
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-      <header className="bg-black/80 py-4 sticky top-0 z-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white flex flex-col">
+      <header className="bg-black/80 backdrop-blur-md py-4 sticky top-0 z-50 shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -14,17 +14,17 @@ const HomePage = () => {
             </div>
             <nav className="hidden md:flex gap-6">
               <Link href="/features">
-                <span className="text-gray-300 hover:text-orange-400">Características</span>
+                <span className="text-gray-300 hover:text-orange-400 transition-colors">Características</span>
               </Link>
               <Link href="/pricing">
-                <span className="text-gray-300 hover:text-orange-400">Precios</span>
+                <span className="text-gray-300 hover:text-orange-400 transition-colors">Precios</span>
               </Link>
               <Link href="/contact">
-                <span className="text-gray-300 hover:text-orange-400">Contacto</span>
+                <span className="text-gray-300 hover:text-orange-400 transition-colors">Contacto</span>
               </Link>
             </nav>
             <div>
-              <button className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">
+              <button className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors">
                 Iniciar sesión
               </button>
             </div>
@@ -35,18 +35,18 @@ const HomePage = () => {
       <main className="flex-grow">
         <section className="py-20 bg-gradient-to-b from-black to-gray-900">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">Impulsa tu música con IA</h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">Impulsa tu música con IA</h1>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10 animate-slide-up">
               Transforma tu carrera musical con herramientas de IA para videos, marketing y producción.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/signup">
-                <button className="bg-orange-500 text-white px-6 py-3 rounded-md hover:bg-orange-600">
+                <button className="bg-orange-500 text-white px-6 py-3 rounded-md hover:bg-orange-600 transition-colors shadow-lg">
                   Comenzar gratis
                 </button>
               </Link>
               <Link href="/demo">
-                <button className="bg-gray-800 text-white px-6 py-3 rounded-md hover:bg-gray-700">
+                <button className="bg-gray-800 text-white px-6 py-3 rounded-md hover:bg-gray-700 transition-colors border border-gray-700">
                   Ver demo
                 </button>
               </Link>
@@ -97,7 +97,7 @@ const HomePage = () => {
                   </button>
                 </Link>
               </div>
-              <div className="md:w-1/2 bg-black/30 rounded-lg p-6 border border-purple-500/20">
+              <div className="md:w-1/2 bg-black/30 rounded-lg p-6 border border-purple-500/20 shadow-xl">
                 <div className="aspect-video rounded-lg overflow-hidden relative bg-gradient-to-br from-purple-900/60 to-indigo-900/60 flex items-center justify-center">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
@@ -120,15 +120,15 @@ const HomePage = () => {
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">Características principales</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-gray-700/50 p-6 rounded-lg">
+              <div className="bg-gray-700/50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
                 <h3 className="text-xl font-semibold mb-4">Creador de Videos Musicales</h3>
                 <p className="text-gray-300">Genera videos musicales profesionales en minutos usando IA avanzada.</p>
               </div>
-              <div className="bg-gray-700/50 p-6 rounded-lg">
+              <div className="bg-gray-700/50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
                 <h3 className="text-xl font-semibold mb-4">Generador de Música</h3>
                 <p className="text-gray-300">Crea pistas originales y voces sintéticas para tus canciones.</p>
               </div>
-              <div className="bg-gray-700/50 p-6 rounded-lg">
+              <div className="bg-gray-700/50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
                 <h3 className="text-xl font-semibold mb-4">Marketing Musical</h3>
                 <p className="text-gray-300">Estrategias personalizadas y promoción automatizada para tu música.</p>
               </div>
@@ -140,7 +140,7 @@ const HomePage = () => {
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold mb-8">Planes de precios</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+              <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden shadow-lg">
                 <div className="p-6">
                   <h3 className="text-xl font-bold mb-2">Básico</h3>
                   <p className="text-3xl font-bold mb-4">Gratis</p>
@@ -150,14 +150,15 @@ const HomePage = () => {
                     <li>Análisis básico</li>
                   </ul>
                   <Link href="/signup">
-                    <button className="block w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-600">
+                    <button className="block w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-600 transition-colors">
                       Empezar
                     </button>
                   </Link>
                 </div>
               </div>
-              <div className="bg-gray-800 border border-orange-500 rounded-lg overflow-hidden">
+              <div className="bg-gray-800 border border-orange-500 rounded-lg overflow-hidden shadow-lg transform scale-105">
                 <div className="p-6">
+                  <div className="absolute top-0 right-0 bg-orange-500 text-xs text-white px-2 py-1 rounded-bl-lg">Popular</div>
                   <h3 className="text-xl font-bold mb-2">Pro</h3>
                   <p className="text-3xl font-bold mb-4">$29/mes</p>
                   <ul className="text-left space-y-2 mb-8">
@@ -166,13 +167,13 @@ const HomePage = () => {
                     <li>Análisis avanzado</li>
                   </ul>
                   <Link href="/signup">
-                    <button className="block w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600">
+                    <button className="block w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors">
                       Prueba gratuita
                     </button>
                   </Link>
                 </div>
               </div>
-              <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+              <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden shadow-lg">
                 <div className="p-6">
                   <h3 className="text-xl font-bold mb-2">Business</h3>
                   <p className="text-3xl font-bold mb-4">$79/mes</p>
@@ -182,7 +183,7 @@ const HomePage = () => {
                     <li>Estrategia personalizada</li>
                   </ul>
                   <Link href="/contact">
-                    <button className="block w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-600">
+                    <button className="block w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-600 transition-colors">
                       Contactar
                     </button>
                   </Link>
