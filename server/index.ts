@@ -104,7 +104,7 @@ if (process.env.NODE_ENV === "production") {
   log('🚀 Running in production mode');
 
   const distPath = path.resolve(process.cwd(), 'dist', 'public');
-  
+
   //Simplified static file serving
   app.use(express.static(distPath));
   app.get('*', (req, res) => {
