@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Script de inicio para el entorno de producción de Boostify Music
-# Este script automatiza el proceso de compilación y ejecución en producción
-
 # Colores para mejor legibilidad
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -64,7 +61,7 @@ fi
 
 # Compilar la aplicación
 echo -e "\n${YELLOW}Compilando la aplicación para producción...${RESET}"
-node build-for-replit.js
+npm run build
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error durante la compilación${RESET}"
@@ -73,11 +70,6 @@ fi
 
 # Iniciar la aplicación
 echo -e "\n${YELLOW}Iniciando la aplicación en modo producción...${RESET}"
-cd dist
 
-# Determinar el puerto
-PORT=${PORT:-3000}
-echo -e "${BLUE}La aplicación estará disponible en: http://localhost:${PORT}${RESET}"
-
-# Iniciar el servidor
-node server.js
+# Start the server
+NODE_ENV=production PORT=5173 node dist/server/index.js

@@ -27,12 +27,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     "worker-src 'self' blob:; " +
     "frame-src 'self';"
   );
-  
+
   // Add CORS headers to avoid CORB issues
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
-  
+
   next();
 });
 
@@ -110,7 +110,7 @@ if (process.env.NODE_ENV === "production") {
   // Verify build files exist
   if (!fs.existsSync(distPath)) {
     console.error(`⚠️ Warning: Production build directory not found: ${distPath}`);
-    
+
     // Create directory if it doesn't exist
     try {
       fs.mkdirSync(distPath, { recursive: true });
@@ -123,7 +123,7 @@ if (process.env.NODE_ENV === "production") {
 
   if (!fs.existsSync(indexPath)) {
     console.error(`⚠️ Warning: index.html not found in production build: ${indexPath}`);
-    
+
     // Create a minimal index.html if it doesn't exist
     try {
       const minimalHtml = `<!DOCTYPE html>
@@ -167,7 +167,7 @@ if (process.env.NODE_ENV === "production") {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        
+
         // Usa res.sendFile con opciones para un path absoluto
         res.sendFile(indexPath, { 
           maxAge: 0,
@@ -247,7 +247,7 @@ if (process.env.NODE_ENV === "production") {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
-        
+
         // Usa res.sendFile con opciones para un path absoluto
         res.sendFile(indexPath, { 
           maxAge: 0,
@@ -297,12 +297,12 @@ if (process.env.NODE_ENV === "production") {
 
 } else {
   log('🛠 Running in development mode');
-  
+
   // In development mode, we let the Vite middleware handle all frontend routes
   // Important: We don't define specific handlers for frontend routes like '/'
   // Static files are served automatically
   app.use(express.static(path.join(process.cwd(), 'client/public')));
-  
+
   // Add diagnostics to debug route handling
   log('🔍 Vite will handle frontend routes in development mode');
 }
@@ -310,11 +310,11 @@ if (process.env.NODE_ENV === "production") {
 (async () => {
   try {
     log('🔄 Starting server setup...');
-    
+
     // Import and run environment check
     const { checkEnvironment } = await import('./utils/environment-check');
     checkEnvironment();
-    
+
     const server = registerRoutes(app);
 
     // Global error handler
@@ -339,7 +339,7 @@ if (process.env.NODE_ENV === "production") {
         { name: 'SESSION_SECRET', description: 'Secure session management' },
         { name: 'DATABASE_URL', description: 'Database connection' }
       ];
-      
+
       // Warning for missing critical variables
       criticalEnvVars.forEach(({name, description}) => {
         if (!process.env[name]) {
@@ -348,11 +348,11 @@ if (process.env.NODE_ENV === "production") {
           log(`✅ ${name} is configured and ready for use`);
         }
       });
-      
+
       // Check if running under PM2 (recommended for production)
       if (process.env.PM2_HOME) {
         log('✅ Running under PM2 process manager');
-        
+
         // Log PM2 configuration if available
         if (process.env.PM2_INSTANCES) {
           log(`📊 PM2 Instances: ${process.env.PM2_INSTANCES}`);
@@ -371,13 +371,13 @@ if (process.env.NODE_ENV === "production") {
     // but BEFORE any middleware that handles all routes (like '*')
     if (process.env.NODE_ENV !== "production") {
       log('🛠 Setting up Vite development server');
-      
+
       // Additional diagnostics to identify initialization order
       log('📌 Configuring Vite to handle frontend routes like "/"');
-      
+
       // Configure Vite with higher priority for non-API routes
       await setupVite(app, server);
-      
+
       // Add a last-resort middleware for debugging
       app.use('*', (req, res, next) => {
         // Only for non-API routes that Vite hasn't handled
@@ -391,15 +391,15 @@ if (process.env.NODE_ENV === "production") {
     // Use the configured port, Replit port, or 5000 as fallback
     const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 
                 (process.env.REPLIT_PORT ? parseInt(process.env.REPLIT_PORT, 10) : 5000);
-    
+
     // Determine if we're in a Replit environment
     const isReplitEnv = !!process.env.REPL_SLUG || !!process.env.REPLIT_IDENTITY;
-    
+
     // In production, ensure we're listening on the correct port
     if (process.env.NODE_ENV === "production") {
       log(`🚀 Starting server in production mode on port ${PORT}`);
     }
-    
+
     // Start the server on a specific port - always on 0.0.0.0 to ensure external accessibility
     // The value 0.0.0.0 makes the server listen on all network interfaces (including localhost)
     server.listen(PORT, '0.0.0.0', () => {
@@ -408,17 +408,17 @@ if (process.env.NODE_ENV === "production") {
       log(`📂 Static files served from: ${process.env.NODE_ENV === "production" ? 
         path.resolve(process.cwd(), 'dist', 'public') : 
         path.join(process.cwd(), 'client/public')}`);
-      
+
       // Access URL adapted to the environment
       const accessURL = isReplitEnv ? 
         `https://${process.env.REPL_SLUG || 'your-replit'}.replit.app` : 
         process.env.NODE_ENV === "production" ? 
           `${process.env.APP_URL || 'https://your-app-domain.com'}` : 
           `http://localhost:${PORT}`;
-      
+
       log(`🔗 Access URL: ${accessURL}`);
     });
-    
+
     // Handle server errors
     server.on('error', (error: any) => {
       if (error.code === 'EADDRINUSE') {
