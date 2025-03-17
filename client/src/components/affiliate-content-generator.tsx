@@ -46,6 +46,29 @@ interface AffiliateContentGeneratorProps {
   affiliateData: any;
 }
 
+interface AffiliateProduct {
+  id: string;
+  name: string;
+  description?: string;
+  url?: string;
+  commissionRate?: number;
+  category?: string;
+  imageUrl?: string;
+}
+
+interface AffiliateContent {
+  id: string;
+  userId: string;
+  content: string;
+  title: string;
+  tags: string[];
+  productId: string;
+  productName: string;
+  contentType: string;
+  platform: string;
+  createdAt: any; // Idealmente debería ser Timestamp de Firestore
+}
+
 // Esquema de validación para el formulario de generación de contenido
 const contentFormSchema = z.object({
   productId: z.string({ required_error: "Selecciona un producto" }),

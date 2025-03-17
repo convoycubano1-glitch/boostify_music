@@ -3,6 +3,13 @@ import { type Express, type Request, type Response, type NextFunction } from "ex
 import session from 'express-session';
 import passport from 'passport';
 
+// Define User interface para resolver problemas de tipado
+interface User {
+  uid: string;
+  id: string;
+  role: string;
+}
+
 // Middleware to check if the request is authenticated
 async function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   // First check if user is authenticated through session
@@ -21,6 +28,7 @@ async function isAuthenticated(req: Request, res: Response, next: NextFunction) 
     const decodedToken = await auth.verifyIdToken(token);
     req.user = {
       id: decodedToken.uid,
+      uid: decodedToken.uid,
       role: 'artist'
     };
     next();
@@ -97,7 +105,7 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: string, done) => {
     try {
       const userRecord = await auth.getUser(id);
-      done(null, { id: userRecord.uid, role: 'artist' });
+      done(null, { id: userRecord.uid, uid: userRecord.uid, role: 'artist' });
     } catch (error) {
       done(error);
     }
