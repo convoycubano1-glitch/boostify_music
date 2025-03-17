@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { SceneData, SceneEditor } from "../components/music-video/scene-editor/SceneEditor";
 import { SceneEditorContainer, TimelineClip } from "../components/music-video/scene-editor/SceneEditorContainer";
+import { SceneEditorPanel } from "../components/music-video/scene-editor/SceneEditorPanel";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useToast } from "../hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
 import { Separator } from '../components/ui/separator';
+import { PlusCircle, Save, RefreshCw, Film, Layers } from 'lucide-react';
 
 /**
  * Página dedicada al editor de escenas para videos musicales

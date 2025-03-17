@@ -16,6 +16,7 @@ import AdminPage from "./pages/admin";
 import AIAgentsPage from "./pages/ai-agents";
 import AIAdvisorsPage from "./pages/ai-advisors";
 import AIAdvisorsPageV2 from "./pages/ai-advisors-v2";
+import SceneEditorPage from "./pages/scene-editor-page";
 import AnalyticsPage from "./pages/analytics";
 import AnalyticsDashboardPage from "./pages/analytics-dashboard";
 import ArtistDashboard from "./pages/artist-dashboard";
@@ -268,6 +269,7 @@ const Router = () => {
   const WrappedToolsPage = withPageWrapper(ToolsPage);
   const WrappedFeaturesPage = withPageWrapper(FeaturesPage);
   const WrappedAIVideoCreationPage = withPageWrapper(AIVideoCreationPage);
+  const WrappedSceneEditorPage = withPageWrapper(SceneEditorPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -373,6 +375,7 @@ const Router = () => {
         {getRouteComponent("/tools/release-planner", WrappedToolsPage, null)}
         {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, null)}
         {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, null)}
+        {getRouteComponent("/scene-editor", WrappedSceneEditorPage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
