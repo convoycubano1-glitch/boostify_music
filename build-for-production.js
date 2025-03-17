@@ -113,10 +113,8 @@ function createBuildGitignore() {
 **/*.fig
 **/*.xd
 
-# Other large assets
-**/client/dist/assets/Standard_Mode_Generated_Video*
-**/client/public/assets/Standard_Mode_Generated_Video*
-**/assets/Standard_Mode_Generated_Video*
+# IMPORTANT: No longer excluding video files (134MB total)
+# Temp/cache files and directories
 **/node_modules/.cache
 **/.git
 
@@ -127,21 +125,34 @@ function createBuildGitignore() {
 `;
 
   fs.writeFileSync('.gitignore-build', gitignoreContent);
-  log('✓ Created .gitignore-build for excluding large media files', 'green');
+  log('✓ Created .gitignore-build (preserving all video content)', 'green');
 }
 
-// Copy files to dist while excluding specified patterns
-function excludeLargeMediaFiles() {
-  log('Copying files to dist with optimizations...', 'cyan');
+// Copy files with optimization strategy
+function copyFilesWithOptimization() {
+  log('Copying files with optimization strategy...', 'cyan');
   
   // Create a function to check if a file should be excluded based on patterns
   function shouldExclude(filePath) {
+    // Keep all video files regardless of size
+    if (filePath.toLowerCase().endsWith('.mp4') || 
+        filePath.toLowerCase().endsWith('.webm') ||
+        filePath.toLowerCase().endsWith('.mov')) {
+      return false;
+    }
+    
+    // Read exclusion patterns from .gitignore-build
     if (fs.existsSync('.gitignore-build')) {
       try {
         const patterns = fs.readFileSync('.gitignore-build', 'utf8').split('\n');
         for (const pattern of patterns) {
           // Skip empty lines and comments
           if (!pattern.trim() || pattern.startsWith('#')) continue;
+          
+          // Skip video exclusion patterns (we want to keep all videos)
+          if (pattern.includes('.mp4') || pattern.includes('.webm') || pattern.includes('.mov')) {
+            continue;
+          }
           
           // Convert glob pattern to regex
           const regexPattern = pattern
@@ -183,6 +194,15 @@ function excludeLargeMediaFiles() {
       } else {
         try {
           fs.copyFileSync(srcPath, destPath);
+          
+          // Log video files being copied
+          if (srcPath.toLowerCase().endsWith('.mp4') || 
+              srcPath.toLowerCase().endsWith('.webm') ||
+              srcPath.toLowerCase().endsWith('.mov')) {
+            const stats = fs.statSync(srcPath);
+            const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+            log(`  ✓ Included video: ${srcPath} (${fileSizeMB} MB)`, 'green');
+          }
         } catch (err) {
           log(`✗ Error copying ${srcPath}: ${err.message}`, 'yellow');
         }
@@ -193,7 +213,7 @@ function excludeLargeMediaFiles() {
   // Start the recursive copy from root to dist
   copyDir('.', 'dist');
   
-  log('✓ Files copied to dist with optimizations', 'green');
+  log('✓ Files copied to dist with optimization strategy (videos included)', 'green');
 }
 
 // Compile server code
@@ -241,6 +261,8 @@ export default defineConfig({
       }
     },
     sourcemap: false,
+    assetsInlineLimit: 4096, // Inlining assets smaller than 4kb
+    chunkSizeWarningLimit: 1000, // Increase warning limit for large chunks
     rollupOptions: {
       output: {
         manualChunks: {
@@ -262,7 +284,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
-  }
+  },
+  // Keep videos untouched
+  assetsInclude: ['**/*.mp4', '**/*.webm']
 });
 `;
 
@@ -412,9 +436,10 @@ server.listen(PORT, () => {
 
 ## Overview
 This application has been prepared for deployment on Replit with optimizations:
-- Large media files have been excluded to stay within size limits
-- Production optimizations have been applied
+- All video content (134MB) is included in the deployment
+- Production optimizations have been applied to reduce overall package size
 - Server configuration has been streamlined for better performance
+- Unnecessary dev dependencies and files have been excluded
 
 ## How to Deploy
 1. Use the "Run" button in Replit to verify the application works locally
@@ -423,7 +448,8 @@ This application has been prepared for deployment on Replit with optimizations:
 4. Once deployed, your app will be available at your-repl-name.replit.app
 
 ## Important Notes
-- Large media files need to be hosted externally (use a CDN or storage service)
+- All video content is preserved in the deployment package
+- Static assets are served directly from the Express server
 - Update any hardcoded URLs to use relative paths or environment variables
 - For any issues, check the server logs in the Replit console
 
@@ -488,8 +514,8 @@ async function buildForProduction() {
   cleanDistDirectory();
   createBuildGitignore();
   
-  // Step 2: Exclude large media files
-  excludeLargeMediaFiles();
+  // Step 2: Copy files with optimization strategy
+  copyFilesWithOptimization();
   
   // Step 3: Compile server
   compileServer();
