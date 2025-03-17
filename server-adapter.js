@@ -6,13 +6,14 @@ import { spawn } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Start server with proper ESM support
-const server = spawn('node', ['--loader', 'ts-node/esm', 'server/index.ts'], {
+// Start server with proper TypeScript support
+const server = spawn('node', ['--loader', 'ts-node/esm/transpile-only', '--experimental-specifier-resolution=node', 'server/index.ts'], {
   stdio: 'inherit',
   env: {
     ...process.env,
-    PORT: '5173', // Match the port configuration
-    NODE_ENV: process.env.NODE_ENV || 'development'
+    PORT: '5173',
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    TS_NODE_PROJECT: './tsconfig.json'
   }
 });
 

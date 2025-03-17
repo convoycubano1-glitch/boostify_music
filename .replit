@@ -58,8 +58,8 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run server:dev"
+args = "npm run client:dev"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run client:dev"
+args = "npm run server:dev"
