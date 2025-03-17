@@ -1,113 +1,42 @@
-# Boostify Music - Production Deployment Guide
+# Guía de Despliegue - Boostify Music
 
-This guide provides instructions for deploying the Boostify Music application to a production environment.
+## Instrucciones para despliegue en producción
 
-## Prerequisites
+### 1. Compilar para producción
 
-- Node.js 18.x or later
-- npm 9.x or later
-- Access to a server or hosting platform (e.g., Replit, AWS, Heroku, etc.)
-
-## Production Build Options
-
-We provide two different build options, depending on your requirements:
-
-### 1. Minimal Build (Recommended for quick deployment)
-
-The minimal build creates a lightweight version of the application with only essential server components and a static HTML page. This is ideal for quick deployments where the full application functionality is not required.
-
-```bash
-node minimal-build.js
-```
-
-### 2. Secure Production Build (Recommended for full production)
-
-The secure production build creates a more robust version with additional security features, error handling, and optimized assets. This is recommended for actual production deployments.
-
-```bash
-node secure-production-build.js
-```
-
-## Deployment Steps
-
-1. **Generate the production build**:
-   ```bash
-   # For minimal build
-   node minimal-build.js
-   
-   # OR for secure build
-   node secure-production-build.js
-   ```
-
-2. **Verify the build**:
-   ```bash
-   node verify-production-build.js
-   ```
-
-3. **Deploy the build**:
-   - Copy the entire `dist` directory to your production server
-   - Navigate to the directory on your server
-   - Install dependencies:
-     ```bash
-     npm install
-     ```
-   - Update the `.env.production` file with your actual API keys and environment variables
-   - Start the server:
-     ```bash
-     ./start.sh
-     # OR
-     npm start
-     ```
-
-## Environment Variables
-
-The following environment variables should be set in the `.env.production` file:
+Para construir la aplicación para producción, ejecute:
 
 ```
-NODE_ENV=production
-PORT=5000
-API_KEY=your_actual_api_key
-API_URL=your_actual_api_url
+npm run build:deploy
 ```
 
-Additional environment variables for specific services:
-- `OPENAI_API_KEY`: For OpenAI API services
-- `FIREBASE_API_KEY`: For Firebase integration
-- `FAL_API_KEY`: For fal.ai services
-- `ELEVENLABS_API_KEY`: For voice services
+Este comando:
+- Ignora errores no críticos de TypeScript
+- Compila el servidor y el cliente
+- Genera una versión optimizada para producción en la carpeta `dist/`
 
-## Security Considerations
+### 2. Implementar en producción
 
-- All API keys should be kept secure and never committed to version control
-- The production server has rate limiting enabled to prevent abuse
-- Security headers are set to help prevent common web vulnerabilities
-- Content Security Policy is configured to mitigate XSS attacks
+La carpeta `dist/` contiene todos los archivos necesarios para el despliegue:
 
-## Common Issues and Troubleshooting
+1. Copie todo el contenido de la carpeta `dist/` a su servidor
+2. Instale las dependencias: `npm install --production`
+3. Inicie la aplicación: `npm start`
 
-### Server won't start
-- Check that the PORT is not already in use
-- Verify all required environment variables are set
-- Ensure Node.js version is compatible (v18+)
+### Variables de entorno requeridas
 
-### Missing dependencies
-- Run `npm install` in the dist directory
+Asegúrese de que las siguientes variables estén configuradas:
 
-### API calls failing
-- Verify that all API keys are correctly set in `.env.production`
-- Check network connectivity to API endpoints
-- Verify server can reach external services
+- `NODE_ENV=production`
+- `PORT=5000` (o el puerto deseado)
+- `DATABASE_URL` (URL de conexión a PostgreSQL si se usa)
+- `FIREBASE_CONFIG` (Configuración de Firebase)
+- `OPENAI_API_KEY` (Clave de API de OpenAI)
 
-## Custom Routes and Features
+## Solución de problemas comunes
 
-The production server includes:
+Si encuentra errores durante el despliegue, verifique:
 
-- Static file serving from the `/public` directory
-- API proxy for secure third-party API calls
-- Health check endpoint at `/api/health`
-- Error handling middleware for improved error messages
-- Client-side routing via single-page application pattern
-
-## License and Legal
-
-Copyright © 2025 Boostify Music. All rights reserved.
+1. Que todas las variables de entorno están correctamente configuradas
+2. Que los puertos necesarios están abiertos
+3. Logs de la aplicación para información específica sobre errores
