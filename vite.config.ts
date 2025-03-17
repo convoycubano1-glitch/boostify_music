@@ -17,6 +17,28 @@ export default defineConfig({
   },
   root: path.resolve(__dirname, "client"),
   build: {
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-select',
+          ],
+          'utils-vendor': ['axios', 'zustand', '@tanstack/react-query'],
+        },
+      },
+    },
+    minify: 'terser',
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
   },

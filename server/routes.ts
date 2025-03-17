@@ -48,7 +48,8 @@ import affiliateRouter from './routes/affiliate'; // Import the affiliate progra
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
-import { Request, Response } from 'express';
+import { Express, Server } from 'express';
+import apiProxySecure from './routes/api-proxy-secure';;
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -64,6 +65,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 // Export the configured server
 export function registerRoutes(app: Express): Server {
+  // API Proxy seguro para producción
+  app.use('/api/proxy', apiProxySecure);
+  
   // IMPORTANTE: Configurar rutas públicas antes de cualquier middleware de autenticación
   
   // Ruta pública para obtener la clave publicable de Stripe (fuera de cualquier middleware de autenticación)

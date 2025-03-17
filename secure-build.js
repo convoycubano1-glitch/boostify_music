@@ -9,20 +9,25 @@
  * 3. Implementa optimizaciones de rendimiento avanzadas
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
-const dotenv = require('dotenv');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { execSync, spawn } from 'child_process';
+import dotenv from 'dotenv';
 
-// Colores para la consola
+// Obtener __dirname en módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cargar variables de entorno
+dotenv.config();
+
+// Definir colores para la consola
 const RESET = '\x1b[0m';
 const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
 const YELLOW = '\x1b[33m';
 const BLUE = '\x1b[36m';
-
-// Cargar variables de entorno
-dotenv.config();
 
 console.log(`${BLUE}=======================================${RESET}`);
 console.log(`${BLUE}    COMPILACIÓN SEGURA PARA PRODUCCIÓN    ${RESET}`);
@@ -34,14 +39,19 @@ console.log(`${BLUE}=======================================${RESET}`);
  * @param {string} errorMessage Mensaje de error si falla
  */
 function ejecutarComando(command, errorMessage) {
+  console.log(`${YELLOW}Ejecutando: ${command}${RESET}`);
   try {
-    console.log(`${YELLOW}Ejecutando: ${command}${RESET}`);
-    execSync(command, { stdio: 'inherit' });
-    return true;
+    const result = execSync(command, { encoding: 'utf8', stdio: 'pipe' });
+    console.log(result);
+    return result;
   } catch (error) {
-    console.error(`${RED}ERROR: ${errorMessage}${RESET}`);
-    console.error(`${RED}${error.message}${RESET}`);
-    return false;
+    console.error(`${RED}${errorMessage || 'Error al ejecutar el comando'}${RESET}`);
+    console.error(error.stdout || error.message);
+    if (errorMessage) {
+      // Solo salir si hay un mensaje de error específico (indica que es crítico)
+      process.exit(1);
+    }
+    return '';
   }
 }
 
@@ -49,56 +59,60 @@ function ejecutarComando(command, errorMessage) {
  * Crea un proxy seguro para las APIs en el servidor
  */
 function crearProxyApisSeguro() {
-  console.log(`\n${BLUE}Creando proxy seguro para APIs...${RESET}`);
+  console.log(`\n${BLUE}1. Creando proxy seguro para APIs sensibles...${RESET}`);
   
-  // Verificar si ya existe el archivo de proxy
-  const rutaProxyApi = './server/routes/secure-api-proxy.ts';
-  if (fs.existsSync(rutaProxyApi)) {
-    console.log(`${YELLOW}El archivo de proxy API ya existe, actualizando...${RESET}`);
-  }
+  // Ruta para el proxy de APIs
+  const proxyFilePath = path.join(__dirname, 'server', 'routes', 'api-proxy-secure.ts');
   
-  // Crear o actualizar el archivo de proxy
-  const contenidoProxy = `/**
- * Proxy seguro para APIs externas
- * Este módulo centraliza todas las llamadas a APIs sensibles en el servidor
+  // Contenido del proxy
+  const proxyContent = `/**
+ * API Proxy seguro para producción
+ * Este archivo implementa un proxy para APIs externas que requieren claves de API
  * para evitar exponer credenciales en el frontend
  */
-import { Request, Response, Router } from 'express';
+
+import { Router } from 'express';
 import axios from 'axios';
+import type { Request, Response } from 'express';
+
+const router = Router();
 
 // Configuración de APIs
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const FAL_API_KEY = process.env.FAL_API_KEY;
 
-// Router para el proxy de APIs
-const apiProxyRouter = Router();
-
-/**
- * Middleware para verificar que las claves API estén configuradas
- */
-function verificarClaves(req: Request, res: Response, next: Function) {
-  const missingKeys = [];
+// Middleware para verificar API keys disponibles
+function verificarAPIKeys(req: Request, res: Response, next: Function) {
+  const apis = {
+    'openai': OPENAI_API_KEY,
+    'fal': FAL_API_KEY
+  };
   
-  if (!OPENAI_API_KEY) missingKeys.push('OPENAI_API_KEY');
-  if (!FAL_API_KEY) missingKeys.push('FAL_API_KEY');
+  const apiName = req.params.api;
   
-  if (missingKeys.length > 0) {
+  if (!apis[apiName]) {
+    return res.status(400).json({
+      success: false,
+      error: 'API no soportada'
+    });
+  }
+  
+  if (!apis[apiName]) {
     return res.status(500).json({
-      error: 'Missing API keys',
-      message: \`The following API keys are missing: \${missingKeys.join(', ')}\`
+      success: false,
+      error: 'Configuración de API no disponible'
     });
   }
   
   next();
 }
 
-/**
- * Proxy para OpenAI API
- */
-apiProxyRouter.post('/openai/chat', verificarClaves, async (req: Request, res: Response) => {
+// Proxy para OpenAI
+router.post('/openai/:endpoint', verificarAPIKeys, async (req: Request, res: Response) => {
   try {
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+    const endpoint = req.params.endpoint;
+    const { data } = await axios.post(
+      \`https://api.openai.com/v1/\${endpoint}\`,
       req.body,
       {
         headers: {
@@ -108,83 +122,87 @@ apiProxyRouter.post('/openai/chat', verificarClaves, async (req: Request, res: R
       }
     );
     
-    res.json(response.data);
-  } catch (error: any) {
-    console.error('Error calling OpenAI API:', error.message);
-    res.status(error.response?.status || 500).json({
-      error: 'OpenAI API error',
-      message: error.response?.data?.error?.message || error.message
+    return res.json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    console.error('Error en proxy OpenAI:', error.message);
+    
+    return res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.error?.message || error.message
     });
   }
 });
 
-/**
- * Proxy para FAL AI
- */
-apiProxyRouter.post('/fal/models/:modelId/generate', verificarClaves, async (req: Request, res: Response) => {
+// Proxy para Fal.ai
+router.post('/fal/:endpoint', verificarAPIKeys, async (req: Request, res: Response) => {
   try {
-    const { modelId } = req.params;
-    const response = await axios.post(
-      \`https://api.fal.ai/v1/models/\${modelId}/generate\`,
+    const endpoint = req.params.endpoint;
+    const { data } = await axios.post(
+      \`https://api.fal.ai/\${endpoint}\`,
       req.body,
       {
         headers: {
-          'Authorization': \`Key \${FAL_API_KEY}\`,
+          'Authorization': \`Bearer \${FAL_API_KEY}\`,
           'Content-Type': 'application/json'
         }
       }
     );
     
-    res.json(response.data);
-  } catch (error: any) {
-    console.error('Error calling FAL API:', error.message);
-    res.status(error.response?.status || 500).json({
-      error: 'FAL API error',
-      message: error.response?.data?.error?.message || error.message
+    return res.json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    console.error('Error en proxy Fal.ai:', error.message);
+    
+    return res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.error?.message || error.message
     });
   }
 });
 
-export default apiProxyRouter;
+export default router;
 `;
+
+  fs.writeFileSync(proxyFilePath, proxyContent);
+  console.log(`${GREEN}✓ Proxy API seguro creado en ${proxyFilePath}${RESET}`);
   
-  // Escribir el archivo
-  fs.mkdirSync(path.dirname(rutaProxyApi), { recursive: true });
-  fs.writeFileSync(rutaProxyApi, contenidoProxy);
-  console.log(`${GREEN}✅ Proxy seguro para APIs creado${RESET}`);
-  
-  // Actualizar archivo de rutas del servidor para incluir el proxy
-  const rutaServerRoutes = './server/routes.ts';
-  if (fs.existsSync(rutaServerRoutes)) {
-    let contenidoRoutes = fs.readFileSync(rutaServerRoutes, 'utf8');
+  // Registrar el router en el archivo de rutas principal
+  try {
+    const routesFilePath = path.join(__dirname, 'server', 'routes.ts');
     
-    // Verificar si ya se importó el proxy
-    if (!contenidoRoutes.includes('secure-api-proxy')) {
-      // Agregar importación
-      contenidoRoutes = contenidoRoutes.replace(
-        'import { Express, Server } from \'express\';',
-        'import { Express, Server } from \'express\';\nimport secureApiProxy from \'./routes/secure-api-proxy\';'
-      );
+    if (fs.existsSync(routesFilePath)) {
+      let routesContent = fs.readFileSync(routesFilePath, 'utf8');
       
-      // Agregar registro de ruta
-      const routerRegistrationRegex = /export function registerRoutes\(app: Express\): Server \{[^}]*}/s;
-      const routerRegistration = contenidoRoutes.match(routerRegistrationRegex)[0];
-      
-      const updatedRouterRegistration = routerRegistration.replace(
-        '{',
-        '{\n  // Registrar proxy seguro para APIs\n  app.use(\'/api/secure\', secureApiProxy);'
-      );
-      
-      contenidoRoutes = contenidoRoutes.replace(routerRegistrationRegex, updatedRouterRegistration);
-      
-      // Guardar cambios
-      fs.writeFileSync(rutaServerRoutes, contenidoRoutes);
-      console.log(`${GREEN}✅ Proxy API registrado en rutas del servidor${RESET}`);
-    } else {
-      console.log(`${YELLOW}El proxy API ya está configurado en rutas del servidor${RESET}`);
+      // Verificar si ya está importado
+      if (!routesContent.includes('import apiProxySecure from')) {
+        // Agregar la importación
+        routesContent = routesContent.replace(
+          /import\s+{[^}]+}\s+from\s+['"]express['"]/,
+          `import { Express, Server } from 'express';\nimport apiProxySecure from './routes/api-proxy-secure';`
+        );
+        
+        // Agregar el uso del router
+        routesContent = routesContent.replace(
+          /export\s+function\s+registerRoutes[^{]*{/,
+          `export function registerRoutes(app: Express): Server {
+  // API Proxy seguro para producción
+  app.use('/api/proxy', apiProxySecure);
+  `
+        );
+        
+        fs.writeFileSync(routesFilePath, routesContent);
+        console.log(`${GREEN}✓ Proxy API registrado en routes.ts${RESET}`);
+      } else {
+        console.log(`${YELLOW}⚠ El proxy API ya está registrado en routes.ts${RESET}`);
+      }
     }
-  } else {
-    console.log(`${RED}⚠️ No se encontró el archivo de rutas del servidor${RESET}`);
+  } catch (error) {
+    console.error(`${RED}Error al registrar el proxy API: ${error.message}${RESET}`);
   }
 }
 
@@ -192,222 +210,232 @@ export default apiProxyRouter;
  * Actualiza el archivo vite.config.ts para optimizaciones de producción
  */
 function actualizarViteConfig() {
-  console.log(`\n${BLUE}Actualizando configuración de Vite para producción...${RESET}`);
+  console.log(`\n${BLUE}2. Actualizando configuración de Vite para producción...${RESET}`);
   
-  const rutaViteConfig = './vite.config.ts';
-  if (!fs.existsSync(rutaViteConfig)) {
-    console.log(`${RED}⚠️ No se encontró el archivo vite.config.ts${RESET}`);
-    return;
-  }
+  const viteConfigPath = path.join(__dirname, 'vite.config.ts');
   
-  let contenidoVite = fs.readFileSync(rutaViteConfig, 'utf8');
-  
-  // Verificar si ya existen las optimizaciones
-  if (contenidoVite.includes('manualChunks') && contenidoVite.includes('rollupOptions')) {
-    console.log(`${YELLOW}Las optimizaciones de Vite ya están configuradas${RESET}`);
-  } else {
-    // Agregar configuraciones de optimización
-    const optimizaciones = `
+  if (!fs.existsSync(viteConfigPath)) {
+    console.log(`${YELLOW}⚠ No se encontró vite.config.ts, se creará uno nuevo${RESET}`);
+    
+    // Crear un nuevo archivo de configuración
+    const viteConfig = `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   build: {
     minify: 'terser',
     sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: [
-            'react', 
-            'react-dom',
-            'firebase/app',
-            'firebase/auth',
-            'firebase/firestore',
-            'firebase/storage'
-          ],
-          ui: [
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-tabs',
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-select',
           ],
-          utils: [
-            'zustand',
-            'date-fns',
-            'class-variance-authority',
-            'clsx',
-            'tailwind-merge',
-          ],
+          'utils-vendor': ['axios', 'zustand', '@tanstack/react-query'],
         },
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
-      }
+      },
     },
     terserOptions: {
-      format: {
-        comments: false,
-      },
       compress: {
         drop_console: true,
-        drop_debugger: true
-      }
-    }
-  },`;
-    
-    // Insertar optimizaciones en el archivo de configuración
-    const defineConfigRegex = /defineConfig\(\{([^}]*)\}\)/s;
-    const defineConfigMatch = contenidoVite.match(defineConfigRegex);
-    
-    if (defineConfigMatch) {
-      const updatedConfig = defineConfigMatch[1] + optimizaciones;
-      contenidoVite = contenidoVite.replace(defineConfigRegex, `defineConfig({\n${updatedConfig}\n})`);
-      
-      // Guardar cambios
-      fs.writeFileSync(rutaViteConfig, contenidoVite);
-      console.log(`${GREEN}✅ Configuración de Vite actualizada con optimizaciones${RESET}`);
-    } else {
-      console.log(`${RED}⚠️ No se pudo actualizar vite.config.ts${RESET}`);
-    }
+        drop_debugger: true,
+      },
+    },
+  },
+  define: {
+    'process.env': {},
+  },
+  server: {
+    port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
+    host: '0.0.0.0',
+  },
+});
+`;
+
+    fs.writeFileSync(viteConfigPath, viteConfig);
+    console.log(`${GREEN}✓ Archivo vite.config.ts creado con optimizaciones${RESET}`);
+    return;
   }
+  
+  // Actualizar el archivo existente
+  let viteConfig = fs.readFileSync(viteConfigPath, 'utf8');
+  
+  // Agregar configuración de minificación si no existe
+  if (!viteConfig.includes('minify:')) {
+    viteConfig = viteConfig.replace(
+      /build\s*:\s*{/,
+      `build: {
+    minify: 'terser',`
+    );
+  }
+  
+  // Agregar manualChunks si no existe
+  if (!viteConfig.includes('manualChunks')) {
+    viteConfig = viteConfig.replace(
+      /build\s*:\s*{/,
+      `build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-select',
+          ],
+          'utils-vendor': ['axios', 'zustand', '@tanstack/react-query'],
+        },
+      },
+    },`
+    );
+  }
+  
+  // Agregar terserOptions si no existe
+  if (!viteConfig.includes('terserOptions')) {
+    viteConfig = viteConfig.replace(
+      /build\s*:\s*{/,
+      `build: {
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },`
+    );
+  }
+  
+  fs.writeFileSync(viteConfigPath, viteConfig);
+  console.log(`${GREEN}✓ Archivo vite.config.ts actualizado con optimizaciones${RESET}`);
 }
 
 /**
  * Crea un archivo .env.production con variables de entorno seguras
  */
 function crearEnvProduccion() {
-  console.log(`\n${BLUE}Creando archivo .env.production...${RESET}`);
+  console.log(`\n${BLUE}3. Creando archivo .env.production seguro...${RESET}`);
   
-  const rutaEnvProd = './.env.production';
+  // Obtener todas las variables de entorno actuales
+  const currentEnv = process.env;
   
-  // Variables que NO se deben exponer al frontend
-  const variablesServidor = [
-    'OPENAI_API_KEY',
-    'FAL_API_KEY',
-    'STRIPE_SECRET_KEY',
-    'FIREBASE_ADMIN_CONFIG',
-    'ELEVENLABS_API_KEY',
-    'DATABASE_URL',
-    'PORT'
-  ];
+  // Separar variables frontEnd (con prefijo VITE_) de las de backend
+  const frontendVars = [];
+  const backendVars = [];
   
-  // Variables que sí pueden estar en el frontend
-  const variablesFrontend = [
-    'VITE_APP_TITLE',
-    'VITE_FIREBASE_API_KEY',
-    'VITE_FIREBASE_AUTH_DOMAIN',
-    'VITE_FIREBASE_PROJECT_ID',
-    'VITE_FIREBASE_STORAGE_BUCKET',
-    'VITE_FIREBASE_MESSAGING_SENDER_ID',
-    'VITE_FIREBASE_APP_ID',
-    'VITE_MEASUREMENT_ID',
-    'VITE_API_URL'
-  ];
-  
-  // Generar contenido
-  let contenidoEnv = '# Environment variables for production\n\n';
-  contenidoEnv += '# Server-side only variables (not exposed to the client)\n';
-  variablesServidor.forEach(variable => {
-    if (process.env[variable]) {
-      contenidoEnv += `${variable}=${process.env[variable]}\n`;
+  Object.keys(currentEnv).forEach(key => {
+    // Variables de Firebase que son públicas y pueden estar en el frontend
+    const firebasePublicKeys = [
+      'FIREBASE_API_KEY',
+      'FIREBASE_AUTH_DOMAIN',
+      'FIREBASE_PROJECT_ID',
+      'FIREBASE_STORAGE_BUCKET',
+      'FIREBASE_MESSAGING_SENDER_ID',
+      'FIREBASE_APP_ID'
+    ];
+    
+    const isPublicFirebaseKey = firebasePublicKeys.includes(key);
+    
+    if (key.startsWith('VITE_') || isPublicFirebaseKey) {
+      // Para las variables públicas de Firebase, crearlas con prefijo VITE_
+      const formattedKey = isPublicFirebaseKey && !key.startsWith('VITE_') 
+        ? `VITE_${key}`
+        : key;
+      
+      frontendVars.push(`${formattedKey}=${currentEnv[key]}`);
+    } else if (!key.startsWith('npm_') && !key.startsWith('_') && !key.startsWith('SHELL') && !key.startsWith('USER')) {
+      // Filtrar variables de entorno de sistema y npm
+      backendVars.push(`${key}=${currentEnv[key]}`);
     }
   });
   
-  contenidoEnv += '\n# Variables exposed to the client (must be prefixed with VITE_)\n';
-  variablesFrontend.forEach(variable => {
-    // Eliminar prefijo VITE_ para buscar en el entorno actual
-    const envVar = variable.replace('VITE_', '');
-    if (process.env[envVar]) {
-      contenidoEnv += `${variable}=${process.env[envVar]}\n`;
-    } else if (process.env[variable]) {
-      contenidoEnv += `${variable}=${process.env[variable]}\n`;
-    }
-  });
+  // Agregar variables adicionales para producción
+  backendVars.push('NODE_ENV=production');
+  frontendVars.push('VITE_APP_ENV=production');
+  frontendVars.push('VITE_API_URL=/api/proxy');
   
-  contenidoEnv += '\n# Server configuration\nNODE_ENV=production\nPORT=3000\n';
+  // Crear archivo .env.production
+  const envProductionPath = path.join(__dirname, '.env.production');
+  const envContent = [...backendVars, '', '# Variables Frontend (públicas)', ...frontendVars].join('\n');
   
-  // Escribir archivo
-  fs.writeFileSync(rutaEnvProd, contenidoEnv);
-  console.log(`${GREEN}✅ Archivo .env.production creado${RESET}`);
+  fs.writeFileSync(envProductionPath, envContent);
+  console.log(`${GREEN}✓ Archivo .env.production creado con variables seguras${RESET}`);
 }
 
 /**
  * Actualiza el index.html para optimizaciones de producción
  */
 function actualizarIndexHtml() {
-  console.log(`\n${BLUE}Optimizando index.html para producción...${RESET}`);
+  console.log(`\n${BLUE}4. Actualizando index.html para producción...${RESET}`);
   
-  const rutaIndexHtml = './index.html';
-  if (!fs.existsSync(rutaIndexHtml)) {
-    console.log(`${RED}⚠️ No se encontró el archivo index.html${RESET}`);
+  const indexPath = path.join(__dirname, 'index.html');
+  
+  if (!fs.existsSync(indexPath)) {
+    console.log(`${RED}✗ No se encontró index.html${RESET}`);
     return;
   }
   
-  let contenidoHtml = fs.readFileSync(rutaIndexHtml, 'utf8');
+  let indexContent = fs.readFileSync(indexPath, 'utf8');
   
-  // Crear copia de respaldo
-  fs.writeFileSync('./index.html.bak', contenidoHtml);
-  
-  // Agregar meta tags para SEO y rendimiento
-  if (!contenidoHtml.includes('<meta name="description"')) {
-    const headTag = '<head>';
-    const metaTags = `<head>
-    <meta name="description" content="Boostify Music - Plataforma AI para músicos y artistas">
-    <meta name="theme-color" content="#FF5500">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`;
-    
-    contenidoHtml = contenidoHtml.replace(headTag, metaTags);
+  // Agregar headers de caché para recursos estáticos
+  if (!indexContent.includes('<meta http-equiv="Cache-Control"')) {
+    indexContent = indexContent.replace(
+      /<head>/,
+      `<head>
+    <meta http-equiv="Cache-Control" content="max-age=86400, public">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://api.openai.com https://api.fal.ai; img-src 'self' data: blob: https://*; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'self';">`
+    );
   }
   
-  // Agregar script de precarga para mejorar rendimiento
-  if (!contenidoHtml.includes('window.PRELOADED_STATE')) {
-    const bodyEnd = '</body>';
-    const preloadScript = `  <script>
-    // Configuración de estado precargado para la aplicación
-    window.PRELOADED_STATE = {
-      config: {
-        apiUrl: window.location.origin + '/api/secure',
-        environment: 'production',
-        version: '1.0.0'
-      }
-    };
-  </script>
-</body>`;
-    
-    contenidoHtml = contenidoHtml.replace(bodyEnd, preloadScript);
+  // Agregar preloads para CSS crítico
+  if (!indexContent.includes('<link rel="preload"')) {
+    indexContent = indexContent.replace(
+      /<\/head>/,
+      `  <link rel="preload" href="/assets/index.css" as="style">
+  <link rel="preload" href="/assets/fonts.css" as="style">
+</head>`
+    );
   }
   
-  // Actualizar título
-  const titleRegex = /<title>(.*?)<\/title>/;
-  if (titleRegex.test(contenidoHtml)) {
-    contenidoHtml = contenidoHtml.replace(titleRegex, '<title>Boostify Music - Plataforma AI para Músicos</title>');
-  }
-  
-  // Guardar cambios
-  fs.writeFileSync(rutaIndexHtml, contenidoHtml);
-  console.log(`${GREEN}✅ Archivo index.html optimizado para producción${RESET}`);
+  fs.writeFileSync(indexPath, indexContent);
+  console.log(`${GREEN}✓ Archivo index.html actualizado con optimizaciones de seguridad y rendimiento${RESET}`);
 }
 
 /**
  * Ejecuta el proceso de construcción para producción
  */
 function ejecutarBuild() {
-  console.log(`\n${BLUE}Ejecutando proceso de construcción para producción...${RESET}`);
+  console.log(`\n${BLUE}5. Ejecutando proceso de compilación...${RESET}`);
   
-  // Limpiar directorio dist
-  if (fs.existsSync('./dist')) {
-    console.log(`${YELLOW}Limpiando directorio dist...${RESET}`);
-    ejecutarComando('rm -rf ./dist', 'No se pudo limpiar el directorio dist');
-  }
-  
-  // Ejecutar verificación pre-producción
-  console.log(`${YELLOW}Ejecutando verificación pre-producción...${RESET}`);
-  ejecutarComando('node production-check.js || true', 'Error en la verificación pre-producción');
-  
-  // Ejecutar build original
-  console.log(`${YELLOW}Ejecutando build-for-replit.js...${RESET}`);
-  if (ejecutarComando('node build-for-replit.js', 'Error en el proceso de build')) {
-    console.log(`${GREEN}✅ Construcción completada exitosamente${RESET}`);
+  try {
+    // Limpiar directorio dist
+    if (fs.existsSync('./dist')) {
+      ejecutarComando('rm -rf ./dist', 'Error al limpiar directorio dist');
+      console.log(`${GREEN}✓ Directorio dist limpiado${RESET}`);
+    }
+    
+    // Compilar la aplicación para producción
+    console.log(`${YELLOW}Iniciando compilación. Esto puede tomar un tiempo...${RESET}`);
+    ejecutarComando('npx tsc && npx vite build', 'Error en la compilación');
+    
+    console.log(`${GREEN}✓ Compilación exitosa${RESET}`);
+    return true;
+  } catch (error) {
+    console.error(`${RED}✗ Error en el proceso de compilación: ${error.message}${RESET}`);
+    return false;
   }
 }
 
@@ -415,99 +443,145 @@ function ejecutarBuild() {
  * Actualiza el archivo server.js en dist para implementar seguridad adicional
  */
 function actualizarServerProduccion() {
-  console.log(`\n${BLUE}Actualizando servidor de producción con medidas de seguridad...${RESET}`);
+  console.log(`\n${BLUE}6. Actualizando servidor para producción...${RESET}`);
   
-  const rutaServerJs = './dist/server.js';
-  if (!fs.existsSync(rutaServerJs)) {
-    console.log(`${RED}⚠️ No se encontró el archivo server.js en dist${RESET}`);
+  const serverPath = path.join(__dirname, 'dist', 'server.js');
+  
+  if (!fs.existsSync(serverPath)) {
+    console.log(`${RED}✗ No se encontró server.js en dist${RESET}`);
     return;
   }
   
-  let contenidoServer = fs.readFileSync(rutaServerJs, 'utf8');
-  
-  // Crear copia de respaldo
-  fs.writeFileSync('./dist/server.js.bak', contenidoServer);
+  // Leer el archivo server.js
+  let serverContent = fs.readFileSync(serverPath, 'utf8');
   
   // Agregar headers de seguridad
-  if (!contenidoServer.includes('X-Content-Type-Options')) {
-    const appUseMatch = contenidoServer.match(/app\.use\([^;]*express\.static[^;]*\);/);
-    if (appUseMatch) {
-      const securityHeaders = `
-// Agregar headers de seguridad
+  if (!serverContent.includes('res.setHeader')) {
+    serverContent = serverContent.replace(
+      /app\.use\(\s*express\.static\s*\(\s*path\.join\s*\(\s*__dirname\s*,\s*['"]public['"]\s*\)\s*\)\s*\)/,
+      `// Headers de seguridad
 app.use((req, res, next) => {
-  // Prevenir click-jacking
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  // Prevenir MIME-sniffing
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  // Prevenir XSS
+  res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  // Control de cache
-  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   next();
 });
 
-`;
-      
-      contenidoServer = contenidoServer.replace(appUseMatch[0], appUseMatch[0] + securityHeaders);
-    }
+app.use(express.static(path.join(__dirname, 'public')))`
+    );
   }
   
-  // Agregar endpoint de verificación de estado
-  if (!contenidoServer.includes('/api/status')) {
-    const appListenMatch = contenidoServer.match(/app\.listen\([^;]*\);/);
-    if (appListenMatch) {
-      const statusEndpoint = `
-// Endpoint de estado
-app.get('/api/status', (req, res) => {
-  res.json({
-    status: 'online',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0-production'
+  // Agregar manejo de errores mejorado
+  if (!serverContent.includes('app.use((err, req, res, next)')) {
+    serverContent = serverContent.replace(
+      /app\.listen\s*\(/,
+      `// Manejo de errores global
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    error: 'Error interno del servidor',
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
-`;
-      
-      contenidoServer = contenidoServer.replace(appListenMatch[0], statusEndpoint + appListenMatch[0]);
-    }
+app.listen(`
+    );
   }
   
-  // Guardar cambios
-  fs.writeFileSync(rutaServerJs, contenidoServer);
-  console.log(`${GREEN}✅ Servidor de producción actualizado con medidas de seguridad${RESET}`);
+  // Crear validador de request para prevenir inyecciones
+  if (!serverContent.includes('validateRequest')) {
+    serverContent = serverContent.replace(
+      /import\s+{[^}]+}\s+from\s+['"]express['"]/,
+      `import { Express, Request, Response, NextFunction } from 'express';
+
+// Middleware para validar y sanitizar requests
+function validateRequest(req, res, next) {
+  // Implementar validación básica anti-inyección
+  const sanitize = (obj) => {
+    if (!obj) return obj;
+    
+    Object.keys(obj).forEach(key => {
+      if (typeof obj[key] === 'string') {
+        // Detectar patrones típicos de inyección
+        const suspiciousPatterns = [
+          /\\\\s*((select|update|delete|insert|drop|alter|exec|union)\\\\s)/i,
+          /<\\\\s*script\\\\b[^>]*>/i,
+          /on\\\\w+\\\\s*=\\\\s*["']?\\\\w/i,
+          /javascript\\\\s*:/i
+        ];
+        
+        const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(obj[key]));
+        
+        if (isSuspicious) {
+          console.warn(\`Suspicious input detected: \${key}=\${obj[key].substring(0, 30)}...\`);
+          delete obj[key];
+        }
+      } else if (typeof obj[key] === 'object') {
+        sanitize(obj[key]);
+      }
+    });
+  };
+  
+  sanitize(req.body);
+  sanitize(req.query);
+  sanitize(req.params);
+  
+  next();
+}`
+    );
+    
+    // Agregar uso del middleware
+    serverContent = serverContent.replace(
+      /app\.use\s*\(\s*express\.json\s*\(\s*\)\s*\)/,
+      `app.use(express.json());
+app.use(validateRequest);`
+    );
+  }
+  
+  // Guardar el archivo actualizado
+  fs.writeFileSync(serverPath, serverContent);
+  console.log(`${GREEN}✓ Servidor actualizado con medidas de seguridad adicionales${RESET}`);
 }
 
 /**
  * Función principal para ejecutar el proceso completo
  */
 async function main() {
-  // Verificar dependencias
-  if (!fs.existsSync('./node_modules/dotenv')) {
-    console.log(`${YELLOW}Instalando dependencias necesarias...${RESET}`);
-    ejecutarComando('npm install dotenv', 'No se pudo instalar dotenv');
+  try {
+    // 1. Crear proxy de APIs seguro
+    crearProxyApisSeguro();
+    
+    // 2. Actualizar configuración de Vite
+    actualizarViteConfig();
+    
+    // 3. Crear .env.production
+    crearEnvProduccion();
+    
+    // 4. Actualizar index.html
+    actualizarIndexHtml();
+    
+    // 5. Ejecutar build
+    const buildSuccess = ejecutarBuild();
+    
+    if (buildSuccess) {
+      // 6. Actualizar server.js en producción
+      actualizarServerProduccion();
+      
+      console.log(`\n${BLUE}=======================================${RESET}`);
+      console.log(`${GREEN}✅ Compilación segura completada exitosamente${RESET}`);
+      console.log(`${BLUE}=======================================${RESET}`);
+      console.log(`\nPara iniciar la aplicación en producción, ejecuta:`);
+      console.log(`${YELLOW}cd dist && node server.js${RESET}`);
+    }
+  } catch (error) {
+    console.error(`${RED}Error en el proceso: ${error.message}${RESET}`);
+    process.exit(1);
   }
-  
-  // Crear estructura de archivos para seguridad
-  crearProxyApisSeguro();
-  
-  // Actualizar configuraciones
-  actualizarViteConfig();
-  crearEnvProduccion();
-  actualizarIndexHtml();
-  
-  // Ejecutar build
-  ejecutarBuild();
-  
-  // Actualizar servidor de producción
-  actualizarServerProduccion();
-  
-  console.log(`\n${GREEN}========================================${RESET}`);
-  console.log(`${GREEN}    PROCESO COMPLETADO EXITOSAMENTE    ${RESET}`);
-  console.log(`${GREEN}========================================${RESET}`);
-  console.log(`\nLa aplicación está lista para ser desplegada en producción.`);
-  console.log(`Para iniciar el servidor:${YELLOW} cd dist && node server.js${RESET}`);
 }
 
-main().catch(error => {
-  console.error(`${RED}Error en el proceso de construcción:${RESET}`, error);
-});
+// Ejecutar el proceso
+main();
