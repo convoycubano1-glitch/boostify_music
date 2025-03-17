@@ -51,25 +51,72 @@ Esto iniciará el servidor de desarrollo de Vite y el servidor Express en el pue
 
 ## Despliegue en producción
 
-### Construir el proyecto
+Hemos desarrollado varios scripts optimizados que facilitan el despliegue seguro y eficiente en producción:
 
-1. Construye la aplicación para producción:
+### Scripts de Producción Disponibles
+
+Estos scripts automatizan el proceso de preparación para producción:
+
+| Script | Descripción |
+|--------|-------------|
+| `production-check.js` | Verifica la aplicación para detectar problemas de seguridad y rendimiento |
+| `secure-build.js` | Construye la aplicación con medidas de seguridad adicionales |
+| `performance-test.js` | Realiza pruebas de rendimiento en el entorno de producción |
+| `build-for-replit.js` | Script optimizado para compilar la aplicación para entornos Replit |
+| `startup.sh` | Script para iniciar la aplicación en producción con verificaciones |
+
+### 1. Verificación Pre-Producción
+
+Ejecuta el script de verificación antes del despliegue para detectar posibles problemas:
 
 ```bash
-npm run build
+node production-check.js
 ```
 
-Esto compilará el frontend con Vite y el backend con esbuild, colocando los archivos generados en la carpeta `dist`.
+Este script verificará:
+- Variables de entorno necesarias
+- Exposición de credenciales en el frontend
+- Configuración de seguridad
+- Optimizaciones de rendimiento
 
-### Iniciar en producción
+### 2. Construcción Segura para Producción
+
+Para compilar la aplicación con las medidas de seguridad recomendadas:
+
+```bash
+node secure-build.js
+```
+
+Este script realizará automáticamente:
+- Creación de proxy seguro para APIs sensibles
+- Optimización de la configuración de Vite
+- Creación de archivo .env.production seguro
+- Actualización del servidor con medidas de seguridad
+
+### 3. Iniciar en Producción
 
 Para iniciar la aplicación en producción:
 
 ```bash
-npm start
+cd dist && node server.js
 ```
 
-#### Uso con PM2 (Recomendado para producción)
+O utiliza el script de inicio automatizado:
+
+```bash
+./startup.sh
+```
+
+### 4. Pruebas de Rendimiento
+
+Para evaluar el rendimiento de la aplicación en producción:
+
+```bash
+# Asegúrate de que la aplicación esté en ejecución
+node performance-test.js
+```
+
+### Uso con PM2 (Recomendado para producción)
 
 Para una gestión robusta de procesos en producción, recomendamos usar PM2:
 
@@ -78,10 +125,8 @@ Para una gestión robusta de procesos en producción, recomendamos usar PM2:
 npm install -g pm2
 
 # Iniciar la aplicación con PM2
-pm2 start npm --name "boostify-music" -- start
-
-# O iniciar directamente el archivo compilado
-pm2 start dist/index.js --name "boostify-music" -- --node-args='-r dotenv/config'
+cd dist
+pm2 start server.js --name "boostify-music"
 
 # Configurar inicio automático en el arranque del servidor
 pm2 startup
@@ -96,23 +141,22 @@ pm2 stop boostify-music    # Detener la aplicación
 
 ### Variables de entorno para producción
 
-Asegúrate de configurar correctamente todas las variables de entorno necesarias en tu servidor de producción, especialmente:
+El script `secure-build.js` generará automáticamente un archivo `.env.production` con las variables correctamente configuradas. Este archivo separará las variables que deben estar disponibles en el frontend (prefijadas con `VITE_`) de aquellas que deben mantenerse solo en el servidor.
 
+Variables críticas para el servidor:
+- `OPENAI_API_KEY` - Clave API de OpenAI
+- `FAL_API_KEY` - Clave API de FAL AI
+- `FIREBASE_ADMIN_CONFIG` - Configuración de Firebase Admin
 - `NODE_ENV=production` - Define el entorno como producción
-- `PORT=5000` - Puerto en el que se ejecutará la aplicación (o el que proporcione tu proveedor de hosting)
-- `APP_URL=https://tu-dominio.com` - URL base de tu aplicación desplegada
-- Credenciales de Firebase (todas las variables que comienzan con `VITE_FIREBASE_`)
-- Claves de API de servicios externos (OpenRouter, OpenAI, Stripe, etc.)
-- Configuración de base de datos (variables `DATABASE_URL`, `PGHOST`, etc.)
+- `PORT=3000` - Puerto en el que se ejecutará la aplicación
 
-#### Configuración de Puertos
+Variables para el frontend (prefijadas con `VITE_`):
+- `VITE_FIREBASE_API_KEY` - Clave API de Firebase (pública)
+- `VITE_FIREBASE_AUTH_DOMAIN` - Dominio de autenticación de Firebase
+- `VITE_FIREBASE_PROJECT_ID` - ID del proyecto de Firebase
+- `VITE_API_URL` - URL base de la API (apuntará a los proxies seguros)
 
-La aplicación está configurada para escuchar en el puerto definido por:
-1. La variable de entorno `PORT`
-2. La variable de entorno `REPLIT_PORT` (si está en un entorno Replit)
-3. El puerto 5000 como valor predeterminado
-
-Todos los enlaces (binding) se realizan a `0.0.0.0` para garantizar que la aplicación sea accesible externamente, lo que es especialmente importante en entornos de producción y contenedores.
+La aplicación en producción escuchará en el puerto 3000 (configurable con la variable `PORT`) y estará enlazada a `0.0.0.0` para garantizar accesibilidad externa.
 
 ## Estructura del proyecto
 
