@@ -8,7 +8,7 @@ channel = "stable-24_05"
 [deployment]
 deploymentTarget = "cloudrun"
 buildCommand = "npm run build"
-run = ["sh", "-c", "chmod +x startup.sh && ./startup.sh"]
+run = ["sh", "-c", "node dist/server/index.js"]
 build = ["sh", "-c", "npm run build"]
 
 [[ports]]
@@ -25,6 +25,7 @@ externalPort = 80
 exposeLocalhost = true
 
 [workflows]
+runButton = "Dev Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -49,3 +50,16 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "node start.js"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Dev Server"
+author = 17917355
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run server:dev"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run client:dev"
