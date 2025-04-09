@@ -56,8 +56,10 @@ interface AffiliateEarning {
 
 interface AffiliatePayment {
   id: string;
+  paymentId?: string;
   amount: number;
   status: string;
+  method?: string;
   processedAt: any;
   createdAt: any;
 }
@@ -135,6 +137,8 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
         createdAt: doc.data().createdAt?.toDate?.() || new Date(),
         processedAt: doc.data().processedAt?.toDate?.() || null,
         amount: doc.data().amount || 0,
+        paymentId: doc.data().paymentId || doc.id.substring(0, 8),
+        method: doc.data().method || 'bank_transfer',
         status: doc.data().status || 'pending'
       })) as AffiliatePayment[];
     },
