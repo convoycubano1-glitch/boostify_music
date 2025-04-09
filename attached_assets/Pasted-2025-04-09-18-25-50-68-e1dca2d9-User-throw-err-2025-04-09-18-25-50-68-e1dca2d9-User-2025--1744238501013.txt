@@ -1,0 +1,112 @@
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+throw err;
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+^
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+Error: Cannot find module '/home/runner/workspace/dist/server/index.js'
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+at Module._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+at Module._load (node:internal/modules/cjs/loader:1051:27)
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:173:12)
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+at node:internal/main/run_main_module:28:49 {
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+code: 'MODULE_NOT_FOUND',
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+requireStack: []
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+}
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+2025-04-09 18:25:50.68
+e1dca2d9
+User
+Node.js v20.18.1
+2025-04-09 18:25:50.69
+e1dca2d9
+System
+command finished with error [sh -c npm start]: exit status 1
+2025-04-09 18:25:51.96
+e1dca2d9
+System
+command finished with error [sh -c npm start]: exit status 1
+2025-04-09 18:25:52.55
+e1dca2d9
+System
+command finished with error [sh -c npm start]: exit status 1
+2025-04-09 18:25:54.07
+e1dca2d9
+System
+command finished with error [sh -c npm start]: exit status 1
+2025-04-09 18:25:54.93
+e1dca2d9
+User
+code: 'MODULE_NOT_FOUND',
+2025-04-09 18:25:54.93
+e1dca2d9
+User
+requireStack: []
+2025-04-09 18:25:54.93
+e1dca2d9
+User
+}
+2025-04-09 18:25:54.93
+e1dca2d9
+User
+2025-04-09 18:25:54.93
+e1dca2d9
+User
+Node.js v20.18.1
+2025-04-09 18:25:54.95
+e1dca2d9
+System
+command finished with error [sh -c npm start]: exit status 1
+2025-04-09 18:25:56.43
+e1dca2d9
+User
+node:internal/modules/cjs/loader:1228
+2025-04-09 18:25:56.43
+e1dca2d9
+User
+throw err;
+2025-04-09 18:25:56.43
+e1dca2d9
+User
+^
+2025-04-09 18:25:56.43
+e1dca2d9
+User
+2025-04-09 18:25:56.43
+e1dca2d9
+User
+Error: Cannot find module '/home/runner/workspace/dist/server/index.js'
+2025-04-09 18:25:56.43
+e1dca2d9
+User
+at Module._resolveFilename (node:internal/modules/cjs/loader:1225:15)

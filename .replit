@@ -1,64 +1,20 @@
-modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
-run = "npm run dev"
-hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+run = "node start-prod.js"
+hidden = [".config", "package-lock.json"]
+modules = ["nodejs-20"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-23_11"
 
 [deployment]
+run = "node start-prod.js"
 deploymentTarget = "cloudrun"
-buildCommand = "npm run build"
-run = ["sh", "-c", "npm start"]
+ignorePorts = false
 
 [[ports]]
 localPort = 3000
 externalPort = 3000
 
 [[ports]]
-localPort = 5000
-externalPort = 5000
-
-[[ports]]
-localPort = 5173
+localPort = 3333
 externalPort = 80
-exposeLocalhost = true
-
-[workflows]
-runButton = "Dev Server"
-
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[workflows.workflow.metadata]
-agentRequireRestartOnSave = false
-
-[[workflows.workflow.tasks]]
-task = "packager.installForAll"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node start.js"
-waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Dev Server"
-author = 17917355
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run client:dev"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run server:dev"

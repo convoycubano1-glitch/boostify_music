@@ -1,0 +1,142 @@
+2025-03-11T02:54:39Z info: Deployment: 15ee0dc3-8268-4091-8e77-2d6fd874c688
+2025-03-11T02:54:39Z info: Build: fe17717b-ca60-425c-bb8e-a92fec0840b8
+2025-03-11T02:54:39Z info: Connecting to builder
+2025-03-11T02:54:43Z info: Builder connected
+2025-03-11T02:54:45Z info: Installing packages
+--> npm install
+
+
+up to date, audited 961 packages in 5s
+
+92 packages are looking for funding
+
+  run `npm fund` for details
+
+
+10 moderate severity vulnerabilities
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.2.0
+npm notice To update run: npm install -g npm@11.2.0
+npm notice
+
+2025-03-11T02:54:52Z info: Skipping Build as no Build command set
+2025-03-11T02:54:52Z info: Pushing pid1 binary layer...
+2025-03-11T02:54:54Z info: Created pid1 binary layer
+2025-03-11T02:54:55Z info: Pushing Repl layer...
+2025-03-11T02:54:55Z info: Pushing hosting layer...
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-55pI5CUTZXAP" does not exist.
+2025-03-11T02:54:55Z info: Retrieved cached nix layer
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-gh1GbSsB8xF6" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-IsFhSkXUaOfL" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-n5Rk9skwsFjC" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-xiUUz0CHP8kn" does not exist.
+2025-03-11T02:54:55Z info: Created hosting layer
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-Ukk6Gs1Z1CWu" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-uDn44IMryeE0" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-HiQURLHYZL8X" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-S7MWqixuwm05" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-ZDhUt4TxU7UL" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-BE1WosbZT0IS" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-mvBGKRWMAWcN" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-7m1eWrP3ga5E" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-QKBEyS5E1xIT" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-rOXuIcVOdzox" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-2LzHyJorMiMi" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-EJSLEZzfvCxz" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-6V1rcOyHm5kx" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-8ISybEJLCfOo" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-Ain7rGulMT0G" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-wC4KeNG2va5a" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-MfA7lQDeeiRR" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-Gqb8fcAqh5ZO" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-MJwfM7bDUXAm" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-nezpnKJLxCLW" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-wFXlrDzTA8ai" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-wOd5QKsZZUVp" does not exist.
+2025-03-11T02:54:55Z warning: Detected broken symlink! The path "/tmp/pulse-olz68vNQYcp6" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-89B4gBZTh95i" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-SX8hGq4zrYYT" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-w1yjHrryiOar" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-uchPjBkZVzq0" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-l1ibOue3gKU4" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-hzbvYwLnz61C" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-30nDTrTmfQLA" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-nH4cehFA3zNv" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-N6BIaMifQfzi" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-A5fhiPt6R6Dl" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-s4J55LYBxhmN" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-02DIXOfPR3OU" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-hNLbHVTICVJj" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-vqgziEaXcmzt" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-9UO4LyJrdu7i" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-7gWXEQEv6CSi" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-CjY37Kn9v96i" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-g3BjPVZJoLBv" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-wetonFtqsHca" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-YnGZ3mgShcPZ" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-Qcr1KNuF6xvo" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-oluQDIJb3SaI" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-u1Js8icidkKJ" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-GurG8SfWEYLr" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-ZEKPdCHdRoRz" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-a8km5K76qPeZ" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-gV4sWnGbbOP3" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-650XiBszqqOB" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-ao1FWcWYcg6k" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-JPnY46GUaR4g" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-xfQOl49kJ2ZT" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-BrTPYTXFKUFl" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-VSlaikRw4ujk" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-ETpLw2pT5y54" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-MWMyOzhtpNdL" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-4pyUAVKrggKa" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-CrEOv2d0o6m2" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-mLcjLvnzZiBl" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-uSdJKfP95XJ3" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-3Tbf2OkBB6yM" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-qMSNWDq0WzTO" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-3rrVvAWamrz1" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-zl4RcX3aUqKv" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-1m9hAAty8RH1" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-5KAkxynMr9mH" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-7IPjffIi87Ld" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-U97aJGKu3uzY" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-0PfyjxlhI0ch" does not exist.
+2025-03-11T02:54:56Z warning: Detected broken symlink! The path "/tmp/pulse-VBkkYPqIpL6B" does not exist.
+2025-03-11T02:56:37Z info: Created Repl layer
+2025-03-11T02:56:37Z info: Pushing Repl (cache) layer...
+2025-03-11T02:56:38Z info: Created Repl (cache) layer
+2025-03-11T02:56:38Z info: Pushed image manifest
+2025-03-11T02:56:39Z info: Pushed soci index manifest
+2025-03-11T02:56:43Z info: Creating Autoscale service
+starting up user application
+forwarding local port 3000 to external port 80
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+2:58:07 AM [express] 🛠 Running in development mode
+2:58:08 AM [express] 📥 Incoming request: GET /
+APIFY_API_TOKEN is configured and ready for use
+2:58:07 AM [express] 🌍 Environment: development
+2:58:07 AM [express] 📌 Configuring Vite to handle frontend routes like "/"
+2:58:07 AM [express] 🔍 Vite will handle frontend routes in development mode
+2:58:07 AM [express] 🔄 Starting server setup...
+2:58:07 AM [express] 🔗 Access URL: https://workspace.replit.app
+2:58:07 AM [express] 🛠 Setting up Vite development server
+2:58:07 AM [api-proxy] ✅ All API keys are configured
+2:58:08 AM [express] 📤 Response: GET / 200 in 48ms
+2:58:07 AM [express] ✅ OPENAI_API_KEY is configured and ready for use
+2:58:07 AM [express] 📂 Static files served from: /home/runner/workspace/client/public
+✅ Subscription-protected routes are registered
+2:58:07 AM [express] ✅ Server started on port 3000
+2025-03-11T02:58:13Z info: Waiting for service to be ready
+2025-03-11T02:58:15Z info: Deployment successful

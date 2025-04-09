@@ -5,14 +5,13 @@
   "license": "MIT",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
-    "start": "node start-prod.js",
+    "start": "node dist/server/index.js",
     "build": "tsc && cd client && vite build",
     "server:dev": "nodemon --exec \"ts-node --project tsconfig.json server/index.ts\" --watch server",
     "client:dev": "cd client && vite",
     "prebuild": "rm -rf dist && mkdir dist",
     "postbuild": "cp -r client/dist dist/client",
-    "build:deploy": "node build-for-deploy.js",
-    "deploy": "node start-prod.js"
+    "build:deploy": "node build-for-deploy.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
