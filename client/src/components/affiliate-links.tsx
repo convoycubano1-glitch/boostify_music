@@ -215,7 +215,12 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
   });
 
   // Función para copiar un enlace al portapapeles
-  const copyLinkToClipboard = (url: string) => {
+  const copyLinkToClipboard = (url: string | undefined) => {
+    if (!url) {
+      toast.error("Enlace no disponible");
+      return;
+    }
+    
     navigator.clipboard.writeText(url)
       .then(() => {
         toast.success("Enlace copiado al portapapeles");
@@ -529,7 +534,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                                 <Copy className="mr-2 h-4 w-4" />
                                 <span>Copiar enlace</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => window.open(link.url, "_blank")}>
+                              <DropdownMenuItem onClick={() => link.url && window.open(link.url, "_blank")}>
                                 <Link className="mr-2 h-4 w-4" />
                                 <span>Abrir enlace</span>
                               </DropdownMenuItem>
@@ -652,7 +657,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
                             variant="secondary" 
                             size="sm" 
                             className="flex-1"
-                            onClick={() => window.open(link.url, "_blank")}
+                            onClick={() => link.url && window.open(link.url, "_blank")}
                           >
                             <Link className="h-3.5 w-3.5 mr-1" />
                             Abrir
@@ -688,7 +693,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
             ) : products && products.length > 0 ? (
               <div className="space-y-4">
                 {products
-                  .sort((a, b) => b.commissionRate - a.commissionRate)
+                  .sort((a, b) => (b.commissionRate || 0) - (a.commissionRate || 0))
                   .slice(0, 3)
                   .map((product) => (
                     <div key={product.id} className="flex flex-col p-4 border rounded-lg">

@@ -1,25 +1,11 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
-import { auth, db } from '../firebase';
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  serverTimestamp, 
-  increment,
-  Timestamp,
-  DocumentData,
-  CollectionReference
-} from 'firebase/firestore';
+import { auth, db, FieldValue } from '../firebase';
 import { z } from 'zod';
+
+// Tipos de Firestore Admin
+type Timestamp = FirebaseFirestore.Timestamp;
+type DocumentData = FirebaseFirestore.DocumentData;
 
 /**
  * Función para obtener el ID del usuario de forma segura
@@ -67,43 +53,19 @@ interface AffiliateProduct {
   category?: string;
   imageUrl?: string;
 }
-import { z } from 'zod';
 
-// Interfaces para tipos de Firestore
-interface AffiliateStats {
-  totalClicks: number;
-  conversions: number;
-  earnings: number;
-  pendingPayment: number;
-}
-
-interface AffiliateData {
-  id: string;
-  userId: string;
-  name: string;
-  bio: string;
-  email?: string;
-  website?: string;
-  socialMedia?: {
-    instagram?: string;
-    twitter?: string;
-    youtube?: string;
-    tiktok?: string;
-  };
-  status: 'pending' | 'approved' | 'rejected';
-  level: string;
-  stats: AffiliateStats;
-  createdAt: Timestamp;
-}
-
-interface AffiliateProduct {
-  id: string;
-  name: string;
-  description?: string;
-  url?: string;
-  commissionRate: number;
-  category?: string;
-  imageUrl?: string;
+/**
+ * Genera un URL de afiliado con los parámetros de seguimiento
+ */
+function generateAffiliateUrl(baseUrl: string, affiliateId: string, linkId: string, utmParams: any): string {
+  try {
+    // Generar URL final - simplificado para redirección interna
+    const trackingUrl = `/api/affiliate/track/${linkId}`;
+    return trackingUrl;
+  } catch (error) {
+    console.error('Error al generar URL de afiliado:', error);
+    return `/api/affiliate/track/${linkId}`;
+  }
 }
 
 const router = express.Router();
@@ -112,7 +74,7 @@ const router = express.Router();
 const affiliateRegistrationSchema = z.object({
   name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
   bio: z.string().min(10, { message: "La biografía debe tener al menos 10 caracteres" }).max(500),
-  email: z.string().email({ message: "Email inválido" }).optional(), // Tomamos el email del usuario autenticado si no se proporciona
+  email: z.string().email({ message: "Email inválido" }).optional(),
   website: z.string().url().optional().or(z.literal('')),
   socialMedia: z.object({
     instagram: z.string().optional().or(z.literal("")),
@@ -157,17 +119,17 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
     }
 
     const userId = getUserId(req);
-    const affiliateRef = doc(db, "affiliates", userId);
-    const affiliateDoc = await getDoc(affiliateRef);
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
     
-    if (!affiliateDoc.exists()) {
+    if (!affiliateDoc.exists) {
       return res.status(404).json({ success: false, message: 'No eres un afiliado registrado' });
     }
     
     // Obtener los enlaces de afiliado del usuario
-    const linksRef = collection(db, "affiliateLinks");
-    const q = query(linksRef, where("affiliateId", "==", userId));
-    const linksSnapshot = await getDocs(q);
+    const linksSnapshot = await db.collection('affiliateLinks')
+      .where('affiliateId', '==', userId)
+      .get();
     
     const links = linksSnapshot.docs.map(doc => ({
       id: doc.id,
@@ -217,10 +179,10 @@ router.post('/register', async (req: Request, res: Response) => {
     const data = validationResult.data;
     
     // Verificar si el usuario ya es un afiliado
-    const affiliateRef = doc(db, "affiliates", userId);
-    const affiliateDoc = await getDoc(affiliateRef);
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
     
-    if (affiliateDoc.exists()) {
+    if (affiliateDoc.exists) {
       return res.status(400).json({ 
         success: false, 
         message: 'Ya estás registrado como afiliado' 
@@ -239,12 +201,12 @@ router.post('/register', async (req: Request, res: Response) => {
     }
     
     // Crear el documento de afiliado
-    await setDoc(affiliateRef, {
+    await affiliateRef.set({
       ...data,
       userId: userId,
       email: userEmail,
       status: "pending", // pending, approved, rejected
-      createdAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
       stats: {
         totalClicks: 0,
         conversions: 0,
@@ -279,10 +241,10 @@ router.get('/products', async (req: Request, res: Response) => {
     const userId = req.user?.id || "test-user-id";
 
     // Verificar si el usuario es un afiliado aprobado
-    const affiliateRef = doc(db, "affiliates", userId);
-    const affiliateDoc = await getDoc(affiliateRef);
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
     
-    if (!affiliateDoc.exists()) {
+    if (!affiliateDoc.exists) {
       return res.status(403).json({ 
         success: false, 
         message: 'No tienes permisos de afiliado' 
@@ -290,7 +252,7 @@ router.get('/products', async (req: Request, res: Response) => {
     }
     
     const affiliateData = affiliateDoc.data();
-    if (affiliateData.status !== 'approved' && affiliateData.status !== 'pending') {
+    if (affiliateData?.status !== 'approved' && affiliateData?.status !== 'pending') {
       return res.status(403).json({ 
         success: false, 
         message: 'Tu cuenta de afiliado no está activa' 
@@ -298,8 +260,7 @@ router.get('/products', async (req: Request, res: Response) => {
     }
     
     // Obtener productos disponibles para afiliados
-    const productsRef = collection(db, "affiliateProducts");
-    const productsSnapshot = await getDocs(productsRef);
+    const productsSnapshot = await db.collection('affiliateProducts').get();
     
     const products = productsSnapshot.docs.map(doc => ({
       id: doc.id,
@@ -345,10 +306,10 @@ router.post('/links', authenticate, async (req: Request, res: Response) => {
     // Verificar si el usuario es un afiliado aprobado
     // Usamos el ID de usuario estandarizado
     const userId = req.user?.id || "test-user-id";
-    const affiliateRef = doc(db, "affiliates", userId);
-    const affiliateDoc = await getDoc(affiliateRef);
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
     
-    if (!affiliateDoc.exists()) {
+    if (!affiliateDoc.exists) {
       return res.status(403).json({ 
         success: false, 
         message: 'No tienes permisos de afiliado' 
@@ -356,10 +317,10 @@ router.post('/links', authenticate, async (req: Request, res: Response) => {
     }
     
     // Verificar si el producto existe
-    const productRef = doc(db, "affiliateProducts", data.productId);
-    const productDoc = await getDoc(productRef);
+    const productRef = db.collection('affiliateProducts').doc(data.productId);
+    const productDoc = await productRef.get();
     
-    if (!productDoc.exists()) {
+    if (!productDoc.exists) {
       return res.status(404).json({ 
         success: false, 
         message: 'Producto no encontrado' 
@@ -372,9 +333,9 @@ router.post('/links', authenticate, async (req: Request, res: Response) => {
     const linkData = {
       affiliateId: userId,
       productId: data.productId,
-      productName: productData.name,
-      productUrl: productData.url,
-      commissionRate: productData.commissionRate,
+      productName: productData?.name,
+      productUrl: productData?.url,
+      commissionRate: productData?.commissionRate,
       campaign: data.campaign || '',
       utmParams: {
         source: data.utmSource || 'boostify_affiliate',
@@ -384,10 +345,10 @@ router.post('/links', authenticate, async (req: Request, res: Response) => {
       clicks: 0,
       conversions: 0,
       earnings: 0,
-      createdAt: serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     };
     
-    const docRef = await addDoc(collection(db, "affiliateLinks"), linkData);
+    const docRef = await db.collection('affiliateLinks').add(linkData);
     
     return res.status(201).json({ 
       success: true, 
@@ -395,7 +356,7 @@ router.post('/links', authenticate, async (req: Request, res: Response) => {
       data: { 
         id: docRef.id,
         ...linkData,
-        url: generateAffiliateUrl(productData.url, userId, docRef.id, linkData.utmParams)
+        url: generateAffiliateUrl(productData?.url || '', userId, docRef.id, linkData.utmParams)
       }
     });
   } catch (error: any) {
@@ -420,10 +381,10 @@ router.get('/links', authenticate, async (req: Request, res: Response) => {
 
     // Verificar si el usuario es un afiliado
     const userId = getUserId(req);
-    const affiliateRef = doc(db, "affiliates", userId);
-    const affiliateDoc = await getDoc(affiliateRef);
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
     
-    if (!affiliateDoc.exists()) {
+    if (!affiliateDoc.exists) {
       return res.status(403).json({ 
         success: false, 
         message: 'No tienes permisos de afiliado' 
@@ -431,25 +392,22 @@ router.get('/links', authenticate, async (req: Request, res: Response) => {
     }
     
     // Obtener los enlaces de afiliado del usuario
-    const linksRef = collection(db, "affiliateLinks");
-    const q = query(
-      linksRef, 
-      where("affiliateId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
-    const linksSnapshot = await getDocs(q);
+    const linksSnapshot = await db.collection('affiliateLinks')
+      .where('affiliateId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
     
     const links = await Promise.all(linksSnapshot.docs.map(async (linkDoc) => {
       const linkData = linkDoc.data();
       
       // Obtener datos actualizados del producto
-      let productData: DocumentData = { name: linkData.productName, url: linkData.productUrl };
+      let productData: any = { name: linkData.productName, url: linkData.productUrl };
       
       try {
-        const productRef = doc(db, "affiliateProducts", linkData.productId);
-        const productDoc = await getDoc(productRef);
-        if (productDoc.exists()) {
-          productData = productDoc.data();
+        const productRef = db.collection('affiliateProducts').doc(linkData.productId);
+        const productDoc = await productRef.get();
+        if (productDoc.exists) {
+          productData = productDoc.data() || productData;
         }
       } catch (err) {
         console.error('Error al obtener datos del producto:', err);
@@ -467,7 +425,7 @@ router.get('/links', authenticate, async (req: Request, res: Response) => {
           commissionRate: productData.commissionRate || linkData.commissionRate
         },
         url: generateAffiliateUrl(
-          linkData.productUrl, 
+          linkData.productUrl || '', 
           userId, 
           linkDoc.id, 
           linkData.utmParams
@@ -503,10 +461,10 @@ router.delete('/links/:id', authenticate, async (req: Request, res: Response) =>
     const linkId = req.params.id;
     
     // Verificar si el enlace existe y pertenece al usuario
-    const linkRef = doc(db, "affiliateLinks", linkId);
-    const linkDoc = await getDoc(linkRef);
+    const linkRef = db.collection('affiliateLinks').doc(linkId);
+    const linkDoc = await linkRef.get();
     
-    if (!linkDoc.exists()) {
+    if (!linkDoc.exists) {
       return res.status(404).json({ 
         success: false, 
         message: 'Enlace no encontrado' 
@@ -514,7 +472,7 @@ router.delete('/links/:id', authenticate, async (req: Request, res: Response) =>
     }
     
     const linkData = linkDoc.data();
-    if (linkData.affiliateId !== userId) {
+    if (linkData?.affiliateId !== userId) {
       return res.status(403).json({ 
         success: false, 
         message: 'No tienes permiso para eliminar este enlace' 
@@ -522,7 +480,7 @@ router.delete('/links/:id', authenticate, async (req: Request, res: Response) =>
     }
     
     // Eliminar el enlace
-    await deleteDoc(doc(db, "affiliateLinks", linkId));
+    await linkRef.delete();
     
     return res.status(200).json({ 
       success: true, 
@@ -548,10 +506,10 @@ router.get('/track/:linkId', async (req: Request, res: Response) => {
     const linkId = req.params.linkId;
     
     // Verificar si el enlace existe
-    const linkRef = doc(db, "affiliateLinks", linkId);
-    const linkDoc = await getDoc(linkRef);
+    const linkRef = db.collection('affiliateLinks').doc(linkId);
+    const linkDoc = await linkRef.get();
     
-    if (!linkDoc.exists()) {
+    if (!linkDoc.exists) {
       return res.status(404).json({ 
         success: false, 
         message: 'Enlace no encontrado' 
@@ -561,46 +519,55 @@ router.get('/track/:linkId', async (req: Request, res: Response) => {
     const linkData = linkDoc.data();
     
     // Registrar el clic
-    await updateDoc(linkRef, {
-      clicks: increment(1)
+    await linkRef.update({
+      clicks: FieldValue.increment(1)
     });
     
     // Registrar la analítica del clic
-    await addDoc(collection(db, "affiliateClicks"), {
+    await db.collection('affiliateClicks').add({
       linkId,
-      affiliateId: linkData.affiliateId,
-      productId: linkData.productId,
+      affiliateId: linkData?.affiliateId,
+      productId: linkData?.productId,
       ip: req.ip,
       userAgent: req.headers['user-agent'],
       referer: req.headers.referer || '',
-      timestamp: serverTimestamp()
+      timestamp: FieldValue.serverTimestamp()
     });
     
     // Actualizar el total de clics en el afiliado
-    const affiliateRef = doc(db, "affiliates", linkData.affiliateId);
-    await updateDoc(affiliateRef, {
-      "stats.totalClicks": increment(1)
+    const affiliateRef = db.collection('affiliates').doc(linkData?.affiliateId);
+    await affiliateRef.update({
+      "stats.totalClicks": FieldValue.increment(1)
     });
     
     // Construir la URL de redirección
-    const redirectUrl = new URL(linkData.productUrl);
-    
-    // Añadir parámetros UTM
-    if (linkData.utmParams) {
-      if (linkData.utmParams.source) {
-        redirectUrl.searchParams.append('utm_source', linkData.utmParams.source);
+    let redirectUrl;
+    try {
+      redirectUrl = new URL(linkData?.productUrl || '');
+      
+      // Añadir parámetros UTM
+      if (linkData?.utmParams) {
+        if (linkData.utmParams.source) {
+          redirectUrl.searchParams.append('utm_source', linkData.utmParams.source);
+        }
+        if (linkData.utmParams.medium) {
+          redirectUrl.searchParams.append('utm_medium', linkData.utmParams.medium);
+        }
+        if (linkData.utmParams.campaign) {
+          redirectUrl.searchParams.append('utm_campaign', linkData.utmParams.campaign);
+        }
       }
-      if (linkData.utmParams.medium) {
-        redirectUrl.searchParams.append('utm_medium', linkData.utmParams.medium);
-      }
-      if (linkData.utmParams.campaign) {
-        redirectUrl.searchParams.append('utm_campaign', linkData.utmParams.campaign);
-      }
+      
+      // Añadir identificadores de afiliado
+      redirectUrl.searchParams.append('aff_id', linkData?.affiliateId || '');
+      redirectUrl.searchParams.append('aff_link', linkId);
+    } catch (error) {
+      console.error('Error al construir URL de redirección:', error);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'URL de producto inválida' 
+      });
     }
-    
-    // Añadir identificadores de afiliado
-    redirectUrl.searchParams.append('aff_id', linkData.affiliateId);
-    redirectUrl.searchParams.append('aff_link', linkId);
     
     // Redireccionar al usuario
     return res.redirect(redirectUrl.toString());
@@ -630,10 +597,10 @@ router.post('/conversions', async (req: Request, res: Response) => {
     }
     
     // Verificar si el afiliado existe
-    const affiliateRef = doc(db, "affiliates", affiliateId);
-    const affiliateDoc = await getDoc(affiliateRef);
+    const affiliateRef = db.collection('affiliates').doc(affiliateId);
+    const affiliateDoc = await affiliateRef.get();
     
-    if (!affiliateDoc.exists()) {
+    if (!affiliateDoc.exists) {
       return res.status(404).json({ 
         success: false, 
         message: 'Afiliado no encontrado' 
@@ -645,17 +612,17 @@ router.post('/conversions', async (req: Request, res: Response) => {
     
     // Si tenemos un ID de enlace, usar su tasa de comisión
     if (linkId) {
-      const linkRef = doc(db, "affiliateLinks", linkId);
-      const linkDoc = await getDoc(linkRef);
+      const linkRef = db.collection('affiliateLinks').doc(linkId);
+      const linkDoc = await linkRef.get();
       
-      if (linkDoc.exists()) {
+      if (linkDoc.exists) {
         const linkData = linkDoc.data();
-        commissionRate = linkData.commissionRate || commissionRate;
+        commissionRate = linkData?.commissionRate || commissionRate;
         
         // Actualizar estadísticas del enlace
-        await updateDoc(linkRef, {
-          conversions: increment(1),
-          earnings: increment(amount * commissionRate)
+        await linkRef.update({
+          conversions: FieldValue.increment(1),
+          earnings: FieldValue.increment(amount * commissionRate)
         });
       }
     }
@@ -664,7 +631,7 @@ router.post('/conversions', async (req: Request, res: Response) => {
     const commission = amount * commissionRate;
     
     // Registrar la conversión
-    const conversionRef = await addDoc(collection(db, "affiliateConversions"), {
+    const conversionRef = await db.collection('affiliateConversions').add({
       affiliateId,
       linkId,
       productId,
@@ -673,26 +640,27 @@ router.post('/conversions', async (req: Request, res: Response) => {
       commission,
       commissionRate,
       status: "pending", // pending, paid, cancelled
-      createdAt: serverTimestamp()
+      createdAt: FieldValue.serverTimestamp()
     });
     
     // Actualizar estadísticas del afiliado
-    await updateDoc(affiliateRef, {
-      "stats.conversions": increment(1),
-      "stats.earnings": increment(commission),
-      "stats.pendingPayment": increment(commission)
+    await affiliateRef.update({
+      "stats.conversions": FieldValue.increment(1),
+      "stats.earnings": FieldValue.increment(commission),
+      "stats.pendingPayment": FieldValue.increment(commission)
     });
     
     return res.status(201).json({ 
       success: true, 
       message: 'Conversión registrada correctamente',
-      data: { 
+      data: {
         id: conversionRef.id,
-        commission
+        commission,
+        status: "pending"
       }
     });
   } catch (error: any) {
-    console.error('Error al registrar conversión de afiliado:', error);
+    console.error('Error al registrar conversión:', error);
     return res.status(500).json({ 
       success: false, 
       message: 'Error al registrar conversión', 
@@ -714,24 +682,21 @@ router.get('/earnings', authenticate, async (req: Request, res: Response) => {
     const userId = getUserId(req);
     
     // Verificar si el usuario es un afiliado
-    const affiliateRef = doc(db, "affiliates", userId);
-    const affiliateDoc = await getDoc(affiliateRef);
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
     
-    if (!affiliateDoc.exists()) {
+    if (!affiliateDoc.exists) {
       return res.status(403).json({ 
         success: false, 
         message: 'No tienes permisos de afiliado' 
       });
     }
     
-    // Obtener conversiones del afiliado
-    const conversionsRef = collection(db, "affiliateConversions");
-    const q = query(
-      conversionsRef, 
-      where("affiliateId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
-    const conversionsSnapshot = await getDocs(q);
+    // Obtener las conversiones del afiliado
+    const conversionsSnapshot = await db.collection('affiliateConversions')
+      .where('affiliateId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
     
     const conversions = conversionsSnapshot.docs.map(doc => ({
       id: doc.id,
@@ -739,45 +704,44 @@ router.get('/earnings', authenticate, async (req: Request, res: Response) => {
       createdAt: doc.data().createdAt?.toDate?.() || new Date()
     }));
     
-    // Obtener historial de pagos
-    const paymentsRef = collection(db, "affiliatePayments");
-    const paymentsQuery = query(
-      paymentsRef, 
-      where("affiliateId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
-    const paymentsSnapshot = await getDocs(paymentsQuery);
+    // Obtener los clics del afiliado (limitados a los últimos 100)
+    const clicksSnapshot = await db.collection('affiliateClicks')
+      .where('affiliateId', '==', userId)
+      .orderBy('timestamp', 'desc')
+      .limit(100)
+      .get();
     
-    const payments = paymentsSnapshot.docs.map(doc => ({
+    const clicks = clicksSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      paidAt: doc.data().paidAt?.toDate?.() || null
+      timestamp: doc.data().timestamp?.toDate?.() || new Date()
     }));
     
-    // Calcular estadísticas de ganancias
+    // Calcular estadísticas mensuales
+    const stats = calculateMonthlyEarnings(conversions);
+    
+    // Agregar información sobre el próximo pago
     const affiliateData = affiliateDoc.data();
-    const earningsStats = {
-      total: affiliateData.stats?.earnings || 0,
-      pending: affiliateData.stats?.pendingPayment || 0,
-      conversions: affiliateData.stats?.conversions || 0,
-      nextPaymentDate: getNextPaymentDate(),
-      monthlyEarnings: calculateMonthlyEarnings(conversions)
+    const nextPayment = {
+      date: getNextPaymentDate(),
+      amount: affiliateData?.stats?.pendingPayment || 0
     };
     
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       data: {
-        stats: earningsStats,
         conversions,
-        payments
+        clicks,
+        monthly: stats,
+        nextPayment,
+        stats: affiliateData?.stats
       }
     });
   } catch (error: any) {
-    console.error('Error al obtener ganancias de afiliado:', error);
+    console.error('Error al obtener historial de ganancias:', error);
     return res.status(500).json({ 
       success: false, 
-      message: 'Error al obtener ganancias', 
+      message: 'Error al obtener historial de ganancias', 
       error: error.message 
     });
   }
@@ -787,8 +751,8 @@ router.get('/earnings', authenticate, async (req: Request, res: Response) => {
  * Calcula la fecha del próximo pago de afiliados (ejemplo: día 15 del mes siguiente)
  */
 function getNextPaymentDate(): Date {
-  const today = new Date();
-  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 15);
+  const now = new Date();
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 15);
   return nextMonth;
 }
 
@@ -798,35 +762,20 @@ function getNextPaymentDate(): Date {
 function calculateMonthlyEarnings(conversions: any[]): Record<string, number> {
   const monthlyEarnings: Record<string, number> = {};
   
-  // Agrupar por mes
   conversions.forEach(conversion => {
     const date = conversion.createdAt;
-    const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    if (!date) return;
+    
+    const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
     
     if (!monthlyEarnings[monthKey]) {
       monthlyEarnings[monthKey] = 0;
     }
     
-    monthlyEarnings[monthKey] += conversion.commission;
+    monthlyEarnings[monthKey] += conversion.commission || 0;
   });
   
   return monthlyEarnings;
 }
-
-/**
- * Genera un URL de afiliado con los parámetros de seguimiento
- */
-function generateAffiliateUrl(baseUrl: string, affiliateId: string, linkId: string, utmParams: any): string {
-  try {
-    // Crear URL base de seguimiento (/api/affiliate/track/:linkId)
-    // En producción debería usar la URL completa del sitio
-    const trackUrl = `/api/affiliate/track/${linkId}`;
-    return trackUrl;
-  } catch (error) {
-    console.error('Error al generar URL de afiliado:', error);
-    return baseUrl;
-  }
-}
-
 
 export default router;

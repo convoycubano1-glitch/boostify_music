@@ -21,6 +21,7 @@ export interface AffiliateLinkType {
   clicks?: number;
   conversions?: number;
   earnings?: number;
+  [key: string]: any; // Permite acceso con índice dinámico para la ordenación
 }
 
 export interface AffiliateEarningType {
