@@ -157,7 +157,7 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
     }
 
     const userId = getUserId(req);
-    const affiliateRef = doc(db, "affiliates", userId);
+    const affiliateRef = doc(db as any, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (!affiliateDoc.exists()) {
@@ -217,7 +217,7 @@ router.post('/register', async (req: Request, res: Response) => {
     const data = validationResult.data;
     
     // Verificar si el usuario ya es un afiliado
-    const affiliateRef = doc(db, "affiliates", userId);
+    const affiliateRef = doc(db as any, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (affiliateDoc.exists()) {
@@ -279,7 +279,7 @@ router.get('/products', async (req: Request, res: Response) => {
     const userId = req.user?.id || "test-user-id";
 
     // Verificar si el usuario es un afiliado aprobado
-    const affiliateRef = doc(db, "affiliates", userId);
+    const affiliateRef = doc(db as any, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (!affiliateDoc.exists()) {
@@ -298,7 +298,7 @@ router.get('/products', async (req: Request, res: Response) => {
     }
     
     // Obtener productos disponibles para afiliados
-    const productsRef = collection(db, "affiliateProducts");
+    const productsRef = collection(db as any, "affiliateProducts");
     const productsSnapshot = await getDocs(productsRef);
     
     const products = productsSnapshot.docs.map(doc => ({
@@ -345,7 +345,7 @@ router.post('/links', authenticate, async (req: Request, res: Response) => {
     // Verificar si el usuario es un afiliado aprobado
     // Usamos el ID de usuario estandarizado
     const userId = req.user?.id || "test-user-id";
-    const affiliateRef = doc(db, "affiliates", userId);
+    const affiliateRef = doc(db as any, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (!affiliateDoc.exists()) {
@@ -420,7 +420,7 @@ router.get('/links', authenticate, async (req: Request, res: Response) => {
 
     // Verificar si el usuario es un afiliado
     const userId = getUserId(req);
-    const affiliateRef = doc(db, "affiliates", userId);
+    const affiliateRef = doc(db as any, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (!affiliateDoc.exists()) {
@@ -714,7 +714,7 @@ router.get('/earnings', authenticate, async (req: Request, res: Response) => {
     const userId = getUserId(req);
     
     // Verificar si el usuario es un afiliado
-    const affiliateRef = doc(db, "affiliates", userId);
+    const affiliateRef = doc(db as any, "affiliates", userId);
     const affiliateDoc = await getDoc(affiliateRef);
     
     if (!affiliateDoc.exists()) {

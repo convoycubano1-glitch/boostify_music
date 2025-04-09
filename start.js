@@ -1,13 +1,11 @@
 /**
- * Script for starting both the server and client
- * Includes improved error handling and process management
- * Updated to work with the current project structure
+ * Script para iniciar la aplicación optimizada de Boostify Music
+ * Desarrollado específicamente para despliegue en Replit
  */
 
-import { spawn } from 'child_process';
-import process from 'node:process';
-import fs from 'fs';
-import path from 'path';
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 // Colors for console output
 const colors = {
@@ -110,33 +108,38 @@ function findServerEntryPoint() {
 
 // Start the application
 function startApplication() {
-  console.log(`${colors.blue}Starting application in development mode...${colors.reset}`);
+  console.log(`${colors.blue}Starting optimized application for Replit deployment...${colors.reset}`);
   
-  const serverFile = findServerEntryPoint();
-  console.log(`${colors.cyan}Using server entry point: ${serverFile}${colors.reset}`);
-  
-  // Start server using tsx or node depending on the file extension
-  const isTypeScript = serverFile.endsWith('.ts');
-  const serverCommand = isTypeScript ? 'npx tsx' : 'node';
-  const server = startProcess(serverCommand, [serverFile], 'SERVER', colors.cyan);
-  
-  // Wait a bit for server to initialize before starting client
-  setTimeout(() => {
-    // Check if client directory exists, otherwise assume Vite is configured to serve from root
-    const hasClientDir = fs.existsSync(path.resolve(process.cwd(), 'client'));
-    const clientCmd = hasClientDir ? 'cd client && npx vite' : 'npx vite';
+  // Verificar si existe el script optimizado
+  if (fs.existsSync('./optimized-start.js')) {
+    console.log(`${colors.cyan}Usando script de inicio optimizado: optimized-start.js${colors.reset}`);
     
-    // Start client using vite
-    const client = startProcess(clientCmd, [], 'CLIENT', colors.green);
+    // Ejecutar directamente el script optimizado
+    const server = startProcess('node', ['optimized-start.js'], 'OPTIMIZED-SERVER', colors.cyan);
     
     // Handle clean termination
     process.on('SIGINT', () => {
       console.log('\nStopping processes...');
       server.kill();
-      client.kill();
       process.exit(0);
     });
-  }, 2000);
+  } else {
+    console.log(`${colors.red}Script optimizado no encontrado. Ejecutando en modo de compatibilidad...${colors.reset}`);
+    
+    // Si no existe el script optimizado, usar el servidor básico
+    if (fs.existsSync('./server-prod.js')) {
+      const server = startProcess('node', ['server-prod.js'], 'SERVER', colors.cyan);
+      
+      process.on('SIGINT', () => {
+        console.log('\nStopping processes...');
+        server.kill();
+        process.exit(0);
+      });
+    } else {
+      console.log(`${colors.red}No se encuentra ningún script de servidor. Verifica la instalación.${colors.reset}`);
+      process.exit(1);
+    }
+  }
 }
 
 // Handle any uncaught exceptions

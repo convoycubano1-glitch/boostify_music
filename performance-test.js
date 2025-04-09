@@ -1,188 +1,191 @@
 /**
- * Script para pruebas de rendimiento en entorno de producción
- * Este script mide el tiempo de carga y respuesta de diferentes endpoints
- * para evaluar el rendimiento de la aplicación en producción.
+ * Script para probar el rendimiento del servidor al servir videos
+ * Este script realiza solicitudes concurrentes para simular múltiples usuarios
  */
 
-const axios = require('axios');
+const http = require('http');
 const { performance } = require('perf_hooks');
 
-// Configuración
-const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
-const ITERATIONS = process.env.TEST_ITERATIONS ? parseInt(process.env.TEST_ITERATIONS) : 5;
-const TIMEOUT = process.env.TEST_TIMEOUT ? parseInt(process.env.TEST_TIMEOUT) : 10000;
+// Configuración de la prueba
+const TEST_CONFIG = {
+  host: 'localhost',
+  port: 5000,
+  concurrentRequests: 5,  // Número de solicitudes simultáneas
+  videoPaths: [
+    '/assets/hero-video.mp4',
+    '/assets/style_advisor_bg.mp4',
+    '/video/hero-video.mp4',
+    '/api/videos',
+    '/diagnose'
+  ],
+  timeout: 10000  // Tiempo de espera máximo en ms
+};
 
 // Colores para la consola
-const RESET = '\x1b[0m';
-const RED = '\x1b[31m';
-const GREEN = '\x1b[32m';
-const YELLOW = '\x1b[33m';
-const BLUE = '\x1b[36m';
+const colors = {
+  reset: '\x1b[0m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m'
+};
 
-console.log(`${BLUE}=======================================${RESET}`);
-console.log(`${BLUE}    PRUEBAS DE RENDIMIENTO PRODUCCIÓN    ${RESET}`);
-console.log(`${BLUE}=======================================${RESET}`);
-console.log(`URL Base: ${BASE_URL}`);
-console.log(`Iteraciones: ${ITERATIONS}`);
-console.log(`Timeout: ${TIMEOUT}ms\n`);
+function log(message, color = 'reset') {
+  console.log(colors[color] + message + colors.reset);
+}
 
-/**
- * Realiza una prueba de rendimiento en un endpoint
- * @param {string} endpoint URL del endpoint a probar
- * @param {string} name Nombre descriptivo de la prueba
- * @param {string} method Método HTTP (GET, POST, etc.)
- * @param {object} data Datos para enviar (solo para POST, PUT)
- * @param {object} headers Cabeceras HTTP adicionales
- */
-async function testEndpoint(endpoint, name, method = 'GET', data = null, headers = {}) {
-  console.log(`${YELLOW}Probando: ${name} (${method} ${endpoint})${RESET}`);
+// Función para realizar una solicitud HTTP
+function makeRequest(path) {
+  return new Promise((resolve, reject) => {
+    const startTime = performance.now();
+    
+    const options = {
+      host: TEST_CONFIG.host,
+      port: TEST_CONFIG.port,
+      path: path,
+      method: 'HEAD',  // Solo encabezados para evitar cargar todo el video
+      timeout: TEST_CONFIG.timeout
+    };
+    
+    const req = http.request(options, (res) => {
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+      
+      let data = {
+        path,
+        statusCode: res.statusCode,
+        duration,
+        contentType: res.headers['content-type'],
+        contentLength: res.headers['content-length']
+      };
+      
+      res.on('data', () => {});  // Consumir datos para evitar fugas de memoria
+      
+      res.on('end', () => {
+        resolve(data);
+      });
+    });
+    
+    req.on('error', (error) => {
+      reject({
+        path,
+        error: error.message,
+        duration: (performance.now() - startTime).toFixed(2)
+      });
+    });
+    
+    req.on('timeout', () => {
+      req.destroy();
+      reject({
+        path,
+        error: 'Timeout',
+        duration: TEST_CONFIG.timeout
+      });
+    });
+    
+    req.end();
+  });
+}
+
+// Función principal para ejecutar pruebas
+async function runPerformanceTests() {
+  log('====================================', 'magenta');
+  log('  PRUEBA DE RENDIMIENTO DE VIDEOS', 'magenta');
+  log('====================================', 'magenta');
+  log(`Servidor: ${TEST_CONFIG.host}:${TEST_CONFIG.port}`, 'blue');
+  log(`Solicitudes concurrentes: ${TEST_CONFIG.concurrentRequests}`, 'blue');
+  log(`Rutas a probar: ${TEST_CONFIG.videoPaths.length}`, 'blue');
+  log('====================================', 'magenta');
   
-  const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
-  const tiempos = [];
-  const resultados = {
-    exito: 0,
-    fallo: 0,
-    tiempoPromedio: 0,
-    tiempoMinimo: Number.MAX_SAFE_INTEGER,
-    tiempoMaximo: 0,
-    errores: []
+  const results = {
+    successful: 0,
+    failed: 0,
+    totalTime: 0,
+    responses: []
   };
   
-  for (let i = 0; i < ITERATIONS; i++) {
+  // Probar cada ruta
+  for (const path of TEST_CONFIG.videoPaths) {
+    log(`\nProbando: ${path}`, 'cyan');
+    
+    // Crear solicitudes concurrentes
+    const requests = [];
+    for (let i = 0; i < TEST_CONFIG.concurrentRequests; i++) {
+      requests.push(makeRequest(path));
+    }
+    
+    // Esperar a que todas las solicitudes se completen
     try {
-      const inicio = performance.now();
+      const start = performance.now();
+      const responses = await Promise.allSettled(requests);
+      const end = performance.now();
+      const totalTime = (end - start).toFixed(2);
       
-      const response = await axios({
-        method,
-        url,
-        data,
-        headers,
-        timeout: TIMEOUT
+      results.totalTime += parseFloat(totalTime);
+      
+      // Procesar resultados
+      let successCount = 0;
+      let failCount = 0;
+      let avgDuration = 0;
+      
+      responses.forEach((response) => {
+        if (response.status === 'fulfilled') {
+          successCount++;
+          avgDuration += parseFloat(response.value.duration);
+          results.responses.push(response.value);
+        } else {
+          failCount++;
+          results.responses.push(response.reason);
+        }
       });
       
-      const fin = performance.now();
-      const tiempoMs = fin - inicio;
+      avgDuration = avgDuration / successCount;
       
-      tiempos.push(tiempoMs);
-      resultados.exito++;
+      results.successful += successCount;
+      results.failed += failCount;
       
-      if (tiempoMs < resultados.tiempoMinimo) resultados.tiempoMinimo = tiempoMs;
-      if (tiempoMs > resultados.tiempoMaximo) resultados.tiempoMaximo = tiempoMs;
+      log(`Resultado: ${successCount}/${TEST_CONFIG.concurrentRequests} exitosas`, successCount === TEST_CONFIG.concurrentRequests ? 'green' : 'yellow');
+      log(`Tiempo promedio: ${avgDuration.toFixed(2)}ms`, avgDuration < 500 ? 'green' : 'yellow');
+      log(`Tiempo total: ${totalTime}ms`, 'blue');
       
-      process.stdout.write(`${GREEN}✓${RESET}`);
+      if (failCount > 0) {
+        log(`Fallos: ${failCount}`, 'red');
+      }
     } catch (error) {
-      resultados.fallo++;
-      process.stdout.write(`${RED}✗${RESET}`);
-      
-      resultados.errores.push({
-        mensaje: error.message,
-        codigo: error.response?.status,
-        datos: error.response?.data
-      });
+      log(`Error al probar ${path}: ${error.message}`, 'red');
+      results.failed += TEST_CONFIG.concurrentRequests;
     }
   }
   
-  if (tiempos.length > 0) {
-    resultados.tiempoPromedio = tiempos.reduce((a, b) => a + b, 0) / tiempos.length;
+  // Mostrar resumen
+  log('\n====================================', 'magenta');
+  log('          RESUMEN', 'magenta');
+  log('====================================', 'magenta');
+  log(`Total de solicitudes: ${results.successful + results.failed}`, 'blue');
+  log(`Exitosas: ${results.successful}`, results.successful > 0 ? 'green' : 'red');
+  log(`Fallidas: ${results.failed}`, results.failed === 0 ? 'green' : 'red');
+  log(`Tiempo total: ${results.totalTime.toFixed(2)}ms`, 'blue');
+  
+  // Análisis
+  if (results.failed === 0) {
+    log('\n✅ El servidor maneja correctamente solicitudes concurrentes de video.', 'green');
+  } else {
+    log('\n⚠️ El servidor tiene problemas para manejar algunas solicitudes concurrentes.', 'yellow');
   }
   
-  if (resultados.tiempoMinimo === Number.MAX_SAFE_INTEGER) {
-    resultados.tiempoMinimo = 0;
-  }
-  
-  console.log('\n');
-  console.log(`${BLUE}Resultados para ${name}:${RESET}`);
-  console.log(`Éxito: ${resultados.exito}/${ITERATIONS} (${(resultados.exito / ITERATIONS * 100).toFixed(2)}%)`);
-  console.log(`Tiempo promedio: ${resultados.tiempoPromedio.toFixed(2)}ms`);
-  console.log(`Tiempo mínimo: ${resultados.tiempoMinimo.toFixed(2)}ms`);
-  console.log(`Tiempo máximo: ${resultados.tiempoMaximo.toFixed(2)}ms`);
-  
-  if (resultados.errores.length > 0) {
-    console.log(`${RED}Errores encontrados:${RESET}`);
-    resultados.errores.forEach((error, index) => {
-      console.log(`  Error ${index + 1}: ${error.mensaje} (Código: ${error.codigo || 'N/A'})`);
+  // Detalles de solicitudes fallidas
+  if (results.failed > 0) {
+    log('\nDetalles de fallos:', 'red');
+    results.responses.filter(r => r.error).forEach((res, index) => {
+      log(`${index + 1}. ${res.path} - ${res.error} (${res.duration}ms)`, 'red');
     });
   }
-  
-  console.log('----------------------------------------');
-  return resultados;
 }
 
-/**
- * Ejecuta todas las pruebas de rendimiento
- */
-async function ejecutarPruebas() {
-  const resultados = {};
-  
-  // Prueba 1: Carga de la página principal
-  resultados.paginaPrincipal = await testEndpoint('/', 'Página Principal');
-  
-  // Prueba 2: API de estado
-  resultados.apiStatus = await testEndpoint('/api/status', 'API de Estado');
-  
-  // Prueba 3: Carga de activos estáticos
-  resultados.activos = await testEndpoint('/assets/freepik__boostify_music_organe_abstract_icon.png', 'Carga de Activos Estáticos');
-  
-  // Prueba 4: Ruta no encontrada (para probar manejo de errores)
-  resultados.rutaNoEncontrada = await testEndpoint('/ruta-que-no-existe', 'Manejo de Rutas No Encontradas');
-  
-  // Resumen general
-  console.log(`${BLUE}=======================================${RESET}`);
-  console.log(`${BLUE}    RESUMEN DE RENDIMIENTO    ${RESET}`);
-  console.log(`${BLUE}=======================================${RESET}`);
-  
-  let totalExito = 0;
-  let totalPruebas = 0;
-  let tiempoPromedioTotal = 0;
-  let pruebasConExito = 0;
-  
-  Object.entries(resultados).forEach(([nombre, resultado]) => {
-    totalExito += resultado.exito;
-    totalPruebas += ITERATIONS;
-    
-    if (resultado.tiempoPromedio > 0) {
-      tiempoPromedioTotal += resultado.tiempoPromedio;
-      pruebasConExito++;
-    }
-    
-    // Evaluar rendimiento
-    let calificacion;
-    if (resultado.tiempoPromedio < 200) {
-      calificacion = `${GREEN}Excelente${RESET}`;
-    } else if (resultado.tiempoPromedio < 500) {
-      calificacion = `${GREEN}Bueno${RESET}`;
-    } else if (resultado.tiempoPromedio < 1000) {
-      calificacion = `${YELLOW}Aceptable${RESET}`;
-    } else {
-      calificacion = `${RED}Necesita Optimización${RESET}`;
-    }
-    
-    console.log(`${nombre}: ${resultado.tiempoPromedio.toFixed(2)}ms - ${calificacion}`);
-  });
-  
-  const exitoTotal = (totalExito / totalPruebas * 100).toFixed(2);
-  const tiempoPromedioGeneral = pruebasConExito > 0 ? (tiempoPromedioTotal / pruebasConExito).toFixed(2) : 0;
-  
-  console.log(`\nTasa de éxito general: ${exitoTotal}%`);
-  console.log(`Tiempo promedio general: ${tiempoPromedioGeneral}ms`);
-  
-  // Evaluación final
-  let evaluacionFinal;
-  if (exitoTotal >= 95 && tiempoPromedioGeneral < 300) {
-    evaluacionFinal = `${GREEN}EXCELENTE - La aplicación está lista para producción con alto rendimiento${RESET}`;
-  } else if (exitoTotal >= 90 && tiempoPromedioGeneral < 600) {
-    evaluacionFinal = `${GREEN}BUENO - La aplicación funciona bien pero hay margen de mejora${RESET}`;
-  } else if (exitoTotal >= 80 && tiempoPromedioGeneral < 1000) {
-    evaluacionFinal = `${YELLOW}ACEPTABLE - Se recomienda optimizar antes de desplegar a producción${RESET}`;
-  } else {
-    evaluacionFinal = `${RED}NECESITA MEJORAS - No se recomienda desplegar hasta optimizar${RESET}`;
-  }
-  
-  console.log(`\nEvaluación final: ${evaluacionFinal}`);
-}
-
-// Ejecutar las pruebas
-ejecutarPruebas().catch(error => {
-  console.error(`${RED}Error al ejecutar las pruebas:${RESET}`, error);
+// Ejecutar pruebas
+runPerformanceTests().catch(error => {
+  log(`\nError en la prueba: ${error.message}`, 'red');
   process.exit(1);
 });
