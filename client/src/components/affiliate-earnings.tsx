@@ -9,7 +9,7 @@ import { Badge } from "./ui/badge";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { DollarSign, FileText, ArrowUpRight, Download, CreditCard, Calendar, Clock, Filter, ChevronDown, BarChart, LineChart } from "lucide-react";
+import { DollarSign, FileText, ArrowUpRight, Download, CreditCard, Calendar as CalendarIcon, Clock, Filter, ChevronDown, BarChart, LineChart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Table,
@@ -44,6 +44,24 @@ interface AffiliateEarningsProps {
   affiliateData: any;
 }
 
+interface AffiliateEarning {
+  id: string;
+  amount: number;
+  orderId: string;
+  productId: string;
+  productName: string;
+  status: string;
+  createdAt: any;
+}
+
+interface AffiliatePayment {
+  id: string;
+  amount: number;
+  status: string;
+  processedAt: any;
+  createdAt: any;
+}
+
 export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
   const { user } = useAuth() || {};
   const [activeTab, setActiveTab] = useState("overview");
@@ -51,7 +69,7 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   
   // Consulta para obtener las transacciones de ganancias
-  const { data: earnings, isLoading: isLoadingEarnings } = useQuery({
+  const { data: earnings, isLoading: isLoadingEarnings } = useQuery<AffiliateEarning[]>({
     queryKey: ["affiliate-earnings", user?.uid, filterPeriod],
     queryFn: async () => {
       if (!user?.uid) return [];
@@ -90,13 +108,18 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      }));
+        amount: doc.data().amount || 0,
+        orderId: doc.data().orderId || '',
+        productId: doc.data().productId || '',
+        productName: doc.data().productName || 'Desconocido',
+        status: doc.data().status || 'Procesado'
+      })) as AffiliateEarning[];
     },
     enabled: !!user?.uid,
   });
 
   // Consulta para obtener los pagos procesados
-  const { data: payments, isLoading: isLoadingPayments } = useQuery({
+  const { data: payments, isLoading: isLoadingPayments } = useQuery<AffiliatePayment[]>({
     queryKey: ["affiliate-payments", user?.uid],
     queryFn: async () => {
       if (!user?.uid) return [];
@@ -111,7 +134,9 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate?.() || new Date(),
         processedAt: doc.data().processedAt?.toDate?.() || null,
-      }));
+        amount: doc.data().amount || 0,
+        status: doc.data().status || 'pending'
+      })) as AffiliatePayment[];
     },
     enabled: !!user?.uid,
   });
@@ -150,8 +175,16 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
     }
   ];
 
+  // Definición de tipos para productos agrupados
+  interface ProductSummary {
+    productId: string;
+    productName: string;
+    count: number;
+    total: number;
+  }
+
   // Agrupar ganancias por producto
-  const earningsByProduct = earnings?.reduce((acc, earning) => {
+  const earningsByProduct = earnings?.reduce<Record<string, ProductSummary>>((acc, earning) => {
     const productId = earning.productId;
     if (!acc[productId]) {
       acc[productId] = {
@@ -167,9 +200,9 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
   }, {});
 
   // Convertir a array y ordenar por total
-  const topProducts = earningsByProduct ? 
+  const topProducts: ProductSummary[] = earningsByProduct ? 
     Object.values(earningsByProduct)
-      .sort((a: any, b: any) => b.total - a.total)
+      .sort((a, b) => b.total - a.total)
       .slice(0, 5) : 
     [];
 
@@ -423,7 +456,7 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                 </div>
               ) : topProducts.length > 0 ? (
-                topProducts.map((product: any, index: number) => (
+                topProducts.map((product, index: number) => (
                   <div key={product.productId} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <div className="font-medium text-sm truncate max-w-[180px]">
@@ -495,7 +528,7 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
                         </TableCell>
                       </TableRow>
                     ) : earnings && earnings.length > 0 ? (
-                      earnings.map((earning: any) => (
+                      earnings.map((earning) => (
                         <TableRow key={earning.id}>
                           <TableCell className="font-medium">
                             {format(new Date(earning.createdAt), "dd/MM/yyyy")}
@@ -563,7 +596,7 @@ export function AffiliateEarnings({ affiliateData }: AffiliateEarningsProps) {
                         </TableCell>
                       </TableRow>
                     ) : payments && payments.length > 0 ? (
-                      payments.map((payment: any) => (
+                      payments.map((payment) => (
                         <TableRow key={payment.id}>
                           <TableCell className="font-medium">
                             {format(new Date(payment.createdAt), "dd/MM/yyyy")}

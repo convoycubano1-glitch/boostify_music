@@ -17,7 +17,7 @@ const colors = {
   magenta: '\x1b[35m'
 };
 
-console.log(`${colors.magenta}===== CONSTRUCCIÓN OPTIMIZADA PARA PRODUCCIÓN =====\n${colors.reset}`);
+console.log(`${colors.magenta}===== CONSTRUCCIÓN OPTIMIZADA PARA PRODUCCIÓN =====${colors.reset}\n`);
 
 /**
  * Ejecuta un comando y muestra su salida
@@ -183,14 +183,14 @@ function copyStaticFiles() {
  */
 async function build() {
   try {
-    console.log(`${colors.magenta}Iniciando proceso de construcción para producción...\n${colors.reset}`);
+    console.log(`${colors.magenta}Iniciando proceso de construcción para producción...${colors.reset}\n`);
     
     prepareDistDirectory();
     compileServerTypeScript();
     buildClient();
     copyStaticFiles();
     
-    console.log(`\n${colors.green}===== CONSTRUCCIÓN COMPLETADA =====\n${colors.reset}`);
+    console.log(`\n${colors.green}===== CONSTRUCCIÓN COMPLETADA =====${colors.reset}`);
     console.log(`${colors.green}La aplicación está lista para producción en la carpeta 'dist'${colors.reset}`);
     console.log(`${colors.blue}Para iniciar la aplicación, ejecute:${colors.reset}`);
     console.log(`${colors.yellow}cd dist && npm start${colors.reset}\n`);
