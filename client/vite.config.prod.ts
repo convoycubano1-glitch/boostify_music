@@ -1,26 +1,40 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
-import path, { dirname } from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Configuración especial para producción
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), themePlugin()],
-  root: path.resolve(__dirname),
-  publicDir: path.resolve(__dirname, 'public'), 
-  build: {
-    outDir: path.resolve(__dirname, "../dist/public"),
-    emptyOutDir: true,
-    sourcemap: true,
-  },
+  plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(__dirname, './src')
     }
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    // Evitar detener la compilación por errores
+    reportCompressedSize: false,
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignorar advertencias específicas
+        if (
+          warning.code === 'MODULE_LEVEL_DIRECTIVE' ||
+          warning.code === 'CIRCULAR_DEPENDENCY' ||
+          warning.message?.includes('use client')
+        ) {
+          return;
+        }
+        warn(warning);
+      },
+    },
+  },
+  optimizeDeps: {
+    exclude: ['@mdx-js/react'],
+  },
+  server: {
+    port: 5173,
+    host: '0.0.0.0',
   }
 });
