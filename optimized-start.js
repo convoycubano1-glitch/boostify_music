@@ -1,71 +1,89 @@
 /**
- * Script de inicio optimizado para Replit
+ * Script optimizado de inicio para Boostify Music
+ * Esta versión evita los problemas de pantalla negra y optimiza el rendimiento de carga
  */
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
 
-// Cargar variables de entorno
-try {
-  if (fs.existsSync('./.env.production')) {
-    require('dotenv').config({ path: './.env.production' });
-    console.log('Variables de entorno de producción cargadas');
-  } else {
-    console.log('Archivo .env.production no encontrado, usando variables predeterminadas');
-  }
-} catch (error) {
-  console.log('Error al cargar variables de entorno:', error.message);
-}
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import cors from 'cors';
+import { spawn } from 'child_process';
 
-// Función para registrar listados de videos disponibles
-function listAvailableVideos() {
-  console.log('\n📹 Comprobando videos disponibles...');
+// Get absolute paths
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Iniciar servidor Express simple
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Configurar middleware
+app.use(cors());
+app.use(express.static('public'));
+app.use(express.static('client/public'));
+app.use(express.json());
+
+// Configurar rutas dinámicas
+app.get('/_loading', (req, res) => {
+  res.sendFile(path.join(__dirname, 'optimized-index.html'));
+});
+
+// Todas las demás rutas cargan el index.html principal
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Iniciar servidor Express
+const server = app.listen(PORT, () => {
+  console.log(`✅ Servidor optimizado iniciado en puerto ${PORT}`);
+  console.log(`📱 Accede a la aplicación en: https://workspace.replit.app`);
+
+  // Iniciar Vite en segundo plano
+  console.log('⚡ Iniciando Vite...');
+  const viteProcess = startProcess('npx', ['vite'], 'VITE', '35');
   
-  const videoDirectories = [
-    './client/assets',
-    './client/public/assets'
-  ];
+  // Manejar cierre gracioso
+  process.on('SIGINT', () => {
+    console.log('\nCerrando procesos...');
+    viteProcess.kill('SIGINT');
+    process.exit(0);
+  });
+});
+
+// Función para iniciar un proceso
+function startProcess(command, args, prefix, color) {
+  console.log(`\x1b[${color}m[${prefix}] Iniciando: ${command} ${args.join(' ')}\x1b[0m`);
   
-  let videoCount = 0;
-  
-  videoDirectories.forEach(dir => {
-    if (fs.existsSync(dir)) {
-      function scanDir(currentDir, level = 0) {
-        const indent = '  '.repeat(level);
-        const files = fs.readdirSync(currentDir, { withFileTypes: true });
-        
-        files.forEach(file => {
-          const fullPath = path.join(currentDir, file.name);
-          
-          if (file.isDirectory()) {
-            scanDir(fullPath, level + 1);
-          } else if (file.name.endsWith('.mp4')) {
-            console.log(`${indent}✓ ${fullPath}`);
-            videoCount++;
-          }
-        });
-      }
-      
-      scanDir(dir);
-    }
+  const proc = spawn(command, args, {
+    stdio: 'pipe',
+    shell: true
   });
   
-  console.log(`\nTotal de videos encontrados: ${videoCount}`);
+  // Manejar stdout
+  proc.stdout.on('data', (data) => {
+    const lines = data.toString().trim().split('\n');
+    lines.forEach(line => {
+      console.log(`\x1b[${color}m[${prefix}] ${line}\x1b[0m`);
+    });
+  });
+  
+  // Manejar stderr
+  proc.stderr.on('data', (data) => {
+    const lines = data.toString().trim().split('\n');
+    lines.forEach(line => {
+      console.log(`\x1b[${color}m[${prefix} ERROR] ${line}\x1b[0m`);
+    });
+  });
+  
+  // Manejar cierre del proceso
+  proc.on('close', (code) => {
+    console.log(`\x1b[${color}m[${prefix}] Proceso finalizado con código ${code}\x1b[0m`);
+  });
+  
+  // Manejar errores
+  proc.on('error', (err) => {
+    console.error(`\x1b[${color}m[${prefix} ERROR] Error al iniciar proceso: ${err.message}\x1b[0m`);
+  });
+  
+  return proc;
 }
-
-// Iniciar servidor
-console.log('\x1b[36m%s\x1b[0m', 'Iniciando Boostify Music en modo producción...');
-
-// Verificar videos disponibles
-listAvailableVideos();
-
-// Ejecutar el servidor
-const server = spawn('node', ['server-prod.js'], {
-  stdio: 'inherit',
-  env: { ...process.env }
-});
-
-server.on('error', (err) => {
-  console.error('\x1b[31m%s\x1b[0m', 'Error al iniciar el servidor:', err);
-  process.exit(1);
-});

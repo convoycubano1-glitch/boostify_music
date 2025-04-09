@@ -1,215 +1,30 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Boostify Music - Plataforma Musical Inteligente</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f8f9fa;
-      color: #333;
-    }
-    
-    header {
-      background-color: #ff5722;
-      color: white;
-      padding: 20px 0;
-      text-align: center;
-    }
-    
-    .logo {
-      font-size: 2.5rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    .hero {
-      position: relative;
-      height: 500px;
-      overflow: hidden;
-      margin-bottom: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .hero video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 1;
-    }
-    
-    .hero-content {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      color: white;
-      padding: 20px;
-      background-color: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      max-width: 80%;
-    }
-    
-    .hero-title {
-      font-size: 3rem;
-      margin-bottom: 20px;
-    }
-    
-    .hero-description {
-      font-size: 1.5rem;
-      margin-bottom: 30px;
-    }
-    
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-      margin-bottom: 40px;
-    }
-    
-    .feature {
-      background-color: white;
-      border-radius: 10px;
-      padding: 30px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-      text-align: center;
-    }
-    
-    .feature-title {
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-      color: #ff5722;
-    }
-    
-    .video-gallery {
-      margin-bottom: 40px;
-    }
-    
-    .video-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-    }
-    
-    .video-item {
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .video-item video {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-    }
-    
-    .video-item-info {
-      padding: 15px;
-      background-color: white;
-    }
-    
-    footer {
-      background-color: #333;
-      color: white;
-      text-align: center;
-      padding: 20px 0;
-    }
-    
-    .section-title {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 30px;
-      color: #333;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="logo">Boostify Music</div>
-    <p>Plataforma Musical Avanzada con IA</p>
-  </header>
-  
-  <div class="hero">
-    <video autoplay muted loop>
-      <source src="/assets/hero-video.mp4" type="video/mp4">
-      Tu navegador no soporta el video.
-    </video>
-    <div class="hero-content">
-      <h1 class="hero-title">Impulsa tu Carrera Musical</h1>
-      <p class="hero-description">Potencia tu creatividad y alcance con nuestra plataforma impulsada por IA</p>
-    </div>
-  </div>
-  
-  <div class="container">
-    <h2 class="section-title">Características Principales</h2>
-    <div class="features">
-      <div class="feature">
-        <h3 class="feature-title">Generación de Contenido con IA</h3>
-        <p>Crea letras, melodías y arreglos musicales con nuestra avanzada tecnología de IA.</p>
-      </div>
-      <div class="feature">
-        <h3 class="feature-title">Análisis Profesional</h3>
-        <p>Recibe análisis detallado de tus composiciones y sugerencias para mejorarlas.</p>
-      </div>
-      <div class="feature">
-        <h3 class="feature-title">Promoción Inteligente</h3>
-        <p>Estrategias personalizadas para promocionar tu música en plataformas digitales.</p>
-      </div>
-    </div>
-    
-    <h2 class="section-title">Descubre Nuestras Herramientas</h2>
-    <div class="video-gallery">
-      <div class="video-grid">
-        <div class="video-item">
-          <video controls>
-            <source src="/assets/Standard_Mode_Generated_Video (5).mp4" type="video/mp4">
-            Tu navegador no soporta el video.
-          </video>
-          <div class="video-item-info">
-            <h3>Herramienta de Composición</h3>
-            <p>Crea composiciones únicas con asistencia de IA.</p>
-          </div>
-        </div>
-        <div class="video-item">
-          <video controls>
-            <source src="/assets/Standard_Mode_Generated_Video (6).mp4" type="video/mp4">
-            Tu navegador no soporta el video.
-          </video>
-          <div class="video-item-info">
-            <h3>Análisis de Rendimiento</h3>
-            <p>Visualiza el impacto de tu música en tiempo real.</p>
-          </div>
-        </div>
-        <div class="video-item">
-          <video controls>
-            <source src="/assets/Standard_Mode_Generated_Video (7).mp4" type="video/mp4">
-            Tu navegador no soporta el video.
-          </video>
-          <div class="video-item-info">
-            <h3>Marketing Musical</h3>
-            <p>Optimiza tu estrategia de promoción con datos inteligentes.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <footer>
-    <p>© 2025 Boostify Music. Todos los derechos reservados.</p>
-    <p>Desplegado correctamente con todos los videos preservados (38 archivos)</p>
-  </footer>
-</body>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Boostify Music - Music Marketing Platform</title>
+    <meta name="description" content="Intelligent music marketing platform empowering emerging artists" />
+    <link rel="icon" type="image/png" href="/assets/freepik__boostify_music_organe_abstract_icon.png" />
+    <link rel="apple-touch-icon" href="/assets/freepik__boostify_music_organe_abstract_icon.png" />
+    <link rel="stylesheet" href="/src/index.css" />
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        // Get the stored language preference or default to browser language
+        const storedLang = localStorage.getItem('preferredLanguage') || navigator.language.split('-')[0];
+
+        new google.translate.TranslateElement({
+          pageLanguage: storedLang || 'en',
+          includedLanguages: 'en,es,fr,de,it,pt,ja,ko,zh-CN,ru',
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  </head>
+  <body class="bg-background min-h-screen text-foreground">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
