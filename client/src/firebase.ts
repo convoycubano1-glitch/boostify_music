@@ -20,12 +20,13 @@ import { getStorage, FirebaseStorage } from "firebase/storage";
  * Default Firebase configuration from environment variables
  */
 const defaultConfig: FirebaseOptions = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAKIV3Z-Yk8xSKDe9-0KjQC1X-87NLbE-E",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "artist-boost.firebaseapp.com", 
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "artist-boost",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "artist-boost.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "829606002665",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:829606002665:web:4fbdcb7ce0a7e16acfb87f"
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "artist-boost.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "502955771825",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:502955771825:web:d6746677d851f9b1449f90",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-ERCSSWTXCJ"
 };
 
 // Check for FIREBASE_CONFIG in environment

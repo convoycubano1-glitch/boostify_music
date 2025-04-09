@@ -403,7 +403,8 @@ export function DirectorsList() {
       });
 
       try {
-        const estimate = JSON.parse(response.choices[0].message.content);
+        const content = response.choices[0].message.content || '{}';
+        const estimate = JSON.parse(content);
         setPriceEstimate(estimate);
       } catch (parseError) {
         console.error("Error parsing price estimate:", parseError);
