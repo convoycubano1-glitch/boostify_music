@@ -2,11 +2,17 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/use-auth";
 import { db } from "../lib/firebase";
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { Product, AffiliateLinkType } from "../types/affiliate";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
-import { toast } from "sonner";
+// Crear un objeto toast temporal mientras solucionamos el error de sonner
+const toast = {
+  success: (message: string) => console.log('Success:', message),
+  error: (message: string) => console.error('Error:', message),
+  info: (message: string) => console.info('Info:', message)
+};
 import { AlertCircle, CheckCircle2, Loader2, Copy, Link, BarChart, Trash2, PlusCircle, ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -95,7 +101,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
   });
 
   // Consulta para obtener los productos disponibles para afiliados
-  const { data: products, isLoading: isLoadingProducts } = useQuery({
+  const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["affiliate-products"],
     queryFn: async () => {
       const productsRef = collection(db, "affiliateProducts");
@@ -104,12 +110,12 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as Product[];
     },
   });
 
   // Consulta para obtener los enlaces de afiliado del usuario
-  const { data: affiliateLinks, isLoading: isLoadingLinks } = useQuery({
+  const { data: affiliateLinks, isLoading: isLoadingLinks } = useQuery<AffiliateLinkType[]>({
     queryKey: ["affiliate-links", user?.uid],
     queryFn: async () => {
       if (!user?.uid) return [];
@@ -122,7 +128,13 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      }));
+        productId: doc.data().productId || "",
+        campaign: doc.data().campaign || "",
+        url: doc.data().url || "",
+        clicks: doc.data().clicks || 0,
+        conversions: doc.data().conversions || 0,
+        earnings: doc.data().earnings || 0
+      })) as AffiliateLinkType[];
     },
     enabled: !!user?.uid,
   });

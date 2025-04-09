@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../hooks/use-auth";
 import { db } from "../lib/firebase";
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from "firebase/firestore";
+import { Product, AffiliateContentType } from "../types/affiliate";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -46,15 +47,8 @@ interface AffiliateContentGeneratorProps {
   affiliateData: any;
 }
 
-interface AffiliateProduct {
-  id: string;
-  name: string;
-  description?: string;
-  url?: string;
-  commissionRate: number;
-  category?: string;
-  imageUrl?: string;
-}
+// Usando los tipos definidos en types/affiliate.ts
+// AffiliateProduct ya no es necesario, usamos Product de types/affiliate.ts
 
 interface AffiliateContent {
   id: string;
@@ -123,7 +117,7 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
   });
 
   // Consulta para obtener los productos disponibles para afiliados
-  const { data: products, isLoading: isLoadingProducts } = useQuery({
+  const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["affiliate-products"],
     queryFn: async () => {
       const productsRef = collection(db, "affiliateProducts");
@@ -132,12 +126,12 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as Product[];
     },
   });
 
   // Consulta para obtener el historial de contenido generado
-  const { data: contentHistory, isLoading: isLoadingContentHistory } = useQuery({
+  const { data: contentHistory, isLoading: isLoadingContentHistory } = useQuery<AffiliateContentType[]>({
     queryKey: ["affiliate-content-history", user?.uid],
     queryFn: async () => {
       if (!user?.uid) return [];
@@ -156,7 +150,8 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate?.() || new Date(),
-      }));
+        contentType: doc.data().contentType || "post", // Valor por defecto
+      })) as AffiliateContentType[];
     },
     enabled: !!user?.uid && activeTab === "history",
   });
