@@ -1,0 +1,4 @@
+{
+  "run": "node healthcheck.cjs",
+  "deploymentTarget": "cloudrun"
+}
