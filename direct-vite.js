@@ -3,7 +3,7 @@ import { exec } from 'child_process';
 
 // Ejecutar Vite directamente
 console.log('⚡ Iniciando Vite para mostrar src/pages/home.tsx...');
-const vite = exec('cd client && vite --host 0.0.0.0 --port 5000 --strictPort false --cors');
+const vite = exec('vite --host 0.0.0.0 --port 5000 --strictPort false --cors');
 
 vite.stdout.on('data', (data) => {
   console.log(`Vite: ${data}`);
