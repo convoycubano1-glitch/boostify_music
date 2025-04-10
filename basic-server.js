@@ -2,59 +2,111 @@
 // Este servidor utiliza únicamente módulos nativos de Node.js
 
 import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Obtener el directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Usar solo el puerto 5000 que es el que espera el workflow de Replit
 const PORTS = [5000];
 
-// Contenido HTML simple
-const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Servidor Básico en Replit</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    h1 {
-      color: #333;
-    }
-    .container {
-      background-color: white;
-      padding: 20px;
-      border-radius: 5px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>¡Servidor funcionando correctamente!</h1>
-    <p>Este es un servidor web básico creado con Node.js.</p>
-    <p>Información del servidor:</p>
-    <ul>
-      <li>Hora del servidor: ${new Date().toLocaleString()}</li>
-      <li>Node.js versión: ${process.version}</li>
-      <li>Plataforma: ${process.platform}</li>
-    </ul>
-  </div>
-</body>
-</html>
-`;
+// Mapeo de extensiones de archivo a tipos MIME
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.mp4': 'video/mp4',
+  '.woff': 'application/font-woff',
+  '.woff2': 'application/font-woff2',
+  '.ttf': 'application/font-ttf',
+  '.eot': 'application/vnd.ms-fontobject',
+  '.otf': 'application/font-otf',
+};
 
 // Crear servidor HTTP básico
 const server = http.createServer((req, res) => {
   console.log(`Solicitud recibida: ${req.method} ${req.url}`);
   
-  // Responder con contenido HTML simple
-  res.writeHead(200, {'Content-Type': 'text/html'});
-  res.end(htmlContent);
-  console.log('Respuesta enviada: 200 OK');
+  // Añadir encabezados CORS para permitir acceso desde cualquier origen
+  // Esto puede ayudar con problemas de acceso desde herramientas de verificación
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Responder inmediatamente a las solicitudes OPTIONS (preflight CORS)
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    console.log('Respuesta enviada: 200 OK (CORS Preflight)');
+    return;
+  }
+  
+  // Ruta de verificación especial
+  if (req.url === '/health' || req.url === '/health/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', message: 'Servidor funcionando correctamente' }));
+    console.log('Respuesta enviada: 200 OK (Health Check)');
+    return;
+  }
+  
+  // Normalizar la URL solicitada
+  let filePath = '.' + req.url;
+  if (filePath === './') {
+    filePath = './index.html';
+  }
+  
+  // Obtener la extensión del archivo
+  const extname = path.extname(filePath);
+  let contentType = MIME_TYPES[extname] || 'application/octet-stream';
+  
+  // Leer el archivo
+  fs.readFile(filePath, (error, content) => {
+    if (error) {
+      // Si el archivo no existe, intentamos servir el index.html (para SPA)
+      if (error.code === 'ENOENT') {
+        fs.readFile('./index.html', (err, indexContent) => {
+          if (err) {
+            res.writeHead(404);
+            res.end('Archivo no encontrado');
+            console.log('Respuesta enviada: 404 Not Found');
+          } else {
+            res.writeHead(200, { 
+              'Content-Type': 'text/html',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
+            });
+            res.end(indexContent, 'utf-8');
+            console.log('Respuesta enviada: 200 OK (index.html para SPA)');
+          }
+        });
+      } else {
+        // Error de servidor
+        res.writeHead(500);
+        res.end(`Error de servidor: ${error.code}`);
+        console.log(`Respuesta enviada: 500 Error de servidor: ${error.code}`);
+      }
+    } else {
+      // Responder con el contenido del archivo
+      res.writeHead(200, { 
+        'Content-Type': contentType,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      res.end(content, 'utf-8');
+      console.log(`Respuesta enviada: 200 OK (${filePath})`);
+    }
+  });
 });
 
 // Intentar iniciar el servidor en múltiples puertos

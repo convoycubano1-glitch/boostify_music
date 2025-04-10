@@ -1,7 +1,0 @@
-{
-  "name": "@/services",
-  "version": "1.0.0",
-  "main": "/home/runner/workspace/client/src/services/index.js",
-  "module": "/home/runner/workspace/client/src/services/index.js",
-  "types": "/home/runner/workspace/client/src/services/index.d.ts"
-}
