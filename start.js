@@ -1,34 +1,33 @@
-// Script simplificado para iniciar la aplicación
-// Configuramos las variables de entorno para permitir todos los hosts
+// Script para iniciar un servidor optimizado para servir archivos compilados en Replit
 import { spawn } from 'child_process';
 
-// Establecer variables de entorno para Vite
-process.env.VITE_DEV_SERVER_HOST = '0.0.0.0';
-process.env.VITE_ALLOW_HOSTS = 'all';
-process.env.VITE_HMR_HOST = 'all';
+console.log('🚀 Iniciando servidor para archivos compilados en Replit...');
+console.log('✅ Configurado específicamente para servir la carpeta client/dist');
 
-console.log('✅ Configurando variables para permitir todos los hosts');
-console.log('🚀 Iniciando la aplicación con npm run dev...');
+// Establecer variables de entorno para garantizar el funcionamiento
+process.env.PORT = '5000';
 
-// Ejecutar el servidor de desarrollo con npm run dev
-const devProcess = spawn('npm', ['run', 'dev'], {
+// Iniciar el servidor optimizado para archivos compilados
+const serverProcess = spawn('node', ['dist-server.js'], {
   stdio: 'inherit',
   env: {
     ...process.env,
-    VITE_DEV_SERVER_HOST: '0.0.0.0',
-    VITE_ALLOW_HOSTS: 'all',
-    VITE_HMR_HOST: 'all'
+    // Variables necesarias para un correcto funcionamiento
+    PORT: '5000',
+    NODE_ENV: 'production'
   }
 });
 
-devProcess.on('error', (error) => {
-  console.error('❌ Error al iniciar la aplicación:', error.message);
+// Manejar errores
+serverProcess.on('error', (error) => {
+  console.error('❌ Error al iniciar el servidor:', error.message);
   process.exit(1);
 });
 
-devProcess.on('exit', (code) => {
+// Manejar cierre del proceso
+serverProcess.on('exit', (code) => {
   if (code !== 0) {
-    console.error(`❌ El proceso se cerró con código: ${code}`);
+    console.error(`❌ El proceso del servidor se cerró con código: ${code}`);
     process.exit(code);
   }
 });
