@@ -239,11 +239,6 @@ export function Footer() {
                   Service Status
                 </Link>
               </li>
-              <li>
-                <Link href="/admin" className="hover:text-orange-500 transition-colors">
-                  Administration
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

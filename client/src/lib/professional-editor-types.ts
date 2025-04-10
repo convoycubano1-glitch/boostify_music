@@ -42,15 +42,6 @@ export type TrackType =
   | 'overlay'
   | 'image-sequence';  // Secuencia de imágenes (tipo especializado para videos musicales)
 
-// Tipo de pista de audio para mayor especialización
-export interface AudioTrack extends Track {
-  volume: number;
-  muted: boolean;
-  solo: boolean;
-  effects?: string[];
-  audioSource?: string;
-}
-
 // Tipos de plano para clips de video e imagen
 export type ShotType = 
   | 'close-up'      // Primer plano
@@ -443,73 +434,4 @@ export interface ClipMetadata {
     model: string;
     settings?: string;
   };
-}
-
-// Estado del editor para la interfaz de usuario
-export interface EditorState {
-  project: Project | null;
-  currentTime: number;
-  isPlaying: boolean;
-  selectedTrackId: string | null;
-  selectedClipId: string | null;
-  zoom: number;
-  viewportStartTime: number;
-  viewportEndTime: number;
-}
-
-// Utilidades para manipular el estado del editor
-export const EditorStateUtils = {
-  updateClip: (state: EditorState, clipId: string, updates: Partial<TimelineClip>): EditorState => {
-    if (!state.project) return state;
-    
-    // Actualizar clips en el proyecto
-    const updatedProject = {
-      ...state.project,
-      timelineClips: (state.project.timelineClips || []).map(clip => 
-        clip.id === clipId ? { ...clip, ...updates } : clip
-      )
-    };
-    
-    return {
-      ...state,
-      project: updatedProject
-    };
-  },
-  
-  addClip: (state: EditorState, clip: Omit<TimelineClip, 'id'>): EditorState => {
-    if (!state.project) return state;
-    
-    // Generar un ID único para el nuevo clip
-    const newClip: TimelineClip = {
-      id: `clip-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      ...clip
-    };
-    
-    // Añadir el clip al proyecto
-    const updatedProject = {
-      ...state.project,
-      timelineClips: [...(state.project.timelineClips || []), newClip]
-    };
-    
-    return {
-      ...state,
-      project: updatedProject
-    };
-  },
-  
-  removeClip: (state: EditorState, clipId: string): EditorState => {
-    if (!state.project) return state;
-    
-    // Eliminar el clip del proyecto
-    const updatedProject = {
-      ...state.project,
-      timelineClips: (state.project.timelineClips || []).filter(clip => clip.id !== clipId)
-    };
-    
-    return {
-      ...state,
-      project: updatedProject,
-      selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId
-    };
-  }
 }
