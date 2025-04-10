@@ -1,5 +1,5 @@
-// Archivo principal para iniciar el servidor simplificado
-console.log('Iniciando servidor Boostify Music...');
+// Archivo principal para iniciar el servidor de redirección
+console.log('Iniciando servidor de redirección para Boostify Music...');
 
-// Importar y ejecutar el servidor que muestra la landing page
-import './multi-server.js';
+// Importar y ejecutar el servidor que redirige al puerto 5173
+import './multi-server-new.js';
