@@ -10,6 +10,8 @@ const app = express();
 // Carpeta donde están los archivos compilados
 const distPath = join(__dirname, 'client', 'dist');
 
+console.log('⚡ Iniciando servidor de producción con versión limpia');
+
 // Servir archivos estáticos
 app.use(express.static(distPath));
 
