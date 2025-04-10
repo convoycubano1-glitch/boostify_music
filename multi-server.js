@@ -12,7 +12,7 @@ const app = express();
 
 // Iniciar el servidor Vite en segundo plano
 console.log('🚀 Iniciando servidor Vite en segundo plano...');
-const viteServer = exec('cd client && npx vite --host 0.0.0.0 --port 5173');
+const viteServer = exec('cd client && npx vite --host 0.0.0.0 --port 5147');
 
 viteServer.stdout.on('data', (data) => {
   console.log(`Vite: ${data.trim()}`);
@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0;url=https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5173" />
+  <meta http-equiv="refresh" content="0;url=https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5147" />
   <title>Redirigiendo a Boostify Music</title>
   <style>
     body { 
@@ -68,7 +68,7 @@ app.get('/', (req, res) => {
 <body>
   <span class="loader"></span>
   <h2>Redirigiendo a la aplicación completa de Boostify Music...</h2>
-  <p>Si no eres redirigido automáticamente, <a href="https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5173" style="color: #f97316; text-decoration: underline;">haz clic aquí</a>.</p>
+  <p>Si no eres redirigido automáticamente, <a href="https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5147" style="color: #f97316; text-decoration: underline;">haz clic aquí</a>.</p>
 </body>
 </html>
   `;
@@ -83,5 +83,5 @@ const server = createServer(app);
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Servidor Express iniciado exitosamente en http://0.0.0.0:${PORT}`);
-  console.log(`✅ Servidor Vite en funcionamiento en puerto 5173`);
+  console.log(`✅ Servidor Vite en funcionamiento en puerto 5147`);
 });
