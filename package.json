@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "start": "node dist/server/index.js",
-    "build": "tsc && cd client && vite build",
+    "build": "node build-for-deploy.js",
     "server:dev": "nodemon --exec \"ts-node --project tsconfig.json server/index.ts\" --watch server",
     "client:dev": "cd client && vite",
     "prebuild": "rm -rf dist && mkdir dist",

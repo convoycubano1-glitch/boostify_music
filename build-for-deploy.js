@@ -152,3 +152,26 @@ ${colors.green}===== COMPILACIÓN COMPLETADA =====${colors.reset}`);
 
 // Ejecutar la compilación
 buildProject();
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+
+// Ensure dist directory exists
+if (!fs.existsSync('dist')) {
+  fs.mkdirSync('dist');
+}
+if (!fs.existsSync('dist/server')) {
+  fs.mkdirSync('dist/server');
+}
+
+// Build client
+console.log('Building client...');
+execSync('cd client && npm run build', { stdio: 'inherit' });
+
+// Build server
+console.log('Building server...');
+execSync('tsc --project tsconfig.json', { stdio: 'inherit' });
+
+// Copy client build to dist
+console.log('Copying client build...');
+fs.cpSync('client/dist', 'dist/client', { recursive: true });
