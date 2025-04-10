@@ -8,7 +8,7 @@ Esta guía explica cómo desplegar la aplicación en diferentes entornos.
 - NPM (versión 9 o superior)
 - Acceso a las API Keys necesarias para las funcionalidades completas
 
-## Despliegue en Replit
+## Despliegue en Replit (Actualizado)
 
 1. Asegúrate de tener todos los secretos configurados en la sección "Secrets" del proyecto:
    - `OPENAI_API_KEY` (Para funcionalidades de IA)
@@ -16,17 +16,26 @@ Esta guía explica cómo desplegar la aplicación en diferentes entornos.
    - `FIREBASE_CONFIG` (Para autenticación y base de datos)
    - Otras claves según las funcionalidades que utilices
 
-2. Para desplegar la aplicación, simplemente haz clic en el botón "Deploy" en la interfaz de Replit.
+2. **Solución para errores de TypeScript y extensión de archivos**:
+   Antes de desplegar, ejecuta estos comandos en orden:
 
-3. **Importante**: Para el despliegue exitoso en Replit, asegúrate de que el archivo `deploy.js` sea el que se ejecuta. Este archivo está optimizado para:
+   ```bash
+   # Primero, construir el cliente (resuelve problemas de TypeScript)
+   node build-client.js
+
+   # Luego, iniciar el servidor de despliegue
+   node start-deploy.js
+   ```
+
+3. **Para despliegue automático**:
+   - Haz clic en el botón "Deploy" en la interfaz de Replit
+   - Asegúrate de que el comando de ejecución en el panel de despliegue sea `node start-deploy.js`
+
+4. **Importante**: El archivo `start-deploy.js` está optimizado para:
    - Iniciar rápidamente (necesario para que Replit reconozca el servidor)
    - Usar el puerto 3333 (requerido por Replit para despliegue)
-   - Manejar errores de forma segura
-
-4. Si necesitas probar el despliegue manualmente, ejecuta:
-   ```
-   node deploy.js
-   ```
+   - Manejar errores de TypeScript y extensiones de archivo
+   - Servir archivos estáticos desde múltiples ubicaciones posibles
 
 5. Replit configurará automáticamente tu aplicación para producción y la hará accesible a través de una URL pública con formato `tu-proyecto.replit.app`.
 

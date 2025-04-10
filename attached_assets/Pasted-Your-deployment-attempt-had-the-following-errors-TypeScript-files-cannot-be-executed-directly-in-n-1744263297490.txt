@@ -1,0 +1,119 @@
+Your deployment attempt had the following errors:
+TypeScript files cannot be executed directly in node, requiring a compiler or transpiler
+Server application crashes due to unknown file extension '.ts'
+Deployment fails because the expected port configuration was not met
+Assistant suggestions
+npm run dev
+npm run build && node dist/server/index.js
+[[ports]]
+externalPort = 3000
+localPort = 3000
+[[ports]]
+externalPort = 3001
+localPort = 80
+[[ports]]
+externalPort = 80
+localPort = 3333
+[[ports]]
+externalPort = 5000
+localPort = 5000
+[[ports]]
+externalPort = 5173
+localPort = 5173
+[[ports]]
+externalPort = 8080
+localPort = 8080
+[[ports]]
+externalPort = 3002
+localPort = 24678
+[[ports]]
+externalPort = 80
+localPort = 5000
+if (process.env.NODE_ENV === "production") {
+  log('🚀 Running in production mode');
+
+  const distPath = path.resolve(process.cwd(), 'dist', 'public');
+
+  //Simplified static file serving
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'), { root: '/' });
+  });
+
+
+} else {
+if (process.env.NODE_ENV === "production") {
+  log('🚀 Running in production mode');
+
+  const distPath = path.resolve(process.cwd(), 'dist', 'public');
+
+  //Simplified static file serving
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'), { root: '/' });
+  });
+
+  // Register API routes before the catch-all route
+  registerRoutes(app);
+} else {
+"module": "ESNext",
+"module": "CommonJS",
+// Setup static file serving based on environment
+if (process.env.NODE_ENV === "production") {
+  log('🚀 Running in production mode');
+
+  const distPath = path.resolve(process.cwd(), 'dist', 'public');
+
+  //Simplified static file serving
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'), { root: '/' });
+  });
+
+
+} else {
+  log('🛠 Running in development mode');
+  app.use(express.static(path.join(process.cwd(), 'client/public')));
+  log('🔍 Vite will handle frontend routes in development mode');
+}
+
+(async () => {
+  try {
+    log('🔄 Starting server setup...');
+
+    const { checkEnvironment } = await import('./utils/environment-check');
+    checkEnvironment();
+
+    const server = registerRoutes(app);
+// Setup static file serving based on environment
+if (process.env.NODE_ENV === "production") {
+  log('🚀 Running in production mode');
+
+  const distPath = path.resolve(process.cwd(), 'dist', 'public');
+
+  //Simplified static file serving
+  app.use(express.static(distPath));
+} else {
+  log('🛠 Running in development mode');
+  app.use(express.static(path.join(process.cwd(), 'client/public')));
+  log('🔍 Vite will handle frontend routes in development mode');
+}
+
+(async () => {
+  try {
+    log('🔄 Starting server setup...');
+
+    const { checkEnvironment } = await import('./utils/environment-check');
+    checkEnvironment();
+
+    const server = registerRoutes(app);
+    
+    // This should come after registerRoutes for production environment
+    if (process.env.NODE_ENV === "production") {
+      app.get('*', (req, res) => {
+        if (!req.path.startsWith('/api/')) {
+          const distPath = path.resolve(process.cwd(), 'dist', 'public');
+          res.sendFile(path.join(distPath, 'index.html'), { root: '/' });
+        }
+      });
+    }
