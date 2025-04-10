@@ -1,5 +1,5 @@
-// Archivo principal para iniciar el servidor de redirección
-console.log('Iniciando servidor de redirección para Boostify Music...');
+// Archivo principal para iniciar el servidor múltiple
+console.log('Iniciando servidor múltiple con redirección automática...');
 
-// Importar y ejecutar el servidor que redirige al puerto 5173
-import './multi-server-new.js';
+// Importar y ejecutar el servidor múltiple que inicia Vite y Express
+import './multi-server.js';

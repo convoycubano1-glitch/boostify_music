@@ -1,2 +1,0 @@
-Build iniciado: Thu 10 Apr 2025 02:28:46 AM UTC
-Este archivo se eliminará cuando el build se complete.
