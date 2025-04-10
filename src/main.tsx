@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App"; // Usamos la versión completa de App para tener acceso a todas las rutas
+import App from "./App"; // Importante: Usamos la versión completa de App.tsx
 import "./index.css";
 import { setupHMRErrorHandler } from "./utils/hmr-error-handler";
 
@@ -8,8 +8,8 @@ import { setupHMRErrorHandler } from "./utils/hmr-error-handler";
 // "The user aborted a request" en el timeline
 setupHMRErrorHandler();
 
-// Reemplazamos el enrutador de hash y usamos el enfoque básico
-// Esto evitará problemas de reactividad y carga infinita
+// Renderizamos la aplicación en el elemento root
+// La página home.tsx será accesible a través de la ruta "/"
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
