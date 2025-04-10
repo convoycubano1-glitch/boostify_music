@@ -1,5 +1,5 @@
-// Archivo principal para servir el contenido de home.tsx
-console.log('Iniciando servidor para mostrar src/pages/home.tsx...');
+// Archivo principal para ejecutar Vite y mostrar src/pages/home.tsx
+console.log('Iniciando Vite para mostrar src/pages/home.tsx desde la ruta principal...');
 
-// Importar y ejecutar el servidor simple
-import './serve-homepage.js';
+// Importar y ejecutar Vite directamente
+import './direct-vite.js';
