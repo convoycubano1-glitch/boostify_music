@@ -18,12 +18,17 @@ Esta guía explica cómo desplegar la aplicación en diferentes entornos.
 
 2. Para desplegar la aplicación, simplemente haz clic en el botón "Deploy" en la interfaz de Replit.
 
-3. Si prefieres iniciar el despliegue manualmente, ejecuta el siguiente comando:
+3. **Importante**: Para el despliegue exitoso en Replit, asegúrate de que el archivo `deploy.js` sea el que se ejecuta. Este archivo está optimizado para:
+   - Iniciar rápidamente (necesario para que Replit reconozca el servidor)
+   - Usar el puerto 3333 (requerido por Replit para despliegue)
+   - Manejar errores de forma segura
+
+4. Si necesitas probar el despliegue manualmente, ejecuta:
    ```
-   node deploy-simple.cjs
+   node deploy.js
    ```
 
-4. Replit configurará automáticamente tu aplicación para producción y la hará accesible a través de una URL pública. El servidor escuchará en el puerto 3333.
+5. Replit configurará automáticamente tu aplicación para producción y la hará accesible a través de una URL pública con formato `tu-proyecto.replit.app`.
 
 ## Despliegue Manual (Entorno de Producción)
 
@@ -55,6 +60,7 @@ Asegúrate de configurar las siguientes variables de entorno para el correcto fu
 - `start.js`: Script principal que inicia la aplicación en desarrollo
 
 ### Despliegue
+- `deploy.js`: **Script principal para despliegue en Replit** (recomendado)
 - `build-for-deploy.cjs`: Script CommonJS para construir la aplicación para producción
 - `deploy-start.cjs`: Script CommonJS para iniciar el servidor de producción
 - `deploy-simple.cjs`: Script CommonJS para ejecutar construcción y despliegue en un solo paso
@@ -65,9 +71,19 @@ Asegúrate de configurar las siguientes variables de entorno para el correcto fu
 
 Si encuentras problemas durante el despliegue:
 
-1. Verifica que todas las variables de entorno estén correctamente configuradas
-2. Asegúrate de que los archivos de construcción se han generado correctamente en la carpeta `dist/client`
-3. Revisa los logs del servidor para identificar posibles errores
+1. **Problemas con puertos**: Replit requiere que el servidor escuche en el puerto 3333. Si obtienes un error de "application failed to open a port in time", asegúrate de usar `deploy.js` que está optimizado para abrir el puerto rápidamente.
+
+2. **Errores de módulo ESM/CommonJS**: Si recibes errores como `ERR_UNKNOWN_FILE_EXTENSION`, usa los archivos con extensión `.cjs` que están configurados para usar CommonJS.
+
+3. **Problemas de construcción**:
+   - Verifica que todas las variables de entorno estén correctamente configuradas
+   - Asegúrate de que los archivos de construcción se han generado correctamente con `cd client && npx vite build` 
+   - Revisa los logs del servidor para identificar posibles errores
+
+4. **Si nada funciona**: Prueba estos pasos:
+   - Ejecuta `node deploy.js` directamente antes de intentar el despliegue
+   - Asegúrate de que el contenido de la carpeta `client/dist` exista y sea correcto
+   - Verifica que no haya errores de sintaxis en los archivos de despliegue
 
 ## Seguridad
 

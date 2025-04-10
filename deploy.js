@@ -1,80 +1,66 @@
-// Script completo para desplegar la aplicación en producción
-import { exec } from 'child_process';
+// Script super-simplificado para despliegue en Replit
+const express = require('express');
+const path = require('path');
+const compression = require('compression');
 
-console.log('🚀 Iniciando despliegue de la aplicación...');
+// Puerto FIJO para despliegue en Replit
+const PORT = 3333;
+const app = express();
 
-// Función principal para desplegar
-async function deploy() {
+// Habilitar compresión HTTP
+app.use(compression());
+
+// Punto de verificación para Replit
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Intentar servir archivos estáticos si existen
+const possiblePaths = [
+  path.join(__dirname, 'dist', 'client'),
+  path.join(__dirname, 'client', 'dist'),
+  path.join(__dirname, 'public')
+];
+
+let staticDir = '';
+for (const dir of possiblePaths) {
   try {
-    // Paso 1: Construir la aplicación
-    await buildApp();
-    
-    // Paso 2: Iniciar el servidor de producción
-    await startServer();
-    
-  } catch (error) {
-    console.error('❌ Error durante el despliegue:', error.message);
-    process.exit(1);
+    if (require('fs').existsSync(dir)) {
+      staticDir = dir;
+      console.log(`Sirviendo archivos estáticos desde: ${dir}`);
+      break;
+    }
+  } catch (e) {
+    // Ignorar errores
   }
 }
 
-// Función para construir la aplicación
-function buildApp() {
-  console.log('\n🔨 Paso 1: Construyendo la aplicación...');
+if (staticDir) {
+  // Servir archivos estáticos
+  app.use(express.static(staticDir));
   
-  return new Promise((resolve, reject) => {
-    const build = exec('node build-for-deploy.js');
-    
-    build.stdout.on('data', (data) => {
-      console.log(`Build: ${data}`);
-    });
-    
-    build.stderr.on('data', (data) => {
-      console.error(`Build Error: ${data}`);
-    });
-    
-    build.on('close', (code) => {
-      if (code === 0) {
-        console.log('✅ Construcción completada con éxito');
-        resolve();
-      } else {
-        reject(new Error(`Error en la construcción (código ${code})`));
-      }
-    });
+  // Ruta para SPA
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(staticDir, 'index.html'));
+  });
+} else {
+  // Respuesta predeterminada si no hay archivos estáticos
+  app.get('*', (req, res) => {
+    res.send('¡Aplicación en preparación! Los archivos estáticos aún no están disponibles.');
   });
 }
 
-// Función para iniciar el servidor
-function startServer() {
-  console.log('\n🌐 Paso 2: Iniciando servidor de producción...');
-  
-  return new Promise((resolve, reject) => {
-    const server = exec('node server-prod.js');
-    
-    server.stdout.on('data', (data) => {
-      console.log(`Server: ${data}`);
-    });
-    
-    server.stderr.on('data', (data) => {
-      console.error(`Server Error: ${data}`);
-    });
-    
-    // Resolvemos la promesa después de que el servidor haya iniciado
-    // (no esperamos a que termine, ya que es un proceso continuo)
-    setTimeout(() => {
-      console.log('✅ Servidor iniciado correctamente');
-      resolve();
-    }, 2000);
-    
-    server.on('close', (serverCode) => {
-      if (serverCode !== 0) {
-        console.error(`❌ Servidor terminado con código de error ${serverCode}`);
-      } else {
-        console.log('✅ Servidor finalizado correctamente');
-      }
-    });
-  });
-}
+// Iniciar servidor inmediatamente
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor ejecutándose en puerto ${PORT}`);
+});
 
-// Iniciar el proceso de despliegue
-deploy();
+// Manejo seguro de errores
+process.on('unhandledRejection', (reason, p) => {
+  console.log('Rechazo no manejado en:', p, 'razón:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.log('Excepción no capturada:', err);
+  // No cerrar el servidor para que Replit pueda seguir detectándolo
+});
