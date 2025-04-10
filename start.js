@@ -1,5 +1,5 @@
-// Archivo principal para iniciar el servidor múltiple
-console.log('Iniciando servidor múltiple con redirección automática...');
+// Archivo principal para iniciar el servidor básico
+console.log('Iniciando servidor básico que muestra src/pages/home.tsx...');
 
-// Importar y ejecutar el servidor múltiple que inicia Vite y Express
-import './multi-server.js';
+// Importar y ejecutar el servidor básico
+import './basic-redirect.js';
