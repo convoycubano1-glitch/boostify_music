@@ -91,6 +91,28 @@ app.get('/', (req, res) => {
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    .button {
+      display: inline-block;
+      background-color: #f97316;
+      color: white;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      margin-top: 20px;
+      transition: background-color 0.3s ease;
+    }
+    .button:hover {
+      background-color: #ea580c;
+    }
+    .note {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: rgba(249, 115, 22, 0.1);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      max-width: 600px;
+    }
   </style>
   <!-- Import React -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -138,12 +160,53 @@ app.get('/', (req, res) => {
             marginBottom: '30px'
           }}>
             <h2 style={{ color: '#f97316', marginBottom: '20px' }}>
-              La aplicación React está cargando
+              Servidor Express (Puerto 5000)
             </h2>
             <p style={{ fontSize: '1.2rem', lineHeight: '1.6' }}>
               Esta es una versión simplificada del componente HomePage (src/pages/home.tsx). El componente completo incluye todas las funcionalidades de la página principal de Boostify Music.
             </p>
+            
+            <div style={{ marginTop: '30px', marginBottom: '20px' }}>
+              <h3 style={{ color: '#f97316', marginBottom: '15px' }}>Configuración de Puertos Disponibles:</h3>
+              <ul style={{ textAlign: 'left', lineHeight: '1.6' }}>
+                <li><strong>Puerto 5000 (Actual)</strong>: Servidor Express con React simplificado</li>
+                <li><strong>Puerto 5173</strong>: Servidor Vite con React completo y todos los estilos</li>
+              </ul>
+            </div>
+            
+            <p>
+              <a 
+                href="https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5173" 
+                target="_blank"
+                style={{
+                  display: 'inline-block',
+                  backgroundColor: '#f97316',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  marginTop: '20px',
+                  transition: 'background-color 0.3s ease'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#ea580c'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#f97316'}
+              >
+                Abrir aplicación en Puerto 5173 (Vite)
+              </a>
+            </p>
+            
+            <div style={{
+              marginTop: '20px',
+              padding: '15px',
+              backgroundColor: 'rgba(249, 115, 22, 0.1)',
+              borderRadius: '8px',
+              fontSize: '0.9rem'
+            }}>
+              <p>Para abrir el puerto 5173 debes usar los botones de "Run" en Replit y seleccionar "Dev Server".</p>
+            </div>
           </div>
+          
           <div style={{
             display: 'flex',
             gap: '15px',
