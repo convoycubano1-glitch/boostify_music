@@ -1,0 +1,85 @@
+/**
+ * Estilos para optimización de dispositivos móviles
+ */
+
+@media (max-width: 768px) {
+  .mobile-responsive {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .mobile-hidden {
+    display: none;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .mobile-text-center {
+    text-align: center;
+  }
+  
+  .mobile-py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .mobile-px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-mt-4 {
+    margin-top: 1rem;
+  }
+  
+  .mobile-mb-4 {
+    margin-bottom: 1rem;
+  }
+  
+  .mobile-flex-col {
+    flex-direction: column;
+  }
+  
+  .mobile-items-center {
+    align-items: center;
+  }
+  
+  .mobile-justify-center {
+    justify-content: center;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+/* Estilos específicos para componentes de audio */
+.audio-controls-mobile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .audio-player-container {
+    padding: 0.5rem;
+  }
+  
+  .audio-visualization {
+    height: 80px;
+  }
+  
+  .audio-controls-row {
+    flex-direction: column;
+  }
+  
+  .audio-button-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
