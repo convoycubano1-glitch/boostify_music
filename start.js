@@ -1,5 +1,5 @@
-// Archivo principal para iniciar el servidor básico
-console.log('Iniciando servidor básico que muestra src/pages/home.tsx...');
+// Archivo principal para servir el contenido de home.tsx
+console.log('Iniciando servidor para mostrar src/pages/home.tsx...');
 
-// Importar y ejecutar el servidor básico
-import './basic-redirect.js';
+// Importar y ejecutar el servidor simple
+import './serve-homepage.js';
