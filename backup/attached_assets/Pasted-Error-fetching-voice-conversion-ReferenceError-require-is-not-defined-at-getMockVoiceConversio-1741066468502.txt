@@ -1,0 +1,50 @@
+Error fetching voice conversion: ReferenceError: require is not defined
+    at getMockVoiceConversions (src/lib/firebase-storage.ts:63:32)
+    at fetchVoiceConversionById (audio-mastering.tsx:338:13)
+    at onClick (audio-mastering.tsx:1196:40)
+    at HTMLUnknownElement.callCallback2 (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3674:22)
+    at Object.invokeGuardedCallbackDev (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3699:24)
+    at invokeGuardedCallback (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3736:33)
+    at executeDispatch (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7014:11)
+    at processDispatchQueueItemsInOrder (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7034:15)
+    at processDispatchQueue (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7043:13)
+fetchVoiceConversionById @ audio-mastering.tsx:400Understand this errorAI
+audio-mastering.tsx:333 Development environment detected - using mock conversion data for ID: demo-3
+audio-mastering.tsx:400 Error fetching voice conversion: ReferenceError: require is not defined
+    at getMockVoiceConversions (src/lib/firebase-storage.ts:63:32)
+    at fetchVoiceConversionById (audio-mastering.tsx:338:13)
+    at onClick (audio-mastering.tsx:1196:40)
+    at HTMLUnknownElement.callCallback2 (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3674:22)
+    at Object.invokeGuardedCallbackDev (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3699:24)
+    at invokeGuardedCallback (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3736:33)
+    at executeDispatch (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7014:11)
+    at processDispatchQueueItemsInOrder (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7034:15)
+    at processDispatchQueue (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7043:13)
+fetchVoiceConversionById @ audio-mastering.tsx:400Understand this errorAI
+audio-mastering.tsx:333 Development environment detected - using mock conversion data for ID: demo-3
+audio-mastering.tsx:400 Error fetching voice conversion: ReferenceError: require is not defined
+    at getMockVoiceConversions (src/lib/firebase-storage.ts:63:32)
+    at fetchVoiceConversionById (audio-mastering.tsx:338:13)
+    at onClick (audio-mastering.tsx:1196:40)
+    at HTMLUnknownElement.callCallback2 (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3674:22)
+    at Object.invokeGuardedCallbackDev (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3699:24)
+    at invokeGuardedCallback (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3736:33)
+    at executeDispatch (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7014:11)
+    at processDispatchQueueItemsInOrder (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7034:15)
+    at processDispatchQueue (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7043:13)
+fetchVoiceConversionById @ audio-mastering.tsx:400Understand this errorAI
+audio-mastering.tsx:333 Development environment detected - using mock conversion data for ID: demo-3
+audio-mastering.tsx:400 Error fetching voice conversion: ReferenceError: require is not defined
+    at getMockVoiceConversions (src/lib/firebase-storage.ts:63:32)
+    at fetchVoiceConversionById (audio-mastering.tsx:338:13)
+    at onClick (audio-mastering.tsx:1196:40)
+    at HTMLUnknownElement.callCallback2 (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3674:22)
+    at Object.invokeGuardedCallbackDev (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3699:24)
+    at invokeGuardedCallback (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:3736:33)
+    at executeDispatch (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7014:11)
+    at processDispatchQueueItemsInOrder (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7034:15)
+    at processDispatchQueue (@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U53NH74P.js?v=2ea3b35a:7043:13)

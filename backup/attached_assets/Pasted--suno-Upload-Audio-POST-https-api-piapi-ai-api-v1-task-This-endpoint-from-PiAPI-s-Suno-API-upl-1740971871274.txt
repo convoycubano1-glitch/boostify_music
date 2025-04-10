@@ -1,0 +1,97 @@
+[suno] Upload Audio
+POST
+https://api.piapi.ai/api/v1/task
+This endpoint from PiAPI's Suno API uploads a audio url into and convert it into a clip(so that you can extend or edit it).
+
+Request
+Header Params
+x-api-key
+string 
+required
+Your API key for authorization
+
+Body Params application/json
+model
+enum<string> 
+required
+Allowed value:
+music-s
+task_type
+enum<string> 
+required
+Allowed value:
+upload_audio
+input
+object 
+required
+audio_url
+string 
+required
+config
+object 
+optional
+webhook_config
+object 
+optional
+Webhook provides timely task notifications. Check PiAPI webhook for detail.
+
+service_mode
+enum<string> 
+optional
+This allows users to choose whether this specific task will get processed under PAYG or HYA mode. If unspecified, then this task will get processed under whatever mode (PAYG or HYA)
+the user chose on the workspace setting of your account.
+
+public means this task will be processed under PAYG mode.
+
+private means this task will be processed under HYA mode.
+
+Allowed values:
+public
+private
+Example
+{
+  "model": "music-s",
+  "task_type": "upload_audio",
+  "input": {
+    "audio_url": "https://samplelib.com/lib/preview/mp3/sample-9s.mp3"
+  },
+  "config": {
+    "webhook_config": {
+      "endpoint": "",
+      "secret": ""
+    },
+    "service_mode": ""
+  }
+}
+Request samples
+var myHeaders = new Headers();
+myHeaders.append("x-api-key", "");
+myHeaders.append("Content-Type", "application/json");
+
+var raw = JSON.stringify({
+   "model": "music-s",
+   "task_type": "upload_audio",
+   "input": {
+      "audio_url": "https://samplelib.com/lib/preview/mp3/sample-9s.mp3"
+   },
+   "config": {
+      "webhook_config": {
+         "endpoint": "",
+         "secret": ""
+      },
+      "service_mode": ""
+   }
+});
+
+var requestOptions = {
+   method: 'POST',
+   headers: myHeaders,
+   body: raw,
+   redirect: 'follow'
+};
+
+fetch("https://api.piapi.ai/api/v1/task", requestOptions)
+   .then(response => response.text())
+   .then(result => console.log(result))
+   .catch(error => console.log('error', error));
+Responses

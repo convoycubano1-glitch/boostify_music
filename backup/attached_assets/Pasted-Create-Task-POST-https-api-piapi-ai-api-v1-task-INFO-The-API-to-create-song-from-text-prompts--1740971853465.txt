@@ -1,0 +1,123 @@
+Create Task
+POST
+https://api.piapi.ai/api/v1/task
+INFO
+The API to create song from text prompts - supporting models like Udio and others!
+
+Unit Pricing
+music-s: $0.04 / generation (default version is V4)
+
+music-u: $0.04 / generation
+
+Examples
+Check here for different examples when using the Song API.
+
+Request
+Body Params application/json
+model
+enum<string> 
+required
+model of the music api
+
+Allowed values:
+music-u
+music-s
+task_type
+enum<string> 
+required
+type of the task
+
+Allowed values:
+generate_music
+generate_music_custom
+input
+object 
+required
+prompt
+string 
+optional
+prompt of the music, check Examples
+
+negative_tags
+string 
+optional
+negative tags of the music, seperate by comma, for example 'pop,rock'
+
+tags
+string 
+optional
+tags of the music, seperate by comma
+
+gpt_description_prompt
+string 
+optional
+use in generate_music only
+
+title
+string 
+optional
+title of the music
+
+make_instrumental
+boolean 
+optional
+set to true if you want intrumental melody only
+
+lyrics_type
+enum<string> 
+required
+used in music-u only, check Examples
+
+Allowed values:
+generate
+user
+instrumental
+seed
+number 
+optional
+used in music-u only, check Examples
+
+config
+object 
+optional
+webhook_config
+object 
+optional
+Example
+{
+  "model": "music-u",
+  "task_type": "generate_music",
+  "input": {
+    "negative_tags": "veritatis",
+    "gpt_description_prompt": "magna in id in eu",
+    "lyrics_type": "instrumental",
+    "seed": -25443934
+  }
+}
+Request samples
+var myHeaders = new Headers();
+myHeaders.append("Content-Type", "application/json");
+
+var raw = JSON.stringify({
+   "model": "music-u",
+   "task_type": "generate_music",
+   "input": {
+      "negative_tags": "veritatis",
+      "gpt_description_prompt": "magna in id in eu",
+      "lyrics_type": "instrumental",
+      "seed": -25443934
+   }
+});
+
+var requestOptions = {
+   method: 'POST',
+   headers: myHeaders,
+   body: raw,
+   redirect: 'follow'
+};
+
+fetch("https://api.piapi.ai/api/v1/task", requestOptions)
+   .then(response => response.text())
+   .then(result => console.log(result))
+   .catch(error => console.log('error', error));
+Responses

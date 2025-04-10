@@ -1,0 +1,32 @@
+Initializing Google Translate
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+Initializing Google Translate
+Firebase Auth: Usuario autenticado: coqofMnNMQUmnqU39h5EEO05Lwi1
+Initializing Google Translate
+Error fetching campaigns: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+code: "failed-precondition"
+customData: undefined
+name: "FirebaseError"
+toString: ƒ () => `${this.name}: [code=${this.code}]: ${this.message}`
+length: 0
+name: ""
+[[Prototype]]: ƒ ()
+message: "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/artist-boost/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9hcnRpc3QtYm9vc3QvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NhbXBhaWducy9pbmRleGVzL18QARoKCgZ1c2VySWQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC"
+stack: "FirebaseError: The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/artist-boost/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9hcnRpc3QtYm9vc3QvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NhbXBhaWducy9pbmRleGVzL18QARoKCgZ1c2VySWQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC"
+get stack: ƒ ()
+length: 0
+name: ""
+[[Prototype]]: ƒ ()
+set stack: ƒ ()
+length: 1
+name: ""
+[[Prototype]]: ƒ ()
+[[Prototype]]: Object
+constructor: ƒ class _FirebaseError extends Error {↵ constructor(code, message, customData) {↵ super(message);↵ this.code = code;↵ this.customData = customData;↵ this.name = ERROR_NAME;↵ Object.setPrototypeOf(this, _FirebaseError.prototype);↵ if (Error.captureStackTrace) {↵ Error.captureStackTrace(this, ErrorFactory.prototype.create);↵ }↵ }↵}
+[[Prototype]]: Object
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

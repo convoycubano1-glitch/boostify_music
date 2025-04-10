@@ -1,0 +1,158 @@
+Error en respuesta de status de PiAPI/Kling: {status: 'failed', errorMessage: 'task failed', success: false, taskId: '08fb416d-d745-4ada-ac0a-46ad73589813'}
+checkTryOnStatus @ kling-service.ts:247
+await in checkTryOnStatus
+checkTaskStatus @ tryon-component.tsx:171
+setInterval
+(anonymous) @ tryon-component.tsx:105
+commitHookEffectListMount @ chunk-U53NH74P.js?v=7c28a490:16883
+commitPassiveMountOnFiber @ chunk-U53NH74P.js?v=7c28a490:18124
+commitPassiveMountEffects_complete @ chunk-U53NH74P.js?v=7c28a490:18097
+commitPassiveMountEffects_begin @ chunk-U53NH74P.js?v=7c28a490:18087
+commitPassiveMountEffects @ chunk-U53NH74P.js?v=7c28a490:18077
+flushPassiveEffectsImpl @ chunk-U53NH74P.js?v=7c28a490:19458
+flushPassiveEffects @ chunk-U53NH74P.js?v=7c28a490:19415
+performSyncWorkOnRoot @ chunk-U53NH74P.js?v=7c28a490:18836
+flushSyncCallbacks @ chunk-U53NH74P.js?v=7c28a490:9119
+commitRootImpl @ chunk-U53NH74P.js?v=7c28a490:19400
+commitRoot @ chunk-U53NH74P.js?v=7c28a490:19245
+finishConcurrentRender @ chunk-U53NH74P.js?v=7c28a490:18773
+performConcurrentWorkOnRoot @ chunk-U53NH74P.js?v=7c28a490:18686
+workLoop @ chunk-U53NH74P.js?v=7c28a490:197
+flushWork @ chunk-U53NH74P.js?v=7c28a490:176
+performWorkUntilDeadline @ chunk-U53NH74P.js?v=7c28a490:384
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+schedulePerformWorkUntilDeadline @ chunk-U53NH74P.js?v=7c28a490:400
+requestHostCallback @ chunk-U53NH74P.js?v=7c28a490:418
+unstable_scheduleCallback @ chunk-U53NH74P.js?v=7c28a490:330
+scheduleCallback$1 @ chunk-U53NH74P.js?v=7c28a490:19794
+ensureRootIsScheduled @ chunk-U53NH74P.js?v=7c28a490:18620
+scheduleUpdateOnFiber @ chunk-U53NH74P.js?v=7c28a490:18530
+dispatchSetState @ chunk-U53NH74P.js?v=7c28a490:13006
+handleStartTryOn @ tryon-component.tsx:687
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+kling-service.ts:330 Error en checkTryOnStatus: Error: task failed
+    at KlingService.checkTryOnStatus (kling-service.ts:270:15)
+    at async checkTaskStatus (tryon-component.tsx:171:22)
+checkTryOnStatus @ kling-service.ts:330
+await in checkTryOnStatus
+checkTaskStatus @ tryon-component.tsx:171
+setInterval
+(anonymous) @ tryon-component.tsx:105
+commitHookEffectListMount @ chunk-U53NH74P.js?v=7c28a490:16883
+commitPassiveMountOnFiber @ chunk-U53NH74P.js?v=7c28a490:18124
+commitPassiveMountEffects_complete @ chunk-U53NH74P.js?v=7c28a490:18097
+commitPassiveMountEffects_begin @ chunk-U53NH74P.js?v=7c28a490:18087
+commitPassiveMountEffects @ chunk-U53NH74P.js?v=7c28a490:18077
+flushPassiveEffectsImpl @ chunk-U53NH74P.js?v=7c28a490:19458
+flushPassiveEffects @ chunk-U53NH74P.js?v=7c28a490:19415
+performSyncWorkOnRoot @ chunk-U53NH74P.js?v=7c28a490:18836
+flushSyncCallbacks @ chunk-U53NH74P.js?v=7c28a490:9119
+commitRootImpl @ chunk-U53NH74P.js?v=7c28a490:19400
+commitRoot @ chunk-U53NH74P.js?v=7c28a490:19245
+finishConcurrentRender @ chunk-U53NH74P.js?v=7c28a490:18773
+performConcurrentWorkOnRoot @ chunk-U53NH74P.js?v=7c28a490:18686
+workLoop @ chunk-U53NH74P.js?v=7c28a490:197
+flushWork @ chunk-U53NH74P.js?v=7c28a490:176
+performWorkUntilDeadline @ chunk-U53NH74P.js?v=7c28a490:384
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+schedulePerformWorkUntilDeadline @ chunk-U53NH74P.js?v=7c28a490:400
+requestHostCallback @ chunk-U53NH74P.js?v=7c28a490:418
+unstable_scheduleCallback @ chunk-U53NH74P.js?v=7c28a490:330
+scheduleCallback$1 @ chunk-U53NH74P.js?v=7c28a490:19794
+ensureRootIsScheduled @ chunk-U53NH74P.js?v=7c28a490:18620
+scheduleUpdateOnFiber @ chunk-U53NH74P.js?v=7c28a490:18530
+dispatchSetState @ chunk-U53NH74P.js?v=7c28a490:13006
+handleStartTryOn @ tryon-component.tsx:687
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+tryon-component.tsx:347 Error checking task status: Error: task failed
+    at KlingService.checkTryOnStatus (kling-service.ts:270:15)
+    at async checkTaskStatus (tryon-component.tsx:171:22)
+checkTaskStatus @ tryon-component.tsx:347
+setInterval
+(anonymous) @ tryon-component.tsx:105
+commitHookEffectListMount @ chunk-U53NH74P.js?v=7c28a490:16883
+commitPassiveMountOnFiber @ chunk-U53NH74P.js?v=7c28a490:18124
+commitPassiveMountEffects_complete @ chunk-U53NH74P.js?v=7c28a490:18097
+commitPassiveMountEffects_begin @ chunk-U53NH74P.js?v=7c28a490:18087
+commitPassiveMountEffects @ chunk-U53NH74P.js?v=7c28a490:18077
+flushPassiveEffectsImpl @ chunk-U53NH74P.js?v=7c28a490:19458
+flushPassiveEffects @ chunk-U53NH74P.js?v=7c28a490:19415
+performSyncWorkOnRoot @ chunk-U53NH74P.js?v=7c28a490:18836
+flushSyncCallbacks @ chunk-U53NH74P.js?v=7c28a490:9119
+commitRootImpl @ chunk-U53NH74P.js?v=7c28a490:19400
+commitRoot @ chunk-U53NH74P.js?v=7c28a490:19245
+finishConcurrentRender @ chunk-U53NH74P.js?v=7c28a490:18773
+performConcurrentWorkOnRoot @ chunk-U53NH74P.js?v=7c28a490:18686
+workLoop @ chunk-U53NH74P.js?v=7c28a490:197
+flushWork @ chunk-U53NH74P.js?v=7c28a490:176
+performWorkUntilDeadline @ chunk-U53NH74P.js?v=7c28a490:384
+run @ setImmediate.js:40
+runIfPresent @ setImmediate.js:69
+onGlobalMessage @ setImmediate.js:109
+postMessage
+registerImmediate @ setImmediate.js:120
+setImmediate @ setImmediate.js:27
+schedulePerformWorkUntilDeadline @ chunk-U53NH74P.js?v=7c28a490:400
+requestHostCallback @ chunk-U53NH74P.js?v=7c28a490:418
+unstable_scheduleCallback @ chunk-U53NH74P.js?v=7c28a490:330
+scheduleCallback$1 @ chunk-U53NH74P.js?v=7c28a490:19794
+ensureRootIsScheduled @ chunk-U53NH74P.js?v=7c28a490:18620
+scheduleUpdateOnFiber @ chunk-U53NH74P.js?v=7c28a490:18530
+dispatchSetState @ chunk-U53NH74P.js?v=7c28a490:13006
+handleStartTryOn @ tryon-component.tsx:687
+await in handleStartTryOn
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI

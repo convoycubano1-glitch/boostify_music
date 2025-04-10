@@ -1,0 +1,22 @@
+`DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+Error en autenticación con Google: 
+_FirebaseError {code: "auth/api-key-not-valid.-please-pass-a-valid-api-key.", customData: {…}, name: "FirebaseError"}
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error en autenticación con Google: 
+_FirebaseError {code: "auth/api-key-not-valid.-please-pass-a-valid-api-key.", customData: {…}, name: "FirebaseError"}
+code: "auth/api-key-not-valid.-please-pass-a-valid-api-key."
+customData: Object
+name: "FirebaseError"
+message: "Firebase: Error (auth/api-key-not-valid.-please-pass-a-valid-api-key.)."
+stack: "FirebaseError: Firebase: Error (auth/api-key-not-valid.-please-pass-a-valid-api-key.).↵ at createErrorInternal (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_auth.js?v=e8d4bd5a:689:37)↵ at _fail (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_auth.js?v=e8d4bd5a:654:9)↵ at _performFetchWithErrorHandling (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_auth.js?v=e8d4bd5a:1112:9)↵ at async _validateOrigin (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_auth.js?v=e8d4bd5a:7149:33)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object

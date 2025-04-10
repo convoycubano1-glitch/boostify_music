@@ -1,0 +1,47 @@
+https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/api/stripe/create-subscription 400 (Bad Request)
+apiRequest @ queryClient.ts:46
+await in apiRequest
+createCheckoutSession @ stripe-service.ts:70
+handleSubscribe @ pricing-plans.tsx:218
+onClick @ pricing-plans.tsx:377
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+stripe-service.ts:81 Error creating checkout session: Error: 400: {"success":false,"message":"Invalid price ID. Please check your subscription selection and try again.","error":"price_verification_failed"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:53:5)
+    at async createCheckoutSession (stripe-service.ts:70:22)
+    at async handleSubscribe (pricing-plans.tsx:218:24)
+createCheckoutSession @ stripe-service.ts:81
+await in createCheckoutSession
+handleSubscribe @ pricing-plans.tsx:218
+onClick @ pricing-plans.tsx:377
+callCallback2 @ chunk-U53NH74P.js?v=7c28a490:3674
+invokeGuardedCallbackDev @ chunk-U53NH74P.js?v=7c28a490:3699
+invokeGuardedCallback @ chunk-U53NH74P.js?v=7c28a490:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-U53NH74P.js?v=7c28a490:3736
+executeDispatch @ chunk-U53NH74P.js?v=7c28a490:7014
+processDispatchQueueItemsInOrder @ chunk-U53NH74P.js?v=7c28a490:7034
+processDispatchQueue @ chunk-U53NH74P.js?v=7c28a490:7043
+dispatchEventsForPlugins @ chunk-U53NH74P.js?v=7c28a490:7051
+(anonymous) @ chunk-U53NH74P.js?v=7c28a490:7174
+batchedUpdates$1 @ chunk-U53NH74P.js?v=7c28a490:18881
+batchedUpdates @ chunk-U53NH74P.js?v=7c28a490:3579
+dispatchEventForPluginEventSystem @ chunk-U53NH74P.js?v=7c28a490:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-U53NH74P.js?v=7c28a490:5478
+dispatchEvent @ chunk-U53NH74P.js?v=7c28a490:5472
+dispatchDiscreteEvent @ chunk-U53NH74P.js?v=7c28a490:5449Understand this errorAI
+pricing-plans.tsx:227 Error starting checkout: Error: No se pudo crear la sesión de pago
+    at handleSubscribe (pricing-plans.tsx:224:15)

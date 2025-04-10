@@ -1,0 +1,190 @@
+Create image from text - Mystic
+Convert descriptive text input into images using AI. This endpoint accepts a variety of parameters to customize the generated images.
+
+POST
+/
+v1
+/
+ai
+/
+mystic
+
+Try it
+​
+Important
+Mystic image generation mode is Freepik’s exclusive advanced AI workflow for ultra-realistic, high-resolution images.
+
+Mystic is available on beta access only for premium API users. Make sure you get your webhook set up on every request in order to retrieve your generations.
+
+You can upgrade your account here, no upfront payments or precommitment. You will only pay for what you use.
+
+​
+Pricing
+Resolution	Price per Image
+2K	0.10€
+4K	0.32€
+Authorizations
+​
+x-freepik-api-key
+string
+header
+required
+Your Freepik API key. Required for authentication. Learn how to obtain an API key
+
+Body
+application/json
+​
+prompt
+string
+AI Model Prompt Description
+The prompt is a short text that describes the image you want to generate. It can range from simple descriptions, like "a cat", to detailed scenarios, such as "a cat with wings, playing the guitar, and wearing a hat". If no prompt is provided, the AI will generate a random image.
+
+Adding Characters to the Prompt
+You can introduce characters into the prompt using the following syntax:
+
+@character_name: Represents the character you want to include. Example: My friend @john is a great artist.
+Modifying Character Strength
+To adjust the influence or "strength" of a character in the image, use the following syntax:
+
+@character_name::strength: Specify the character’s strength by appending ::strength to their name, where strength is a numerical value. Example: My friend @john::200 is a great artist.
+Higher strength values will make the character more prominent in the generated image.
+
+​
+resolution
+enum<string>
+default:
+2k
+Resolution of the image
+
+Available options: 2k, 4k 
+​
+aspect_ratio
+enum<string>
+default:
+square_1_1
+Image size with the aspect ratio. The aspect ratio is the proportional relationship between an image's width and height, expressed as *_width_height (e.g., square_1_1, widescreen_16_9). It is calculated by dividing the width by the height.
+
+If not present, the default is square_1_1.
+
+Available options: square_1_1, classic_4_3, traditional_3_4, widescreen_16_9, social_story_9_16, smartphone_horizontal_20_9, smartphone_vertical_9_20, standard_3_2, portrait_2_3, horizontal_2_1, vertical_1_2, social_5_4, social_post_4_5 
+​
+realism
+boolean
+default:
+true
+Experimental feature: it tries to give an extra boost of reality to your images, a kind of "less AI look".
+Works especially well with photographs but it also magically works with illustrations too.
+IMPORTANT: deactivate it if you are trying to generate something that is really fantastic or a known character, otherwise it won't follow your prompt well.
+
+​
+creative_detailing
+integer
+default:
+33
+Higher values can achieve greater detail per pixel at higher resolutions at the cost of giving a somewhat more "HDR" or artificial look.
+Very high values can generate quite crazy things like eyes where they shouldn't appear, etc.
+
+Valid values range [0, 100], default 33
+
+Required range: 0 <= x <= 100
+​
+engine
+enum<string>
+default:
+automatic
+Select the engine for the AI model. Available options:
+
+automatic - default choice
+Illusio - for smoother illustrations, landscapes, and nature. The softer looking one.
+Sharpy - better for realistic images like photographs and for a more grainy look. It provides the sharpest and most detailed images. If you use it for illustrations it will give them more texture and a less softer look.
+Sparkle - also good for realistic images. It's a middle ground between Illusio and Sharpy.
+Available options: automatic, magnific_illusio, magnific_sharpy, magnific_sparkle 
+​
+fixed_generation
+boolean
+default:
+false
+When this option is enabled, using the same settings will consistently produce the same image.
+Fixed generations are ideal for fine-tuning, as it allows for incremental changes to parameters (such as the prompt) to see subtle variations in the output.
+When disabled, expect each generation to introduce a degree of randomness, leading to more diverse outcomes.
+
+​
+webhook_url
+string
+Webhook URL to notify the user when the task is completed
+
+​
+filter_nsfw
+boolean
+default:
+true
+When enabled, if the AI model return some nsfw image we will change it for a black image. This feature is experimental and may not be 100% accurate
+
+​
+styling
+object
+Styling options for the image
+
+
+Show child attributes
+
+Response
+200
+
+200
+application/json
+OK - The request has succeeded and the Mystic process has started.
+​
+data
+object
+required
+
+Show child attributes
+
+Was this page helpful?
+
+
+Yes
+
+No
+Get the status of the Mystic task
+discord
+facebook
+x
+instagram
+youtube
+linkedin
+Powered by Mintlify
+
+cURL
+
+Python
+
+JavaScript
+
+PHP
+
+Go
+
+Java
+
+const options = {
+  method: 'POST',
+  headers: {'x-freepik-api-key': '<api-key>', 'Content-Type': 'application/json'},
+  body: '{"prompt":"<string>","resolution":"2k","aspect_ratio":"square_1_1","realism":true,"creative_detailing":33,"engine":"automatic","fixed_generation":false,"webhook_url":"https://httpbin.org/post","filter_nsfw":true,"styling":{"styles":[{"name":"<string>","strength":100}],"characters":[{"id":"<string>","strength":100}]}}'
+};
+
+fetch('https://api.freepik.com/v1/ai/mystic', options)
+  .then(response => response.json())
+  .then(response => console.log(response))
+  .catch(err => console.error(err));
+
+
+
+{
+  "data": {
+    "generated": [],
+    "task_id": "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
+    "status": "IN_PROGRESS"
+  }
+}

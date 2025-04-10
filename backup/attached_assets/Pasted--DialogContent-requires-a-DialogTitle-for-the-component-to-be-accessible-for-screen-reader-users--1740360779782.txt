@@ -1,0 +1,183 @@
+`DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+Error generating music: 
+Error {}
+message: "Suno API key is not configured. Please check your environment variables."
+stack: "Error: Suno API key is not configured. Please check your environment variables.↵ at Object.generateMusic (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/suno-service.ts:19:13)↵ at Object.action (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/ai/composer-agent.tsx:123:46)↵ at async handleAction (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/ai/base-agent.tsx:70:7)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Boostify Music
+
+
+Int'l
+Toggle menu
+Neiver Alvarez
+AI Agents Orchestra
+Power up your music with our team of specialized agents powered by artificial intelligence
+
+AI Music Composer
+
+Your creative companion for musical composition
+
+Generate musical composition
+Create a new composition using Suno AI
+
+Musical Genre
+Pop
+Tempo (BPM)
+120
+Mood
+Energetic
+Ejecutar Generate musical composition
+Analyze musical structure
+Analyze the structure and elements of a composition
+
+Audio URL
+Ejecutar Analyze musical structure
+Suggest arrangements
+Propose improvements and variations for a composition
+
+Arrangement Style
+Minimalist
+Ejecutar Suggest arrangements
+Video Director AI
+
+Your assistant for music video direction and production
+
+Generate music video script
+Create a detailed script based on lyrics and music genre
+
+Song Lyrics
+Visual Style
+Narrative
+Atmosphere
+Dramatic
+Ejecutar Generate music video script
+Plan sequences
+Create storyboard and scene planning
+
+Duration (seconds)
+240
+Location Type
+Urban
+Ejecutar Plan sequences
+Suggest visual effects
+Recommend visual effects and transitions
+
+Complexity
+Moderate
+Effects Style
+Cinematic
+Ejecutar Suggest visual effects
+Strategic Marketing AI
+
+Your expert in digital strategies and growth
+
+Generate marketing plan
+Create personalized music marketing strategy
+
+Target Audience
+Millennials (26-40)
+Budget ($)
+1000
+Main Platform
+Instagram
+Ejecutar Generate marketing plan
+Schedule content
+Plan and schedule posts automatically
+
+Content Type
+Mixed Content
+Frequency
+3 times per week
+Ejecutar Schedule content
+Analyze results
+Analyze metrics and generate performance reports
+
+Key Metrics
+All metrics
+Analysis Period
+Last 30 days
+Ejecutar Analyze results
+Social Media AI
+
+Your social media strategy expert
+
+Plan content
+Create social media content calendar
+
+Platforms
+All platforms
+Frequency
+Weekly
+Ejecutar Plan content
+Analyze engagement
+Analyze engagement metrics and suggest improvements
+
+Analysis Period
+Last month
+Ejecutar Analyze engagement
+Generate hashtags
+Suggest relevant hashtags for better reach
+
+Music Genre
+Pop
+Ejecutar Generate hashtags
+Merchandise Designer AI
+
+Your expert in merchandise design and management
+
+Design products
+Generate designs for merchandise
+
+Product Type
+T-Shirts
+Design Style
+Minimalist
+Ejecutar Design products
+Analyze trends
+Identify trends in music merchandise
+
+Target Market
+Global
+Ejecutar Analyze trends
+Optimize pricing
+Suggest competitive pricing strategies
+
+Price Range
+Mid-range
+Ejecutar Optimize pricing
+Manager AI
+
+Your executive assistant for artist management
+
+Analyze performance
+Evaluate artist performance metrics
+
+Metrics Type
+All metrics
+Time Period
+Last quarter
+Ejecutar Analyze performance
+Plan strategy
+Develop career strategic plan
+
+Main Focus
+Audience Growth
+Ejecutar Plan strategy
+Coordinate activities
+Suggest and coordinate promotional activities
+
+Activity Type
+Press and Media
+Ejecutar Coordinate activities
+0

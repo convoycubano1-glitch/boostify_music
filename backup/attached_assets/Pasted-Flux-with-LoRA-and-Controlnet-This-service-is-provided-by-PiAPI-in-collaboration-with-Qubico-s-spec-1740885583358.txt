@@ -1,0 +1,215 @@
+Flux with LoRA and Controlnet
+This service is provided by PiAPI in collaboration with Qubico's specialized inference hardware, designed to optimize LoRA (Low-Rank Adaptation) and ControlNet functionalities for advanced model control in various Flux tasks.
+
+Flux API (Task Creation with LoRA and ControlNet)
+Model, Task Type and LoRA Numbers
+Model Name	Task Type	LoRA Capacity	Controlnet Capacity
+Qubico/flux1-dev-advanced	txt2img-lora	1	0
+Qubico/flux1-dev-advanced	img2img-lora	1	0
+Qubico/flux1-dev-advanced	controlnet-lora	0 or 1	1
+Qubico/flux1-dev-advanced	contact us if you need a complex workflow customization	>1	>1
+Note: Qubico/flux1-dev-advanced is the only model that supports LoRA and controlnet in PiAPI's Flux API. You can explore Available LoRA and Controlnet to find out what LoRA or Controlnet model that best fit your need.
+
+Example: Request Body of Text-to-Image Task with ControlNet and LoRA
+{
+  "model": "Qubico/flux1-dev-advanced",
+  "task_type": "controlnet-lora",
+  "input": {
+    "prompt": "spiderman",
+    "control_net_settings": [
+      {
+        "control_type": "depth",
+        "control_image": "https://example.com/control_image2.png"
+      }
+    ],
+    "lora_settings": [
+      {
+        "lora_type": "mjv6"
+      }
+    ]
+  },
+  "config": {
+    "webhook_config": {
+      "endpoint": "https://webhook.site/d35ab4aa-95f9-4855-af82-32fbfbb67063",
+      "secret": ""
+    }
+  }
+}
+Request Example Using cURL
+curl --location --request POST 'https://api.piapi.ai/api/v1/task' --header 'X-API-KEY: YOUR_API_KEY' --header 'Content-Type: application/json' --data-raw '{
+    "model": "Qubico/flux1-dev-advanced",
+    "task_type": "controlnet-lora",
+    "input": {
+        "prompt": "spiderman",
+        "control_net_settings": [
+            {
+                "control_type": "depth",
+                "control_image": "https://example.com/control_image1.png"
+            }
+        ],
+        "lora_settings": [
+            {
+                "lora_type": "mjv6"
+            }
+        ]
+    },
+    "config": {
+        "webhook_config": {
+            "endpoint": "https://webhook.site/d35ab4aa-95f9-4855-af82-32fbfbb67063",
+            "secret": ""
+        }
+    }
+}'
+Example: Request Body of Task Creation with LoRA only
+Input Example:
+
+{
+  "model": "Qubico/flux1-dev-advanced",
+  "task_type": "txt2img-lora",
+  "input": {
+    "prompt": "spiderman",
+    "lora_settings": [
+      {
+        "lora_type": "mjv6"
+      }
+    ]
+  },
+  "config": {
+    "webhook_config": {
+      "endpoint": "https://webhook.site/d35ab4aa-95f9-4855-af82-32fbfbb67063",
+      "secret": ""
+    }
+  }
+}
+Example: Task Creation with controlnet Canny
+{
+    "model": "Qubico/flux1-dev-advanced",
+    "task_type": "controlnet-lora",
+    "input": {
+        "steps": 28,
+        "prompt": "A girl in city, 25 years old, cool, futuristic",
+        "negative_prompt": "low quality, ugly, distorted, artefacts",
+        "guidance_scale": 2.5,
+        "control_net_settings": [
+            {
+                "control_type": "canny",
+                "control_image": "https://i.ibb.co/yX07dwV/Comfy-UI-controlnet.webp",
+                "control_strength": 0.45,
+                "return_preprocessed_image": true
+            }
+        ],
+        "lora_settings": [
+            {
+                "lora_type": "graphic-portrait",
+                "lora_strength": 1
+            }
+        ]
+    },
+    "config": {
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
+Canny Result 1	Canny Result 2
+Alt text 1	Alt text 2
+Example: Task Creation with controlnet Depth
+{
+    "model": "Qubico/flux1-dev-advanced",
+    "task_type": "controlnet-lora",
+    "input": {
+        "steps": 28,
+        "prompt": "A girl in city, 25 years old, cool, futuristic",
+        "negative_prompt": "low quality, ugly, distorted, artefacts",
+        "guidance_scale": 2.5,
+        "control_net_settings": [
+            {
+                "control_type": "depth",
+                "control_image": "https://i.ibb.co/yX07dwV/Comfy-UI-controlnet.webp",
+                "control_strength": 0.45,
+                "return_preprocessed_image": true
+            }
+        ],
+        "lora_settings": [
+            {
+                "lora_type": "geometric-woman",
+                "lora_strength": 1
+            }
+        ]
+    },
+    "config": {
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
+Depth Result 1	Depth Result 2
+Alt text 1	Alt text 2
+Example: Task Creation with controlnet SoftEdge
+{
+    "model": "Qubico/flux1-dev-advanced",
+    "task_type": "controlnet-lora",
+    "input": {
+        "steps": 28,
+        "prompt": "A girl in city, 25 years old, cool, futuristic",
+        "negative_prompt": "low quality, ugly, distorted, artefacts",
+        "guidance_scale": 2.5,
+        "control_net_settings": [
+            {
+                "control_type": "soft_edge",
+                "control_image": "https://i.ibb.co/yX07dwV/Comfy-UI-controlnet.webp",
+                "control_strength": 0.55,
+                "return_preprocessed_image": true
+            }
+        ],
+        "lora_settings": [
+            {
+                "lora_type": "remes-abstract-poster-style",
+                "lora_strength": 1
+            }
+        ]
+    },
+    "config": {
+        "webhook_config": {
+            "endpoint": "https://webhook.site/0edf5555-22ba-4aae-898a-f707440effa4",
+            "secret": ""
+        }
+    }
+}
+Softedge Result 1	Softedge Result 2
+Alt text 1	Alt text 2
+Example: Task Creation with controlnet OpenPose
+{
+    "model": "Qubico/flux1-dev-advanced",
+    "task_type": "controlnet-lora",
+    "input": {
+        "steps": 28,
+        "prompt": "person enjoying a day at the park, full hd, cinematic",
+        "negative_prompt": "low quality, ugly, distorted, artefacts",
+        "guidance_scale": 4.0,
+        "control_net_settings": [
+            {
+                "control_type": "openpose",
+                "control_image": "https://i.ibb.co/vkCbMZY/3-pose-1024.jpg",
+                "control_strength": 0.7,
+                "return_preprocessed_image": true
+            }
+        ],
+        "lora_settings": [
+            {
+                "lora_type": "mjv6",
+                "lora_strength": 1
+            }
+        ]
+    },
+    "config": {
+        "webhook_config": {
+            "endpoint": "https://webhook.site/0edf5555-22ba-4aae-898a-f707440effa4",
+            "secret": ""
+        }
+    }
+}
+OpenPose Control Image INPUT	OpenPose Result
+Alt text 1	Alt text 2

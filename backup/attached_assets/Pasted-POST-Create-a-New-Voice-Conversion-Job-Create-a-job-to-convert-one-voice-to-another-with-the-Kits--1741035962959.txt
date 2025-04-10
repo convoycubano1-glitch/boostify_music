@@ -1,0 +1,106 @@
+POST: Create a New Voice Conversion Job
+Create a job to convert one voice to another with the Kits API.
+
+POST
+/
+api
+/
+kits
+/
+v1
+/
+voice-conversions
+
+Try it
+Creates a voice conversion inference job and adds it to the inference queue. All requests must be made as multipart form requests. The response will contain the job status.
+
+​
+Headers
+​
+Authorization*
+String
+Bearer <api-key>
+
+​
+Request Body
+​
+voiceModelId*
+Number
+ID of the voice model.
+
+​
+soundFile*
+String
+Supports wav, mp3, or flac. Max file size is 100MB.
+
+​
+conversionStrength
+Number
+Increases the amount of accent from the Voice Model. This may cause mispronunciation. Range from 0 to 1.
+
+​
+modelVolumeMix
+Number
+Increase to convert the volume of your input audio to the volume of the AI model. Decrease to hear dynamics from the input audio. High values may accentuate noise. Range from 0 to 1.
+
+​
+pitchShift
+Number
+The number of semitones to shift the input audio. Range from -24 to 24.
+
+​
+pre
+Object
+Preprocessing effects run on the input file before the conversion is processed.
+
+​
+post
+Object
+Postprocessing effects run on the output file after the conversion is processed.
+
+​
+Response
+Inference Job
+
+GET: Fetch a Voice Conversion by ID
+GET: Fetch Voice Models
+youtube
+linkedin
+discord
+instagram
+Powered by Mintlify
+
+cURL
+
+Python
+
+JavaScript
+
+Copy
+const url = 'https://arpeggi.io/api/kits/v1/voice-conversions'
+const data = {
+  voiceModelId: voice_model_id,
+  soundFile: fs.createReadStream(file_path)
+}
+const headers = { Authorization: `Bearer ${your_api_key}` }
+
+const response = await axios.postForm(url, data, { headers })
+const vocalConversionJob = response.data
+
+201: Created
+
+401: Unauthorized
+
+422: Unprocessable Entity
+
+429: Too many requests
+
+Copy
+{
+  "id": 1,
+  "createdAt": "2023-09-19 20:13:50.428000 +00:00",
+  "type": "infer",
+  "voiceModelId": 2,
+  "status": "running",
+  "jobStartTime": "2023-09-19 20:15:50.428000 +00:00",
+  "jobEndTime": null

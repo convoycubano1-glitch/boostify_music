@@ -1,0 +1,38 @@
+Error fetching campaigns: 
+_FirebaseError {code: "failed-precondition", customData: undefined, name: "FirebaseError", toString: ƒ}
+code: "failed-precondition"
+customData: undefined
+name: "FirebaseError"
+toString: ƒ () => `${this.name}: [code=${this.code}]: ${this.message}`
+length: 0
+name: ""
+[[Prototype]]: ƒ ()
+apply: ƒ apply()
+arguments: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get arguments: ƒ ()
+set arguments: ƒ ()
+bind: ƒ bind()
+call: ƒ call()
+caller: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get caller: ƒ ()
+set caller: ƒ ()
+constructor: ƒ Function()
+length: 0
+name: ""
+toString: ƒ toString()
+Symbol(Symbol.hasInstance): undefined
+Symbol(Symbol.metadata): undefined
+[[Prototype]]: Object
+message: "The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/artist-boost/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9hcnRpc3QtYm9vc3QvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NhbXBhaWducy9pbmRleGVzL18QARoKCgZ1c2VySWQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC"
+stack: "FirebaseError: The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/artist-boost/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9hcnRpc3QtYm9vc3QvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2NhbXBhaWducy9pbmRleGVzL18QARoKCgZ1c2VySWQQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC"
+get stack: ƒ ()
+length: 0
+name: ""
+[[Prototype]]: ƒ ()
+set stack: ƒ ()
+length: 1
+name: ""
+[[Prototype]]: ƒ ()
+[[Prototype]]: Object
+constructor: ƒ class _FirebaseError extends Error {↵ constructor(code, message, customData) {↵ super(message);↵ this.code = code;↵ this.customData = customData;↵ this.name = ERROR_NAME;↵ Object.setPrototypeOf(this, _FirebaseError.prototype);↵ if (Error.captureStackTrace) {↵ Error.captureStackTrace(this, ErrorFactory.prototype.create);↵ }↵ }↵}
+[[Prototype]]: Object

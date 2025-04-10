@@ -1,0 +1,133 @@
+Get Available Models
+The /models endpoint returns the available AI Voice Models for your Revocalize account. Any of the available models can be used in the Voice Synthesis API to create audio generations.
+
+GET
+/
+models
+
+Try it
+​
+Response
+​
+models
+array
+The array of available AI voice models for your Revocalize account.
+
+
+Hide voice model object
+
+​
+id
+strng
+A unique identifier for each AI voice model. This is the value that should be used in the voice_model parameter of the Voice Synthesis API.
+
+​
+name
+string
+The name of the artist or musician that the AI voice model is based on.
+
+​
+gender
+"male" | "female"
+The gender of the AI voice model.
+
+​
+age
+"child" | "young adult" | "adult"
+The age category of the AI voice model.
+
+​
+description
+string
+A brief description of the AI voice model’s characteristics.
+
+​
+base_language
+string
+The base language of the AI voice model, in ISO 639-1 format.
+
+​
+traits
+array
+An array of traits that describe the AI voice model’s vocal qualities.
+
+​
+genre
+string
+The genre that the AI voice model is best suited for. Possible values are:
+
+pop
+rock
+hip-hop
+r&b
+country
+jazz
+classical
+electronic
+world
+other
+​
+voice_type
+string
+The voice type of the AI voice model. Possible values are: soprano, mezzo-soprano, alto, tenor, baritone, bass.
+
+​
+vocal_range
+object
+An object containing the minimum and maximum vocal range of the AI voice model.
+
+
+Show vocal range object
+
+Check Task Status
+Create Model
+website
+twitter
+linkedin
+instagram
+Powered by Mintlify
+
+Example Request
+
+Copy
+curl --location --request GET 'https://api.revocalize.ai/models'
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <token>'
+
+Response
+
+Copy
+{
+  "models": [
+    {
+      id: "andra",
+      name: "Andra",
+      gender: "female",
+      age: "adult",
+      description: "Popular pop singer with a powerful and dynamic vocal range. Her voice is characterized by its soulful quality, agility, and emotive expressiveness.",
+      base_language: "en",
+      traits: ["nasal", "powerful", "emotive", "dynamic", "soulful"],
+      genre: "pop"
+      voice_type: "tenor",
+      vocal_range: {
+        min: "C3",
+        max: "C7",
+      }
+    },
+    {
+      id: "smiley",
+      name: "Smiley",
+      gender: "male",
+      age: "young adult",
+      description: "Romanian musician and producer known for his smooth and versatile vocal style, which ranges from tender and emotive to powerful and dynamic.",
+      base_language: "ro",
+      traits: ["smooth", "versatile", "emotive", "dynamic", "expressive"],
+      genre: "r&b",
+      voice_type: "bass",
+      vocal_range: {
+        min: "E2",
+        max: "E4",
+      }
+    }
+  ]
+}

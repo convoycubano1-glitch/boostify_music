@@ -1,0 +1,78 @@
+Invalid response structure: 
+Object {error: {…}}
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error in attempt 1: 
+Error {}
+
+Waiting 3 seconds before retry 1
+Attempt 2/5 to generate video prompt
+Generated prompt text: Generate a detailed video scene description:
+- Shot: wide shot using Anamórfico
+- Style: Cinematográfico (91% intensity)
+- Mood: Energético with Monocromático colors
+- Duration: 1.5 seconds
+- Camera: Professional cinematography focusing on composition (79% narrative)
+- Director Style: Vibrant aesthetics with dynamic camera movements
+- Special Focus: Latin Music & Reggaeton
+API Response: 
+Object {error: {…}}
+Invalid response structure: 
+Object {error: {…}}
+
+Error in attempt 2: 
+Error {}
+
+Waiting 6 seconds before retry 2
+Attempt 3/5 to generate video prompt
+Generated prompt text: Generate a detailed video scene description:
+- Shot: wide shot using Anamórfico
+- Style: Cinematográfico (91% intensity)
+- Mood: Energético with Monocromático colors
+- Duration: 1.5 seconds
+- Camera: Professional cinematography focusing on composition (79% narrative)
+- Director Style: Vibrant aesthetics with dynamic camera movements
+- Special Focus: Latin Music & Reggaeton
+API Response: 
+Object {error: {…}}
+Invalid response structure: 
+Object {error: {…}}
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error in attempt 3: 
+Error {}
+message: "Invalid API response format"
+stack: "Error: Invalid API response format↵ at task (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/openrouter.ts?t=1740279775078:116:19)↵ at async processQueue (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/openrouter.ts?t=1740279775078:57:7)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Waiting 12 seconds before retry 3
+Attempt 4/5 to generate video prompt
+Generated prompt text: Generate a detailed video scene description:
+- Shot: wide shot using Anamórfico
+- Style: Cinematográfico (91% intensity)
+- Mood: Energético with Monocromático colors
+- Duration: 1.5 seconds
+- Camera: Professional cinematography focusing on composition (79% narrative)
+- Director Style: Vibrant aesthetics with dynamic camera movements
+- Special Focus: Latin Music & Reggaeton
+API Response: 
+Object {error: {…}}
+Invalid response structure: 
+Object {error: {…}}
+
+Error in attempt 4: 
+Error {}
+
+Waiting 24 seconds before retry 4

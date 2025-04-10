@@ -1,0 +1,252 @@
+Barra de herramientas
+src/components/Toolbar.jsx
+
+jsx
+Copiar
+import React, { useState } from 'react';
+
+const Toolbar = ({ onCut, onEffect }) => {
+  // Estados para demo de corte y efecto
+  const [clipId, setClipId] = useState('');
+  const [start, setStart] = useState(0);
+  const [end, setEnd] = useState(10);
+  const [effect, setEffect] = useState('fade');
+
+  const handleCutClick = () => {
+    // Se asume que el tipo es "video", pero podrías extenderlo
+    if (clipId) onCut(clipId, 'video', Number(start), Number(end));
+  };
+
+  const handleEffectClick = () => {
+    if (clipId) onEffect(clipId, 'video', effect);
+  };
+
+  return (
+    <div className="toolbar">
+      <h3>Herramientas de Edición</h3>
+      <div>
+        <input
+          type="text"
+          placeholder="ID del clip"
+          value={clipId}
+          onChange={(e) => setClipId(e.target.value)}
+        />
+        <input
+          type="number"
+          placeholder="Inicio (s)"
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+          style={{ width: '80px', marginLeft: '5px' }}
+        />
+        <input
+          type="number"
+          placeholder="Fin (s)"
+          value={end}
+          onChange={(e) => setEnd(e.target.value)}
+          style={{ width: '80px', marginLeft: '5px' }}
+        />
+        <button onClick={handleCutClick}>Cortar</button>
+      </div>
+      <div style={{ marginTop: '10px' }}>
+        <input
+          type="text"
+          placeholder="ID del clip"
+          value={clipId}
+          onChange={(e) => setClipId(e.target.value)}
+        />
+        <select value={effect} onChange={(e) => setEffect(e.target.value)} style={{ marginLeft: '5px' }}>
+          <option value="fade">Fundido</option>
+          <option value="slide">Deslizamiento</option>
+          <option value="zoom">Zoom</option>
+        </select>
+        <button onClick={handleEffectClick} style={{ marginLeft: '5px' }}>
+          Aplicar Efecto
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Toolbar;
+4. Línea de tiempo con múltiples capas
+Utilizamos React-Movable para permitir reordenar las capas (video y audio).
+src/components/Timeline.jsx
+
+jsx
+Copiar
+import React from 'react';
+import { List } from 'react-movable';
+import VideoLayer from './VideoLayer';
+import AudioLayer from './AudioLayer';
+
+const Timeline = ({ clips }) => {
+  // Creamos una lista de capas: cada capa tiene un id, tipo y los clips correspondientes.
+  const layers = [
+    { id: 1, type: 'video', items: clips.video },
+    { id: 2, type: 'audio', items: clips.audio }
+  ];
+
+  const handleReorder = ({ oldIndex, newIndex }) => {
+    // Aquí podrías actualizar el orden de las capas en un estado superior si fuera necesario.
+    console.log(`Mover capa de ${oldIndex} a ${newIndex}`);
+  };
+
+  return (
+    <div className="timeline">
+      <List
+        values={layers}
+        onChange={({ oldIndex, newIndex }) => handleReorder({ oldIndex, newIndex })}
+        renderList={({ children, props }) => <ul {...props}>{children}</ul>}
+        renderItem={({ value, props }) => (
+          <li {...props} className="layer">
+            {value.type === 'video' ? (
+              <VideoLayer clips={value.items} />
+            ) : (
+              <AudioLayer clips={value.items} />
+            )}
+          </li>
+        )}
+      />
+    </div>
+  );
+};
+
+export default Timeline;
+5. Capa de video con miniaturas y corte
+src/components/VideoLayer.jsx
+
+jsx
+Copiar
+import React from 'react';
+
+const VideoLayer = ({ clips }) => {
+  return (
+    <div className="video-layer">
+      <h4>Capa de Video</h4>
+      <div style={{ display: 'flex' }}>
+        {clips.map((clip, index) => (
+          <div key={clip.id} className="clip">
+            <img src={clip.thumbnail} alt={`Miniatura ${index}`} />
+            <div style={{ fontSize: '10px', textAlign: 'center' }}>
+              {clip.start}s - {clip.end}s
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default VideoLayer;
+6. Capa de audio con WaveSurfer
+src/components/AudioLayer.jsx
+
+jsx
+Copiar
+import React, { useRef, useEffect } from 'react';
+import WaveSurfer from 'wavesurfer.js';
+
+const AudioLayer = ({ clips }) => {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (clips.length > 0 && containerRef.current) {
+      const wavesurfer = WaveSurfer.create({
+        container: containerRef.current,
+        waveColor: '#999',
+        progressColor: '#555',
+        cursorColor: '#333',
+        height: 60
+      });
+      // Se carga el primer clip; en una solución real podrías concatenar o mostrar varios
+      wavesurfer.load(clips[0].src);
+      return () => wavesurfer.destroy();
+    }
+  }, [clips]);
+
+  return (
+    <div className="audio-layer">
+      <h4>Capa de Audio</h4>
+      <div ref={containerRef} style={{ width: '100%' }} />
+    </div>
+  );
+};
+
+export default AudioLayer;
+7. Utilidades para FFmpeg
+En este archivo se configura FFmpeg para ejecutar comandos (por ejemplo, cortar o aplicar efectos).
+src/utils/ffmpeg.js
+
+jsx
+Copiar
+import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
+
+const ffmpeg = createFFmpeg({ log: true });
+
+export const loadFFmpeg = async () => {
+  if (!ffmpeg.isLoaded()) {
+    await ffmpeg.load();
+  }
+};
+
+export const cutVideo = async (file, start, end) => {
+  await loadFFmpeg();
+  ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+  // Recorta el video desde "start" hasta "end"
+  await ffmpeg.run(
+    '-i',
+    'input.mp4',
+    '-ss',
+    start.toString(),
+    '-to',
+    end.toString(),
+    '-c',
+    'copy',
+    'output.mp4'
+  );
+  const data = ffmpeg.FS('readFile', 'output.mp4');
+  return URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+};
+
+// Función para aplicar un efecto (ejemplo de fundido)
+export const applyFadeEffect = async (file, type = 'in', duration = 2) => {
+  await loadFFmpeg();
+  ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+  // Si type es 'in', aplica fundido de entrada; si es 'out', de salida.
+  if (type === 'in') {
+    await ffmpeg.run(
+      '-i',
+      'input.mp4',
+      '-vf',
+      `fade=t=in:st=0:d=${duration}`,
+      '-c:a',
+      'copy',
+      'output.mp4'
+    );
+  } else {
+    await ffmpeg.run(
+      '-i',
+      'input.mp4',
+      '-vf',
+      `fade=t=out:st=8:d=${duration}`, // "st" se debe ajustar según la duración
+      '-c:a',
+      'copy',
+      'output.mp4'
+    );
+  }
+  const data = ffmpeg.FS('readFile', 'output.mp4');
+  return URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+};
+8. Utilidades para manejo de archivos
+Aquí definimos funciones sencillas para detectar el tipo de archivo o enlace.
+src/utils/fileUtils.js
+
+jsx
+Copiar
+export const isVideoFile = (fileName) => {
+  return fileName.toLowerCase().endsWith('.mp4');
+};
+
+export const isImageLink = (url) => {
+  return /\.(jpg|jpeg|png|gif)$/.test(url);
+};

@@ -1,0 +1,110 @@
+Kling Virtual Try-On
+POST
+https://api.piapi.ai/api/v1/task
+This is the api for Kling's Virtual Try On, $0.07 for each output image for PAYG. You can also use this endpoint in HYA mode.
+
+Request
+Header Params
+x-api-key
+string 
+required
+you api key
+
+Body Params application/json
+model
+string 
+required
+should be kling
+
+Default:
+kling
+task_type
+string 
+required
+should be ai_try_on
+
+Default:
+ai_try_on
+input
+object 
+required
+the input param of the task
+
+model_input
+string 
+required
+the image url of the model(person), see guideline
+
+dress_input
+string 
+optional
+the image url of the full-body garment. If you use this parameter, do not include the upper_input or lower_input parameters in the same request. See guideline
+
+upper_input
+string 
+optional
+the image url of the upper-body garment. If you use this parameter, do not include the dress_input parameters in the same request. See guideline
+
+lower_input
+string 
+optional
+the image url of the lower-body garment. If you use this parameter, do not include the dress_input parameters in the same request. See guideline
+
+batch_size
+integer 
+optional
+default is 1, final generation price is $0.07*batch_size
+
+>= 1
+<= 4
+Default:
+1
+Example
+{
+  "model": "kling",
+  "task_type": "ai_try_on",
+  "input": {
+    "model_input": "string",
+    "dress_input": "string",
+    "upper_input": "string",
+    "lower_input": "string",
+    "batch_size": 1
+  }
+}
+Request samples
+var myHeaders = new Headers();
+myHeaders.append("x-api-key", "");
+myHeaders.append("Content-Type", "application/json");
+
+var raw = JSON.stringify({
+   "model": "kling",
+   "task_type": "ai_try_on",
+   "input": {
+      "model_input": "string",
+      "dress_input": "string",
+      "upper_input": "string",
+      "lower_input": "string",
+      "batch_size": 1
+   }
+});
+
+var requestOptions = {
+   method: 'POST',
+   headers: myHeaders,
+   body: raw,
+   redirect: 'follow'
+};
+
+fetch("https://api.piapi.ai/api/v1/task", requestOptions)
+   .then(response => response.text())
+   .then(result => console.log(result))
+   .catch(error => console.log('error', error));
+Responses
+HTTP Code: 200
+Content Type : JSONapplication/json
+Data Schema
+object
+ 
+{0}
+Example
+{}

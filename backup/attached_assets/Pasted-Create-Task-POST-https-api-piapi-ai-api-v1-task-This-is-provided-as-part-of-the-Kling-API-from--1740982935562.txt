@@ -1,0 +1,198 @@
+Create Task
+POST
+https://api.piapi.ai/api/v1/task
+This is provided as part of the Kling API from PiAPI.
+This service allows you access to APIs for the most advanced video generation model - Kuaishou's KlingAI.
+You can create Text-to-video, Image-to-video, Extend video, Lipsync task and Effects task through this endpoint.
+
+INFO
+Text-to-video vs Image-to-video
+1.
+If the parameter image_url is left null then the task would be a text-to-video task; if filled out, then the task would be an image-to-video task.
+
+About v1.5 and v1.6
+The V1.5 model through the API currently has all the features and constraints as per klingai.com
+
+Video Lengths
+For the video lengths (5s vs 10s) of the API-generated-videos for each model (1.0 1.5 and 1.6) and modes (std vs pro) combination, please refer to what is allowed on klingai.com; the API currently aligns with the website.
+
+Request
+Header Params
+x-api-key
+string 
+required
+Your API Key used for request authorization
+
+Body Params application/json
+model
+enum<string> 
+required
+the model name
+
+Allowed value:
+kling
+task_type
+enum<string> 
+required
+type of the task. If you want to extend video,set to extend_video and include origin_task_id filed in input; if you want lipsync, use lip_sync and include origin_task_id in input
+
+Allowed values:
+video_generation
+extend_video
+lip_sync
+effects
+input
+object 
+required
+the input param of the kling task, depends on the task_type .refer to the example for more details.
+
+prompt
+string 
+optional
+<= 2500 characters
+negative_prompt
+string 
+optional
+<= 2500 characters
+cfg_scale
+string 
+optional
+float between 0 and 1, it is strongly recommended to use 0.5
+
+duration
+enum<integer> 
+optional
+Allowed values:
+5
+10
+aspect_ratio
+enum<string> 
+optional
+only required in text-to-video task
+
+Allowed values:
+16:9
+9:16
+1:1
+camera_control
+object 
+optional
+mode
+enum<string> 
+optional
+Allowed values:
+std
+pro
+version
+enum<string> 
+optional
+the model version
+
+Allowed values:
+1.0
+1.5
+1.6
+image_url
+string 
+optional
+Only required in image-to-video task. Initial frame of the video.No larger than 10MB, and each side must be greater than 300 pixels.
+
+image_tail_url
+string 
+optional
+End frame of the video. No larger than 10MB, and each side must be greater than 300 pixels.Need to be used with image_url.
+
+origin_task_id
+string 
+optional
+The task_id of the video to extend or lip_sync.
+
+tts_text
+string 
+optional
+The text that you want to lipsync in the video, used in lip_sync task only; will be ignored if local_dubbing_url is set
+
+tts_speed
+number 
+optional
+The speed of the lip_sync speech, used in lip_sync task with valid tts_textonly.
+
+>= 0.8
+<= 2
+Default:
+1
+tts_timbre
+string 
+optional
+The voice that you want to use in lip_sync task with valid ttx_text, the full voice name list and demo list here: https://klingai.com/api/lip/sync/ttsList?type=
+
+local_dubbing_url
+string <uri>
+optional
+Use your audio file for lip_sync through this parameter. All tts related param will be ignored if this is set. Audio format:mp3``wav``flac``ogg, should be less than 20 MB and shorter than 60 seconds. After the audio is submitted, we will trim it to the exact length of the original video.
+
+Example:
+https://example.com/hello.mp3
+motion_brush
+object (motion brush) 
+optional
+It's highly recommended that you read our example doc before acutally use motion brush
+
+effect
+enum<string> 
+optional
+your choice of kling effect, see Kling Effects
+
+Allowed values:
+squish
+expansion
+config
+object 
+optional
+webhook_config
+object 
+optional
+service_mode
+enum<string> 
+optional
+This field allows for more flexible switching between HYA and PAYG.
+
+public->Pay As You Go(PAYG)
+
+private->Host Your Account(HYA)
+
+Allowed values:
+public
+private
+Example
+{
+  "model": "kling",
+  "task_type": "video_generation",
+  "input": {
+    "prompt": "White egrets fly over the vast paddy fields",
+    "negative_prompt": "",
+    "cfg_scale": 0.5,
+    "duration": 5,
+    "aspect_ratio": "1:1",
+    "camera_control": {
+      "type": "simple",
+      "config": {
+        "horizontal": 0,
+        "vertical": 0,
+        "pan": -10,
+        "tilt": 0,
+        "roll": 0,
+        "zoom": 0
+      }
+    },
+    "mode": "std"
+  },
+  "config": {
+    "service_mode": "",
+    "webhook_config": {
+      "endpoint": "",
+      "secret": ""
+    }
+  }
+}
+Request samples

@@ -1,0 +1,109 @@
+Song API Task Creation Examples(Suno and Udio)
+This document provides examples and descriptions for tasks supported by the Song API. Below are the available modes and configurations for the music-u and music-s models.
+
+Music-u (Udio API)
+Currently, the music-u model supports only the generate_music task. Below are the task examples for different use cases:
+
+Request Body Example of Udio Simple Prompt
+This mode generates music based on a textual description prompt. It is similar to Suno's description mode.
+
+{
+    "model": "music-u",
+    "task_type": "generate_music",
+    "input": {
+        "gpt_description_prompt": "night breeze, piano",
+        "negative_tags": "",
+        "lyrics_type": "generate",
+        "seed": -1
+    },
+    "config": {
+        "service_mode": "public",
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
+Request Body Example of Udio Instrumental
+This mode generates instrumental music.
+
+{
+    "model": "music-u",
+    "task_type": "generate_music",
+    "input": {
+        "gpt_description_prompt": "night breeze",
+        "negative_tags": "",
+        "lyrics_type": "instrumental",
+        "seed": -1
+
+    },
+    "config": {
+        "service_mode": "public",
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
+Request Body Example of Udio Full Lyrics
+This mode generates music using user-provided lyrics.
+
+{
+    "model": "music-u",
+    "task_type": "generate_music",
+    "input": {
+        "prompt": "[Verse]\nIn the gentle evening air,\nWhispers dance without a care.\nStars ignite our dreams above,\nWrapped in warmth, we find our love.\n[Chorus]\n",
+        "negative_tags": "",
+        "lyrics_type": "user",
+        "seed": -1
+    },
+    "config": {
+        "service_mode": "public",
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
+Music-s (Suno)
+The Music-s model is in testing phase thus it has following restrictions:
+
+Only model version v4 is supported.
+
+Request Body Example of Description Mode
+This mode generates music based on a descriptive text prompt.
+
+{
+    "model": "music-s",
+    "task_type": "generate_music",
+    "input": {
+        "gpt_description_prompt": "night breeze",
+        "make_instrumental": false
+    },
+    "config": {
+        "service_mode": "public",
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }
+}
+Request Body Example of Custom Mode
+This mode generates music with user-provided details such as title, lyrics, and tags.
+
+{
+    "model": "music-s",
+    "task_type": "generate_music_custom",
+    "input": {
+        "title": "night breeze",
+        "prompt": "[Verse]\nIn the gentle evening air,\nWhispers dance without a care.\nStars ignite our dreams above,\nWrapped in warmth, we find our love.\n[Chorus]\n",
+        "tags": "exotica, cello",
+        "negative_tags": ""
+    },
+    "config": {
+        "service_mode": "public",
+        "webhook_config": {
+            "endpoint": "",
+            "secret": ""
+        }
+    }

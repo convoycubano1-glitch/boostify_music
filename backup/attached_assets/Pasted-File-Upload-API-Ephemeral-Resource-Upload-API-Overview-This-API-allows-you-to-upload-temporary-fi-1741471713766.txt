@@ -1,0 +1,134 @@
+File Upload API
+Ephemeral Resource Upload API
+Overview
+This API allows you to upload temporary files that will be automatically deleted after 24 hours. This API is Free of charge for Creator/Pro Plan. If you are on Free plan, you can not use it.
+
+Base URL
+https://upload.theapi.app
+Authentication
+Authentication is required via API key
+
+Must be on the Creator plan or higher
+
+Add your API key to the request headers as x-api-key
+
+Endpoint: Upload Temporary File
+Upload a file that will be automatically deleted after 24 hours.
+
+HTTP Request
+POST /api/ephemeral_resource
+
+Headers
+Header	Value	Description
+Content-Type	application/json	Request body format
+x-api-key	YOUR_API_KEY	Your API authentication key
+Request Body Parameters
+Parameter	Type	Required	Description
+file_name	string	Yes	Name of the file with extension (max 128 characters)
+file_data	string	Yes	Base64 encoded file data. Can include data URI if it matches the file's content type (max 10MB)
+Supported File Extensions
+The following file extensions are supported (case-insensitive):
+
+1.
+jpg
+
+2.
+jpeg
+
+3.
+png
+
+4.
+webp
+
+5.
+mp4
+
+6.
+wav
+
+7.
+mp3
+
+File Name Requirements
+Must not be empty
+
+Must include one of the supported extensions
+
+Maximum length: 128 characters
+
+Extensions are case-insensitive
+
+File Data Requirements
+Must be provided as a base64 string
+
+Maximum size: 10MB
+
+Optional data URI is supported
+
+If data URI is included, its content-type must match the file extension's content-type
+
+Example Request
+curl --location 'https://upload.theapi.app/api/ephemeral_resource' \
+--header 'x-api-key: YOUR_API_KEY' \
+--header 'Content-Type: application/json' \
+--data '{
+    "file_name": "hello.png",
+    "file_data": "base64_encoded_data_here"
+}'
+Success Response
+A successful request will return a 200 status code with the following response structure:
+
+{
+  "code": 200,
+  "data": {
+    "url": "https://example.com/example.png"
+  },
+  "message": "success"
+}
+Error Responses
+Invalid Request (400)
+Returned when the request parameters are invalid (e.g., unsupported file type, file too large).
+
+{
+  "code": 400,
+  "message": "Invalid request parameters"
+}
+Insufficient Permissions (403)
+Returned when the user's plan level is insufficient (requires Creator plan or higher).
+
+{
+  "code": 403,
+  "message": "Insufficient plan level"
+}
+Important Notes
+1.
+Uploaded files are automatically deleted after 24 hours
+
+2.
+The service requires a Creator plan or higher
+
+3.
+The file_data field can include a data URI, but if included, its content-type must match the file extension's expected content-type
+
+4.
+File names are validated for supported extensions in a case-insensitive manner
+
+Additional Examples
+Example with JPG file
+curl --location 'https://upload.theapi.app/api/ephemeral_resource' \
+--header 'x-api-key: YOUR_API_KEY' \
+--header 'Content-Type: application/json' \
+--data '{
+    "file_name": "photo.jpg",
+    "file_data": "base64_encoded_data_here"
+}'
+Example with MP3 file
+curl --location 'https://upload.theapi.app/api/ephemeral_resource' \
+--header 'x-api-key: YOUR_API_KEY' \
+--header 'Content-Type: application/json' \
+--data '{
+    "file_name": "song.mp3",
+    "file_data": "base64_encoded_data_here"
+}'
+Last modified: 2 months ago

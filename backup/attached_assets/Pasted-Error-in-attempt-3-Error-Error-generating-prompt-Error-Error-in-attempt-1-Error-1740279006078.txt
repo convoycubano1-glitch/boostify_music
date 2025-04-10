@@ -1,0 +1,73 @@
+Error in attempt 3: 
+Error {}
+
+Error generating prompt: 
+Error {}
+
+Error in attempt 1: 
+Error {}
+
+Error in attempt 2: 
+Error {}
+
+Error in attempt 3: 
+Error {}
+
+Error generating prompt: 
+Error {}
+
+Error in attempt 1: 
+Error {}
+
+Error in attempt 2: 
+Error {}
+
+Error in attempt 3: 
+Error {}
+
+Error generating prompt: 
+Error {}
+
+Error in attempt 1: 
+Error {}
+
+Error in attempt 2: 
+Error {}
+
+Error in attempt 3: 
+Error {}
+
+Error generating prompt: 
+Error {}
+
+Error in attempt 1: 
+Error {}
+
+Error in attempt 2: 
+Error {}
+
+Error in attempt 3: 
+Error {}
+
+Error generating prompt: 
+Error {}
+
+Error in attempt 1: 
+Error {}
+message: "Invalid API response format"
+stack: "Error: Invalid API response format↵ at generateVideoPromptWithRetry (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/openrouter.ts:183:15)↵ at async generatePromptForSegment (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/music-video/music-video-ai.tsx:870:14)↵ at async generatePromptsForSegments (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/music-video/music-video-ai.tsx:905:29)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error in attempt 2: 
+Error {}
+message: "Invalid API response format"
+stack: "Error: Invalid API response format↵ at generateVideoPromptWithRetry (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/openrouter.ts:183:15)↵ at async generatePromptForSegment (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/music-video/music-video-ai.tsx:870:14)↵ at async generatePromptsForSegments (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/music-video/music-video-ai.tsx:905:29)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object

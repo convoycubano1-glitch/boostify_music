@@ -1,0 +1,31 @@
+api.kling.ai/v1/images/generations:1 
+            
+            
+           Failed to load resource: net::ERR_NAME_NOT_RESOLVEDEntender este errorAI
+image-generator:1 Access to XMLHttpRequest at 'https://api.freepik.com/v1/images/generate' from origin 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.Entender este errorAI
+multi-platform-generator.ts:125 Error generating image with Freepik: AxiosErrorcode: "ERR_NETWORK"config: {transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}message: "Network Error"name: "AxiosError"request: XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}stack: "AxiosError: Network Error\n    at XMLHttpRequest.handleError (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:1596:14)\n    at Axios.request (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:2124:41)\n    at async generateWithFreepik (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/lib/api/multi-platform-generator.ts:46:22)\n    at async onImageSubmit (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/pages/image-generator.tsx:96:22)\n    at async https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NR6CU6E4.js?v=2cb1d82a:1675:9"[[Prototype]]: Error
+generateWithFreepik @ multi-platform-generator.ts:125Entender este errorAI
+api.freepik.com/v1/images/generate:1 
+            
+            
+           Failed to load resource: net::ERR_FAILEDEntender este errorAI
+multi-platform-generator.ts:232 Error generating video with Luma: AxiosErrorcode: "ERR_NETWORK"config: {transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}message: "Network Error"name: "AxiosError"request: XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}stack: "AxiosError: Network Error\n    at XMLHttpRequest.handleError (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:1596:14)\n    at Axios.request (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:2124:41)\n    at async generateVideoWithLuma (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/lib/api/multi-platform-generator.ts:127:22)\n    at async onVideoSubmit (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/pages/image-generator.tsx:128:22)\n    at async https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NR6CU6E4.js?v=2cb1d82a:1675:9"[[Prototype]]: Error
+generateVideoWithLuma @ multi-platform-generator.ts:232Entender este errorAI
+api.luma.ai/v1/videos/generate:1 
+            
+            
+           Failed to load resource: net::ERR_NAME_NOT_RESOLVEDEntender este errorAI
+multi-platform-generator.ts:284 Error generating video with Kling: AxiosErrorcode: "ERR_NETWORK"config: {transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}message: "Network Error"name: "AxiosError"request: XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}stack: "AxiosError: Network Error\n    at XMLHttpRequest.handleError (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:1596:14)\n    at Axios.request (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=2cb1d82a:2124:41)\n    at async generateVideoWithKling (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/lib/api/multi-platform-generator.ts:167:22)\n    at async onVideoSubmit (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/src/pages/image-generator.tsx:128:22)\n    at async https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NR6CU6E4.js?v=2cb1d82a:1675:9"[[Prototype]]: Error
+generateVideoWithKling @ multi-platform-generator.ts:284Entender este errorAI
+api.kling.ai/v1/videos/generations:1 
+            
+            
+           Failed to load resource: net::ERR_NAME_NOT_RESOLVEDEntender este errorAI
+multi-platform-generator.ts:78 Error generating image with Fal.ai: AxiosError
+generateWithFal @ multi-platform-generator.ts:78Entender este errorAI
+image-generator.tsx:122 Error generating image: AxiosError
+onImageSubmit @ image-generator.tsx:122Entender este errorAI
+api.fal.ai/v1/p/stable-diffusion-xl:1 
+            
+            
+           Failed to load resource: net::ERR_NAME_NOT_RESOLVED

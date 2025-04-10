@@ -1,0 +1,159 @@
+Get Task
+GET
+https://api.piapi.ai/api/v1/task/{task_id}
+This endpoint from PiAPI's Suno API retrieves the output of a Song generation task.
+
+Request
+Path Params
+task_id
+string 
+required
+Header Params
+x-api-key
+string 
+required
+Your API Key used for request authorization
+
+Request samples
+var myHeaders = new Headers();
+myHeaders.append("x-api-key", "");
+
+var requestOptions = {
+   method: 'GET',
+   headers: myHeaders,
+   redirect: 'follow'
+};
+
+fetch("https://api.piapi.ai/api/v1/task/", requestOptions)
+   .then(response => response.text())
+   .then(result => console.log(result))
+   .catch(error => console.log('error', error));
+Responses
+HTTP Code: 200
+Content Type : JSONapplication/json
+Data Schema
+code
+integer 
+required
+data
+object 
+required
+task_id
+string 
+required
+model
+string 
+required
+task_type
+string 
+required
+status
+enum<string> 
+required
+Hover on the "Completed" option and you coult see the explaintion of all status: completed/processing/pending/failed/staged
+
+Allowed values:
+Completed
+Processing
+Pending
+Failed
+Staged
+input
+object 
+required
+output
+object 
+required
+meta
+object 
+required
+detail
+null 
+required
+logs
+array [object] 
+required
+error
+object 
+required
+message
+string 
+required
+If you get non-null error message, here are some steps you chould follow:
+
+Check our common error message
+
+Retry for several times
+
+If you have retried for more than 3 times and still not work, file a ticket on Discord and our support will be with you soon.
+
+Example
+{
+  "code": 200,
+  "data": {
+    "task_id": "7088bf9d-6edb-4fab-b1fd-83afc64dde91",
+    "model": "suno",
+    "task_type": "generate_music",
+    "status": "completed",
+    "config": {
+      "service_mode": "public",
+      "webhook_config": {
+        "endpoint": "",
+        "secret": ""
+      }
+    },
+    "input": {},
+    "output": {
+      "clips": {
+        "7d7231fa-5015-4f71-8d0b-fd446f1dd446": {},
+        "a43c955a-3474-47f3-a550-57bf7c395c48": {
+          "id": "",
+          "video_url": "https://xxx.mp4",
+          "audio_url": "https://xxx.mp3",
+          "image_url": "https://xxx.jpeg",
+          "image_large_url": "https://xxx.jpeg",
+          "is_video_pending": false,
+          "major_model_version": "v3",
+          "model_name": "chirp-v3",
+          "metadata": {
+            "tags": "",
+            "prompt": "",
+            "gpt_description_prompt": "",
+            "audio_prompt_id": "",
+            "history": null,
+            "concat_history": null,
+            "type": "gen",
+            "duration": 102,
+            "refund_credits": false,
+            "stream": true,
+            "error_type": "",
+            "error_message": ""
+          },
+          "is_liked": false,
+          "user_id": "",
+          "display_name": "",
+          "handle": "",
+          "is_handle_updated": false,
+          "is_trashed": false,
+          "reaction": null,
+          "created_at": "",
+          "status": "complete",
+          "title": "",
+          "play_count": 0,
+          "upvote_count": 0,
+          "is_public": false
+        }
+      }
+    },
+    "meta": {},
+    "detail": null,
+    "logs": [],
+    "error": {
+      "code": 0,
+      "raw_message": "",
+      "message": "",
+      "detail": null
+    }
+  },
+  "message": "success"
+}

@@ -1,0 +1,115 @@
+Overview
+The Video Upscale service uses Qubico/video-toolkit model to enhance video resolution. This service automatically scales up video content while maintaining quality and visual fidelity.
+
+Service Limitations
+Video Requirements
+Resolution: Maximum 720p (1280×720)
+
+Frame count: Between 10 and 240 frames
+
+File size: Maximum 10MB
+
+Format: MP4 only
+
+Scale factor: Currently only supports 2x upscaling (doubles both width and height)
+
+Pricing
+$0.0003 per frame processed
+
+Notes and Best Practices
+1.
+Always verify your video meets the requirements before submission:
+
+Resolution below 720p
+
+Frame count between 10-240
+
+File size under 10MB
+
+MP4 format
+
+2.
+Cost calculation example:
+
+For a 60-frame video: 60 frames × 0.0003=0.018 per video
+
+3.
+The service currently only supports 2x upscaling, which means:
+
+A 480p video (854×480) will be upscaled to 960p (1708×960)
+
+A 360p video (640×360) will be upscaled to 720p (1280×720)
+
+A 720p video (1280×720) will be upscaled to 1440p (2560x1440)
+
+Request
+Header Params
+x-api-key
+string 
+required
+your api key
+
+Body Params application/json
+model
+enum<string> 
+required
+Model identifier
+
+Allowed value:
+Qubico/video-toolkit
+task_type
+enum<string> 
+required
+Type of task to perform
+
+Allowed value:
+upscale
+input
+object 
+required
+video
+string 
+required
+Video URL or base64 string (MP4 format only)
+
+config
+object 
+optional
+webhook_config
+object 
+optional
+Example
+Empty Data
+Request samples
+var axios = require('axios');
+var data = JSON.stringify({
+   "model": "Qubico/video-toolkit",
+   "task_type": "upscale",
+   "input": {
+      "video": "string"
+   },
+   "config": {
+      "webhook_config": {
+         "endpoint": "string",
+         "secret": "string"
+      }
+   }
+});
+
+var config = {
+   method: 'post',
+   url: 'https://api.piapi.ai/api/v1/task',
+   headers: { 
+      'x-api-key': '', 
+      'Content-Type': 'application/json'
+   },
+   data : data
+};
+
+axios(config)
+.then(function (response) {
+   console.log(JSON.stringify(response.data));
+})
+.catch(function (error) {
+   console.log(error);
+});
