@@ -1,5 +1,5 @@
-// Archivo principal para iniciar tanto el servidor Express como Vite
-console.log('Iniciando aplicación con ambos servidores (Express: 5000, Vite: 5173)...');
+// Archivo principal para iniciar el servidor Express
+console.log('Iniciando aplicación con servidor Express...');
 
-// Importar y ejecutar el script que inicia ambos servidores
-import './vite-express-starter.js';
+// Importar y ejecutar el servidor Express que sirve una aplicación React simplificada
+import './server-express.js';
