@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App"; // Usamos la versión completa de App para tener acceso a todas las rutas
+import App from "./App-simple"; // Usamos la versión simplificada de App para solucionar problemas
 import "./index.css";
 import { setupHMRErrorHandler } from "./utils/hmr-error-handler";
 
