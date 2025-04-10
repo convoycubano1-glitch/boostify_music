@@ -1,5 +1,5 @@
-// Archivo principal para iniciar el servidor Express
-console.log('Iniciando aplicación con servidor Express...');
+// Archivo principal para iniciar el servidor múltiple
+console.log('Iniciando servidor múltiple con redirección automática...');
 
-// Importar y ejecutar el servidor Express que sirve una aplicación React simplificada
-import './server-express.js';
+// Importar y ejecutar el servidor múltiple que inicia Vite y Express
+import './multi-server.js';
