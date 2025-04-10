@@ -1,14 +1,12 @@
 
-#!/usr/bin/env node
-
 /**
  * Production build script
  */
 
-console.log('🚀 Starting production build process...');
+import { execSync } from 'child_process';
+import fs from 'fs';
 
-const { execSync } = require('child_process');
-const fs = require('fs');
+console.log('🚀 Starting production build process...');
 
 try {
   // Clean dist directory
