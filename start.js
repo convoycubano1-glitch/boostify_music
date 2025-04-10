@@ -1,5 +1,5 @@
-// Archivo principal para iniciar el servidor en modo producción
-console.log('Iniciando servidor en modo producción...');
+// Archivo principal para iniciar el servidor simplificado
+console.log('Iniciando servidor Boostify Music...');
 
-// Importar y ejecutar el servidor de producción
-import './production-server.js';
+// Importar y ejecutar el servidor que muestra la landing page
+import './multi-server.js';
