@@ -35,34 +35,13 @@ clientBuild.on('close', (code) => {
   if (code === 0) {
     console.log('✅ Construcción del cliente completada con éxito');
     
-    // Construir el servidor
-    console.log('🏗️ Construyendo el servidor...');
-    const serverBuild = exec('tsc --project tsconfig.server.json');
+    // Copiar archivos estáticos a la carpeta dist
+    console.log('📋 Copiando archivos estáticos...');
     
-    serverBuild.stdout.on('data', (data) => {
-      console.log(`Servidor: ${data}`);
-    });
+    // Copiar client/dist a dist/client
+    copyFolder(path.join(__dirname, 'client', 'dist'), path.join(__dirname, 'dist', 'client'));
     
-    serverBuild.stderr.on('data', (data) => {
-      console.error(`Error Servidor: ${data}`);
-    });
-    
-    serverBuild.on('close', (serverCode) => {
-      if (serverCode === 0) {
-        console.log('✅ Construcción del servidor completada con éxito');
-        
-        // Copiar archivos estáticos a la carpeta dist
-        console.log('📋 Copiando archivos estáticos...');
-        
-        // Copiar client/dist a dist/client
-        copyFolder(path.join(__dirname, 'client', 'dist'), path.join(__dirname, 'dist', 'client'));
-        
-        console.log('🚀 Construcción para producción completada con éxito');
-      } else {
-        console.error(`❌ Error al construir el servidor (código ${serverCode})`);
-        process.exit(1);
-      }
-    });
+    console.log('🚀 Construcción para producción completada con éxito');
   } else {
     console.error(`❌ Error al construir el cliente (código ${code})`);
     process.exit(1);
