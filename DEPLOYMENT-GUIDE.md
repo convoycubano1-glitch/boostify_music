@@ -18,21 +18,26 @@ Esta guía explica cómo desplegar la aplicación en diferentes entornos.
 
 2. Para desplegar la aplicación, simplemente haz clic en el botón "Deploy" en la interfaz de Replit.
 
-3. Replit configurará automáticamente tu aplicación para producción y la hará accesible a través de una URL pública.
+3. Si prefieres iniciar el despliegue manualmente, ejecuta el siguiente comando:
+   ```
+   node deploy-simple.cjs
+   ```
+
+4. Replit configurará automáticamente tu aplicación para producción y la hará accesible a través de una URL pública. El servidor escuchará en el puerto 3333.
 
 ## Despliegue Manual (Entorno de Producción)
 
 1. Construye la aplicación para producción:
    ```
-   npm run build
+   node build-for-deploy.cjs
    ```
 
 2. Ejecuta el servidor de producción:
    ```
-   node production.js
+   node deploy-start.cjs
    ```
 
-3. La aplicación estará disponible en `http://localhost:3000` (o el puerto configurado en las variables de entorno).
+3. La aplicación estará disponible en `http://localhost:3333` (o el puerto configurado en las variables de entorno).
 
 ## Variables de Entorno
 
@@ -45,9 +50,16 @@ Asegúrate de configurar las siguientes variables de entorno para el correcto fu
 
 ## Estructura de Archivos Importantes
 
+### Desarrollo
 - `direct-vite.js`: Script para ejecutar el servidor de desarrollo Vite
 - `start.js`: Script principal que inicia la aplicación en desarrollo
-- `production.js`: Script para construir y servir la aplicación en producción
+
+### Despliegue
+- `build-for-deploy.cjs`: Script CommonJS para construir la aplicación para producción
+- `deploy-start.cjs`: Script CommonJS para iniciar el servidor de producción
+- `deploy-simple.cjs`: Script CommonJS para ejecutar construcción y despliegue en un solo paso
+- `server-prod.js`: Servidor de producción con optimizaciones (compresión, caché)
+- `production.js`: Script alternativo para construir y servir la aplicación
 
 ## Solución de Problemas
 
