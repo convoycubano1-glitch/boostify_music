@@ -143,7 +143,7 @@ export function Header() {
     { name: "Cookies", href: "/cookies", icon: FileText },
   ];
 
-  const isAdmin = true; // Siempre mostrando la opción de admin
+  const isAdmin = user?.email === 'convoycubano@gmail.com';
 
   return (
     <>
