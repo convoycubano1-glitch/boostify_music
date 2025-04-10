@@ -28,13 +28,27 @@ export function setupHMRErrorHandler(): void {
   
   // Capturar errores no manejados en la ventana
   window.addEventListener('unhandledrejection', function(event) {
+    // Loguear detalles del error para diagnóstico
+    console.debug('[Diagnostico] Error no manejado:', event.reason);
+    
     // Suprime errores de Vite HMR
     if (event.reason && 
         (event.reason.message?.includes('user aborted') || 
-         event.reason.name === 'AbortError') && 
-        event.reason.stack?.includes('vite')) {
+         event.reason.name === 'AbortError' ||
+         (typeof event.reason === 'object' && event.reason.type === 'unhandledrejection')) &&
+        (event.reason.stack?.includes('vite') || event.reason.stack?.includes('hmr'))) {
       console.debug('[HMR] Suprimido error no manejado de Vite HMR:', event.reason.message);
       event.preventDefault(); // Prevenir que el error se propague
+      return;
+    }
+    
+    // Suprime errores de conexión a servicios externos que podrían no estar disponibles
+    if (event.reason && 
+        (event.reason.message?.includes('NetworkError') || 
+         event.reason.message?.includes('Failed to fetch') ||
+         event.reason.message?.includes('Network request failed'))) {
+      console.warn('[Network] Error de red suprimido:', event.reason.message);
+      event.preventDefault();
     }
   });
   
