@@ -1,21 +1,21 @@
 // Archivo principal para desarrollo
-console.log('Iniciando entorno de desarrollo...');
+console.log('Iniciando cliente Vite directamente...');
 
-// Importar y ejecutar scripts de desarrollo
+// Importar y ejecutar solo el cliente Vite
 import { exec } from 'child_process';
 
-// Ejecutar npm run dev
-console.log('⚡ Ejecutando npm run dev...');
-const dev = exec('npm run dev');
+// Ejecutar solo el cliente Vite
+console.log('⚡ Ejecutando cliente Vite en el puerto 5000...');
+const vite = exec('cd client && vite --host 0.0.0.0 --port 5000 --strictPort false');
 
-dev.stdout.on('data', (data) => {
-  console.log(data);
+vite.stdout.on('data', (data) => {
+  console.log(`Vite: ${data}`);
 });
 
-dev.stderr.on('data', (data) => {
-  console.error(data);
+vite.stderr.on('data', (data) => {
+  console.error(`Vite Error: ${data}`);
 });
 
-dev.on('close', (code) => {
-  console.log(`Proceso terminado con código ${code}`);
+vite.on('close', (code) => {
+  console.log(`Proceso de Vite terminado con código ${code}`);
 });
