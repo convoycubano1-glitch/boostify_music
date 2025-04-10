@@ -1,5 +1,5 @@
-// Archivo principal para iniciar el servidor de producción
-console.log('Iniciando servidor en modo producción...');
+// Archivo principal para iniciar el servidor múltiple
+console.log('Iniciando servidor múltiple con redirección automática...');
 
-// Importar y ejecutar el servidor de producción que sirve los archivos compilados
-import './production-server.js';
+// Importar y ejecutar el servidor múltiple que inicia Vite y Express
+import './multi-server.js';
