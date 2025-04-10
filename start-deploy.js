@@ -1,3 +1,4 @@
+
 /**
  * Script optimizado para despliegue en Replit
  * Este script soluciona:
@@ -7,13 +8,19 @@
  * 
  * COMANDO DE DESPLIEGUE RECOMENDADO:
  * node start-deploy.js
+ *
+ * NOTA: Este archivo usa sintaxis de módulos ES (import/export)
  */
 
-const express = require('express');
-const path = require('path');
-const compression = require('compression');
-const { exec } = require('child_process');
-const fs = require('fs');
+import express from 'express';
+import path from 'path';
+import compression from 'compression';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+// Set up __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // IMPORTANTE: Puerto fijo 3333 para Replit
 const PORT = 3333;
