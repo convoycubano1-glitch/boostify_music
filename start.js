@@ -1,6 +1,5 @@
-// Script de inicio simplificado para la aplicación
-// Este archivo carga el servidor básico
-
-import './basic-server.js';
-
+// Archivo principal para iniciar el servidor básico
 console.log('Iniciando aplicación con servidor básico...');
+
+// Importar y ejecutar directamente basic-server.js
+import './basic-server.js';
