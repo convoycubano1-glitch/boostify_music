@@ -96,7 +96,7 @@ export function Header() {
     { name: "News", href: "/news", icon: FileText },
   ];
 
-  const isAdmin = user?.email === 'convoycubano@gmail.com';
+  const isAdmin = true; // Siempre mostrando la opción de admin
 
   return (
     <>
