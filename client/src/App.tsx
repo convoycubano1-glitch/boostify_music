@@ -86,7 +86,7 @@ import SubscriptionCancelledPage from "./pages/subscription-cancelled";
 import MusicVideoSuccess from "./pages/music-video-success";
 import MusicVideoCancelled from "./pages/music-video-cancelled";
 import SubscriptionExamplePage from "./pages/subscription-example";
-import ProfessionalEditorPage from "./pages/professional-editor";
+import ProfessionalEditorPage from "./pages/professional-editor-fixed";
 import LayerFilterDemoPage from "./pages/layer-filter-demo";
 import AnimatedWorkflowPage from "./pages/animated-workflow";
 import TokenizationPage from "./pages/tokenization";
@@ -421,10 +421,8 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <SubscriptionProvider>
-              <EditorProvider>
-                <Router />
-                <Toaster />
-              </EditorProvider>
+              <Router />
+              <Toaster />
             </SubscriptionProvider>
           </AuthProvider>
         </QueryClientProvider>
