@@ -1,0 +1,41 @@
+Error fetching requests: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Error fetching requests: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Error fetching requests: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Error loading directors: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Permiso denegado para acceder a la colección 'directors'
+Error loading directors: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Permiso denegado para acceder a la colección 'directors'
+Error loading directors: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Error loading directors: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Error loading directors: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+
+Permiso denegado para acceder a la colección 'directors'
+Error loading directors: 
+_FirebaseError {code: "permission-denied", customData: undefined, name: "FirebaseError", toString: ƒ}
+code: "permission-denied"
+customData: undefined
+name: "FirebaseError"
+toString: ƒ () => `${this.name}: [code=${this.code}]: ${this.message}`
+column: 10
+line: 475
+message: "Missing or insufficient permissions."
+sourceURL: "https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5A7QZLK5.js"
+stack: "_FirebaseError@https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5A7QZLK5.js:475:10↵FirestoreError@https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_firestore.js:2766:10↵__PRIVATE_fromRpcStatus@https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_firestore.js:6934:32↵__PRIVATE_fromWatchChange@https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_firestore.js:6935:6↵onNext@https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_firestore.js:12578:40↵@https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_firestore.js:15571:69↵@https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev:5000/@fs/home/runner/workspace/node_modules/.vite/deps/firebase_firestore.js:15602:52"
+[[Prototype]]: Object
+
+Permiso denegado para acceder a la colección 'directors'

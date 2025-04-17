@@ -1,21 +1,19 @@
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
-import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Import the service account credentials from the JSON file
-const serviceAccountPath = join(__dirname, '..', 'attached_assets', 'artist-boost-firebase-adminsdk-fbsvc-cb627d3f73.json');
-const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
-
+// Initialize Firebase Admin without service account (for development)
+console.log("Initializing Firebase Admin in development mode (limited functionality)");
 const app = initializeApp({
-  credential: cert(serviceAccount),
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+  // No credential provided, will use application default credentials or run in limited mode
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "artist-boost",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "artist-boost.firebasestorage.app"
 });
 
 export const db = getFirestore(app);
