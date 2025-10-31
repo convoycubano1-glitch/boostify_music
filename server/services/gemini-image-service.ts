@@ -133,3 +133,118 @@ export async function generateBatchImages(
   
   return results;
 }
+
+/**
+ * Genera una imagen adaptando el rostro de una imagen de referencia
+ * Usa image-to-image editing de Gemini para mantener consistencia facial
+ */
+export async function generateImageWithFaceReference(
+  prompt: string,
+  referenceImageBase64: string
+): Promise<ImageGenerationResult> {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY no está configurada');
+    }
+
+    console.log('Generando imagen con referencia facial...');
+
+    // Crear el prompt combinado para mantener la cara de la referencia
+    const combinedPrompt = `${prompt}
+
+IMPORTANT: Maintain the exact same face, facial features, and person from the reference image. Keep their identity, facial structure, skin tone, and distinctive features identical.`;
+
+    // Usar Gemini con imagen de referencia para edición
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash-preview-image-generation",
+      contents: [
+        { 
+          role: "user", 
+          parts: [
+            {
+              inlineData: {
+                data: referenceImageBase64,
+                mimeType: "image/jpeg"
+              }
+            },
+            { text: combinedPrompt }
+          ] 
+        }
+      ],
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+      },
+    });
+
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('No se recibieron candidatos de la API');
+    }
+
+    const content = candidates[0].content;
+    if (!content || !content.parts) {
+      throw new Error('Contenido vacío en la respuesta');
+    }
+
+    // Buscar la parte de imagen en la respuesta
+    for (const part of content.parts) {
+      if (part.text) {
+        console.log('Texto de respuesta:', part.text);
+      } else if (part.inlineData && part.inlineData.data) {
+        const imageBase64 = part.inlineData.data;
+        console.log('Imagen con rostro adaptado generada exitosamente');
+        
+        return {
+          success: true,
+          imageBase64: imageBase64,
+          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`
+        };
+      }
+    }
+
+    throw new Error('No se encontró imagen en la respuesta');
+  } catch (error: any) {
+    console.error('Error generando imagen con referencia facial:', error);
+    return {
+      success: false,
+      error: error.message || 'Error desconocido al generar imagen con rostro'
+    };
+  }
+}
+
+/**
+ * Genera múltiples imágenes en lote con referencia facial
+ */
+export async function generateBatchImagesWithFaceReference(
+  scenes: CinematicScene[],
+  referenceImageBase64: string
+): Promise<Map<number, ImageGenerationResult>> {
+  const results = new Map<number, ImageGenerationResult>();
+  
+  for (const scene of scenes) {
+    console.log(`Generando imagen con rostro ${scene.id}/${scenes.length}...`);
+    
+    // Construir prompt cinematográfico
+    const cinematicPrompt = `
+Professional cinematic photography for a music video:
+
+Scene: ${scene.scene}
+Camera Setup: ${scene.camera}
+Lighting: ${scene.lighting}
+Visual Style: ${scene.style}
+Camera Movement: ${scene.movement}
+
+Create a high-quality, professional music video frame with cinematic composition.
+    `.trim();
+    
+    const result = await generateImageWithFaceReference(cinematicPrompt, referenceImageBase64);
+    results.set(scene.id, result);
+    
+    // Delay para evitar rate limiting
+    if (scenes.indexOf(scene) < scenes.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+  }
+  
+  return results;
+}

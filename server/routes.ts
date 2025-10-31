@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { createServer, type Server as HttpServer } from "http";
 import { setupAuth } from "./auth";
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
@@ -49,8 +49,7 @@ import geminiImageRouter from './routes/gemini-image'; // Import the Gemini imag
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
-import { Express, Server } from 'express';
-import apiProxySecure from './routes/api-proxy-secure';;
+import apiProxySecure from './routes/api-proxy-secure';
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -65,7 +64,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 // Export the configured server
-export function registerRoutes(app: Express): Server {
+export function registerRoutes(app: Express): HttpServer {
   // API Proxy seguro para producción
   app.use('/api/proxy', apiProxySecure);
   

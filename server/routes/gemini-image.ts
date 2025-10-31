@@ -98,4 +98,74 @@ router.post('/generate-batch', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Genera una imagen adaptando rostro de imagen de referencia
+ */
+router.post('/generate-with-face', async (req: Request, res: Response) => {
+  try {
+    const { prompt, referenceImageBase64 } = req.body;
+    
+    if (!prompt || !referenceImageBase64) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere prompt y referenceImageBase64'
+      });
+    }
+    
+    const { generateImageWithFaceReference } = await import('../services/gemini-image-service');
+    const result = await generateImageWithFaceReference(prompt, referenceImageBase64);
+    
+    return res.json(result);
+  } catch (error: any) {
+    console.error('Error en /generate-with-face:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno al generar imagen con rostro'
+    });
+  }
+});
+
+/**
+ * Genera múltiples imágenes en lote con referencia facial
+ */
+router.post('/generate-batch-with-face', async (req: Request, res: Response) => {
+  try {
+    const { scenes, referenceImageBase64 }: { scenes: CinematicScene[], referenceImageBase64: string } = req.body;
+    
+    if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere un array de escenas'
+      });
+    }
+    
+    if (!referenceImageBase64) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere una imagen de referencia'
+      });
+    }
+    
+    const { generateBatchImagesWithFaceReference } = await import('../services/gemini-image-service');
+    const results = await generateBatchImagesWithFaceReference(scenes, referenceImageBase64);
+    
+    // Convertir Map a objeto para JSON
+    const resultsObj: Record<number, any> = {};
+    results.forEach((value, key) => {
+      resultsObj[key] = value;
+    });
+    
+    return res.json({
+      success: true,
+      results: resultsObj
+    });
+  } catch (error: any) {
+    console.error('Error en /generate-batch-with-face:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno al generar imágenes con rostro'
+    });
+  }
+});
+
 export default router;

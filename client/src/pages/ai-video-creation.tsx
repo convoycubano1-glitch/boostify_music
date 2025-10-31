@@ -3,7 +3,7 @@
  * Interfaz principal para la creación de videos musicales con IA
  */
 import { useState, useEffect } from 'react';
-import { CinematicVideoWorkspace } from '../components/music-video/CinematicVideoWorkspace';
+import { MusicVideoWorkspaceComplete } from '../components/music-video/MusicVideoWorkspaceComplete';
 import { useToast } from "../hooks/use-toast";
 
 // Clip de ejemplo para demostración
@@ -102,9 +102,8 @@ export default function AIVideoCreationPage() {
           </div>
         </div>
       ) : (
-        <CinematicVideoWorkspace 
+        <MusicVideoWorkspaceComplete 
           projectName="Creador de Videos Musicales AI"
-          audioUrl="/assets/music-sample.mp3"
         />
       )}
     </div>
