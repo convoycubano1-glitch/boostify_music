@@ -979,29 +979,72 @@ export async function generateMusicVideoScript(lyrics: string, audioAnalysis?: a
         messages: [
           {
             role: "system",
-            content: `You are a professional music video director. Your task is to create a detailed script for a music video based on song lyrics.
+            content: `You are a professional music video director. Create a detailed cinematic script for a music video based on song lyrics.
 
-Return a JSON object with this EXACT structure:
-{
-  "videoTitle": "Title based on the song",
-  "concept": "Brief concept description",
-  "visualStyle": "Visual style description",
-  "segments": [
-    {
-      "timecode": "00:00 - 00:30",
-      "lyrics": "The lyrics for this segment",
-      "scene": "Detailed description of this scene",
-      "shotTypes": ["List of shot types used"],
-      "visualElements": ["Key visual elements"],
-      "transitions": "How to transition to next scene"
+Return a JSON array of scene objects. Each scene MUST follow this EXACT structure:
+
+[
+  {
+    "scene_id": 1,
+    "section": "Intro/Verse/Chorus/Bridge/Outro",
+    "title": "Scene title that captures the moment",
+    "camera": {
+      "type": "camera setup (e.g., 'handheld', 'drone', 'dolly')",
+      "lens": "lens specification (e.g., '35mm anamorphic', '50mm')",
+      "movement": "detailed camera movement description",
+      "framerate": "frame rate (e.g., '24fps', '48fps slow motion')",
+      "resolution": "resolution (e.g., '8K RAW', '6K')",
+      "stabilization": "stabilization notes"
+    },
+    "lighting": {
+      "source": "primary light source",
+      "temperature": "color temperature (e.g., '3100K warm', '5000K cool')",
+      "key_light": "key light description",
+      "fill_light": "fill light description",
+      "back_light": "back light description",
+      "atmosphere": "atmospheric effects (fog, haze, particles)"
+    },
+    "environment": {
+      "location": "specific location description",
+      "elements": ["array", "of", "environmental", "elements"],
+      "color_palette": ["array", "of", "colors"],
+      "texture": "texture and visual quality description"
+    },
+    "performance": {
+      "artist_name": "artist/character name",
+      "wardrobe": "costume description",
+      "action": "what the artist is doing",
+      "expression": "emotional expression and body language",
+      "symbolism": "symbolic meaning if any"
+    },
+    "sound": {
+      "ambience": "ambient sounds",
+      "music": "musical elements in this scene",
+      "voice": "key lyrics or dialogue from this scene"
+    },
+    "emotional_tone": {
+      "feeling": "primary emotion of the scene",
+      "tempo_visual": "visual tempo (slow, medium, fast)"
+    },
+    "transition": {
+      "in": "how this scene begins (fade in, cut, etc.)",
+      "out": "how this scene ends (fade out, cut to, etc.)"
+    },
+    "production_notes": {
+      "notes": "any additional production notes, effects, safety, etc."
     }
-  ]
-}
+  }
+]
 
-Divide the song into logical segments (intro, verses, chorus, bridge, outro).
-Create a coherent visual narrative that communicates the song's message.
-Be specific about visual details, camera movements, and transitions.
-Keep scene descriptions detailed but concise.`
+IMPORTANT GUIDELINES:
+- Create 8-12 scenes that cover the entire song structure
+- Divide logically: Intro, Verses, Chorus, Bridge, Outro
+- Be EXTREMELY specific and cinematic in all descriptions
+- Use professional cinematography terminology
+- Create a coherent visual narrative with strong symbolism
+- Each scene should sync with the lyrics and emotion
+- Include detailed camera, lighting, and production specs
+- Note: Reference images of the artist may be available for face adaptation during image generation`
           },
           {
             role: "user",
@@ -1105,18 +1148,54 @@ function generarGuionFallback(lyrics: string): string {
           const keywords = extraerPalabrasClave(segmentText);
           
           segments.push({
-            timecode,
-            lyrics: segmentText,
-            scene: `${type === 'chorus' ? 'Vibrant and energetic' : 'Intimate and emotional'} scene showing ${keywords.join(', ')} with ${type === 'chorus' ? 'dynamic camera movements' : 'static shots focusing on details'}.`,
-            shotTypes: type === 'chorus' 
-              ? ["Wide shot", "Tracking shot", "Crane shot"] 
-              : ["Close-up", "Medium shot", "Over-the-shoulder"],
-            visualElements: keywords.length > 0 
-              ? keywords.map(k => `${k} visual element`) 
-              : ["Atmospheric lighting", "Symbolic objects", "Character expressions"],
-            transitions: type === 'outro' 
-              ? "Fade to black" 
-              : (type === 'chorus' ? "Fast cuts" : "Smooth dissolve")
+            scene_id: segmentIndex + 1,
+            section: type.charAt(0).toUpperCase() + type.slice(1),
+            title: `${type.charAt(0).toUpperCase() + type.slice(1)} - ${keywords.slice(0, 3).join(', ') || 'Scene'}`,
+            camera: {
+              type: type === 'chorus' ? 'handheld' : 'dolly',
+              lens: type === 'chorus' ? '35mm' : '50mm',
+              movement: type === 'chorus' ? 'dynamic tracking following artist' : 'slow push in on artist',
+              framerate: '24fps',
+              resolution: '6K',
+              stabilization: type === 'chorus' ? 'handheld natural movement' : 'smooth stabilized'
+            },
+            lighting: {
+              source: 'natural daylight with artificial fill',
+              temperature: type === 'chorus' ? '5000K cool' : '3200K warm',
+              key_light: 'soft natural light from window',
+              fill_light: 'LED panel with diffusion',
+              back_light: 'rim light for separation',
+              atmosphere: 'subtle haze for depth'
+            },
+            environment: {
+              location: type === 'chorus' ? 'outdoor urban setting' : 'intimate interior space',
+              elements: keywords.length > 0 ? keywords : ['artistic set pieces', 'symbolic objects'],
+              color_palette: type === 'chorus' ? ['vibrant', 'saturated', 'energetic'] : ['muted', 'warm', 'intimate'],
+              texture: 'cinematic with slight film grain'
+            },
+            performance: {
+              artist_name: 'Artist',
+              wardrobe: 'contemporary styled outfit',
+              action: type === 'chorus' ? 'energetic performance, engaging camera' : 'emotive lip sync, subtle movements',
+              expression: type === 'chorus' ? 'confident and powerful' : 'vulnerable and emotional',
+              symbolism: `visual representation of ${keywords.slice(0, 2).join(' and ') || 'the lyrics'}`
+            },
+            sound: {
+              ambience: type === 'chorus' ? 'crowd energy, environmental sounds' : 'quiet atmospheric tones',
+              music: type === 'chorus' ? 'full instrumentation, energetic' : 'stripped back, emotional',
+              voice: segmentText.substring(0, 100)
+            },
+            emotional_tone: {
+              feeling: type === 'chorus' ? 'energetic and powerful' : 'intimate and reflective',
+              tempo_visual: type === 'chorus' ? 'fast' : 'slow'
+            },
+            transition: {
+              in: segmentIndex === 0 ? 'fade in from black' : 'cut from previous scene',
+              out: type === 'outro' ? 'fade to black' : (type === 'chorus' ? 'quick cut' : 'smooth dissolve')
+            },
+            production_notes: {
+              notes: `${type} section with ${type === 'chorus' ? 'high energy' : 'emotional depth'} visual treatment`
+            }
           });
           
           segmentIndex++;
@@ -1129,24 +1208,59 @@ function generarGuionFallback(lyrics: string): string {
   // Si no se crearon segmentos (posible error), crear al menos uno
   if (segments.length === 0) {
     segments.push({
-      timecode: "00:00 - 03:00",
-      lyrics: lyrics.substring(0, 200),
-      scene: "Artistic scene with performer in atmospheric setting with dynamic lighting changes.",
-      shotTypes: ["Medium shot", "Close-up", "Wide shot"],
-      visualElements: ["Atmospheric lighting", "Artist performance", "Visual metaphors"],
-      transitions: "Fade to black"
+      scene_id: 1,
+      section: "Full Song",
+      title: "Complete Music Video",
+      camera: {
+        type: 'handheld',
+        lens: '35mm',
+        movement: 'dynamic movement following artist',
+        framerate: '24fps',
+        resolution: '6K',
+        stabilization: 'natural handheld feel'
+      },
+      lighting: {
+        source: 'natural and artificial mixed',
+        temperature: '4000K neutral',
+        key_light: 'soft key from 45 degrees',
+        fill_light: 'bounce fill',
+        back_light: 'rim light for separation',
+        atmosphere: 'atmospheric haze'
+      },
+      environment: {
+        location: 'artistic performance space',
+        elements: ['symbolic set pieces', 'atmospheric props'],
+        color_palette: ['cinematic', 'vibrant', 'contrasted'],
+        texture: 'film grain aesthetic'
+      },
+      performance: {
+        artist_name: 'Artist',
+        wardrobe: 'artistic performance outfit',
+        action: 'dynamic performance throughout',
+        expression: 'emotional and engaging',
+        symbolism: 'visual storytelling of lyrics'
+      },
+      sound: {
+        ambience: 'atmospheric environmental sounds',
+        music: 'full track instrumentation',
+        voice: lyrics.substring(0, 100)
+      },
+      emotional_tone: {
+        feeling: 'powerful and emotional',
+        tempo_visual: 'medium to fast'
+      },
+      transition: {
+        in: 'fade in from black',
+        out: 'fade to black'
+      },
+      production_notes: {
+        notes: 'Fallback scene covering entire song with artistic visual treatment'
+      }
     });
   }
   
-  // Crear el guion completo
-  const script = {
-    videoTitle: `Music Video based on "${lyrics.split('\n')[0]}"`,
-    concept: "Emotional journey visualizing the lyrical themes through cinematic metaphors",
-    visualStyle: "Modern cinematic style with high contrast lighting and vibrant color palette",
-    segments
-  };
-  
-  return JSON.stringify(script, null, 2);
+  // Retornar el array de escenas directamente (nueva estructura)
+  return JSON.stringify(segments, null, 2);
   
   function extraerPalabrasClave(texto: string): string[] {
     // Lista de palabras emocionales comunes en canciones
