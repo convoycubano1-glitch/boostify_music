@@ -71,6 +71,7 @@ export function setupAuth(app: Express) {
       '/stripe/test-guest-checkout', // Ruta de prueba para verificar la integración de compras sin autenticación
       '/affiliate/register',  // Ruta para registrarse como afiliado (temporal para desarrollo)
       '/affiliate/me',        // Ruta para obtener información del afiliado (temporal para desarrollo)
+      '/gemini-image/generate-batch-with-multiple-faces', // Ruta para generar imágenes con Gemini
     ];
     
     // Patrones de rutas públicas que se verifican con startsWith

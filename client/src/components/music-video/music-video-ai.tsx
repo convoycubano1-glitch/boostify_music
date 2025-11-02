@@ -591,9 +591,6 @@ export function MusicVideoAI() {
         start_time: startTime,
         end_time: endTime,
         duration: duration,
-        canMove: true,
-        canResize: true,
-        canChangeGroup: false,
         itemProps: {
           style: {
             background: `hsl(${(index * 30) % 360}, 70%, 50%)`,
