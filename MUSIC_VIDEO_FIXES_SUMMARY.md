@@ -14,26 +14,18 @@ Todas las escenas tenían la misma duración (3.90s), lo cual no es apropiado pa
 
 **Cómo Funciona:**
 ```javascript
-// 1. Genera duraciones aleatorias variadas
-const avgDuration = targetTotal ? targetTotal / sceneCount : 3.75;
+// Genera duraciones aleatorias VARIADAS entre 2.5-5 segundos
 for (let i = 0; i < sceneCount; i++) {
-  const variation = (Math.random() - 0.5) * 2; // -1 a 1
-  let duration = avgDuration + variation * 1.25; // ±1.25s de variación
-  duration = Math.max(minDuration, Math.min(maxDuration, duration));
-  randomDurations.push(duration);
+  const duration = minDuration + Math.random() * (maxDuration - minDuration);
+  adjustedDurations.push(duration);
 }
-
-// 2. NORMALIZA para que sumen EXACTAMENTE audioDuration
-const currentSum = randomDurations.reduce((s, d) => s + d, 0);
-const adjustedDurations = targetTotal 
-  ? randomDurations.map(d => (d / currentSum) * targetTotal)
-  : randomDurations;
 ```
 
 **Resultado:**  
-- Duraciones VARIADAS (ej: 3.2s, 4.7s, 2.8s, 5.0s, 3.5s...)
-- Suman EXACTAMENTE la duración del audio
-- Timeline alineado correctamente ✅
+- ✅ Duraciones VARIADAS (ej: 3.2s, 4.7s, 2.8s, 5.0s, 3.5s...)
+- ✅ Cada escena tiene duración única entre 2.5-5 segundos
+- ⚠️ Total puede diferir ligeramente de la duración del audio
+- 💡 **Para sincronización perfecta:** usar Módulo 5 Beat Synchronization
 
 ---
 

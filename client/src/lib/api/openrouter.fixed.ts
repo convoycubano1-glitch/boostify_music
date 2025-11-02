@@ -12,6 +12,7 @@ import {
   validateSceneBalance,
   generateVariedShotSequence
 } from "../../types/music-video-scene";
+import type { SyncOptions } from "../../components/music-video/beat-synchronization-panel";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -1168,13 +1169,92 @@ DESCRIPTION GUIDELINES:
 }
 
 /**
+ * Genera duraciones de escena basadas en beats detectados y estilo de edición
+ * Esta es la función CLAVE para la sincronización con beats (Módulo 5)
+ */
+export function generateDurationsFromBeats(
+  beats: { time: number; type?: string; intensity?: number }[],
+  syncOptions: SyncOptions,
+  audioDuration: number
+): number[] {
+  console.log(`🎵 Generando duraciones desde ${beats.length} beats con estilo: ${syncOptions.cutStyle}`);
+  
+  if (beats.length === 0) {
+    console.warn('⚠️ No hay beats detectados, usando duraciones aleatorias');
+    return [];
+  }
+
+  const durations: number[] = [];
+  const { minimumClipDuration, maximumClipDuration, durationRange, prioritizeDownbeats, cutStyle } = syncOptions;
+  
+  // Filtrar beats por intensidad si está configurado
+  const filteredBeats = beats.filter(b => 
+    !syncOptions.intensityThreshold || (b.intensity || 1) >= syncOptions.intensityThreshold
+  );
+  
+  // Si priorizamos downbeats, filtrar solo esos
+  const relevantBeats = prioritizeDownbeats 
+    ? filteredBeats.filter(b => b.type === 'downbeat' || !b.type)
+    : filteredBeats;
+  
+  console.log(`🎯 Beats relevantes: ${relevantBeats.length} (de ${beats.length} totales)`);
+  
+  // Generar duraciones entre beats consecutivos
+  for (let i = 0; i < relevantBeats.length - 1; i++) {
+    const beatInterval = relevantBeats[i + 1].time - relevantBeats[i].time;
+    
+    // Si el intervalo está dentro del rango, úsalo directamente
+    if (beatInterval >= minimumClipDuration && beatInterval <= maximumClipDuration) {
+      durations.push(beatInterval);
+    } 
+    // Si es muy corto, combinar con el siguiente beat
+    else if (beatInterval < minimumClipDuration) {
+      // Buscar el próximo beat que alcance la duración mínima
+      let combinedDuration = beatInterval;
+      let j = i + 1;
+      while (j < relevantBeats.length - 1 && combinedDuration < minimumClipDuration) {
+        combinedDuration = relevantBeats[j + 1].time - relevantBeats[i].time;
+        j++;
+      }
+      // Aplicar aleatoriedad dentro del rango del estilo
+      const randomFactor = 0.8 + Math.random() * 0.4; // 80-120%
+      const adjustedDuration = Math.min(
+        maximumClipDuration,
+        Math.max(minimumClipDuration, combinedDuration * randomFactor)
+      );
+      durations.push(adjustedDuration);
+      i = j - 1; // Saltar los beats combinados
+    }
+    // Si es muy largo, dividir en clips más pequeños
+    else {
+      const numClips = Math.ceil(beatInterval / durationRange.max);
+      for (let k = 0; k < numClips; k++) {
+        // Aplicar variación aleatoria dentro del rango
+        const randomDuration = durationRange.min + Math.random() * (durationRange.max - durationRange.min);
+        durations.push(randomDuration);
+      }
+    }
+  }
+  
+  console.log(`✅ Generadas ${durations.length} duraciones variadas: min=${Math.min(...durations).toFixed(2)}s, max=${Math.max(...durations).toFixed(2)}s, promedio=${(durations.reduce((s, d) => s + d, 0) / durations.length).toFixed(2)}s`);
+  
+  return durations;
+}
+
+/**
  * Genera un guion profesional como respaldo cuando la API falla
  * Usa el nuevo schema MusicVideoScene con balance 50/50
  * @param lyrics Letras de la canción
  * @param sceneCount Número exacto de escenas a generar (default: 10)
  * @param audioDuration Duración total del audio en segundos
+ * @param beatsDurations Duraciones pre-calculadas basadas en beats (opcional, Módulo 5)
  */
-function generarGuionFallback(lyrics: string, sceneCount: number = 10, audioDuration?: number): string {
+function generarGuionFallback(
+  lyrics: string, 
+  sceneCount: number = 10, 
+  audioDuration?: number,
+  beatsDurations?: number[]
+): string {
   console.log(`🎬 Generando guión fallback con ${sceneCount} escenas (nuevo schema MusicVideoScene)`);
   
   // Dividir las letras en líneas
@@ -1184,34 +1264,41 @@ function generarGuionFallback(lyrics: string, sceneCount: number = 10, audioDura
   // Generar shot types variados usando el helper
   const shotSequence = generateVariedShotSequence(sceneCount, 2);
   
-  // GENERAR DURACIONES ALEATORIAS Y VARIADAS (2.5-5 segundos) para video musical
-  // NOTA: Esta es una solución temporal. Para sincronización REAL con beats,
-  // usa el Módulo 5 "Beat Synchronization" que detecta beats musicales automáticamente.
-  const minDuration = 2.5;
-  const maxDuration = 5.0;
+  // GENERAR DURACIONES: usar beats si están disponibles, sino aleatorias
+  let adjustedDurations: number[] = [];
   
-  // Validar que audioDuration esté en el rango posible
-  const minPossibleTotal = sceneCount * minDuration;
-  const maxPossibleTotal = sceneCount * maxDuration;
-  
-  let targetTotal = audioDuration || 0;
-  if (audioDuration && (audioDuration < minPossibleTotal || audioDuration > maxPossibleTotal)) {
-    console.warn(`⚠️ audioDuration ${audioDuration}s está fuera del rango posible [${minPossibleTotal.toFixed(1)}-${maxPossibleTotal.toFixed(1)}]s para ${sceneCount} escenas`);
-    console.warn(`⚠️ Se ajustará al rango posible`);
-    targetTotal = Math.max(minPossibleTotal, Math.min(maxPossibleTotal, audioDuration));
+  if (beatsDurations && beatsDurations.length > 0) {
+    // ✅ MÓDULO 5 ACTIVO: Usar duraciones basadas en beats detectados
+    console.log(`🎵 Usando ${beatsDurations.length} duraciones del Módulo 5 Beat Synchronization`);
+    
+    // Si tenemos más duraciones de beats que escenas necesarias, tomar las primeras
+    if (beatsDurations.length >= sceneCount) {
+      adjustedDurations = beatsDurations.slice(0, sceneCount);
+    } 
+    // Si tenemos menos, usar las que hay y completar con aleatorias
+    else {
+      adjustedDurations = [...beatsDurations];
+      const remaining = sceneCount - beatsDurations.length;
+      const minDuration = 2.5;
+      const maxDuration = 5.0;
+      for (let i = 0; i < remaining; i++) {
+        adjustedDurations.push(minDuration + Math.random() * (maxDuration - minDuration));
+      }
+      console.log(`⚠️ Completadas ${remaining} duraciones aleatorias adicionales`);
+    }
+  } else {
+    // ❌ Sin beats: Generar duraciones aleatorias VARIADAS (2.5-5 segundos)
+    console.log(`⚠️ Módulo 5 no activado, generando duraciones aleatorias`);
+    const minDuration = 2.5;
+    const maxDuration = 5.0;
+    
+    for (let i = 0; i < sceneCount; i++) {
+      const duration = minDuration + Math.random() * (maxDuration - minDuration);
+      adjustedDurations.push(duration);
+    }
   }
   
-  // Generar duraciones aleatorias VARIADAS entre 2.5-5 segundos
-  // Solución SIMPLE: cada escena tiene duración aleatoria en el rango válido
-  const adjustedDurations: number[] = [];
-  
-  for (let i = 0; i < sceneCount; i++) {
-    // Duración aleatoria entre 2.5 y 5 segundos
-    const duration = minDuration + Math.random() * (maxDuration - minDuration);
-    adjustedDurations.push(duration);
-  }
-  
-  console.log(`🎬 Duraciones VARIADAS generadas: min=${Math.min(...adjustedDurations).toFixed(2)}s, max=${Math.max(...adjustedDurations).toFixed(2)}s, promedio=${(adjustedDurations.reduce((s, d) => s + d, 0) / sceneCount).toFixed(2)}s, total=${adjustedDurations.reduce((s, d) => s + d, 0).toFixed(2)}s / target=${targetTotal}s`);
+  console.log(`🎬 Duraciones VARIADAS: min=${Math.min(...adjustedDurations).toFixed(2)}s, max=${Math.max(...adjustedDurations).toFixed(2)}s, promedio=${(adjustedDurations.reduce((s, d) => s + d, 0) / sceneCount).toFixed(2)}s, total=${adjustedDurations.reduce((s, d) => s + d, 0).toFixed(2)}s`);
   
   // Generar exactamente sceneCount escenas
   const scenes: MusicVideoScene[] = [];
