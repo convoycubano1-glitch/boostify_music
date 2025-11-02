@@ -521,9 +521,19 @@ export function MusicVideoAI() {
         try {
           const parsedScript = JSON.parse(scriptContent);
           
-          // Verificar si el script es un array de escenas (nueva estructura)
-          if (Array.isArray(parsedScript) && parsedScript.length > 0 && parsedScript[0].scene_id) {
-            segments = createSegmentsFromScenes(parsedScript, audioBuffer.duration);
+          // Verificar el formato del script y extraer las escenas
+          let scenes = [];
+          if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
+            // Nuevo formato: { scenes: [...] }
+            scenes = parsedScript.scenes;
+          } else if (Array.isArray(parsedScript) && parsedScript.length > 0 && parsedScript[0].scene_id) {
+            // Formato anterior: array directo de escenas
+            scenes = parsedScript;
+          }
+          
+          // Verificar si tenemos escenas válidas
+          if (scenes.length > 0 && scenes[0].scene_id) {
+            segments = createSegmentsFromScenes(scenes, audioBuffer.duration);
             toast({
               title: "Sincronizando",
               description: `Creando ${segments.length} escenas basadas en el guión cinematográfico`,
@@ -632,17 +642,25 @@ export function MusicVideoAI() {
     try {
       const parsedScript = JSON.parse(scriptContent);
       
-      if (!Array.isArray(parsedScript) || parsedScript.length === 0) {
+      // Extraer las escenas del formato correcto
+      let scenes = [];
+      if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
+        scenes = parsedScript.scenes;
+      } else if (Array.isArray(parsedScript)) {
+        scenes = parsedScript;
+      }
+      
+      if (scenes.length === 0) {
         throw new Error("El guión no tiene escenas válidas");
       }
 
       toast({
         title: "Generando imágenes",
-        description: `Iniciando generación de ${parsedScript.length} escenas con Gemini 2.5 Flash Image...`,
+        description: `Iniciando generación de ${scenes.length} escenas con Gemini 2.5 Flash Image...`,
       });
 
       // Preparar las escenas en el formato que espera Gemini
-      const geminiScenes = parsedScript.map((scene: any) => {
+      const geminiScenes = scenes.map((scene: any) => {
         const cameraType = scene.camera?.type || "cinematográfica profesional";
         const cameraMovement = scene.camera?.movement || "estática";
         const shotType = scene.camera?.lens || "plano medio";
@@ -1449,13 +1467,26 @@ ${transcription}`;
     try {
       const scriptData = JSON.parse(value);
       
+      // Extraer las escenas del formato correcto
+      let scenesData = [];
+      if (scriptData.scenes && Array.isArray(scriptData.scenes)) {
+        // Nuevo formato: { scenes: [...] }
+        scenesData = scriptData.scenes;
+      } else if (scriptData.segments && Array.isArray(scriptData.segments)) {
+        // Formato intermedio
+        scenesData = scriptData.segments;
+      } else if (scriptData.shots && Array.isArray(scriptData.shots)) {
+        // Formato antiguo
+        scenesData = scriptData.shots;
+      }
+      
       // Compatibilidad con diferentes formatos de script
       if (scriptData.shots && Array.isArray(scriptData.shots)) {
         // Formato anterior
         generateTimelineItems(scriptData.shots);
-      } else if (scriptData.segments && Array.isArray(scriptData.segments)) {
+      } else if (scenesData.length > 0) {
         // Nuevo formato de script desde generateMusicVideoScript
-        const shotItems = scriptData.segments.map((segment: any) => ({
+        const shotItems = scenesData.map((segment: any) => ({
           shotType: segment.tipo_plano || segment.shotType || "Plano medio",
           description: segment.descripción_visual || segment.description || "",
           imagePrompt: segment.imagePrompt || "",
