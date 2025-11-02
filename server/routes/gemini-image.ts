@@ -6,6 +6,7 @@ import {
   generateCinematicImage, 
   generateImageFromCinematicScene,
   generateBatchImages,
+  generateBatchImagesWithMultipleFaceReferences,
   type CinematicScene 
 } from '../services/gemini-image-service';
 
@@ -164,6 +165,62 @@ router.post('/generate-batch-with-face', async (req: Request, res: Response) => 
     return res.status(500).json({
       success: false,
       error: error.message || 'Error interno al generar imágenes con rostro'
+    });
+  }
+});
+
+/**
+ * Genera múltiples imágenes en lote con MÚLTIPLES referencias faciales (hasta 3)
+ * Ideal para videos musicales con consistencia facial usando varias fotos del artista
+ */
+router.post('/generate-batch-with-multiple-faces', async (req: Request, res: Response) => {
+  try {
+    const { scenes, referenceImagesBase64 }: { 
+      scenes: CinematicScene[], 
+      referenceImagesBase64: string[] 
+    } = req.body;
+    
+    if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere un array de escenas'
+      });
+    }
+    
+    if (!referenceImagesBase64 || !Array.isArray(referenceImagesBase64) || referenceImagesBase64.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere un array de imágenes de referencia (1-3 imágenes)'
+      });
+    }
+
+    if (referenceImagesBase64.length > 3) {
+      return res.status(400).json({
+        success: false,
+        error: 'Máximo 3 imágenes de referencia permitidas'
+      });
+    }
+    
+    console.log(`Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
+    const results = await generateBatchImagesWithMultipleFaceReferences(scenes, referenceImagesBase64);
+    
+    // Convertir Map a objeto para JSON
+    const resultsObj: Record<number, any> = {};
+    results.forEach((value, key) => {
+      resultsObj[key] = value;
+    });
+    
+    return res.json({
+      success: true,
+      results: resultsObj,
+      totalScenes: scenes.length,
+      totalReferences: referenceImagesBase64.length
+    });
+  } catch (error: any) {
+    console.error('Error en /generate-batch-with-multiple-faces:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno al generar imágenes con múltiples rostros'
     });
   }
 });

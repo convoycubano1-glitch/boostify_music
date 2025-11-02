@@ -248,3 +248,136 @@ Create a high-quality, professional music video frame with cinematic composition
   
   return results;
 }
+
+/**
+ * Genera una imagen usando MÚLTIPLES imágenes de referencia (hasta 3)
+ * Nano Banana puede usar múltiples referencias para mejor adaptación facial
+ */
+export async function generateImageWithMultipleFaceReferences(
+  prompt: string,
+  referenceImagesBase64: string[]
+): Promise<ImageGenerationResult> {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY no está configurada');
+    }
+
+    if (!referenceImagesBase64 || referenceImagesBase64.length === 0) {
+      // Si no hay referencias, usar generación normal
+      return await generateCinematicImage(prompt);
+    }
+
+    console.log(`Generando imagen con ${referenceImagesBase64.length} referencias faciales...`);
+
+    // Crear el prompt mejorado para múltiples referencias
+    const combinedPrompt = `${prompt}
+
+CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain facial consistency. The person should have the EXACT same face, features, skin tone, and identity across all generated images. Blend the best features from all reference angles to create a consistent appearance.`;
+
+    // Construir array de parts con todas las imágenes de referencia
+    const parts: any[] = [];
+    
+    // Agregar todas las imágenes de referencia primero
+    for (let i = 0; i < Math.min(referenceImagesBase64.length, 3); i++) {
+      const base64Data = referenceImagesBase64[i].split(',')[1] || referenceImagesBase64[i];
+      parts.push({
+        inlineData: {
+          data: base64Data,
+          mimeType: "image/jpeg"
+        }
+      });
+    }
+    
+    // Agregar el prompt al final
+    parts.push({ text: combinedPrompt });
+
+    // Usar Gemini con múltiples imágenes de referencia
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash-preview-image-generation",
+      contents: [
+        { 
+          role: "user", 
+          parts: parts
+        }
+      ],
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+      },
+    });
+
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('No se recibieron candidatos de la API');
+    }
+
+    const content = candidates[0].content;
+    if (!content || !content.parts) {
+      throw new Error('Contenido vacío en la respuesta');
+    }
+
+    // Buscar la parte de imagen en la respuesta
+    for (const part of content.parts) {
+      if (part.text) {
+        console.log('Texto de respuesta:', part.text);
+      } else if (part.inlineData && part.inlineData.data) {
+        const imageBase64 = part.inlineData.data;
+        console.log('Imagen con rostros adaptados generada exitosamente');
+        
+        return {
+          success: true,
+          imageBase64: imageBase64,
+          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`
+        };
+      }
+    }
+
+    throw new Error('No se encontró imagen en la respuesta');
+  } catch (error: any) {
+    console.error('Error generando imagen con múltiples referencias faciales:', error);
+    return {
+      success: false,
+      error: error.message || 'Error desconocido al generar imagen con rostros'
+    };
+  }
+}
+
+/**
+ * Genera múltiples imágenes en lote con MÚLTIPLES referencias faciales
+ * Ideal para crear videos musicales con consistencia facial usando hasta 3 fotos del artista
+ */
+export async function generateBatchImagesWithMultipleFaceReferences(
+  scenes: CinematicScene[],
+  referenceImagesBase64: string[]
+): Promise<Map<number, ImageGenerationResult>> {
+  const results = new Map<number, ImageGenerationResult>();
+  
+  console.log(`Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
+  
+  for (const scene of scenes) {
+    console.log(`Generando escena ${scene.id}/${scenes.length}...`);
+    
+    // Construir prompt cinematográfico detallado
+    const cinematicPrompt = `
+Professional cinematic photography for a music video:
+
+Scene: ${scene.scene}
+Camera Setup: ${scene.camera}
+Lighting: ${scene.lighting}
+Visual Style: ${scene.style}
+Camera Movement: ${scene.movement}
+
+Create a high-quality, professional music video frame with cinematic composition, perfect lighting, and stunning visual aesthetics.
+    `.trim();
+    
+    const result = await generateImageWithMultipleFaceReferences(cinematicPrompt, referenceImagesBase64);
+    results.set(scene.id, result);
+    
+    // Delay para evitar rate limiting (1.5 segundos entre requests)
+    if (scenes.indexOf(scene) < scenes.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+  }
+  
+  console.log(`Generación completada: ${results.size} imágenes creadas`);
+  return results;
+}
