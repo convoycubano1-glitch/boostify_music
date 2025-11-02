@@ -4856,6 +4856,99 @@ ${transcription}`;
                     </motion.div>
                   )}
                   
+                  {/* Preview Player - Muestra la imagen actual basada en currentTime */}
+                  {/* SIEMPRE visible si hay timeline items, muestra placeholder si falta la imagen */}
+                  {timelineItems.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-black/60 backdrop-blur-lg border border-white/10 rounded-lg p-4 mb-4"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <Play className="h-5 w-5 text-green-400" />
+                        <h3 className="text-sm font-semibold text-white">Preview en Vivo</h3>
+                        <Badge variant="secondary" className="ml-auto">
+                          {(currentTime / 1000).toFixed(2)}s / {totalDuration.toFixed(2)}s
+                        </Badge>
+                      </div>
+                      
+                      {(() => {
+                        // Encontrar la imagen actual basada en currentTime
+                        const currentScene = timelineItems.find(item => {
+                          const itemStart = item.start_time || 0;
+                          const itemEnd = (item.start_time || 0) + (item.duration || 0);
+                          return currentTime >= itemStart && currentTime < itemEnd;
+                        });
+                        
+                        const currentImage = currentScene?.imageUrl || currentScene?.thumbnail;
+                        
+                        return (
+                          <div className="relative">
+                            {/* Preview de imagen actual */}
+                            <div className="aspect-video rounded-lg overflow-hidden bg-black/80 border border-white/20 relative">
+                              {currentImage ? (
+                                <>
+                                  <img
+                                    src={currentImage}
+                                    alt={currentScene?.title || "Vista previa"}
+                                    className="w-full h-full object-contain"
+                                  />
+                                  {/* Información de la escena actual */}
+                                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-3">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1">
+                                        <p className="text-white font-semibold text-sm mb-1">
+                                          {currentScene?.title || "Escena actual"}
+                                        </p>
+                                        <div className="flex items-center gap-2 text-xs">
+                                          {currentScene?.shotType && (
+                                            <Badge className="bg-purple-500/80 border-purple-400 text-white font-mono text-[10px] px-1.5 py-0.5">
+                                              {currentScene.shotType}
+                                            </Badge>
+                                          )}
+                                          {currentScene?.metadata?.role && (
+                                            <Badge className="bg-blue-500/80 border-blue-400 text-white text-[10px] px-1.5 py-0.5">
+                                              {currentScene.metadata.role}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {isPlaying && (
+                                        <div className="flex items-center gap-1.5 text-green-400">
+                                          <Activity className="h-4 w-4 animate-pulse" />
+                                          <span className="text-[10px] font-semibold">EN VIVO</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                                  <ImageIcon className="h-12 w-12 text-white/20" />
+                                  <p className="text-white/40 text-sm">
+                                    {currentScene ? "Imagen aún no generada" : "Ninguna escena activa"}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Indicador de progreso */}
+                            {currentScene && (
+                              <div className="mt-2 bg-white/10 rounded-full h-1 overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-100"
+                                  style={{
+                                    width: `${((currentTime - (currentScene.start_time || 0)) / (currentScene.duration || 1)) * 100}%`
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </motion.div>
+                  )}
+                  
                   <TimelineEditor
                     clips={clips}
                     currentTime={(currentTime - (timelineItems[0]?.start_time || 0)) / 1000}
