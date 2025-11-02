@@ -56,7 +56,7 @@ app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',
   createParentPath: true,
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   abortOnLimit: true,
   debug: false
 }));
@@ -67,7 +67,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     console.error('Error al cargar archivo: tamaño excedido');
     return res.status(413).json({
       success: false,
-      error: 'El archivo es demasiado grande. El tamaño máximo permitido es 8MB.'
+      error: 'El archivo es demasiado grande. El tamaño máximo permitido es 50MB.'
     });
   }
   next(err);
@@ -103,7 +103,7 @@ app.use((req, res, next) => {
 if (process.env.NODE_ENV === "production") {
   log('🚀 Running in production mode');
 
-  const distPath = path.resolve(process.cwd(), 'dist', 'public');
+  const distPath = path.resolve(process.cwd(), 'dist', 'client');
 
   //Simplified static file serving
   app.use(express.static(distPath));

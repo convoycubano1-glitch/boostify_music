@@ -22,7 +22,6 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Badge } from "../ui/badge";
 import { cn } from "../../lib/utils";
 import * as fal from "@fal-ai/serverless-client";
-import OpenAI from "openai";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -53,39 +52,52 @@ import { generateVideoScript as generateVideoScriptAPI } from "../../lib/api/ope
 import { FileText } from "lucide-react";
 import fluxService, { FluxModel, FluxTaskType } from "../../lib/api/flux/flux-service";
 
-// OpenAI configuration for audio transcription only
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
-
-// Add check for debugging
-console.log("OpenAI API Key available:", !!import.meta.env.VITE_OPENAI_API_KEY);
-
-if (!import.meta.env.VITE_OPENAI_API_KEY) {
-  console.error('OpenAI API key is not configured');
-}
-
 // Fal.ai configuration
 fal.config({
   credentials: import.meta.env.VITE_FAL_API_KEY,
 });
 
+// Transcribe audio using backend API (secure)
 async function transcribeAudio(file: File) {
-  if (!import.meta.env.VITE_OPENAI_API_KEY) {
-    throw new Error('OpenAI API key not configured');
-  }
-
   try {
-    const transcription = await openai.audio.transcriptions.create({
-      file: file,
-      model: "whisper-1",
+    const formData = new FormData();
+    formData.append('audio', file);
+
+    console.log('🌐 Haciendo fetch a /api/audio/transcribe...');
+    const response = await fetch('/api/audio/transcribe', {
+      method: 'POST',
+      body: formData
     });
 
-    return transcription.text;
+    console.log('📊 Respuesta del servidor:', response.status, response.statusText);
+
+    let data;
+    try {
+      data = await response.json();
+      console.log('📦 Datos recibidos:', data);
+    } catch (parseError) {
+      console.error('❌ Error al parsear JSON de respuesta:', parseError);
+      throw new Error('La respuesta del servidor no es JSON válido');
+    }
+
+    if (!response.ok || !data.success) {
+      const errorMsg = data.error || `Error del servidor: ${response.status} ${response.statusText}`;
+      console.error('❌ Error en respuesta del servidor:', errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    if (!data.transcription || !data.transcription.text) {
+      console.error('❌ Respuesta del servidor no contiene transcripción');
+      throw new Error('La transcripción no se generó correctamente');
+    }
+
+    return data.transcription.text;
   } catch (error) {
-    console.error("Transcription error:", error);
-    throw error;
+    console.error("❌ Error en transcribeAudio:", error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Error desconocido al transcribir el audio');
   }
 }
 
@@ -277,14 +289,18 @@ export function MusicVideoAI() {
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
   const [upscaledVideoUrl, setUpscaledVideoUrl] = useState<string | null>(null);
+  
+  // Estado para las 3 imágenes de referencia del artista (para Nano Banana)
+  const [artistReferenceImages, setArtistReferenceImages] = useState<string[]>([]);
+  const [isUploadingReferences, setIsUploadingReferences] = useState(false);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > 50 * 1024 * 1024) {
         toast({
           title: "Error",
-          description: "El archivo debe ser menor a 10MB",
+          description: "El archivo debe ser menor a 50MB",
           variant: "destructive",
         });
         return;
@@ -315,31 +331,116 @@ export function MusicVideoAI() {
           setAudioBuffer(buffer);
 
           // Usar OpenAI para la transcripción
+          console.log('🎤 Iniciando transcripción del archivo:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
           setIsTranscribing(true);
           try {
+            console.log('📤 Enviando archivo al servidor para transcripción...');
             const transcriptionText = await transcribeAudio(file);
+            console.log('✅ Transcripción completada, longitud:', transcriptionText.length, 'caracteres');
             setTranscription(transcriptionText);
             // Establecer el paso como completado para habilitar el siguiente botón
             // pero no cambiar la vista (por eso usamos 1.5 en lugar de 2)
             setCurrentStep(1.5);
             toast({
               title: "Éxito",
-              description: "Audio transcrito correctamente. Ahora puedes generar el guión musical.",
+              description: `Audio transcrito correctamente (${transcriptionText.length} caracteres). Ahora puedes generar el guión musical.`,
             });
           } catch (err) {
-            console.error("Error transcribing audio:", err);
+            console.error("❌ Error transcribing audio:", err);
             toast({
-              title: "Error",
-              description: "Error al transcribir el audio. Por favor intenta de nuevo.",
+              title: "Error en transcripción",
+              description: err instanceof Error ? err.message : "Error al transcribir el audio. Por favor intenta de nuevo.",
               variant: "destructive",
             });
           } finally {
+            console.log('🏁 Proceso de transcripción finalizado');
             setIsTranscribing(false);
           }
         }
       };
       reader.readAsArrayBuffer(file);
     }
+  }, [toast]);
+
+  // Función para manejar la subida de imágenes de referencia del artista
+  const handleReferenceImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // Validar que no se suban más de 3 imágenes en total
+    if (artistReferenceImages.length + files.length > 3) {
+      toast({
+        title: "Error",
+        description: "Solo puedes subir un máximo de 3 imágenes de referencia",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingReferences(true);
+
+    try {
+      const newImages: string[] = [];
+      
+      for (let i = 0; i < files.length && artistReferenceImages.length + newImages.length < 3; i++) {
+        const file = files[i];
+        
+        // Validar tipo de archivo
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Error",
+            description: `${file.name} no es una imagen válida`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // Validar tamaño (máximo 5MB por imagen)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Error",
+            description: `${file.name} excede el tamaño máximo de 5MB`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // Convertir imagen a base64
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        newImages.push(base64);
+      }
+
+      setArtistReferenceImages([...artistReferenceImages, ...newImages]);
+      
+      toast({
+        title: "Éxito",
+        description: `${newImages.length} imagen(es) de referencia agregada(s) (${artistReferenceImages.length + newImages.length}/3)`,
+      });
+    } catch (error) {
+      console.error("Error al cargar imágenes de referencia:", error);
+      toast({
+        title: "Error",
+        description: "Error al procesar las imágenes de referencia",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingReferences(false);
+    }
+  }, [artistReferenceImages, toast]);
+
+  // Función para eliminar una imagen de referencia
+  const removeReferenceImage = useCallback((index: number) => {
+    setArtistReferenceImages(prev => prev.filter((_, i) => i !== index));
+    toast({
+      title: "Imagen eliminada",
+      description: `Imagen de referencia ${index + 1} eliminada`,
+    });
   }, [toast]);
 
   const generateScriptFromTranscription = async () => {
@@ -2866,7 +2967,7 @@ ${transcription}`;
                   >
                     <Input
                       type="file"
-                      accept="audio/*"
+                      accept="audio/mpeg,audio/mp3,audio/mp4,audio/wav,audio/aac,audio/x-m4a,audio/ogg,audio/webm,audio/flac"
                       onChange={handleFileChange}
                       disabled={isTranscribing}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -2996,10 +3097,73 @@ ${transcription}`;
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
+                        className="space-y-4"
                       >
+                        {/* Sección para subir imágenes de referencia del artista */}
+                        <div className="border border-purple-500/30 rounded-lg p-4 bg-purple-950/20">
+                          <div className="flex items-center gap-2 mb-3">
+                            <ImageIcon className="h-5 w-5 text-purple-400" />
+                            <Label className="text-base font-semibold text-purple-400">
+                              Imágenes de Referencia del Artista (Opcional)
+                            </Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            Sube hasta 3 fotos del artista para que Nano Banana las use como referencia al generar las escenas del video
+                          </p>
+                          
+                          {/* Grid para mostrar las imágenes subidas */}
+                          {artistReferenceImages.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                              {artistReferenceImages.map((img, index) => (
+                                <div key={index} className="relative group">
+                                  <img 
+                                    src={img} 
+                                    alt={`Referencia ${index + 1}`}
+                                    className="w-full h-24 object-cover rounded-md border border-purple-500/40"
+                                  />
+                                  <button
+                                    onClick={() => removeReferenceImage(index)}
+                                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    data-testid={`remove-reference-${index}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Botón para subir imágenes */}
+                          {artistReferenceImages.length < 3 && (
+                            <div className="relative">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleReferenceImageUpload}
+                                disabled={isUploadingReferences}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                data-testid="upload-reference-images"
+                              />
+                              <div className="border-2 border-dashed border-purple-400/40 rounded-lg p-3 hover:border-purple-400 transition-colors bg-purple-950/10 cursor-pointer">
+                                <div className="flex flex-col items-center justify-center gap-1">
+                                  <Upload className="h-6 w-6 text-purple-400" />
+                                  <p className="text-xs font-medium text-center text-purple-300">
+                                    {isUploadingReferences ? "Cargando..." : `Subir imágenes (${artistReferenceImages.length}/3)`}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground text-center">
+                                    JPG, PNG o WEBP (máx. 5MB)
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
                         <Button
                           onClick={() => setCurrentStep(2)}
-                          className="w-full mb-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md"
+                          className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md"
+                          data-testid="continue-to-next-step"
                         >
                           <motion.div 
                             className="mr-2"

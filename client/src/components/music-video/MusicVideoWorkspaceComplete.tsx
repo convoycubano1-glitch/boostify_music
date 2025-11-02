@@ -42,6 +42,14 @@ interface ReferenceImage {
   base64: string;
 }
 
+interface AudioFile {
+  file: File;
+  name: string;
+  duration: number;
+  size: string;
+  url: string;
+}
+
 interface MusicVideoWorkspaceCompleteProps {
   projectName?: string;
 }
@@ -57,7 +65,10 @@ export function MusicVideoWorkspaceComplete({
   const [editingStyle, setEditingStyle] = useState<string>("cinematic");
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [audioFile, setAudioFile] = useState<AudioFile | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
 
   // Función para convertir File a base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -116,6 +127,152 @@ export function MusicVideoWorkspaceComplete({
       title: "Imagen eliminada",
       description: "La imagen de referencia ha sido eliminada."
     });
+  };
+
+  // Manejo de carga de archivos de audio
+  const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const fileType = file.type.toLowerCase();
+    const fileName = file.name.toLowerCase();
+    
+    // Validar que sea un archivo de audio válido (por tipo MIME o extensión)
+    const isValidType = fileType.includes('audio') || 
+                        fileName.endsWith('.wav') || 
+                        fileName.endsWith('.mp3') ||
+                        fileName.endsWith('.m4a') ||
+                        fileName.endsWith('.aac') ||
+                        fileName.endsWith('.flac') ||
+                        fileName.endsWith('.ogg');
+    
+    if (!isValidType) {
+      toast({
+        title: "Formato no soportado",
+        description: "Solo se permiten archivos de audio.",
+        variant: "destructive"
+      });
+      event.target.value = '';
+      return;
+    }
+
+    // Validar tamaño (máximo 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      toast({
+        title: "Archivo demasiado grande",
+        description: "El archivo de audio no debe superar los 50MB.",
+        variant: "destructive"
+      });
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      // Crear URL del archivo
+      const url = URL.createObjectURL(file);
+      
+      // Obtener duración del audio
+      const audio = new Audio(url);
+      await new Promise<void>((resolve) => {
+        audio.addEventListener('loadedmetadata', () => {
+          resolve();
+        });
+      });
+
+      const duration = audio.duration;
+      const minutes = Math.floor(duration / 60);
+      const seconds = Math.floor(duration % 60);
+      const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Formatear tamaño del archivo
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      const sizeText = `${sizeMB} MB`;
+
+      const audioData: AudioFile = {
+        file,
+        name: file.name,
+        duration,
+        size: sizeText,
+        url
+      };
+
+      setAudioFile(audioData);
+      
+      toast({
+        title: "Audio cargado",
+        description: `${file.name} (${durationText}, ${sizeText}) cargado exitosamente.`
+      });
+
+    } catch (error) {
+      console.error('Error al cargar audio:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el archivo de audio.",
+        variant: "destructive"
+      });
+    }
+
+    event.target.value = '';
+  };
+
+  const handleRemoveAudio = () => {
+    if (audioFile?.url) {
+      URL.revokeObjectURL(audioFile.url);
+    }
+    setAudioFile(null);
+    toast({
+      title: "Audio eliminado",
+      description: "El archivo de audio ha sido eliminado."
+    });
+  };
+
+  const handleTranscribeAudio = async () => {
+    if (!audioFile) return;
+
+    setIsTranscribing(true);
+    
+    try {
+      toast({
+        title: "Transcribiendo audio",
+        description: "Este proceso puede tardar algunos minutos..."
+      });
+
+      const formData = new FormData();
+      formData.append('audio', audioFile.file);
+
+      const response = await fetch('/api/audio/transcribe', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Error al transcribir el audio');
+      }
+
+      console.log('Transcripción completa:', data.transcription);
+
+      toast({
+        title: "Transcripción completa",
+        description: `Audio transcrito exitosamente. ${data.transcription.text.length} caracteres.`
+      });
+
+      // Aquí podrías actualizar el estado con la transcripción
+      // Por ejemplo: setTranscription(data.transcription.text);
+
+    } catch (error: any) {
+      console.error('Error al transcribir:', error);
+      toast({
+        title: "Error en transcripción",
+        description: error.message || "No se pudo transcribir el audio. Intente nuevamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTranscribing(false);
+    }
   };
 
   const handleSceneUpdate = (updatedScene: CinematicSceneData) => {
@@ -294,8 +451,8 @@ export function MusicVideoWorkspaceComplete({
               </div>
             </div>
 
-            {/* Estilo de edición y referencias */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Estilo de edición, audio y referencias */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="editing-style" className="text-xs md:text-sm">Estilo de Edición</Label>
                 <Select value={editingStyle} onValueChange={setEditingStyle}>
@@ -314,6 +471,34 @@ export function MusicVideoWorkspaceComplete({
 
               <div className="space-y-2">
                 <Label className="text-xs md:text-sm flex items-center gap-1">
+                  <Music className="h-3 w-3" />
+                  Audio para Transcripción
+                </Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => audioInputRef.current?.click()}
+                    disabled={!!audioFile}
+                    className="flex-1 text-xs md:text-sm"
+                    data-testid="button-upload-audio"
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    {audioFile ? 'Audio Cargado' : 'Importar WAV/MP3'}
+                  </Button>
+                  <input
+                    ref={audioInputRef}
+                    type="file"
+                    accept="audio/mpeg,audio/mp3,audio/mp4,audio/wav,audio/aac,audio/x-m4a,audio/ogg,audio/webm,audio/flac"
+                    className="hidden"
+                    onChange={handleAudioUpload}
+                    data-testid="input-audio-file"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs md:text-sm flex items-center gap-1">
                   <Users className="h-3 w-3" />
                   Imágenes de Referencia ({referenceImages.length}/3)
                 </Label>
@@ -324,6 +509,7 @@ export function MusicVideoWorkspaceComplete({
                     onClick={() => fileInputRef.current?.click()}
                     disabled={referenceImages.length >= 3}
                     className="flex-1 text-xs md:text-sm"
+                    data-testid="button-upload-image"
                   >
                     <Upload className="h-4 w-4 mr-1" />
                     Subir Imagen
@@ -339,6 +525,59 @@ export function MusicVideoWorkspaceComplete({
                 </div>
               </div>
             </div>
+
+            {/* Información del audio cargado */}
+            {audioFile && (
+              <Card className="bg-muted/50 border-primary/20">
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      <Music className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" title={audioFile.name}>
+                          {audioFile.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Tamaño: {audioFile.size} • Duración: {Math.floor(audioFile.duration / 60)}:{Math.floor(audioFile.duration % 60).toString().padStart(2, '0')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleTranscribeAudio}
+                        disabled={isTranscribing}
+                        className="text-xs"
+                        data-testid="button-transcribe-audio"
+                      >
+                        {isTranscribing ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            Transcribiendo...
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="h-3 w-3 mr-1" />
+                            Transcribir
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveAudio}
+                        disabled={isTranscribing}
+                        className="text-xs h-8 w-8 p-0"
+                        data-testid="button-remove-audio"
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Referencias visuales */}
             {referenceImages.length > 0 && (

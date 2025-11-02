@@ -1,0 +1,402 @@
+[
+  {
+    "scene_id": 1,
+    "section": "Intro",
+    "title": "La Habana respira polvo",
+    "camera": {
+      "type": "dron descendente y dolly in manual",
+      "lens": "35mm anamórfico Atlas Orion",
+      "movement": "dron baja lentamente desde vista aérea hasta primer plano de María entre los escombros",
+      "framerate": "24fps",
+      "resolution": "8K RAW",
+      "stabilization": "ligera vibración natural para sensación documental"
+    },
+    "lighting": {
+      "source": "luz natural del amanecer",
+      "temperature": "3100K cálida",
+      "key_light": "sol lateral rebotado en paredes ocre",
+      "fill_light": "reflexión de rebotador blanco",
+      "back_light": "halo dorado de sol atravesando polvo",
+      "atmosphere": "humo suave y partículas suspendidas"
+    },
+    "environment": {
+      "location": "Centro Habana, callejón entre edificios semiderrumbados",
+      "elements": ["paredes descascaradas", "grafitis descoloridos", "ropa colgando", "bandera cubana desteñida"],
+      "color_palette": ["ocre", "turquesa gastado", "herrumbre", "gris cemento"],
+      "texture": "grano fílmico visible, polvo suspendido"
+    },
+    "performance": {
+      "artist_name": "María la mulata cubana",
+      "wardrobe": "vestido blanco roto, paño rojo, pies descalzos",
+      "action": "camina hacia cámara, mirada fija, recita la línea inicial",
+      "expression": "serena y firme, con tristeza contenida",
+      "symbolism": "pureza resistiendo entre ruinas"
+    },
+    "sound": {
+      "ambience": "viento leve, goteo de agua, pájaros distantes",
+      "music": "conga lenta con eco profundo",
+      "voice": "‘Mira bien esas paredes… la pintura se cayó, pero la mentira se mantiene.’"
+    },
+    "emotional_tone": {
+      "feeling": "melancolía y resistencia",
+      "tempo_visual": "lento y contemplativo"
+    },
+    "transition": {
+      "in": "fade in desde negro",
+      "out": "corte directo a plano medio de María en el verso 1"
+    },
+    "production_notes": {
+      "camera_team": "operador de dron + dolly grip",
+      "makeup": "piel húmeda, brillo natural",
+      "set_decoration": "añadir polvo fino visible en contraluz"
+    }
+  },
+  {
+    "scene_id": 2,
+    "section": "Verso 1",
+    "title": "Calles rotas",
+    "camera": {
+      "type": "cámara al hombro",
+      "lens": "50mm",
+      "movement": "seguimiento lateral de María caminando entre escombros",
+      "framerate": "24fps",
+      "stabilization": "ligera vibración natural"
+    },
+    "lighting": {
+      "source": "sol cenital",
+      "temperature": "4500K neutra",
+      "contrast": "alto",
+      "key_light": "reflejos de las paredes",
+      "fill_light": "mínimo, sombras marcadas"
+    },
+    "environment": {
+      "location": "Calle interior con balcones deteriorados",
+      "elements": ["niños descalzos jugando", "balcón roto", "cartel político desgarrado"],
+      "color_palette": ["tierra", "gris", "verde musgo"],
+      "texture": "ruido visual urbano, polvo"
+    },
+    "performance": {
+      "artist_name": "María",
+      "wardrobe": "mismo vestido blanco",
+      "action": "toca la pared con ternura mientras rapea",
+      "expression": "mirada al horizonte, tono de denuncia suave"
+    },
+    "sound": {
+      "ambience": "risas de niños, pasos, viento",
+      "music": "percusión suave con congas lentas"
+    },
+    "emotional_tone": {
+      "feeling": "dignidad en medio de la decadencia"
+    },
+    "transition": {
+      "out": "corte con paneo rápido al siguiente callejón"
+    },
+    "production_notes": {
+      "makeup": "ligeramente sucia, sudor natural",
+      "set_decoration": "añadir polvo cayendo desde el techo"
+    }
+  },
+  {
+    "scene_id": 3,
+    "section": "Verso 1 (Fast Flow)",
+    "title": "El viejo dirigente",
+    "camera": {
+      "type": "plano secuencia dolly backward",
+      "lens": "28mm",
+      "movement": "cámara retrocede frente a María caminando",
+      "framerate": "24fps",
+      "resolution": "6K"
+    },
+    "lighting": {
+      "source": "luz dura del mediodía",
+      "temperature": "5000K fría",
+      "contrast": "alto",
+      "key_light": "sol directo",
+      "fill_light": "rebotador cálido"
+    },
+    "environment": {
+      "location": "calle estrecha de Centro Habana",
+      "elements": ["balcones oxidados", "hombres mayores mirando", "carteles políticos rotos"],
+      "color_palette": ["gris", "amarillo viejo", "azul gastado"],
+      "texture": "ruido de polvo, vibración urbana"
+    },
+    "performance": {
+      "action": "María camina mientras rapea con rabia contenida",
+      "expression": "furia y lucidez, mirada directa a cámara"
+    },
+    "sound": {
+      "music": "percusión intensa, clave cubana rítmica",
+      "voice": "‘Mira el hambre, mira el miedo…’"
+    },
+    "emotional_tone": {
+      "feeling": "denuncia, energía contenida"
+    },
+    "transition": {
+      "out": "corte a rumba colectiva en el solar"
+    },
+    "production_notes": {
+      "efx": "ligero motion blur al ritmo de percusión"
+    }
+  },
+  {
+    "scene_id": 4,
+    "section": "Coro 1",
+    "title": "Se cae, compay",
+    "camera": {
+      "type": "plano general circular",
+      "lens": "40mm",
+      "movement": "cámara gira 360° alrededor del grupo",
+      "framerate": "48fps slow motion"
+    },
+    "lighting": {
+      "source": "atardecer natural",
+      "temperature": "3200K cálida",
+      "key_light": "sol filtrado por techo roto",
+      "fill_light": "reflejos dorados de paredes"
+    },
+    "environment": {
+      "location": "solar habanero",
+      "elements": ["tamores", "ancianas aplaudiendo", "niños bailando"],
+      "color_palette": ["dorado", "ámbar", "ocre"]
+    },
+    "performance": {
+      "action": "María canta con el grupo al centro, cuerpo vibrando",
+      "expression": "energía, rebeldía, alegría popular"
+    },
+    "sound": {
+      "music": "rumba fuerte, coros colectivos",
+      "voice": "‘¡Se cae, compay, se cae sin brillo!’"
+    },
+    "emotional_tone": {
+      "feeling": "unidad y fuerza colectiva"
+    },
+    "transition": {
+      "out": "fundido cruzado al malecón nocturno"
+    },
+    "production_notes": {
+      "extras": "20 personas del barrio, músicos reales",
+      "atrezzo": "antorchas, tambores viejos"
+    }
+  },
+  {
+    "scene_id": 5,
+    "section": "Verso 2",
+    "title": "El malecón llora sal y herrumbre",
+    "camera": {
+      "type": "plano americano lateral",
+      "lens": "75mm",
+      "movement": "dolly lateral paralelo a María",
+      "framerate": "60fps slow motion"
+    },
+    "lighting": {
+      "source": "puesta de sol nublada",
+      "temperature": "4000K fría",
+      "key_light": "reflejo del mar",
+      "back_light": "brillo azul metálico"
+    },
+    "environment": {
+      "location": "malecón habanero",
+      "elements": ["olas golpeando muros", "óxido", "grafitis descoloridos"],
+      "color_palette": ["azul acero", "gris húmedo", "rojo herrumbre"]
+    },
+    "performance": {
+      "action": "María rapea mirando al horizonte",
+      "expression": "mirada desafiante, tono firme"
+    },
+    "sound": {
+      "music": "ritmo grave con percusión profunda",
+      "ambience": "olas, viento fuerte"
+    },
+    "emotional_tone": {
+      "feeling": "cansancio y resistencia"
+    },
+    "transition": {
+      "out": "fade a interior oscuro"
+    },
+    "production_notes": {
+      "fx": "spray de agua salada, cámara protegida"
+    }
+  },
+  {
+    "scene_id": 6,
+    "section": "Verso 2 (Fast Flow)",
+    "title": "Techos que se rajan",
+    "camera": {
+      "type": "handheld nervioso",
+      "lens": "24mm gran angular",
+      "movement": "movimiento caótico sincronizado con percusión",
+      "framerate": "24fps"
+    },
+    "lighting": {
+      "source": "luces de linterna y ventanas rotas",
+      "temperature": "3500K mixta",
+      "contrast": "alto"
+    },
+    "environment": {
+      "location": "interior derrumbado",
+      "elements": ["vigas partidas", "polvo suspendido", "rayos de sol filtrados"],
+      "color_palette": ["gris", "negro carbón", "amarillo polvo"]
+    },
+    "performance": {
+      "action": "María camina entre ruinas mientras el techo se agrieta",
+      "expression": "determinación",
+      "symbolism": "la verdad emerge del colapso"
+    },
+    "sound": {
+      "ambience": "grietas, ruidos de caída",
+      "music": "percusión agresiva, eco metálico"
+    },
+    "emotional_tone": {
+      "feeling": "tensión, peligro, verdad cruda"
+    },
+    "transition": {
+      "out": "corte a exterior con niños corriendo"
+    },
+    "production_notes": {
+      "safety": "estructura controlada, polvo artificial"
+    }
+  },
+  {
+    "scene_id": 7,
+    "section": "Interludio",
+    "title": "Niños del polvo",
+    "camera": {
+      "type": "plano general bajo",
+      "lens": "32mm",
+      "movement": "steadycam baja siguiendo a los niños",
+      "framerate": "48fps slow motion"
+    },
+    "lighting": {
+      "source": "sol difuso del mediodía",
+      "temperature": "4300K",
+      "key_light": "rebotado cálido"
+    },
+    "environment": {
+      "location": "plazoleta entre ruinas",
+      "elements": ["niños corriendo", "charcos", "mujer colgando ropa"],
+      "color_palette": ["ocre", "azul pálido", "verde polvo"]
+    },
+    "performance": {
+      "action": "María los observa desde la sombra, sonrisa leve",
+      "symbolism": "la esperanza entre la ruina"
+    },
+    "sound": {
+      "ambience": "risas, tambores suaves"
+    },
+    "emotional_tone": {
+      "feeling": "nostalgia y ternura"
+    },
+    "transition": {
+      "out": "fundido cruzado a altavoz político"
+    },
+    "production_notes": {
+      "reales": "niños locales no actores"
+    }
+  },
+  {
+    "scene_id": 8,
+    "section": "Bridge",
+    "title": "El pregón de la mentira",
+    "camera": {
+      "type": "plano medio cerrado fijo",
+      "lens": "85mm",
+      "movement": "sin movimiento, tensión en la quietud",
+      "framerate": "24fps"
+    },
+    "lighting": {
+      "source": "bombilla parpadeante y luz lateral",
+      "temperature": "2700K amarilla",
+      "contrast": "medio"
+    },
+    "environment": {
+      "location": "interior oscuro con altavoz viejo",
+      "elements": ["retrato desvanecido del Che", "pósters caídos"],
+      "color_palette": ["marrón", "sepia", "negro"]
+    },
+    "performance": {
+      "action": "María apaga el altavoz con un gesto firme",
+      "expression": "mirada fría, controlada"
+    },
+    "sound": {
+      "ambience": "eco metálico del altavoz, silencio posterior"
+    },
+    "emotional_tone": {
+      "feeling": "ruptura simbólica, rebeldía silenciosa"
+    },
+    "transition": {
+      "out": "fundido lento al exterior con tambores"
+    }
+  },
+  {
+    "scene_id": 9,
+    "section": "Coro",
+    "title": "Rumba en ruinas",
+    "camera": {
+      "type": "plano general circular",
+      "lens": "35mm",
+      "movement": "cámara gira rápidamente alrededor del grupo",
+      "framerate": "48fps"
+    },
+    "lighting": {
+      "source": "luz cálida artificial + fuego real",
+      "temperature": "3000K",
+      "key_light": "antorchas y hogueras"
+    },
+    "environment": {
+      "location": "calle abierta con tambores y fuego",
+      "elements": ["músicos", "bailarines", "polvo y humo"],
+      "color_palette": ["rojo", "naranja", "negro"]
+    },
+    "performance": {
+      "action": "María baila y canta con el grupo",
+      "expression": "euforia y fuerza colectiva"
+    },
+    "sound": {
+      "music": "rumba acelerada con tambores y palmas"
+    },
+    "emotional_tone": {
+      "feeling": "catarsis popular"
+    },
+    "transition": {
+      "out": "corte abrupto al silencio del ladrillo"
+    }
+  },
+  {
+    "scene_id": 10,
+    "section": "Outro I",
+    "title": "La fe del ladrillo",
+    "camera": {
+      "type": "plano detalle y cámara lenta",
+      "lens": "100mm macro",
+      "movement": "zoom in sobre las manos de María recogiendo un ladrillo roto",
+      "framerate": "60fps"
+    },
+    "lighting": {
+      "source": "luz lateral cálida",
+      "temperature": "3300K",
+      "contrast": "medio-bajo"
+    },
+    "environment": {
+      "location": "solar vacío al amanecer",
+      "elements": ["ladrillos rotos", "polvo suspendido"],
+      "color_palette": ["ocre", "rojo tierra", "gris claro"]
+    },
+    "performance": {
+      "action": "María levanta el ladrillo y sopla el polvo",
+      "voice": "‘Con esto reconstruyo mi verdad.’"
+    },
+    "sound": {
+      "ambience": "viento leve, percusión lenta"
+    },
+    "emotional_tone": {
+      "feeling": "esperanza silenciosa, cierre poético"
+    },
+    "transition": {
+      "out": "fade to black"
+    },
+    "production_notes": {
+      "efecto": "grano visible, realismo poético",
+      "color_grade": "cálido con matices dorados"
+    }
+  }
+]
