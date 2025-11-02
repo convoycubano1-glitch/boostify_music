@@ -461,7 +461,14 @@ export function MusicVideoAI() {
         description: "Generando guion basado en la letra de la canción...",
       });
 
-      const scriptResponse = await generateMusicVideoScript(transcription);
+      // Pasar información del director si está seleccionado
+      const directorInfo = videoStyle.selectedDirector ? {
+        name: videoStyle.selectedDirector.name,
+        specialty: videoStyle.selectedDirector.specialty,
+        style: videoStyle.selectedDirector.style
+      } : undefined;
+      
+      const scriptResponse = await generateMusicVideoScript(transcription, undefined, directorInfo);
       
       // Intentar dar formato al JSON para mejor visualización
       try {

@@ -934,9 +934,14 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
  * 
  * @param lyrics La transcripción de la letra de la canción
  * @param audioAnalysis Análisis opcional de la pista de audio (beats, segmentos, etc)
+ * @param director Información del director para adaptar el estilo cinematográfico
  * @returns Promise con el guion en formato JSON estructurado
  */
-export async function generateMusicVideoScript(lyrics: string, audioAnalysis?: any): Promise<string> {
+export async function generateMusicVideoScript(
+  lyrics: string, 
+  audioAnalysis?: any, 
+  director?: { name: string; specialty: string; style: string }
+): Promise<string> {
   try {
     if (!lyrics) {
       throw new Error("No lyrics provided for script generation");
@@ -961,6 +966,22 @@ export async function generateMusicVideoScript(lyrics: string, audioAnalysis?: a
     
     // Crear el prompt con la letra y análisis de audio si está disponible
     let userPrompt = `Generate a detailed music video script for these lyrics:\n\n${lyrics}`;
+    
+    // Agregar información del director si está disponible
+    if (director) {
+      userPrompt += `\n\nDIRECTOR STYLE ADAPTATION:
+This music video will be directed by ${director.name}, known for:
+- Specialty: ${director.specialty}
+- Visual Style: ${director.style}
+
+IMPORTANT: Adapt the entire script to reflect ${director.name}'s unique cinematic signature. Every scene should embody their characteristic style in:
+- Camera choices and movements
+- Lighting design
+- Visual composition
+- Color palette
+- Scene transitions
+- Overall aesthetic approach`;
+    }
     
     if (audioAnalysis) {
       try {
