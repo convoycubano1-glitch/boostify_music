@@ -935,12 +935,14 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
  * @param lyrics La transcripción de la letra de la canción
  * @param audioAnalysis Análisis opcional de la pista de audio (beats, segmentos, etc)
  * @param director Información del director para adaptar el estilo cinematográfico
+ * @param audioDuration Duración del audio en segundos para calcular número de escenas
  * @returns Promise con el guion en formato JSON estructurado
  */
 export async function generateMusicVideoScript(
   lyrics: string, 
   audioAnalysis?: any, 
-  director?: { name: string; specialty: string; style: string }
+  director?: { name: string; specialty: string; style: string },
+  audioDuration?: number
 ): Promise<string> {
   try {
     if (!lyrics) {
@@ -964,8 +966,21 @@ export async function generateMusicVideoScript(
       "Content-Type": "application/json"
     };
     
+    // Calcular número de escenas basado en duración del audio (~4 segundos por escena)
+    const targetSceneCount = audioDuration ? Math.ceil(audioDuration / 4) : 12;
+    const sceneDuration = audioDuration ? audioDuration / targetSceneCount : 4;
+    
     // Crear el prompt con la letra y análisis de audio si está disponible
     let userPrompt = `Generate a detailed music video script for these lyrics:\n\n${lyrics}`;
+    
+    if (audioDuration) {
+      userPrompt += `\n\nAUDIO INFORMATION:
+- Total duration: ${Math.floor(audioDuration)} seconds
+- Required number of scenes: ${targetSceneCount} scenes
+- Average scene duration: ~${sceneDuration.toFixed(1)} seconds per scene
+
+IMPORTANT: Create EXACTLY ${targetSceneCount} scenes to cover the entire song duration. Each scene should be approximately ${sceneDuration.toFixed(1)} seconds long.`;
+    }
     
     // Agregar información del director si está disponible
     if (director) {
@@ -1058,8 +1073,21 @@ Return a JSON array of scene objects. Each scene MUST follow this EXACT structur
 ]
 
 IMPORTANT GUIDELINES:
-- Create 8-12 scenes that cover the entire song structure
-- Divide logically: Intro, Verses, Chorus, Bridge, Outro
+- Create scenes with VARIED shot types for dynamic visual storytelling:
+  * Extreme Close-Up (ECU): Eyes, hands, lips - intense emotion
+  * Close-Up (CU): Face and shoulders - intimate moments
+  * Medium Close-Up (MCU): Head to chest - conversations
+  * Medium Shot (MS): Waist up - general performance
+  * Medium Long Shot (MLS): Knees up - environmental context
+  * Long Shot (LS): Full body - establishing presence
+  * Extreme Long Shot (ELS): Wide environment - scale and atmosphere
+  * Over-the-Shoulder (OTS): Connection and perspective
+  * Dutch Angle: Tension and disorientation
+  * Bird's Eye View: God's perspective
+  * Low Angle: Power and dominance
+  * High Angle: Vulnerability
+- VARY shot types throughout - never use the same type consecutively
+- Match shot type to emotional intensity and lyrical content
 - Be EXTREMELY specific and cinematic in all descriptions
 - Use professional cinematography terminology
 - Create a coherent visual narrative with strong symbolism

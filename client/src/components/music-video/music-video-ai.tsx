@@ -15,7 +15,7 @@ import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw,
   Film, CheckCircle2, Share, User, Upload, X, Check, Activity, ChevronUp, ChevronDown,
-  Megaphone, Waves, HelpCircle
+  Megaphone, Waves, HelpCircle, Sparkles
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { ScrollArea } from "../ui/scroll-area";
@@ -237,6 +237,7 @@ export function MusicVideoAI() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [isGeneratingShots, setIsGeneratingShots] = useState(false);
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
   const [transcription, setTranscription] = useState<string>("");
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [isExporting, setIsExporting] = useState(false);
@@ -468,7 +469,15 @@ export function MusicVideoAI() {
         style: videoStyle.selectedDirector.style
       } : undefined;
       
-      const scriptResponse = await generateMusicVideoScript(transcription, undefined, directorInfo);
+      // Pasar duración del audio para generar escenas cada ~4 segundos
+      const audioDurationInSeconds = audioBuffer?.duration || undefined;
+      
+      const scriptResponse = await generateMusicVideoScript(
+        transcription, 
+        undefined, 
+        directorInfo,
+        audioDurationInSeconds
+      );
       
       // Intentar dar formato al JSON para mejor visualización
       try {
@@ -599,6 +608,119 @@ export function MusicVideoAI() {
     });
     
     return segments;
+  };
+
+  // Generar todas las imágenes para las escenas del timeline usando Gemini con referencias faciales
+  const generateAllSceneImages = async () => {
+    if (!scriptContent) {
+      toast({
+        title: "Error",
+        description: "Primero debes generar el guión",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (artistReferenceImages.length === 0) {
+      toast({
+        title: "Advertencia",
+        description: "No hay imágenes de referencia. Se generarán imágenes sin consistencia facial",
+      });
+    }
+
+    setIsGeneratingImages(true);
+    try {
+      const parsedScript = JSON.parse(scriptContent);
+      
+      if (!Array.isArray(parsedScript) || parsedScript.length === 0) {
+        throw new Error("El guión no tiene escenas válidas");
+      }
+
+      toast({
+        title: "Generando imágenes",
+        description: `Iniciando generación de ${parsedScript.length} escenas con Gemini 2.5 Flash Image...`,
+      });
+
+      // Preparar las escenas en el formato que espera Gemini
+      const geminiScenes = parsedScript.map((scene: any) => {
+        const cameraType = scene.camera?.type || "cinematográfica profesional";
+        const cameraMovement = scene.camera?.movement || "estática";
+        const shotType = scene.camera?.lens || "plano medio";
+        const lighting = scene.lighting?.source || "iluminación natural";
+        const environment = scene.environment?.location || "escenario neutral";
+        
+        return {
+          id: scene.scene_id,
+          scene: `${scene.title}. ${scene.performance?.action || ''}`,
+          camera: `${cameraType}, ${shotType}, ${cameraMovement}`,
+          lighting: `${lighting}, ${scene.lighting?.temperature || 'temperatura neutra'}`,
+          style: `${scene.environment?.color_palette?.join(', ') || 'colores naturales'}`,
+          movement: cameraMovement
+        };
+      });
+
+      // Llamar al endpoint de Gemini con múltiples referencias faciales
+      const response = await fetch('/api/gemini-image/generate-batch-with-multiple-faces', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scenes: geminiScenes,
+          referenceImagesBase64: artistReferenceImages
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success || !data.results) {
+        throw new Error(data.error || 'Error al generar imágenes');
+      }
+
+      // Actualizar timeline items con las imágenes generadas
+      setTimelineItems(prevItems => {
+        return prevItems.map(item => {
+          // Extraer scene_id del id del item (formato: "scene-1", "scene-2", etc)
+          const sceneId = parseInt(item.id.replace('scene-', ''));
+          const imageResult = data.results[sceneId];
+          
+          if (imageResult && imageResult.success && imageResult.imageUrl) {
+            return {
+              ...item,
+              imageUrl: imageResult.imageUrl,
+              thumbnail: imageResult.imageUrl,
+              metadata: {
+                ...item.metadata,
+                isGeneratedImage: true,
+                imageGeneratedAt: new Date().toISOString()
+              }
+            };
+          }
+          
+          return item;
+        });
+      });
+
+      toast({
+        title: "¡Éxito!",
+        description: `${parsedScript.length} imágenes generadas con Gemini Nano Banana`,
+      });
+
+      setCurrentStep(5);
+    } catch (error) {
+      console.error("Error generando imágenes:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al generar las imágenes",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingImages(false);
+    }
   };
   
 
@@ -3899,6 +4021,34 @@ ${transcription}`;
                       )}
                     </Button>
                     
+                    {/* Botón para generar imágenes con Gemini */}
+                    {timelineItems.length > 0 && scriptContent && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1 }}
+                        className="mt-3"
+                      >
+                        <Button
+                          onClick={generateAllSceneImages}
+                          disabled={isGeneratingImages || !scriptContent}
+                          className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 border-0 shadow-md"
+                        >
+                          {isGeneratingImages ? (
+                            <motion.div className="flex items-center justify-center gap-2" animate={{ opacity: [0.7, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <span>Generando imágenes con Gemini...</span>
+                            </motion.div>
+                          ) : (
+                            <motion.div className="flex items-center justify-center" whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              <span>Generar Imágenes ({artistReferenceImages.length > 0 ? `${artistReferenceImages.length} referencias` : 'sin referencias'})</span>
+                            </motion.div>
+                          )}
+                        </Button>
+                      </motion.div>
+                    )}
+                    
                     {/* Botón para descargar el archivo JSON de timecodes */}
                     {beatsJsonData && (
                       <motion.div
@@ -4586,6 +4736,65 @@ ${transcription}`;
             <div className="lg:order-2 order-1">
               <div className="sticky top-4 space-y-4">
                 <div className="space-y-4">
+                  {/* Visor de Imágenes Generadas */}
+                  {timelineItems.some(item => item.imageUrl || item.thumbnail) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-black/40 backdrop-blur-lg border border-white/10 rounded-lg p-4"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <ImageIcon className="h-5 w-5 text-purple-400" />
+                        <h3 className="text-sm font-semibold text-white">Escenas Generadas</h3>
+                        <Badge variant="secondary" className="ml-auto">
+                          {timelineItems.filter(item => item.imageUrl || item.thumbnail).length} / {timelineItems.length}
+                        </Badge>
+                      </div>
+                      
+                      <ScrollArea className="h-[200px]">
+                        <div className="grid grid-cols-3 gap-2">
+                          {timelineItems.map((item, index) => {
+                            const hasImage = item.imageUrl || item.thumbnail;
+                            return (
+                              <motion.div
+                                key={item.id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="relative group cursor-pointer"
+                                whileHover={{ scale: 1.05 }}
+                              >
+                                <div className="aspect-video rounded overflow-hidden bg-black/60 border border-white/10">
+                                  {hasImage ? (
+                                    <img
+                                      src={item.imageUrl || item.thumbnail}
+                                      alt={item.title || `Scene ${index + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <ImageIcon className="h-6 w-6 text-white/20" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
+                                  <p className="text-[10px] text-white/80 font-medium truncate">
+                                    {item.title || `Escena ${index + 1}`}
+                                  </p>
+                                </div>
+                                {hasImage && (
+                                  <div className="absolute top-1 right-1 bg-green-500 rounded-full p-0.5">
+                                    <CheckCircle2 className="h-3 w-3 text-white" />
+                                  </div>
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </motion.div>
+                  )}
+                  
                   <TimelineEditor
                     clips={clips}
                     currentTime={(currentTime - (timelineItems[0]?.start_time || 0)) / 1000}
