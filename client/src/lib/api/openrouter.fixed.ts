@@ -1017,7 +1017,14 @@ IMPORTANT: Adapt the entire script to reflect ${director.name}'s unique cinemati
             role: "system",
             content: `You are a professional music video director. Create a detailed cinematic script for a music video based on song lyrics.
 
-Return a JSON array of scene objects. Each scene MUST follow this EXACT structure:
+CRITICAL: You MUST return a JSON object with a "scenes" key containing an array of EXACTLY 10 scene objects (or the number specified in the user prompt). DO NOT return fewer scenes.
+
+The response structure must be:
+{
+  "scenes": [... array of scene objects ...]
+}
+
+Each scene in the array MUST follow this EXACT structure:
 
 [
   {
@@ -1101,7 +1108,7 @@ IMPORTANT GUIDELINES:
           }
         ],
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 12000,
         response_format: { type: "json_object" }
       })
     });
@@ -1121,22 +1128,49 @@ IMPORTANT GUIDELINES:
     const scriptContent = data.choices[0].message.content;
     
     try {
-      // Validar que sea JSON válido
-      JSON.parse(scriptContent);
-      return scriptContent;
+      // Validar que sea JSON válido y tenga la estructura esperada
+      const parsed = JSON.parse(scriptContent);
+      
+      // Verificar que tenga la key "scenes" con un array
+      if (parsed.scenes && Array.isArray(parsed.scenes)) {
+        console.log(`✅ Guión generado con ${parsed.scenes.length} escenas`);
+        
+        // Si no generó suficientes escenas, completar con fallback
+        if (parsed.scenes.length < targetSceneCount) {
+          console.warn(`⚠️ Solo se generaron ${parsed.scenes.length} de ${targetSceneCount} escenas. Completando...`);
+          const fallbackScript = generarGuionFallback(lyrics, targetSceneCount);
+          const fallbackParsed = JSON.parse(fallbackScript);
+          
+          // Agregar las escenas faltantes del fallback
+          const missingCount = targetSceneCount - parsed.scenes.length;
+          const additionalScenes = fallbackParsed.scenes.slice(0, missingCount).map((scene: any, idx: number) => ({
+            ...scene,
+            scene_id: parsed.scenes.length + idx + 1
+          }));
+          
+          parsed.scenes = [...parsed.scenes, ...additionalScenes];
+        }
+        
+        return JSON.stringify(parsed);
+      } else {
+        console.warn("El script no tiene la estructura esperada con 'scenes' array");
+        return generarGuionFallback(lyrics, targetSceneCount);
+      }
     } catch (error) {
       console.error("El script generado no es JSON válido:", error);
       // Intento de extraer JSON si está mezclado con otro texto
       const jsonMatch = scriptContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
-          JSON.parse(jsonMatch[0]);
-          return jsonMatch[0];
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.scenes && Array.isArray(parsed.scenes)) {
+            return jsonMatch[0];
+          }
         } catch (e) {
           console.error("No se pudo extraer JSON del contenido:", e);
         }
       }
-      return generarGuionFallback(lyrics);
+      return generarGuionFallback(lyrics, targetSceneCount);
     }
   } catch (error) {
     console.error("Error generando guion de video musical:", error);
@@ -1147,169 +1181,107 @@ IMPORTANT GUIDELINES:
 /**
  * Genera un guion profesional como respaldo cuando la API falla
  * Usa un análisis básico del texto para determinar características y crear segmentos lógicos
+ * @param lyrics Letras de la canción
+ * @param sceneCount Número exacto de escenas a generar (default: 10)
  */
-function generarGuionFallback(lyrics: string): string {
-  console.log("Generando guion fallback para:", lyrics.substring(0, 100) + "...");
+function generarGuionFallback(lyrics: string, sceneCount: number = 10): string {
+  console.log(`🎬 Generando guión fallback con ${sceneCount} escenas`);
   
   // Dividir las letras en líneas
   const lines = lyrics.split('\n').filter(line => line.trim().length > 0);
+  const totalLines = lines.length;
   
-  // Detectar posible estructura (estrofas, coro, etc.)
-  const segments = [];
-  let currentSegment = [];
-  let segmentType = "intro";
-  let segmentIndex = 0;
+  // Tipos de planos para variar (nunca repetir consecutivamente)
+  const shotTypes = [
+    'Extreme Close-Up', 'Close-Up', 'Medium Shot', 'Wide Shot',
+    'Long Shot', 'Medium Close-Up', 'Over-the-Shoulder', 'Dutch Angle',
+    'Low Angle', 'High Angle'
+  ];
   
-  // Dividir en segmentos lógicos basados en líneas en blanco o patrones repetidos
-  for (let i = 0; i < lines.length; i++) {
-    currentSegment.push(lines[i]);
+  // Tipos de cámara
+  const cameraTypes = ['dolly', 'handheld', 'steadicam', 'drone', 'crane'];
+  
+  // Generar exactamente sceneCount escenas
+  const scenes = [];
+  const linesPerScene = Math.max(1, Math.floor(totalLines / sceneCount));
+  
+  for (let i = 0; i < sceneCount; i++) {
+    // Calcular qué líneas de letras corresponden a esta escena
+    const startLine = Math.floor((i / sceneCount) * totalLines);
+    const endLine = Math.min(Math.floor(((i + 1) / sceneCount) * totalLines), totalLines);
+    const sceneLines = lines.slice(startLine, endLine);
+    const lyricsText = sceneLines.join(' ').substring(0, 100);
     
-    // Detectar cambio de segmento por línea en blanco o al acumular 4-5 líneas
-    if (i === lines.length - 1 || currentSegment.length >= 4 || lines[i].trim() === "") {
-      if (currentSegment.length > 0) {
-        const segmentText = currentSegment.join('\n').trim();
-        if (segmentText) {
-          // Determinar tipo de segmento
-          let type = segmentType;
-          
-          // Intentar detectar si es coro basado en repetición
-          if (i > 0 && lines.slice(0, i).some(l => l === lines[i])) {
-            type = "chorus";
-          } else if (segmentIndex === 0) {
-            type = "intro";
-          } else if (i === lines.length - 1) {
-            type = "outro";
-          } else if (segmentIndex % 2 === 0) {
-            type = "verse";
-          } else {
-            type = "chorus";
-          }
-          
-          // Calcular timecodes aproximados (asumiendo 3 minutos / 180 segundos en total)
-          const startPercent = segmentIndex / Math.max(1, Math.ceil(lines.length / 4));
-          const endPercent = (segmentIndex + 1) / Math.max(1, Math.ceil(lines.length / 4));
-          const startSeconds = Math.floor(startPercent * 180);
-          const endSeconds = Math.floor(endPercent * 180);
-          
-          const timecode = `${formatearTiempo(startSeconds)} - ${formatearTiempo(endSeconds)}`;
-          
-          // Determinar estilo visual basado en palabras clave en el texto
-          const keywords = extraerPalabrasClave(segmentText);
-          
-          segments.push({
-            scene_id: segmentIndex + 1,
-            section: type.charAt(0).toUpperCase() + type.slice(1),
-            title: `${type.charAt(0).toUpperCase() + type.slice(1)} - ${keywords.slice(0, 3).join(', ') || 'Scene'}`,
-            camera: {
-              type: type === 'chorus' ? 'handheld' : 'dolly',
-              lens: type === 'chorus' ? '35mm' : '50mm',
-              movement: type === 'chorus' ? 'dynamic tracking following artist' : 'slow push in on artist',
-              framerate: '24fps',
-              resolution: '6K',
-              stabilization: type === 'chorus' ? 'handheld natural movement' : 'smooth stabilized'
-            },
-            lighting: {
-              source: 'natural daylight with artificial fill',
-              temperature: type === 'chorus' ? '5000K cool' : '3200K warm',
-              key_light: 'soft natural light from window',
-              fill_light: 'LED panel with diffusion',
-              back_light: 'rim light for separation',
-              atmosphere: 'subtle haze for depth'
-            },
-            environment: {
-              location: type === 'chorus' ? 'outdoor urban setting' : 'intimate interior space',
-              elements: keywords.length > 0 ? keywords : ['artistic set pieces', 'symbolic objects'],
-              color_palette: type === 'chorus' ? ['vibrant', 'saturated', 'energetic'] : ['muted', 'warm', 'intimate'],
-              texture: 'cinematic with slight film grain'
-            },
-            performance: {
-              artist_name: 'Artist',
-              wardrobe: 'contemporary styled outfit',
-              action: type === 'chorus' ? 'energetic performance, engaging camera' : 'emotive lip sync, subtle movements',
-              expression: type === 'chorus' ? 'confident and powerful' : 'vulnerable and emotional',
-              symbolism: `visual representation of ${keywords.slice(0, 2).join(' and ') || 'the lyrics'}`
-            },
-            sound: {
-              ambience: type === 'chorus' ? 'crowd energy, environmental sounds' : 'quiet atmospheric tones',
-              music: type === 'chorus' ? 'full instrumentation, energetic' : 'stripped back, emotional',
-              voice: segmentText.substring(0, 100)
-            },
-            emotional_tone: {
-              feeling: type === 'chorus' ? 'energetic and powerful' : 'intimate and reflective',
-              tempo_visual: type === 'chorus' ? 'fast' : 'slow'
-            },
-            transition: {
-              in: segmentIndex === 0 ? 'fade in from black' : 'cut from previous scene',
-              out: type === 'outro' ? 'fade to black' : (type === 'chorus' ? 'quick cut' : 'smooth dissolve')
-            },
-            production_notes: {
-              notes: `${type} section with ${type === 'chorus' ? 'high energy' : 'emotional depth'} visual treatment`
-            }
-          });
-          
-          segmentIndex++;
-          currentSegment = [];
-        }
-      }
-    }
-  }
-  
-  // Si no se crearon segmentos (posible error), crear al menos uno
-  if (segments.length === 0) {
-    segments.push({
-      scene_id: 1,
-      section: "Full Song",
-      title: "Complete Music Video",
+    // Determinar tipo de sección
+    let section = "Verse";
+    if (i === 0) section = "Intro";
+    else if (i === sceneCount - 1) section = "Outro";
+    else if (i % 3 === 1) section = "Chorus";
+    else if (i % 4 === 2) section = "Bridge";
+    
+    // Seleccionar tipo de plano (evitar repetir el anterior)
+    const shotType = shotTypes[i % shotTypes.length];
+    const cameraType = cameraTypes[i % cameraTypes.length];
+    
+    // Extraer palabras clave de las letras de esta escena
+    const keywords = extraerPalabrasClave(sceneLines.join(' '));
+    
+    const isHighEnergy = section === "Chorus";
+    
+    scenes.push({
+      scene_id: i + 1,
+      section: section,
+      title: `${section} - ${shotType} - ${keywords.slice(0, 2).join(', ') || 'Scene'}`,
       camera: {
-        type: 'handheld',
-        lens: '35mm',
-        movement: 'dynamic movement following artist',
+        type: cameraType,
+        lens: isHighEnergy ? '35mm' : '50mm',
+        movement: isHighEnergy ? `dynamic ${shotType} movement following artist` : `smooth ${shotType} on artist`,
         framerate: '24fps',
         resolution: '6K',
-        stabilization: 'natural handheld feel'
+        stabilization: isHighEnergy ? 'dynamic handheld' : 'smooth stabilized'
       },
       lighting: {
-        source: 'natural and artificial mixed',
-        temperature: '4000K neutral',
-        key_light: 'soft key from 45 degrees',
-        fill_light: 'bounce fill',
+        source: isHighEnergy ? 'dynamic mixed lighting' : 'natural daylight with fill',
+        temperature: isHighEnergy ? '5000K cool' : '3200K warm',
+        key_light: 'soft key light from 45 degrees',
+        fill_light: 'LED panel with diffusion',
         back_light: 'rim light for separation',
-        atmosphere: 'atmospheric haze'
+        atmosphere: 'cinematic haze for depth'
       },
       environment: {
-        location: 'artistic performance space',
-        elements: ['symbolic set pieces', 'atmospheric props'],
-        color_palette: ['cinematic', 'vibrant', 'contrasted'],
-        texture: 'film grain aesthetic'
+        location: isHighEnergy ? 'dynamic urban setting' : 'intimate interior space',
+        elements: keywords.length > 0 ? keywords : ['artistic set pieces', 'symbolic objects'],
+        color_palette: isHighEnergy ? ['vibrant', 'saturated', 'bold'] : ['muted', 'warm', 'intimate'],
+        texture: 'cinematic film grain'
       },
       performance: {
         artist_name: 'Artist',
-        wardrobe: 'artistic performance outfit',
-        action: 'dynamic performance throughout',
-        expression: 'emotional and engaging',
-        symbolism: 'visual storytelling of lyrics'
+        wardrobe: 'contemporary styled outfit',
+        action: isHighEnergy ? 'energetic performance, engaging camera' : 'emotive lip sync, subtle movements',
+        expression: isHighEnergy ? 'confident and powerful' : 'vulnerable and emotional',
+        symbolism: `${shotType} visual representation of ${keywords.slice(0, 2).join(' and ') || 'the lyrics'}`
       },
       sound: {
-        ambience: 'atmospheric environmental sounds',
-        music: 'full track instrumentation',
-        voice: lyrics.substring(0, 100)
+        ambience: isHighEnergy ? 'dynamic environmental sounds' : 'quiet atmospheric tones',
+        music: isHighEnergy ? 'full instrumentation' : 'stripped back emotional',
+        voice: lyricsText
       },
       emotional_tone: {
-        feeling: 'powerful and emotional',
-        tempo_visual: 'medium to fast'
+        feeling: isHighEnergy ? 'energetic and powerful' : 'intimate and reflective',
+        tempo_visual: isHighEnergy ? 'fast' : 'slow'
       },
       transition: {
-        in: 'fade in from black',
-        out: 'fade to black'
+        in: i === 0 ? 'fade in from black' : 'cut from previous scene',
+        out: i === sceneCount - 1 ? 'fade to black' : (isHighEnergy ? 'quick cut' : 'smooth dissolve')
       },
       production_notes: {
-        notes: 'Fallback scene covering entire song with artistic visual treatment'
+        notes: `${section} scene ${i + 1}/${sceneCount} using ${shotType} with ${isHighEnergy ? 'high energy' : 'emotional depth'} treatment`
       }
     });
   }
   
-  // Retornar el array de escenas directamente (nueva estructura)
-  return JSON.stringify(segments, null, 2);
+  // Retornar en el formato correcto con la key "scenes"
+  return JSON.stringify({ scenes }, null, 2);
   
   function extraerPalabrasClave(texto: string): string[] {
     // Lista de palabras emocionales comunes en canciones
