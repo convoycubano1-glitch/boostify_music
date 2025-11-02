@@ -505,14 +505,40 @@ export function MusicVideoAI() {
 
     setIsGeneratingShots(true);
     try {
-      const segments = await detectBeatsAndCreateSegments();
+      let segments: TimelineItem[] = [];
+      
+      // Si hay un guión generado, crear segmentos basados en las escenas del JSON
+      if (scriptContent) {
+        try {
+          const parsedScript = JSON.parse(scriptContent);
+          
+          // Verificar si el script es un array de escenas (nueva estructura)
+          if (Array.isArray(parsedScript) && parsedScript.length > 0 && parsedScript[0].scene_id) {
+            segments = createSegmentsFromScenes(parsedScript, audioBuffer.duration);
+            toast({
+              title: "Sincronizando",
+              description: `Creando ${segments.length} escenas basadas en el guión cinematográfico`,
+            });
+          } else {
+            // Fallback a detección de beats si no hay estructura válida
+            segments = await detectBeatsAndCreateSegments();
+          }
+        } catch (e) {
+          console.warn("No se pudo parsear el guión, usando detección de beats:", e);
+          segments = await detectBeatsAndCreateSegments();
+        }
+      } else {
+        // Si no hay guión, usar detección de beats
+        segments = await detectBeatsAndCreateSegments();
+      }
+      
       if (segments && segments.length > 0) {
         setTimelineItems(segments);
-        setCurrentStep(4); // Actualizamos este paso de 3 a 4 ya que agregamos un paso antes
+        setCurrentStep(4);
 
         toast({
           title: "Éxito",
-          description: `Se detectaron ${segments.length} segmentos sincronizados con la música`,
+          description: `${segments.length} escenas sincronizadas con la música`,
         });
       } else {
         throw new Error("No se detectaron segmentos en el audio");
@@ -527,6 +553,52 @@ export function MusicVideoAI() {
     } finally {
       setIsGeneratingShots(false);
     }
+  };
+
+  // Nueva función para crear segmentos del timeline basados en las escenas del guión JSON
+  const createSegmentsFromScenes = (scenes: any[], totalDuration: number): TimelineItem[] => {
+    const segments: TimelineItem[] = [];
+    const sceneDuration = totalDuration / scenes.length;
+    
+    scenes.forEach((scene, index) => {
+      const startTime = index * sceneDuration * 1000; // Convertir a milisegundos
+      const endTime = (index + 1) * sceneDuration * 1000;
+      const duration = endTime - startTime;
+      
+      segments.push({
+        id: `scene-${scene.scene_id}`,
+        group: 1,
+        title: scene.title || `Scene ${scene.scene_id}`,
+        start_time: startTime,
+        end_time: endTime,
+        duration: duration,
+        canMove: true,
+        canResize: true,
+        canChangeGroup: false,
+        itemProps: {
+          style: {
+            background: `hsl(${(index * 30) % 360}, 70%, 50%)`,
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '4px',
+            color: 'white'
+          }
+        },
+        metadata: {
+          scene_id: scene.scene_id,
+          section: scene.section,
+          camera: scene.camera,
+          lighting: scene.lighting,
+          environment: scene.environment,
+          performance: scene.performance,
+          sound: scene.sound,
+          emotional_tone: scene.emotional_tone,
+          transition: scene.transition,
+          production_notes: scene.production_notes
+        }
+      });
+    });
+    
+    return segments;
   };
   
 
