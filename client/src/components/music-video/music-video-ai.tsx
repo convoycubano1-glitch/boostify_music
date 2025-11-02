@@ -575,22 +575,30 @@ export function MusicVideoAI() {
   };
 
   // Nueva función para crear segmentos del timeline basados en las escenas del guión JSON
+  // Lee directamente start_time y duration del JSON del script
   const createSegmentsFromScenes = (scenes: any[], totalDuration: number): TimelineItem[] => {
     const segments: TimelineItem[] = [];
-    const sceneDuration = totalDuration / scenes.length;
     
     scenes.forEach((scene, index) => {
-      const startTime = index * sceneDuration * 1000; // Convertir a milisegundos
-      const endTime = (index + 1) * sceneDuration * 1000;
-      const duration = endTime - startTime;
+      // LEER directamente start_time y duration del JSON del script
+      // NO calcular duraciones iguales - usar los valores aleatorios (3-4 seg) del JSON
+      const startTime = (scene.start_time || 0) * 1000; // Convertir segundos a milisegundos
+      const duration = (scene.duration || 3.5) * 1000; // Duración en milisegundos (default 3.5s)
+      const endTime = startTime + duration;
+      
+      console.log(`🎬 Creando clip ${scene.scene_id}: start=${scene.start_time}s, duration=${scene.duration}s`);
       
       segments.push({
         id: `scene-${scene.scene_id}`,
+        type: 'image', // Tipo imagen para que se muestre correctamente
         group: 1,
         title: scene.title || `Scene ${scene.scene_id}`,
         start_time: startTime,
         end_time: endTime,
         duration: duration,
+        shotType: scene.shot_type || scene.camera?.lens || 'MS', // Shot type desde el JSON
+        thumbnail: '', // Se asignará cuando se genere la imagen
+        imageUrl: '', // Se asignará cuando se genere la imagen
         itemProps: {
           style: {
             background: `hsl(${(index * 30) % 360}, 70%, 50%)`,
@@ -602,6 +610,8 @@ export function MusicVideoAI() {
         metadata: {
           scene_id: scene.scene_id,
           section: scene.section,
+          shot_type: scene.shot_type || scene.camera?.lens,
+          role: scene.role,
           camera: scene.camera,
           lighting: scene.lighting,
           environment: scene.environment,
@@ -614,6 +624,7 @@ export function MusicVideoAI() {
       });
     });
     
+    console.log(`✅ ${segments.length} clips creados desde JSON con duraciones aleatorias`);
     return segments;
   };
 
