@@ -378,12 +378,12 @@ export function TimelineClip({
         )}
 
         {/* Información adicional / etiquetas */}
-        {clip.metadata?.section && (
+        {(clip.shotType || clip.metadata?.shot_type) && (
           <Badge
             variant="outline"
-            className="absolute top-5 right-0 text-[10px] h-4 pointer-events-none"
+            className="absolute top-5 right-0 text-[10px] h-4 pointer-events-none bg-purple-500/80 border-purple-400 text-white font-mono"
           >
-            {clip.metadata.section}
+            {clip.shotType || clip.metadata?.shot_type}
           </Badge>
         )}
       </div>

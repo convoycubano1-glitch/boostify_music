@@ -256,7 +256,8 @@ export interface BatchImageGenerationResult {
 }
 
 /**
- * Validador de balance 50/50
+ * Validador de balance 50/50 ESTRICTO
+ * Requiere exactamente mitad performance y mitad b-roll
  */
 export function validateSceneBalance(scenes: MusicVideoScene[]): {
   valid: boolean;
@@ -265,17 +266,19 @@ export function validateSceneBalance(scenes: MusicVideoScene[]): {
 } {
   const total = scenes.length;
   const performance_count = scenes.filter(s => s.role === SceneRole.PERFORMANCE).length;
+  const broll_count = scenes.filter(s => s.role === SceneRole.BROLL).length;
   const performance_ratio = performance_count / total;
   
-  const tolerance = 0.1; // 10% de tolerancia
-  const valid = Math.abs(performance_ratio - 0.5) <= tolerance;
+  // Balance ESTRICTO: exactamente 50/50 (con tolerancia de 1 escena para números impares)
+  const expected_count = Math.floor(total / 2);
+  const valid = Math.abs(performance_count - expected_count) <= (total % 2);
   
   return {
     valid,
     performance_ratio,
     message: valid 
-      ? `Balance correcto: ${(performance_ratio * 100).toFixed(1)}% performance`
-      : `Balance incorrecto: ${(performance_ratio * 100).toFixed(1)}% performance (debe ser ~50%)`
+      ? `✅ Balance 50/50: ${performance_count} performance, ${broll_count} b-roll${total % 2 === 1 ? ' (1 escena de tolerancia para total impar)' : ''}`
+      : `❌ Balance incorrecto: ${performance_count} performance, ${broll_count} b-roll (debe ser ${expected_count}/${total - expected_count}${total % 2 === 1 ? ' ±1' : ''})`
   };
 }
 

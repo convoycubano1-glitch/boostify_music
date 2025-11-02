@@ -1,4 +1,17 @@
 import { env } from "../../env";
+import { 
+  ShotType, 
+  SceneRole, 
+  CameraMovement, 
+  LensType, 
+  VisualStyle, 
+  LightingType, 
+  MusicSection,
+  type MusicVideoScene,
+  type MusicVideoScript,
+  validateSceneBalance,
+  generateVariedShotSequence
+} from "../../types/music-video-scene";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -955,7 +968,7 @@ export async function generateMusicVideoScript(
     const apiKey = env.VITE_OPENROUTER_API_KEY;
     if (!apiKey) {
       console.error("OpenRouter API key missing - using fallback script generation");
-      return generarGuionFallback(lyrics);
+      return generarGuionFallback(lyrics, Math.ceil((audioDuration || 40) / 4), audioDuration);
     }
     
     // Preparar headers para OpenRouter con modelo actualizado a Gemini 2.0 Flash
@@ -1015,92 +1028,68 @@ IMPORTANT: Adapt the entire script to reflect ${director.name}'s unique cinemati
         messages: [
           {
             role: "system",
-            content: `You are a professional music video director. Create a detailed cinematic script for a music video based on song lyrics.
+            content: `You are a professional music video director. Create a detailed cinematic script for a music video using the MusicVideoScene schema.
 
-CRITICAL: You MUST return a JSON object with a "scenes" key containing an array of EXACTLY 10 scene objects (or the number specified in the user prompt). DO NOT return fewer scenes.
+CRITICAL REQUIREMENTS:
+1. Return EXACTLY the number of scenes specified in the user prompt
+2. STRICT 50/50 BALANCE: Half the scenes MUST be "performance" (artist performing) and half MUST be "b-roll" (environmental/story scenes)
+3. VARY shot types - NEVER use the same type consecutively
+4. Use professional cinematography shot type codes
 
-The response structure must be:
+RESPONSE FORMAT (JSON):
 {
-  "scenes": [... array of scene objects ...]
+  "scenes": [
+    {
+      "scene_id": "scene-1",
+      "start_time": 0,
+      "duration": 4.0,
+      "role": "performance" | "b-roll",
+      "shot_type": "ECU" | "CU" | "MCU" | "MS" | "MWS" | "LS" | "WS" | "EWS" | "OTS" | "POV" | "HIGH" | "LOW" | "DUTCH",
+      "camera_movement": "static" | "pan" | "tilt" | "dolly" | "zoom" | "handheld" | "steadicam" | "crane" | "drone" | "tracking",
+      "lens": "14mm" | "24mm" | "35mm" | "50mm" | "85mm" | "135mm",
+      "visual_style": "cinematic" | "vibrant" | "muted" | "high-contrast" | "moody" | "warm" | "cool" | "saturated" | "desaturated",
+      "lighting": "natural" | "studio" | "dramatic" | "soft" | "hard" | "mixed" | "golden-hour" | "blue-hour" | "neon",
+      "color_temperature": "3200K" | "5000K" | "5600K",
+      "description": "Detailed visual description for image generation including scene composition, artist action, mood, and specific details",
+      "location": "Specific location description",
+      "music_section": "intro" | "verse" | "pre-chorus" | "chorus" | "bridge" | "outro" | "breakdown"
+    }
+  ]
 }
 
-Each scene in the array MUST follow this EXACT structure:
+SHOT TYPE GUIDE:
+- ECU (Extreme Close-Up): Eyes, lips, hands - maximum intimacy and emotion
+- CU (Close-Up): Face and shoulders - intimate connection
+- MCU (Medium Close-Up): Head to chest - personal moments
+- MS (Medium Shot): Waist up - standard performance
+- MWS (Medium Wide Shot): Knees up - movement with context
+- LS (Long Shot): Full body - complete performance
+- WS (Wide Shot): Artist in environment - establishing
+- EWS (Extreme Wide Shot): Vast environment - scale
+- OTS (Over-the-Shoulder): Perspective and connection
+- POV (Point of View): First person perspective
+- HIGH (High Angle): Vulnerability, looking down
+- LOW (Low Angle): Power, looking up
+- DUTCH (Dutch Angle): Tension, tilted frame
 
-[
-  {
-    "scene_id": 1,
-    "section": "Intro/Verse/Chorus/Bridge/Outro",
-    "title": "Scene title that captures the moment",
-    "camera": {
-      "type": "camera setup (e.g., 'handheld', 'drone', 'dolly')",
-      "lens": "lens specification (e.g., '35mm anamorphic', '50mm')",
-      "movement": "detailed camera movement description",
-      "framerate": "frame rate (e.g., '24fps', '48fps slow motion')",
-      "resolution": "resolution (e.g., '8K RAW', '6K')",
-      "stabilization": "stabilization notes"
-    },
-    "lighting": {
-      "source": "primary light source",
-      "temperature": "color temperature (e.g., '3100K warm', '5000K cool')",
-      "key_light": "key light description",
-      "fill_light": "fill light description",
-      "back_light": "back light description",
-      "atmosphere": "atmospheric effects (fog, haze, particles)"
-    },
-    "environment": {
-      "location": "specific location description",
-      "elements": ["array", "of", "environmental", "elements"],
-      "color_palette": ["array", "of", "colors"],
-      "texture": "texture and visual quality description"
-    },
-    "performance": {
-      "artist_name": "artist/character name",
-      "wardrobe": "costume description",
-      "action": "what the artist is doing",
-      "expression": "emotional expression and body language",
-      "symbolism": "symbolic meaning if any"
-    },
-    "sound": {
-      "ambience": "ambient sounds",
-      "music": "musical elements in this scene",
-      "voice": "key lyrics or dialogue from this scene"
-    },
-    "emotional_tone": {
-      "feeling": "primary emotion of the scene",
-      "tempo_visual": "visual tempo (slow, medium, fast)"
-    },
-    "transition": {
-      "in": "how this scene begins (fade in, cut, etc.)",
-      "out": "how this scene ends (fade out, cut to, etc.)"
-    },
-    "production_notes": {
-      "notes": "any additional production notes, effects, safety, etc."
-    }
-  }
-]
+CRITICAL BALANCE RULES:
+- For every scene with role "performance", create a scene with role "b-roll"
+- Performance scenes: Artist singing, performing, playing instrument, lip-syncing
+- B-roll scenes: Environmental shots, story elements, symbolic visuals, cityscapes, nature, objects, atmospheric scenes
+- Example sequence: performance, b-roll, performance, b-roll, performance, b-roll...
 
-IMPORTANT GUIDELINES:
-- Create scenes with VARIED shot types for dynamic visual storytelling:
-  * Extreme Close-Up (ECU): Eyes, hands, lips - intense emotion
-  * Close-Up (CU): Face and shoulders - intimate moments
-  * Medium Close-Up (MCU): Head to chest - conversations
-  * Medium Shot (MS): Waist up - general performance
-  * Medium Long Shot (MLS): Knees up - environmental context
-  * Long Shot (LS): Full body - establishing presence
-  * Extreme Long Shot (ELS): Wide environment - scale and atmosphere
-  * Over-the-Shoulder (OTS): Connection and perspective
-  * Dutch Angle: Tension and disorientation
-  * Bird's Eye View: God's perspective
-  * Low Angle: Power and dominance
-  * High Angle: Vulnerability
-- VARY shot types throughout - never use the same type consecutively
-- Match shot type to emotional intensity and lyrical content
-- Be EXTREMELY specific and cinematic in all descriptions
-- Use professional cinematography terminology
-- Create a coherent visual narrative with strong symbolism
-- Each scene should sync with the lyrics and emotion
-- Include detailed camera, lighting, and production specs
-- Note: Reference images of the artist may be available for face adaptation during image generation`
+SHOT VARIATION RULES:
+- NEVER repeat the same shot_type in consecutive scenes
+- Rotate through different shot types for visual dynamics
+- Match shot intensity to music energy (chorus = dynamic shots, verse = intimate shots)
+- Use varied camera movements and angles
+
+DESCRIPTION GUIDELINES:
+- For PERFORMANCE: Describe artist action, expression, movement, wardrobe, setting
+- For B-ROLL: Describe environment, atmosphere, story elements, symbolic meaning
+- Include color palette, lighting mood, and specific visual details
+- Reference the lyrics being sung in performance scenes
+- Be cinematically specific and evocative`
           },
           {
             role: "user",
@@ -1115,14 +1104,14 @@ IMPORTANT GUIDELINES:
     
     if (!response.ok) {
       console.error("Error en respuesta de OpenRouter:", response.status, response.statusText);
-      return generarGuionFallback(lyrics);
+      return generarGuionFallback(lyrics, targetSceneCount, audioDuration);
     }
     
     const data = await response.json();
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
       console.error("Respuesta inválida de OpenRouter:", data);
-      return generarGuionFallback(lyrics);
+      return generarGuionFallback(lyrics, targetSceneCount, audioDuration);
     }
     
     const scriptContent = data.choices[0].message.content;
@@ -1138,7 +1127,7 @@ IMPORTANT GUIDELINES:
         // Si no generó suficientes escenas, completar con fallback
         if (parsed.scenes.length < targetSceneCount) {
           console.warn(`⚠️ Solo se generaron ${parsed.scenes.length} de ${targetSceneCount} escenas. Completando...`);
-          const fallbackScript = generarGuionFallback(lyrics, targetSceneCount);
+          const fallbackScript = generarGuionFallback(lyrics, targetSceneCount, audioDuration);
           const fallbackParsed = JSON.parse(fallbackScript);
           
           // Agregar las escenas faltantes del fallback
@@ -1154,7 +1143,7 @@ IMPORTANT GUIDELINES:
         return JSON.stringify(parsed);
       } else {
         console.warn("El script no tiene la estructura esperada con 'scenes' array");
-        return generarGuionFallback(lyrics, targetSceneCount);
+        return generarGuionFallback(lyrics, targetSceneCount, audioDuration);
       }
     } catch (error) {
       console.error("El script generado no es JSON válido:", error);
@@ -1170,39 +1159,36 @@ IMPORTANT GUIDELINES:
           console.error("No se pudo extraer JSON del contenido:", e);
         }
       }
-      return generarGuionFallback(lyrics, targetSceneCount);
+      return generarGuionFallback(lyrics, targetSceneCount, audioDuration);
     }
   } catch (error) {
     console.error("Error generando guion de video musical:", error);
-    return generarGuionFallback(lyrics);
+    return generarGuionFallback(lyrics, Math.ceil((audioDuration || 40) / 4), audioDuration);
   }
 }
 
 /**
  * Genera un guion profesional como respaldo cuando la API falla
- * Usa un análisis básico del texto para determinar características y crear segmentos lógicos
+ * Usa el nuevo schema MusicVideoScene con balance 50/50
  * @param lyrics Letras de la canción
  * @param sceneCount Número exacto de escenas a generar (default: 10)
+ * @param audioDuration Duración total del audio en segundos
  */
-function generarGuionFallback(lyrics: string, sceneCount: number = 10): string {
-  console.log(`🎬 Generando guión fallback con ${sceneCount} escenas`);
+function generarGuionFallback(lyrics: string, sceneCount: number = 10, audioDuration?: number): string {
+  console.log(`🎬 Generando guión fallback con ${sceneCount} escenas (nuevo schema MusicVideoScene)`);
   
   // Dividir las letras en líneas
   const lines = lyrics.split('\n').filter(line => line.trim().length > 0);
   const totalLines = lines.length;
   
-  // Tipos de planos para variar (nunca repetir consecutivamente)
-  const shotTypes = [
-    'Extreme Close-Up', 'Close-Up', 'Medium Shot', 'Wide Shot',
-    'Long Shot', 'Medium Close-Up', 'Over-the-Shoulder', 'Dutch Angle',
-    'Low Angle', 'High Angle'
-  ];
+  // Generar shot types variados usando el helper
+  const shotSequence = generateVariedShotSequence(sceneCount, 2);
   
-  // Tipos de cámara
-  const cameraTypes = ['dolly', 'handheld', 'steadicam', 'drone', 'crane'];
+  // Calcular duración promedio por escena
+  const sceneDuration = audioDuration ? audioDuration / sceneCount : 4;
   
   // Generar exactamente sceneCount escenas
-  const scenes = [];
+  const scenes: MusicVideoScene[] = [];
   const linesPerScene = Math.max(1, Math.floor(totalLines / sceneCount));
   
   for (let i = 0; i < sceneCount; i++) {
@@ -1210,78 +1196,103 @@ function generarGuionFallback(lyrics: string, sceneCount: number = 10): string {
     const startLine = Math.floor((i / sceneCount) * totalLines);
     const endLine = Math.min(Math.floor(((i + 1) / sceneCount) * totalLines), totalLines);
     const sceneLines = lines.slice(startLine, endLine);
-    const lyricsText = sceneLines.join(' ').substring(0, 100);
+    const lyricsText = sceneLines.join(' ').substring(0, 150);
     
-    // Determinar tipo de sección
-    let section = "Verse";
-    if (i === 0) section = "Intro";
-    else if (i === sceneCount - 1) section = "Outro";
-    else if (i % 3 === 1) section = "Chorus";
-    else if (i % 4 === 2) section = "Bridge";
+    // Determinar tipo de sección musical
+    let musicSection: MusicSection = MusicSection.VERSE;
+    if (i === 0) musicSection = MusicSection.INTRO;
+    else if (i === sceneCount - 1) musicSection = MusicSection.OUTRO;
+    else if (i % 3 === 1) musicSection = MusicSection.CHORUS;
+    else if (i % 4 === 2) musicSection = MusicSection.BRIDGE;
     
-    // Seleccionar tipo de plano (evitar repetir el anterior)
-    const shotType = shotTypes[i % shotTypes.length];
-    const cameraType = cameraTypes[i % cameraTypes.length];
+    // Balance 50/50: alternar entre performance y b-roll
+    const role: SceneRole = i % 2 === 0 ? SceneRole.PERFORMANCE : SceneRole.BROLL;
     
-    // Extraer palabras clave de las letras de esta escena
-    const keywords = extraerPalabrasClave(sceneLines.join(' '));
+    // Obtener shot type de la secuencia variada
+    const shotType = shotSequence[i];
     
-    const isHighEnergy = section === "Chorus";
+    // Seleccionar movimiento de cámara y lente según energía
+    const isHighEnergy = musicSection === MusicSection.CHORUS;
+    const cameraMovements = [CameraMovement.HANDHELD, CameraMovement.STEADICAM, CameraMovement.DOLLY, CameraMovement.CRANE, CameraMovement.DRONE];
+    const cameraMovement = cameraMovements[i % cameraMovements.length];
     
-    scenes.push({
-      scene_id: i + 1,
-      section: section,
-      title: `${section} - ${shotType} - ${keywords.slice(0, 2).join(', ') || 'Scene'}`,
-      camera: {
-        type: cameraType,
-        lens: isHighEnergy ? '35mm' : '50mm',
-        movement: isHighEnergy ? `dynamic ${shotType} movement following artist` : `smooth ${shotType} on artist`,
-        framerate: '24fps',
-        resolution: '6K',
-        stabilization: isHighEnergy ? 'dynamic handheld' : 'smooth stabilized'
-      },
-      lighting: {
-        source: isHighEnergy ? 'dynamic mixed lighting' : 'natural daylight with fill',
-        temperature: isHighEnergy ? '5000K cool' : '3200K warm',
-        key_light: 'soft key light from 45 degrees',
-        fill_light: 'LED panel with diffusion',
-        back_light: 'rim light for separation',
-        atmosphere: 'cinematic haze for depth'
-      },
-      environment: {
-        location: isHighEnergy ? 'dynamic urban setting' : 'intimate interior space',
-        elements: keywords.length > 0 ? keywords : ['artistic set pieces', 'symbolic objects'],
-        color_palette: isHighEnergy ? ['vibrant', 'saturated', 'bold'] : ['muted', 'warm', 'intimate'],
-        texture: 'cinematic film grain'
-      },
-      performance: {
-        artist_name: 'Artist',
-        wardrobe: 'contemporary styled outfit',
-        action: isHighEnergy ? 'energetic performance, engaging camera' : 'emotive lip sync, subtle movements',
-        expression: isHighEnergy ? 'confident and powerful' : 'vulnerable and emotional',
-        symbolism: `${shotType} visual representation of ${keywords.slice(0, 2).join(' and ') || 'the lyrics'}`
-      },
-      sound: {
-        ambience: isHighEnergy ? 'dynamic environmental sounds' : 'quiet atmospheric tones',
-        music: isHighEnergy ? 'full instrumentation' : 'stripped back emotional',
-        voice: lyricsText
-      },
-      emotional_tone: {
-        feeling: isHighEnergy ? 'energetic and powerful' : 'intimate and reflective',
-        tempo_visual: isHighEnergy ? 'fast' : 'slow'
-      },
-      transition: {
-        in: i === 0 ? 'fade in from black' : 'cut from previous scene',
-        out: i === sceneCount - 1 ? 'fade to black' : (isHighEnergy ? 'quick cut' : 'smooth dissolve')
-      },
-      production_notes: {
-        notes: `${section} scene ${i + 1}/${sceneCount} using ${shotType} with ${isHighEnergy ? 'high energy' : 'emotional depth'} treatment`
-      }
-    });
+    const lens = isHighEnergy ? LensType.STANDARD : LensType.PORTRAIT;
+    const visualStyle = isHighEnergy ? VisualStyle.VIBRANT : VisualStyle.CINEMATIC;
+    const lighting = isHighEnergy ? LightingType.MIXED : LightingType.NATURAL;
+    
+    // Calcular start_time
+    const start_time = i * sceneDuration;
+    
+    // Generar descripción según el rol
+    let description: string;
+    if (role === SceneRole.PERFORMANCE) {
+      description = isHighEnergy 
+        ? `Artist performing energetically, ${shotType} shot capturing dynamic movement and emotional expression. ${lyricsText}`
+        : `Artist performing intimately, ${shotType} shot focusing on emotive lip sync and subtle movements. ${lyricsText}`;
+    } else {
+      // B-roll: escenas de historia/ambiente
+      const brollScenes = [
+        `Cinematic ${shotType} of urban landscape with artistic composition`,
+        `${shotType} capturing environmental storytelling elements`,
+        `Atmospheric ${shotType} of symbolic visual narrative`,
+        `${shotType} showcasing contextual setting and mood`,
+        `Story-driven ${shotType} with strong visual metaphor`
+      ];
+      description = brollScenes[i % brollScenes.length] + `. ${lyricsText}`;
+    }
+    
+    // Crear escena con nuevo schema
+    const scene: MusicVideoScene = {
+      scene_id: `scene-${i + 1}`,
+      start_time,
+      duration: sceneDuration,
+      role,
+      shot_type: shotType,
+      camera_movement: cameraMovement,
+      lens,
+      visual_style: visualStyle,
+      lighting,
+      color_temperature: isHighEnergy ? '5000K' : '3200K',
+      description,
+      location: role === SceneRole.PERFORMANCE ? 'performance space' : 'cinematic environment',
+      music_section: musicSection,
+      status: 'pending'
+    };
+    
+    scenes.push(scene);
   }
   
+  // Validar balance 50/50
+  const balance = validateSceneBalance(scenes);
+  console.log(`✅ Balance de escenas: ${balance.message}`);
+  
+  // Crear script completo con estadísticas
+  const script: MusicVideoScript = {
+    id: `script-${Date.now()}`,
+    title: 'Music Video Script',
+    duration: audioDuration || sceneCount * sceneDuration,
+    scene_count: sceneCount,
+    scenes,
+    stats: {
+      performance_count: scenes.filter(s => s.role === SceneRole.PERFORMANCE).length,
+      broll_count: scenes.filter(s => s.role === SceneRole.BROLL).length,
+      performance_ratio: balance.performance_ratio,
+      shot_type_distribution: scenes.reduce((acc, s) => {
+        acc[s.shot_type] = (acc[s.shot_type] || 0) + 1;
+        return acc;
+      }, {} as Record<ShotType, number>)
+    },
+    generated_at: Date.now(),
+    generation_config: {
+      audio_duration: audioDuration || 0,
+      audio_transcription: lyrics,
+      target_scene_count: sceneCount,
+      performance_ratio: 0.5
+    }
+  };
+  
   // Retornar en el formato correcto con la key "scenes"
-  return JSON.stringify({ scenes }, null, 2);
+  return JSON.stringify({ scenes: script.scenes }, null, 2);
   
   function extraerPalabrasClave(texto: string): string[] {
     // Lista de palabras emocionales comunes en canciones

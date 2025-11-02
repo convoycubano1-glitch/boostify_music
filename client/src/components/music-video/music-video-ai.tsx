@@ -698,24 +698,46 @@ export function MusicVideoAI() {
 
       // Actualizar timeline items con las imágenes generadas
       setTimelineItems(prevItems => {
+        // Filtrar solo clips de imágenes/escenas (excluir audio, texto, etc.)
+        const sceneItems = prevItems.filter(item => 
+          item.type === 'image' || item.id.toString().startsWith('scene-')
+        );
+        
         return prevItems.map(item => {
-          // Extraer scene_id del id del item (formato: "scene-1", "scene-2", etc)
-          const sceneId = parseInt(item.id.replace('scene-', ''));
-          const imageResult = data.results[sceneId];
+          // Solo procesar clips de imágenes/escenas
+          if (item.type !== 'image' && !item.id.toString().startsWith('scene-')) {
+            return item;
+          }
+          
+          // Encontrar el índice de esta escena en el array filtrado
+          const sceneIndex = sceneItems.findIndex(s => s.id === item.id);
+          if (sceneIndex === -1) {
+            console.warn(`⚠️ No se encontró índice de escena para ${item.id}`);
+            return item;
+          }
+          
+          // El backend retorna results indexados desde 0
+          const imageResult = data.results[sceneIndex];
+          
+          console.log(`📍 Asignando imagen ${sceneIndex} a ${item.id}:`, imageResult?.success ? 'SÍ' : 'NO', imageResult?.imageUrl ? `URL: ${imageResult.imageUrl.substring(0, 50)}...` : '');
           
           if (imageResult && imageResult.success && imageResult.imageUrl) {
             return {
               ...item,
               imageUrl: imageResult.imageUrl,
               thumbnail: imageResult.imageUrl,
+              url: imageResult.imageUrl, // También asignar a url para compatibilidad
               metadata: {
                 ...item.metadata,
                 isGeneratedImage: true,
-                imageGeneratedAt: new Date().toISOString()
+                imageGeneratedAt: new Date().toISOString(),
+                shot_type: item.shotType || item.metadata?.shot_type,
+                role: item.metadata?.role || 'performance'
               }
             };
           }
           
+          console.warn(`⚠️ No se pudo asignar imagen a ${item.id}`);
           return item;
         });
       });
