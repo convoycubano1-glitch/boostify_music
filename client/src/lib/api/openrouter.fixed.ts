@@ -1184,12 +1184,41 @@ function generarGuionFallback(lyrics: string, sceneCount: number = 10, audioDura
   // Generar shot types variados usando el helper
   const shotSequence = generateVariedShotSequence(sceneCount, 2);
   
-  // Calcular duración promedio por escena
-  const sceneDuration = audioDuration ? audioDuration / sceneCount : 4;
+  // GENERAR DURACIONES ALEATORIAS Y VARIADAS (2.5-5 segundos) para video musical
+  // NOTA: Esta es una solución temporal. Para sincronización REAL con beats,
+  // usa el Módulo 5 "Beat Synchronization" que detecta beats musicales automáticamente.
+  const minDuration = 2.5;
+  const maxDuration = 5.0;
+  
+  // Validar que audioDuration esté en el rango posible
+  const minPossibleTotal = sceneCount * minDuration;
+  const maxPossibleTotal = sceneCount * maxDuration;
+  
+  let targetTotal = audioDuration || 0;
+  if (audioDuration && (audioDuration < minPossibleTotal || audioDuration > maxPossibleTotal)) {
+    console.warn(`⚠️ audioDuration ${audioDuration}s está fuera del rango posible [${minPossibleTotal.toFixed(1)}-${maxPossibleTotal.toFixed(1)}]s para ${sceneCount} escenas`);
+    console.warn(`⚠️ Se ajustará al rango posible`);
+    targetTotal = Math.max(minPossibleTotal, Math.min(maxPossibleTotal, audioDuration));
+  }
+  
+  // Generar duraciones aleatorias VARIADAS entre 2.5-5 segundos
+  // Solución SIMPLE: cada escena tiene duración aleatoria en el rango válido
+  const adjustedDurations: number[] = [];
+  
+  for (let i = 0; i < sceneCount; i++) {
+    // Duración aleatoria entre 2.5 y 5 segundos
+    const duration = minDuration + Math.random() * (maxDuration - minDuration);
+    adjustedDurations.push(duration);
+  }
+  
+  console.log(`🎬 Duraciones VARIADAS generadas: min=${Math.min(...adjustedDurations).toFixed(2)}s, max=${Math.max(...adjustedDurations).toFixed(2)}s, promedio=${(adjustedDurations.reduce((s, d) => s + d, 0) / sceneCount).toFixed(2)}s, total=${adjustedDurations.reduce((s, d) => s + d, 0).toFixed(2)}s / target=${targetTotal}s`);
   
   // Generar exactamente sceneCount escenas
   const scenes: MusicVideoScene[] = [];
   const linesPerScene = Math.max(1, Math.floor(totalLines / sceneCount));
+  
+  // Acumular start_time correctamente
+  let accumulatedTime = 0;
   
   for (let i = 0; i < sceneCount; i++) {
     // Calcular qué líneas de letras corresponden a esta escena
@@ -1220,8 +1249,9 @@ function generarGuionFallback(lyrics: string, sceneCount: number = 10, audioDura
     const visualStyle = isHighEnergy ? VisualStyle.VIBRANT : VisualStyle.CINEMATIC;
     const lighting = isHighEnergy ? LightingType.MIXED : LightingType.NATURAL;
     
-    // Calcular start_time
-    const start_time = i * sceneDuration;
+    // Usar duración aleatoria de la lista generada
+    const sceneDuration = adjustedDurations[i];
+    const start_time = accumulatedTime;
     
     // Generar descripción según el rol
     let description: string;
@@ -1260,6 +1290,9 @@ function generarGuionFallback(lyrics: string, sceneCount: number = 10, audioDura
     };
     
     scenes.push(scene);
+    
+    // Incrementar el tiempo acumulado con la duración de esta escena
+    accumulatedTime += sceneDuration;
   }
   
   // Validar balance 50/50
@@ -1267,10 +1300,11 @@ function generarGuionFallback(lyrics: string, sceneCount: number = 10, audioDura
   console.log(`✅ Balance de escenas: ${balance.message}`);
   
   // Crear script completo con estadísticas
+  const totalDuration = audioDuration || adjustedDurations.reduce((sum, d) => sum + d, 0);
   const script: MusicVideoScript = {
     id: `script-${Date.now()}`,
     title: 'Music Video Script',
-    duration: audioDuration || sceneCount * sceneDuration,
+    duration: totalDuration,
     scene_count: sceneCount,
     scenes,
     stats: {

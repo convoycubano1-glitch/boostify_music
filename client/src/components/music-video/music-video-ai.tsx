@@ -667,20 +667,24 @@ export function MusicVideoAI() {
         description: `Iniciando generación de ${scenes.length} escenas con Gemini 2.5 Flash Image...`,
       });
 
-      // Preparar las escenas en el formato que espera Gemini
+      // Preparar las escenas en el formato que espera Gemini usando el NUEVO schema
       const geminiScenes = scenes.map((scene: any) => {
-        const cameraType = scene.camera?.type || "cinematográfica profesional";
-        const cameraMovement = scene.camera?.movement || "estática";
-        const shotType = scene.camera?.lens || "plano medio";
-        const lighting = scene.lighting?.source || "iluminación natural";
-        const environment = scene.environment?.location || "escenario neutral";
+        // Usar los campos del nuevo schema MusicVideoScene
+        const shotType = scene.shot_type || "MS";
+        const cameraMovement = scene.camera_movement || "static";
+        const lens = scene.lens || "standard";
+        const lighting = scene.lighting || "natural";
+        const visualStyle = scene.visual_style || "cinematic";
+        const description = scene.description || "";
+        const location = scene.location || "performance space";
+        const colorTemp = scene.color_temperature || "5000K";
         
         return {
-          id: scene.scene_id,
-          scene: `${scene.title}. ${scene.performance?.action || ''}`,
-          camera: `${cameraType}, ${shotType}, ${cameraMovement}`,
-          lighting: `${lighting}, ${scene.lighting?.temperature || 'temperatura neutra'}`,
-          style: `${scene.environment?.color_palette?.join(', ') || 'colores naturales'}`,
+          id: scene.scene_id || `scene-${Math.random()}`,
+          scene: description, // Usar la descripción completa que ya incluye todos los detalles
+          camera: `${lens} lens, ${shotType} shot, ${cameraMovement} movement`,
+          lighting: `${lighting} lighting, ${colorTemp} color temperature`,
+          style: `${visualStyle} style, ${location}`,
           movement: cameraMovement
         };
       });
