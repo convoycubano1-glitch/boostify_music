@@ -956,7 +956,8 @@ export async function generateMusicVideoScript(
   lyrics: string, 
   audioAnalysis?: any, 
   director?: { name: string; specialty: string; style: string },
-  audioDuration?: number
+  audioDuration?: number,
+  beatsDurations?: number[]  // MÓDULO 5: duraciones sincronizadas con beats
 ): Promise<string> {
   try {
     if (!lyrics) {
@@ -964,12 +965,15 @@ export async function generateMusicVideoScript(
     }
     
     console.log("Generating music video script from lyrics:", lyrics.substring(0, 100) + "...");
+    if (beatsDurations && beatsDurations.length > 0) {
+      console.log(`🎵 MÓDULO 5: Usando ${beatsDurations.length} duraciones sincronizadas con beats`);
+    }
     
     // Verificar API key
     const apiKey = env.VITE_OPENROUTER_API_KEY;
     if (!apiKey) {
       console.error("OpenRouter API key missing - using fallback script generation");
-      return generarGuionFallback(lyrics, Math.ceil((audioDuration || 40) / 4), audioDuration);
+      return generarGuionFallback(lyrics, Math.ceil((audioDuration || 40) / 4), audioDuration, beatsDurations);
     }
     
     // Preparar headers para OpenRouter con modelo actualizado a Gemini 2.0 Flash
@@ -980,14 +984,34 @@ export async function generateMusicVideoScript(
       "Content-Type": "application/json"
     };
     
-    // Calcular número de escenas basado en duración del audio (~4 segundos por escena)
-    const targetSceneCount = audioDuration ? Math.ceil(audioDuration / 4) : 12;
-    const sceneDuration = audioDuration ? audioDuration / targetSceneCount : 4;
+    // MÓDULO 5: Si hay beatsDurations, usar esas duraciones exactas
+    let targetSceneCount: number;
+    let sceneDuration: number;
+    
+    if (beatsDurations && beatsDurations.length > 0) {
+      // Usar el número de duraciones de beats como número de escenas
+      targetSceneCount = beatsDurations.length;
+      sceneDuration = beatsDurations.reduce((sum, d) => sum + d, 0) / beatsDurations.length;
+      console.log(`🎵 Usando ${targetSceneCount} escenas con duraciones sincronizadas con beats (promedio: ${sceneDuration.toFixed(2)}s)`);
+    } else {
+      // Calcular número de escenas basado en duración del audio (~4 segundos por escena)
+      targetSceneCount = audioDuration ? Math.ceil(audioDuration / 4) : 12;
+      sceneDuration = audioDuration ? audioDuration / targetSceneCount : 4;
+    }
     
     // Crear el prompt con la letra y análisis de audio si está disponible
     let userPrompt = `Generate a detailed music video script for these lyrics:\n\n${lyrics}`;
     
-    if (audioDuration) {
+    // MÓDULO 5: Incluir duraciones específicas si están disponibles
+    if (beatsDurations && beatsDurations.length > 0) {
+      userPrompt += `\n\n🎵 BEAT-SYNCHRONIZED DURATIONS (Module 5):
+- Total scenes: ${beatsDurations.length}
+- CRITICAL: Use these EXACT durations for each scene (in seconds):
+${beatsDurations.map((d, i) => `  Scene ${i + 1}: ${d.toFixed(2)}s`).join('\n')}
+- Total duration: ${beatsDurations.reduce((sum, d) => sum + d, 0).toFixed(2)} seconds
+
+⚠️ MANDATORY: Each scene MUST use the exact duration specified above. These durations are synchronized with musical beats and CANNOT be changed.`;
+    } else if (audioDuration) {
       userPrompt += `\n\nAUDIO INFORMATION:
 - Total duration: ${Math.floor(audioDuration)} seconds
 - Required number of scenes: ${targetSceneCount} scenes

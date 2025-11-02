@@ -594,11 +594,18 @@ export function MusicVideoAI() {
       // Pasar duración del audio para generar escenas cada ~4 segundos
       const audioDurationInSeconds = audioBuffer?.duration || undefined;
       
+      // MÓDULO 5: Pasar duraciones sincronizadas con beats si están disponibles
+      const beatsToUse = beatsDurations.length > 0 ? beatsDurations : undefined;
+      if (beatsToUse) {
+        console.log(`🎵 Generando guión con ${beatsToUse.length} duraciones sincronizadas con beats del Módulo 5`);
+      }
+      
       const scriptResponse = await generateMusicVideoScript(
         transcription, 
         undefined, 
         directorInfo,
-        audioDurationInSeconds
+        audioDurationInSeconds,
+        beatsToUse  // Pasar beats sincronizados
       );
       
       // Intentar dar formato al JSON para mejor visualización
@@ -3562,6 +3569,41 @@ ${transcription}`;
                           </motion.div>
                           Continuar al siguiente paso
                         </Button>
+                      </motion.div>
+                    )}
+                    
+                    {/* MÓDULO 5: BEAT SYNCHRONIZATION PANEL */}
+                    {audioBuffer && transcription && currentStep >= 1.5 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="mb-6"
+                      >
+                        <BeatSynchronizationPanel
+                          audioBuffer={audioBuffer}
+                          beatsData={beatsData}
+                          isAnalyzing={false}
+                          onAnalyzeAudio={handleAnalyzeAudio}
+                          onSyncToBeats={handleSyncToBeats}
+                        />
+                        
+                        {/* Mensaje de confirmación cuando hay beats sincronizados */}
+                        {beatsDurations.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg"
+                          >
+                            <div className="flex items-center gap-2 text-sm text-green-400">
+                              <CheckCircle2 className="h-4 w-4" />
+                              <span>
+                                ✅ {beatsDurations.length} cortes sincronizados con beats. 
+                                Genera el guión para aplicar los cambios.
+                              </span>
+                            </div>
+                          </motion.div>
+                        )}
                       </motion.div>
                     )}
                     
