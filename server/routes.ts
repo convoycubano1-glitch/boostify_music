@@ -170,7 +170,7 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api', fluxApiRouter);
   
   // Registrar el router para Gemini Image Generation (Nano Banana)
-  app.use('/api/gemini', geminiImageRouter);
+  app.use('/api/gemini-image', geminiImageRouter);
   
   // Registrar el router para transcripción de audio
   console.log('📢 Registrando router de transcripción de audio en /api/audio');
