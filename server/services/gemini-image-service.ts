@@ -359,6 +359,7 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
 /**
  * Genera múltiples imágenes en lote con MÚLTIPLES referencias faciales
  * Ideal para crear videos musicales con consistencia facial usando hasta 3 fotos del artista
+ * USA SEMILLA CONSISTENTE PARA COHERENCIA VISUAL (color, tono, iluminación)
  */
 export async function generateBatchImagesWithMultipleFaceReferences(
   scenes: CinematicScene[],
@@ -368,8 +369,13 @@ export async function generateBatchImagesWithMultipleFaceReferences(
   const results = new Map<number, ImageGenerationResult>();
   let quotaExceeded = false;
   
+  // 🌱 GENERAR SEMILLA BASE para coherencia visual entre escenas
+  // Usar timestamp + random para unicidad, pero consistente dentro de la sesión
+  const baseSeed = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
+  
   console.log(`🎨 Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
   console.log(`📌 Fallback a FAL AI: ${useFallback ? 'ACTIVADO' : 'DESACTIVADO'}`);
+  console.log(`🌱 Semilla base para coherencia visual: ${baseSeed}`);
   
   for (const scene of scenes) {
     console.log(`🎬 Generando escena ${scene.id}/${scenes.length}...`);
@@ -390,23 +396,25 @@ Create a high-quality, professional music video frame with cinematic composition
     // Intentar primero con Gemini
     let result = await generateImageWithMultipleFaceReferences(cinematicPrompt, referenceImagesBase64);
     
+    // CRÍTICO: Extraer número del scene.id para calcular semilla y key
+    // scene.id puede ser "scene-1", "scene-2", etc.
+    const sceneIdStr = String(scene.id);
+    const sceneNumber = sceneIdStr.includes('scene-') 
+      ? parseInt(sceneIdStr.replace('scene-', '')) 
+      : parseInt(sceneIdStr);
+    
+    // Calcular semilla única para esta escena (mantiene coherencia visual)
+    const sceneSeed = baseSeed + sceneNumber;
+    
     // Si falla y el fallback está activado, intentar con FAL AI
     if (!result.success && useFallback && !quotaExceeded) {
       console.log(`⚠️ Gemini falló para escena ${scene.id}, intentando con FAL AI...`);
-      result = await generateImageWithFAL(cinematicPrompt, referenceImagesBase64);
+      result = await generateImageWithFAL(cinematicPrompt, referenceImagesBase64, sceneSeed);
       
       if (result.success) {
         console.log(`✅ Escena ${scene.id} generada exitosamente con FAL AI (fallback)`);
       }
     }
-    
-    // CRÍTICO: Extraer número del scene.id para que coincida con el frontend
-    // scene.id puede ser "scene-1", "scene-2", etc.
-    // Necesitamos guardar con el número para que el frontend pueda acceder
-    const sceneIdStr = String(scene.id);
-    const sceneNumber = sceneIdStr.includes('scene-') 
-      ? parseInt(sceneIdStr.replace('scene-', '')) 
-      : parseInt(sceneIdStr);
     
     results.set(sceneNumber, result);
     
@@ -435,10 +443,12 @@ Create a high-quality, professional music video frame with cinematic composition
 /**
  * Genera una imagen usando FAL AI FLUX Pro v1.1 con referencias faciales
  * USAR IMÁGENES DE REFERENCIA SUBIDAS POR EL USUARIO
+ * USA SEMILLA (SEED) PARA COHERENCIA VISUAL
  */
 async function generateImageWithFAL(
   prompt: string,
-  referenceImagesBase64: string[]
+  referenceImagesBase64: string[],
+  seed?: number
 ): Promise<ImageGenerationResult> {
   try {
     // Importar axios dinámicamente
@@ -457,7 +467,7 @@ async function generateImageWithFAL(
     // Mejorar el prompt para mantener consistencia facial
     const enhancedPrompt = `${prompt}. Professional photography, same person, consistent facial features, high quality, detailed, 8k resolution.`;
     
-    console.log(`🎨 Generando con FAL AI FLUX Pro v1.1 (${referenceImagesBase64.length} referencias)...`);
+    console.log(`🎨 Generando con FAL AI FLUX Pro v1.1 (${referenceImagesBase64.length} referencias, seed: ${seed || 'auto'})...`);
     
     // Preparar request body base
     const requestBody: any = {
@@ -469,6 +479,12 @@ async function generateImageWithFAL(
       enable_safety_checker: false,
       output_format: 'jpeg'
     };
+    
+    // 🌱 CRÍTICO: Agregar semilla para coherencia visual
+    if (seed !== undefined) {
+      requestBody.seed = seed;
+      console.log(`🌱 Usando semilla ${seed} para coherencia visual (color, tono, estilo)`);
+    }
     
     // CRÍTICO: Usar imagen de referencia si está disponible
     if (referenceImagesBase64 && referenceImagesBase64.length > 0) {
