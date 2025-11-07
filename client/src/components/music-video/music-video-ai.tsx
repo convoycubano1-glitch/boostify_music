@@ -2425,6 +2425,9 @@ ${transcription}`;
         videoUrl: (clipType === 'video') ? url : undefined,
         audioUrl: (clipType === 'audio') ? item.audioUrl : undefined,
         textContent: (clipType === 'text') ? item.metadata?.textContent : undefined,
+        // Agregar imagePrompt y shotType para regeneración
+        imagePrompt: item.imagePrompt,
+        shotType: item.shotType,
         // Estado de visibilidad y bloqueo
         visible: true,
         locked: false,
