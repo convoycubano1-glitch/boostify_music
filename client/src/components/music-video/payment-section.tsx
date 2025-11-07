@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -14,7 +14,7 @@ interface PaymentSectionProps {
   onPaymentSuccess: () => void;
 }
 
-export function PaymentSection({ 
+export const PaymentSection = memo(function PaymentSection({ 
   songName, 
   duration, 
   userId,
@@ -87,13 +87,13 @@ export function PaymentSection({
   }
 
   return (
-    <div className="space-y-4" data-testid="payment-section">
+    <div className="space-y-4 w-full" data-testid="payment-section">
       {/* Plan Gratuito */}
-      <Card className="border-muted">
+      <Card className="border-muted hover:shadow-md transition-shadow">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Free Preview</CardTitle>
-            <Badge variant="secondary">Free</Badge>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <CardTitle className="text-base md:text-lg">Free Preview</CardTitle>
+            <Badge variant="secondary" className="text-xs">Free</Badge>
           </div>
           <CardDescription>
             Try before you pay
@@ -118,17 +118,17 @@ export function PaymentSection({
       </Card>
 
       {/* Plan Premium */}
-      <Card className="border-primary shadow-lg relative overflow-hidden">
+      <Card className="border-primary shadow-lg relative overflow-hidden hover:shadow-xl transition-shadow">
         {/* Gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5" />
         
         <CardHeader className="relative">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <CardTitle className="text-lg md:text-xl flex items-center gap-2">
+              <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               Premium Full Video
             </CardTitle>
-            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm md:text-base px-3 py-1">
               $199.00
             </Badge>
           </div>
@@ -168,7 +168,7 @@ export function PaymentSection({
           <Button
             onClick={handlePayment}
             disabled={isProcessing}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg"
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg text-sm md:text-base"
             size="lg"
             data-testid="button-pay-premium"
           >
@@ -193,4 +193,4 @@ export function PaymentSection({
       </Card>
     </div>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { useState, useMemo, memo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -7,6 +8,8 @@ import { Download, Trash2, Video, Loader2, Play, CheckCircle2, Clock, XCircle } 
 import { useToast } from "../../hooks/use-toast";
 import { queryClient, apiRequest } from "../../lib/queryClient";
 import { format } from "date-fns";
+import { ConfirmationDialog } from "../ui/confirmation-dialog";
+import { Skeleton } from "../ui/skeleton";
 
 interface GeneratedVideo {
   id: number;
@@ -26,6 +29,8 @@ interface GeneratedVideo {
 
 export function MyGeneratedVideos() {
   const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<{ id: number; name: string } | null>(null);
 
   // Obtener videos del usuario
   const { data: videos, isLoading } = useQuery<GeneratedVideo[]>({
@@ -88,12 +93,18 @@ export function MyGeneratedVideos() {
   };
 
   const handleDelete = (videoId: number, songName: string) => {
-    if (confirm(`Are you sure you want to delete the video "${songName}"?`)) {
-      deleteMutation.mutate(videoId);
+    setVideoToDelete({ id: videoId, name: songName });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (videoToDelete) {
+      deleteMutation.mutate(videoToDelete.id);
+      setVideoToDelete(null);
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useMemo(() => (status: string) => {
     switch (status) {
       case 'completed':
         return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />Completed</Badge>;
@@ -104,7 +115,7 @@ export function MyGeneratedVideos() {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -115,10 +126,24 @@ export function MyGeneratedVideos() {
             My Generated Videos
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
-            <p className="text-muted-foreground">Loading videos...</p>
+        <CardContent>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <div className="flex flex-col sm:flex-row">
+                  <Skeleton className="w-full sm:w-48 h-32" />
+                  <div className="flex-1 p-4 space-y-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-9 w-20" />
+                      <Skeleton className="h-9 w-24" />
+                      <Skeleton className="h-9 w-20" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -160,13 +185,13 @@ export function MyGeneratedVideos() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px] pr-4">
+        <ScrollArea className="h-[500px] md:h-[600px] pr-2 md:pr-4">
           <div className="space-y-4">
             {videos.map((video) => (
-              <Card key={video.id} className="overflow-hidden" data-testid={`video-card-${video.id}`}>
-                <div className="flex flex-col sm:flex-row">
+              <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow" data-testid={`video-card-${video.id}`}>
+                <div className="flex flex-col md:flex-row">
                   {/* Thumbnail */}
-                  <div className="relative w-full sm:w-48 h-32 bg-muted flex items-center justify-center">
+                  <div className="relative w-full md:w-48 h-40 md:h-32 bg-muted flex items-center justify-center">
                     {video.thumbnail_url ? (
                       <img
                         src={video.thumbnail_url}
@@ -205,7 +230,7 @@ export function MyGeneratedVideos() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 mt-auto">
                       {video.status === 'completed' && video.video_url && (
                         <>
                           <Button
@@ -251,6 +276,17 @@ export function MyGeneratedVideos() {
           </div>
         </ScrollArea>
       </CardContent>
+
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Video"
+        description={`Are you sure you want to delete "${videoToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        variant="destructive"
+      />
     </Card>
   );
 }
