@@ -2897,7 +2897,24 @@ ${transcription}`;
           ) : (
             <>
 
+          {/* Sección de Pasos de Creación */}
           <div className="space-y-6">
+            {/* Título de la sección */}
+            <motion.div 
+              className="border-b border-orange-500/20 pb-4"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-orange-500 flex items-center gap-3">
+                <Sparkles className="h-6 w-6 text-orange-500" />
+                Pasos de Creación
+              </h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Sigue estos pasos para crear tu video musical con IA
+              </p>
+            </motion.div>
+
             <div className="space-y-6">
               <motion.div 
                 className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-zinc-900 to-black shadow-sm relative border-zinc-800"
@@ -4272,8 +4289,31 @@ ${transcription}`;
               </div>
             </div>
 
-            <div className="lg:order-2 order-1">
-              <div className="sticky top-4 space-y-4">
+            {/* Separador visual entre creación y edición avanzada */}
+            <motion.div 
+              className="my-12 py-8 border-t border-orange-500/30"
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <motion.div 
+                className="border-l-4 border-purple-500 pl-4 mb-6"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h3 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-500 flex items-center gap-3">
+                  <Film className="h-7 w-7 text-purple-500" />
+                  Editor de Timeline
+                </h3>
+                <p className="text-muted-foreground mt-3 text-base">
+                  Edita y ajusta las escenas de tu video en el timeline. Perfecciona cada detalle antes de la generación final.
+                </p>
+              </motion.div>
+            </motion.div>
+
+            <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="space-y-4">
                   {/* Visor de Imágenes Generadas */}
                   {timelineItems.some(item => item.imageUrl || item.thumbnail) && (
