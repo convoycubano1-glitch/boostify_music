@@ -555,3 +555,24 @@ export type Post = typeof posts.$inferSelect;
 export type NewPost = typeof posts.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
+
+export const generatedVideos = pgTable("generated_videos", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  songName: text("song_name").notNull(),
+  videoUrl: text("video_url").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  duration: integer("duration").notNull(),
+  isPaid: boolean("is_paid").default(false).notNull(),
+  paymentIntentId: text("payment_intent_id"),
+  amount: decimal("amount", { precision: 10, scale: 2 }),
+  metadata: json("metadata"),
+  status: text("status", { enum: ["generating", "completed", "failed"] }).default("generating").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const insertGeneratedVideoSchema = createInsertSchema(generatedVideos);
+export const selectGeneratedVideoSchema = createSelectSchema(generatedVideos);
+export type GeneratedVideo = typeof generatedVideos.$inferSelect;
+export type NewGeneratedVideo = typeof generatedVideos.$inferInsert;
