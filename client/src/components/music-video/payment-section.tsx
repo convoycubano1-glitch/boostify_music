@@ -1,4 +1,5 @@
 import { useState, memo } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -21,6 +22,7 @@ export const PaymentSection = memo(function PaymentSection({
   isPaid,
   onPaymentSuccess 
 }: PaymentSectionProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -46,8 +48,8 @@ export const PaymentSection = memo(function PaymentSection({
     } catch (error) {
       console.error('Error al crear sesión de pago:', error);
       toast({
-        title: "Payment error",
-        description: error instanceof Error ? error.message : "Could not initiate payment process",
+        title: t('payment.paymentError'),
+        description: error instanceof Error ? error.message : t('payment.couldNotInitiate'),
         variant: "destructive",
       });
       setIsProcessing(false);
@@ -60,25 +62,25 @@ export const PaymentSection = memo(function PaymentSection({
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-500" />
-            Full Video Unlocked
+            {t('payment.fullVideoUnlocked')}
           </CardTitle>
           <CardDescription>
-            You have paid for the complete music video
+            {t('payment.paidForComplete')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span>30 cinematic scenes</span>
+              <span>{t('payment.thirtyScenes')}</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span>Full video ({duration}s)</span>
+              <span>{t('payment.fullVideo', { duration })}</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span>Professional quality with selected model</span>
+              <span>{t('payment.professionalQuality')}</span>
             </div>
           </div>
         </CardContent>
@@ -92,26 +94,26 @@ export const PaymentSection = memo(function PaymentSection({
       <Card className="border-muted hover:shadow-md transition-shadow">
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <CardTitle className="text-base md:text-lg">Free Preview</CardTitle>
-            <Badge variant="secondary" className="text-xs">Free</Badge>
+            <CardTitle className="text-base md:text-lg">{t('payment.freePreview')}</CardTitle>
+            <Badge variant="secondary" className="text-xs">{t('payment.freePreview')}</Badge>
           </div>
           <CardDescription>
-            Try before you pay
+            {t('payment.tryBeforePay')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Zap className="w-4 h-4" />
-              <span>10 second preview</span>
+              <span>{t('payment.tenSecondPreview')}</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Zap className="w-4 h-4" />
-              <span>3-5 test scenes</span>
+              <span>{t('payment.testScenes')}</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Zap className="w-4 h-4" />
-              <span>Standard quality</span>
+              <span>{t('payment.standardQuality')}</span>
             </div>
           </div>
         </CardContent>
@@ -126,14 +128,14 @@ export const PaymentSection = memo(function PaymentSection({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <CardTitle className="text-lg md:text-xl flex items-center gap-2">
               <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-              Premium Full Video
+              {t('payment.premiumFullVideo')}
             </CardTitle>
             <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm md:text-base px-3 py-1">
-              $199.00
+              {t('payment.priceLabel')}
             </Badge>
           </div>
           <CardDescription>
-            Professional-grade full music video
+            {t('payment.professionalGrade')}
           </CardDescription>
         </CardHeader>
         
@@ -175,19 +177,19 @@ export const PaymentSection = memo(function PaymentSection({
             {isProcessing ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
+                {t('payment.processing')}
               </>
             ) : (
               <>
                 <CreditCard className="w-4 h-4 mr-2" />
-                Pay $199 - Unlock Full Video
+                {t('payment.unlockFullVideo')} - {t('payment.priceLabel')}
               </>
             )}
           </Button>
 
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Lock className="w-3 h-3" />
-            <span>Secure payment with Stripe</span>
+            <span>{t('payment.securePayment')}</span>
           </div>
         </CardContent>
       </Card>

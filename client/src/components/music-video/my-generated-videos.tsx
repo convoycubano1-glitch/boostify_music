@@ -1,4 +1,5 @@
 import { useState, useMemo, memo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -28,6 +29,7 @@ interface GeneratedVideo {
 }
 
 export function MyGeneratedVideos() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<{ id: number; name: string } | null>(null);
@@ -52,14 +54,14 @@ export function MyGeneratedVideos() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/videos/my-videos'] });
       toast({
-        title: "Video deleted",
-        description: "The video has been deleted successfully",
+        title: t('videos.videoDeleted'),
+        description: t('videos.deletedSuccessfully'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Could not delete video",
+        title: t('common.error'),
+        description: error.message || t('videos.errorDeleting'),
         variant: "destructive",
       });
     }
@@ -79,13 +81,13 @@ export function MyGeneratedVideos() {
       document.body.removeChild(a);
       
       toast({
-        title: "Download started",
-        description: "Your video is downloading",
+        title: t('videos.downloadStarted'),
+        description: t('videos.downloadingVideo'),
       });
     } catch (error) {
       console.error('Error descargando video:', error);
       toast({
-        title: "Download error",
+        title: t('common.error'),
         description: "Could not download the video. Try opening it in a new tab.",
         variant: "destructive",
       });
@@ -104,18 +106,18 @@ export function MyGeneratedVideos() {
     }
   };
 
-  const getStatusBadge = useMemo(() => (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />Completed</Badge>;
+        return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />{t('videos.completed')}</Badge>;
       case 'generating':
-        return <Badge className="bg-blue-500"><Clock className="w-3 h-3 mr-1 animate-spin" />Generating</Badge>;
+        return <Badge className="bg-blue-500"><Clock className="w-3 h-3 mr-1 animate-spin" />{t('videos.generating')}</Badge>;
       case 'failed':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />{t('videos.failed')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
-  }, []);
+  };
 
   if (isLoading) {
     return (
@@ -123,7 +125,7 @@ export function MyGeneratedVideos() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Video className="w-5 h-5" />
-            My Generated Videos
+            {t('videos.myGeneratedVideos')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -156,17 +158,17 @@ export function MyGeneratedVideos() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Video className="w-5 h-5" />
-            My Generated Videos
+            {t('videos.myGeneratedVideos')}
           </CardTitle>
           <CardDescription>
-            Your generated music videos will appear here
+            {t('videos.allYourVideos')}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-12">
           <div className="text-center text-muted-foreground">
             <Video className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">You have no generated videos</p>
-            <p className="text-sm">Generate your first music video to see it here</p>
+            <p className="text-lg font-medium">{t('videos.noVideos')}</p>
+            <p className="text-sm">{t('videos.startCreating')}</p>
           </div>
         </CardContent>
       </Card>
@@ -178,10 +180,10 @@ export function MyGeneratedVideos() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Video className="w-5 h-5" />
-          My Generated Videos ({videos.length})
+          {t('videos.myGeneratedVideos')} ({videos.length})
         </CardTitle>
         <CardDescription>
-          All your AI-generated music videos
+          {t('videos.allYourVideos')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -223,9 +225,9 @@ export function MyGeneratedVideos() {
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                      <span>Duration: {Math.round(video.duration)}s</span>
+                      <span>{t('videos.duration')}: {t('videos.seconds', { count: Math.round(video.duration) })}</span>
                       {video.amount && (
-                        <span>Paid: ${(video.amount / 100).toFixed(2)}</span>
+                        <span>{t('videos.paid', { amount: (video.amount / 100).toFixed(2) })}</span>
                       )}
                     </div>
 
@@ -239,7 +241,7 @@ export function MyGeneratedVideos() {
                             data-testid={`button-play-${video.id}`}
                           >
                             <Play className="w-4 h-4 mr-1" />
-                            View
+                            {t('videos.watch')}
                           </Button>
                           <Button
                             size="sm"
@@ -248,14 +250,14 @@ export function MyGeneratedVideos() {
                             data-testid={`button-download-${video.id}`}
                           >
                             <Download className="w-4 h-4 mr-1" />
-                            Download
+                            {t('videos.download')}
                           </Button>
                         </>
                       )}
                       {video.status === 'generating' && (
                         <Button size="sm" disabled>
                           <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                          Generating...
+                          {t('videos.generating')}...
                         </Button>
                       )}
                       <Button
@@ -266,7 +268,7 @@ export function MyGeneratedVideos() {
                         data-testid={`button-delete-${video.id}`}
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
+                        {t('videos.delete')}
                       </Button>
                     </div>
                   </div>
@@ -280,10 +282,10 @@ export function MyGeneratedVideos() {
       <ConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Delete Video"
-        description={`Are you sure you want to delete "${videoToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={t('videos.deleteVideo')}
+        description={t('videos.deleteConfirm', { name: videoToDelete?.name || '' })}
+        confirmText={t('videos.delete')}
+        cancelText={t('videos.cancel')}
         onConfirm={confirmDelete}
         variant="destructive"
       />
