@@ -680,19 +680,18 @@ export function MusicVideoAI() {
       
       const imagePromises = fullScript.scenes.map(async (scene, index) => {
         try {
-          // Usar Flux para generar la imagen
+          // Use Flux to generate the image
           const result = await fluxService.generateImage({
             prompt: scene.prompt,
-            image_size: "landscape_16_9",
-            num_inference_steps: 30,
+            width: 1280,
+            height: 720,
             guidance_scale: 3.5,
-            num_images: 1,
-            enable_safety_checker: true,
-            safety_tolerance: "2"
+            steps: 30
           });
           
-          console.log(`✅ Imagen ${index + 1}/${fullScript.total_scenes} generada`);
-          return result.images[0].url;
+          console.log(`✅ Image ${index + 1}/${fullScript.total_scenes} generated`);
+          // FluxTaskResult.images is string[] not objects with url
+          return result.images?.[0] || '';
         } catch (error) {
           console.error(`Error generando imagen ${index + 1}:`, error);
           throw error;
@@ -1831,16 +1830,16 @@ ${transcription}`;
       
       console.log(`📍 Clip ${item.id} - Tipo: ${clipType}, Capa: ${clipLayer}, URL: ${url ? "SI" : "NO"}`);
       
-      // Crear un objeto base con todas las propiedades necesarias
+      // Create base object with all necessary properties
       const clipBase = {
-        id: item.id,
-        start: (item.start_time - timelineItems[0]?.start_time || 0) / 1000,
-        duration: item.duration / 1000,
+        id: typeof item.id === 'string' ? parseInt(item.id, 10) : item.id,
+        start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
+        duration: (item.duration || 0) / 1000,
         // Usar tipo determinado (video, imagen, audio, texto, efecto)
         type: clipType,
         // Usar capa determinada (0=audio, 1=video/imagen, 2=texto, 3=efectos)
         layer: clipLayer,
-        thumbnail: item.generatedImage || item.firebaseUrl,
+        thumbnail: typeof (item.generatedImage || item.firebaseUrl) === 'string' ? (item.generatedImage || item.firebaseUrl) : undefined,
         title: item.shotType || `Clip ${item.id}`,
         description: item.description || '',
         // Propiedades específicas por tipo
@@ -1963,7 +1962,7 @@ ${transcription}`;
     const absoluteSplitTime = timelineItems[0].start_time + splitTime * 1000;
     
     // Crear el nuevo clip para la segunda parte
-    const newClipId = Math.max(...timelineItems.map(item => item.id)) + 1;
+    const newClipId = Math.max(...timelineItems.map(item => typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10))) + 1;
     const relativeStartInClip = splitTime - ((clipToSplit.start_time - timelineItems[0].start_time) / 1000);
     
     // Nuevo clip (segunda parte)
@@ -2221,7 +2220,7 @@ ${transcription}`;
             visualIntensity: videoStyle.visualIntensity,
             narrativeIntensity: videoStyle.narrativeIntensity,
             colorPalette: videoStyle.colorPalette,
-            duration: segment.duration / 1000,
+            duration: (segment.duration || 0) / 1000,
             directorStyle: videoStyle.selectedDirector?.style,
             specialty: videoStyle.selectedDirector?.specialty,
             styleReference: videoStyle.styleReferenceUrl || ""
@@ -4058,12 +4057,12 @@ ${transcription}`;
                         isLoading={isGeneratingVideo}
                         scenesCount={timelineItems.length}
                         clips={timelineItems.map(item => ({
-                          id: item.id,
+                          id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
                           start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
-                          duration: item.duration / 1000,
+                          duration: (item.duration || 0) / 1000,
                           type: 'image' as const,
                           layer: 1, // Añadimos layer=1 para video/imagen
-                          thumbnail: item.generatedImage || item.firebaseUrl,
+                          thumbnail: typeof (item.generatedImage || item.firebaseUrl) === 'string' ? (item.generatedImage || item.firebaseUrl) : undefined,
                           title: item.shotType || 'Escena',
                           description: item.description || '',
                           imageUrl: item.generatedImage || item.firebaseUrl,
@@ -4232,9 +4231,9 @@ ${transcription}`;
                       
                       <FinalRendering
                         timelineClips={timelineItems.map(item => ({
-                          id: item.id,
+                          id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
                           start: (item.start_time - (timelineItems[0]?.start_time || 0)) / 1000,
-                          duration: item.duration / 1000,
+                          duration: (item.duration || 0) / 1000,
                           title: item.shotType || 'Escena',
                           type: 'video' as const,
                           layer: 1, // Añadimos layer=1 para video/imagen
