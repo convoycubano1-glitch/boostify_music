@@ -27,17 +27,15 @@ export function PaymentSection({
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      const response = await apiRequest<{ url: string }>(
-        '/api/stripe/create-music-video-payment',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            userId,
-            songName,
-            duration
-          })
+      const response = await apiRequest({
+        url: '/api/stripe/create-music-video-payment',
+        method: 'POST',
+        data: {
+          userId,
+          songName,
+          duration
         }
-      );
+      }) as { url: string };
 
       if (response.url) {
         // Redirigir a Stripe Checkout

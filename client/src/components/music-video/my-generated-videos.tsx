@@ -35,9 +35,13 @@ export function MyGeneratedVideos() {
   // Mutación para eliminar video
   const deleteMutation = useMutation({
     mutationFn: async (videoId: number) => {
-      return apiRequest(`/api/videos/${videoId}`, {
+      const response = await fetch(`/api/videos/${videoId}`, {
         method: 'DELETE'
       });
+      if (!response.ok) {
+        throw new Error('Error al eliminar video');
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/videos/my-videos'] });

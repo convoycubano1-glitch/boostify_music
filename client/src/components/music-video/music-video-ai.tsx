@@ -51,6 +51,11 @@ import { upscaleVideo } from "../../lib/api/video-service";
 import { generateVideoScript as generateVideoScriptAPI } from "../../lib/api/openrouter";
 import { FileText } from "lucide-react";
 import fluxService, { FluxModel, FluxTaskType } from "../../lib/api/flux/flux-service";
+import { FalModelSelector } from "./fal-model-selector";
+import { PaymentSection } from "./payment-section";
+import { MyGeneratedVideos } from "./my-generated-videos";
+import { generateMusicVideoPrompts } from "../../lib/api/music-video-generator";
+import { FAL_VIDEO_MODELS, generateVideoWithFAL, generateMultipleVideos } from "../../lib/api/fal-video-service";
 
 // Fal.ai configuration
 fal.config({
@@ -291,6 +296,12 @@ export function MusicVideoAI() {
   // Estado para las 3 imágenes de referencia del artista (para Nano Banana)
   const [artistReferenceImages, setArtistReferenceImages] = useState<string[]>([]);
   const [isUploadingReferences, setIsUploadingReferences] = useState(false);
+  
+  // Estados para sistema de pago y FAL
+  const [isPaidVideo, setIsPaidVideo] = useState(false);
+  const [selectedFalModel, setSelectedFalModel] = useState<string>(FAL_VIDEO_MODELS.KLING_2_1_PRO_I2V.id);
+  const [isGeneratingFullVideo, setIsGeneratingFullVideo] = useState(false);
+  const [showMyVideos, setShowMyVideos] = useState(false);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -626,6 +637,146 @@ export function MusicVideoAI() {
     
     console.log(`✅ ${segments.length} clips creados desde JSON con duraciones aleatorias`);
     return segments;
+  };
+
+  // Nueva función: Generar video completo con pago (30 escenas + FAL)
+  const handleGenerateFullVideoWithPayment = async () => {
+    if (!transcription || !audioBuffer || !user) {
+      toast({
+        title: "Error",
+        description: "Necesitas transcripción, audio cargado y estar autenticado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingFullVideo(true);
+    
+    try {
+      // Paso 1: Generar script con 30 prompts
+      toast({
+        title: "Generando script completo",
+        description: "Creando 30 escenas cinematográficas...",
+      });
+      
+      const fullScript = await generateMusicVideoPrompts(
+        transcription,
+        audioBuffer.duration,
+        true, // isPaid = true (30 escenas)
+        videoStyle.selectedDirector ? {
+          name: videoStyle.selectedDirector.name,
+          specialty: videoStyle.selectedDirector.specialty,
+          style: videoStyle.selectedDirector.style
+        } : undefined
+      );
+      
+      console.log(`✅ Script generado: ${fullScript.total_scenes} escenas`);
+      
+      // Paso 2: Generar imágenes para cada escena usando Gemini/Flux
+      toast({
+        title: "Generando imágenes",
+        description: `Generando ${fullScript.total_scenes} imágenes con IA...`,
+      });
+      
+      const imagePromises = fullScript.scenes.map(async (scene, index) => {
+        try {
+          // Usar Flux para generar la imagen
+          const result = await fluxService.generateImage({
+            prompt: scene.prompt,
+            image_size: "landscape_16_9",
+            num_inference_steps: 30,
+            guidance_scale: 3.5,
+            num_images: 1,
+            enable_safety_checker: true,
+            safety_tolerance: "2"
+          });
+          
+          console.log(`✅ Imagen ${index + 1}/${fullScript.total_scenes} generada`);
+          return result.images[0].url;
+        } catch (error) {
+          console.error(`Error generando imagen ${index + 1}:`, error);
+          throw error;
+        }
+      });
+      
+      const imageUrls = await Promise.all(imagePromises);
+      
+      toast({
+        title: "Imágenes generadas",
+        description: `${imageUrls.length} imágenes creadas exitosamente`,
+      });
+      
+      // Paso 3: Generar videos con FAL
+      toast({
+        title: "Generando videos",
+        description: `Convirtiendo ${imageUrls.length} imágenes a video con ${selectedFalModel}...`,
+      });
+      
+      const scenesWithImages = fullScript.scenes.map((scene, index) => ({
+        prompt: scene.prompt,
+        imageUrl: imageUrls[index]
+      }));
+      
+      const videoResults = await generateMultipleVideos(
+        selectedFalModel,
+        scenesWithImages
+      );
+      
+      const successCount = videoResults.filter(r => r.success).length;
+      
+      toast({
+        title: "Videos generados",
+        description: `${successCount}/${videoResults.length} videos generados exitosamente`,
+      });
+      
+      // Paso 4: Guardar en base de datos
+      const videoData = {
+        user_id: user.uid,
+        song_name: selectedFile?.name || "Video Musical",
+        video_url: null, // Se actualizará cuando se compile el video final
+        thumbnail_url: imageUrls[0],
+        duration: audioBuffer.duration,
+        is_paid: true,
+        amount: 19900, // $199.00 en centavos
+        status: 'completed',
+        metadata: {
+          scenes: fullScript.total_scenes,
+          model: selectedFalModel,
+          video_urls: videoResults.map(r => r.videoUrl)
+        }
+      };
+      
+      const response = await fetch('/api/videos/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(videoData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error guardando video en base de datos');
+      }
+      
+      const savedVideo = await response.json();
+      
+      toast({
+        title: "¡Video completo generado!",
+        description: "Tu video musical ha sido guardado en tu cuenta",
+      });
+      
+      // Actualizar estados
+      setIsPaidVideo(true);
+      setShowMyVideos(true);
+      
+    } catch (error) {
+      console.error('Error generando video completo:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al generar video completo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingFullVideo(false);
+    }
   };
 
   // Generar todas las imágenes para las escenas del timeline usando Gemini con referencias faciales
@@ -2702,28 +2853,50 @@ ${transcription}`;
               }}
             />
             
-          <div className="flex items-center gap-4 mb-6">
-            <motion.div 
-              className="h-14 w-14 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 flex items-center justify-center border border-orange-500/20 shadow-sm"
-              whileHover={{ scale: 1.05 }}
-              animate={{ 
-                boxShadow: ["0 0 0 rgba(249, 115, 22, 0)", "0 0 12px rgba(249, 115, 22, 0.3)", "0 0 0 rgba(249, 115, 22, 0)"] 
-              }}
-              transition={{ 
-                boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" } 
-              }}
-            >
-              <Video className="h-7 w-7 text-orange-500" />
-            </motion.div>
-            <div>
-              <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-orange-500">
-                Creador de Videos Musicales AI
-              </h2>
-              <p className="text-sm text-muted-foreground/90 tracking-wide">
-                Transforma tu música en experiencias visuales cautivadoras
-              </p>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <motion.div 
+                className="h-14 w-14 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 flex items-center justify-center border border-orange-500/20 shadow-sm"
+                whileHover={{ scale: 1.05 }}
+                animate={{ 
+                  boxShadow: ["0 0 0 rgba(249, 115, 22, 0)", "0 0 12px rgba(249, 115, 22, 0.3)", "0 0 0 rgba(249, 115, 22, 0)"] 
+                }}
+                transition={{ 
+                  boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" } 
+                }}
+              >
+                <Video className="h-7 w-7 text-orange-500" />
+              </motion.div>
+              <div>
+                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-orange-500">
+                  Creador de Videos Musicales AI
+                </h2>
+                <p className="text-sm text-muted-foreground/90 tracking-wide">
+                  Transforma tu música en experiencias visuales cautivadoras
+                </p>
+              </div>
             </div>
+            
+            {/* Botón para mostrar Mis Videos */}
+            <Button
+              onClick={() => setShowMyVideos(!showMyVideos)}
+              variant={showMyVideos ? "default" : "outline"}
+              className={cn(
+                "flex items-center gap-2",
+                showMyVideos && "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              )}
+              data-testid="button-toggle-my-videos"
+            >
+              <Film className="w-4 h-4" />
+              {showMyVideos ? "Volver al Creador" : "Mis Videos"}
+            </Button>
           </div>
+          
+          {/* Dashboard de Mis Videos */}
+          {showMyVideos ? (
+            <MyGeneratedVideos />
+          ) : (
+            <>
 
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="space-y-6 order-2 lg:order-1">
@@ -4286,6 +4459,8 @@ ${transcription}`;
         </Card>
         </motion.div>
       </motion.div>
+      </>
+      )}
     </div>
   );
 }
