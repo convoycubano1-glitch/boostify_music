@@ -61,6 +61,9 @@ import { FAL_VIDEO_MODELS, generateVideoWithFAL, generateMultipleVideos } from "
 import DynamicProgressTracker from "./dynamic-progress-tracker";
 import { CreativeOnboardingModal } from "./creative-onboarding-modal";
 import { applyLipSync } from "../../lib/api/fal-lipsync";
+import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
+import { ProjectManager } from "./project-manager";
+import { VideoModelSelector } from "./video-model-selector";
 
 // Fal.ai configuration
 fal.config({
@@ -329,6 +332,16 @@ export function MusicVideoAI() {
   const [currentProgressStage, setCurrentProgressStage] = useState<string>("transcription");
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [progressMessage, setProgressMessage] = useState<string>("");
+
+  // Estados para gestión de proyectos
+  const [projectName, setProjectName] = useState<string>("Untitled Project");
+  const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
+  const [isSavingProject, setIsSavingProject] = useState(false);
+
+  // Estados para generación de videos
+  const [selectedVideoModel, setSelectedVideoModel] = useState<string>(FAL_VIDEO_MODELS.KLING_2_1_PRO_I2V.id);
+  const [isGeneratingVideos, setIsGeneratingVideos] = useState(false);
+  const [videoGenerationProgress, setVideoGenerationProgress] = useState({ current: 0, total: 0 });
   
   // Estado para modal de onboarding
   const [showOnboarding, setShowOnboarding] = useState(true);
@@ -1812,6 +1825,210 @@ ${transcription}`;
       });
     }
   };
+
+  /**
+   * Guardar proyecto en Firestore
+   */
+  const handleSaveProject = async () => {
+    if (!user?.uid) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to save your project",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!projectName.trim()) {
+      toast({
+        title: "Project name required",
+        description: "Please enter a name for your project",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSavingProject(true);
+    try {
+      const projectId = await musicVideoProjectService.saveProject(
+        user.uid,
+        projectName,
+        {
+          audioUrl: audioUrl || "",
+          timelineItems,
+          artistReferences: artistReferenceImages,
+          editingStyle: selectedEditingStyle.id,
+          duration: estimatedDuration
+        },
+        currentProjectId
+      );
+
+      setCurrentProjectId(projectId);
+      toast({
+        title: "Project saved",
+        description: `"${projectName}" has been saved successfully`
+      });
+    } catch (error) {
+      console.error('Error saving project:', error);
+      toast({
+        title: "Error saving project",
+        description: "Could not save your project",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingProject(false);
+    }
+  };
+
+  /**
+   * Cargar proyecto desde Firestore
+   */
+  const handleLoadProject = (project: MusicVideoProject) => {
+    setProjectName(project.name);
+    setCurrentProjectId(project.id);
+    setAudioUrl(project.audioUrl);
+    setTimelineItems(project.timelineItems);
+    setArtistReferenceImages(project.artistReferences);
+    
+    const editingStyle = editingStyles.find(s => s.id === project.editingStyle);
+    if (editingStyle) {
+      setSelectedEditingStyle(editingStyle);
+    }
+  };
+
+  /**
+   * Generar video individual para una escena
+   */
+  const handleGenerateIndividualVideo = async (sceneId: number) => {
+    const scene = timelineItems.find(item => item.id === sceneId);
+    if (!scene || !scene.generatedImage) {
+      toast({
+        title: "Cannot generate video",
+        description: "Scene must have a generated image first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingVideos(true);
+    try {
+      const prompt = scene.imagePrompt || scene.description || "Cinematic video animation";
+      
+      const result = await generateVideoWithFAL(selectedVideoModel, {
+        prompt,
+        imageUrl: scene.generatedImage,
+        duration: "5",
+        aspectRatio: "16:9"
+      });
+
+      if (result.success && result.videoUrl) {
+        const updatedItems = timelineItems.map(item =>
+          item.id === sceneId
+            ? { ...item, videoUrl: result.videoUrl }
+            : item
+        );
+        setTimelineItems(updatedItems);
+
+        toast({
+          title: "Video generated",
+          description: `Video for scene ${sceneId} has been generated successfully`
+        });
+      } else {
+        throw new Error(result.error || "Failed to generate video");
+      }
+    } catch (error) {
+      console.error('Error generating video:', error);
+      toast({
+        title: "Error generating video",
+        description: error instanceof Error ? error.message : "Could not generate video",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingVideos(false);
+    }
+  };
+
+  /**
+   * Generar videos para todas las escenas
+   */
+  const handleGenerateAllVideos = async (modelId: string) => {
+    const scenesWithImages = timelineItems.filter(item => item.generatedImage);
+    
+    if (scenesWithImages.length === 0) {
+      toast({
+        title: "No images to animate",
+        description: "Please generate images first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingVideos(true);
+    setVideoGenerationProgress({ current: 0, total: scenesWithImages.length });
+
+    try {
+      const scenes = scenesWithImages.map(item => ({
+        prompt: item.imagePrompt || item.description || "Cinematic video animation",
+        imageUrl: item.generatedImage || ""
+      }));
+
+      const results = await generateMultipleVideos(modelId, scenes);
+
+      let successCount = 0;
+      const updatedItems = [...timelineItems];
+
+      results.forEach((result, index) => {
+        setVideoGenerationProgress({ current: index + 1, total: scenesWithImages.length });
+        
+        if (result.success && result.videoUrl) {
+          const originalScene = scenesWithImages[index];
+          const itemIndex = updatedItems.findIndex(item => item.id === originalScene.id);
+          if (itemIndex !== -1) {
+            updatedItems[itemIndex] = {
+              ...updatedItems[itemIndex],
+              videoUrl: result.videoUrl
+            };
+            successCount++;
+          }
+        }
+      });
+
+      setTimelineItems(updatedItems);
+      
+      toast({
+        title: "Videos generated",
+        description: `Successfully generated ${successCount} out of ${scenesWithImages.length} videos`
+      });
+    } catch (error) {
+      console.error('Error generating videos:', error);
+      toast({
+        title: "Error generating videos",
+        description: error instanceof Error ? error.message : "Could not generate videos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingVideos(false);
+      setVideoGenerationProgress({ current: 0, total: 0 });
+    }
+  };
+
+  // Auto-guardar proyecto cada 5 segundos cuando hay cambios
+  useEffect(() => {
+    if (user?.uid && projectName && timelineItems.length > 0 && audioUrl) {
+      musicVideoProjectService.autoSave(
+        user.uid,
+        projectName,
+        {
+          audioUrl,
+          timelineItems,
+          artistReferences: artistReferenceImages,
+          editingStyle: selectedEditingStyle.id,
+          duration: estimatedDuration
+        },
+        currentProjectId
+      );
+    }
+  }, [user?.uid, projectName, timelineItems, audioUrl, artistReferenceImages, selectedEditingStyle, currentProjectId, estimatedDuration]);
 
   const generateTimelineItems = useCallback((shots: { duration?: string; shotType: string; description: string; imagePrompt?: string; transition?: string }[]) => {
     const baseTime = Date.now();
@@ -4672,6 +4889,51 @@ ${transcription}`;
                     ))}
                   </RadioGroup>
                 </div>
+
+                {/* Project Management */}
+                {user && (
+                  <div className="mt-6">
+                    <ProjectManager
+                      userId={user.uid}
+                      projectName={projectName}
+                      onProjectNameChange={setProjectName}
+                      onSaveProject={handleSaveProject}
+                      onLoadProject={handleLoadProject}
+                      isSaving={isSavingProject}
+                      currentProjectId={currentProjectId}
+                    />
+                  </div>
+                )}
+
+                {/* Video Generation with FAL Models */}
+                {timelineItems.length > 0 && (
+                  <div className="mt-6">
+                    <VideoModelSelector
+                      onGenerateVideo={handleGenerateIndividualVideo}
+                      onGenerateAllVideos={handleGenerateAllVideos}
+                      isGenerating={isGeneratingVideos}
+                      scenesCount={timelineItems.length}
+                      hasImages={timelineItems.some(item => item.generatedImage || item.firebaseUrl)}
+                    />
+                  </div>
+                )}
+
+                {/* Video Generation Progress */}
+                {isGeneratingVideos && videoGenerationProgress.total > 0 && (
+                  <div className="mt-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="font-medium">Generating Videos...</span>
+                    </div>
+                    <Progress 
+                      value={(videoGenerationProgress.current / videoGenerationProgress.total) * 100} 
+                      className="h-2"
+                    />
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {videoGenerationProgress.current} of {videoGenerationProgress.total} videos completed
+                    </p>
+                  </div>
+                )}
 
                 {/* Secciones "Generar Prompts" y "Generar Imágenes" eliminadas - ahora automático */}
 
