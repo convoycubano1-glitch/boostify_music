@@ -56,6 +56,7 @@ import { PaymentSection } from "./payment-section";
 import { MyGeneratedVideos } from "./my-generated-videos";
 import { generateMusicVideoPrompts } from "../../lib/api/music-video-generator";
 import { FAL_VIDEO_MODELS, generateVideoWithFAL, generateMultipleVideos } from "../../lib/api/fal-video-service";
+import DynamicProgressTracker from "./dynamic-progress-tracker";
 
 // Fal.ai configuration
 fal.config({
@@ -303,6 +304,12 @@ export function MusicVideoAI() {
   const [isGeneratingFullVideo, setIsGeneratingFullVideo] = useState(false);
   const [showMyVideos, setShowMyVideos] = useState(false);
 
+  // Estados para progreso dinámico
+  const [showProgress, setShowProgress] = useState(false);
+  const [currentProgressStage, setCurrentProgressStage] = useState<string>("transcription");
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [progressMessage, setProgressMessage] = useState<string>("");
+
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -342,10 +349,24 @@ export function MusicVideoAI() {
           // Use OpenAI for transcription
           console.log('🎤 Starting file transcription:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
           setIsTranscribing(true);
+          setShowProgress(true);
+          setCurrentProgressStage("transcription");
+          setProgressPercentage(0);
+          
+          // Simular progreso mientras transcribe
+          const progressInterval = setInterval(() => {
+            setProgressPercentage(prev => {
+              if (prev >= 90) return prev;
+              return prev + Math.random() * 15;
+            });
+          }, 500);
+          
           try {
             console.log('📤 Sending file to server for transcription...');
             const transcriptionText = await transcribeAudio(file);
             console.log('✅ Transcription completed, length:', transcriptionText.length, 'characters');
+            setProgressPercentage(100);
+            await new Promise(resolve => setTimeout(resolve, 500));
             setTranscription(transcriptionText);
             // Set step as completed to enable next button
             // but don't change the view (that's why we use 1.5 instead of 2)
@@ -362,8 +383,11 @@ export function MusicVideoAI() {
               variant: "destructive",
             });
           } finally {
+            clearInterval(progressInterval);
             console.log('🏁 Transcription process completed');
             setIsTranscribing(false);
+            setShowProgress(false);
+            setProgressPercentage(0);
           }
         }
       };
@@ -463,6 +487,18 @@ export function MusicVideoAI() {
     }
 
     setIsGeneratingScript(true);
+    setShowProgress(true);
+    setCurrentProgressStage("script");
+    setProgressPercentage(0);
+    
+    // Simular progreso mientras genera el script
+    const progressInterval = setInterval(() => {
+      setProgressPercentage(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 12;
+      });
+    }, 600);
+    
     try {
       // Call API to generate the script
       toast({
@@ -486,6 +522,9 @@ export function MusicVideoAI() {
         directorInfo,
         audioDurationInSeconds
       );
+      
+      setProgressPercentage(100);
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Try to format JSON for better visualization
       try {
@@ -513,7 +552,10 @@ export function MusicVideoAI() {
         variant: "destructive",
       });
     } finally {
+      clearInterval(progressInterval);
       setIsGeneratingScript(false);
+      setShowProgress(false);
+      setProgressPercentage(0);
     }
   };
 
@@ -797,6 +839,10 @@ export function MusicVideoAI() {
     }
 
     setIsGeneratingImages(true);
+    setShowProgress(true);
+    setCurrentProgressStage("images");
+    setProgressPercentage(0);
+    
     try {
       const parsedScript = JSON.parse(scriptContent);
       
@@ -816,6 +862,9 @@ export function MusicVideoAI() {
         title: "Generating images",
         description: `Starting generation of ${scenes.length} scenes with Gemini 2.5 Flash Image...`,
       });
+      
+      // Actualizar progreso inicialmente
+      setProgressPercentage(10);
 
       // Prepare scenes in the format expected by Gemini using the NEW schema
       const geminiScenes = scenes.map((scene: any) => {
@@ -840,6 +889,7 @@ export function MusicVideoAI() {
       });
 
       // Call Gemini endpoint with multiple facial references
+      setProgressPercentage(30);
       const response = await fetch('/api/gemini-image/generate-batch-with-multiple-faces', {
         method: 'POST',
         headers: {
@@ -851,11 +901,13 @@ export function MusicVideoAI() {
         }),
       });
 
+      setProgressPercentage(70);
       if (!response.ok) {
         throw new Error(`Server error: ${response.statusText}`);
       }
 
       const data = await response.json();
+      setProgressPercentage(90);
       
       if (!data.success || !data.results) {
         throw new Error(data.error || 'Error generating images');
@@ -907,6 +959,9 @@ export function MusicVideoAI() {
         });
       });
 
+      setProgressPercentage(100);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       toast({
         title: "Success!",
         description: `${parsedScript.length} images generated with Gemini Nano Banana`,
@@ -922,6 +977,8 @@ export function MusicVideoAI() {
       });
     } finally {
       setIsGeneratingImages(false);
+      setShowProgress(false);
+      setProgressPercentage(0);
     }
   };
   
@@ -2641,6 +2698,35 @@ ${transcription}`;
   
   return (
     <div className="min-h-screen bg-black">
+      {/* Overlay de progreso dinámico */}
+      <AnimatePresence>
+        {showProgress && (
+          <motion.div
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="max-w-2xl w-full"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <DynamicProgressTracker
+                currentStage={currentProgressStage}
+                progress={progressPercentage}
+                customMessage={progressMessage}
+                onComplete={() => {
+                  setShowProgress(false);
+                }}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Efectos visuales para toda la aplicación */}
       {allStepsCompleted && <motion.div className="confetti-container" />}
       
