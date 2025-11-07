@@ -8,18 +8,37 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Initialize Firebase Admin without service account (for development)
-console.log("Initializing Firebase Admin in development mode (limited functionality)");
-const app = initializeApp({
-  // No credential provided, will use application default credentials or run in limited mode
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "artist-boost",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "artist-boost.firebasestorage.app"
-});
+let app: any;
+let db: any;
+let auth: any;
+let storage: any;
 
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
-export { FieldValue };
+// Initialize Firebase Admin with robust error handling
+try {
+  console.log("Initializing Firebase Admin...");
+  
+  app = initializeApp({
+    // No credential provided, will use application default credentials or run in limited mode
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "artist-boost",
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "artist-boost.firebasestorage.app"
+  });
+
+  db = getFirestore(app);
+  auth = getAuth(app);
+  storage = getStorage(app);
+  
+  console.log("✅ Firebase Admin initialized successfully");
+} catch (error) {
+  console.warn("⚠️ Firebase Admin initialization failed (non-critical):", error instanceof Error ? error.message : error);
+  console.warn("⚠️ Firebase features will be limited or unavailable");
+  
+  // Create mock objects to prevent crashes
+  db = null;
+  auth = null;
+  storage = null;
+}
+
+export { db, auth, storage, FieldValue };
 
 // Configure Firestore security rules
 const rules = `

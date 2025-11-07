@@ -99,25 +99,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Setup static file serving based on environment
-if (process.env.NODE_ENV === "production") {
-  log('🚀 Running in production mode');
-
-  const distPath = path.resolve(process.cwd(), 'dist', 'client');
-
-  //Simplified static file serving
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'), { root: '/' });
-  });
-
-
-} else {
-  log('🛠 Running in development mode');
-  app.use(express.static(path.join(process.cwd(), 'client/public')));
-  log('🔍 Vite will handle frontend routes in development mode');
-}
-
 (async () => {
   try {
     log('🔄 Starting server setup...');
@@ -125,7 +106,34 @@ if (process.env.NODE_ENV === "production") {
     const { checkEnvironment } = await import('./utils/environment-check');
     checkEnvironment();
 
+    // IMPORTANT: Register API routes BEFORE static file serving
     const server = registerRoutes(app);
+
+    // Setup static file serving based on environment
+    // This must come AFTER API routes registration
+    if (process.env.NODE_ENV === "production") {
+      log('🚀 Running in production mode');
+
+      const distPath = path.resolve(process.cwd(), 'dist', 'client');
+      log(`📁 Serving static files from: ${distPath}`);
+
+      // Serve static files
+      app.use(express.static(distPath));
+      
+      // SPA fallback - catch all other routes and serve index.html
+      // This MUST be the last route
+      app.get('*', (req, res) => {
+        // Don't log API requests here as they're already handled
+        if (!req.path.startsWith('/api/')) {
+          log(`📄 Serving index.html for: ${req.path}`);
+        }
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    } else {
+      log('🛠 Running in development mode');
+      app.use(express.static(path.join(process.cwd(), 'client/public')));
+      log('🔍 Vite will handle frontend routes in development mode');
+    }
 
     // Global error handler
     app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
