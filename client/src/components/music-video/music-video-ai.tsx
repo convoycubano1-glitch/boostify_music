@@ -68,81 +68,81 @@ async function transcribeAudio(file: File) {
     const formData = new FormData();
     formData.append('audio', file);
 
-    console.log('🌐 Haciendo fetch a /api/audio/transcribe...');
+    console.log('🌐 Fetching /api/audio/transcribe...');
     const response = await fetch('/api/audio/transcribe', {
       method: 'POST',
       body: formData
     });
 
-    console.log('📊 Respuesta del servidor:', response.status, response.statusText);
+    console.log('📊 Server response:', response.status, response.statusText);
 
     let data;
     try {
       data = await response.json();
-      console.log('📦 Datos recibidos:', data);
+      console.log('📦 Data received:', data);
     } catch (parseError) {
-      console.error('❌ Error al parsear JSON de respuesta:', parseError);
-      throw new Error('La respuesta del servidor no es JSON válido');
+      console.error('❌ Error parsing response JSON:', parseError);
+      throw new Error('Server response is not valid JSON');
     }
 
     if (!response.ok || !data.success) {
-      const errorMsg = data.error || `Error del servidor: ${response.status} ${response.statusText}`;
-      console.error('❌ Error en respuesta del servidor:', errorMsg);
+      const errorMsg = data.error || `Server error: ${response.status} ${response.statusText}`;
+      console.error('❌ Error in server response:', errorMsg);
       throw new Error(errorMsg);
     }
 
     if (!data.transcription || !data.transcription.text) {
-      console.error('❌ Respuesta del servidor no contiene transcripción');
-      throw new Error('La transcripción no se generó correctamente');
+      console.error('❌ Server response does not contain transcription');
+      throw new Error('Transcription was not generated correctly');
     }
 
     return data.transcription.text;
   } catch (error) {
-    console.error("❌ Error en transcribeAudio:", error);
+    console.error("❌ Error in transcribeAudio:", error);
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('Error desconocido al transcribir el audio');
+    throw new Error('Unknown error transcribing audio');
   }
 }
 
 const videoStyles = {
   moods: [
-    "Energético", "Melancólico", "Romántico", "Dramático",
-    "Misterioso", "Alegre", "Épico", "Minimalista"
+    "Energetic", "Melancholic", "Romantic", "Dramatic",
+    "Mysterious", "Cheerful", "Epic", "Minimalist"
   ],
   colorPalettes: [
-    "Vibrante", "Monocromático", "Pastel", "Oscuro y Contrastado",
-    "Cálido", "Frío", "Retro", "Neón"
+    "Vibrant", "Monochromatic", "Pastel", "Dark and Contrasted",
+    "Warm", "Cool", "Retro", "Neon"
   ],
   characterStyles: [
-    "Realista", "Estilizado", "Artístico", "Abstracto",
-    "Cinematográfico", "Documental", "Surrealista", "Vintage"
+    "Realistic", "Stylized", "Artistic", "Abstract",
+    "Cinematic", "Documentary", "Surrealist", "Vintage"
   ],
   cameraFormats: [
     {
-      name: "35mm Estándar",
-      description: "El formato clásico del cine, ofrece una imagen natural y cinematográfica"
+      name: "35mm Standard",
+      description: "The classic cinema format, offers a natural and cinematic image"
     },
     {
       name: "IMAX",
-      description: "Alto detalle y amplitud visual, ideal para escenas épicas"
+      description: "High detail and visual breadth, ideal for epic scenes"
     },
     {
       name: "Super 8mm",
-      description: "Look vintage y granulado, perfecto para escenas nostálgicas"
+      description: "Vintage and grainy look, perfect for nostalgic scenes"
     },
     {
-      name: "Anamórfico",
-      description: "Formato panorámico con característicos lens flares"
+      name: "Anamorphic",
+      description: "Panoramic format with characteristic lens flares"
     },
     {
       name: "PANAVISION",
-      description: "Cinematográfico de alta gama con bokeh distintivo"
+      description: "High-end cinematic with distinctive bokeh"
     },
     {
       name: "Digital RAW",
-      description: "Look moderno y nítido con alto rango dinámico"
+      description: "Modern and sharp look with high dynamic range"
     }
   ]
 };
@@ -150,76 +150,76 @@ const videoStyles = {
 const editingStyles = [
   {
     id: "phrases",
-    name: "Edición por Frases",
-    description: "Cortes sincronizados con las frases musicales",
+    name: "Phrase-based Editing",
+    description: "Cuts synchronized with musical phrases",
     duration: { min: 4, max: 8 }
   },
   {
     id: "random_bars",
-    name: "Compases Aleatorios",
-    description: "Cortes variados siguiendo el ritmo",
+    name: "Random Bars",
+    description: "Varied cuts following the rhythm",
     duration: { min: 2, max: 6 }
   },
   {
     id: "dynamic",
-    name: "Dinámico",
-    description: "Cortes rápidos en momentos intensos, más lentos en partes suaves",
+    name: "Dynamic",
+    description: "Fast cuts in intense moments, slower in soft parts",
     duration: { min: 1.5, max: 4 }
   },
   {
     id: "slow",
-    name: "Lento",
-    description: "Cortes largos y suaves transiciones",
+    name: "Slow",
+    description: "Long cuts and smooth transitions",
     duration: { min: 5, max: 10 }
   },
   {
     id: "cinematic",
-    name: "Cinematográfico",
-    description: "Estilo de película con variedad de duraciones",
+    name: "Cinematic",
+    description: "Movie style with variety of durations",
     duration: { min: 3, max: 8 }
   },
   {
     id: "music_video",
-    name: "Video Musical",
-    description: "Estilo MTV con cortes rápidos y dinámicos",
+    name: "Music Video",
+    description: "MTV style with fast and dynamic cuts",
     duration: { min: 1, max: 3 }
   },
   {
     id: "narrative",
-    name: "Narrativo",
-    description: "Cortes que siguen la historia de la letra",
+    name: "Narrative",
+    description: "Cuts that follow the story of the lyrics",
     duration: { min: 4, max: 7 }
   },
   {
     id: "experimental",
     name: "Experimental",
-    description: "Patrones de corte no convencionales",
+    description: "Unconventional cut patterns",
     duration: { min: 1, max: 6 }
   },
   {
     id: "rhythmic",
-    name: "Rítmico",
-    description: "Cortes precisos en cada beat",
+    name: "Rhythmic",
+    description: "Precise cuts on each beat",
     duration: { min: 1, max: 2 }
   },
   {
     id: "minimalist",
-    name: "Minimalista",
-    description: "Pocos cortes, transiciones suaves",
+    name: "Minimalist",
+    description: "Few cuts, smooth transitions",
     duration: { min: 6, max: 12 }
   }
 ];
 
-// Usamos la interfaz TimelineItem importada anteriormente
-// No es necesario importarla de nuevo
+// We use the TimelineItem interface imported previously
+// No need to import it again
 
-// Usamos la interfaz TimelineItem importada para mantener compatibilidad
-// Definimos un tipo específico para nuestra aplicación basado en TimelineItem
+// We use the TimelineItem interface imported to maintain compatibility
+// We define a specific type for our application based on TimelineItem
 type MusicVideoTimelineItem = TimelineItem;
 
 const groups = [
   { id: 1, title: "Video", stackItems: true },
-  { id: 2, title: "Transiciones", stackItems: false },
+  { id: 2, title: "Transitions", stackItems: false },
   { id: 3, title: "Audio", stackItems: false }
 ];
 
@@ -309,7 +309,7 @@ export function MusicVideoAI() {
       if (file.size > 50 * 1024 * 1024) {
         toast({
           title: "Error",
-          description: "El archivo debe ser menor a 50MB",
+          description: "File must be smaller than 50MB",
           variant: "destructive",
         });
         return;
@@ -318,7 +318,7 @@ export function MusicVideoAI() {
       if (!file.type.startsWith("audio/")) {
         toast({
           title: "Error",
-          description: "Por favor sube un archivo de audio válido (MP3)",
+          description: "Please upload a valid audio file (MP3)",
           variant: "destructive",
         });
         return;
@@ -339,30 +339,30 @@ export function MusicVideoAI() {
           const buffer = await audioContext.current.decodeAudioData(e.target.result);
           setAudioBuffer(buffer);
 
-          // Usar OpenAI para la transcripción
-          console.log('🎤 Iniciando transcripción del archivo:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+          // Use OpenAI for transcription
+          console.log('🎤 Starting file transcription:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
           setIsTranscribing(true);
           try {
-            console.log('📤 Enviando archivo al servidor para transcripción...');
+            console.log('📤 Sending file to server for transcription...');
             const transcriptionText = await transcribeAudio(file);
-            console.log('✅ Transcripción completada, longitud:', transcriptionText.length, 'caracteres');
+            console.log('✅ Transcription completed, length:', transcriptionText.length, 'characters');
             setTranscription(transcriptionText);
-            // Establecer el paso como completado para habilitar el siguiente botón
-            // pero no cambiar la vista (por eso usamos 1.5 en lugar de 2)
+            // Set step as completed to enable next button
+            // but don't change the view (that's why we use 1.5 instead of 2)
             setCurrentStep(1.5);
             toast({
-              title: "Éxito",
-              description: `Audio transcrito correctamente (${transcriptionText.length} caracteres). Ahora puedes generar el guión musical.`,
+              title: "Success",
+              description: `Audio transcribed correctly (${transcriptionText.length} characters). You can now generate the musical script.`,
             });
           } catch (err) {
             console.error("❌ Error transcribing audio:", err);
             toast({
-              title: "Error en transcripción",
-              description: err instanceof Error ? err.message : "Error al transcribir el audio. Por favor intenta de nuevo.",
+              title: "Transcription error",
+              description: err instanceof Error ? err.message : "Error transcribing audio. Please try again.",
               variant: "destructive",
             });
           } finally {
-            console.log('🏁 Proceso de transcripción finalizado');
+            console.log('🏁 Transcription process completed');
             setIsTranscribing(false);
           }
         }
@@ -371,16 +371,16 @@ export function MusicVideoAI() {
     }
   }, [toast]);
 
-  // Función para manejar la subida de imágenes de referencia del artista
+  // Function to handle artist reference image upload
   const handleReferenceImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    // Validar que no se suban más de 3 imágenes en total
+    // Validate that no more than 3 images are uploaded in total
     if (artistReferenceImages.length + files.length > 3) {
       toast({
         title: "Error",
-        description: "Solo puedes subir un máximo de 3 imágenes de referencia",
+        description: "You can only upload a maximum of 3 reference images",
         variant: "destructive",
       });
       return;
@@ -394,27 +394,27 @@ export function MusicVideoAI() {
       for (let i = 0; i < files.length && artistReferenceImages.length + newImages.length < 3; i++) {
         const file = files[i];
         
-        // Validar tipo de archivo
+        // Validate file type
         if (!file.type.startsWith('image/')) {
           toast({
             title: "Error",
-            description: `${file.name} no es una imagen válida`,
+            description: `${file.name} is not a valid image`,
             variant: "destructive",
           });
           continue;
         }
 
-        // Validar tamaño (máximo 5MB por imagen)
+        // Validate size (maximum 5MB per image)
         if (file.size > 5 * 1024 * 1024) {
           toast({
             title: "Error",
-            description: `${file.name} excede el tamaño máximo de 5MB`,
+            description: `${file.name} exceeds the maximum size of 5MB`,
             variant: "destructive",
           });
           continue;
         }
 
-        // Convertir imagen a base64
+        // Convert image to base64
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
@@ -428,14 +428,14 @@ export function MusicVideoAI() {
       setArtistReferenceImages([...artistReferenceImages, ...newImages]);
       
       toast({
-        title: "Éxito",
-        description: `${newImages.length} imagen(es) de referencia agregada(s) (${artistReferenceImages.length + newImages.length}/3)`,
+        title: "Success",
+        description: `${newImages.length} reference image(s) added (${artistReferenceImages.length + newImages.length}/3)`,
       });
     } catch (error) {
-      console.error("Error al cargar imágenes de referencia:", error);
+      console.error("Error loading reference images:", error);
       toast({
         title: "Error",
-        description: "Error al procesar las imágenes de referencia",
+        description: "Error processing reference images",
         variant: "destructive",
       });
     } finally {
@@ -443,12 +443,12 @@ export function MusicVideoAI() {
     }
   }, [artistReferenceImages, toast]);
 
-  // Función para eliminar una imagen de referencia
+  // Function to remove a reference image
   const removeReferenceImage = useCallback((index: number) => {
     setArtistReferenceImages(prev => prev.filter((_, i) => i !== index));
     toast({
-      title: "Imagen eliminada",
-      description: `Imagen de referencia ${index + 1} eliminada`,
+      title: "Image removed",
+      description: `Reference image ${index + 1} removed`,
     });
   }, [toast]);
 
@@ -456,7 +456,7 @@ export function MusicVideoAI() {
     if (!transcription) {
       toast({
         title: "Error",
-        description: "Es necesario transcribir el audio primero",
+        description: "You need to transcribe the audio first",
         variant: "destructive",
       });
       return;
@@ -464,20 +464,20 @@ export function MusicVideoAI() {
 
     setIsGeneratingScript(true);
     try {
-      // Llamar a la API para generar el guion
+      // Call API to generate the script
       toast({
-        title: "Procesando",
-        description: "Generando guion basado en la letra de la canción...",
+        title: "Processing",
+        description: "Generating script based on song lyrics...",
       });
 
-      // Pasar información del director si está seleccionado
+      // Pass director information if selected
       const directorInfo = videoStyle.selectedDirector ? {
         name: videoStyle.selectedDirector.name,
         specialty: videoStyle.selectedDirector.specialty,
         style: videoStyle.selectedDirector.style
       } : undefined;
       
-      // Pasar duración del audio para generar escenas cada ~4 segundos
+      // Pass audio duration to generate scenes every ~4 seconds
       const audioDurationInSeconds = audioBuffer?.duration || undefined;
       
       const scriptResponse = await generateMusicVideoScript(
@@ -487,29 +487,29 @@ export function MusicVideoAI() {
         audioDurationInSeconds
       );
       
-      // Intentar dar formato al JSON para mejor visualización
+      // Try to format JSON for better visualization
       try {
-        // Verificamos si ya es un string JSON válido, y lo parseamos para darle formato
+        // Check if it's already a valid JSON string, and parse it to format it
         const parsed = JSON.parse(scriptResponse);
         setScriptContent(JSON.stringify(parsed, null, 2));
       } catch (parseError) {
-        // Si no se puede parsear, usamos directamente la respuesta
-        console.warn("No se pudo formatear el JSON del guion, usando respuesta directa", parseError);
+        // If it can't be parsed, use the response directly
+        console.warn("Could not format script JSON, using direct response", parseError);
         setScriptContent(scriptResponse);
       }
       
-      // Marcar este paso como completado
+      // Mark this step as completed
       setCurrentStep(3);
       
       toast({
-        title: "Éxito",
-        description: "Guion del video musical generado correctamente",
+        title: "Success",
+        description: "Music video script generated correctly",
       });
     } catch (error) {
-      console.error("Error generando guion:", error);
+      console.error("Error generating script:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al generar el guion del video musical",
+        description: error instanceof Error ? error.message : "Error generating music video script",
         variant: "destructive",
       });
     } finally {
@@ -523,7 +523,7 @@ export function MusicVideoAI() {
     if (!scriptContent) {
       toast({
         title: "Error",
-        description: "Primero debes generar el guión del video musical",
+        description: "You must first generate the music video script",
         variant: "destructive",
       });
       return;
@@ -533,33 +533,33 @@ export function MusicVideoAI() {
     try {
       let segments: TimelineItem[] = [];
       
-      // Crear segmentos basados en las escenas del JSON del guión
+      // Create segments based on JSON script scenes
       try {
         const parsedScript = JSON.parse(scriptContent);
         
-        // Verificar el formato del script y extraer las escenas
+        // Verify script format and extract scenes
         let scenes = [];
         if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
-          // Nuevo formato: { scenes: [...] }
+          // New format: { scenes: [...] }
           scenes = parsedScript.scenes;
         } else if (Array.isArray(parsedScript) && parsedScript.length > 0 && parsedScript[0].scene_id) {
-          // Formato anterior: array directo de escenas
+          // Old format: direct array of scenes
           scenes = parsedScript;
         }
         
-        // Verificar si tenemos escenas válidas
+        // Check if we have valid scenes
         if (scenes.length > 0 && scenes[0].scene_id) {
           segments = createSegmentsFromScenes(scenes, audioBuffer.duration);
           toast({
-            title: "Sincronizando",
-            description: `Creando ${segments.length} escenas basadas en el guión cinematográfico`,
+            title: "Synchronizing",
+            description: `Creating ${segments.length} scenes based on the cinematic script`,
           });
         } else {
-          throw new Error("El guión no contiene escenas válidas");
+          throw new Error("The script does not contain valid scenes");
         }
       } catch (e) {
-        console.error("Error al parsear el guión:", e);
-        throw new Error("No se pudo procesar el guión. Por favor, genera el guión nuevamente.");
+        console.error("Error parsing script:", e);
+        throw new Error("Could not process the script. Please, generate the script again.");
       }
       
       if (segments && segments.length > 0) {
@@ -567,17 +567,17 @@ export function MusicVideoAI() {
         setCurrentStep(4);
 
         toast({
-          title: "Éxito",
-          description: `${segments.length} escenas sincronizadas con la música`,
+          title: "Success",
+          description: `${segments.length} scenes synchronized with music`,
         });
       } else {
-        throw new Error("No se detectaron segmentos en el guión");
+        throw new Error("No segments detected in the script");
       }
     } catch (error) {
-      console.error("Error sincronizando audio:", error);
+      console.error("Error synchronizing audio:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al sincronizar el audio con el timeline",
+        description: error instanceof Error ? error.message : "Error synchronizing audio with timeline",
         variant: "destructive",
       });
     } finally {
@@ -585,31 +585,31 @@ export function MusicVideoAI() {
     }
   };
 
-  // Nueva función para crear segmentos del timeline basados en las escenas del guión JSON
-  // Lee directamente start_time y duration del JSON del script
+  // New function to create timeline segments based on JSON script scenes
+  // Reads start_time and duration directly from the script JSON
   const createSegmentsFromScenes = (scenes: any[], totalDuration: number): TimelineItem[] => {
     const segments: TimelineItem[] = [];
     
     scenes.forEach((scene, index) => {
-      // LEER directamente start_time y duration del JSON del script
-      // NO calcular duraciones iguales - usar los valores aleatorios (3-4 seg) del JSON
-      const startTime = (scene.start_time || 0) * 1000; // Convertir segundos a milisegundos
-      const duration = (scene.duration || 3.5) * 1000; // Duración en milisegundos (default 3.5s)
+      // READ start_time and duration directly from the script JSON
+      // DO NOT calculate equal durations - use the random values (3-4 sec) from JSON
+      const startTime = (scene.start_time || 0) * 1000; // Convert seconds to milliseconds
+      const duration = (scene.duration || 3.5) * 1000; // Duration in milliseconds (default 3.5s)
       const endTime = startTime + duration;
       
-      console.log(`🎬 Creando clip ${scene.scene_id}: start=${scene.start_time}s, duration=${scene.duration}s`);
+      console.log(`🎬 Creating clip ${scene.scene_id}: start=${scene.start_time}s, duration=${scene.duration}s`);
       
       segments.push({
         id: `scene-${scene.scene_id}`,
-        type: 'image', // Tipo imagen para que se muestre correctamente
+        type: 'image', // Image type for proper display
         group: 1,
         title: scene.title || `Scene ${scene.scene_id}`,
         start_time: startTime,
         end_time: endTime,
         duration: duration,
-        shotType: scene.shot_type || scene.camera?.lens || 'MS', // Shot type desde el JSON
-        thumbnail: '', // Se asignará cuando se genere la imagen
-        imageUrl: '', // Se asignará cuando se genere la imagen
+        shotType: scene.shot_type || scene.camera?.lens || 'MS', // Shot type from JSON
+        thumbnail: '', // Will be assigned when image is generated
+        imageUrl: '', // Will be assigned when image is generated
         itemProps: {
           style: {
             background: `hsl(${(index * 30) % 360}, 70%, 50%)`,
@@ -635,16 +635,16 @@ export function MusicVideoAI() {
       });
     });
     
-    console.log(`✅ ${segments.length} clips creados desde JSON con duraciones aleatorias`);
+    console.log(`✅ ${segments.length} clips created from JSON with random durations`);
     return segments;
   };
 
-  // Nueva función: Generar video completo con pago (30 escenas + FAL)
+  // New function: Generate full video with payment (30 scenes + FAL)
   const handleGenerateFullVideoWithPayment = async () => {
     if (!transcription || !audioBuffer || !user) {
       toast({
         title: "Error",
-        description: "Necesitas transcripción, audio cargado y estar autenticado",
+        description: "You need transcription, loaded audio and be authenticated",
         variant: "destructive",
       });
       return;
@@ -653,16 +653,16 @@ export function MusicVideoAI() {
     setIsGeneratingFullVideo(true);
     
     try {
-      // Paso 1: Generar script con 30 prompts
+      // Step 1: Generate script with 30 prompts
       toast({
-        title: "Generando script completo",
-        description: "Creando 30 escenas cinematográficas...",
+        title: "Generating complete script",
+        description: "Creating 30 cinematic scenes...",
       });
       
       const fullScript = await generateMusicVideoPrompts(
         transcription,
         audioBuffer.duration,
-        true, // isPaid = true (30 escenas)
+        true, // isPaid = true (30 scenes)
         videoStyle.selectedDirector ? {
           name: videoStyle.selectedDirector.name,
           specialty: videoStyle.selectedDirector.specialty,
@@ -670,12 +670,12 @@ export function MusicVideoAI() {
         } : undefined
       );
       
-      console.log(`✅ Script generado: ${fullScript.total_scenes} escenas`);
+      console.log(`✅ Script generated: ${fullScript.total_scenes} scenes`);
       
-      // Paso 2: Generar imágenes para cada escena usando Gemini/Flux
+      // Step 2: Generate images for each scene using Gemini/Flux
       toast({
-        title: "Generando imágenes",
-        description: `Generando ${fullScript.total_scenes} imágenes con IA...`,
+        title: "Generating images",
+        description: `Generating ${fullScript.total_scenes} images with AI...`,
       });
       
       const imagePromises = fullScript.scenes.map(async (scene, index) => {
@@ -693,7 +693,7 @@ export function MusicVideoAI() {
           // FluxTaskResult.images is string[] not objects with url
           return result.images?.[0] || '';
         } catch (error) {
-          console.error(`Error generando imagen ${index + 1}:`, error);
+          console.error(`Error generating image ${index + 1}:`, error);
           throw error;
         }
       });
@@ -701,14 +701,14 @@ export function MusicVideoAI() {
       const imageUrls = await Promise.all(imagePromises);
       
       toast({
-        title: "Imágenes generadas",
-        description: `${imageUrls.length} imágenes creadas exitosamente`,
+        title: "Images generated",
+        description: `${imageUrls.length} images successfully created`,
       });
       
-      // Paso 3: Generar videos con FAL
+      // Step 3: Generate videos with FAL
       toast({
-        title: "Generando videos",
-        description: `Convirtiendo ${imageUrls.length} imágenes a video con ${selectedFalModel}...`,
+        title: "Generating videos",
+        description: `Converting ${imageUrls.length} images to video with ${selectedFalModel}...`,
       });
       
       const scenesWithImages = fullScript.scenes.map((scene, index) => ({
@@ -724,19 +724,19 @@ export function MusicVideoAI() {
       const successCount = videoResults.filter(r => r.success).length;
       
       toast({
-        title: "Videos generados",
-        description: `${successCount}/${videoResults.length} videos generados exitosamente`,
+        title: "Videos generated",
+        description: `${successCount}/${videoResults.length} videos successfully generated`,
       });
       
-      // Paso 4: Guardar en base de datos
+      // Step 4: Save to database
       const videoData = {
         user_id: user.uid,
-        song_name: selectedFile?.name || "Video Musical",
-        video_url: null, // Se actualizará cuando se compile el video final
+        song_name: selectedFile?.name || "Music Video",
+        video_url: null, // Will be updated when final video is compiled
         thumbnail_url: imageUrls[0],
         duration: audioBuffer.duration,
         is_paid: true,
-        amount: 19900, // $199.00 en centavos
+        amount: 19900, // $199.00 in cents
         status: 'completed',
         metadata: {
           scenes: fullScript.total_scenes,
@@ -752,25 +752,25 @@ export function MusicVideoAI() {
       });
       
       if (!response.ok) {
-        throw new Error('Error guardando video en base de datos');
+        throw new Error('Error saving video to database');
       }
       
       const savedVideo = await response.json();
       
       toast({
-        title: "¡Video completo generado!",
-        description: "Tu video musical ha sido guardado en tu cuenta",
+        title: "Full video generated!",
+        description: "Your music video has been saved to your account",
       });
       
-      // Actualizar estados
+      // Update states
       setIsPaidVideo(true);
       setShowMyVideos(true);
       
     } catch (error) {
-      console.error('Error generando video completo:', error);
+      console.error('Error generating full video:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al generar video completo",
+        description: error instanceof Error ? error.message : "Error generating full video",
         variant: "destructive",
       });
     } finally {
@@ -778,12 +778,12 @@ export function MusicVideoAI() {
     }
   };
 
-  // Generar todas las imágenes para las escenas del timeline usando Gemini con referencias faciales
+  // Generate all images for timeline scenes using Gemini with facial references
   const generateAllSceneImages = async () => {
     if (!scriptContent) {
       toast({
         title: "Error",
-        description: "Primero debes generar el guión",
+        description: "You must first generate the script",
         variant: "destructive",
       });
       return;
@@ -791,8 +791,8 @@ export function MusicVideoAI() {
 
     if (artistReferenceImages.length === 0) {
       toast({
-        title: "Advertencia",
-        description: "No hay imágenes de referencia. Se generarán imágenes sin consistencia facial",
+        title: "Warning",
+        description: "No reference images. Images will be generated without facial consistency",
       });
     }
 
@@ -800,7 +800,7 @@ export function MusicVideoAI() {
     try {
       const parsedScript = JSON.parse(scriptContent);
       
-      // Extraer las escenas del formato correcto
+      // Extract scenes from correct format
       let scenes = [];
       if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
         scenes = parsedScript.scenes;
@@ -809,17 +809,17 @@ export function MusicVideoAI() {
       }
       
       if (scenes.length === 0) {
-        throw new Error("El guión no tiene escenas válidas");
+        throw new Error("The script has no valid scenes");
       }
 
       toast({
-        title: "Generando imágenes",
-        description: `Iniciando generación de ${scenes.length} escenas con Gemini 2.5 Flash Image...`,
+        title: "Generating images",
+        description: `Starting generation of ${scenes.length} scenes with Gemini 2.5 Flash Image...`,
       });
 
-      // Preparar las escenas en el formato que espera Gemini usando el NUEVO schema
+      // Prepare scenes in the format expected by Gemini using the NEW schema
       const geminiScenes = scenes.map((scene: any) => {
-        // Usar los campos del nuevo schema MusicVideoScene
+        // Use fields from the new MusicVideoScene schema
         const shotType = scene.shot_type || "MS";
         const cameraMovement = scene.camera_movement || "static";
         const lens = scene.lens || "standard";
@@ -831,7 +831,7 @@ export function MusicVideoAI() {
         
         return {
           id: scene.scene_id || `scene-${Math.random()}`,
-          scene: description, // Usar la descripción completa que ya incluye todos los detalles
+          scene: description, // Use complete description that already includes all details
           camera: `${lens} lens, ${shotType} shot, ${cameraMovement} movement`,
           lighting: `${lighting} lighting, ${colorTemp} color temperature`,
           style: `${visualStyle} style, ${location}`,
@@ -839,7 +839,7 @@ export function MusicVideoAI() {
         };
       });
 
-      // Llamar al endpoint de Gemini con múltiples referencias faciales
+      // Call Gemini endpoint with multiple facial references
       const response = await fetch('/api/gemini-image/generate-batch-with-multiple-faces', {
         method: 'POST',
         headers: {
@@ -852,46 +852,46 @@ export function MusicVideoAI() {
       });
 
       if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.statusText}`);
+        throw new Error(`Server error: ${response.statusText}`);
       }
 
       const data = await response.json();
       
       if (!data.success || !data.results) {
-        throw new Error(data.error || 'Error al generar imágenes');
+        throw new Error(data.error || 'Error generating images');
       }
 
-      // Actualizar timeline items con las imágenes generadas
+      // Update timeline items with generated images
       setTimelineItems(prevItems => {
-        // Filtrar solo clips de imágenes/escenas (excluir audio, texto, etc.)
+        // Filter only image/scene clips (exclude audio, text, etc.)
         const sceneItems = prevItems.filter(item => 
           item.type === 'image' || item.id.toString().startsWith('scene-')
         );
         
         return prevItems.map(item => {
-          // Solo procesar clips de imágenes/escenas
+          // Only process image/scene clips
           if (item.type !== 'image' && !item.id.toString().startsWith('scene-')) {
             return item;
           }
           
-          // Encontrar el índice de esta escena en el array filtrado
+          // Find the index of this scene in the filtered array
           const sceneIndex = sceneItems.findIndex(s => s.id === item.id);
           if (sceneIndex === -1) {
-            console.warn(`⚠️ No se encontró índice de escena para ${item.id}`);
+            console.warn(`⚠️ Scene index not found for ${item.id}`);
             return item;
           }
           
-          // El backend retorna results indexados desde 0
+          // Backend returns results indexed from 0
           const imageResult = data.results[sceneIndex];
           
-          console.log(`📍 Asignando imagen ${sceneIndex} a ${item.id}:`, imageResult?.success ? 'SÍ' : 'NO', imageResult?.imageUrl ? `URL: ${imageResult.imageUrl.substring(0, 50)}...` : '');
+          console.log(`📍 Assigning image ${sceneIndex} to ${item.id}:`, imageResult?.success ? 'YES' : 'NO', imageResult?.imageUrl ? `URL: ${imageResult.imageUrl.substring(0, 50)}...` : '');
           
           if (imageResult && imageResult.success && imageResult.imageUrl) {
             return {
               ...item,
               imageUrl: imageResult.imageUrl,
               thumbnail: imageResult.imageUrl,
-              url: imageResult.imageUrl, // También asignar a url para compatibilidad
+              url: imageResult.imageUrl, // Also assign to url for compatibility
               metadata: {
                 ...item.metadata,
                 isGeneratedImage: true,
@@ -902,22 +902,22 @@ export function MusicVideoAI() {
             };
           }
           
-          console.warn(`⚠️ No se pudo asignar imagen a ${item.id}`);
+          console.warn(`⚠️ Could not assign image to ${item.id}`);
           return item;
         });
       });
 
       toast({
-        title: "¡Éxito!",
-        description: `${parsedScript.length} imágenes generadas con Gemini Nano Banana`,
+        title: "Success!",
+        description: `${parsedScript.length} images generated with Gemini Nano Banana`,
       });
 
       setCurrentStep(5);
     } catch (error) {
-      console.error("Error generando imágenes:", error);
+      console.error("Error generating images:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al generar las imágenes",
+        description: error instanceof Error ? error.message : "Error generating images",
         variant: "destructive",
       });
     } finally {
@@ -944,106 +944,106 @@ export function MusicVideoAI() {
       const totalSegments = timelineItems.length;
       const totalDuration = audioBuffer?.duration || 0;
 
-      const prompt = `Como director de videos musicales profesional, necesito que analices esta canción y crees un guion detallado, perfectamente sincronizado con los cortes musicales ya identificados.
+      const prompt = `As a professional music video director, I need you to analyze this song and create a detailed script, perfectly synchronized with the already identified musical cuts.
 
-LETRA DE LA CANCIÓN:
+SONG LYRICS:
 ${transcription}
 
-DURACIÓN TOTAL: ${totalDuration.toFixed(2)} segundos
+TOTAL DURATION: ${totalDuration.toFixed(2)} seconds
 
-INFORMACIÓN DE CORTES MUSICALES:
+MUSICAL CUTS INFORMATION:
 ${JSON.stringify(timelineInfo, null, 2)}
 
-REQUISITOS ESTRICTOS DE SINCRONIZACIÓN:
-1. Debes crear EXACTAMENTE ${totalSegments} segmentos de guion, uno para cada corte musical predefinido.
-2. Cada segmento debe corresponder con una sección específica de la letra que coincida con el tiempo exacto del corte.
-3. Si un corte abarca un periodo instrumental sin letra, especifica que es un momento instrumental y describe qué debería mostrarse.
+STRICT SYNCHRONIZATION REQUIREMENTS:
+1. You must create EXACTLY ${totalSegments} script segments, one for each predefined musical cut.
+2. Each segment must correspond with a specific section of the lyrics that matches the exact time of the cut.
+3. If a cut spans an instrumental period without lyrics, specify it is an instrumental moment and describe what should be shown.
 
-INSTRUCCIONES ESPECÍFICAS:
-1. ANÁLISIS DE LETRA Y MÚSICA:
-   - Para cada corte, identifica qué parte exacta de la letra encaja con su duración
-   - Describe los elementos musicales precisos que ocurren durante ese corte
-   - Señala cualquier cambio de ritmo, tono o instrumentación
+SPECIFIC INSTRUCTIONS:
+1. LYRICS AND MUSIC ANALYSIS:
+   - For each cut, identify what exact part of the lyrics fits its duration
+   - Describe the precise musical elements occurring during that cut
+   - Point out any changes in rhythm, tone, or instrumentation
 
-2. CREACIÓN DE GUION VISUAL SINCRONIZADO:
-   - Para cada segmento, relaciona la escena exactamente con la parte de la letra correspondiente
-   - Cada descripción visual debe reflejar el significado literal o metafórico de esa parte específica de la letra
-   - El tipo de plano y mood deben ser apropiados para el momento específico de la canción
+2. SYNCHRONIZED VISUAL SCRIPT CREATION:
+   - For each segment, relate the scene exactly with the corresponding part of the lyrics
+   - Each visual description must reflect the literal or metaphorical meaning of that specific part of the lyrics
+   - The shot type and mood must be appropriate for the specific moment of the song
 
-ESTRUCTURA REQUERIDA (JSON exacto):
+REQUIRED STRUCTURE (exact JSON):
 {
   "segments": [
     {
-      "id": número (debe coincidir con el ID del corte),
-      "timeStart": número (tiempo de inicio en segundos, debe coincidir con el corte),
-      "timeEnd": número (tiempo de fin en segundos, debe coincidir con el corte),
-      "lyrics": "parte EXACTA de la letra que ocurre durante este corte temporal",
-      "musical_elements": "descripción precisa de los elementos musicales durante este corte",
-      "description": "descripción visual detallada que representa fielmente esta parte específica de la letra",
-      "imagePrompt": "prompt detallado y específico para generar una imagen que capture esta escena",
-      "shotType": "tipo de plano específico (primer plano, plano medio, plano general, etc.)",
-      "mood": "estado de ánimo preciso basado en esta parte específica de la letra y música",
-      "transition": "tipo de transición hacia el siguiente segmento"
+      "id": number (must match the cut ID),
+      "timeStart": number (start time in seconds, must match the cut),
+      "timeEnd": number (end time in seconds, must match the cut),
+      "lyrics": "EXACT part of the lyrics occurring during this time cut",
+      "musical_elements": "precise description of musical elements during this cut",
+      "description": "detailed visual description that faithfully represents this specific part of the lyrics",
+      "imagePrompt": "detailed and specific prompt to generate an image capturing this scene",
+      "shotType": "specific shot type (close-up, medium shot, wide shot, etc.)",
+      "mood": "precise mood based on this specific part of the lyrics and music",
+      "transition": "type of transition to the next segment"
     }
   ]
 }
 
 CRUCIAL:
-- Cada segmento debe tener un ID que coincida exactamente con el ID del corte musical correspondiente
-- Los tiempos de inicio y fin deben coincidir exactamente con los cortes musicales proporcionados
-- Los prompts de imagen deben reflejar ESPECÍFICAMENTE el contenido de la letra en ese corte exacto
-- La descripción debe explicar explícitamente cómo la escena se relaciona con esa parte específica de la letra
+- Each segment must have an ID that exactly matches the ID of the corresponding musical cut
+- Start and end times must exactly match the provided musical cuts
+- Image prompts must SPECIFICALLY reflect the lyrics content in that exact cut
+- The description must explicitly explain how the scene relates to that specific part of the lyrics
 
-LETRA COMPLETA DE LA CANCIÓN:
+COMPLETE SONG LYRICS:
 ${transcription}`;
 
-      // Validamos que el prompt sea una cadena de texto
+      // Validate that the prompt is a text string
       if (typeof prompt !== 'string') {
-        throw new Error("El prompt debe ser una cadena de texto");
+        throw new Error("The prompt must be a text string");
       }
       
-      // Llamada a la API para generar el guion con validación de tipos
+      // Call API to generate script with type validation
       const jsonContent: string = await generateVideoScriptAPI(prompt);
 
       try {
-        // Validar y procesar la respuesta
+        // Validate and process response
         let scriptResult;
         try {
           if (typeof jsonContent === 'string') {
             scriptResult = JSON.parse(jsonContent);
           } else {
-            throw new Error("La respuesta no es una cadena de texto válida");
+            throw new Error("The response is not a valid text string");
           }
         } catch (parseError) {
-          // Intentar extraer JSON válido si está dentro de comillas, markdown, etc.
+          // Try to extract valid JSON if it's within quotes, markdown, etc.
           const error = parseError as Error;
           console.error("Error parsing JSON:", error.message);
           
-          // Verificar que jsonContent es un string antes de usar regex
+          // Verify jsonContent is a string before using regex
           if (typeof jsonContent === 'string') {
-            // Extraer un objeto JSON válido de la respuesta
+            // Extract a valid JSON object from the response
             try {
               const regex = /\{[\s\S]*"segments"[\s\S]*\}/;
               const match = jsonContent.match(regex);
               if (match && match[0]) {
                 scriptResult = JSON.parse(match[0]);
               } else {
-                throw new Error("No se pudo encontrar un JSON válido con segmentos");
+                throw new Error("Could not find valid JSON with segments");
               }
             } catch (regexError) {
-              console.error("Error en la búsqueda de JSON con regex:", regexError);
-              throw new Error("No se pudo extraer un JSON válido de la respuesta");
+              console.error("Error searching for JSON with regex:", regexError);
+              throw new Error("Could not extract valid JSON from response");
             }
           } else {
-            throw new Error("La respuesta no es una cadena de texto válida");
+            throw new Error("The response is not a valid text string");
           }
         }
 
         if (!scriptResult || !scriptResult.segments || !Array.isArray(scriptResult.segments)) {
-          throw new Error("Formato de guion inválido: no se encontró el array de segmentos");
+          throw new Error("Invalid script format: segments array not found");
         }
 
-        // Crear un mapa para buscar segmentos por ID eficientemente
+        // Create a map to search segments by ID efficiently
         const segmentMap = new Map();
         scriptResult.segments.forEach((segment: { id?: number; }) => {
           if (segment && segment.id !== undefined) {
@@ -1051,17 +1051,17 @@ ${transcription}`;
           }
         });
 
-        // Actualizar cada elemento del timeline con la información del guion
+        // Update each timeline element with script information
         const updatedItems = timelineItems.map(item => {
           const scriptSegment = segmentMap.get(item.id);
           
           if (scriptSegment) {
             return {
               ...item,
-              description: `Letra: "${scriptSegment.lyrics || 'Instrumental'}"\n\nMúsica: ${scriptSegment.musical_elements || 'N/A'}\n\nEscena: ${scriptSegment.description || 'N/A'}`,
-              imagePrompt: `${scriptSegment.imagePrompt || ''} La escena representa estas letras precisas: "${scriptSegment.lyrics || 'Instrumental'}" con elementos musicales: ${scriptSegment.musical_elements || 'ritmo principal'}`,
-              shotType: scriptSegment.shotType || 'Plano medio',
-              transition: scriptSegment.transition || 'Corte directo',
+              description: `Lyrics: "${scriptSegment.lyrics || 'Instrumental'}"\n\nMusic: ${scriptSegment.musical_elements || 'N/A'}\n\nScene: ${scriptSegment.description || 'N/A'}`,
+              imagePrompt: `${scriptSegment.imagePrompt || ''} The scene represents these precise lyrics: "${scriptSegment.lyrics || 'Instrumental'}" with musical elements: ${scriptSegment.musical_elements || 'main rhythm'}`,
+              shotType: scriptSegment.shotType || 'Medium shot',
+              transition: scriptSegment.transition || 'Direct cut',
               mood: scriptSegment.mood || 'Neutral'
             };
           }
@@ -1071,26 +1071,26 @@ ${transcription}`;
         setTimelineItems(updatedItems);
         setCurrentStep(4);
 
-        // Guardar el script completo para referencia
+        // Save complete script for reference
         setScriptContent(JSON.stringify(scriptResult, null, 2));
 
         toast({
-          title: "Éxito",
-          description: "Guion sincronizado generado correctamente con todos los cortes musicales",
+          title: "Success",
+          description: "Synchronized script generated correctly with all musical cuts",
         });
 
       } catch (parseError) {
         const error = parseError as Error;
         console.error("Error parsing response:", error);
         console.error("Response content:", jsonContent);
-        throw new Error("Error al procesar la respuesta del guion: " + error.message);
+        throw new Error("Error processing script response: " + error.message);
       }
 
     } catch (error) {
       console.error("Error generating script:", error);
       toast({
-        title: "Error en la generación del guion",
-        description: error instanceof Error ? error.message : "Error al generar el guion sincronizado del video",
+        title: "Error generating script",
+        description: error instanceof Error ? error.message : "Error generating synchronized video script",
         variant: "destructive",
       });
     } finally {
@@ -1099,69 +1099,69 @@ ${transcription}`;
   };
 
   /**
-   * Genera una imagen para un segmento específico utilizando FAL AI
-   * @param item - El segmento de timeline para el que se generará la imagen
-   * @returns Promise<string> URL de la imagen generada o null en caso de error
+   * Generates an image for a specific segment using FAL AI
+   * @param item - The timeline segment for which the image will be generated
+   * @returns Promise<string> URL of generated image or null in case of error
    */
   const generateImageForSegment = async (item: TimelineItem): Promise<string | null> => {
     if (!item.imagePrompt) {
-      console.warn(`Segmento ${item.id} no tiene prompt para generar imagen`);
+      console.warn(`Segment ${item.id} has no prompt to generate image`);
       return null;
     }
 
-    // Número de intentos para generación de imagen
+    // Number of attempts for image generation
     const maxAttempts = 2;
     let attempt = 0;
     let lastError: Error | null = null;
 
     while (attempt < maxAttempts) {
       try {
-        // Formateamos el prompt para incluir información de estilo
+        // Format the prompt to include style information
         const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style, ${item.shotType} composition`;
         
-        console.log(`Generando imagen para segmento ${item.id}, intento ${attempt + 1}/${maxAttempts}`);
+        console.log(`Generating image for segment ${item.id}, attempt ${attempt + 1}/${maxAttempts}`);
         console.log(`Prompt: ${prompt.substring(0, 100)}...`);
 
-        // Configuramos los parámetros para la API de Flux
+        // Configure parameters for Flux API
         const params = {
           prompt: prompt,
           negativePrompt: "low quality, blurry, distorted, deformed, unrealistic, oversaturated, text, watermark",
           width: 1024,
-          height: 576, // Relación de aspecto 16:9
+          height: 576, // 16:9 aspect ratio
           guidance_scale: 2.5,
           model: FluxModel.FLUX1_DEV,
           taskType: FluxTaskType.TXT2IMG,
-          // Usar una semilla específica para cada segmento, pero consistente en regeneraciones
+          // Use a specific seed for each segment, but consistent in regenerations
           seed: seed + (typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id)
         };
 
-        // Iniciar la generación de imagen con Flux API
-        console.log('Iniciando generación con Flux API');
+        // Start image generation with Flux API
+        console.log('Starting generation with Flux API');
         const result = await fluxService.generateImage(params);
 
         if (!result.success || !result.taskId) {
-          throw new Error(`Error iniciando la generación de imagen: ${result.error || 'Respuesta inválida'}`);
+          throw new Error(`Error starting image generation: ${result.error || 'Invalid response'}`);
         }
 
-        console.log(`Tarea de generación iniciada con ID: ${result.taskId}`);
+        console.log(`Generation task started with ID: ${result.taskId}`);
         
-        // Esperar a que la imagen se genere (polling)
+        // Wait for image to be generated (polling)
         const imageUrl = await waitForFluxImageGeneration(result.taskId);
         
         if (imageUrl) {
-          console.log(`Imagen generada exitosamente para segmento ${item.id}: ${imageUrl}`);
+          console.log(`Image successfully generated for segment ${item.id}: ${imageUrl}`);
           return imageUrl;
         } else {
-          throw new Error("No se recibió URL de imagen en la respuesta");
+          throw new Error("No image URL received in response");
         }
       } catch (error) {
-        console.error(`Error en intento ${attempt + 1} para segmento ${item.id}:`, error);
+        console.error(`Error in attempt ${attempt + 1} for segment ${item.id}:`, error);
         lastError = error instanceof Error ? error : new Error(String(error));
         
-        // Si es el último intento, no esperamos
+        // If it's the last attempt, we don't wait
         if (attempt < maxAttempts - 1) {
           const backoffTime = Math.min(1000 * Math.pow(2, attempt), 10000);
-          console.log(`Reintentando en ${backoffTime/1000} segundos...`);
+          console.log(`Retrying in ${backoffTime/1000} seconds...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
         }
         
@@ -1169,65 +1169,65 @@ ${transcription}`;
       }
     }
 
-    console.error(`No se pudo generar imagen para segmento ${item.id} después de ${maxAttempts} intentos:`, lastError);
+    console.error(`Could not generate image for segment ${item.id} after ${maxAttempts} attempts:`, lastError);
     return null;
   };
 
   /**
-   * Espera a que se complete la generación de imagen en Flux API mediante polling
-   * @param taskId ID de la tarea de generación de imagen
-   * @returns URL de la imagen generada o null si falla
+   * Waits for image generation to complete in Flux API via polling
+   * @param taskId ID of the image generation task
+   * @returns URL of generated image or null if it fails
    */
   const waitForFluxImageGeneration = async (taskId: string): Promise<string | null> => {
-    const maxAttempts = 40; // Máximo número de intentos para verificar el estado
-    const pollingInterval = 1500; // Intervalo entre verificaciones (1.5 segundos)
+    const maxAttempts = 40; // Maximum number of attempts to check status
+    const pollingInterval = 1500; // Interval between checks (1.5 seconds)
     let attempts = 0;
 
-    // Función para hacer un único intento de verificación
+    // Function to make a single check attempt
     const checkStatus = async (): Promise<string | null> => {
       const statusResult = await fluxService.checkTaskStatus(taskId);
       
-      console.log(`Estado de la tarea ${taskId}:`, statusResult.status);
+      console.log(`Task ${taskId} status:`, statusResult.status);
       
       if (statusResult.success && statusResult.status === 'completed' && statusResult.images && statusResult.images.length > 0) {
         return statusResult.images[0];
       } else if (!statusResult.success || statusResult.status === 'failed') {
-        throw new Error(`La generación de imagen falló: ${statusResult.error || 'Error desconocido'}`);
+        throw new Error(`Image generation failed: ${statusResult.error || 'Unknown error'}`);
       }
       
-      return null; // Todavía procesando
+      return null; // Still processing
     };
 
-    // Bucle de polling
+    // Polling loop
     while (attempts < maxAttempts) {
       try {
         const result = await checkStatus();
         if (result) {
-          return result; // Imagen generada exitosamente
+          return result; // Image successfully generated
         }
         
-        // Esperar antes del siguiente intento
+        // Wait before next attempt
         await new Promise(resolve => setTimeout(resolve, pollingInterval));
         attempts++;
       } catch (error) {
-        console.error('Error verificando estado de generación:', error);
+        console.error('Error checking generation status:', error);
         return null;
       }
     }
 
-    console.error(`Tiempo de espera agotado después de ${attempts} intentos para la tarea ${taskId}`);
+    console.error(`Timeout expired after ${attempts} attempts for task ${taskId}`);
     return null;
   };
 
   /**
-   * Regenera la imagen para un segmento específico
-   * @param item - El segmento de timeline cuya imagen se regenerará
+   * Regenerates the image for a specific segment
+   * @param item - The timeline segment whose image will be regenerated
    */
   const regenerateImage = async (item: TimelineItem) => {
     if (!item.imagePrompt) {
       toast({
         title: "Error",
-        description: "Este segmento no tiene un prompt para generar imagen",
+        description: "This segment has no prompt to generate image",
         variant: "destructive",
       });
       return;
@@ -1245,17 +1245,17 @@ ${transcription}`;
         setTimelineItems(updatedItems);
 
         toast({
-          title: "Imagen regenerada",
-          description: "La imagen se ha regenerado exitosamente",
+          title: "Image regenerated",
+          description: "The image has been successfully regenerated",
         });
       } else {
-        throw new Error("No se pudo generar la imagen");
+        throw new Error("Could not generate image");
       }
     } catch (error) {
-      console.error("Error regenerando imagen:", error);
+      console.error("Error regenerating image:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al regenerar la imagen",
+        description: error instanceof Error ? error.message : "Error regenerating image",
         variant: "destructive",
       });
     }
@@ -1355,7 +1355,7 @@ ${transcription}`;
     if (!item.generatedImage) return null;
 
     try {
-      // Asegurarnos de que generatedImage sea una URL válida (string)
+      // Make sure generatedImage is a valid URL (string)
       const imageUrl = typeof item.generatedImage === 'string' ? item.generatedImage : '';
       if (!imageUrl) return null;
       
@@ -1374,25 +1374,25 @@ ${transcription}`;
   };
 
   /**
-   * Genera imágenes para todos los segmentos que tengan prompts
-   * Procesa los segmentos en paralelo en batches para optimizar tiempo
+   * Generates images for all segments that have prompts
+   * Processes segments in parallel in batches to optimize time
    */
   const generateShotImages = async () => {
     if (timelineItems.length === 0) {
       toast({
         title: "Error",
-        description: "No hay segmentos para generar imágenes",
+        description: "No segments to generate images",
         variant: "destructive",
       });
       return;
     }
 
-    // Verificar que haya prompts generados
+    // Verify there are generated prompts
     const itemsWithoutPrompts = timelineItems.filter(item => !item.imagePrompt).length;
     if (itemsWithoutPrompts === timelineItems.length) {
       toast({
         title: "Error",
-        description: "Los segmentos no tienen prompts para generar imágenes",
+        description: "Segments have no prompts to generate images",
         variant: "destructive",
       });
       return;
@@ -1400,51 +1400,51 @@ ${transcription}`;
 
     if (itemsWithoutPrompts > 0) {
       toast({
-        title: "Advertencia",
-        description: `${itemsWithoutPrompts} segmentos no tienen prompts y se omitirán`,
+        title: "Warning",
+        description: `${itemsWithoutPrompts} segments have no prompts and will be skipped`,
         variant: "default",
       });
     }
 
     setIsGeneratingShots(true);
     try {
-      // Limitar a máximo 10 imágenes para evitar sobrecarga
+      // Limit to maximum 10 images to avoid overload
       const items = timelineItems
-        .filter(item => item.imagePrompt && !item.generatedImage) // Solo procesar los que tienen prompt pero no imagen
+        .filter(item => item.imagePrompt && !item.generatedImage) // Only process those with prompt but no image
         .slice(0, 10);
 
       if (items.length === 0) {
         toast({
-          title: "Información",
-          description: "Todos los segmentos ya tienen imágenes generadas",
+          title: "Information",
+          description: "All segments already have generated images",
         });
         setIsGeneratingShots(false);
         return;
       }
 
       toast({
-        title: "Iniciando generación",
-        description: `Generando ${items.length} imágenes para el video musical`,
+        title: "Starting generation",
+        description: `Generating ${items.length} images for the music video`,
       });
 
       let successCount = 0;
       let failCount = 0;
 
-      // Procesar en batches de 2 para equilibrar velocidad y estabilidad
+      // Process in batches of 2 to balance speed and stability
       const batchSize = 2;
       
       for (let i = 0; i < items.length; i += batchSize) {
         const currentBatch = items.slice(i, i + batchSize);
         
         try {
-          // Mostrar batch actual
-          console.log(`Procesando batch ${Math.floor(i/batchSize) + 1} de ${Math.ceil(items.length/batchSize)}`);
+          // Show current batch
+          console.log(`Processing batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(items.length/batchSize)}`);
           toast({
-            title: "Progreso",
-            description: `Procesando batch ${Math.floor(i/batchSize) + 1} de ${Math.ceil(items.length/batchSize)}`,
+            title: "Progress",
+            description: `Processing batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(items.length/batchSize)}`,
           });
 
-          // Generar imágenes para el batch actual en paralelo
+          // Generate images for current batch in parallel
           const results = await Promise.all(
             currentBatch.map(async (item) => {
               try {
@@ -1455,22 +1455,22 @@ ${transcription}`;
                   url: imageUrl
                 };
               } catch (error) {
-                console.error(`Error en generación para segmento ${item.id}:`, error);
+                console.error(`Error in generation for segment ${item.id}:`, error);
                 return {
                   id: item.id,
                   success: false,
-                  error: error instanceof Error ? error.message : "Error desconocido"
+                  error: error instanceof Error ? error.message : "Unknown error"
                 };
               }
             })
           );
 
-          // Actualizar el timeline con las imágenes generadas
+          // Update timeline with generated images
           let updatedItems = [...timelineItems];
           
           for (const result of results) {
             if (result.success && result.url) {
-              // Actualizar el item correspondiente
+              // Update corresponding item
               updatedItems = updatedItems.map(item => 
                 item.id === result.id 
                   ? { ...item, generatedImage: result.url as string } 
@@ -1479,22 +1479,22 @@ ${transcription}`;
               successCount++;
             } else {
               failCount++;
-              console.error(`Fallo en segmento ${result.id}:`, result.error);
+              console.error(`Failure in segment ${result.id}:`, result.error);
             }
           }
           
-          // Actualizar estado solo una vez para todo el batch
+          // Update state only once for the entire batch
           setTimelineItems(updatedItems);
 
-          // Esperar entre batches para evitar rate limits
+          // Wait between batches to avoid rate limits
           if (i + batchSize < items.length) {
             await new Promise(resolve => setTimeout(resolve, 4000));
           }
         } catch (batchError) {
-          console.error(`Error procesando batch ${Math.floor(i/batchSize) + 1}:`, batchError);
+          console.error(`Error processing batch ${Math.floor(i/batchSize) + 1}:`, batchError);
           toast({
-            title: "Error en batch",
-            description: `Error en batch ${Math.floor(i/batchSize) + 1}, continuando con el siguiente...`,
+            title: "Batch error",
+            description: `Error in batch ${Math.floor(i/batchSize) + 1}, continuing with next...`,
             variant: "destructive",
           });
         }
@@ -2095,33 +2095,33 @@ ${transcription}`;
   };
 
   /**
-   * Genera un prompt para un segmento de timeline específico
-   * Extrae las letras correspondientes al segmento y genera un prompt visual
-   * @param segment - El segmento de timeline para el que se generará el prompt
-   * @returns Un string con el prompt generado o un mensaje de error
+   * Generates a prompt for a specific timeline segment
+   * Extracts the lyrics corresponding to the segment and generates a visual prompt
+   * @param segment - The timeline segment for which the prompt will be generated
+   * @returns A string with the generated prompt or an error message
    */
   const generatePromptForSegment = async (segment: TimelineItem): Promise<string> => {
     if (!segment || typeof segment.id !== 'number') {
-      console.error("Segmento inválido:", segment);
-      return "Error: segmento inválido";
+      console.error("Invalid segment:", segment);
+      return "Error: invalid segment";
     }
     
     const maxAttempts = 3;
     let attempt = 0;
     let lastError: Error | null = null;
     
-    // Determinar qué parte de la transcripción corresponde a este segmento
-    const segmentStartTime = segment.start_time / 1000; // convertir a segundos
+    // Determine which part of the transcription corresponds to this segment
+    const segmentStartTime = segment.start_time / 1000; // convert to seconds
     const segmentEndTime = segment.end_time / 1000;
     let relevantLyrics = "";
     
     try {
-      console.log(`Generando prompt para segmento ${segment.id} (${segmentStartTime.toFixed(2)}s - ${segmentEndTime.toFixed(2)}s)`);
+      console.log(`Generating prompt for segment ${segment.id} (${segmentStartTime.toFixed(2)}s - ${segmentEndTime.toFixed(2)}s)`);
       
-      // PASO 1: EXTRACCIÓN DE LETRAS RELEVANTES
-      // Si tenemos transcripción con timestamps (más preciso)
+      // STEP 1: RELEVANT LYRICS EXTRACTION
+      // If we have transcription with timestamps (more precise)
       if (transcriptionWithTimestamps && Array.isArray(transcriptionWithTimestamps.segments)) {
-        // Buscar segmentos de la transcripción que coincidan con este segmento de timeline
+        // Search for transcription segments that match this timeline segment
         const relevantSegments = transcriptionWithTimestamps.segments.filter(
           (s: {start: number, end: number}) => 
             (s.start >= segmentStartTime && s.start <= segmentEndTime) || 
@@ -2135,13 +2135,13 @@ ${transcription}`;
             .filter(text => text.trim().length > 0)
             .join(" ");
           
-          console.log(`Encontrados ${relevantSegments.length} segmentos con timestamps para este fragmento`);
+          console.log(`Found ${relevantSegments.length} segments with timestamps for this fragment`);
         }
       }
       
-      // Si no hay letras específicas, usar transcripción general
+      // If there are no specific lyrics, use general transcription
       if (!relevantLyrics && transcription) {
-        // Dividir la transcripción total proporcionalmente
+        // Divide total transcription proportionally
         const totalDuration = timelineItems.length > 0 ? 
           (timelineItems[timelineItems.length - 1].end_time / 1000) - (timelineItems[0].start_time / 1000) : 0;
           
@@ -2150,7 +2150,7 @@ ${transcription}`;
           const segmentPercent = segmentDuration / totalDuration;
           const startPercent = (segmentStartTime - (timelineItems[0].start_time / 1000)) / totalDuration;
           
-          // Estimar qué parte de la transcripción corresponde a este segmento
+          // Estimate which part of the transcription corresponds to this segment
           const transcriptionWords = transcription.split(/\s+/);
           const startWordIndex = Math.floor(startPercent * transcriptionWords.length);
           const wordCount = Math.max(1, Math.floor(segmentPercent * transcriptionWords.length));
@@ -2158,14 +2158,14 @@ ${transcription}`;
           if (startWordIndex >= 0 && wordCount > 0 && startWordIndex < transcriptionWords.length) {
             const endWordIndex = Math.min(startWordIndex + wordCount, transcriptionWords.length);
             relevantLyrics = transcriptionWords.slice(startWordIndex, endWordIndex).join(" ");
-            console.log(`Usando transcripción proporcional: palabras ${startWordIndex}-${endWordIndex} de ${transcriptionWords.length}`);
+            console.log(`Using proportional transcription: words ${startWordIndex}-${endWordIndex} of ${transcriptionWords.length}`);
           }
         }
       }
 
-      // Si aún no tenemos letras, usar información contextual basada en el segmento
+      // If we still don't have lyrics, use contextual information based on segment
       if (!relevantLyrics || relevantLyrics.trim().length === 0) {
-        // Determinar contexto basado en la posición en el video y características del segmento
+        // Determine context based on position in video and segment characteristics
         const isBeginningSong = timelineItems.indexOf(segment) < Math.min(3, timelineItems.length * 0.2);
         const isEndingSong = timelineItems.indexOf(segment) > timelineItems.length * 0.8;
         const isHighEnergy = segment.energy && segment.averageEnergy && segment.energy > segment.averageEnergy * 1.3;
@@ -2173,48 +2173,48 @@ ${transcription}`;
         
         if (isHighEnergy) {
           relevantLyrics = isBeginningSong 
-            ? "Introducción enérgica e intensa" 
+            ? "Energetic and intense introduction" 
             : isEndingSong 
-              ? "Climax final con gran energía" 
-              : "Sección instrumental con alta intensidad";
+              ? "Final climax with great energy" 
+              : "Instrumental section with high intensity";
         } else if (isLowEnergy) {
           relevantLyrics = isBeginningSong 
-            ? "Introducción suave y atmosférica" 
+            ? "Soft and atmospheric introduction" 
             : isEndingSong 
-              ? "Cierre melódico y reflexivo" 
-              : "Interludio tranquilo y contemplativo";
+              ? "Melodic and reflective closure" 
+              : "Quiet and contemplative interlude";
         } else {
           relevantLyrics = isBeginningSong 
-            ? "Introducción de la canción" 
+            ? "Song introduction" 
             : isEndingSong 
-              ? "Conclusión de la canción" 
+              ? "Song conclusion" 
               : "Instrumental";
         }
         
-        console.log(`No se encontraron letras específicas, usando contexto: "${relevantLyrics}"`);
+        console.log(`No specific lyrics found, using context: "${relevantLyrics}"`);
       }
 
-      // PASO 2: GENERACIÓN DEL PROMPT CON MÚLTIPLES INTENTOS
+      // STEP 2: PROMPT GENERATION WITH MULTIPLE ATTEMPTS
       while (attempt < maxAttempts) {
         try {
-          console.log(`Generando prompt para segmento ${segment.id}, intento ${attempt + 1}/${maxAttempts}`);
+          console.log(`Generating prompt for segment ${segment.id}, attempt ${attempt + 1}/${maxAttempts}`);
           
-          // Validar parámetros del estilo de video antes de crear el prompt
+          // Validate video style parameters before creating prompt
           if (!videoStyle.cameraFormat || !videoStyle.mood || !videoStyle.characterStyle || 
               !videoStyle.colorPalette || videoStyle.visualIntensity === undefined || 
               videoStyle.narrativeIntensity === undefined) {
-            console.error("Estilos de video incompletos:", videoStyle);
-            throw new Error("Faltan parámetros de estilo para generar el prompt");
+            console.error("Incomplete video styles:", videoStyle);
+            throw new Error("Missing style parameters to generate prompt");
           }
           
-          // Preparar parámetros para el prompt con tipado
+          // Prepare parameters for prompt with typing
           const promptParams: VideoPromptParams = {
             shotType: segment.shotType || "medium shot",
             cameraFormat: videoStyle.cameraFormat,
             mood: segment.mood === 'intense' 
-              ? 'Enérgico' 
+              ? 'Energetic' 
               : segment.mood === 'calm' 
-                ? 'Tranquilo' 
+                ? 'Calm' 
                 : videoStyle.mood,
             visualStyle: videoStyle.characterStyle,
             visualIntensity: videoStyle.visualIntensity,
@@ -2226,50 +2226,50 @@ ${transcription}`;
             styleReference: videoStyle.styleReferenceUrl || ""
           };
 
-          // Añadir información de letra a los parámetros
-          const promptWithLyrics = `Escena para video musical que represente estas letras: "${relevantLyrics}". ${await generateVideoPromptWithRetry(promptParams)}`;
+          // Add lyrics information to parameters
+          const promptWithLyrics = `Music video scene representing these lyrics: "${relevantLyrics}". ${await generateVideoPromptWithRetry(promptParams)}`;
 
           if (promptWithLyrics && promptWithLyrics !== "Error generating prompt") {
-            console.log(`Prompt generado exitosamente para segmento ${segment.id}`);
+            console.log(`Prompt successfully generated for segment ${segment.id}`);
             return promptWithLyrics;
           }
 
-          console.warn(`Intento ${attempt + 1} falló, reintentando en ${2 * (attempt + 1)} segundos...`);
+          console.warn(`Attempt ${attempt + 1} failed, retrying in ${2 * (attempt + 1)} seconds...`);
           await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
           attempt++;
 
         } catch (error) {
-          console.error(`Error en intento ${attempt + 1}:`, error);
+          console.error(`Error in attempt ${attempt + 1}:`, error);
           lastError = error instanceof Error ? error : new Error(String(error));
 
           if (attempt === maxAttempts - 1) {
             toast({
               title: "Error",
-              description: "No se pudo generar el prompt después de varios intentos",
+              description: "Could not generate prompt after several attempts",
               variant: "destructive",
             });
             return segment.imagePrompt || "Error generating prompt";
           }
 
-          // Backoff exponencial
+          // Exponential backoff
           const backoffTime = Math.min(1000 * Math.pow(2, attempt), 10000);
-          console.log(`Reintentando en ${backoffTime/1000} segundos...`);
+          console.log(`Retrying in ${backoffTime/1000} seconds...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
           attempt++;
         }
       }
     } catch (outerError) {
-      console.error("Error general en generatePromptForSegment:", outerError);
+      console.error("General error in generatePromptForSegment:", outerError);
       lastError = outerError instanceof Error ? outerError : new Error(String(outerError));
     }
 
-    // FALLBACK: Si ningún intento tuvo éxito
-    console.error(`No se pudo generar prompt para segmento ${segment.id} después de múltiples intentos:`, lastError);
+    // FALLBACK: If no attempt succeeded
+    console.error(`Could not generate prompt for segment ${segment.id} after multiple attempts:`, lastError);
     
-    // Como último recurso, usar un prompt básico basado en el tipo de plano y el mood
+    // As a last resort, use a basic prompt based on shot type and mood
     const fallbackPrompt = `${segment.shotType || 'medium shot'} of a ${segment.mood || 'neutral'} scene with ${videoStyle.colorPalette || 'balanced'} colors. ${relevantLyrics}`;
     
-    console.warn(`Usando prompt fallback para segmento ${segment.id}: ${fallbackPrompt}`);
+    console.warn(`Using fallback prompt for segment ${segment.id}: ${fallbackPrompt}`);
     return fallbackPrompt;
   };
 
@@ -2277,7 +2277,7 @@ ${transcription}`;
     if (timelineItems.length === 0) {
       toast({
         title: "Error",
-        description: "Primero debes detectar los cortes musicales",
+        description: "You must first detect musical cuts",
         variant: "destructive",
       });
       return;
@@ -2286,7 +2286,7 @@ ${transcription}`;
     if (!videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle) {
       toast({
         title: "Error",
-        description: "Debes configurar todos los aspectos del estilo antes de generar los prompts",
+        description: "You must configure all style aspects before generating prompts",
         variant: "destructive",
       });
       return;

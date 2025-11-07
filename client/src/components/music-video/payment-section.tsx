@@ -41,13 +41,13 @@ export function PaymentSection({
         // Redirigir a Stripe Checkout
         window.location.href = response.url;
       } else {
-        throw new Error('No se recibió URL de pago');
+        throw new Error('Payment URL not received');
       }
     } catch (error) {
       console.error('Error al crear sesión de pago:', error);
       toast({
-        title: "Error de pago",
-        description: error instanceof Error ? error.message : "No se pudo iniciar el proceso de pago",
+        title: "Payment error",
+        description: error instanceof Error ? error.message : "Could not initiate payment process",
         variant: "destructive",
       });
       setIsProcessing(false);
@@ -60,25 +60,25 @@ export function PaymentSection({
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-500" />
-            Video Completo Desbloqueado
+            Full Video Unlocked
           </CardTitle>
           <CardDescription>
-            Has pagado por el video musical completo
+            You have paid for the complete music video
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span>30 escenas cinematográficas</span>
+              <span>30 cinematic scenes</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span>Video completo ({duration}s)</span>
+              <span>Full video ({duration}s)</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              <span>Calidad profesional con modelo seleccionado</span>
+              <span>Professional quality with selected model</span>
             </div>
           </div>
         </CardContent>
@@ -92,26 +92,26 @@ export function PaymentSection({
       <Card className="border-muted">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Vista Previa Gratuita</CardTitle>
-            <Badge variant="secondary">Gratis</Badge>
+            <CardTitle className="text-base">Free Preview</CardTitle>
+            <Badge variant="secondary">Free</Badge>
           </div>
           <CardDescription>
-            Prueba antes de pagar
+            Try before you pay
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Zap className="w-4 h-4" />
-              <span>10 segundos de preview</span>
+              <span>10 second preview</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Zap className="w-4 h-4" />
-              <span>3-5 escenas de prueba</span>
+              <span>3-5 test scenes</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Zap className="w-4 h-4" />
-              <span>Calidad estándar</span>
+              <span>Standard quality</span>
             </div>
           </div>
         </CardContent>
@@ -126,14 +126,14 @@ export function PaymentSection({
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              Video Completo Premium
+              Premium Full Video
             </CardTitle>
             <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
               $199.00
             </Badge>
           </div>
           <CardDescription>
-            Video musical completo de nivel profesional
+            Professional-grade full music video
           </CardDescription>
         </CardHeader>
         
@@ -141,27 +141,27 @@ export function PaymentSection({
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              <span className="font-medium">30 escenas cinematográficas únicas</span>
+              <span className="font-medium">30 unique cinematic scenes</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              <span className="font-medium">Video completo ({Math.round(duration)}s)</span>
+              <span className="font-medium">Full video ({Math.round(duration)}s)</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              <span className="font-medium">Modelos premium (KLING, Veo, Sora)</span>
+              <span className="font-medium">Premium models (KLING, Veo, Sora)</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              <span className="font-medium">Prompts variados y creativos</span>
+              <span className="font-medium">Varied and creative prompts</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              <span className="font-medium">Descarga en alta calidad</span>
+              <span className="font-medium">High-quality download</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary" />
-              <span className="font-medium">Guardado permanente en tu cuenta</span>
+              <span className="font-medium">Permanently saved in your account</span>
             </div>
           </div>
 
@@ -175,19 +175,19 @@ export function PaymentSection({
             {isProcessing ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Procesando...
+                Processing...
               </>
             ) : (
               <>
                 <CreditCard className="w-4 h-4 mr-2" />
-                Pagar $199 - Desbloquear Video Completo
+                Pay $199 - Unlock Full Video
               </>
             )}
           </Button>
 
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Lock className="w-3 h-3" />
-            <span>Pago seguro con Stripe</span>
+            <span>Secure payment with Stripe</span>
           </div>
         </CardContent>
       </Card>

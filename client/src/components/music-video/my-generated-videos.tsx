@@ -40,21 +40,21 @@ export function MyGeneratedVideos() {
         method: 'DELETE'
       });
       if (!response.ok) {
-        throw new Error('Error al eliminar video');
+        throw new Error('Error deleting video');
       }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/videos/my-videos'] });
       toast({
-        title: "Video eliminado",
-        description: "El video ha sido eliminado correctamente",
+        title: "Video deleted",
+        description: "The video has been deleted successfully",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo eliminar el video",
+        description: error.message || "Could not delete video",
         variant: "destructive",
       });
     }
@@ -74,21 +74,21 @@ export function MyGeneratedVideos() {
       document.body.removeChild(a);
       
       toast({
-        title: "Descarga iniciada",
-        description: "Tu video se está descargando",
+        title: "Download started",
+        description: "Your video is downloading",
       });
     } catch (error) {
       console.error('Error descargando video:', error);
       toast({
-        title: "Error de descarga",
-        description: "No se pudo descargar el video. Intenta abrirlo en una nueva pestaña.",
+        title: "Download error",
+        description: "Could not download the video. Try opening it in a new tab.",
         variant: "destructive",
       });
     }
   };
 
   const handleDelete = (videoId: number, songName: string) => {
-    if (confirm(`¿Estás seguro de que quieres eliminar el video de "${songName}"?`)) {
+    if (confirm(`Are you sure you want to delete the video "${songName}"?`)) {
       deleteMutation.mutate(videoId);
     }
   };
@@ -96,11 +96,11 @@ export function MyGeneratedVideos() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />Completado</Badge>;
+        return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />Completed</Badge>;
       case 'generating':
-        return <Badge className="bg-blue-500"><Clock className="w-3 h-3 mr-1 animate-spin" />Generando</Badge>;
+        return <Badge className="bg-blue-500"><Clock className="w-3 h-3 mr-1 animate-spin" />Generating</Badge>;
       case 'failed':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Fallido</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -112,13 +112,13 @@ export function MyGeneratedVideos() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Video className="w-5 h-5" />
-            Mis Videos Generados
+            My Generated Videos
           </CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-12">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
-            <p className="text-muted-foreground">Cargando videos...</p>
+            <p className="text-muted-foreground">Loading videos...</p>
           </div>
         </CardContent>
       </Card>
@@ -131,17 +131,17 @@ export function MyGeneratedVideos() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Video className="w-5 h-5" />
-            Mis Videos Generados
+            My Generated Videos
           </CardTitle>
           <CardDescription>
-            Aquí aparecerán tus videos musicales generados
+            Your generated music videos will appear here
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-12">
           <div className="text-center text-muted-foreground">
             <Video className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">No tienes videos generados</p>
-            <p className="text-sm">Genera tu primer video musical para verlo aquí</p>
+            <p className="text-lg font-medium">You have no generated videos</p>
+            <p className="text-sm">Generate your first music video to see it here</p>
           </div>
         </CardContent>
       </Card>
@@ -153,10 +153,10 @@ export function MyGeneratedVideos() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Video className="w-5 h-5" />
-          Mis Videos Generados ({videos.length})
+          My Generated Videos ({videos.length})
         </CardTitle>
         <CardDescription>
-          Todos tus videos musicales generados con IA
+          All your AI-generated music videos
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -191,16 +191,16 @@ export function MyGeneratedVideos() {
                           {video.song_name}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          Creado el {format(new Date(video.created_at), 'dd/MM/yyyy HH:mm')}
+                          Created on {format(new Date(video.created_at), 'MM/dd/yyyy HH:mm')}
                         </p>
                       </div>
                       {getStatusBadge(video.status)}
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                      <span>Duración: {Math.round(video.duration)}s</span>
+                      <span>Duration: {Math.round(video.duration)}s</span>
                       {video.amount && (
-                        <span>Pagado: ${(video.amount / 100).toFixed(2)}</span>
+                        <span>Paid: ${(video.amount / 100).toFixed(2)}</span>
                       )}
                     </div>
 
@@ -214,7 +214,7 @@ export function MyGeneratedVideos() {
                             data-testid={`button-play-${video.id}`}
                           >
                             <Play className="w-4 h-4 mr-1" />
-                            Ver
+                            View
                           </Button>
                           <Button
                             size="sm"
@@ -223,14 +223,14 @@ export function MyGeneratedVideos() {
                             data-testid={`button-download-${video.id}`}
                           >
                             <Download className="w-4 h-4 mr-1" />
-                            Descargar
+                            Download
                           </Button>
                         </>
                       )}
                       {video.status === 'generating' && (
                         <Button size="sm" disabled>
                           <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                          Generando...
+                          Generating...
                         </Button>
                       )}
                       <Button
@@ -241,7 +241,7 @@ export function MyGeneratedVideos() {
                         data-testid={`button-delete-${video.id}`}
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Eliminar
+                        Delete
                       </Button>
                     </div>
                   </div>

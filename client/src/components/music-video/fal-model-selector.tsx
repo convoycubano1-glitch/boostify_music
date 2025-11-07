@@ -38,10 +38,10 @@ export function FalModelSelector({ selectedModelId, onModelChange, disabled = fa
       <div>
         <Label htmlFor="fal-model" className="text-base font-semibold flex items-center gap-2">
           <Film className="w-5 h-5" />
-          Modelo de Generación de Video
+          Video Generation Model
         </Label>
         <p className="text-sm text-muted-foreground mt-1">
-          Selecciona el modelo de IA para generar tus videos musicales
+          Select the AI model to generate your music videos
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export function FalModelSelector({ selectedModelId, onModelChange, disabled = fa
           className="w-full"
           data-testid="select-fal-model"
         >
-          <SelectValue placeholder="Selecciona un modelo de video" />
+          <SelectValue placeholder="Select a video model" />
         </SelectTrigger>
         <SelectContent className="max-h-[400px]">
           {/* Modelos Premium */}
@@ -59,7 +59,7 @@ export function FalModelSelector({ selectedModelId, onModelChange, disabled = fa
             <>
               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
-                Máxima Calidad - Premium
+                Maximum Quality - Premium
               </div>
               {premiumModels.map(([key, model]) => (
                 <SelectItem 
@@ -84,7 +84,7 @@ export function FalModelSelector({ selectedModelId, onModelChange, disabled = fa
             <>
               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1">
                 <Zap className="w-3 h-3" />
-                KLING Series - Cinematográfico
+                KLING Series - Cinematic
               </div>
               {klingModels.map(([key, model]) => (
                 <SelectItem 
@@ -109,7 +109,7 @@ export function FalModelSelector({ selectedModelId, onModelChange, disabled = fa
             <>
               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1">
                 <Film className="w-3 h-3" />
-                Otros Modelos Avanzados
+                Other Advanced Models
               </div>
               {otherModels.map(([key, model]) => (
                 <SelectItem 
@@ -143,17 +143,17 @@ export function FalModelSelector({ selectedModelId, onModelChange, disabled = fa
           </CardHeader>
           <CardContent className="space-y-2 text-xs">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Tipo:</span>
+              <span className="text-muted-foreground">Type:</span>
               <Badge variant="outline" className="text-xs">
                 {selectedModel.type}
               </Badge>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Duración máxima:</span>
+              <span className="text-muted-foreground">Max duration:</span>
               <span className="font-medium">{selectedModel.maxDuration}s</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Precio:</span>
+              <span className="text-muted-foreground">Pricing:</span>
               <span className="font-medium">{selectedModel.pricing}</span>
             </div>
           </CardContent>
