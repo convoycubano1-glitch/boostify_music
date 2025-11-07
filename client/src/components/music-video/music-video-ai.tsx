@@ -4456,11 +4456,11 @@ ${transcription}`;
               </div>
             </div>
           </div>
+          </>
+          )}
         </Card>
         </motion.div>
       </motion.div>
-      </>
-      )}
     </div>
   );
 }
