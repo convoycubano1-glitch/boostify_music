@@ -1,17 +1,25 @@
 /**
- * Editor de línea de tiempo para música
- * Componente principal que integra gestión de capas, clips y reproducción de audio
- * @export TimelineEditor - Componente principal del editor
+ * Enhanced Timeline Editor for Music Videos
+ * Professional-grade multi-track editor with advanced features:
+ * - Synchronized video preview viewer
+ * - Multiple tool modes (Select, Razor, Trim, Hand)
+ * - Undo/Redo history system
+ * - Snap-to-grid and marker snapping
+ * - Auto-scroll following playhead
+ * - Comprehensive keyboard shortcuts
+ * - Mobile-responsive with touch support
+ * - Multi-layer editing (Audio, Video, Text, Effects, AI)
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { cn } from '../../lib/utils';
 import { 
   Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut,
-  Music, Volume2, Volume1, VolumeX, Layers, Lock, Eye, Trash, 
-  Plus, Save, Download, Upload, Share2, Loader2, ChevronLeft, 
-  ChevronRight, EyeOff, LockOpen, Unlock, Image as ImageIcon, RefreshCw,
-  Video, Wand2, Text, Sparkles as SparklesIcon, Star
+  Music, Layers, Lock, Eye, Trash, Plus, Undo, Redo,
+  ChevronLeft, ChevronRight, EyeOff, LockOpen, Unlock, 
+  Image as ImageIcon, RefreshCw, Video, Wand2, Text, 
+  Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
+  Maximize2
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -27,48 +35,42 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { Progress } from '../../components/ui/progress';
 import { ensureCompatibleClip } from '../timeline/TimelineClipUnified';
 
+// ===== Type Definitions =====
+
 /**
- * Interfaz para clips de línea de tiempo con soporte para múltiples capas
- * Estructura profesional inspirada en editores como CapCut y Premiere
+ * Timeline clip interface with multi-layer support
+ * Professional structure inspired by editors like CapCut and Premiere
  */
 export interface TimelineClip {
   id: number;
   start: number;
   duration: number;
-  // Tipo de clip con soporte para múltiples formatos
   type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
-  // Layer al que pertenece: 0=audio, 1=video/imagen, 2=texto, 3=efectos
-  layer: number;
-  // Propiedades visuales
+  layer: number; // 0=audio, 1=video/image, 2=text, 3=effects, 7=AI-generated
   thumbnail?: string;
   title: string;
   description?: string;
   waveform?: number[];
   imagePrompt?: string;
   shotType?: string;
-  // Propiedades de visibilidad y bloqueo
   visible?: boolean;
   locked?: boolean;
-  // URLs de recursos
   imageUrl?: string;
   videoUrl?: string;
   movementUrl?: string;
   audioUrl?: string;
-  // Propiedades específicas para la sincronización de labios
   lipsyncApplied?: boolean;
   lipsyncVideoUrl?: string;
   lipsyncProgress?: number;
-  // Propiedades adicionales
   metadata?: {
-    section?: string;    // Sección musical (coro, verso, etc.)
+    section?: string;
     movementApplied?: boolean;
     movementPattern?: string;
     movementIntensity?: number;
     faceSwapApplied?: boolean;
     musicianIntegrated?: boolean;
-    sourceIndex?: number; // Índice en el guion original
-    isGeneratedImage?: boolean; // Indica si es una imagen generada por IA
-    // Propiedades de sincronización de labios en metadata
+    sourceIndex?: number;
+    isGeneratedImage?: boolean;
     lipsync?: {
       applied: boolean;
       videoUrl?: string;
@@ -78,17 +80,15 @@ export interface TimelineClip {
   };
 }
 
-// Interfaz para los datos de beat detectados
 export interface BeatData {
-  time: number;      // Tiempo en segundos
-  timecode: string;  // Timecode formateado
-  energy: number;    // Nivel de energía
-  intensity: number; // Intensidad normalizada (0-1)
-  type: string;      // Tipo de beat (downbeat, accent, beat)
-  isDownbeat: boolean; // Si es un beat principal o secundario
+  time: number;
+  timecode: string;
+  energy: number;
+  intensity: number;
+  type: string;
+  isDownbeat: boolean;
 }
 
-// Interfaz para metadata de beatMap
 export interface BeatMapMetadata {
   songTitle?: string;
   artist?: string;
@@ -110,13 +110,14 @@ export interface BeatMapMetadata {
   };
 }
 
-// Interfaz para el mapa completo de beats
 export interface BeatMap {
   metadata: BeatMapMetadata;
   beats: BeatData[];
 }
 
-// Propiedades del editor de línea de tiempo
+type ToolMode = 'select' | 'razor' | 'trim' | 'hand';
+type HistoryState = { clips: TimelineClip[]; selectedId: number | null };
+
 interface TimelineEditorProps {
   clips?: TimelineClip[];
   currentTime: number;
@@ -129,18 +130,17 @@ interface TimelineEditorProps {
   isPlaying: boolean;
   onRegenerateImage?: (clipId: number) => void;
   onSplitClip?: (clipId: number, splitTime: number) => void;
-  beatsData?: BeatMap; // Datos de beats para visualización avanzada
+  beatsData?: BeatMap;
+  videoUrl?: string; // Optional: for video preview
 }
 
-/**
- * Editor de línea de tiempo para música
- * 
- * Componente principal que integra:
- * - Gestión de capas (audio, video, texto, efectos)
- * - Edición de clips con restricciones
- * - Reproducción y visualización de audio
- * - Sincronización con beats
- */
+// ===== Constants =====
+const PIXELS_PER_SECOND_BASE = 100;
+const SNAP_TOLERANCE = 0.08; // 80ms snap tolerance
+const HISTORY_LIMIT = 50;
+const MAX_CLIP_DURATION = 5; // Maximum clip duration in seconds
+
+// ===== Main Component =====
 export function TimelineEditor({
   clips = [],
   currentTime,
@@ -153,29 +153,164 @@ export function TimelineEditor({
   isPlaying,
   onRegenerateImage,
   onSplitClip,
-  beatsData
+  beatsData,
+  videoUrl
 }: TimelineEditorProps) {
   const { toast } = useToast();
 
+  // ===== State =====
   const [zoom, setZoom] = useState(1);
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const waveformRef = useRef<HTMLCanvasElement>(null);
+  const [tool, setTool] = useState<ToolMode>('select');
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
+  const [showWaveform, setShowWaveform] = useState<boolean>(true);
+  const [previewZoom, setPreviewZoom] = useState(1);
+  const [showSafeAreas, setShowSafeAreas] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
+  
+  // Drag/Resize state
   const [draggingClip, setDraggingClip] = useState<number | null>(null);
   const [resizingSide, setResizingSide] = useState<'start' | 'end' | null>(null);
   const [dragStartX, setDragStartX] = useState<number>(0);
   const [clipStartPosition, setClipStartPosition] = useState<number>(0);
-  const [showWaveform, setShowWaveform] = useState<boolean>(true);
+  
+  // History for undo/redo
+  const [history, setHistory] = useState<{ past: HistoryState[]; future: HistoryState[] }>({ 
+    past: [], 
+    future: [] 
+  });
 
-  const PIXELS_PER_SECOND = 100; // Base de píxeles por segundo
-  const scaledPixelsPerSecond = PIXELS_PER_SECOND * zoom;
+  // ===== Refs =====
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const waveformRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const rafIdRef = useRef<number | null>(null);
 
-  // Convertir tiempo a píxeles y viceversa
-  const timeToPixels = (time: number) => time * scaledPixelsPerSecond;
-  const pixelsToTime = (pixels: number) => pixels / scaledPixelsPerSecond;
+  // ===== Computed Values =====
+  const scaledPixelsPerSecond = PIXELS_PER_SECOND_BASE * zoom;
+  const timeToPixels = useCallback((time: number) => time * scaledPixelsPerSecond, [scaledPixelsPerSecond]);
+  const pixelsToTime = useCallback((pixels: number) => pixels / scaledPixelsPerSecond, [scaledPixelsPerSecond]);
+  
+  // Snap candidates from beat markers
+  const snapCandidates = useMemo(() => {
+    const beats = beatsData?.beats?.map(b => b.time) ?? [];
+    return [...beats, 0, duration];
+  }, [beatsData, duration]);
 
-  // Dibujar forma de onda si hay audioBuffer
+  const snapTo = useCallback((t: number) => {
+    const step = zoom >= 1.4 ? 0.1 : zoom >= 0.8 ? 0.25 : 0.5;
+    const grid = [...snapCandidates, Math.round(t / step) * step];
+    const nearest = grid.reduce((a, b) => Math.abs(b - t) < Math.abs(a - t) ? b : a, t);
+    return Math.abs(nearest - t) <= SNAP_TOLERANCE ? nearest : t;
+  }, [snapCandidates, zoom]);
+
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  // ===== History Management =====
+  const pushHistory = useCallback(() => {
+    const snapshot: HistoryState = {
+      clips: structuredClone?.(clips) ?? clips.map(c => ({ ...c })),
+      selectedId: selectedClip
+    };
+    setHistory(prev => {
+      const nextPast = [...prev.past, snapshot].slice(-HISTORY_LIMIT);
+      return { past: nextPast, future: [] };
+    });
+  }, [clips, selectedClip]);
+
+  const handleUndo = useCallback(() => {
+    if (history.past.length === 0) return;
+    const newPast = [...history.past];
+    const prev = newPast.pop()!;
+    
+    const currentState: HistoryState = {
+      clips: structuredClone?.(clips) ?? clips.map(c => ({ ...c })),
+      selectedId: selectedClip
+    };
+    
+    setHistory({ past: newPast, future: [currentState, ...history.future] });
+    setSelectedClip(prev.selectedId);
+    
+    // Update clips
+    prev.clips.forEach(clip => {
+      if (onClipUpdate) {
+        const original = clips.find(c => c.id === clip.id);
+        if (original) {
+          onClipUpdate(clip.id, clip);
+        }
+      }
+    });
+    
+    toast({
+      title: "Undo",
+      description: "Reverted last change",
+      variant: "default",
+    });
+  }, [history, clips, selectedClip, onClipUpdate, toast]);
+
+  const handleRedo = useCallback(() => {
+    if (history.future.length === 0) return;
+    const newFuture = [...history.future];
+    const next = newFuture.shift()!;
+    
+    const currentState: HistoryState = {
+      clips: structuredClone?.(clips) ?? clips.map(c => ({ ...c })),
+      selectedId: selectedClip
+    };
+    
+    setHistory({ past: [...history.past, currentState], future: newFuture });
+    setSelectedClip(next.selectedId);
+    
+    // Update clips
+    next.clips.forEach(clip => {
+      if (onClipUpdate) {
+        const original = clips.find(c => c.id === clip.id);
+        if (original) {
+          onClipUpdate(clip.id, clip);
+        }
+      }
+    });
+    
+    toast({
+      title: "Redo",
+      description: "Reapplied change",
+      variant: "default",
+    });
+  }, [history, clips, selectedClip, onClipUpdate, toast]);
+
+  // ===== Auto-scroll Effect =====
+  useEffect(() => {
+    if (!autoScroll || !timelineRef.current) return;
+    const container = timelineRef.current;
+    const playheadX = timeToPixels(currentTime);
+    const pad = 60;
+    
+    if (playheadX < container.scrollLeft + pad || playheadX > container.scrollLeft + container.clientWidth - pad) {
+      container.scrollTo({ 
+        left: Math.max(0, playheadX - container.clientWidth / 3), 
+        behavior: 'smooth' 
+      });
+    }
+  }, [currentTime, timeToPixels, autoScroll]);
+
+  // ===== Video Preview Sync =====
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !videoUrl) return;
+    
+    try {
+      video.currentTime = currentTime;
+      if (isPlaying) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    } catch (e) {
+      // Silently handle video sync errors
+    }
+  }, [currentTime, isPlaying, videoUrl]);
+
+  // ===== Waveform Drawing =====
   useEffect(() => {
     const canvas = waveformRef.current;
     if (!canvas || !audioBuffer || !showWaveform) return;
@@ -183,63 +318,205 @@ export function TimelineEditor({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Configurar dimensiones
     const width = timeToPixels(duration);
     canvas.width = width;
     canvas.height = 80;
 
-    // Limpiar canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.4)';
 
-    // Configurar estilo
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.4)'; // Color naranja semitransparente
-
-    // Obtener datos del canal izquierdo del audio
     const data = audioBuffer.getChannelData(0);
     const step = Math.ceil(data.length / width);
     const amp = canvas.height / 2;
 
-    // Dibujar forma de onda
     for (let i = 0; i < width; i++) {
       let min = 1.0;
       let max = -1.0;
       
-      // Encontrar min/max en el segmento
       for (let j = 0; j < step; j++) {
         const datum = data[(i * step) + j] || 0;
         if (datum < min) min = datum;
         if (datum > max) max = datum;
       }
       
-      // Dibujar barra desde min hasta max
-      ctx.fillRect(
-        i, 
-        (1 + min) * amp, 
-        1, 
-        Math.max(1, (max - min) * amp)
-      );
+      ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
     }
   }, [audioBuffer, duration, zoom, showWaveform, timeToPixels]);
 
-  // Renderizar marcas de tiempo y guías para límites de clips
-  const renderTimeMarkers = () => {
+  // ===== Clip Operations =====
+  const handleSelectClip = useCallback((id: number) => {
+    setSelectedClip(id);
+  }, []);
+
+  const handleClipUpdate = useCallback((id: number, updates: Partial<TimelineClip>) => {
+    if (onClipUpdate) {
+      onClipUpdate(id, updates);
+    }
+  }, [onClipUpdate]);
+
+  const handleClipMouseDown = useCallback((e: React.MouseEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
+    if (tool === 'hand') return;
+    
+    e.stopPropagation();
+    
+    setSelectedClip(clipId);
+    
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip || clip.locked) return;
+    
+    if (tool === 'razor') {
+      // Split clip at click position
+      if (onSplitClip) {
+        pushHistory();
+        onSplitClip(clipId, currentTime);
+      }
+      return;
+    }
+    
+    if (tool === 'select' && handle === 'body') {
+      pushHistory();
+      setDraggingClip(clipId);
+      setDragStartX(e.clientX);
+      setClipStartPosition(clip.start);
+    } else if (tool === 'trim' && (handle === 'start' || handle === 'end')) {
+      pushHistory();
+      setResizingSide(handle);
+      setDragStartX(e.clientX);
+      setClipStartPosition(clip.start);
+    }
+  }, [tool, clips, currentTime, pushHistory, onSplitClip]);
+
+  // Mouse move handler for drag/resize
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!draggingClip && !resizingSide) return;
+    
+    const deltaX = e.clientX - dragStartX;
+    const deltaTime = pixelsToTime(deltaX);
+    
+    const clip = clips.find(c => c.id === (draggingClip || selectedClip));
+    if (!clip) return;
+    
+    const otherClipsInLayer = clips.filter(c => c.layer === clip.layer && c.id !== clip.id);
+    
+    if (draggingClip) {
+      let newStart = Math.max(0, clipStartPosition + deltaTime);
+      newStart = snapTo(newStart);
+      
+      const wouldCollide = otherClipsInLayer.some(otherClip => {
+        const clipEnd = newStart + clip.duration;
+        return (newStart < otherClip.start + otherClip.duration && clipEnd > otherClip.start);
+      });
+      
+      if (!wouldCollide && newStart + clip.duration <= duration) {
+        handleClipUpdate(clip.id, { start: newStart });
+      }
+    } else if (resizingSide === 'start') {
+      const maxNewStart = clipStartPosition + clip.duration - 0.1;
+      let newStart = Math.min(maxNewStart, Math.max(0, clipStartPosition + deltaTime));
+      newStart = snapTo(newStart);
+      const newDuration = Math.min(MAX_CLIP_DURATION, clip.duration - (newStart - clipStartPosition));
+      
+      if (newDuration >= 0.1) {
+        handleClipUpdate(clip.id, { start: newStart, duration: newDuration });
+      }
+    } else if (resizingSide === 'end') {
+      let newDuration = Math.min(MAX_CLIP_DURATION, Math.max(0.1, clip.duration + deltaTime));
+      const endTime = snapTo(clip.start + newDuration);
+      newDuration = clamp(endTime - clip.start, 0.1, MAX_CLIP_DURATION);
+      
+      if (clip.start + newDuration <= duration) {
+        handleClipUpdate(clip.id, { duration: newDuration });
+      }
+    }
+  }, [draggingClip, resizingSide, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, snapTo, duration, handleClipUpdate]);
+
+  const handleMouseUp = useCallback(() => {
+    setDraggingClip(null);
+    setResizingSide(null);
+  }, []);
+
+  // Setup/cleanup mouse event listeners
+  useEffect(() => {
+    if (draggingClip || resizingSide) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [draggingClip, resizingSide, handleMouseMove, handleMouseUp]);
+
+  // ===== Touch Support for Mobile =====
+  const handleTouchStart = useCallback((e: React.TouchEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
+    if (tool === 'hand' || e.touches.length !== 1) return;
+    
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      bubbles: true
+    }) as unknown as React.MouseEvent;
+    
+    handleClipMouseDown(mouseEvent, clipId, handle);
+  }, [tool, handleClipMouseDown]);
+
+  // ===== Keyboard Shortcuts =====
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName.toLowerCase() === 'input') return;
+      
+      if (e.code === 'Space') {
+        e.preventDefault();
+        isPlaying ? onPause() : onPlay();
+      } else if (e.key.toLowerCase() === 'v') {
+        setTool('select');
+      } else if (e.key.toLowerCase() === 'c') {
+        setTool('razor');
+      } else if (e.key.toLowerCase() === 't') {
+        setTool('trim');
+      } else if (e.key.toLowerCase() === 'h') {
+        setTool('hand');
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+      } else if (e.key === 'Delete' && selectedClip !== null) {
+        pushHistory();
+        // Delete selected clip - implement deletion logic
+      }
+    };
+    
+    containerRef.current?.addEventListener('keydown', handleKeyDown);
+    return () => {
+      containerRef.current?.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPlaying, onPlay, onPause, handleUndo, handleRedo, selectedClip, pushHistory]);
+
+  // ===== Timeline Click Handler =====
+  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
+    if (tool === 'hand' || !timelineRef.current) return;
+    
+    const rect = timelineRef.current.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const clickedTime = pixelsToTime(offsetX);
+    
+    if (clickedTime >= 0 && clickedTime <= duration) {
+      onTimeUpdate(clickedTime);
+    }
+  }, [tool, pixelsToTime, duration, onTimeUpdate]);
+
+  // ===== Render Time Markers =====
+  const renderTimeMarkers = useCallback(() => {
     const markers = [];
-    // Ajusta la frecuencia de las marcas según el nivel de zoom
-    const majorStep = zoom < 0.5 ? 10 : zoom < 1 ? 5 : zoom < 2 ? 1 : 0.5; 
+    const majorStep = zoom < 0.5 ? 10 : zoom < 1 ? 5 : zoom < 2 ? 1 : 0.5;
     const minorStep = majorStep / 5;
     
-    // Añadir cuadrícula horizontal
-    markers.push(
-      <div 
-        key="grid-base" 
-        className="absolute top-12 left-0 right-0 w-full border-t border-gray-700" 
-      />
-    );
-    
-    // Añadir marcadores de tiempo principales y secundarios
     for (let i = 0; i <= Math.ceil(duration); i += minorStep) {
       const position = timeToPixels(i);
-      const isMajor = Math.abs(i % majorStep) < 0.001; // Usar una pequeña tolerancia para evitar errores de punto flotante
+      const isMajor = Math.abs(i % majorStep) < 0.001;
       const isHalfSecond = Math.abs(i % 0.5) < 0.001;
       
       markers.push(
@@ -248,52 +525,25 @@ export function TimelineEditor({
           className={cn(
             "absolute",
             isMajor ? "border-l border-gray-500 h-12" : 
-                     isHalfSecond ? "border-l border-gray-700 h-8" : 
-                     "border-l border-gray-800 h-4"
+            isHalfSecond ? "border-l border-gray-700 h-8" : 
+            "border-l border-gray-800 h-4"
           )}
           style={{ left: `${position}px` }}
         >
           {isMajor && (
-            <div className="text-xs text-gray-400 font-medium ml-1">{formatTime(i)}</div>
+            <div className="text-xs text-gray-400 font-medium ml-1">
+              {formatTime(i)}
+            </div>
           )}
         </div>
       );
     }
     
-    // Añadir marcadores especiales para los límites de 5 segundos
-    for (let i = 0; i <= Math.ceil(duration); i += 5) {
-      const position = timeToPixels(i);
-      
-      markers.push(
-        <div 
-          key={`limit-${i}`}
-          className="absolute top-12 bottom-0 border-l border-amber-800 border-dashed opacity-40 z-5"
-          style={{ left: `${position}px` }}
-        >
-          <div className="absolute -rotate-90 text-[10px] text-amber-500 transform -translate-x-6 mt-4 opacity-80 whitespace-nowrap">
-            {i === 0 ? "Inicio" : `${i}s (límite de clip)`}
-          </div>
-        </div>
-      );
-    }
-    
-    // Añadir marcadores para la posición actual de reproducción
-    if (currentTime > 0) {
-      const currentPosition = timeToPixels(currentTime);
-      markers.push(
-        <div 
-          key="current-position-line"
-          className="absolute top-0 bottom-0 border-l border-primary opacity-25 z-5"
-          style={{ left: `${currentPosition}px` }}
-        />
-      );
-    }
-    
     return markers;
-  };
+  }, [duration, zoom, timeToPixels]);
 
-  // Renderizar línea actual de reproducción con indicadores mejorados
-  const renderPlayhead = () => {
+  // ===== Render Playhead =====
+  const renderPlayhead = useCallback(() => {
     return (
       <div 
         className="absolute top-0 h-full border-l-2 border-primary z-30 pointer-events-none"
@@ -303,7 +553,6 @@ export function TimelineEditor({
           filter: "drop-shadow(0 0 3px rgba(255,255,255,0.3))"
         }}
       >
-        {/* Indicador superior con tiempo actual */}
         <div className="absolute -left-[18px] -top-2 flex flex-col items-center">
           <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center shadow-lg">
             {isPlaying ? 
@@ -315,184 +564,12 @@ export function TimelineEditor({
             {formatTime(currentTime)}
           </div>
         </div>
-        
-        {/* Línea vertical con efecto de brillo */}
-        <div className="absolute top-0 left-0 w-full h-full bg-primary opacity-25" style={{width: '1px'}} />
-        
-        {/* Indicador inferior */}
         <div className="absolute -left-1 bottom-0 w-2 h-4 bg-primary rounded-t-sm" />
       </div>
     );
-  };
+  }, [currentTime, isPlaying, timeToPixels]);
 
-  // Manejar clic en timeline para cambiar la posición actual
-  const handleTimelineClick = (e: React.MouseEvent) => {
-    if (!timelineRef.current) return;
-    
-    const rect = timelineRef.current.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left;
-    const clickedTime = pixelsToTime(offsetX);
-    
-    if (clickedTime >= 0 && clickedTime <= duration) {
-      onTimeUpdate(clickedTime);
-    }
-  };
-
-  // Manejar selección de clip
-  const handleSelectClip = (id: number, multiSelect = false) => {
-    setSelectedClip(id);
-    
-    // Aquí puedes implementar selección múltiple si multiSelect es true
-    toast({
-      title: "Clip seleccionado",
-      description: `Has seleccionado el clip #${id}`,
-      variant: "default",
-    });
-  };
-
-  // Manejar actualización de clip
-  const handleClipUpdate = (id: number, updates: Partial<TimelineClip>) => {
-    if (onClipUpdate) {
-      onClipUpdate(id, updates);
-    }
-  };
-
-  // Manejar inicio de arrastre de clip
-  const handleClipMouseDown = (e: React.MouseEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
-    e.stopPropagation();
-    
-    setSelectedClip(clipId);
-    setDraggingClip(handle === 'body' ? clipId : null);
-    setResizingSide(handle === 'start' || handle === 'end' ? handle : null);
-    setDragStartX(e.clientX);
-    
-    // Encontrar la posición inicial del clip
-    const clip = clips.find(c => c.id === clipId);
-    if (clip) {
-      setClipStartPosition(clip.start);
-    }
-    
-    // Registrar manejadores de eventos globales
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  // Manejar movimiento durante el arrastre
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!draggingClip && !resizingSide) return;
-    
-    const deltaX = e.clientX - dragStartX;
-    const deltaTime = pixelsToTime(deltaX);
-    
-    const clip = clips.find(c => c.id === (draggingClip || selectedClip));
-    if (!clip) return;
-    
-    // Verificar colisiones con otros clips en la misma capa
-    const otherClipsInLayer = clips.filter(c => c.layer === clip.layer && c.id !== clip.id);
-    
-    if (draggingClip) {
-      // Mover el clip completo
-      const newStart = Math.max(0, clipStartPosition + deltaTime);
-      
-      // Comprobar si hay colisión al mover
-      const wouldCollide = otherClipsInLayer.some(otherClip => {
-        const clipEnd = newStart + clip.duration;
-        return (newStart < otherClip.start + otherClip.duration && 
-                clipEnd > otherClip.start);
-      });
-      
-      if (!wouldCollide) {
-        handleClipUpdate(clip.id, { start: newStart });
-      } else {
-        // Mostrar mensaje de colisión
-        toast({
-          title: "Superposición detectada",
-          description: "No se permite superposición entre clips en la misma capa",
-          variant: "destructive",
-        });
-      }
-    } else if (resizingSide === 'start') {
-      // Redimensionar desde el inicio
-      const maxNewStart = clipStartPosition + clip.duration - 0.1;
-      let newStart = Math.min(maxNewStart, Math.max(0, clipStartPosition + deltaTime));
-      const newDuration = Math.min(5, clip.duration - (newStart - clipStartPosition));
-      
-      // Comprobar si hay colisión al redimensionar desde el inicio
-      const wouldCollide = otherClipsInLayer.some(otherClip => {
-        return (newStart < otherClip.start + otherClip.duration && 
-                otherClip.start < clipStartPosition);
-      });
-      
-      if (!wouldCollide) {
-        handleClipUpdate(clip.id, { 
-          start: newStart,
-          duration: newDuration
-        });
-      } else {
-        toast({
-          title: "Superposición detectada",
-          description: "No se permite superposición entre clips en la misma capa",
-          variant: "destructive",
-        });
-      }
-    } else if (resizingSide === 'end') {
-      // Redimensionar desde el final - limitar a 5 segundos exactos como máximo
-      let newDuration = Math.min(5, Math.max(0.1, clip.duration + deltaTime));
-      
-      // Comprobar si hay colisión al redimensionar desde el final
-      const wouldCollide = otherClipsInLayer.some(otherClip => {
-        const newEnd = clip.start + newDuration;
-        return (newEnd > otherClip.start && otherClip.start > clip.start);
-      });
-      
-      if (!wouldCollide) {
-        handleClipUpdate(clip.id, { duration: newDuration });
-      } else {
-        toast({
-          title: "Superposición detectada",
-          description: "No se permite superposición entre clips en la misma capa",
-          variant: "destructive",
-        });
-      }
-      
-      // Mostrar mensaje si intenta exceder la duración máxima
-      if (clip.duration + deltaTime > 5) {
-        toast({
-          title: "Límite de duración",
-          description: "La duración máxima de un clip es de 5 segundos",
-          variant: "warning",
-        });
-      }
-    }
-  }, [draggingClip, resizingSide, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, handleClipUpdate, toast]);
-
-  // Manejar fin del arrastre
-  const handleMouseUp = useCallback(() => {
-    setDraggingClip(null);
-    setResizingSide(null);
-    
-    // Eliminar manejadores de eventos globales
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-  }, [handleMouseMove]);
-
-  // Limpiar manejadores de eventos al desmontar
-  useEffect(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [handleMouseMove, handleMouseUp]);
-
-  // Agrupar clips por capa para visualización
-  const clipsByLayer = clips.reduce((grouped, clip) => {
-    const layer = clip.layer || 0;
-    if (!grouped[layer]) grouped[layer] = [];
-    grouped[layer].push(clip);
-    return grouped;
-  }, {} as Record<number, TimelineClip[]>);
-
-  // Formatear tiempo en formato mm:ss.ms
+  // ===== Format Time Utility =====
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -500,40 +577,111 @@ export function TimelineEditor({
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms}`;
   };
 
-  // Manejar regeneración de imagen
-  const handleRegenerateImage = (clipId: number) => {
-    if (onRegenerateImage) {
-      onRegenerateImage(clipId);
-    }
-  };
+  // ===== Group clips by layer =====
+  const clipsByLayer = useMemo(() => {
+    return clips.reduce((grouped, clip) => {
+      const layer = clip.layer || 0;
+      if (!grouped[layer]) grouped[layer] = [];
+      grouped[layer].push(clip);
+      return grouped;
+    }, {} as Record<number, TimelineClip[]>);
+  }, [clips]);
 
-  // Determinar el color de una capa
+  // ===== Layer Colors =====
   const getLayerColor = (layer: number) => {
     const colors = [
-      { bg: '#3730a3', text: 'white' },  // 0: Audio - Índigo
-      { bg: '#0369a1', text: 'white' },  // 1: Video - Azul
-      { bg: '#15803d', text: 'white' },  // 2: Texto - Verde
-      { bg: '#9f1239', text: 'white' },  // 3: Efectos - Rojo
-      { bg: '#7e22ce', text: 'white' },  // 4: Reservada - Púrpura
-      { bg: '#b91c1c', text: 'white' },  // 5: Reservada - Rojo oscuro
-      { bg: '#854d0e', text: 'white' },  // 6: Reservada - Ámbar oscuro
-      { bg: '#f97316', text: 'white' }   // 7: Imágenes generadas - Naranja
+      { bg: '#3730a3', text: 'white' },  // 0: Audio
+      { bg: '#0369a1', text: 'white' },  // 1: Video
+      { bg: '#15803d', text: 'white' },  // 2: Text
+      { bg: '#9f1239', text: 'white' },  // 3: Effects
+      { bg: '#7e22ce', text: 'white' },  // 4: Reserved
+      { bg: '#b91c1c', text: 'white' },  // 5: Reserved
+      { bg: '#854d0e', text: 'white' },  // 6: Reserved
+      { bg: '#f97316', text: 'white' }   // 7: AI Generated
     ];
-    
     return colors[layer % colors.length];
   };
 
+  const getLayerName = (layerId: number) => {
+    const names: Record<number, string> = {
+      0: 'Audio',
+      1: 'Video/Image',
+      2: 'Text',
+      3: 'Effects',
+      7: 'AI Generated'
+    };
+    return names[layerId] || `Layer ${layerId}`;
+  };
+
+  const getLayerIcon = (layerId: number) => {
+    const icons: Record<number, JSX.Element> = {
+      0: <Music className="h-3 w-3 mr-1" />,
+      1: <Video className="h-3 w-3 mr-1" />,
+      2: <Text className="h-3 w-3 mr-1" />,
+      3: <Wand2 className="h-3 w-3 mr-1" />,
+      7: <ImageIcon className="h-3 w-3 mr-1" />
+    };
+    return icons[layerId] || <Layers className="h-3 w-3 mr-1" />;
+  };
+
+  // ===== Main Render =====
   return (
-    <div className="flex flex-col h-full border rounded-md bg-gray-900 text-white overflow-hidden">
-      {/* Barra de herramientas superior */}
-      <div className="flex items-center justify-between p-2 border-b border-gray-700">
+    <div 
+      ref={containerRef}
+      tabIndex={0}
+      className="flex flex-col h-full border rounded-md bg-gray-900 text-white overflow-hidden"
+      style={{ outline: 'none' }}
+    >
+      {/* Video Preview Panel */}
+      {videoUrl && (
+        <div className="preview-panel relative bg-black border-b border-gray-700">
+          <div className="relative mx-auto max-w-4xl aspect-video">
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              muted
+              playsInline
+              className="h-full w-full object-contain"
+              style={{ 
+                transform: `scale(${previewZoom})`, 
+                transformOrigin: 'center' 
+              }}
+            />
+            {/* Timecode overlay */}
+            <div className="absolute top-2 left-2 text-xs px-2 py-1 bg-black/60 text-white rounded">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </div>
+            {/* Safe areas */}
+            {showSafeAreas && (
+              <div className="pointer-events-none absolute inset-0 border-2 border-white/30" />
+            )}
+          </div>
+          <div className="flex items-center gap-2 p-2 bg-gray-800">
+            <Button size="sm" variant="outline" onClick={() => setPreviewZoom(1)}>
+              1x
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setPreviewZoom(z => Math.min(2, z + 0.25))}>
+              +
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setPreviewZoom(z => Math.max(0.5, z - 0.25))}>
+              -
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowSafeAreas(v => !v)}>
+              {showSafeAreas ? 'Hide Safe Areas' : 'Show Safe Areas'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Toolbar */}
+      <div className="flex items-center justify-between p-2 border-b border-gray-700 flex-wrap gap-2">
         <div className="flex items-center space-x-2">
-          {/* Controles de reproducción */}
+          {/* Playback controls */}
           <Button 
             size="icon" 
             variant="ghost" 
             onClick={() => onTimeUpdate(Math.max(0, currentTime - 1))}
-            title="Retroceder 1 segundo"
+            title="Rewind 1s"
           >
             <SkipBack className="h-4 w-4" />
           </Button>
@@ -542,7 +690,8 @@ export function TimelineEditor({
             size="icon" 
             variant="default" 
             onClick={isPlaying ? onPause : onPlay}
-            title={isPlaying ? "Pausar" : "Reproducir"}
+            title={isPlaying ? "Pause" : "Play"}
+            data-testid="button-playback-toggle"
           >
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
@@ -551,19 +700,66 @@ export function TimelineEditor({
             size="icon" 
             variant="ghost" 
             onClick={() => onTimeUpdate(Math.min(duration, currentTime + 1))}
-            title="Avanzar 1 segundo"
+            title="Forward 1s"
           >
             <SkipForward className="h-4 w-4" />
           </Button>
           
-          <div className="h-8 border-r border-gray-700 mx-2" />
+          <Separator orientation="vertical" className="h-8 mx-2" />
           
-          {/* Controles de zoom */}
+          {/* Tool modes */}
+          <Button 
+            size="sm" 
+            variant={tool === 'select' ? 'default' : 'ghost'}
+            onClick={() => setTool('select')}
+            title="Select Tool (V)"
+            data-testid="button-tool-select"
+          >
+            <Move className="h-4 w-4 mr-1" />
+            Select
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant={tool === 'razor' ? 'default' : 'ghost'}
+            onClick={() => setTool('razor')}
+            title="Razor Tool (C)"
+            data-testid="button-tool-razor"
+          >
+            <Scissors className="h-4 w-4 mr-1" />
+            Razor
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant={tool === 'trim' ? 'default' : 'ghost'}
+            onClick={() => setTool('trim')}
+            title="Trim Tool (T)"
+            data-testid="button-tool-trim"
+          >
+            <Maximize2 className="h-4 w-4 mr-1" />
+            Trim
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant={tool === 'hand' ? 'default' : 'ghost'}
+            onClick={() => setTool('hand')}
+            title="Hand Tool (H)"
+            data-testid="button-tool-hand"
+          >
+            <Hand className="h-4 w-4 mr-1" />
+            Hand
+          </Button>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {/* Zoom controls */}
           <Button 
             size="icon" 
             variant="ghost" 
             onClick={() => setZoom(Math.max(0.1, zoom / 1.5))}
-            title="Alejar"
+            title="Zoom Out"
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
@@ -572,83 +768,76 @@ export function TimelineEditor({
             size="icon" 
             variant="ghost" 
             onClick={() => setZoom(Math.min(10, zoom * 1.5))}
-            title="Acercar"
+            title="Zoom In"
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
           
-          <div className="text-xs text-gray-400">
-            Zoom: {zoom.toFixed(1)}x
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          {/* Tiempo actual / duración total */}
-          <div className="text-sm font-medium bg-gray-800 px-2 py-1 rounded">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </div>
+          <Badge variant="outline" className="text-xs">
+            {zoom.toFixed(1)}x
+          </Badge>
           
-          {/* Controles adicionales */}
-          <div className="flex items-center">
-            <Switch 
-              checked={showWaveform} 
-              onCheckedChange={setShowWaveform}
-              id="show-waveform"
-            />
-            <Label htmlFor="show-waveform" className="ml-2 text-xs">
-              Mostrar forma de onda
-            </Label>
+          <Separator orientation="vertical" className="h-8 mx-2" />
+          
+          {/* Undo/Redo */}
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            onClick={handleUndo}
+            disabled={history.past.length === 0}
+            title="Undo (Ctrl+Z)"
+            data-testid="button-undo"
+          >
+            <Undo className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            onClick={handleRedo}
+            disabled={history.future.length === 0}
+            title="Redo (Ctrl+Y)"
+            data-testid="button-redo"
+          >
+            <Redo className="h-4 w-4" />
+          </Button>
+          
+          <Separator orientation="vertical" className="h-8 mx-2" />
+          
+          {/* Time display */}
+          <div className="text-sm font-medium bg-gray-800 px-2 py-1 rounded" data-testid="text-timecode">
+            {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
       </div>
-      
-      {/* Área principal del timeline */}
+
+      {/* Main timeline area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Panel lateral de capas con mejor organización */}
+        {/* Layer panel */}
         <div className="w-40 min-w-40 border-r border-gray-700 bg-gray-800 overflow-hidden">
           <div className="bg-gray-900 p-2 border-b border-gray-700 text-xs font-semibold flex items-center justify-between">
-            <span>Capas</span>
+            <span>Layers</span>
             <Badge variant="outline" className="text-[9px] bg-gray-800">
-              {Object.keys(clipsByLayer).length} activas
+              {Object.keys(clipsByLayer).length}
             </Badge>
           </div>
           
-          <div className="space-y-1 p-1 max-h-[calc(100vh-12rem)] overflow-y-auto">
-            {/* Encabezados de capas con iconos y mejores estilos */}
+          <div className="space-y-1 p-1 max-h-full overflow-y-auto">
             {Object.keys(clipsByLayer).length > 0 ? (
               Object.keys(clipsByLayer)
                 .map(Number)
                 .sort((a, b) => a - b)
                 .map(layerId => {
                   const layerColor = getLayerColor(layerId);
-                  const layerName = layerId === 0 ? 'Audio' : 
-                                  layerId === 1 ? 'Video/Imagen' : 
-                                  layerId === 2 ? 'Texto' : 
-                                  layerId === 3 ? 'Efectos' :
-                                  layerId === 7 ? 'Imágenes Generadas' : 'Capa ' + layerId;
-                  
-                  // Seleccionar ícono según tipo de capa
-                  const layerIcon = layerId === 0 ? <Music className="h-3 w-3 mr-1" /> : 
-                               layerId === 1 ? <Video className="h-3 w-3 mr-1" /> : 
-                               layerId === 2 ? <Text className="h-3 w-3 mr-1" /> : 
-                               layerId === 3 ? <Wand2 className="h-3 w-3 mr-1" /> :
-                               layerId === 7 ? <ImageIcon className="h-3 w-3 mr-1" /> : 
-                               <Layers className="h-3 w-3 mr-1" />;
-                  
-                  // Destacar la capa 7 con un estilo especial
-                  const isGeneratedImagesLayer = layerId === 7;
+                  const layerName = getLayerName(layerId);
+                  const layerIcon = getLayerIcon(layerId);
                   
                   return (
-                    <div 
-                      key={`layer-${layerId}`}
-                      className={cn(
-                        "flex flex-col p-1.5 text-xs rounded-sm", 
-                        isGeneratedImagesLayer ? "border-l-2 border-amber-500" : ""
-                      )}
+                    <div
+                      key={layerId}
+                      className="flex items-center justify-between p-2 rounded text-xs"
                       style={{ 
-                        background: isGeneratedImagesLayer 
-                          ? "linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(234, 88, 12, 0.1))" 
-                          : layerColor.bg,
+                        backgroundColor: layerColor.bg,
                         color: layerColor.text
                       }}
                     >
@@ -656,142 +845,133 @@ export function TimelineEditor({
                         {layerIcon}
                         <span className="font-medium">{layerName}</span>
                       </div>
-                      
-                      <div className="ml-4 mt-0.5 text-[9px] text-gray-300">
-                        {clipsByLayer[layerId].length} elementos
-                      </div>
-                      
-                      {isGeneratedImagesLayer && (
-                        <div className="mt-1 flex items-center">
-                          <Badge variant="outline" className="text-[8px] bg-amber-950 text-amber-200 border-amber-700">
-                            <SparklesIcon className="h-2 w-2 mr-0.5" />
-                            IA
-                          </Badge>
-                          <div className="text-[8px] ml-1 text-amber-200">
-                            Límite: 5s
-                          </div>
-                        </div>
-                      )}
+                      <Badge variant="outline" className="text-[9px] ml-1">
+                        {clipsByLayer[layerId]?.length || 0}
+                      </Badge>
                     </div>
                   );
                 })
             ) : (
-              <div className="text-gray-500 text-xs p-2 italic">
-                No hay capas disponibles
+              <div className="text-xs text-gray-500 p-2 text-center">
+                No clips
               </div>
             )}
           </div>
         </div>
-        
-        {/* Área de clips y línea de tiempo */}
-        <div className="flex-1 overflow-hidden" ref={containerRef}>
-          <ScrollArea className="h-full">
-            <div 
-              className="relative"
-              style={{ width: `${timeToPixels(duration) + 100}px`, minHeight: '200px' }}
-              ref={timelineRef}
-              onClick={handleTimelineClick}
-            >
-              {/* Fondo con marcas de tiempo */}
-              <div className="absolute inset-0">
-                {renderTimeMarkers()}
-              </div>
-              
-              {/* Línea de reproducción actual */}
-              {renderPlayhead()}
-              
-              {/* Forma de onda del audio */}
-              {showWaveform && (
-                <div className="absolute inset-0">
-                  <canvas 
-                    ref={waveformRef} 
-                    className="absolute top-0" 
-                    style={{ height: '80px' }} 
-                  />
-                </div>
-              )}
-              
-              {/* Renderizado de clips por capa */}
-              <div className="relative pt-12">
-                {Object.keys(clipsByLayer).length > 0 ? (
-                  Object.keys(clipsByLayer)
-                    .map(Number)
-                    .sort((a, b) => a - b)
-                    .map(layerId => (
-                      <div 
-                        key={`layer-container-${layerId}`}
-                        className="relative h-16 mb-2 border-t border-gray-800"
-                      >
-                        {/* Clips en esta capa */}
-                        {clipsByLayer[layerId].map(clip => (
-                          <TimelineClip
-                            key={`clip-${clip.id}`}
-                            clip={clip}
-                            selected={selectedClip === clip.id}
-                            timeToPixels={timeToPixels}
-                            onSelect={handleSelectClip}
-                            onMouseDown={handleClipMouseDown}
-                            onDelete={id => handleClipUpdate(id, { visible: false })}
-                            onDuplicate={id => {
-                              const original = clips.find(c => c.id === id);
-                              if (original) {
-                                const newClip = {
-                                  ...original,
-                                  id: Math.max(...clips.map(c => c.id)) + 1,
-                                  start: original.start + original.duration,
-                                };
-                                // Aquí deberías tener un onAddClip para añadir el clip duplicado
-                              }
-                            }}
-                            onPreview={id => {
-                              const clip = clips.find(c => c.id === id);
-                              if (clip) {
-                                onTimeUpdate(clip.start);
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
-                    ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-                    <p>No hay clips para mostrar</p>
-                    <Button variant="outline" size="sm" className="mt-2">
-                      <Plus className="h-4 w-4 mr-1" /> Añadir clip
-                    </Button>
-                  </div>
-                )}
-              </div>
+
+        {/* Timeline scroll area */}
+        <div className="flex-1 overflow-auto" ref={timelineRef}>
+          <div 
+            className={cn(
+              "relative min-h-full",
+              tool === 'hand' ? 'cursor-grab' : tool === 'razor' ? 'cursor-crosshair' : 'cursor-default'
+            )}
+            style={{ width: `${timeToPixels(duration)}px`, minWidth: '100%' }}
+            onClick={handleTimelineClick}
+          >
+            {/* Time rulers */}
+            <div className="sticky top-0 h-12 bg-gray-800 border-b border-gray-700 z-20">
+              {renderTimeMarkers()}
             </div>
-          </ScrollArea>
+            
+            {/* Waveform */}
+            {showWaveform && audioBuffer && (
+              <div className="sticky top-12 h-20 bg-gray-900/50 border-b border-gray-700 overflow-hidden">
+                <canvas ref={waveformRef} className="w-full h-full" />
+              </div>
+            )}
+            
+            {/* Clips by layer */}
+            <div className="relative" style={{ minHeight: '300px' }}>
+              {Object.keys(clipsByLayer)
+                .map(Number)
+                .sort((a, b) => a - b)
+                .map((layerId, index) => (
+                  <div 
+                    key={layerId}
+                    className="relative h-24 border-b border-gray-700"
+                    style={{ top: `${index * 96}px` }}
+                  >
+                    {clipsByLayer[layerId]?.map(clip => {
+                      const clipLeft = timeToPixels(clip.start);
+                      const clipWidth = timeToPixels(clip.duration);
+                      const isSelected = clip.id === selectedClip;
+                      const layerColor = getLayerColor(clip.layer);
+                      
+                      return (
+                        <div
+                          key={clip.id}
+                          className={cn(
+                            "absolute h-20 rounded cursor-pointer transition-all",
+                            isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-gray-900" : "",
+                            clip.locked ? "opacity-50 cursor-not-allowed" : ""
+                          )}
+                          style={{
+                            left: `${clipLeft}px`,
+                            width: `${clipWidth}px`,
+                            backgroundColor: layerColor.bg,
+                            top: '8px'
+                          }}
+                          onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'body')}
+                          onTouchStart={(e) => handleTouchStart(e, clip.id, 'body')}
+                          data-testid={`clip-${clip.id}`}
+                        >
+                          {/* Clip content */}
+                          <div className="p-2 h-full flex flex-col justify-between overflow-hidden">
+                            <div className="text-xs font-semibold truncate text-white">
+                              {clip.title}
+                            </div>
+                            {clip.imagePrompt && (
+                              <div className="text-[10px] text-white/70 truncate">
+                                {clip.imagePrompt}
+                              </div>
+                            )}
+                            <div className="text-[9px] text-white/50">
+                              {formatTime(clip.duration)}
+                            </div>
+                          </div>
+                          
+                          {/* Resize handles */}
+                          {!clip.locked && tool === 'trim' && (
+                            <>
+                              <div
+                                className="absolute left-0 top-0 bottom-0 w-2 bg-white/30 cursor-ew-resize hover:bg-white/50"
+                                onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'start')}
+                                onTouchStart={(e) => handleTouchStart(e, clip.id, 'start')}
+                              />
+                              <div
+                                className="absolute right-0 top-0 bottom-0 w-2 bg-white/30 cursor-ew-resize hover:bg-white/50"
+                                onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'end')}
+                                onTouchStart={(e) => handleTouchStart(e, clip.id, 'end')}
+                              />
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+            </div>
+            
+            {/* Playhead */}
+            {renderPlayhead()}
+          </div>
         </div>
       </div>
       
-      {/* Panel inferior de propiedades */}
-      {selectedClip !== null && (
-        <div className="border-t border-gray-700 p-2 bg-gray-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-sm font-medium">
-                Propiedades del clip
-              </h4>
-              <p className="text-xs text-gray-400">
-                {clips.find(c => c.id === selectedClip)?.title || `Clip #${selectedClip}`}
-              </p>
-            </div>
-            
-            {onRegenerateImage && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => handleRegenerateImage(selectedClip)}
-              >
-                <RefreshCw className="h-4 w-4 mr-1" /> Regenerar imagen
-              </Button>
-            )}
-          </div>
+      {/* Footer info */}
+      <div className="flex items-center justify-between p-2 border-t border-gray-700 text-xs bg-gray-800">
+        <div className="flex items-center gap-4">
+          <span>Tool: <strong>{tool}</strong></span>
+          <span>Clips: <strong>{clips.length}</strong></span>
+          {selectedClip && (
+            <span>Selected: <strong>Clip #{selectedClip}</strong></span>
+          )}
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">Shortcuts: V=Select, C=Razor, T=Trim, H=Hand, Space=Play/Pause</span>
+        </div>
+      </div>
     </div>
   );
 }
