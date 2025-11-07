@@ -47,6 +47,7 @@ import fluxApiRouter from './routes/flux-api-proxy'; // Import the Flux API rout
 import affiliateRouter from './routes/affiliate'; // Import the affiliate program router
 import geminiImageRouter from './routes/gemini-image'; // Import the Gemini image generation router
 import audioTranscriptionRouter from './routes/audio-transcription'; // Import the audio transcription router
+import generatedVideosRouter from './routes/generated-videos'; // Import the generated videos router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -176,6 +177,11 @@ export function registerRoutes(app: Express): HttpServer {
   console.log('📢 Registrando router de transcripción de audio en /api/audio');
   app.use('/api/audio', audioTranscriptionRouter);
   console.log('✅ Router de transcripción de audio registrado');
+  
+  // Registrar el router para videos generados (con autenticación)
+  console.log('📢 Registrando router de videos generados en /api/videos');
+  app.use('/api/videos', generatedVideosRouter);
+  console.log('✅ Router de videos generados registrado');
   
   // ☑️ Rutas de Kling API ahora están separadas en su propio router
   // Véase server/routes/kling-api.ts para la implementación

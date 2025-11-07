@@ -142,6 +142,84 @@ router.post('/create-subscription', authenticate, async (req: Request, res: Resp
 });
 
 /**
+ * Crear payment intent para video musical completo ($199)
+ */
+router.post('/create-music-video-payment', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { songName, duration, metadata } = req.body;
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+
+    if (!songName) {
+      return res.status(400).json({ success: false, message: 'Nombre de canción requerido' });
+    }
+
+    // Obtener información del usuario de Firestore
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userData = userSnap.data();
+    
+    // Verificar si el usuario ya tiene un customerID en Stripe
+    let customerId = userData?.stripeCustomerId;
+    
+    if (!customerId) {
+      // Crear un nuevo cliente en Stripe si no existe
+      const customer = await stripe.customers.create({
+        email: userData?.email || undefined,
+        name: userData?.displayName || undefined,
+        metadata: { firebaseUserId: userId }
+      });
+      
+      customerId = customer.id;
+      
+      // Guardar el customerId en Firestore
+      await db.collection('users').doc(userId).update({
+        stripeCustomerId: customerId
+      });
+    }
+    
+    // Crear sesión de checkout para pago único de $199
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `Video Musical Completo - ${songName}`,
+              description: 'Generación de video musical completo con IA para toda la canción',
+            },
+            unit_amount: 19900, // $199.00 en centavos
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${BASE_URL}/music-video-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/music-video-cancelled`,
+      metadata: {
+        userId,
+        songName,
+        duration: duration?.toString() || '',
+        productType: 'music_video_full',
+        ...metadata
+      },
+    });
+    
+    res.json({ success: true, url: session.url, sessionId: session.id });
+  } catch (error: any) {
+    console.error('Error al crear sesión de pago de video musical:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al crear sesión de pago'
+    });
+  }
+});
+
+/**
  * Obtener el estado de la suscripción del usuario actual
  */
 router.get('/subscription-status', authenticate, async (req: Request, res: Response) => {
