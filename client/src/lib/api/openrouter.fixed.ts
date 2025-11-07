@@ -955,7 +955,8 @@ export async function generateMusicVideoScript(
   lyrics: string, 
   audioAnalysis?: any, 
   director?: { name: string; specialty: string; style: string },
-  audioDuration?: number
+  audioDuration?: number,
+  editingStyle?: { id: string; name: string; description: string; duration: { min: number; max: number } }
 ): Promise<string> {
   try {
     if (!lyrics) {
@@ -981,12 +982,19 @@ export async function generateMusicVideoScript(
       "Content-Type": "application/json"
     };
     
-    // Calcular número de escenas basado en duración del audio (~3 segundos por escena)
-    // LIMITAR A 10 ESCENAS PARA PRUEBAS
-    const calculatedScenes = audioDuration ? Math.ceil(audioDuration / 3) : 12;
+    // Usar estilo de edición para calcular escenas y duraciones
+    const minDuration = editingStyle?.duration.min || 2;
+    const maxDuration = editingStyle?.duration.max || 4;
+    const avgDuration = (minDuration + maxDuration) / 2;
+    
+    // Calcular número de escenas basado en duración promedio del estilo
+    const calculatedScenes = audioDuration ? Math.ceil(audioDuration / avgDuration) : 12;
     const maxScenes = 10; // Máximo 10 escenas para pruebas
     const targetSceneCount = Math.min(calculatedScenes, maxScenes);
-    const sceneDuration = audioDuration ? audioDuration / targetSceneCount : 3;
+    
+    console.log(`🎬 Estilo de edición: ${editingStyle?.name || 'Phrase-based'}`);
+    console.log(`⏱️ Duraciones: ${minDuration}s - ${maxDuration}s por escena`);
+    console.log(`📊 Escenas calculadas: ${targetSceneCount}`);
     
     // Crear el prompt con la letra y análisis de audio si está disponible
     let userPrompt = `Generate a detailed music video script for these lyrics:\n\n${lyrics}`;
@@ -996,11 +1004,14 @@ export async function generateMusicVideoScript(
 - Total duration: ${Math.floor(audioDuration)} seconds
 - Required number of scenes: ${targetSceneCount} scenes
 
+🎬 EDITING STYLE: ${editingStyle?.name || 'Phrase-based Editing'}
+Description: ${editingStyle?.description || 'Cuts synchronized with musical phrases'}
+
 🎵 CRITICAL TIMING REQUIREMENTS:
 1. Create EXACTLY ${targetSceneCount} scenes to cover the entire song duration
-2. Each scene MUST have a duration between 2 and 4 seconds (NEVER more than 4 seconds)
-3. Each scene should align with MUSICAL PHRASES (typically 1-2 phrases per scene)
-4. Vary durations for dynamic pacing: mix 2s, 2.5s, 3s, 3.5s, and 4s cuts
+2. Each scene MUST have a duration between ${minDuration} and ${maxDuration} seconds
+3. ${editingStyle?.id === 'rhythmic' ? 'Make PRECISE cuts on each beat' : editingStyle?.id === 'minimalist' ? 'Create LONG, smooth scenes with few cuts' : editingStyle?.id === 'dynamic' ? 'Use FAST cuts in intense moments, SLOWER in soft parts' : 'Align scenes with MUSICAL PHRASES'}
+4. Vary durations within the ${minDuration}-${maxDuration}s range for dynamic pacing
 5. Make sure the total duration adds up to approximately ${Math.floor(audioDuration)} seconds
 
 🎤 LIP-SYNC SYNCHRONIZATION:

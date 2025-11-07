@@ -292,6 +292,7 @@ export function MusicVideoAI() {
     styleReferenceUrl: "",
     selectedDirector: null as Director | null
   });
+  const [selectedEditingStyle, setSelectedEditingStyle] = useState(editingStyles[0]);
   const storage = getStorage();
   const [isSaving, setIsSaving] = useState(false);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>(undefined);
@@ -306,7 +307,6 @@ export function MusicVideoAI() {
   const audioContext = useRef<AudioContext | null>(null);
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [selectedEditingStyle, setSelectedEditingStyle] = useState<string>("dynamic");
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [directors, setDirectors] = useState<Director[]>([]);
@@ -1152,7 +1152,8 @@ export function MusicVideoAI() {
           name: videoStyle.selectedDirector.name,
           specialty: videoStyle.selectedDirector.specialty,
           style: videoStyle.selectedDirector.style
-        } : undefined
+        } : undefined,
+        selectedEditingStyle
       );
       
       console.log(`✅ Script generated: ${fullScript.total_scenes} scenes`);
@@ -1619,7 +1620,48 @@ ${transcription}`;
       return null;
     }
 
-    // Number of attempts for image generation
+    // Si hay imágenes de referencia del artista, usar el nuevo endpoint
+    if (artistReferenceImages && artistReferenceImages.length > 0) {
+      try {
+        const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style, ${item.shotType} composition`;
+        
+        console.log(`🎨 Generando imagen con ${artistReferenceImages.length} referencias faciales`);
+        console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
+
+        const response = await fetch('/api/gemini-image/generate-single-with-multiple-faces', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            referenceImagesBase64: artistReferenceImages,
+            seed: seed + (typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id)
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Server error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (!data.success || !data.imageUrl) {
+          throw new Error(data.error || 'Error generating image');
+        }
+
+        console.log(`✅ Imagen generada con referencias faciales`);
+        return data.imageUrl;
+        
+      } catch (error) {
+        console.error(`Error generating image with faces for segment ${item.id}:`, error);
+        // Si falla, continuar con el método tradicional de FLUX
+        console.log('⚠️ Fallando a generación tradicional sin referencias faciales');
+      }
+    }
+
+    // Método tradicional sin referencias faciales (fallback)
     const maxAttempts = 2;
     let attempt = 0;
     let lastError: Error | null = null;
@@ -1963,73 +2005,72 @@ ${transcription}`;
             currentPrompt: currentBatch[0]?.imagePrompt || ''
           }));
 
-          // Generate images for current batch in parallel
-          const results = await Promise.all(
-            currentBatch.map(async (item, index) => {
-              try {
-                // Actualizar progreso individual
-                setGenerationProgress(prev => ({
-                  ...prev,
-                  status: `Generando imagen ${i + index + 1} de ${items.length}...`,
-                  currentPrompt: item.imagePrompt || ''
-                }));
-
-                const imageUrl = await generateImageForSegment(item);
-                
-                return {
-                  id: item.id,
-                  success: true,
-                  url: imageUrl,
-                  prompt: item.imagePrompt || ''
-                };
-              } catch (error) {
-                console.error(`Error in generation for segment ${item.id}:`, error);
-                return {
-                  id: item.id,
-                  success: false,
-                  error: error instanceof Error ? error.message : "Unknown error",
-                  prompt: item.imagePrompt || ''
-                };
-              }
-            })
-          );
-
-          // Update timeline with generated images
-          let updatedItems = [...timelineItems];
+          // Generate images for current batch - SECUENCIALMENTE para mostrar progreso en tiempo real
+          const results = [];
           
-          for (const result of results) {
-            if (result.success && result.url) {
-              // Update corresponding item
-              updatedItems = updatedItems.map(item => 
-                item.id === result.id 
-                  ? { ...item, generatedImage: result.url as string } 
-                  : item
-              );
+          for (let batchIndex = 0; batchIndex < currentBatch.length; batchIndex++) {
+            const item = currentBatch[batchIndex];
+            const globalIndex = i + batchIndex;
+            
+            try {
+              // Actualizar progreso ANTES de generar
+              setGenerationProgress(prev => ({
+                ...prev,
+                status: `Generando imagen ${globalIndex + 1} de ${items.length}...`,
+                currentPrompt: item.imagePrompt || ''
+              }));
+
+              // Generar la imagen
+              const imageUrl = await generateImageForSegment(item);
+              
+              // Actualizar timeline inmediatamente
+              setTimelineItems(prev => prev.map(timelineItem => 
+                timelineItem.id === item.id 
+                  ? { ...timelineItem, generatedImage: imageUrl as string } 
+                  : timelineItem
+              ));
+              
               successCount++;
               
-              // Agregar imagen a la galería del progreso
+              // Actualizar galería del modal INMEDIATAMENTE
               setGenerationProgress(prev => ({
                 ...prev,
                 current: successCount,
                 percentage: Math.round((successCount / items.length) * 100),
+                status: `✅ Imagen ${globalIndex + 1} completada`,
                 generatedImages: [...prev.generatedImages, {
-                  id: String(result.id),
-                  url: result.url as string,
-                  prompt: result.prompt
+                  id: String(item.id),
+                  url: imageUrl as string,
+                  prompt: item.imagePrompt || ''
                 }]
               }));
-            } else {
+              
+              results.push({
+                id: item.id,
+                success: true,
+                url: imageUrl,
+                prompt: item.imagePrompt || ''
+              });
+              
+              // Pequeña pausa para que el usuario vea la imagen aparecer
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+            } catch (error) {
+              console.error(`Error in generation for segment ${item.id}:`, error);
               failCount++;
-              console.error(`Failure in segment ${result.id}:`, result.error);
+              
+              results.push({
+                id: item.id,
+                success: false,
+                error: error instanceof Error ? error.message : "Unknown error",
+                prompt: item.imagePrompt || ''
+              });
             }
           }
           
-          // Update state only once for the entire batch
-          setTimelineItems(updatedItems);
-
           // Wait between batches to avoid rate limits
           if (i + batchSize < items.length) {
-            await new Promise(resolve => setTimeout(resolve, 4000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
         } catch (batchError) {
           console.error(`Error processing batch ${Math.floor(i/batchSize) + 1}:`, batchError);
@@ -3251,7 +3292,10 @@ ${transcription}`;
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">
                   Generando Imágenes con IA
                 </h2>
-                <p className="text-sm sm:text-base text-orange-400/80">
+                <p className="text-sm sm:text-base text-white/70 mb-1">
+                  Creando visuales únicos basados en tu estilo seleccionado
+                </p>
+                <p className="text-xs sm:text-sm text-orange-400/80">
                   {generationProgress.current} de {generationProgress.total} imágenes completadas
                 </p>
               </div>
@@ -3280,21 +3324,33 @@ ${transcription}`;
               </motion.div>
             )}
 
-            {/* Galería de imágenes generadas */}
-            {generationProgress.generatedImages.length > 0 && (
-              <div className="space-y-3">
+            {/* Galería de imágenes generadas - Más prominente */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
                 <h3 className="text-base sm:text-lg font-semibold text-orange-400">
-                  Imágenes Generadas ({generationProgress.generatedImages.length})
+                  {generationProgress.generatedImages.length > 0 ? 'Visuales Creados' : 'Preparando generación...'}
                 </h3>
-                
+                {generationProgress.generatedImages.length > 0 && (
+                  <Badge variant="outline" className="bg-green-900/30 text-green-400 border-green-500/30">
+                    {generationProgress.generatedImages.length} completadas
+                  </Badge>
+                )}
+              </div>
+              
+              {generationProgress.generatedImages.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                   {generationProgress.generatedImages.map((img, index) => (
                     <motion.div
                       key={img.id}
-                      className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 border border-orange-500/20 group"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.1 }}
+                      className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 border-2 border-orange-500/30 group shadow-lg"
+                      initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      transition={{ 
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 20,
+                        delay: index * 0.15 
+                      }}
                     >
                       <img
                         src={img.url}
@@ -3304,21 +3360,41 @@ ${transcription}`;
                       />
                       
                       {/* Overlay con prompt al hacer hover */}
-                      <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 flex items-center justify-center">
-                        <p className="text-[10px] sm:text-xs text-white/90 text-center line-clamp-4">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 flex flex-col justify-end">
+                        <p className="text-[10px] sm:text-xs text-white/90 line-clamp-3">
                           {img.prompt}
                         </p>
                       </div>
 
-                      {/* Checkmark de completado */}
-                      <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
-                        <Check className="w-3 h-3 text-white" />
+                      {/* Checkmark de completado con animación */}
+                      <motion.div 
+                        className="absolute top-2 right-2 bg-green-500 rounded-full p-1 shadow-md"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: index * 0.15 + 0.3, type: "spring" }}
+                      >
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                      </motion.div>
+
+                      {/* Número de imagen */}
+                      <div className="absolute bottom-2 left-2 bg-orange-500/90 rounded-full px-2 py-0.5">
+                        <span className="text-[10px] sm:text-xs font-bold text-white">#{index + 1}</span>
                       </div>
                     </motion.div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="border-2 border-dashed border-orange-500/30 rounded-lg p-8 text-center">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <ImageIcon className="w-12 h-12 text-orange-400/50 mx-auto mb-3" />
+                  </motion.div>
+                  <p className="text-sm text-white/60">Las imágenes aparecerán aquí mientras se generan...</p>
+                </div>
+              )}
+            </div>
 
             {/* Mensaje motivacional */}
             <motion.div

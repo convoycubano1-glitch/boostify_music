@@ -126,6 +126,41 @@ router.post('/generate-with-face', async (req: Request, res: Response) => {
   }
 });
 
+// Nuevo endpoint para generar UNA imagen con MÚLTIPLES referencias faciales
+router.post('/generate-single-with-multiple-faces', async (req: Request, res: Response) => {
+  try {
+    const { prompt, referenceImagesBase64, seed } = req.body;
+
+    if (!prompt || !referenceImagesBase64 || !Array.isArray(referenceImagesBase64)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren "prompt" y "referenceImagesBase64" (array)'
+      });
+    }
+
+    console.log(`🎬 Generando UNA imagen con ${referenceImagesBase64.length} referencias faciales`);
+    console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
+
+    const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
+    const imageUrl = await generateImageWithMultipleFaceReferences(
+      prompt,
+      referenceImagesBase64,
+      seed
+    );
+
+    return res.json({
+      success: true,
+      imageUrl
+    });
+  } catch (error: any) {
+    console.error('Error generating single image with multiple faces:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error generando imagen'
+    });
+  }
+});
+
 /**
  * Genera múltiples imágenes en lote con referencia facial
  */

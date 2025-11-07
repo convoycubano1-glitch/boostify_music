@@ -33,7 +33,8 @@ export async function generateMusicVideoPrompts(
   transcription: string,
   audioDuration: number,
   isPaid: boolean = false,
-  directorInfo?: { name: string; specialty: string; style: string }
+  directorInfo?: { name: string; specialty: string; style: string },
+  editingStyle?: { id: string; name: string; description: string; duration: { min: number; max: number } }
 ): Promise<MusicVideoScript> {
   
   const targetSceneCount = isPaid ? 30 : Math.min(5, Math.floor(audioDuration / 2));
@@ -42,6 +43,8 @@ export async function generateMusicVideoPrompts(
   console.log(`🎬 Generando script ${isPaid ? 'COMPLETO' : 'PREVIEW'}:`);
   console.log(`  - Escenas: ${targetSceneCount}`);
   console.log(`  - Duración: ${targetDuration}s`);
+  console.log(`  - Estilo de edición: ${editingStyle?.name || 'Phrase-based Editing'}`);
+  console.log(`  - Rango de duración: ${editingStyle?.duration.min || 4}-${editingStyle?.duration.max || 8}s por escena`);
   
   try {
     // Llamar a la API para generar el guion con el número específico de escenas
@@ -49,7 +52,8 @@ export async function generateMusicVideoPrompts(
       transcription,
       targetSceneCount,
       directorInfo,
-      targetDuration
+      targetDuration,
+      editingStyle
     );
     
     // Parsear el JSON del script
