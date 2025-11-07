@@ -441,7 +441,8 @@ Create a high-quality, professional music video frame with cinematic composition
 }
 
 /**
- * Genera una imagen usando FAL AI FLUX Pro v1.1 con referencias faciales
+ * Genera una imagen usando FAL AI FLUX Kontext [Pro] con referencias faciales
+ * MODELO ESPECIALIZADO EN PRESERVAR ROSTROS (85-95% consistencia)
  * USAR IMÁGENES DE REFERENCIA SUBIDAS POR EL USUARIO
  * USA SEMILLA (SEED) PARA COHERENCIA VISUAL
  */
@@ -464,17 +465,16 @@ async function generateImageWithFAL(
       };
     }
     
-    // Mejorar el prompt para mantener consistencia facial
-    const enhancedPrompt = `${prompt}. Professional photography, same person, consistent facial features, high quality, detailed, 8k resolution.`;
+    // 👤 CRÍTICO: Mejorar prompt para PRESERVAR IDENTIDAD FACIAL
+    // El prompt debe enfocarse en la acción/escena, NO en describir la cara
+    const enhancedPrompt = `${prompt}. Maintain exact facial features and identity, professional photography, cinematic lighting, 8k resolution.`;
     
-    console.log(`🎨 Generando con FAL AI FLUX Pro v1.1 (${referenceImagesBase64.length} referencias, seed: ${seed || 'auto'})...`);
+    console.log(`🎨 Generando con FAL AI FLUX Kontext Pro (${referenceImagesBase64.length} referencias, seed: ${seed || 'auto'})...`);
     
-    // Preparar request body base
+    // CRÍTICO: Decidir modelo según si hay referencias faciales
+    let endpoint: string;
     const requestBody: any = {
       prompt: enhancedPrompt,
-      image_size: 'landscape_16_9',
-      num_inference_steps: 28,
-      guidance_scale: 3.5,
       num_images: 1,
       enable_safety_checker: false,
       output_format: 'jpeg'
@@ -486,8 +486,10 @@ async function generateImageWithFAL(
       console.log(`🌱 Usando semilla ${seed} para coherencia visual (color, tono, estilo)`);
     }
     
-    // CRÍTICO: Usar imagen de referencia si está disponible
+    // 👤 SI HAY REFERENCIAS FACIALES: Usar FLUX Kontext Pro (especializado en preservar rostros)
     if (referenceImagesBase64 && referenceImagesBase64.length > 0) {
+      endpoint = 'https://fal.run/fal-ai/flux-pro/kontext';
+      
       // Usar la primera imagen de referencia como base
       const referenceImage = referenceImagesBase64[0];
       
@@ -497,21 +499,35 @@ async function generateImageWithFAL(
         : `data:image/jpeg;base64,${referenceImage}`;
       
       requestBody.image_url = imageDataUri;
-      requestBody.image_prompt_strength = 0.4; // Influencia media-alta para mantener rasgos faciales
       
-      console.log(`✅ Usando referencia facial (strength: 0.4)`);
+      // PARÁMETROS OPTIMIZADOS PARA PRESERVAR ROSTRO:
+      requestBody.guidance_scale = 4.5; // 4.0-5.0 = máxima preservación facial
+      requestBody.num_inference_steps = 35; // 35-40 = mejor detalle facial
+      
+      console.log(`👤 FLUX Kontext Pro activado - PRESERVACIÓN FACIAL MÁXIMA`);
+      console.log(`✅ guidance_scale: 4.5 (alta preservación)`);
+      console.log(`✅ num_inference_steps: 35 (máxima calidad)`);
+      
+    } else {
+      // SIN REFERENCIAS: Usar FLUX Pro v1.1 estándar
+      endpoint = 'https://fal.run/fal-ai/flux-pro/v1.1';
+      requestBody.image_size = 'landscape_16_9';
+      requestBody.num_inference_steps = 28;
+      requestBody.guidance_scale = 3.5;
+      
+      console.log(`🎨 FLUX Pro v1.1 - Generación sin referencia facial`);
     }
     
-    // Usar FLUX Pro v1.1 que soporta image_url
+    // Hacer request al endpoint apropiado
     const response = await axios.post(
-      'https://fal.run/fal-ai/flux-pro/v1.1',
+      endpoint,
       requestBody,
       {
         headers: {
           'Authorization': `Key ${FAL_API_KEY}`,
           'Content-Type': 'application/json'
         },
-        timeout: 90000 // Aumentar timeout por referencias
+        timeout: 120000 // 2 minutos por la mayor calidad
       }
     );
     
@@ -519,12 +535,12 @@ async function generateImageWithFAL(
     if (response.data && response.data.images && response.data.images.length > 0) {
       const imageUrl = response.data.images[0].url;
       
-      console.log(`✅ Imagen generada con FAL AI (con referencia facial)`);
+      console.log(`✅ Imagen generada con FAL AI Kontext Pro (rostro preservado)`);
       
       return {
         success: true,
         imageUrl: imageUrl,
-        provider: 'fal',
+        provider: 'fal-kontext',
         error: undefined
       };
     }

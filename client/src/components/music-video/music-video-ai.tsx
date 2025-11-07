@@ -276,6 +276,7 @@ export function MusicVideoAI() {
   const [scriptContent, setScriptContent] = useState<string>("");
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
   const visualStyleRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const [videoStyle, setVideoStyle] = useState({
     mood: "",
     colorPalette: "",
@@ -636,6 +637,15 @@ export function MusicVideoAI() {
       setShowProgress(false);
       setProgressPercentage(0);
       
+      // 📍 SCROLL AUTOMÁTICO AL TIMELINE
+      setTimeout(() => {
+        timelineRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start'
+        });
+        console.log('📍 Scroll automático al timeline ejecutado');
+      }, 500);
+      
     } catch (error) {
       console.error("❌ [IMG] Error generating images:", error);
       toast({
@@ -660,9 +670,6 @@ export function MusicVideoAI() {
     
     // Establecer las imágenes de referencia
     setArtistReferenceImages(referenceImages);
-    
-    // Establecer el archivo de audio
-    setSelectedFile(audioFile);
     
     // Cerrar el modal de onboarding
     setShowOnboarding(false);
@@ -708,6 +715,9 @@ export function MusicVideoAI() {
           await executeScriptGeneration(transcriptionText, buffer);
           console.log('✅ [FLUJO AUTOMÁTICO] executeScriptGeneration completado');
           
+          // IMPORTANTE: Establecer el archivo DESPUÉS de procesar para evitar duplicación
+          setSelectedFile(audioFile);
+          
         } catch (err) {
           console.error("❌ Error transcribing audio:", err);
           clearInterval(progressInterval);
@@ -723,7 +733,7 @@ export function MusicVideoAI() {
       }
     };
     reader.readAsArrayBuffer(audioFile);
-  }, [toast]);
+  }, [toast, executeScriptGeneration]);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -4989,24 +4999,27 @@ ${transcription}`;
                     </motion.div>
                   )}
                   
-                  <TimelineEditor
-                    clips={clips}
-                    currentTime={(currentTime - (timelineItems[0]?.start_time || 0)) / 1000}
-                    duration={totalDuration}
-                    audioBuffer={audioBuffer}
-                    onTimeUpdate={handleTimeUpdate}
-                    onClipUpdate={handleClipUpdate}
-                    onSplitClip={handleSplitClip}
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
-                    isPlaying={isPlaying}
-                    onRegenerateImage={(clipId) => {
-                      const item = timelineItems.find(item => item.id === clipId);
-                      if (item) {
-                        regenerateImage(item);
-                      }
-                    }}
-                  />
+                  {/* Timeline Section con ref para scroll automático */}
+                  <div ref={timelineRef}>
+                    <TimelineEditor
+                      clips={clips}
+                      currentTime={(currentTime - (timelineItems[0]?.start_time || 0)) / 1000}
+                      duration={totalDuration}
+                      audioBuffer={audioBuffer}
+                      onTimeUpdate={handleTimeUpdate}
+                      onClipUpdate={handleClipUpdate}
+                      onSplitClip={handleSplitClip}
+                      onPlay={() => setIsPlaying(true)}
+                      onPause={() => setIsPlaying(false)}
+                      isPlaying={isPlaying}
+                      onRegenerateImage={(clipId) => {
+                        const item = timelineItems.find(item => item.id === clipId);
+                        if (item) {
+                          regenerateImage(item);
+                        }
+                      }}
+                    />
+                  </div>
 
                   <AnalyticsDashboard
                     clips={clips}

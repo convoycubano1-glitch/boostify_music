@@ -981,12 +981,12 @@ export async function generateMusicVideoScript(
       "Content-Type": "application/json"
     };
     
-    // Calcular número de escenas basado en duración del audio (~4 segundos por escena)
+    // Calcular número de escenas basado en duración del audio (~3 segundos por escena)
     // LIMITAR A 10 ESCENAS PARA PRUEBAS
-    const calculatedScenes = audioDuration ? Math.ceil(audioDuration / 4) : 12;
+    const calculatedScenes = audioDuration ? Math.ceil(audioDuration / 3) : 12;
     const maxScenes = 10; // Máximo 10 escenas para pruebas
     const targetSceneCount = Math.min(calculatedScenes, maxScenes);
-    const sceneDuration = audioDuration ? audioDuration / targetSceneCount : 4;
+    const sceneDuration = audioDuration ? audioDuration / targetSceneCount : 3;
     
     // Crear el prompt con la letra y análisis de audio si está disponible
     let userPrompt = `Generate a detailed music video script for these lyrics:\n\n${lyrics}`;
@@ -996,9 +996,18 @@ export async function generateMusicVideoScript(
 - Total duration: ${Math.floor(audioDuration)} seconds
 - Required number of scenes: ${targetSceneCount} scenes
 
-IMPORTANT: Create EXACTLY ${targetSceneCount} scenes to cover the entire song duration. 
-Each scene should have a RANDOM duration between 2 and 6 seconds to create dynamic pacing.
-Make sure the total duration of all scenes adds up to approximately ${Math.floor(audioDuration)} seconds.`;
+🎵 CRITICAL TIMING REQUIREMENTS:
+1. Create EXACTLY ${targetSceneCount} scenes to cover the entire song duration
+2. Each scene MUST have a duration between 2 and 4 seconds (NEVER more than 4 seconds)
+3. Each scene should align with MUSICAL PHRASES (typically 1-2 phrases per scene)
+4. Vary durations for dynamic pacing: mix 2s, 2.5s, 3s, 3.5s, and 4s cuts
+5. Make sure the total duration adds up to approximately ${Math.floor(audioDuration)} seconds
+
+🎤 LIP-SYNC SYNCHRONIZATION:
+- Each PERFORMANCE scene must show the artist singing the EXACT lyrics from that time segment
+- Match scene timing to where those specific words are sung in the audio
+- Performance scenes should align with vocal-heavy sections (verses, choruses)
+- B-roll scenes can fill instrumental breaks and transitions`;
     }
     
     // Agregar información del director si está disponible
@@ -1048,7 +1057,8 @@ RESPONSE FORMAT (JSON):
     {
       "scene_id": "scene-1",
       "start_time": 0,
-      "duration": 4.0,
+      "duration": 3.0,  // Must be between 2-4 seconds, aligned with musical phrases
+      "lyrics_segment": "The exact lyrics being sung in this scene (for performance scenes)",
       "role": "performance" | "b-roll",
       "shot_type": "ECU" | "CU" | "MCU" | "MS" | "MWS" | "LS" | "WS" | "EWS" | "OTS" | "POV" | "HIGH" | "LOW" | "DUTCH",
       "camera_movement": "static" | "pan" | "tilt" | "dolly" | "zoom" | "handheld" | "steadicam" | "crane" | "drone" | "tracking",
