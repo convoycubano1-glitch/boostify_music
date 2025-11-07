@@ -136,21 +136,21 @@ export default function DynamicProgressTracker({
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-4 sm:space-y-5 md:space-y-6 bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-6 md:p-8 shadow-2xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Cabecera con título animado */}
+      {/* Cabecera con título animado - Responsive */}
       <motion.div
-        className="text-center space-y-2"
+        className="text-center space-y-2 sm:space-y-3"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
           <motion.div
-            className={`p-3 rounded-full bg-gradient-to-r ${stage.color} bg-opacity-10`}
+            className={`p-2 sm:p-3 rounded-full bg-gradient-to-r ${stage.color} bg-opacity-10`}
             animate={{ 
               rotate: [0, 10, -10, 0],
               scale: [1, 1.1, 1]
@@ -163,21 +163,21 @@ export default function DynamicProgressTracker({
           >
             {stage.icon}
           </motion.div>
-          <h3 className={`text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${stage.color}`}>
+          <h3 className={`text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${stage.color}`}>
             {stage.title}
           </h3>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground px-2">
           {customMessage || stage.description}
         </p>
       </motion.div>
 
-      {/* Barra de progreso mejorada */}
+      {/* Barra de progreso mejorada - Responsive */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-xs sm:text-sm">
           <span className="text-muted-foreground">Progreso</span>
           <motion.span 
-            className={`font-bold bg-clip-text text-transparent bg-gradient-to-r ${stage.color}`}
+            className={`font-bold bg-clip-text text-transparent bg-gradient-to-r ${stage.color} text-base sm:text-lg`}
             key={displayProgress}
             initial={{ scale: 1.2 }}
             animate={{ scale: 1 }}
@@ -188,19 +188,19 @@ export default function DynamicProgressTracker({
         <div className="relative">
           <Progress 
             value={displayProgress} 
-            className="h-3 bg-gray-200 dark:bg-gray-800"
+            className="h-2 sm:h-3 bg-gray-200 dark:bg-gray-800"
           />
           <motion.div
-            className={`absolute top-0 left-0 h-3 rounded-full bg-gradient-to-r ${stage.color}`}
+            className={`absolute top-0 left-0 h-2 sm:h-3 rounded-full bg-gradient-to-r ${stage.color}`}
             initial={{ width: 0 }}
             animate={{ width: `${displayProgress}%` }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           />
           {displayProgress > 5 && (
             <motion.div
-              className="absolute -top-1 h-5 w-5 rounded-full bg-white shadow-lg border-2 border-orange-500"
+              className="absolute -top-0.5 sm:-top-1 h-3 w-3 sm:h-5 sm:w-5 rounded-full bg-white shadow-lg border-2 border-orange-500"
               style={{ 
-                left: `calc(${displayProgress}% - 10px)`
+                left: `calc(${displayProgress}% - ${displayProgress > 5 ? '6px' : '10px'})`
               }}
               animate={{ 
                 scale: [1, 1.2, 1],
@@ -214,13 +214,13 @@ export default function DynamicProgressTracker({
         </div>
       </div>
 
-      {/* Tips rotativos con animación */}
+      {/* Tips rotativos con animación - Responsive */}
       <motion.div
-        className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 rounded-lg p-4 border border-orange-200/50 dark:border-orange-800/50"
+        className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 rounded-lg p-3 sm:p-4 border border-orange-200/50 dark:border-orange-800/50"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2 sm:gap-3">
           <motion.div
             animate={{ 
               rotate: [0, 15, -15, 0],
@@ -231,16 +231,16 @@ export default function DynamicProgressTracker({
               ease: "easeInOut"
             }}
           >
-            <Lightbulb className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+            <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500 flex-shrink-0 mt-0.5" />
           </motion.div>
-          <div className="flex-1 min-h-[48px]">
-            <p className="text-sm font-medium text-orange-900 dark:text-orange-100 mb-1">
+          <div className="flex-1 min-h-[40px] sm:min-h-[48px]">
+            <p className="text-xs sm:text-sm font-medium text-orange-900 dark:text-orange-100 mb-1">
               💡 Lo que está pasando ahora:
             </p>
             <AnimatePresence mode="wait">
               <motion.p
                 key={currentTipIndex}
-                className="text-sm text-orange-700 dark:text-orange-300"
+                className="text-xs sm:text-sm text-orange-700 dark:text-orange-300"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -253,10 +253,10 @@ export default function DynamicProgressTracker({
         </div>
       </motion.div>
 
-      {/* Indicador simple de progreso de etapa */}
+      {/* Indicador simple de progreso de etapa - Responsive */}
       <div className="flex items-center justify-center gap-2">
         <motion.div
-          className="text-center text-sm text-muted-foreground"
+          className="text-center text-xs sm:text-sm text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >

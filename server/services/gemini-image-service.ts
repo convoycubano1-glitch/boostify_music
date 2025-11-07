@@ -22,6 +22,8 @@ export interface ImageGenerationResult {
   imageBase64?: string;
   imageUrl?: string;
   error?: string;
+  quotaError?: boolean;
+  provider?: 'gemini' | 'fal' | 'unknown';
 }
 
 /**
@@ -69,7 +71,8 @@ export async function generateCinematicImage(
         return {
           success: true,
           imageBase64: imageBase64,
-          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`
+          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`,
+          provider: 'gemini'
         };
       }
     }
@@ -197,7 +200,8 @@ IMPORTANT: Maintain the exact same face, facial features, and person from the re
         return {
           success: true,
           imageBase64: imageBase64,
-          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`
+          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`,
+          provider: 'gemini'
         };
       }
     }
@@ -326,7 +330,8 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
         return {
           success: true,
           imageBase64: imageBase64,
-          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`
+          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`,
+          provider: 'gemini'
         };
       }
     }
@@ -334,6 +339,16 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
     throw new Error('No se encontró imagen en la respuesta');
   } catch (error: any) {
     console.error('Error generando imagen con múltiples referencias faciales:', error);
+    
+    // Detectar error de cuota excedida (429)
+    if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+      return {
+        success: false,
+        error: 'QUOTA_EXCEEDED',
+        quotaError: true
+      };
+    }
+    
     return {
       success: false,
       error: error.message || 'Error desconocido al generar imagen con rostros'
@@ -347,14 +362,17 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
  */
 export async function generateBatchImagesWithMultipleFaceReferences(
   scenes: CinematicScene[],
-  referenceImagesBase64: string[]
+  referenceImagesBase64: string[],
+  useFallback: boolean = true
 ): Promise<Map<number, ImageGenerationResult>> {
   const results = new Map<number, ImageGenerationResult>();
+  let quotaExceeded = false;
   
-  console.log(`Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
+  console.log(`🎨 Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
+  console.log(`📌 Fallback a FAL AI: ${useFallback ? 'ACTIVADO' : 'DESACTIVADO'}`);
   
   for (const scene of scenes) {
-    console.log(`Generando escena ${scene.id}/${scenes.length}...`);
+    console.log(`🎬 Generando escena ${scene.id}/${scenes.length}...`);
     
     // Construir prompt cinematográfico detallado
     const cinematicPrompt = `
@@ -369,8 +387,35 @@ Camera Movement: ${scene.movement}
 Create a high-quality, professional music video frame with cinematic composition, perfect lighting, and stunning visual aesthetics.
     `.trim();
     
-    const result = await generateImageWithMultipleFaceReferences(cinematicPrompt, referenceImagesBase64);
-    results.set(scene.id, result);
+    // Intentar primero con Gemini
+    let result = await generateImageWithMultipleFaceReferences(cinematicPrompt, referenceImagesBase64);
+    
+    // Si falla y el fallback está activado, intentar con FAL AI
+    if (!result.success && useFallback && !quotaExceeded) {
+      console.log(`⚠️ Gemini falló para escena ${scene.id}, intentando con FAL AI...`);
+      result = await generateImageWithFAL(cinematicPrompt, referenceImagesBase64);
+      
+      if (result.success) {
+        console.log(`✅ Escena ${scene.id} generada exitosamente con FAL AI (fallback)`);
+      }
+    }
+    
+    // CRÍTICO: Extraer número del scene.id para que coincida con el frontend
+    // scene.id puede ser "scene-1", "scene-2", etc.
+    // Necesitamos guardar con el número para que el frontend pueda acceder
+    const sceneIdStr = String(scene.id);
+    const sceneNumber = sceneIdStr.includes('scene-') 
+      ? parseInt(sceneIdStr.replace('scene-', '')) 
+      : parseInt(sceneIdStr);
+    
+    results.set(sceneNumber, result);
+    
+    // Si se detecta error de cuota, detener la generación
+    if ((result as any).quotaError) {
+      console.log(`⚠️ Cuota de API excedida después de generar ${results.size} imágenes. Deteniendo generación.`);
+      quotaExceeded = true;
+      break;
+    }
     
     // Delay para evitar rate limiting (1.5 segundos entre requests)
     if (scenes.indexOf(scene) < scenes.length - 1) {
@@ -378,6 +423,106 @@ Create a high-quality, professional music video frame with cinematic composition
     }
   }
   
-  console.log(`Generación completada: ${results.size} imágenes creadas`);
+  if (quotaExceeded) {
+    console.log(`⚠️ Generación detenida por límite de cuota: ${results.size}/${scenes.length} imágenes creadas`);
+  } else {
+    console.log(`✅ Generación completada: ${results.size} imágenes creadas`);
+  }
+  
   return results;
+}
+
+/**
+ * Genera una imagen usando FAL AI FLUX Pro v1.1 con referencias faciales
+ * USAR IMÁGENES DE REFERENCIA SUBIDAS POR EL USUARIO
+ */
+async function generateImageWithFAL(
+  prompt: string,
+  referenceImagesBase64: string[]
+): Promise<ImageGenerationResult> {
+  try {
+    // Importar axios dinámicamente
+    const axios = (await import('axios')).default;
+    
+    // Obtener la API key de FAL
+    const FAL_API_KEY = process.env.FAL_API_KEY;
+    
+    if (!FAL_API_KEY) {
+      return {
+        success: false,
+        error: 'FAL_API_KEY no configurada'
+      };
+    }
+    
+    // Mejorar el prompt para mantener consistencia facial
+    const enhancedPrompt = `${prompt}. Professional photography, same person, consistent facial features, high quality, detailed, 8k resolution.`;
+    
+    console.log(`🎨 Generando con FAL AI FLUX Pro v1.1 (${referenceImagesBase64.length} referencias)...`);
+    
+    // Preparar request body base
+    const requestBody: any = {
+      prompt: enhancedPrompt,
+      image_size: 'landscape_16_9',
+      num_inference_steps: 28,
+      guidance_scale: 3.5,
+      num_images: 1,
+      enable_safety_checker: false,
+      output_format: 'jpeg'
+    };
+    
+    // CRÍTICO: Usar imagen de referencia si está disponible
+    if (referenceImagesBase64 && referenceImagesBase64.length > 0) {
+      // Usar la primera imagen de referencia como base
+      const referenceImage = referenceImagesBase64[0];
+      
+      // Convertir base64 a data URI si no lo es ya
+      const imageDataUri = referenceImage.startsWith('data:') 
+        ? referenceImage 
+        : `data:image/jpeg;base64,${referenceImage}`;
+      
+      requestBody.image_url = imageDataUri;
+      requestBody.image_prompt_strength = 0.4; // Influencia media-alta para mantener rasgos faciales
+      
+      console.log(`✅ Usando referencia facial (strength: 0.4)`);
+    }
+    
+    // Usar FLUX Pro v1.1 que soporta image_url
+    const response = await axios.post(
+      'https://fal.run/fal-ai/flux-pro/v1.1',
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 90000 // Aumentar timeout por referencias
+      }
+    );
+    
+    // Verificar si hay imágenes en la respuesta
+    if (response.data && response.data.images && response.data.images.length > 0) {
+      const imageUrl = response.data.images[0].url;
+      
+      console.log(`✅ Imagen generada con FAL AI (con referencia facial)`);
+      
+      return {
+        success: true,
+        imageUrl: imageUrl,
+        provider: 'fal',
+        error: undefined
+      };
+    }
+    
+    return {
+      success: false,
+      error: 'No se generaron imágenes con FAL AI'
+    };
+    
+  } catch (error: any) {
+    console.error('Error generando imagen con FAL AI:', error.response?.data || error.message);
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Error al generar imagen con FAL AI'
+    };
+  }
 }

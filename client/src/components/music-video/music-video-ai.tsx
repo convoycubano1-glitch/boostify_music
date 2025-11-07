@@ -57,6 +57,7 @@ import { MyGeneratedVideos } from "./my-generated-videos";
 import { generateMusicVideoPrompts } from "../../lib/api/music-video-generator";
 import { FAL_VIDEO_MODELS, generateVideoWithFAL, generateMultipleVideos } from "../../lib/api/fal-video-service";
 import DynamicProgressTracker from "./dynamic-progress-tracker";
+import { CreativeOnboardingModal } from "./creative-onboarding-modal";
 
 // Fal.ai configuration
 fal.config({
@@ -70,34 +71,48 @@ async function transcribeAudio(file: File) {
     formData.append('audio', file);
 
     console.log('🌐 Fetching /api/audio/transcribe...');
-    const response = await fetch('/api/audio/transcribe', {
-      method: 'POST',
-      body: formData
-    });
-
-    console.log('📊 Server response:', response.status, response.statusText);
-
-    let data;
+    
+    // Crear AbortController para timeout de 10 minutos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutos
+    
     try {
-      data = await response.json();
-      console.log('📦 Data received:', data);
-    } catch (parseError) {
-      console.error('❌ Error parsing response JSON:', parseError);
-      throw new Error('Server response is not valid JSON');
-    }
+      const response = await fetch('/api/audio/transcribe', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      console.log('📊 Server response:', response.status, response.statusText);
 
-    if (!response.ok || !data.success) {
-      const errorMsg = data.error || `Server error: ${response.status} ${response.statusText}`;
-      console.error('❌ Error in server response:', errorMsg);
-      throw new Error(errorMsg);
-    }
+      let data;
+      try {
+        data = await response.json();
+        console.log('📦 Data received:', data);
+      } catch (parseError) {
+        console.error('❌ Error parsing response JSON:', parseError);
+        throw new Error('Server response is not valid JSON');
+      }
 
-    if (!data.transcription || !data.transcription.text) {
-      console.error('❌ Server response does not contain transcription');
-      throw new Error('Transcription was not generated correctly');
-    }
+      if (!response.ok || !data.success) {
+        const errorMsg = data.error || `Server error: ${response.status} ${response.statusText}`;
+        console.error('❌ Error in server response:', errorMsg);
+        throw new Error(errorMsg);
+      }
 
-    return data.transcription.text;
+      if (!data.transcription || !data.transcription.text) {
+        console.error('❌ Server response does not contain transcription');
+        throw new Error('Transcription was not generated correctly');
+      }
+
+      return data.transcription.text;
+    } catch (fetchError: any) {
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Transcription timeout - the audio file may be too large or the service is slow');
+      }
+      throw fetchError;
+    }
   } catch (error) {
     console.error("❌ Error in transcribeAudio:", error);
     if (error instanceof Error) {
@@ -260,6 +275,7 @@ export function MusicVideoAI() {
   const [duration, setDuration] = useState<number>(0);
   const [scriptContent, setScriptContent] = useState<string>("");
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
+  const visualStyleRef = useRef<HTMLDivElement>(null);
   const [videoStyle, setVideoStyle] = useState({
     mood: "",
     colorPalette: "",
@@ -309,14 +325,24 @@ export function MusicVideoAI() {
   const [currentProgressStage, setCurrentProgressStage] = useState<string>("transcription");
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [progressMessage, setProgressMessage] = useState<string>("");
+  
+  // Estado para modal de onboarding
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   // Función auxiliar para ejecutar la generación del script automáticamente
   const executeScriptGeneration = async (transcriptionText: string, buffer: AudioBuffer) => {
+    console.log('🔵 [EXEC SCRIPT] Función executeScriptGeneration iniciada');
+    console.log('🔵 [EXEC SCRIPT] transcriptionText length:', transcriptionText.length);
+    console.log('🔵 [EXEC SCRIPT] buffer duration:', buffer.duration);
+    
     try {
+      console.log('📝 [EXEC SCRIPT] Entrando en try block...');
       setIsTranscribing(false);
       setIsGeneratingScript(true);
+      setShowProgress(true);  // ACTIVAR MODAL
       setCurrentProgressStage("script");
       setProgressPercentage(0);
+      console.log('📊 [EXEC SCRIPT] Estados actualizados: showProgress=true, isGeneratingScript=true, stage=script');
       
       const progressInterval = setInterval(() => {
         setProgressPercentage(prev => {
@@ -353,28 +379,37 @@ export function MusicVideoAI() {
       
       setCurrentStep(3);
       setIsGeneratingScript(false);
+      console.log('✅ [EXEC SCRIPT] Script generado exitosamente, currentStep=3');
       
       // Continuar automáticamente con la sincronización y generación de imágenes
+      console.log('🚀 [FLUJO AUTOMÁTICO] Paso 3: Sincronización de timeline');
+      console.log('🎯 [SIGUIENTE] Llamando executeSyncAndImageGeneration...');
       await executeSyncAndImageGeneration(scriptResponse, buffer);
+      console.log('✅ [FLUJO AUTOMÁTICO] executeSyncAndImageGeneration completado');
       
     } catch (error) {
-      console.error("Error generating script:", error);
+      console.error("❌ [EXEC SCRIPT] Error generating script:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error generating music video script",
         variant: "destructive",
       });
       setIsGeneratingScript(false);
-      setShowProgress(false);
+      setShowProgress(false);  // Cerrar modal en caso de error
       setProgressPercentage(0);
+      throw error; // Re-lanzar el error para detener el flujo
     }
   };
 
   // Función auxiliar para sincronizar timeline y generar imágenes automáticamente
   const executeSyncAndImageGeneration = async (script: string, buffer: AudioBuffer) => {
+    console.log('🔵 [SYNC] Función executeSyncAndImageGeneration iniciada');
+    
     try {
+      console.log('⏱️ [SYNC] Sincronizando timeline...');
       setCurrentProgressStage("timeline-prep");
       setProgressPercentage(0);
+      console.log('📊 [SYNC] Estados actualizados: stage=timeline-prep');
       
       // Sincronizar con timeline
       const parsedScript = JSON.parse(script);
@@ -389,38 +424,65 @@ export function MusicVideoAI() {
         const segments = createSegmentsFromScenes(scenes, buffer.duration);
         setTimelineItems(segments);
         setCurrentStep(4);
+        
+        // Scroll automático al módulo 4 "Estilo Visual"
+        setTimeout(() => {
+          visualStyleRef.current?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }, 500);
       }
       
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('✅ [SYNC] Timeline sincronizado exitosamente');
       
-      // Continuar con generación de imágenes
-      await executeImageGeneration();
+      // CAMBIO: El flujo automático termina aquí
+      // El usuario decide cuándo generar las imágenes
+      setProgressPercentage(100);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setShowProgress(false);
+      
+      toast({
+        title: "Timeline sincronizado",
+        description: "El timeline está listo. Ahora puedes generar las imágenes cuando quieras.",
+      });
+      
+      console.log('✅ [FLUJO AUTOMÁTICO] Terminado - Timeline listo para generación de imágenes');
       
     } catch (error) {
-      console.error("Error in sync and image generation:", error);
+      console.error("❌ [SYNC] Error in sync and image generation:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error synchronizing timeline",
         variant: "destructive",
       });
       setShowProgress(false);
-      setProgressPercentage(0);
+      throw error;
     }
   };
 
   // Función auxiliar para generar imágenes automáticamente
-  const executeImageGeneration = async () => {
+  const executeImageGeneration = async (script?: string) => {
+    console.log('🔵 [IMG] Función executeImageGeneration iniciada');
+    
     try {
+      console.log('🎨 [IMG] Generando imágenes con IA...');
       setIsGeneratingImages(true);
+      setShowProgress(true);  // ACTIVAR MODAL
       setCurrentProgressStage("images");
       setProgressPercentage(0);
+      console.log('📊 [IMG] Estados actualizados: showProgress=true, isGeneratingImages=true, stage=images');
       
-      if (!scriptContent) {
+      const scriptToUse = script || scriptContent;
+      if (!scriptToUse) {
         throw new Error("No script content available");
       }
+      
+      console.log('📝 [IMG] Script disponible, length:', scriptToUse.length);
 
-      const parsedScript = JSON.parse(scriptContent);
+      const parsedScript = JSON.parse(scriptToUse);
       let scenes = [];
       if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
         scenes = parsedScript.scenes;
@@ -454,21 +516,31 @@ export function MusicVideoAI() {
         };
       });
 
+      // Decidir qué endpoint usar basado en si hay imágenes de referencia
+      const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
+      const endpoint = hasReferenceImages 
+        ? '/api/gemini-image/generate-batch-with-multiple-faces'
+        : '/api/gemini-image/generate-batch';
+      
+      console.log(`📸 [IMG] Usando endpoint: ${endpoint}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
+      
+      const requestBody = hasReferenceImages
+        ? { scenes: geminiScenes, referenceImagesBase64: artistReferenceImages }
+        : { scenes: geminiScenes };
+      
       setProgressPercentage(30);
-      const response = await fetch('/api/gemini-image/generate-batch-with-multiple-faces', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          scenes: geminiScenes,
-          referenceImagesBase64: artistReferenceImages
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       setProgressPercentage(70);
       if (!response.ok) {
-        throw new Error(`Server error: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -478,24 +550,51 @@ export function MusicVideoAI() {
         throw new Error(data.error || 'Error generating images');
       }
 
-      setTimelineItems(prevItems => {
-        const sceneItems = prevItems.filter(item => 
-          item.type === 'image' || item.id.toString().startsWith('scene-')
-        );
+      console.log(`✅ [IMG] Recibidas ${Object.keys(data.results).length} imágenes del servidor`);
+      console.log(`🗺️ [IMG] Mapeo de resultados:`, Object.keys(data.results));
+      
+      // Verificar si se alcanzó el límite de cuota
+      if (data.quotaExceeded) {
+        console.warn(`⚠️ [IMG] Límite de cuota alcanzado: ${data.successCount}/${data.totalScenes} imágenes generadas`);
         
+        toast({
+          title: "⚠️ Límite de API Alcanzado",
+          description: data.message || `Se generaron ${data.successCount}/${data.totalScenes} imágenes. La cuota se restablecerá en 24 horas.`,
+          variant: "destructive",
+        });
+      } else if (data.usedFallback) {
+        // Informar si se usó FAL AI como fallback
+        console.log(`📢 [IMG] Se usó FAL AI como fallback: ${data.falCount} imágenes`);
+        
+        toast({
+          title: "✅ Imágenes Generadas",
+          description: data.message || `${data.geminiCount} con Gemini Nano Banana, ${data.falCount} con FAL AI (fallback).`,
+        });
+      }
+      
+      // Actualizar timeline con las imágenes generadas
+      // IMPORTANTE: El servidor devuelve results indexados por scene_id (ej: 1, 2, 3...)
+      setTimelineItems(prevItems => {
         return prevItems.map(item => {
+          // Solo procesar items de tipo imagen o que sean escenas
           if (item.type !== 'image' && !item.id.toString().startsWith('scene-')) {
             return item;
           }
           
-          const sceneIndex = sceneItems.findIndex(s => s.id === item.id);
-          if (sceneIndex === -1) {
+          // Extraer el scene_id del item.id (formato: "scene-1", "scene-2", etc)
+          const sceneIdMatch = item.id.toString().match(/scene-(\d+)/);
+          if (!sceneIdMatch) {
+            console.warn(`⚠️ [IMG] No se pudo extraer scene_id de ${item.id}`);
             return item;
           }
           
-          const imageResult = data.results[sceneIndex];
+          const sceneId = parseInt(sceneIdMatch[1]);
+          
+          // Buscar el resultado correspondiente por scene_id
+          const imageResult = data.results[sceneId];
           
           if (imageResult && imageResult.success && imageResult.imageUrl) {
+            console.log(`🖼️ [IMG] ✅ Scene ${sceneId} → Timeline item ${item.id} actualizado con imagen`);
             return {
               ...item,
               imageUrl: imageResult.imageUrl,
@@ -505,10 +604,13 @@ export function MusicVideoAI() {
                 ...item.metadata,
                 isGeneratedImage: true,
                 imageGeneratedAt: new Date().toISOString(),
+                scene_id: sceneId,
                 shot_type: item.shotType || item.metadata?.shot_type,
                 role: item.metadata?.role || 'performance'
               }
             };
+          } else {
+            console.warn(`⚠️ [IMG] ❌ Scene ${sceneId} no tiene imagen generada (quotaError o error de generación)`);
           }
           
           return item;
@@ -518,28 +620,110 @@ export function MusicVideoAI() {
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      toast({
-        title: "¡Proceso Completado!",
-        description: `Video musical listo con ${scenes.length} escenas generadas`,
-      });
+      // Solo mostrar mensaje de éxito completo si no hubo error de cuota
+      if (!data.quotaExceeded) {
+        toast({
+          title: "¡Proceso Completado!",
+          description: `Video musical listo con ${scenes.length} escenas generadas`,
+        });
+      }
 
+      console.log('✅ [IMG] Imágenes generadas exitosamente');
+      console.log('🎉 [FLUJO AUTOMÁTICO] COMPLETADO - Todas las fases ejecutadas');
+      
       setCurrentStep(5);
       setIsGeneratingImages(false);
       setShowProgress(false);
       setProgressPercentage(0);
       
     } catch (error) {
-      console.error("Error generating images:", error);
+      console.error("❌ [IMG] Error generating images:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error generating images",
         variant: "destructive",
       });
       setIsGeneratingImages(false);
+      // El modal se cierra aquí porque este es el ÚLTIMO paso del flujo
+      // Si falla, necesitamos cerrar el modal
       setShowProgress(false);
       setProgressPercentage(0);
     }
   };
+
+  // Función para manejar el resultado del onboarding
+  const handleOnboardingComplete = useCallback(async (audioFile: File, referenceImages: string[]) => {
+    console.log('🎉 Onboarding completado:', {
+      audio: audioFile.name,
+      imagesCount: referenceImages.length
+    });
+    
+    // Establecer las imágenes de referencia
+    setArtistReferenceImages(referenceImages);
+    
+    // Establecer el archivo de audio
+    setSelectedFile(audioFile);
+    
+    // Cerrar el modal de onboarding
+    setShowOnboarding(false);
+    
+    // Preparar el audio buffer y comenzar transcripción automáticamente
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      if (e.target?.result instanceof ArrayBuffer) {
+        if (!audioContext.current) {
+          audioContext.current = new AudioContext();
+        }
+        const buffer = await audioContext.current.decodeAudioData(e.target.result);
+        setAudioBuffer(buffer);
+        
+        // Iniciar transcripción automáticamente
+        console.log('🎤 Starting auto transcription:', audioFile.name, `(${(audioFile.size / 1024 / 1024).toFixed(2)} MB)`);
+        setIsTranscribing(true);
+        setShowProgress(true);
+        setCurrentProgressStage("transcription");
+        setProgressPercentage(0);
+        
+        const progressInterval = setInterval(() => {
+          setProgressPercentage(prev => {
+            if (prev >= 90) return prev;
+            return prev + Math.random() * 15;
+          });
+        }, 500);
+        
+        try {
+          console.log('📤 Sending file to server for transcription...');
+          const transcriptionText = await transcribeAudio(audioFile);
+          console.log('✅ Transcription completed, length:', transcriptionText.length, 'characters');
+          clearInterval(progressInterval);
+          setProgressPercentage(100);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          setTranscription(transcriptionText);
+          setCurrentStep(1.5);
+          
+          console.log('🚀 [FLUJO AUTOMÁTICO] Iniciando - Paso 2: Generación de script');
+          console.log('🎯 [SIGUIENTE] Llamando executeScriptGeneration...');
+          
+          // Continuar automáticamente con la generación del script
+          await executeScriptGeneration(transcriptionText, buffer);
+          console.log('✅ [FLUJO AUTOMÁTICO] executeScriptGeneration completado');
+          
+        } catch (err) {
+          console.error("❌ Error transcribing audio:", err);
+          clearInterval(progressInterval);
+          toast({
+            title: "Error de transcripción",
+            description: err instanceof Error ? err.message : "Error al transcribir el audio. Por favor intenta de nuevo.",
+            variant: "destructive",
+          });
+          setIsTranscribing(false);
+          setShowProgress(false);
+          setProgressPercentage(0);
+        }
+      }
+    };
+    reader.readAsArrayBuffer(audioFile);
+  }, [toast]);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -602,8 +786,14 @@ export function MusicVideoAI() {
             setTranscription(transcriptionText);
             setCurrentStep(1.5);
             
+            console.log('🚀 [FLUJO AUTOMÁTICO] Iniciando - Paso 2: Generación de script');
+            console.log('📊 [ESTADO] showProgress:', true, 'currentProgressStage: transcription');
+            console.log('🎯 [SIGUIENTE] Llamando executeScriptGeneration...');
+            
             // Continuar automáticamente con la generación del script
             await executeScriptGeneration(transcriptionText, buffer);
+            
+            console.log('✅ [FLUJO AUTOMÁTICO] executeScriptGeneration completado');
             
           } catch (err) {
             console.error("❌ Error transcribing audio:", err);
@@ -628,11 +818,11 @@ export function MusicVideoAI() {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    // Validate that no more than 3 images are uploaded in total
-    if (artistReferenceImages.length + files.length > 3) {
+    // Validate that no more than 10 images are uploaded in total
+    if (artistReferenceImages.length + files.length > 10) {
       toast({
         title: "Error",
-        description: "You can only upload a maximum of 3 reference images",
+        description: "You can only upload a maximum of 10 reference images",
         variant: "destructive",
       });
       return;
@@ -643,7 +833,7 @@ export function MusicVideoAI() {
     try {
       const newImages: string[] = [];
       
-      for (let i = 0; i < files.length && artistReferenceImages.length + newImages.length < 3; i++) {
+      for (let i = 0; i < files.length && artistReferenceImages.length + newImages.length < 10; i++) {
         const file = files[i];
         
         // Validate file type
@@ -681,7 +871,7 @@ export function MusicVideoAI() {
       
       toast({
         title: "Success",
-        description: `${newImages.length} reference image(s) added (${artistReferenceImages.length + newImages.length}/3)`,
+        description: `${newImages.length} reference image(s) added (${artistReferenceImages.length + newImages.length}/10)`,
       });
     } catch (error) {
       console.error("Error loading reference images:", error);
@@ -1132,40 +1322,49 @@ export function MusicVideoAI() {
 
       setProgressPercentage(70);
       if (!response.ok) {
-        throw new Error(`Server error: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Detectar error de cuota excedida
+        if (response.status === 429 || errorData.error?.includes('quota') || errorData.error?.includes('RESOURCE_EXHAUSTED')) {
+          throw new Error('Has excedido el límite de imágenes gratuitas de Gemini (100/día). Intenta de nuevo mañana o usa un API key de pago.');
+        }
+        
+        throw new Error(errorData.error || `Server error: ${response.statusText}`);
       }
 
       const data = await response.json();
       setProgressPercentage(90);
       
       if (!data.success || !data.results) {
+        // Detectar error de cuota en la respuesta
+        if (data.error?.includes('quota') || data.error?.includes('RESOURCE_EXHAUSTED')) {
+          throw new Error('Has excedido el límite de imágenes gratuitas de Gemini (100/día). Intenta de nuevo mañana o usa un API key de pago.');
+        }
         throw new Error(data.error || 'Error generating images');
       }
 
       // Update timeline items with generated images
+      // IMPORTANTE: El servidor devuelve results indexados por scene_id (ej: 1, 2, 3...)
       setTimelineItems(prevItems => {
-        // Filter only image/scene clips (exclude audio, text, etc.)
-        const sceneItems = prevItems.filter(item => 
-          item.type === 'image' || item.id.toString().startsWith('scene-')
-        );
-        
         return prevItems.map(item => {
           // Only process image/scene clips
           if (item.type !== 'image' && !item.id.toString().startsWith('scene-')) {
             return item;
           }
           
-          // Find the index of this scene in the filtered array
-          const sceneIndex = sceneItems.findIndex(s => s.id === item.id);
-          if (sceneIndex === -1) {
-            console.warn(`⚠️ Scene index not found for ${item.id}`);
+          // Extraer el scene_id del item.id (formato: "scene-1", "scene-2", etc)
+          const sceneIdMatch = item.id.toString().match(/scene-(\d+)/);
+          if (!sceneIdMatch) {
+            console.warn(`⚠️ No se pudo extraer scene_id de ${item.id}`);
             return item;
           }
           
-          // Backend returns results indexed from 0
-          const imageResult = data.results[sceneIndex];
+          const sceneId = parseInt(sceneIdMatch[1]);
           
-          console.log(`📍 Assigning image ${sceneIndex} to ${item.id}:`, imageResult?.success ? 'YES' : 'NO', imageResult?.imageUrl ? `URL: ${imageResult.imageUrl.substring(0, 50)}...` : '');
+          // Backend returns results indexed by scene_id
+          const imageResult = data.results[sceneId];
+          
+          console.log(`📍 Assigning image for scene ${sceneId} to ${item.id}:`, imageResult?.success ? 'YES' : 'NO', imageResult?.imageUrl ? `URL: ${imageResult.imageUrl.substring(0, 50)}...` : '');
           
           if (imageResult && imageResult.success && imageResult.imageUrl) {
             return {
@@ -1177,13 +1376,14 @@ export function MusicVideoAI() {
                 ...item.metadata,
                 isGeneratedImage: true,
                 imageGeneratedAt: new Date().toISOString(),
+                scene_id: sceneId,
                 shot_type: item.shotType || item.metadata?.shot_type,
                 role: item.metadata?.role || 'performance'
               }
             };
           }
           
-          console.warn(`⚠️ Could not assign image to ${item.id}`);
+          console.warn(`⚠️ Could not assign image to ${item.id} (scene ${sceneId})`);
           return item;
         });
       });
@@ -2927,17 +3127,23 @@ ${transcription}`;
   
   return (
     <div className="min-h-screen bg-black">
-      {/* Overlay de progreso dinámico */}
+      {/* Modal de Onboarding Creativo */}
+      <CreativeOnboardingModal
+        open={showOnboarding}
+        onComplete={handleOnboardingComplete}
+      />
+      
+      {/* Overlay de progreso dinámico - Adaptado perfectamente a cada dispositivo */}
       <AnimatePresence>
         {showProgress && (
           <motion.div
-            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6"
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 md:p-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="max-w-2xl w-full"
+              className="w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -3704,6 +3910,7 @@ ${transcription}`;
                 </motion.div>
 
                 <motion.div 
+                  ref={visualStyleRef}
                   className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-zinc-900 to-black shadow-sm relative border-zinc-800"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ 

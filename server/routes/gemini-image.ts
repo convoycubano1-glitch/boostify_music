@@ -175,9 +175,10 @@ router.post('/generate-batch-with-face', async (req: Request, res: Response) => 
  */
 router.post('/generate-batch-with-multiple-faces', async (req: Request, res: Response) => {
   try {
-    const { scenes, referenceImagesBase64 }: { 
+    const { scenes, referenceImagesBase64, useFallback = true }: { 
       scenes: CinematicScene[], 
-      referenceImagesBase64: string[] 
+      referenceImagesBase64: string[],
+      useFallback?: boolean
     } = req.body;
     
     if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
@@ -190,31 +191,64 @@ router.post('/generate-batch-with-multiple-faces', async (req: Request, res: Res
     if (!referenceImagesBase64 || !Array.isArray(referenceImagesBase64) || referenceImagesBase64.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Se requiere un array de imágenes de referencia (1-3 imágenes)'
+        error: 'Se requiere un array de imágenes de referencia (1-10 imágenes)'
       });
     }
 
-    if (referenceImagesBase64.length > 3) {
+    if (referenceImagesBase64.length > 10) {
       return res.status(400).json({
         success: false,
-        error: 'Máximo 3 imágenes de referencia permitidas'
+        error: 'Máximo 10 imágenes de referencia permitidas'
       });
     }
     
-    console.log(`Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
-    const results = await generateBatchImagesWithMultipleFaceReferences(scenes, referenceImagesBase64);
+    console.log(`🎨 Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
+    console.log(`📌 Fallback a FAL AI: ${useFallback ? 'ACTIVADO' : 'DESACTIVADO'}`);
+    const results = await generateBatchImagesWithMultipleFaceReferences(scenes, referenceImagesBase64, useFallback);
     
-    // Convertir Map a objeto para JSON
+    // Convertir Map a objeto para JSON y rastrear proveedores
     const resultsObj: Record<number, any> = {};
+    let successCount = 0;
+    let quotaExceeded = false;
+    let geminiCount = 0;
+    let falCount = 0;
+    
     results.forEach((value, key) => {
       resultsObj[key] = value;
+      if (value.success) {
+        successCount++;
+        if (value.provider === 'gemini') geminiCount++;
+        if (value.provider === 'fal') falCount++;
+      }
+      if ((value as any).quotaError) quotaExceeded = true;
     });
+    
+    let message = '';
+    if (quotaExceeded) {
+      message = `Límite de cuota alcanzado. Se generaron ${successCount}/${scenes.length} imágenes`;
+      if (falCount > 0) {
+        message += ` (${geminiCount} con Gemini, ${falCount} con FAL AI fallback)`;
+      }
+      message += '. La cuota se restablecerá en 24 horas.';
+    } else {
+      message = `Se generaron ${successCount}/${scenes.length} imágenes exitosamente`;
+      if (falCount > 0) {
+        message += ` (${geminiCount} con Gemini, ${falCount} con FAL AI fallback)`;
+      }
+      message += '.';
+    }
     
     return res.json({
       success: true,
       results: resultsObj,
       totalScenes: scenes.length,
-      totalReferences: referenceImagesBase64.length
+      totalReferences: referenceImagesBase64.length,
+      successCount,
+      quotaExceeded,
+      geminiCount,
+      falCount,
+      usedFallback: falCount > 0,
+      message
     });
   } catch (error: any) {
     console.error('Error en /generate-batch-with-multiple-faces:', error);

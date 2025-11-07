@@ -11,6 +11,10 @@ const openai = new OpenAI({
 });
 
 router.post('/transcribe', async (req: Request, res: Response) => {
+  // Aumentar el timeout de esta ruta a 10 minutos
+  req.setTimeout(600000); // 10 minutos en milisegundos
+  res.setTimeout(600000);
+  
   try {
     console.log('🎤 Solicitud de transcripción recibida');
     console.log('📋 OpenAI API Key configurada:', !!process.env.OPENAI_API_KEY);

@@ -968,7 +968,9 @@ export async function generateMusicVideoScript(
     const apiKey = env.VITE_OPENROUTER_API_KEY;
     if (!apiKey) {
       console.error("OpenRouter API key missing - using fallback script generation");
-      return generarGuionFallback(lyrics, Math.ceil((audioDuration || 40) / 4), audioDuration);
+      const calculatedScenes = Math.ceil((audioDuration || 40) / 4);
+      const maxScenes = 10; // Máximo 10 escenas para pruebas
+      return generarGuionFallback(lyrics, Math.min(calculatedScenes, maxScenes), audioDuration);
     }
     
     // Preparar headers para OpenRouter con modelo actualizado a Gemini 2.0 Flash
@@ -980,7 +982,10 @@ export async function generateMusicVideoScript(
     };
     
     // Calcular número de escenas basado en duración del audio (~4 segundos por escena)
-    const targetSceneCount = audioDuration ? Math.ceil(audioDuration / 4) : 12;
+    // LIMITAR A 10 ESCENAS PARA PRUEBAS
+    const calculatedScenes = audioDuration ? Math.ceil(audioDuration / 4) : 12;
+    const maxScenes = 10; // Máximo 10 escenas para pruebas
+    const targetSceneCount = Math.min(calculatedScenes, maxScenes);
     const sceneDuration = audioDuration ? audioDuration / targetSceneCount : 4;
     
     // Crear el prompt con la letra y análisis de audio si está disponible
@@ -1164,7 +1169,10 @@ DESCRIPTION GUIDELINES:
     }
   } catch (error) {
     console.error("Error generando guion de video musical:", error);
-    return generarGuionFallback(lyrics, Math.ceil((audioDuration || 40) / 4), audioDuration);
+    // LIMITAR A 10 ESCENAS PARA PRUEBAS
+    const calculatedScenes = Math.ceil((audioDuration || 40) / 4);
+    const maxScenes = 10; // Máximo 10 escenas para pruebas
+    return generarGuionFallback(lyrics, Math.min(calculatedScenes, maxScenes), audioDuration);
   }
 }
 
