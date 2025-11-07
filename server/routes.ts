@@ -48,6 +48,7 @@ import affiliateRouter from './routes/affiliate'; // Import the affiliate progra
 import geminiImageRouter from './routes/gemini-image'; // Import the Gemini image generation router
 import audioTranscriptionRouter from './routes/audio-transcription'; // Import the audio transcription router
 import generatedVideosRouter from './routes/generated-videos'; // Import the generated videos router
+import minimaxVideoRouter from './routes/minimax-video'; // Import the MiniMax video generation router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -172,6 +173,7 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Registrar el router para Gemini Image Generation (Nano Banana)
   app.use('/api/gemini-image', geminiImageRouter);
+  app.use('/api/minimax', minimaxVideoRouter);
   
   // Registrar el router para transcripción de audio
   console.log('📢 Registrando router de transcripción de audio en /api/audio');
