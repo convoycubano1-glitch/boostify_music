@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App"; // Usamos la versión completa de App para tener acceso a todas las rutas
 import "./index.css";
+import "./i18n/config";
 import { setupHMRErrorHandler } from "./utils/hmr-error-handler";
 
 // Configurar el manejador de errores de HMR para prevenir el error
