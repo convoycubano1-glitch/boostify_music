@@ -21,6 +21,8 @@ import { useToast } from "../../hooks/use-toast";
 import { ScrollArea } from "../ui/scroll-area";
 import { Badge } from "../ui/badge";
 import { cn } from "../../lib/utils";
+import { Dialog, DialogContent } from "../ui/dialog";
+import { Progress } from "../ui/progress";
 import * as fal from "@fal-ai/serverless-client";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
@@ -330,6 +332,16 @@ export function MusicVideoAI() {
   
   // Estado para modal de onboarding
   const [showOnboarding, setShowOnboarding] = useState(true);
+
+  // Estados para el modal de progreso de generación de imágenes
+  const [generationProgress, setGenerationProgress] = useState({
+    current: 0,
+    total: 0,
+    percentage: 0,
+    currentPrompt: '',
+    generatedImages: [] as Array<{ id: string; url: string; prompt: string }>,
+    status: ''
+  });
 
   // Función auxiliar para ejecutar la generación del script automáticamente
   const executeScriptGeneration = async (transcriptionText: string, buffer: AudioBuffer) => {
@@ -1905,26 +1917,32 @@ ${transcription}`;
     }
 
     setIsGeneratingShots(true);
-    try {
-      // Limit to maximum 10 images to avoid overload
-      const items = timelineItems
-        .filter(item => item.imagePrompt && !item.generatedImage) // Only process those with prompt but no image
-        .slice(0, 10);
+    
+    // Limit to maximum 10 images to avoid overload
+    const items = timelineItems
+      .filter(item => item.imagePrompt && !item.generatedImage)
+      .slice(0, 10);
 
-      if (items.length === 0) {
-        toast({
-          title: "Information",
-          description: "All segments already have generated images",
-        });
-        setIsGeneratingShots(false);
-        return;
-      }
-
+    if (items.length === 0) {
       toast({
-        title: "Starting generation",
-        description: `Generating ${items.length} images for the music video`,
+        title: "Information",
+        description: "All segments already have generated images",
       });
+      setIsGeneratingShots(false);
+      return;
+    }
 
+    // Inicializar progreso
+    setGenerationProgress({
+      current: 0,
+      total: items.length,
+      percentage: 0,
+      currentPrompt: items[0]?.imagePrompt || '',
+      generatedImages: [],
+      status: 'Preparando generación...'
+    });
+
+    try {
       let successCount = 0;
       let failCount = 0;
 
@@ -1935,29 +1953,42 @@ ${transcription}`;
         const currentBatch = items.slice(i, i + batchSize);
         
         try {
-          // Show current batch
-          console.log(`Processing batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(items.length/batchSize)}`);
-          toast({
-            title: "Progress",
-            description: `Processing batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(items.length/batchSize)}`,
-          });
+          // Actualizar estado antes de procesar el batch
+          const batchNumber = Math.floor(i/batchSize) + 1;
+          const totalBatches = Math.ceil(items.length/batchSize);
+          
+          setGenerationProgress(prev => ({
+            ...prev,
+            status: `Procesando lote ${batchNumber} de ${totalBatches}...`,
+            currentPrompt: currentBatch[0]?.imagePrompt || ''
+          }));
 
           // Generate images for current batch in parallel
           const results = await Promise.all(
-            currentBatch.map(async (item) => {
+            currentBatch.map(async (item, index) => {
               try {
+                // Actualizar progreso individual
+                setGenerationProgress(prev => ({
+                  ...prev,
+                  status: `Generando imagen ${i + index + 1} de ${items.length}...`,
+                  currentPrompt: item.imagePrompt || ''
+                }));
+
                 const imageUrl = await generateImageForSegment(item);
+                
                 return {
                   id: item.id,
                   success: true,
-                  url: imageUrl
+                  url: imageUrl,
+                  prompt: item.imagePrompt || ''
                 };
               } catch (error) {
                 console.error(`Error in generation for segment ${item.id}:`, error);
                 return {
                   id: item.id,
                   success: false,
-                  error: error instanceof Error ? error.message : "Unknown error"
+                  error: error instanceof Error ? error.message : "Unknown error",
+                  prompt: item.imagePrompt || ''
                 };
               }
             })
@@ -1975,6 +2006,18 @@ ${transcription}`;
                   : item
               );
               successCount++;
+              
+              // Agregar imagen a la galería del progreso
+              setGenerationProgress(prev => ({
+                ...prev,
+                current: successCount,
+                percentage: Math.round((successCount / items.length) * 100),
+                generatedImages: [...prev.generatedImages, {
+                  id: String(result.id),
+                  url: result.url as string,
+                  prompt: result.prompt
+                }]
+              }));
             } else {
               failCount++;
               console.error(`Failure in segment ${result.id}:`, result.error);
@@ -1990,11 +2033,7 @@ ${transcription}`;
           }
         } catch (batchError) {
           console.error(`Error processing batch ${Math.floor(i/batchSize) + 1}:`, batchError);
-          toast({
-            title: "Batch error",
-            description: `Error in batch ${Math.floor(i/batchSize) + 1}, continuing with next...`,
-            variant: "destructive",
-          });
+          failCount++;
         }
       }
 
@@ -3189,6 +3228,109 @@ ${transcription}`;
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
       />
+
+      {/* Modal de Progreso de Generación de Imágenes */}
+      <Dialog open={isGeneratingShots} onOpenChange={() => {}}>
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-black via-zinc-900 to-black border-orange-500/20">
+          <div className="space-y-6 p-2 sm:p-4">
+            {/* Encabezado con porcentaje */}
+            <div className="text-center space-y-4">
+              <motion.div
+                className="inline-flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 relative"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <div className="absolute inset-2 rounded-full bg-black flex items-center justify-center">
+                  <span className="text-2xl sm:text-4xl font-bold text-orange-400">
+                    {generationProgress.percentage}%
+                  </span>
+                </div>
+              </motion.div>
+              
+              <div>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">
+                  Generando Imágenes con IA
+                </h2>
+                <p className="text-sm sm:text-base text-orange-400/80">
+                  {generationProgress.current} de {generationProgress.total} imágenes completadas
+                </p>
+              </div>
+            </div>
+
+            {/* Barra de progreso */}
+            <div className="space-y-2">
+              <Progress value={generationProgress.percentage} className="h-2 bg-zinc-800" />
+              <p className="text-xs sm:text-sm text-white/70 text-center">
+                {generationProgress.status}
+              </p>
+            </div>
+
+            {/* Prompt actual */}
+            {generationProgress.currentPrompt && (
+              <motion.div
+                className="bg-zinc-800/50 border border-orange-500/20 rounded-lg p-3 sm:p-4"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                key={generationProgress.currentPrompt}
+              >
+                <p className="text-xs text-orange-400/60 mb-1">Generando ahora:</p>
+                <p className="text-xs sm:text-sm text-white/90 line-clamp-2">
+                  {generationProgress.currentPrompt}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Galería de imágenes generadas */}
+            {generationProgress.generatedImages.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-base sm:text-lg font-semibold text-orange-400">
+                  Imágenes Generadas ({generationProgress.generatedImages.length})
+                </h3>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                  {generationProgress.generatedImages.map((img, index) => (
+                    <motion.div
+                      key={img.id}
+                      className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 border border-orange-500/20 group"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Generated ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        data-testid={`generated-image-${index}`}
+                      />
+                      
+                      {/* Overlay con prompt al hacer hover */}
+                      <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 flex items-center justify-center">
+                        <p className="text-[10px] sm:text-xs text-white/90 text-center line-clamp-4">
+                          {img.prompt}
+                        </p>
+                      </div>
+
+                      {/* Checkmark de completado */}
+                      <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mensaje motivacional */}
+            <motion.div
+              className="text-center text-xs sm:text-sm text-white/60 italic"
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              ✨ Creando tu video musical único con inteligencia artificial...
+            </motion.div>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       {/* Overlay de progreso dinámico - Adaptado perfectamente a cada dispositivo */}
       <AnimatePresence>
