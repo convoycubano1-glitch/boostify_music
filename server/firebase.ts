@@ -109,4 +109,4 @@ service firebase.storage {
 }
 `;
 
-export const firebaseAdmin = app;
+export const firebaseAdmin = app || null;
