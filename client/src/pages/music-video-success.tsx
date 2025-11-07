@@ -134,7 +134,7 @@ export default function MusicVideoSuccess() {
         <CardFooter className="flex flex-col sm:flex-row justify-center gap-4">
           <Button 
             variant="outline" 
-            onClick={() => setLocation("/music-video-creator")}
+            onClick={() => setLocation("/music-video-ai")}
             className="w-full sm:w-auto"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />

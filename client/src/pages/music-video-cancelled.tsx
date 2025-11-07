@@ -81,7 +81,7 @@ export default function MusicVideoCancelled() {
         <CardFooter className="flex flex-col sm:flex-row justify-center gap-4">
           <Button 
             variant="outline" 
-            onClick={() => setLocation("/music-video-creator")}
+            onClick={() => setLocation("/music-video-ai")}
             className="w-full sm:w-auto"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -93,7 +93,7 @@ export default function MusicVideoCancelled() {
               // Redirigir a la última página de generación de video
               // En un caso real, podríamos guardar el ID del video y usarlo para volver
               // exactamente al mismo punto
-              setLocation("/music-video-creator");
+              setLocation("/music-video-ai");
             }}
             className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
           >
