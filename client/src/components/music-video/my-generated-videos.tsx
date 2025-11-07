@@ -30,6 +30,7 @@ export function MyGeneratedVideos() {
   // Obtener videos del usuario
   const { data: videos, isLoading } = useQuery<GeneratedVideo[]>({
     queryKey: ['/api/videos/my-videos'],
+    select: (data: any) => data?.videos || []
   });
 
   // Mutación para eliminar video

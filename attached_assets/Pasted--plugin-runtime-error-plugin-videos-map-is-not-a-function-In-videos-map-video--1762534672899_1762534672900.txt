@@ -1,0 +1,51 @@
+[plugin:runtime-error-plugin] videos.map is not a function. (In 'videos.map(
+      (video) => /* @__PURE__ */ jsxDEV(Card, { className: "overflow-hidden", "data-testid": `video-card-${video.id}`, children: /* @__PURE__ */ jsxDEV("div", { className: "flex flex-col sm:flex-row", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "relative w-full sm:w-48 h-32 bg-muted flex items-center justify-center", children: [
+          video.thumbnail_url ? /* @__PURE__ */ jsxDEV(
+            "img",
+            {
+              src: video.thumbnail_url,
+              alt: video.song_name,
+              className: "w-full h-full object-cover"
+            },
+            void 0,
+            false,
+            {
+              fileName: "/home/runner/workspace/client/src/components/music-video/my-generated-videos.tsx",
+              lineNumber: 170,
+              columnNumber: 19
+            },
+            this
+          ) : /* @__PURE__ */ jsxDEV(Video, { className: "w-12 h-12 text-muted-foreground opacity-50" }, void 0, false, {
+            fileName: "/home/runner/workspace/client/src/components/music-video/my-generated-videos.tsx",
+            lineNumber: 176,
+            columnNumber: 19
+          }, this),
+          video.is_paid && /* @__PURE__ */ jsxDEV(Badge, { className: "absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500", children: "Premium" }, void 0, false, {
+            fileName: "/home/runner/workspace/client/src/components/music-video/my-generated-videos.tsx",
+            lineNumber: 179,
+            columnNumber: 19
+          }, this)
+        ] }, void 0, true, {
+          fileName: "/home/runner/workspace/client/src/components/music-video/my-generated-videos.tsx",
+          lineNumber: 168,
+          columnNumber: 19
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "flex-1 p-4", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "flex items-start justify-between mb-2", children: [
+            /* @__PURE__ */ jsxDEV("div", { children: [
+              /* @__PURE__ */ jsxDEV("h3", { className: "font-semibold text-lg", "data-testid": `video-title-${video.id}`, children: video.song_name }, void 0, false, {
+                fileName: "/home/runner/workspace/client/src/components/music-video/my-generated-videos.tsx",
+                lineNumber: 189,
+                columnNumber: 25
+              }, this),
+              /* @__PURE__ */ jsxDEV("p", { className: "text-sm text-muted-foreground", children: [
+                "Creado el ",
+                format(new Date(video.created_at), "dd/MM/yyyy HH:mm")
+              ] }, void 0, true, {
+                fileName: "/home/runner/workspace/client/src/components/music-video/my-generated-videos.tsx",
+                lineNumber: 192,
+                columnNumber: 25
+              }, this)
+            ] }, void 0, true, {
+              fileName: "/home/runner/workspace/client/src/components/music-video/my-generated-vid

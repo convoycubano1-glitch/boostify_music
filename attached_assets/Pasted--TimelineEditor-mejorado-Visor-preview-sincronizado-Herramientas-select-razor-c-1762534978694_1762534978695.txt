@@ -1,0 +1,698 @@
+/**
+ * TimelineEditor mejorado
+ * - Visor (preview) sincronizado
+ * - Herramientas: select, razor (cortar en playhead), trim, hand
+ * - Snap a grid/markers, ruler con ticks, auto-scroll, atajos
+ */
+
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { TimelineClip, LayerConfig, TimeMarker } from '../../../interfaces/timeline';
+import TimelineLayers from './TimelineLayers';
+import { DEFAULT_ZOOM, TIMELINE_DIMENSIONS, LayerType } from '../../../constants/timeline-constants';
+import { enforceAllConstraints } from './TimelineConstraints';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import {
+  PlayIcon, PauseIcon, ZoomInIcon, ZoomOutIcon, UndoIcon, RedoIcon,
+} from 'lucide-react';
+
+// ===== Config =====
+type MarkerType = 'beat'|'section'|'custom';
+const MARKER_COLORS: Record<MarkerType,string> = { beat:'#ff9800', section:'#e91e63', custom:'#2196f3' };
+
+type ToolMode = 'select' | 'razor' | 'trim' | 'hand';
+const SNAP_TOL = 0.08; // ~80ms de tolerancia para snap
+const HISTORY_LIMIT = 50;
+
+// ===== Props =====
+interface TimelineEditorProps {
+  clips: TimelineClip[];
+  duration: number;
+  markers?: TimeMarker[];
+  onClipsChange: (clips: TimelineClip[]) => void;
+  onTimeChange?: (time: number) => void;
+  onPlaybackStateChange?: (isPlaying: boolean) => void;
+  showBeatGrid?: boolean;
+  autoScroll?: boolean;
+  readOnly?: boolean;
+  videoUrl?: string; // opcional: para el visor
+}
+
+const TimelineEditor: React.FC<TimelineEditorProps> = ({
+  clips,
+  duration,
+  markers = [],
+  onClipsChange,
+  onTimeChange,
+  onPlaybackStateChange,
+  showBeatGrid = false,
+  autoScroll = true,
+  readOnly = false,
+  videoUrl,
+}) => {
+  // ===== Estado base =====
+  const [timeScale, setTimeScale] = useState(DEFAULT_ZOOM);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
+
+  // Herramientas
+  const [tool, setTool] = useState<ToolMode>('select');
+
+  // UI visor
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [previewZoom, setPreviewZoom] = useState(1);
+  const [showSafeAreas, setShowSafeAreas] = useState(false);
+
+  // Drag/resize operación en curso
+  const [dragOperation, setDragOperation] = useState<{
+    type: 'move' | 'resize-start' | 'resize-end' | null;
+    clipId: number | null;
+    startX: number;
+    startTime: number;
+    startDuration?: number;
+  }>({ type: null, clipId: null, startX: 0, startTime: 0 });
+
+  // Ref contenedor timeline
+  const timelineRef = useRef<HTMLDivElement>(null);
+
+  // Capas por defecto
+  const [layers, setLayers] = useState<LayerConfig[]>([
+    { id: LayerType.AUDIO,        name: 'Audio',  type: LayerType.AUDIO,        height: 60, visible: true, locked: false },
+    { id: LayerType.VIDEO_IMAGE,  name: 'Video',  type: LayerType.VIDEO_IMAGE,  height: 80, visible: true, locked: false },
+    { id: LayerType.TEXT,         name: 'Texto',  type: LayerType.TEXT,         height: 60, visible: true, locked: false },
+    { id: LayerType.EFFECTS,      name: 'Efectos',type: LayerType.EFFECTS,      height: 60, visible: true, locked: false },
+    { id: LayerType.AI_GENERATED, name: 'IA',     type: LayerType.AI_GENERATED, height: 80, visible: true, locked: false }
+  ]);
+
+  // Historial para undo/redo
+  type SnapState = { clips: TimelineClip[]; selectedId: number | null };
+  const [history, setHistory] = useState<{ past: SnapState[]; future: SnapState[] }>({ past: [], future: [] });
+
+  // ===== Helpers =====
+
+  const snapCandidates = useMemo(() => {
+    // grid básico por step y markers (beats/secciones)
+    const beats = markers?.filter(m => m.type === 'beat').map(m => m.time) ?? [];
+    const sections = markers?.filter(m => m.type === 'section').map(m => m.time) ?? [];
+    return [...beats, ...sections];
+  }, [markers]);
+
+  const snapTo = useCallback((t: number) => {
+    const step = timeScale >= 140 ? 0.1 : timeScale >= 80 ? 0.25 : 0.5;
+    const grid = [...snapCandidates, Math.round(t / step) * step];
+    const nearest = grid.reduce((a, b) => Math.abs(b - t) < Math.abs(a - t) ? b : a, t);
+    return Math.abs(nearest - t) <= SNAP_TOL ? nearest : t;
+  }, [snapCandidates, timeScale]);
+
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  const pushHistory = useCallback(() => {
+    const snapshot: SnapState = {
+      clips: (structuredClone?.(clips) ?? clips.map(c => ({ ...c }))),
+      selectedId: selectedClipId
+    };
+    setHistory(prev => {
+      const nextPast = [...prev.past, snapshot].slice(-HISTORY_LIMIT);
+      return { past: nextPast, future: [] };
+    });
+  }, [clips, selectedClipId]);
+
+  // rAF scheduling para drag fluido
+  const rafIdRef = useRef<number | null>(null);
+  const scheduleChange = useCallback((next: TimelineClip[]) => {
+    if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = requestAnimationFrame(() => {
+      onClipsChange(enforceAllConstraints(next));
+    });
+  }, [onClipsChange]);
+
+  // ===== Sincronización constraints =====
+  useEffect(() => {
+    const constrained = enforceAllConstraints([...clips]);
+    if (JSON.stringify(constrained) !== JSON.stringify(clips)) {
+      onClipsChange(constrained);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clips]);
+
+  // ===== Reproducción (playhead) =====
+  useEffect(() => {
+    let raf: number | undefined;
+    let lastTs = 0;
+    const loop = (ts: number) => {
+      if (!lastTs) lastTs = ts;
+      const elapsed = (ts - lastTs) / 1000;
+      lastTs = ts;
+
+      if (isPlaying) {
+        setCurrentTime(prev => {
+          const t = prev + elapsed;
+          if (t >= duration) {
+            // alcanza el final: detener
+            setIsPlaying(false);
+            onPlaybackStateChange?.(false);
+            return duration;
+          }
+          return t;
+        });
+        raf = requestAnimationFrame(loop);
+      }
+    };
+    if (isPlaying) raf = requestAnimationFrame(loop);
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }, [isPlaying, duration, onPlaybackStateChange]);
+
+  // Notificar tiempo
+  useEffect(() => { onTimeChange?.(currentTime); }, [currentTime, onTimeChange]);
+
+  // Notificar estado de reproducción
+  useEffect(() => { onPlaybackStateChange?.(isPlaying); }, [isPlaying, onPlaybackStateChange]);
+
+  // Visor: sincroniza currentTime/isPlaying
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    try {
+      v.currentTime = currentTime;
+      if (isPlaying) {
+        // Opcional: intentar reproducir si hay fuente
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    } catch {}
+  }, [currentTime, isPlaying]);
+
+  // Auto-scroll siguiendo el playhead
+  useEffect(() => {
+    if (!autoScroll || !timelineRef.current) return;
+    const c = timelineRef.current;
+    const x = TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH + currentTime * timeScale;
+    const pad = 60;
+    if (x < c.scrollLeft + pad || x > c.scrollLeft + c.clientWidth - pad) {
+      c.scrollTo({ left: Math.max(0, x - c.clientWidth / 3), behavior: 'smooth' });
+    }
+  }, [currentTime, timeScale, autoScroll]);
+
+  // ===== Handlers básicos =====
+  const handleClipSelect = useCallback((clipId: number) => {
+    setSelectedClipId(clipId);
+  }, []);
+
+  const handleClipMoveStart = useCallback((clipId: number, e: React.MouseEvent) => {
+    if (readOnly || tool === 'trim' || tool === 'hand') return;
+    e.preventDefault();
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip || clip.locked) return;
+
+    pushHistory();
+
+    setDragOperation({ type: 'move', clipId, startX: e.clientX, startTime: clip.start });
+
+    const handleMouseMove = (me: MouseEvent) => {
+      const deltaX = me.clientX - e.clientX;
+      let deltaTime = deltaX / timeScale;
+      let newStart = clamp(clip.start + deltaTime, 0, duration - clip.duration);
+      newStart = snapTo(newStart);
+
+      const next = clips.map(c => c.id === clipId ? { ...c, start: newStart } : c);
+      scheduleChange(next);
+    };
+
+    const handleMouseUp = () => {
+      setDragOperation({ type: null, clipId: null, startX: 0, startTime: 0 });
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [clips, duration, timeScale, readOnly, tool, pushHistory, snapTo, scheduleChange]);
+
+  const handleClipResizeStart = useCallback((clipId: number, direction: 'start' | 'end', e: React.MouseEvent) => {
+    if (readOnly || tool === 'hand' || tool === 'select') return; // sólo en trim
+    e.preventDefault();
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip || clip.locked) return;
+
+    pushHistory();
+
+    setDragOperation({
+      type: direction === 'start' ? 'resize-start' : 'resize-end',
+      clipId,
+      startX: e.clientX,
+      startTime: clip.start,
+      startDuration: clip.duration
+    });
+
+    const handleMouseMove = (me: MouseEvent) => {
+      const deltaX = me.clientX - e.clientX;
+      let deltaTime = deltaX / timeScale;
+
+      const next = clips.map(c => {
+        if (c.id !== clipId) return c;
+        if (direction === 'start') {
+          let newStart = clamp(clip.start + deltaTime, 0, clip.start + clip.duration - 0.1);
+          newStart = snapTo(newStart);
+          const deltaStart = newStart - clip.start;
+          const newDuration = Math.max(0.1, clip.duration - deltaStart);
+          return { ...c, start: newStart, duration: newDuration };
+        } else {
+          let newDuration = Math.max(0.1, clip.duration + deltaTime);
+          const maxDur = duration - clip.start;
+          newDuration = clamp(newDuration, 0.1, maxDur);
+          const endTime = snapTo(clip.start + newDuration);
+          newDuration = clamp(endTime - clip.start, 0.1, maxDur);
+          return { ...c, duration: newDuration };
+        }
+      });
+
+      scheduleChange(next);
+    };
+
+    const handleMouseUp = () => {
+      setDragOperation({ type: null, clipId: null, startX: 0, startTime: 0 });
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [clips, duration, timeScale, readOnly, tool, pushHistory, snapTo, scheduleChange]);
+
+  const handleLayerDrop = useCallback((e: React.DragEvent, layerId: number) => {
+    if (readOnly) return;
+    const clipIdString = e.dataTransfer.getData('clip-id');
+    if (!clipIdString) return;
+
+    const clipId = parseInt(clipIdString, 10);
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip || clip.locked) return;
+
+    pushHistory();
+
+    if (timelineRef.current) {
+      const rect = timelineRef.current.getBoundingClientRect();
+      const dropX = e.clientX - rect.left - TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH;
+      let dropTime = clamp(dropX / timeScale, 0, duration - clip.duration);
+      dropTime = snapTo(dropTime);
+
+      const next = clips.map(c => c.id === clipId ? ({ ...c, layer: layerId, start: dropTime }) : c);
+      onClipsChange(enforceAllConstraints(next));
+    }
+  }, [clips, duration, readOnly, pushHistory, timeScale, onClipsChange, snapTo]);
+
+  const handleAddClip = useCallback((layerId: number, position: number) => {
+    if (readOnly) return;
+
+    let clipType: 'audio'|'video'|'image'|'text'|'effect' = 'video';
+    switch (layerId) {
+      case LayerType.AUDIO:        clipType = 'audio'; break;
+      case LayerType.VIDEO_IMAGE:  clipType = 'video'; break;
+      case LayerType.TEXT:         clipType = 'text';  break;
+      case LayerType.EFFECTS:      clipType = 'effect';break;
+      case LayerType.AI_GENERATED: clipType = 'image'; break;
+    }
+
+    pushHistory();
+
+    const id = Math.max(0, ...clips.map(c => c.id)) + 1;
+    const newClip: TimelineClip = {
+      id,
+      start: clamp(position, 0, Math.max(0, duration - 3)),
+      duration: 3,
+      type: clipType,
+      layer: layerId,
+      title: `Nuevo ${clipType}`,
+      visible: true,
+      locked: false,
+      ...(layerId === LayerType.AI_GENERATED ? { generatedImage: true, imagePrompt: 'Escriba su descripción aquí' } : {})
+    };
+
+    const next = enforceAllConstraints([...clips, newClip]);
+    onClipsChange(next);
+    setSelectedClipId(id);
+  }, [clips, readOnly, onClipsChange, duration, pushHistory]);
+
+  const handleToggleLayerVisibility = useCallback((layerId: number) => {
+    setLayers(prev => prev.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l));
+  }, []);
+  const handleToggleLayerLock = useCallback((layerId: number) => {
+    setLayers(prev => prev.map(l => l.id === layerId ? { ...l, locked: !l.locked } : l));
+  }, []);
+
+  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
+    if (!timelineRef.current) return;
+    if (tool === 'hand') return;
+
+    const rect = timelineRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left - TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH;
+    const t = clamp(clickX / timeScale, 0, duration);
+
+    setCurrentTime(t);
+  }, [timeScale, duration, tool]);
+
+  // ===== Zoom helpers =====
+  const handleZoomIn = useCallback(() => setTimeScale(prev => Math.min(prev * 1.2, 200)), []);
+  const handleZoomOut = useCallback(() => setTimeScale(prev => Math.max(prev / 1.2, 20)), []);
+  const zoomToFit = useCallback(() => {
+    if (!timelineRef.current) return;
+    const width = timelineRef.current.clientWidth - TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH;
+    if (width <= 0 || duration <= 0) return;
+    setTimeScale(Math.max(20, width / duration));
+  }, [duration]);
+
+  const togglePlayback = useCallback(() => setIsPlaying(prev => !prev), []);
+
+  // ===== Edición: cortar / ripple / nudge =====
+  const canSplitAtPlayhead = useCallback(() => {
+    return clips.some(c => currentTime > c.start && currentTime < c.start + c.duration);
+  }, [clips, currentTime]);
+
+  const splitAtPlayhead = useCallback(() => {
+    if (readOnly) return;
+    if (!canSplitAtPlayhead()) return;
+
+    pushHistory();
+
+    let maxId = Math.max(0, ...clips.map(x => x.id));
+    const next: TimelineClip[] = [];
+    for (const c of clips) {
+      const end = c.start + c.duration;
+      if (currentTime > c.start && currentTime < end) {
+        const left: TimelineClip  = { ...c, duration: currentTime - c.start, title: c.title ?? 'Clip' };
+        const right: TimelineClip = { ...c, id: ++maxId, start: currentTime, duration: end - currentTime, title: c.title ?? 'Clip' };
+        next.push(left, right);
+      } else {
+        next.push(c);
+      }
+    }
+    onClipsChange(enforceAllConstraints(next));
+    setTool('select'); // opcional: volver a selección
+  }, [clips, currentTime, onClipsChange, readOnly, canSplitAtPlayhead, pushHistory]);
+
+  const rippleDeleteSelection = useCallback(() => {
+    if (readOnly || selectedClipId == null) return;
+    const sel = clips.find(c => c.id === selectedClipId);
+    if (!sel) return;
+
+    pushHistory();
+
+    const delta = sel.duration;
+    const next = clips
+      .filter(c => c.id !== sel.id)
+      .map(c => (c.layer === sel.layer && c.start >= sel.start + sel.duration)
+        ? { ...c, start: Math.max(0, c.start - delta) }
+        : c
+      );
+
+    setSelectedClipId(null);
+    onClipsChange(enforceAllConstraints(next));
+  }, [clips, selectedClipId, readOnly, onClipsChange, pushHistory]);
+
+  const nudgeSelection = useCallback((delta: number) => {
+    if (readOnly || selectedClipId == null) return;
+    const sel = clips.find(c => c.id === selectedClipId);
+    if (!sel || sel.locked) return;
+
+    const next = clips.map(c =>
+      c.id === sel.id
+        ? { ...c, start: clamp(snapTo(c.start + delta), 0, duration - c.duration) }
+        : c
+    );
+    onClipsChange(enforceAllConstraints(next));
+  }, [clips, selectedClipId, readOnly, onClipsChange, duration, snapTo]);
+
+  // ===== Undo/Redo =====
+  const handleUndo = useCallback(() => {
+    if (history.past.length === 0) return;
+    const newPast = [...history.past];
+    const prev = newPast.pop()!;
+    setHistory({ past: newPast, future: [{ clips: (structuredClone?.(clips) ?? clips.map(c=>({...c}))), selectedId: selectedClipId }, ...history.future] });
+    onClipsChange(prev.clips);
+    setSelectedClipId(prev.selectedId);
+  }, [history, clips, onClipsChange, selectedClipId]);
+
+  const handleRedo = useCallback(() => {
+    if (history.future.length === 0) return;
+    const newFuture = [...history.future];
+    const next = newFuture.shift()!;
+    setHistory({ past: [...history.past, { clips: (structuredClone?.(clips) ?? clips.map(c=>({...c}))), selectedId: selectedClipId }], future: newFuture });
+    onClipsChange(next.clips);
+    setSelectedClipId(next.selectedId);
+  }, [history, clips, onClipsChange, selectedClipId]);
+
+  // ===== Ruler render =====
+  const rulerTicks = useMemo(() => {
+    if (duration <= 0) return [];
+    const step = timeScale >= 160 ? 0.5 : timeScale >= 100 ? 1 : timeScale >= 60 ? 2 : 5;
+    const count = Math.floor(duration / step) + 1;
+    return Array.from({ length: count }, (_, i) => i * step);
+  }, [duration, timeScale]);
+
+  // ===== Keybindings =====
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target && (e.target as HTMLElement).tagName.toLowerCase() === 'input') return;
+
+      if (e.code === 'Space') { e.preventDefault(); togglePlayback(); }
+      else if (e.key === 'c' || e.key === 'C') setTool('razor');
+      else if (e.key === 'v' || e.key === 'V') setTool('select');
+      else if (e.key === 't' || e.key === 'T') setTool('trim');
+      else if (e.key === 'h' || e.key === 'H') setTool('hand');
+      else if (e.key === 's' || e.key === 'S') splitAtPlayhead();
+      else if (e.key === 'Delete') rippleDeleteSelection();
+      else if (e.key === 'ArrowLeft') nudgeSelection(e.shiftKey ? -1 : -0.1);
+      else if (e.key === 'ArrowRight') nudgeSelection(e.shiftKey ? +1 : +0.1);
+      else if (e.key === 'f' || e.key === 'F') zoomToFit();
+      else if (e.key === '0') setTimeScale(DEFAULT_ZOOM);
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); handleUndo(); }
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); handleRedo(); }
+    };
+    el.addEventListener('keydown', onKey);
+    return () => el.removeEventListener('keydown', onKey);
+  }, [togglePlayback, splitAtPlayhead, rippleDeleteSelection, nudgeSelection, zoomToFit, handleUndo, handleRedo]);
+
+  // ===== Playhead render =====
+  const playheadLeft = TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH + currentTime * timeScale;
+
+  // ===== Render =====
+  return (
+    <div className="timeline-editor" ref={containerRef} tabIndex={0} style={{ outline: 'none' }}>
+      {/* Toolbar superior */}
+      <div className="timeline-toolbar">
+        <div className="toolbar-group">
+          <Button variant="ghost" size="sm" onClick={togglePlayback} className="toolbar-button" disabled={duration <= 0}>
+            {isPlaying ? <PauseIcon size={16} /> : <PlayIcon size={16} />}
+          </Button>
+          <Badge variant="outline" className="current-time">
+            {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
+          </Badge>
+        </div>
+
+        <div className="toolbar-group">
+          <Button variant={tool==='select' ? 'default':'ghost'} size="sm" onClick={()=>setTool('select')}>Seleccionar</Button>
+          <Button variant={tool==='razor'  ? 'default':'ghost'} size="sm" onClick={()=>setTool('razor')}>Cuchilla</Button>
+          <Button variant={tool==='trim'   ? 'default':'ghost'} size="sm" onClick={()=>setTool('trim')}>Trim</Button>
+          <Button variant={tool==='hand'   ? 'default':'ghost'} size="sm" onClick={()=>setTool('hand')}>Mano</Button>
+        </div>
+
+        <div className="toolbar-group">
+          <Button variant="ghost" size="sm" onClick={handleZoomIn} className="toolbar-button"><ZoomInIcon size={16} /></Button>
+          <Button variant="ghost" size="sm" onClick={handleZoomOut} className="toolbar-button"><ZoomOutIcon size={16} /></Button>
+          <Button variant="ghost" size="sm" onClick={zoomToFit} className="toolbar-button">Fit</Button>
+          <Badge variant="outline" className="zoom-level">{Math.round(timeScale)}x</Badge>
+        </div>
+
+        <div className="toolbar-group">
+          <Button variant="ghost" size="sm" onClick={handleUndo} disabled={history.past.length === 0} className="toolbar-button"><UndoIcon size={16} /></Button>
+          <Button variant="ghost" size="sm" onClick={handleRedo} disabled={history.future.length === 0} className="toolbar-button"><RedoIcon size={16} /></Button>
+        </div>
+
+        <div className="toolbar-group">
+          <Button size="sm" onClick={splitAtPlayhead} disabled={!canSplitAtPlayhead() || readOnly}>Cortar en playhead</Button>
+          <Button size="sm" variant="destructive" onClick={rippleDeleteSelection} disabled={selectedClipId==null || readOnly}>Ripple delete</Button>
+          <Button size="sm" onClick={()=>nudgeSelection(-0.1)} disabled={selectedClipId==null || readOnly}>← 0.1s</Button>
+          <Button size="sm" onClick={()=>nudgeSelection(+0.1)} disabled={selectedClipId==null || readOnly}>0.1s →</Button>
+        </div>
+      </div>
+
+      {/* Preview Panel (visor) */}
+      <div className="preview-panel relative bg-black border-b">
+        <div className="relative mx-auto max-w-4xl aspect-video">
+          {videoUrl ? (
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              muted
+              playsInline
+              className="h-full w-full object-contain"
+              style={{ transform: `scale(${previewZoom})`, transformOrigin: 'center' }}
+            />
+          ) : (
+            <div className="h-full w-full grid place-items-center text-white/70 text-sm">
+              Sin fuente de video — usa el visor como referencia de tiempo.
+            </div>
+          )}
+          {/* HUD timecode */}
+          <div className="absolute top-2 left-2 text-xs px-2 py-1 bg-black/60 text-white rounded">
+            {currentTime.toFixed(2)}s / {duration.toFixed(2)}s
+          </div>
+          {/* Safe areas */}
+          {showSafeAreas && (
+            <div className="pointer-events-none absolute inset-0 border-2 border-white/30" />
+          )}
+        </div>
+        <div className="flex items-center gap-2 p-2 bg-white">
+          <Button size="sm" variant="outline" onClick={()=>setPreviewZoom(1)}>1x</Button>
+          <Button size="sm" variant="outline" onClick={()=>setPreviewZoom(z=>Math.min(2, z+0.25))}>+</Button>
+          <Button size="sm" variant="outline" onClick={()=>setPreviewZoom(z=>Math.max(0.5, z-0.25))}>-</Button>
+          <Button size="sm" variant="ghost"   onClick={()=>setShowSafeAreas(v=>!v)}>{showSafeAreas ? 'Ocultar safe' : 'Mostrar safe'}</Button>
+        </div>
+      </div>
+
+      {/* Contenedor principal del timeline */}
+      <div
+        className={`timeline-container ${tool==='hand' ? 'cursor-grab' : tool==='razor' ? 'cursor-crosshair' : ''}`}
+        ref={timelineRef}
+        onClick={handleTimelineClick}
+      >
+        {/* Regla de tiempo */}
+        <div className="timeline-ruler" style={{ height: `${TIMELINE_DIMENSIONS.RULER_HEIGHT}px` }}>
+          <div className="relative h-full" style={{ marginLeft: TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH }}>
+            {rulerTicks.map((s) => {
+              const left = s * timeScale;
+              const major = Number.isInteger(s);
+              return (
+                <div key={s}
+                  className="absolute top-0 border-l border-gray-300 text-[10px] text-gray-500"
+                  style={{ left }}>
+                  <div style={{ height: major ? 16 : 10, background: 'transparent', width: 0 }} />
+                  {major && (
+                    <span className="absolute top-0 -translate-x-1/2">{s.toFixed(0)}s</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Marcas (beats / secciones) */}
+        <div className="time-markers">
+          {markers.map((m, i) => {
+            const left = TIMELINE_DIMENSIONS.LAYER_LABEL_WIDTH + m.time * timeScale;
+            const color = MARKER_COLORS[(m.type as MarkerType)] ?? MARKER_COLORS.custom;
+            return (
+              <div key={i} className="timeline-marker" style={{ left, backgroundColor: color }} title={m.label}/>
+            );
+          })}
+        </div>
+
+        {/* Playhead alineado con labels */}
+        <div className="timeline-playhead" style={{ left: playheadLeft, width: `${TIMELINE_DIMENSIONS.PLAYHEAD_WIDTH}px` }} />
+
+        {/* Capas y clips */}
+        <TimelineLayers
+          layers={layers}
+          clips={clips}
+          timeScale={timeScale}
+          selectedClipId={selectedClipId}
+          onClipSelect={handleClipSelect}
+          onClipMoveStart={handleClipMoveStart}
+          onClipResizeStart={handleClipResizeStart}
+          onLayerDrop={handleLayerDrop}
+          onAddClip={handleAddClip}
+          onToggleLayerVisibility={handleToggleLayerVisibility}
+          onToggleLayerLock={handleToggleLayerLock}
+        />
+      </div>
+
+      {/* Info clip seleccionado (placeholder) */}
+      {selectedClipId !== null && (
+        <div className="selected-clip-info">
+          Clip seleccionado: <strong>#{selectedClipId}</strong>
+        </div>
+      )}
+
+      {/* Estilos mínimos (puedes migrarlos a tu CSS/Tailwind) */}
+      <style jsx>{`
+        .timeline-editor {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          font-family: system-ui, -apple-system, sans-serif;
+          color: #333;
+          background-color: #f5f5f5;
+          border-radius: 6px;
+          overflow: hidden;
+        }
+        .timeline-toolbar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 16px;
+          background-color: #fff;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .toolbar-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .preview-panel { background: #000; }
+        .timeline-container {
+          position: relative;
+          flex: 1;
+          overflow: auto;
+          background-color: #f9f9fb;
+        }
+        .timeline-ruler {
+          position: sticky;
+          top: 0;
+          left: 0;
+          right: 0;
+          background-color: #fff;
+          border-bottom: 1px solid #e2e8f0;
+          z-index: 10;
+        }
+        .time-markers {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          pointer-events: none;
+        }
+        .timeline-marker {
+          position: absolute;
+          top: 0;
+          width: 1px;
+          height: 100%;
+          opacity: 0.7;
+          pointer-events: none;
+        }
+        .timeline-playhead {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          background-color: #ff0000;
+          z-index: 100;
+          pointer-events: none;
+        }
+        .selected-clip-info {
+          padding: 8px 16px;
+          background-color: #fff;
+          border-top: 1px solid #e2e8f0;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default TimelineEditor;
