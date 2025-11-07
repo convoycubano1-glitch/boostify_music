@@ -59,21 +59,21 @@ export interface VideoGenerationSettings {
 }
 
 const videoModels = [
-  { id: 't2v-01', name: 'Estándar', description: 'Genera videos desde texto' },
-  { id: 'i2v-01', name: 'Imagen a Video', description: 'Anima tus imágenes existentes' },
-  { id: 's2v-01', name: 'Estilo a Video', description: 'Transfiere estilos visuales' }
+  { id: 't2v-01', name: 'Standard', description: 'Generate videos from text' },
+  { id: 'i2v-01', name: 'Image to Video', description: 'Animate your existing images' },
+  { id: 's2v-01', name: 'Style to Video', description: 'Transfer visual styles' }
 ];
 
 const cameraMovements = [
-  'Sin movimiento',
-  'Zoom In Lento',
-  'Zoom Out Suave',
-  'Paneo Horizontal',
-  'Paneo Vertical',
+  'No movement',
+  'Slow Zoom In',
+  'Smooth Zoom Out',
+  'Horizontal Pan',
+  'Vertical Pan',
   'Dolly In',
   'Dolly Out',
-  'Seguimiento Sutil',
-  'Movimiento Orbital'
+  'Subtle Tracking',
+  'Orbital Movement'
 ];
 
 export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, clips = [], duration = 15 }: VideoGeneratorProps) {
@@ -107,14 +107,14 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
     const clipTitles = videoClips.map(clip => clip.title).filter(Boolean);
     
     // Construir prompt básico
-    return `Video musical ${sections.join(', ')} con ${clipTitles.join(', ')}. Estilo cinematográfico, alta calidad.`;
+    return `Music video ${sections.join(', ')} with ${clipTitles.join(', ')}. Cinematic style, high quality.`;
   }
 
   const handleGenerate = async () => {
     if (!settings.prompt && settings.model === 't2v-01') {
       toast({
-        title: "Prompt requerido",
-        description: "Por favor, ingresa una descripción para tu video",
+        title: "Prompt required",
+        description: "Please enter a description for your video",
         variant: "destructive"
       });
       return;
@@ -161,15 +161,15 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-semibold flex items-center">
           <Video className="h-5 w-5 mr-2 text-blue-600" />
-          Generación de Video con IA
+          AI Video Generation
         </CardTitle>
         <CardDescription>
-          Transforma tus escenas en videos fluidos y de alta calidad
+          Transform your scenes into smooth, high-quality videos
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="model-select">Modelo de Video</Label>
+          <Label htmlFor="model-select">Video Model</Label>
           <RadioGroup 
             value={settings.model} 
             onValueChange={(value) => setSettings({...settings, model: value})}
@@ -195,7 +195,7 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="quality">Calidad de Video</Label>
+          <Label htmlFor="quality">Video Quality</Label>
           <RadioGroup 
             value={settings.quality} 
             onValueChange={(value: 'standard' | 'premium') => setSettings({...settings, quality: value})}
@@ -211,8 +211,8 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
                 htmlFor="quality-standard"
                 className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 cursor-pointer"
               >
-                <span className="font-medium">Estándar</span>
-                <span className="text-xs text-muted-foreground">Calidad media (720p)</span>
+                <span className="font-medium">Standard</span>
+                <span className="text-xs text-muted-foreground">Medium quality (720p)</span>
               </Label>
             </div>
             <div>
@@ -226,7 +226,7 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
                 className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 cursor-pointer"
               >
                 <span className="font-medium">Premium</span>
-                <span className="text-xs text-muted-foreground">Alta calidad (1080p)</span>
+                <span className="text-xs text-muted-foreground">High quality (1080p)</span>
               </Label>
             </div>
           </RadioGroup>
@@ -234,7 +234,7 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
         
         <div className="space-y-2">
           <div className="flex justify-between">
-            <Label htmlFor="duration">Duración (segundos)</Label>
+            <Label htmlFor="duration">Duration (seconds)</Label>
             <span className="text-sm text-muted-foreground">{settings.duration}s</span>
           </div>
           <Slider 
@@ -254,28 +254,28 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
         
         {settings.model === 't2v-01' && (
           <div className="space-y-2 mt-2">
-            <Label htmlFor="prompt">Descripción del Video</Label>
+            <Label htmlFor="prompt">Video Description</Label>
             <Textarea 
               id="prompt" 
-              placeholder="Describe detalladamente lo que deseas ver en el video..."
+              placeholder="Describe in detail what you want to see in the video..."
               value={settings.prompt}
               onChange={(e) => setSettings({...settings, prompt: e.target.value})}
               className="min-h-[80px]"
             />
             <p className="text-xs text-muted-foreground">
-              Incluye detalles sobre la atmósfera, colores, acciones y elementos visuales deseados.
+              Include details about atmosphere, colors, actions, and desired visual elements.
             </p>
           </div>
         )}
         
         <div className="space-y-2">
-          <Label htmlFor="camera-movement">Movimiento de Cámara</Label>
+          <Label htmlFor="camera-movement">Camera Movement</Label>
           <Select 
             value={settings.cameraMovement} 
             onValueChange={(value) => setSettings({...settings, cameraMovement: value})}
           >
             <SelectTrigger id="camera-movement">
-              <SelectValue placeholder="Seleccionar movimiento" />
+              <SelectValue placeholder="Select movement" />
             </SelectTrigger>
             <SelectContent>
               {cameraMovements.map((movement) => (
@@ -294,12 +294,12 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generando Video...
+                Generating Video...
               </>
             ) : (
               <>
                 <Wand2 className="mr-2 h-4 w-4" />
-                Generar Video
+                Generate Video
               </>
             )}
           </Button>
@@ -309,15 +309,15 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
           <div className="border rounded-md p-3 bg-blue-100/50">
             <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
               <Film className="h-4 w-4" />
-              <span>Escenas</span>
+              <span>Scenes</span>
             </div>
-            <p className="text-muted-foreground"><span className="font-medium">{scenesCount}</span> escenas procesadas</p>
+            <p className="text-muted-foreground"><span className="font-medium">{scenesCount}</span> scenes processed</p>
           </div>
           
           <div className="border rounded-md p-3 bg-blue-100/50">
             <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
               <Clock3 className="h-4 w-4" />
-              <span>Tiempo Estimado</span>
+              <span>Estimated Time</span>
             </div>
             <p className="text-muted-foreground">~{estimatedTime()} minutos</p>
           </div>
