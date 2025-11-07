@@ -56,6 +56,19 @@ const STAGES: ProgressStage[] = [
     color: "from-purple-500 to-pink-500"
   },
   {
+    id: "timeline-prep",
+    title: "Preparando Timeline",
+    description: "Organizando todas las escenas en la línea de tiempo",
+    tips: [
+      "Sincronizando escenas con el audio",
+      "Calculando duración óptima de cada escena",
+      "Preparando estructura de timeline",
+      "Validando coherencia narrativa completa"
+    ],
+    icon: <Film className="h-5 w-5" />,
+    color: "from-green-500 to-emerald-500"
+  },
+  {
     id: "images",
     title: "Generando Imágenes con IA",
     description: "Creando visuales únicos basados en tu estilo seleccionado",
@@ -67,19 +80,6 @@ const STAGES: ProgressStage[] = [
     ],
     icon: <ImageIcon className="h-5 w-5" />,
     color: "from-orange-500 to-red-500"
-  },
-  {
-    id: "timeline",
-    title: "Preparando Timeline",
-    description: "Organizando todas las escenas en la línea de tiempo",
-    tips: [
-      "Sincronizando imágenes con el audio",
-      "Calculando duración óptima de cada escena",
-      "Preparando transiciones suaves entre clips",
-      "Validando coherencia narrativa completa"
-    ],
-    icon: <Film className="h-5 w-5" />,
-    color: "from-green-500 to-emerald-500"
   },
   {
     id: "video",
@@ -253,80 +253,15 @@ export default function DynamicProgressTracker({
         </div>
       </motion.div>
 
-      {/* Indicador de etapas completadas */}
+      {/* Indicador simple de progreso de etapa */}
       <div className="flex items-center justify-center gap-2">
-        {STAGES.map((s, index) => (
-          <motion.div
-            key={s.id}
-            className={`h-2 rounded-full transition-all ${
-              index < stageIndex
-                ? 'w-8 bg-green-500'
-                : index === stageIndex
-                ? `w-12 bg-gradient-to-r ${s.color}`
-                : 'w-6 bg-gray-300 dark:bg-gray-700'
-            }`}
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: index * 0.1 }}
-          />
-        ))}
-      </div>
-
-      {/* Etapas en lista */}
-      <div className="space-y-2">
-        {STAGES.map((s, index) => {
-          const isCompleted = index < stageIndex;
-          const isCurrent = index === stageIndex;
-          const isPending = index > stageIndex;
-
-          return (
-            <motion.div
-              key={s.id}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                isCurrent
-                  ? 'bg-orange-500/10 border border-orange-500/20'
-                  : isCompleted
-                  ? 'bg-green-500/10 border border-green-500/20 opacity-70'
-                  : 'opacity-40'
-              }`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  isCurrent
-                    ? 'bg-orange-500 text-white'
-                    : isCompleted
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-300 dark:bg-gray-700 text-gray-500'
-                }`}
-              >
-                {isCompleted ? (
-                  <CheckCircle2 className="h-4 w-4" />
-                ) : isCurrent ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                  >
-                    <Zap className="h-4 w-4" />
-                  </motion.div>
-                ) : (
-                  s.icon
-                )}
-              </div>
-              <div className="flex-1">
-                <p className={`text-sm font-medium ${
-                  isCurrent ? 'text-orange-600 dark:text-orange-400' : 
-                  isCompleted ? 'text-green-600 dark:text-green-400' : 
-                  'text-muted-foreground'
-                }`}>
-                  {s.title}
-                </p>
-              </div>
-            </motion.div>
-          );
-        })}
+        <motion.div
+          className="text-center text-sm text-muted-foreground"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          Etapa {stageIndex + 1} de {STAGES.length}
+        </motion.div>
       </div>
     </motion.div>
   );

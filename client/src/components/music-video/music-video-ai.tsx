@@ -310,6 +310,237 @@ export function MusicVideoAI() {
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [progressMessage, setProgressMessage] = useState<string>("");
 
+  // Función auxiliar para ejecutar la generación del script automáticamente
+  const executeScriptGeneration = async (transcriptionText: string, buffer: AudioBuffer) => {
+    try {
+      setIsTranscribing(false);
+      setIsGeneratingScript(true);
+      setCurrentProgressStage("script");
+      setProgressPercentage(0);
+      
+      const progressInterval = setInterval(() => {
+        setProgressPercentage(prev => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 12;
+        });
+      }, 600);
+      
+      const directorInfo = videoStyle.selectedDirector ? {
+        name: videoStyle.selectedDirector.name,
+        specialty: videoStyle.selectedDirector.specialty,
+        style: videoStyle.selectedDirector.style
+      } : undefined;
+      
+      const audioDurationInSeconds = buffer.duration;
+      
+      const scriptResponse = await generateMusicVideoScript(
+        transcriptionText, 
+        undefined, 
+        directorInfo,
+        audioDurationInSeconds
+      );
+      
+      clearInterval(progressInterval);
+      setProgressPercentage(100);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      try {
+        const parsed = JSON.parse(scriptResponse);
+        setScriptContent(JSON.stringify(parsed, null, 2));
+      } catch (parseError) {
+        setScriptContent(scriptResponse);
+      }
+      
+      setCurrentStep(3);
+      setIsGeneratingScript(false);
+      
+      // Continuar automáticamente con la sincronización y generación de imágenes
+      await executeSyncAndImageGeneration(scriptResponse, buffer);
+      
+    } catch (error) {
+      console.error("Error generating script:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error generating music video script",
+        variant: "destructive",
+      });
+      setIsGeneratingScript(false);
+      setShowProgress(false);
+      setProgressPercentage(0);
+    }
+  };
+
+  // Función auxiliar para sincronizar timeline y generar imágenes automáticamente
+  const executeSyncAndImageGeneration = async (script: string, buffer: AudioBuffer) => {
+    try {
+      setCurrentProgressStage("timeline-prep");
+      setProgressPercentage(0);
+      
+      // Sincronizar con timeline
+      const parsedScript = JSON.parse(script);
+      let scenes = [];
+      if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
+        scenes = parsedScript.scenes;
+      } else if (Array.isArray(parsedScript)) {
+        scenes = parsedScript;
+      }
+      
+      if (scenes.length > 0) {
+        const segments = createSegmentsFromScenes(scenes, buffer.duration);
+        setTimelineItems(segments);
+        setCurrentStep(4);
+      }
+      
+      setProgressPercentage(100);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Continuar con generación de imágenes
+      await executeImageGeneration();
+      
+    } catch (error) {
+      console.error("Error in sync and image generation:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error synchronizing timeline",
+        variant: "destructive",
+      });
+      setShowProgress(false);
+      setProgressPercentage(0);
+    }
+  };
+
+  // Función auxiliar para generar imágenes automáticamente
+  const executeImageGeneration = async () => {
+    try {
+      setIsGeneratingImages(true);
+      setCurrentProgressStage("images");
+      setProgressPercentage(0);
+      
+      if (!scriptContent) {
+        throw new Error("No script content available");
+      }
+
+      const parsedScript = JSON.parse(scriptContent);
+      let scenes = [];
+      if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
+        scenes = parsedScript.scenes;
+      } else if (Array.isArray(parsedScript)) {
+        scenes = parsedScript;
+      }
+      
+      if (scenes.length === 0) {
+        throw new Error("The script has no valid scenes");
+      }
+
+      setProgressPercentage(10);
+
+      const geminiScenes = scenes.map((scene: any) => {
+        const shotType = scene.shot_type || "MS";
+        const cameraMovement = scene.camera_movement || "static";
+        const lens = scene.lens || "standard";
+        const lighting = scene.lighting || "natural";
+        const visualStyle = scene.visual_style || "cinematic";
+        const description = scene.description || "";
+        const location = scene.location || "performance space";
+        const colorTemp = scene.color_temperature || "5000K";
+        
+        return {
+          id: scene.scene_id || `scene-${Math.random()}`,
+          scene: description,
+          camera: `${lens} lens, ${shotType} shot, ${cameraMovement} movement`,
+          lighting: `${lighting} lighting, ${colorTemp} color temperature`,
+          style: `${visualStyle} style, ${location}`,
+          movement: cameraMovement
+        };
+      });
+
+      setProgressPercentage(30);
+      const response = await fetch('/api/gemini-image/generate-batch-with-multiple-faces', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scenes: geminiScenes,
+          referenceImagesBase64: artistReferenceImages
+        }),
+      });
+
+      setProgressPercentage(70);
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setProgressPercentage(90);
+      
+      if (!data.success || !data.results) {
+        throw new Error(data.error || 'Error generating images');
+      }
+
+      setTimelineItems(prevItems => {
+        const sceneItems = prevItems.filter(item => 
+          item.type === 'image' || item.id.toString().startsWith('scene-')
+        );
+        
+        return prevItems.map(item => {
+          if (item.type !== 'image' && !item.id.toString().startsWith('scene-')) {
+            return item;
+          }
+          
+          const sceneIndex = sceneItems.findIndex(s => s.id === item.id);
+          if (sceneIndex === -1) {
+            return item;
+          }
+          
+          const imageResult = data.results[sceneIndex];
+          
+          if (imageResult && imageResult.success && imageResult.imageUrl) {
+            return {
+              ...item,
+              imageUrl: imageResult.imageUrl,
+              thumbnail: imageResult.imageUrl,
+              url: imageResult.imageUrl,
+              metadata: {
+                ...item.metadata,
+                isGeneratedImage: true,
+                imageGeneratedAt: new Date().toISOString(),
+                shot_type: item.shotType || item.metadata?.shot_type,
+                role: item.metadata?.role || 'performance'
+              }
+            };
+          }
+          
+          return item;
+        });
+      });
+
+      setProgressPercentage(100);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "¡Proceso Completado!",
+        description: `Video musical listo con ${scenes.length} escenas generadas`,
+      });
+
+      setCurrentStep(5);
+      setIsGeneratingImages(false);
+      setShowProgress(false);
+      setProgressPercentage(0);
+      
+    } catch (error) {
+      console.error("Error generating images:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error generating images",
+        variant: "destructive",
+      });
+      setIsGeneratingImages(false);
+      setShowProgress(false);
+      setProgressPercentage(0);
+    }
+  };
+
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -365,26 +596,23 @@ export function MusicVideoAI() {
             console.log('📤 Sending file to server for transcription...');
             const transcriptionText = await transcribeAudio(file);
             console.log('✅ Transcription completed, length:', transcriptionText.length, 'characters');
+            clearInterval(progressInterval);
             setProgressPercentage(100);
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
             setTranscription(transcriptionText);
-            // Set step as completed to enable next button
-            // but don't change the view (that's why we use 1.5 instead of 2)
             setCurrentStep(1.5);
-            toast({
-              title: "Success",
-              description: `Audio transcribed correctly (${transcriptionText.length} characters). You can now generate the musical script.`,
-            });
+            
+            // Continuar automáticamente con la generación del script
+            await executeScriptGeneration(transcriptionText, buffer);
+            
           } catch (err) {
             console.error("❌ Error transcribing audio:", err);
+            clearInterval(progressInterval);
             toast({
               title: "Transcription error",
               description: err instanceof Error ? err.message : "Error transcribing audio. Please try again.",
               variant: "destructive",
             });
-          } finally {
-            clearInterval(progressInterval);
-            console.log('🏁 Transcription process completed');
             setIsTranscribing(false);
             setShowProgress(false);
             setProgressPercentage(0);
@@ -523,6 +751,7 @@ export function MusicVideoAI() {
         audioDurationInSeconds
       );
       
+      clearInterval(progressInterval);
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -546,13 +775,13 @@ export function MusicVideoAI() {
       });
     } catch (error) {
       console.error("Error generating script:", error);
+      clearInterval(progressInterval);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error generating music video script",
         variant: "destructive",
       });
     } finally {
-      clearInterval(progressInterval);
       setIsGeneratingScript(false);
       setShowProgress(false);
       setProgressPercentage(0);
