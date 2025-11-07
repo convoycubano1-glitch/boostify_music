@@ -4184,97 +4184,6 @@ ${transcription}`;
                   </div>
                 </motion.div>
 
-                {/* Paso 3.5: Estilo de Edición */}
-                <motion.div 
-                  className="rounded-lg border-2 border-purple-500/30 bg-gradient-to-br from-purple-950 via-purple-900/50 to-black p-6 shadow-lg hover:shadow-xl relative overflow-hidden"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.25 }}
-                >
-                  {/* Background pattern */}
-                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM5MzMzZWEiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtMS4xMDQuODk2LTIgMi0yIDEuMTA0IDAgMiAuODk2IDIgMnMtLjg5NiAyLTIgMi0yLS44OTYtMi0yeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
-
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-6">
-                      <motion.div 
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30"
-                        whileHover={{ scale: 1.1, backgroundColor: "rgba(168, 85, 247, 0.3)" }}
-                        animate={{ rotate: [0, -3, 3, 0] }}
-                        transition={{ 
-                          rotate: { repeat: Infinity, duration: 4, ease: "easeInOut", repeatDelay: 2 },
-                          scale: { duration: 0.2 }
-                        }}
-                      >
-                        <Scissors className="h-4 w-4" />
-                      </motion.div>
-                      <div>
-                        <Label className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-300">3.5 Estilo de Edición</Label>
-                        <p className="text-xs text-purple-300/70">Define el ritmo y duración de los cortes del timeline</p>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4">
-                      <Label className="font-medium text-purple-200/90">Selecciona el Estilo de Cortes</Label>
-                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                        {editingStyles.map((style) => (
-                          <motion.button
-                            key={style.id}
-                            onClick={() => setSelectedEditingStyle(style)}
-                            className={`p-3 rounded-lg border-2 transition-all text-left ${
-                              selectedEditingStyle.id === style.id
-                                ? 'border-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/20'
-                                : 'border-purple-700/30 bg-purple-950/30 hover:border-purple-500/50 hover:bg-purple-900/30'
-                            }`}
-                            whileHover={{ scale: 1.02, y: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <div className="font-semibold text-sm text-purple-100 mb-1">{style.name}</div>
-                            <div className="text-xs text-purple-300/70 mb-2 line-clamp-2">{style.description}</div>
-                            <div className="text-xs font-mono text-purple-400 bg-purple-950/50 px-2 py-1 rounded inline-block">
-                              {style.duration.min}s - {style.duration.max}s
-                            </div>
-                          </motion.button>
-                        ))}
-                      </div>
-                      
-                      {/* Preview del estilo seleccionado */}
-                      <motion.div
-                        className="mt-2 p-4 bg-purple-950/50 rounded-lg border border-purple-500/30 backdrop-blur-sm"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-purple-500/20 rounded-full border border-purple-500/30">
-                            <Clock className="h-4 w-4 text-purple-400" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-purple-100 mb-1 flex items-center gap-2">
-                              Estilo Seleccionado: {selectedEditingStyle.name}
-                              <Badge variant="outline" className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
-                                Activo
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-purple-200/80 mb-2">
-                              {selectedEditingStyle.description}
-                            </p>
-                            <div className="flex gap-4 text-xs">
-                              <span className="text-purple-300/90 flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-purple-400"></div>
-                                <strong>Duración mín:</strong> {selectedEditingStyle.duration.min}s
-                              </span>
-                              <span className="text-purple-300/90 flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-purple-400"></div>
-                                <strong>Duración máx:</strong> {selectedEditingStyle.duration.max}s
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    </div>
-                  </div>
-                </motion.div>
-
                 <motion.div 
                   ref={visualStyleRef}
                   className="border rounded-lg overflow-hidden p-5 bg-gradient-to-br from-zinc-900 to-black shadow-sm relative border-zinc-800"
@@ -4738,8 +4647,11 @@ ${transcription}`;
                 <div className="border rounded-lg p-4 mt-4">
                   <Label className="text-lg font-semibold mb-4">Estilo de Edición</Label>
                   <RadioGroup
-                    value={selectedEditingStyle}
-                    onValueChange={setSelectedEditingStyle}
+                    value={selectedEditingStyle.id}
+                    onValueChange={(value) => {
+                      const style = editingStyles.find(s => s.id === value);
+                      if (style) setSelectedEditingStyle(style);
+                    }}
                     className="grid grid-cols-2 gap-4"
                   >
                     {editingStyles.map((style) => (
@@ -4750,7 +4662,7 @@ ${transcription}`;
                             {style.name}
                           </Label>
                           <p className="text-sm text-muted-foreground">
-                            {style.description}
+                            {style.description} ({style.duration.min}s - {style.duration.max}s)
                           </p>
                         </div>
                       </div>
