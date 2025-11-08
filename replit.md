@@ -4,6 +4,64 @@
 Sistema simplificado para crear videos musicales con IA que permite a los usuarios subir canciones, extraer lyrics, generar scripts visuales y crear timelines con duraciones aleatorias.
 
 ## Recent Changes (November 2024)
+
+### 🎨 Concepto-Primero con Referencias Visuales (LATEST)
+**Fecha**: 8 de Noviembre, 2024
+**Objetivo**: Mejorar coherencia visual del script JSON generando concepto narrativo ANTES de las escenas
+
+**Cambios implementados**:
+1. ✅ Nueva función `generateMusicVideoConcept()` en `openrouter.fixed.ts`
+   - Genera concepto visual completo ANTES del script
+   - Incluye: historia/narrativa, tema visual, progresión de mood
+   - Define vestuario principal del artista (outfit, colores, accesorios, hair/makeup)
+   - Especifica 2-3 locaciones principales con descripciones detalladas
+   - Establece paleta de colores coherente
+   - Identifica elementos visuales recurrentes
+   - Planifica momentos narrativos clave
+
+2. ✅ Schema expandido `MusicVideoConcept` en `music-video-scene.ts`
+   - `story_concept`: Narrativa completa del video
+   - `main_wardrobe`: Vestuario detallado del artista
+   - `locations`: Array de locaciones con mood y uso
+   - `color_palette`: Colores primarios y de acento
+   - `recurring_visual_elements`: Elementos que se repiten
+   - `key_narrative_moments`: Momentos importantes con timestamps
+
+3. ✅ Schema `MusicVideoScene` mejorado con:
+   - `wardrobe`: Objeto con descripción completa de outfit en cada escena
+   - `visual_references`: Sistema para referenciar escenas previas
+     - `reference_scene_ids`: IDs de escenas anteriores para mantener consistencia
+     - `key_visual_elements`: Elementos visuales a mantener
+     - `color_continuity`: Descripción de continuidad de color
+
+4. ✅ Prompt de Gemini actualizado para:
+   - Usar el concepto como base para todas las escenas
+   - Mantener vestuario consistente en TODAS las escenas de performance
+   - Referenciar escenas anteriores para coherencia visual
+   - Incluir detalles específicos de outfit, accesorios, hair/makeup
+   - Sistema de referencias: escenas posteriores referencian IDs de escenas anteriores
+
+**Workflow mejorado**:
+```
+Upload Audio → Transcribe Lyrics → 
+  ↓
+🆕 Generate Concept (historia, vestuario, locaciones, paleta) →
+  ↓
+Generate Script JSON (con concepto como base) →
+  → Escenas incluyen wardrobe details y visual_references
+  → Mayor coherencia entre escenas
+  ↓
+Add to Timeline → Generate Images (usando referencias previas) → Export Video
+```
+
+**Beneficios**:
+- ✨ Vestuario consistente en todas las escenas de performance
+- ✨ Narrativa coherente desde el inicio hasta el final
+- ✨ Referencias a escenas anteriores para continuidad visual
+- ✨ Paleta de colores unificada
+- ✨ Mejor calidad JSON al tener plan visual claro
+- ✨ Sistema preparado para usar imágenes generadas como referencias en escenas siguientes
+
 ### Major Simplification
 **Fecha**: 6 de Noviembre, 2024
 **Razón**: El usuario reportó que el proyecto era demasiado complejo y "nada funcionaba correctamente"

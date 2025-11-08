@@ -47,6 +47,7 @@ import {
   analyzeImage, 
   generateVideoPromptWithRetry, 
   generateMusicVideoScript,
+  generateMusicVideoConcept,
   type VideoPromptParams 
 } from "../../lib/api/openrouter";
 import { upscaleVideo } from "../../lib/api/video-service";
@@ -395,11 +396,29 @@ export function MusicVideoAI() {
       
       const audioDurationInSeconds = buffer.duration;
       
+      // 🆕 PASO 1: Generar concepto visual primero
+      console.log('🎨 [CONCEPTO] Generando concepto visual y narrativo...');
+      const concept = await generateMusicVideoConcept(
+        transcriptionText,
+        artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
+        audioDurationInSeconds
+      );
+      
+      if (concept) {
+        console.log('✅ [CONCEPTO] Concepto generado:', concept);
+      } else {
+        console.log('⚠️ [CONCEPTO] No se pudo generar concepto, continuando sin él');
+      }
+      
+      // PASO 2: Generar script usando el concepto como base
+      console.log('📝 [SCRIPT] Generando script con concepto...');
       const scriptResponse = await generateMusicVideoScript(
         transcriptionText, 
         undefined, 
         directorInfo,
-        audioDurationInSeconds
+        audioDurationInSeconds,
+        undefined,
+        concept
       );
       
       clearInterval(progressInterval);
@@ -1026,11 +1045,29 @@ export function MusicVideoAI() {
       // Pass audio duration to generate scenes every ~4 seconds
       const audioDurationInSeconds = audioBuffer?.duration || undefined;
       
+      // 🆕 PASO 1: Generar concepto visual primero
+      console.log('🎨 [CONCEPTO] Generando concepto visual y narrativo...');
+      const concept = await generateMusicVideoConcept(
+        transcription,
+        artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
+        audioDurationInSeconds
+      );
+      
+      if (concept) {
+        console.log('✅ [CONCEPTO] Concepto generado:', concept);
+      } else {
+        console.log('⚠️ [CONCEPTO] No se pudo generar concepto, continuando sin él');
+      }
+      
+      // PASO 2: Generar script usando el concepto como base
+      console.log('📝 [SCRIPT] Generando script con concepto...');
       const scriptResponse = await generateMusicVideoScript(
         transcription, 
         undefined, 
         directorInfo,
-        audioDurationInSeconds
+        audioDurationInSeconds,
+        undefined,
+        concept
       );
       
       clearInterval(progressInterval);
