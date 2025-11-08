@@ -297,10 +297,19 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         description: "Musician added successfully to the database",
       });
 
-      onSuccess();
-      onClose();
+      if (onSuccess) {
+        try {
+          await onSuccess();
+        } catch (callbackError) {
+          console.error("Error in onSuccess callback:", callbackError);
+        }
+      }
+      
+      if (onClose) {
+        onClose();
+      }
     } catch (error) {
-      console.error("Error adding musician:", error);
+      console.error("Error adding musician:", error instanceof Error ? error.message : error, error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to add musician",

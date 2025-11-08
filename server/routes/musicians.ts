@@ -37,6 +37,8 @@ router.get('/musicians', async (req, res) => {
   try {
     const { category, isActive = 'true' } = req.query;
     
+    console.log(`Fetching musicians with isActive=${isActive}`);
+    
     let query = db.select().from(musicians);
     
     if (isActive === 'true') {
@@ -45,10 +47,13 @@ router.get('/musicians', async (req, res) => {
     
     const allMusicians = await query.orderBy(desc(musicians.createdAt));
     
+    console.log(`Found ${allMusicians.length} musicians in database`);
+    
     const filteredMusicians = category && category !== 'all'
       ? allMusicians.filter(m => m.category === category)
       : allMusicians;
 
+    console.log(`Returning ${filteredMusicians.length} musicians after filtering`);
     res.json({ success: true, data: filteredMusicians });
   } catch (error) {
     console.error('Error fetching musicians:', error);

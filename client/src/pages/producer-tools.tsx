@@ -284,16 +284,85 @@ export default function ProducerToolsPage() {
   const [useModernUI, setUseModernUI] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
+  const loadFirestoreMusicians = async () => {
+    try {
+      console.log("Fetching from Firestore collections (musicians and musician_images)...");
+      
+      // Load from musicians collection
+      const musiciansRef = collection(db, "musicians");
+      const musiciansSnapshot = await getDocs(musiciansRef);
+      console.log(`Found ${musiciansSnapshot.size} documents in Firestore musicians collection`);
+      
+      // Load from musician_images collection
+      const imagesRef = collection(db, "musician_images");
+      const imagesSnapshot = await getDocs(imagesRef);
+      console.log(`Found ${imagesSnapshot.size} documents in Firestore musician_images collection`);
+      
+      const firestoreMusicians: MusicianService[] = [];
+      
+      // Process musicians collection
+      musiciansSnapshot.forEach(doc => {
+        const data = doc.data();
+        console.log("Firestore musician doc:", doc.id, data);
+        
+        firestoreMusicians.push({
+          id: `firestore-${doc.id}`,
+          userId: data.userId || doc.id,
+          title: data.name || data.title,
+          photo: data.photo || data.photoURL,
+          instrument: data.instrument,
+          category: data.category,
+          description: data.description,
+          price: typeof data.price === 'string' ? parseFloat(data.price) : data.price,
+          rating: typeof data.rating === 'string' ? parseFloat(data.rating) : data.rating,
+          totalReviews: data.totalReviews || 0,
+          genres: data.genres || []
+        });
+      });
+      
+      // Process musician_images collection (reference images)
+      imagesSnapshot.forEach(doc => {
+        const data = doc.data();
+        console.log("Firestore musician image doc:", doc.id, data);
+        
+        // Create a musician from the image data
+        firestoreMusicians.push({
+          id: `firestore-img-${doc.id}`,
+          userId: data.userId || doc.id,
+          title: data.category || "Reference Musician",
+          photo: data.url,
+          instrument: data.category || "Various",
+          category: data.category || "Other",
+          description: data.prompt || "Reference musician from Firestore",
+          price: 150,
+          rating: 4.5,
+          totalReviews: 10,
+          genres: [data.category || "Various"]
+        });
+      });
+      
+      console.log(`Loaded ${firestoreMusicians.length} total musicians from Firestore`);
+      return firestoreMusicians;
+    } catch (error) {
+      console.error("Error loading Firestore musicians:", error);
+      return [];
+    }
+  };
+
   const loadMusicianImages = async () => {
     try {
-      console.log("Loading musicians from PostgreSQL...");
+      console.log("Loading musicians from PostgreSQL and Firestore...");
       setIsLoadingImages(true);
 
-      const response = await fetch('/api/musicians');
-      const result = await response.json();
+      const [postgresResponse, firestoreMusicians] = await Promise.all([
+        fetch('/api/musicians').then(res => res.json()),
+        loadFirestoreMusicians()
+      ]);
 
-      if (result.success && result.data) {
-        const dbMusicians = result.data.map((m: any) => ({
+      let allMusicians: MusicianService[] = [];
+
+      if (postgresResponse.success && postgresResponse.data) {
+        const dbMusicians = postgresResponse.data.map((m: any) => ({
           id: String(m.id),
           userId: m.userId || `user-${m.id}`,
           title: m.name,
@@ -307,17 +376,27 @@ export default function ProducerToolsPage() {
           genres: m.genres || []
         }));
 
-        console.log(`Loaded ${dbMusicians.length} musicians from database`);
-        setMusiciansState(dbMusicians);
+        console.log(`Loaded ${dbMusicians.length} musicians from PostgreSQL`);
+        allMusicians = [...dbMusicians];
+      }
+
+      if (firestoreMusicians.length > 0) {
+        console.log(`Loaded ${firestoreMusicians.length} musicians from Firestore`);
+        allMusicians = [...allMusicians, ...firestoreMusicians];
+      }
+
+      if (allMusicians.length > 0) {
+        console.log(`Total musicians loaded: ${allMusicians.length}`);
+        setMusiciansState(allMusicians);
       } else {
-        console.log("No musicians found in database, using defaults");
+        console.log("No musicians found, using defaults");
         setMusiciansState(musicians);
       }
     } catch (error) {
       console.error("Error loading musicians:", error);
       toast({
         title: "Error",
-        description: "Failed to load musicians from database",
+        description: "Failed to load musicians",
         variant: "destructive"
       });
       setMusiciansState(musicians);

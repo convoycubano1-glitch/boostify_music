@@ -54,10 +54,12 @@ export function AdminMusiciansPanel() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [enhancingId, setEnhancingId] = useState<number | null>(null);
 
-  const { data: musicians, isLoading } = useQuery<Musician[]>({
+  const { data: response, isLoading } = useQuery({
     queryKey: ['/api/musicians'],
     refetchInterval: 5000,
   });
+
+  const musicians = response?.success ? response.data : [];
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {

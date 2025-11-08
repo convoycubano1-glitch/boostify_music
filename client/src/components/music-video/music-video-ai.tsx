@@ -4060,7 +4060,7 @@ ${transcription}`;
                   >
                     <Input
                       type="file"
-                      accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.webm"
+                      accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.webm,.caf,.aiff,.aifc"
                       onChange={handleFileChange}
                       disabled={isTranscribing}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -4069,7 +4069,7 @@ ${transcription}`;
                     <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
                       <Upload className="h-8 w-8 text-orange-400 mb-1" />
                       <p className="font-medium text-sm text-center">Arrastra tu archivo de audio o haz clic para seleccionar</p>
-                      <p className="text-xs text-muted-foreground text-center">Soporta MP3, WAV, FLAC, OGG y otros formatos de audio</p>
+                      <p className="text-xs text-muted-foreground text-center">Soporta todos los formatos de audio (MP3, WAV, M4A, iPhone, etc.)</p>
                     </div>
                   </motion.div>
                   
@@ -4232,7 +4232,7 @@ ${transcription}`;
                             <div className="relative">
                               <Input
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.gif,.bmp"
                                 multiple
                                 onChange={handleReferenceImageUpload}
                                 disabled={isUploadingReferences}
@@ -4246,7 +4246,7 @@ ${transcription}`;
                                     {isUploadingReferences ? "Cargando..." : `Subir imágenes (${artistReferenceImages.length}/3)`}
                                   </p>
                                   <p className="text-xs text-muted-foreground text-center">
-                                    JPG, PNG o WEBP (máx. 5MB)
+                                    Todos los formatos (JPG, PNG, HEIC, WEBP, etc.) - Máx. 5MB
                                   </p>
                                 </div>
                               </div>
@@ -4745,7 +4745,7 @@ ${transcription}`;
                       <div className="grid gap-4">
                         <Input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.gif,.bmp"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
