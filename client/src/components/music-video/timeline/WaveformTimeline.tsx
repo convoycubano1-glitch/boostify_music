@@ -64,6 +64,8 @@ export function WaveformTimeline({
   useEffect(() => {
     if (!waveformRef.current) return;
     
+    let isMounted = true;
+    
     // Crear instancia de WaveSurfer si no existe
     if (!wavesurferRef.current) {
       const wavesurfer = WaveSurfer.create({
@@ -80,29 +82,37 @@ export function WaveformTimeline({
       
       // Configurar eventos
       wavesurfer.on('ready', () => {
-        console.log('WaveSurfer está listo');
+        if (isMounted) {
+          console.log('WaveSurfer está listo');
+        }
       });
       
       wavesurfer.on('interaction', (time) => {
-        onTimeUpdate(time);
+        if (isMounted) {
+          onTimeUpdate(time);
+        }
       });
       
       wavesurferRef.current = wavesurfer;
     }
     
     // Cargar audio si hay URL
-    if (audioUrl && wavesurferRef.current) {
+    if (audioUrl && wavesurferRef.current && isMounted) {
       wavesurferRef.current.load(audioUrl);
     }
     
     // Limpiar al desmontar
     return () => {
+      isMounted = false;
       if (wavesurferRef.current) {
         try {
           // Usar un try-catch para evitar que el error de "signal is aborted" interrumpa la aplicación
           wavesurferRef.current.destroy();
         } catch (err) {
-          console.log("Error al destruir WaveSurfer, esto es normal durante actualizaciones en desarrollo:", err);
+          // Silenciar error de "signal is aborted" que es normal durante actualizaciones
+          if (!err || !String(err).includes('signal is aborted')) {
+            console.warn("Error al destruir WaveSurfer:", err);
+          }
         } finally {
           wavesurferRef.current = null;
         }
@@ -186,7 +196,7 @@ export function WaveformTimeline({
     
     // Clips en la misma capa (para detección de colisiones)
     const otherClipsInLayer = clips.filter(c => 
-      c.layer === clip.layer && c.id !== clip.id
+      c.layerId === clip.layerId && c.id !== clip.id
     );
     
     switch (dragData.type) {
@@ -312,7 +322,7 @@ export function WaveformTimeline({
   
   // Agrupar clips por capa para facilitar el renderizado
   const clipsByLayer = clips.reduce((grouped, clip) => {
-    const layer = clip.layer || 0;
+    const layer = clip.layerId || 0;
     if (!grouped[layer]) grouped[layer] = [];
     grouped[layer].push(clip);
     return grouped;

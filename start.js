@@ -3,10 +3,14 @@ import { spawn } from 'child_process';
 
 console.log('⚡ Iniciando servidor completo (Express + Vite)...');
 
+// Forzar modo desarrollo para Replit
+process.env.NODE_ENV = 'development';
+
 // Ejecutar el servidor con tsx (TypeScript runner)
 const server = spawn('npx', ['tsx', 'server/index.ts'], {
   stdio: 'inherit',
-  shell: true
+  shell: true,
+  env: { ...process.env, NODE_ENV: 'development' }
 });
 
 server.on('error', (error) => {

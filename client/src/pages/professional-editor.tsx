@@ -8,11 +8,18 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { ScrollArea } from "../components/ui/scroll-area";
-import { TimelineClip } from "../components/timeline/TimelineClip";
+import { TimelineClip as TimelineClipComponent } from "../components/timeline/TimelineClip";
 import { WaveformTimeline } from "../components/music-video/timeline/WaveformTimeline";
 import { Separator } from "../components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "../components/ui/dialog";
 import { enforceAllConstraints, MAX_CLIP_DURATION, LAYER_TYPES } from "../components/music-video/timeline/TimelineConstraints";
+import { TimelineClip, ClipType } from "../interfaces/timeline";
+import { musicVideoProjectService } from "../lib/services/music-video-project-service";
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../lib/firebase';
 import { 
   Upload, 
   Save, 
@@ -26,7 +33,9 @@ import {
   Wand2, 
   Star, 
   BookOpen, 
-  HelpCircle 
+  HelpCircle,
+  FolderOpen,
+  Plus
 } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 
@@ -35,38 +44,41 @@ import { useToast } from "../hooks/use-toast";
  */
 export default function ProfessionalEditor() {
   // Estados para el editor
+  const [user] = useAuthState(auth);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState<string>("Nuevo Proyecto");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
+  
   const [clips, setClips] = useState<TimelineClip[]>([
     // Clips de ejemplo
     {
       id: 1,
+      layerId: LAYER_TYPES.AUDIO,
+      type: ClipType.AUDIO,
       start: 0,
       duration: 3,
-      type: 'audio',
-      layer: LAYER_TYPES.AUDIO,
       title: 'Pista de Audio',
-      visible: true,
       locked: false,
     },
     {
       id: 2,
+      layerId: LAYER_TYPES.VIDEO_IMAGE,
+      type: ClipType.IMAGE,
       start: 0,
       duration: 3,
-      type: 'image',
-      layer: LAYER_TYPES.VIDEO_IMAGE,
       title: 'Imagen Principal',
-      imageUrl: 'https://images.unsplash.com/photo-1492282738061-813ef179fff3',
-      visible: true,
+      url: 'https://images.unsplash.com/photo-1492282738061-813ef179fff3',
       locked: false,
     },
     {
       id: 3,
+      layerId: LAYER_TYPES.AI_GENERATED,
+      type: ClipType.IMAGE,
       start: 3.5,
       duration: 2.5,
-      type: 'image',
-      layer: LAYER_TYPES.AI_GENERATED,
       title: 'IA Generada',
-      imagePrompt: 'Professional singer on stage with colorful lighting',
-      visible: true,
+      metadata: { imagePrompt: 'Professional singer on stage with colorful lighting' },
       locked: false,
     }
   ]);
@@ -94,7 +106,6 @@ export default function ProfessionalEditor() {
           toast({
             title: "Aviso: Duración máxima",
             description: `La duración máxima permitida es de ${MAX_CLIP_DURATION} segundos. Se ha limitado automáticamente.`,
-            variant: "warning",
           });
         }
         
@@ -114,10 +125,10 @@ export default function ProfessionalEditor() {
   };
   
   // Crear un nuevo clip
-  const addNewClip = (type: 'video' | 'image' | 'audio' | 'text', layerId: number) => {
+  const addNewClip = (type: ClipType, layerId: number) => {
     // Determinar la posición del nuevo clip
     const lastClipInLayer = [...clips]
-      .filter(c => c.layer === layerId)
+      .filter(c => c.layerId === layerId)
       .sort((a, b) => (a.start + a.duration) - (b.start + b.duration))
       .pop();
     
@@ -126,18 +137,17 @@ export default function ProfessionalEditor() {
     // Crear nuevo clip
     const newClip: TimelineClip = {
       id: Math.max(0, ...clips.map(c => c.id)) + 1,
+      layerId: layerId,
+      type: type,
       start: newStart,
-      duration: type === 'image' ? 3 : 2, // Valores predeterminados
-      type,
-      layer: layerId,
+      duration: type === ClipType.IMAGE ? 3 : 2,
       title: `Nuevo ${type}`,
-      visible: true,
       locked: false,
     };
     
     // Si es una imagen generada por IA
-    if (type === 'image' && layerId === LAYER_TYPES.AI_GENERATED) {
-      newClip.imagePrompt = 'Escriba su descripción aquí';
+    if (type === ClipType.IMAGE && layerId === LAYER_TYPES.AI_GENERATED) {
+      newClip.metadata = { imagePrompt: 'Escriba su descripción aquí' };
     }
     
     // Aplicar restricciones
@@ -153,7 +163,7 @@ export default function ProfessionalEditor() {
   // Generar una imagen con IA para un clip específico
   const generateAIImage = (clipId: number) => {
     const clip = clips.find(c => c.id === clipId);
-    if (!clip || clip.layer !== LAYER_TYPES.AI_GENERATED) return;
+    if (!clip || clip.layerId !== LAYER_TYPES.AI_GENERATED) return;
     
     toast({
       title: "Generando imagen",
@@ -163,15 +173,15 @@ export default function ProfessionalEditor() {
     // Aquí iría la lógica de generación de imagen con IA
     // Por ahora, simulamos un cambio para mostrar la funcionalidad
     setTimeout(() => {
+      const imagePrompt = clip.metadata?.imagePrompt || "";
       handleClipUpdate(clipId, {
-        imageUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
-        title: clip.imagePrompt?.slice(0, 20) + "..." || "Imagen IA",
+        url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+        title: imagePrompt?.slice(0, 20) + "..." || "Imagen IA",
       });
       
       toast({
         title: "Imagen generada",
         description: "La imagen se ha generado correctamente",
-        variant: "success",
       });
     }, 1500);
   };
@@ -181,6 +191,7 @@ export default function ProfessionalEditor() {
     const projectData = {
       clips,
       duration,
+      projectName,
       version: "1.0",
       exportedAt: new Date().toISOString(),
     };
@@ -188,7 +199,7 @@ export default function ProfessionalEditor() {
     const dataStr = JSON.stringify(projectData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const exportFileDefaultName = `proyecto-musical-${new Date().toISOString().slice(0, 10)}.json`;
+    const exportFileDefaultName = `${projectName.replace(/\s+/g, '_')}-${new Date().toISOString().slice(0, 10)}.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -198,8 +209,51 @@ export default function ProfessionalEditor() {
     toast({
       title: "Proyecto exportado",
       description: "El proyecto se ha exportado correctamente",
-      variant: "success",
     });
+  };
+  
+  // Guardar proyecto en Firestore
+  const saveProject = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para guardar proyectos",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const savedProjectId = await musicVideoProjectService.saveProject(
+        user.uid,
+        projectName,
+        {
+          audioUrl: '',
+          timelineItems: clips as any, // Conversión temporal
+          artistReferences: [],
+          editingStyle: 'professional',
+          duration: duration
+        },
+        projectId || undefined
+      );
+      
+      setProjectId(savedProjectId);
+      
+      toast({
+        title: "Proyecto guardado",
+        description: `Proyecto "${projectName}" guardado exitosamente`,
+      });
+    } catch (error) {
+      console.error('Error saving project:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el proyecto",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   // Eliminar un clip
@@ -225,17 +279,59 @@ export default function ProfessionalEditor() {
               <p className="text-muted-foreground text-sm">Crea videos musicales profesionales con control total sobre el timeline</p>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" className="flex items-center">
-                <Upload className="h-4 w-4 mr-2" />
-                Importar
-              </Button>
-              <Button variant="default" className="flex items-center" onClick={exportProject}>
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </Button>
-              <Button variant="secondary" className="flex items-center">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center" data-testid="button-project-name">
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    {projectName}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Nombre del Proyecto</DialogTitle>
+                    <DialogDescription>
+                      Cambia el nombre de tu proyecto de video musical
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="project-name">Nombre del Proyecto</Label>
+                      <Input
+                        id="project-name"
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
+                        placeholder="Mi Proyecto de Video Musical"
+                        data-testid="input-project-name"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" data-testid="button-save-project-name">
+                      Guardar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              <Button 
+                variant="default" 
+                className="flex items-center" 
+                onClick={saveProject}
+                disabled={isSaving || !user}
+                data-testid="button-save-project"
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Guardar
+                {isSaving ? 'Guardando...' : 'Guardar'}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="flex items-center" 
+                onClick={exportProject}
+                data-testid="button-export"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exportar JSON
               </Button>
             </div>
           </div>
@@ -276,7 +372,8 @@ export default function ProfessionalEditor() {
                       <Button 
                         variant="outline" 
                         className="w-full flex items-center justify-start" 
-                        onClick={() => addNewClip('audio', LAYER_TYPES.AUDIO)}
+                        onClick={() => addNewClip(ClipType.AUDIO, LAYER_TYPES.AUDIO)}
+                        data-testid="button-add-audio"
                       >
                         <Music className="h-4 w-4 mr-2" />
                         Audio
@@ -284,7 +381,8 @@ export default function ProfessionalEditor() {
                       <Button 
                         variant="outline" 
                         className="w-full flex items-center justify-start"
-                        onClick={() => addNewClip('image', LAYER_TYPES.VIDEO_IMAGE)}
+                        onClick={() => addNewClip(ClipType.IMAGE, LAYER_TYPES.VIDEO_IMAGE)}
+                        data-testid="button-add-image"
                       >
                         <ImageIcon className="h-4 w-4 mr-2" />
                         Imagen
@@ -292,7 +390,8 @@ export default function ProfessionalEditor() {
                       <Button 
                         variant="outline" 
                         className="w-full flex items-center justify-start"
-                        onClick={() => addNewClip('video', LAYER_TYPES.VIDEO_IMAGE)}
+                        onClick={() => addNewClip(ClipType.VIDEO, LAYER_TYPES.VIDEO_IMAGE)}
+                        data-testid="button-add-video"
                       >
                         <Video className="h-4 w-4 mr-2" />
                         Video
@@ -300,7 +399,8 @@ export default function ProfessionalEditor() {
                       <Button 
                         variant="outline" 
                         className="w-full flex items-center justify-start"
-                        onClick={() => addNewClip('text', LAYER_TYPES.TEXT)}
+                        onClick={() => addNewClip(ClipType.TEXT, LAYER_TYPES.TEXT)}
+                        data-testid="button-add-text"
                       >
                         <Text className="h-4 w-4 mr-2" />
                         Texto
@@ -308,7 +408,8 @@ export default function ProfessionalEditor() {
                       <Button 
                         variant="secondary" 
                         className="w-full flex items-center justify-start"
-                        onClick={() => addNewClip('image', LAYER_TYPES.AI_GENERATED)}
+                        onClick={() => addNewClip(ClipType.GENERATED_IMAGE, LAYER_TYPES.AI_GENERATED)}
+                        data-testid="button-add-ai-image"
                       >
                         <Star className="h-4 w-4 mr-2" />
                         Imagen IA
