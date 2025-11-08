@@ -9,6 +9,7 @@ import {
   MusicSection,
   type MusicVideoScene,
   type MusicVideoScript,
+  type MusicVideoConcept,
   validateSceneBalance,
   generateVariedShotSequence
 } from "../../types/music-video-scene";
@@ -943,12 +944,139 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
 }
 
 /**
+ * Genera el concepto visual y narrativo del video musical PRIMERO
+ * Este concepto se usa como base para generar un script más coherente
+ * 
+ * @param lyrics La transcripción de la letra de la canción
+ * @param artistReferences Imágenes de referencia del artista para extraer estilo
+ * @param audioDuration Duración del audio en segundos
+ * @returns Promise con el concepto visual en formato JSON
+ */
+export async function generateMusicVideoConcept(
+  lyrics: string,
+  artistReferences?: string[],
+  audioDuration?: number
+): Promise<MusicVideoConcept | null> {
+  try {
+    console.log("🎨 Generando concepto visual y narrativo del video...");
+    
+    const apiKey = env.VITE_OPENROUTER_API_KEY;
+    if (!apiKey) {
+      console.warn("OpenRouter API key missing - skipping concept generation");
+      return null;
+    }
+    
+    const headers = {
+      "Authorization": `Bearer ${apiKey.trim()}`,
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "Boostify Music Video Concept Generator",
+      "Content-Type": "application/json"
+    };
+    
+    const prompt = `Based on these lyrics, create a comprehensive visual and narrative concept for a music video:
+
+LYRICS:
+${lyrics}
+
+${audioDuration ? `DURATION: ${Math.floor(audioDuration)} seconds` : ''}
+
+${artistReferences && artistReferences.length > 0 ? `NOTE: The artist has ${artistReferences.length} reference images provided. Use these to inform wardrobe and styling consistency.` : ''}
+
+Create a detailed visual concept that includes:
+1. A compelling narrative/story concept that ties the entire video together
+2. Specific wardrobe details (outfit, colors, accessories, hair/makeup)
+3. 2-3 main locations with detailed descriptions
+4. A cohesive color palette
+5. Recurring visual elements for continuity
+6. Key narrative moments throughout the video
+
+Return ONLY valid JSON matching this structure:
+{
+  "story_concept": "Complete narrative description...",
+  "visual_theme": "Main visual theme...",
+  "mood_progression": "How the mood evolves...",
+  "main_wardrobe": {
+    "outfit_description": "Detailed outfit description",
+    "colors": ["color1", "color2"],
+    "style": "urban/elegant/casual/etc",
+    "accessories": ["accessory1", "accessory2"],
+    "hair_makeup": "Hair and makeup description"
+  },
+  "locations": [
+    {
+      "name": "Location name",
+      "description": "Detailed description",
+      "mood": "Mood of this location",
+      "scenes_usage": "When/how this location is used"
+    }
+  ],
+  "color_palette": {
+    "primary_colors": ["color1", "color2"],
+    "accent_colors": ["color3"],
+    "mood_colors": "Description of color mood"
+  },
+  "recurring_visual_elements": ["element1", "element2"],
+  "key_narrative_moments": [
+    {
+      "timestamp": "0:30",
+      "description": "What happens at this moment"
+    }
+  ]
+}`;
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert music video creative director. Create detailed, cohesive visual concepts that ensure consistency throughout the entire video production."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.8,
+        max_tokens: 4000,
+        response_format: { type: "json_object" }
+      })
+    });
+    
+    if (!response.ok) {
+      console.error("Error generating concept:", response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    const conceptContent = data.choices?.[0]?.message?.content;
+    
+    if (!conceptContent) {
+      console.error("No concept content received");
+      return null;
+    }
+    
+    const concept: MusicVideoConcept = JSON.parse(conceptContent);
+    console.log("✅ Concepto visual generado exitosamente");
+    return concept;
+    
+  } catch (error) {
+    console.error("Error generating music video concept:", error);
+    return null;
+  }
+}
+
+/**
  * Genera un guion detallado para un video musical basado en la transcripción de la letra
+ * AHORA USA EL CONCEPTO VISUAL como base para mayor coherencia
  * 
  * @param lyrics La transcripción de la letra de la canción
  * @param audioAnalysis Análisis opcional de la pista de audio (beats, segmentos, etc)
  * @param director Información del director para adaptar el estilo cinematográfico
  * @param audioDuration Duración del audio en segundos para calcular número de escenas
+ * @param concept Concepto visual generado previamente (opcional pero recomendado)
  * @returns Promise con el guion en formato JSON estructurado
  */
 export async function generateMusicVideoScript(
@@ -956,7 +1084,8 @@ export async function generateMusicVideoScript(
   audioAnalysis?: any, 
   director?: { name: string; specialty: string; style: string },
   audioDuration?: number,
-  editingStyle?: { id: string; name: string; description: string; duration: { min: number; max: number } }
+  editingStyle?: { id: string; name: string; description: string; duration: { min: number; max: number } },
+  concept?: MusicVideoConcept | null
 ): Promise<string> {
   try {
     if (!lyrics) {
@@ -998,6 +1127,42 @@ export async function generateMusicVideoScript(
     
     // Crear el prompt con la letra y análisis de audio si está disponible
     let userPrompt = `Generate a detailed music video script for these lyrics:\n\n${lyrics}`;
+    
+    // ✨ NUEVO: Agregar concepto visual si está disponible
+    if (concept) {
+      console.log("📝 Usando concepto visual para mejorar coherencia del script");
+      userPrompt += `\n\n🎨 VISUAL CONCEPT (USE THIS AS BASE FOR ALL SCENES):
+
+STORY & THEME:
+${concept.story_concept}
+
+VISUAL THEME: ${concept.visual_theme}
+MOOD PROGRESSION: ${concept.mood_progression}
+
+🎭 ARTIST WARDROBE (MAINTAIN CONSISTENCY):
+Outfit: ${concept.main_wardrobe.outfit_description}
+Colors: ${concept.main_wardrobe.colors.join(', ')}
+Style: ${concept.main_wardrobe.style}
+Accessories: ${concept.main_wardrobe.accessories.join(', ')}
+Hair & Makeup: ${concept.main_wardrobe.hair_makeup}
+
+📍 LOCATIONS:
+${concept.locations.map((loc, i) => `${i + 1}. ${loc.name}: ${loc.description} (${loc.scenes_usage})`).join('\n')}
+
+🎨 COLOR PALETTE:
+Primary: ${concept.color_palette.primary_colors.join(', ')}
+Accent: ${concept.color_palette.accent_colors.join(', ')}
+Mood: ${concept.color_palette.mood_colors}
+
+🔁 RECURRING ELEMENTS: ${concept.recurring_visual_elements.join(', ')}
+
+IMPORTANT:
+- Use the wardrobe details for ALL performance scenes to maintain visual consistency
+- Reference the locations described above for b-roll scenes
+- Incorporate recurring visual elements throughout the video
+- Follow the color palette in lighting and scene composition
+- Build upon the story concept in the scene descriptions`;
+    }
     
     if (audioDuration) {
       userPrompt += `\n\nAUDIO INFORMATION:
@@ -1079,7 +1244,23 @@ RESPONSE FORMAT (JSON):
       "color_temperature": "3200K" | "5000K" | "5600K",
       "description": "Detailed visual description for image generation including scene composition, artist action, mood, and specific details",
       "location": "Specific location description",
-      "music_section": "intro" | "verse" | "pre-chorus" | "chorus" | "bridge" | "outro" | "breakdown"
+      "music_section": "intro" | "verse" | "pre-chorus" | "chorus" | "bridge" | "outro" | "breakdown",
+      
+      // 🆕 WARDROBE (for performance scenes - CRITICAL for visual consistency)
+      "wardrobe": {
+        "outfit_description": "Complete description of what the artist is wearing",
+        "colors": ["primary color", "secondary color"],
+        "style": "urban/elegant/casual/streetwear/etc",
+        "accessories": ["accessory1", "accessory2"],
+        "hair_makeup": "Hairstyle and makeup description"
+      },
+      
+      // 🆕 VISUAL REFERENCES (for maintaining consistency across scenes)
+      "visual_references": {
+        "reference_scene_ids": ["scene-1", "scene-2"],  // Previous scenes to reference for consistency
+        "key_visual_elements": ["element1", "element2"],  // Visual elements to carry forward
+        "color_continuity": "Palette description for this scene"
+      }
     }
   ]
 }
@@ -1111,12 +1292,27 @@ SHOT VARIATION RULES:
 - Match shot intensity to music energy (chorus = dynamic shots, verse = intimate shots)
 - Use varied camera movements and angles
 
+🎭 WARDROBE CONSISTENCY REQUIREMENTS (CRITICAL):
+- ALL performance scenes MUST include wardrobe details
+- Use the SAME outfit throughout if a visual concept is provided
+- Be SPECIFIC: describe fabrics, fit, patterns, textures
+- Include accessories in every performance scene for continuity
+- Hair and makeup should remain consistent unless there's a narrative reason to change
+
+🔗 VISUAL REFERENCE SYSTEM (for image generation consistency):
+- In scene 1-2: Establish the core visual elements
+- From scene 3+: Reference previous scene IDs to maintain consistency
+- Example: scene 5 references ["scene-1", "scene-3"] for wardrobe and location continuity
+- Carry forward key visual elements: specific props, colors, lighting setups
+- Build visual narrative: later scenes should feel connected to earlier ones
+
 DESCRIPTION GUIDELINES:
-- For PERFORMANCE: Describe artist action, expression, movement, wardrobe, setting
+- For PERFORMANCE: Describe artist action, expression, movement, wardrobe (detailed!), setting
 - For B-ROLL: Describe environment, atmosphere, story elements, symbolic meaning
 - Include color palette, lighting mood, and specific visual details
 - Reference the lyrics being sung in performance scenes
-- Be cinematically specific and evocative`
+- Be cinematically specific and evocative
+- ALWAYS include wardrobe details in performance scenes`
           },
           {
             role: "user",
@@ -1302,6 +1498,7 @@ function generarGuionFallback(
       lighting,
       color_temperature: isHighEnergy ? '5000K' : '3200K',
       description,
+      lyrics_segment: lyricsText || `Segmento ${i + 1} de la canción`,
       location: role === SceneRole.PERFORMANCE ? 'performance space' : 'cinematic environment',
       music_section: musicSection,
       status: 'pending'

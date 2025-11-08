@@ -165,6 +165,25 @@ export interface MusicVideoScene {
   description: string;                 // Descripción detallada para generación de imagen
   location?: string;                   // Ubicación/escenario
   
+  // Letra de la canción
+  lyrics_segment?: string;             // Porción de la letra que se canta en esta escena
+  
+  // Vestuario y apariencia del artista (para consistencia visual)
+  wardrobe?: {
+    outfit_description: string;        // Descripción completa del vestuario
+    colors: string[];                  // Colores principales del outfit
+    style: string;                     // Estilo general (casual, formal, urbano, etc.)
+    accessories?: string[];            // Accesorios (joyas, gafas, sombreros, etc.)
+    hair_makeup?: string;              // Peinado y maquillaje
+  };
+  
+  // Referencias visuales para consistencia
+  visual_references?: {
+    reference_scene_ids?: string[];    // IDs de escenas previas para mantener consistencia
+    key_visual_elements?: string[];    // Elementos visuales clave a mantener
+    color_continuity?: string;         // Paleta de colores para mantener continuidad
+  };
+  
   // Sección musical (solo para referencia interna)
   music_section: MusicSection;         // Intro, Verse, Chorus, etc.
   
@@ -177,6 +196,7 @@ export interface MusicVideoScene {
     generation_prompt?: string;        // Prompt usado para generar la imagen
     generation_timestamp?: number;     // Timestamp de generación
     error_message?: string;            // Mensaje de error si falla
+    reference_images?: string[];       // URLs de imágenes usadas como referencia
   };
 }
 
@@ -220,6 +240,49 @@ export interface ScriptGenerationConfig {
 }
 
 /**
+ * Concepto visual y narrativo del video musical
+ */
+export interface MusicVideoConcept {
+  // Historia y narrativa
+  story_concept: string;                // Concepto narrativo general del video
+  visual_theme: string;                 // Tema visual principal
+  mood_progression: string;             // Cómo evoluciona el mood a través del video
+  
+  // Vestuario principal del artista
+  main_wardrobe: {
+    outfit_description: string;         // Descripción del outfit principal
+    colors: string[];                   // Paleta de colores del vestuario
+    style: string;                      // Estilo general (urban, elegant, casual, etc.)
+    accessories: string[];              // Accesorios principales
+    hair_makeup: string;                // Peinado y maquillaje base
+  };
+  
+  // Locaciones y ambientes
+  locations: Array<{
+    name: string;                       // Nombre de la locación
+    description: string;                // Descripción detallada
+    mood: string;                       // Mood de esta locación
+    scenes_usage: string;               // Cuándo/cómo se usa esta locación
+  }>;
+  
+  // Paleta de colores general
+  color_palette: {
+    primary_colors: string[];           // Colores principales
+    accent_colors: string[];            // Colores de acento
+    mood_colors: string;                // Descripción del mood de colores
+  };
+  
+  // Elementos visuales recurrentes
+  recurring_visual_elements: string[];  // Elementos que aparecen múltiples veces
+  
+  // Transiciones narrativas clave
+  key_narrative_moments: Array<{
+    timestamp: string;                  // Momento aproximado
+    description: string;                // Qué sucede
+  }>;
+}
+
+/**
  * Resultado completo de la generación de script
  */
 export interface MusicVideoScript {
@@ -228,6 +291,9 @@ export interface MusicVideoScript {
   title: string;
   duration: number;
   scene_count: number;
+  
+  // Concepto visual y narrativo (nuevo)
+  concept?: MusicVideoConcept;
   
   // Escenas generadas
   scenes: MusicVideoScene[];

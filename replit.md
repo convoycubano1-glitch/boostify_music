@@ -70,12 +70,30 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 - **Estabilidad**: Asegurar que las funciones implementadas funcionen correctamente antes de agregar nuevas
 
 ## Environment Variables
-- `OPENAI_API_KEY` - Para transcripción con Whisper
-- `GEMINI_API_KEY` - Para generación de scripts e imágenes
-- `FAL_API_KEY` - Para generación de imágenes
-- `STRIPE_SECRET_KEY` - Para pagos
-- `VITE_STRIPE_PUBLIC_KEY` - Para pagos (frontend)
-- `DATABASE_URL` - PostgreSQL connection string
+
+### Backend API Keys (Replit Secrets - Required for Production)
+Estas variables DEBEN estar configuradas en Replit Secrets para funcionar en producción:
+- `OPENAI_API_KEY2` - Para transcripción de audio con Whisper (debe empezar con sk-proj- o sk-)
+- `GEMINI_API_KEY` - Para generación de scripts e imágenes con Gemini
+- `FAL_API_KEY` - Para generación de imágenes (usado en frontend también como VITE_FAL_API_KEY)
+- `STRIPE_SECRET_KEY` - Para procesamiento de pagos
+- `DATABASE_URL` - PostgreSQL connection string (auto-configurado)
+
+### Frontend API Keys (Variables de entorno con prefijo VITE_)
+- `VITE_STRIPE_PUBLIC_KEY` - Clave pública de Stripe para el frontend
+- `VITE_FAL_API_KEY` - API key de Fal.ai para generación de imágenes
+
+### Configuración para Producción (Deployment)
+⚠️ **IMPORTANTE**: Cuando despliegues la app (Publish), asegúrate de que:
+1. Todas las API keys estén configuradas en **Replit Secrets** (icono de candado en la barra lateral)
+2. Las keys sean las mismas que usas en desarrollo
+3. La key de OpenAI sea válida y tenga créditos disponibles
+4. Reinicia el deployment después de actualizar los Secrets
+
+### Solución de Problemas
+- **Error 401 en transcripción**: Verifica que `OPENAI_API_KEY2` esté configurada en Secrets
+- **API key works in dev but not in production**: Asegúrate de que los Secrets estén sincronizados con `OPENAI_API_KEY2`
+- **Formatos de archivo no soportados**: La app ahora soporta todos los formatos de iPhone (HEIC, HEIF, M4A, CAF, etc.)
 
 ## Running the Project
 ```bash

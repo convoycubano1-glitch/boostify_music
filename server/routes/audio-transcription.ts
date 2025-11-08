@@ -7,15 +7,15 @@ import path from 'path';
 const router = Router();
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY2
 });
 
 // Ruta de prueba para verificar la API key
 router.get('/test-connection', async (req: Request, res: Response) => {
   try {
     console.log('🧪 Probando conexión con OpenAI...');
-    console.log('📋 API Key presente:', !!process.env.OPENAI_API_KEY);
-    console.log('📋 Primeros caracteres:', process.env.OPENAI_API_KEY?.substring(0, 20) + '...');
+    console.log('📋 API Key presente:', !!process.env.OPENAI_API_KEY2);
+    console.log('📋 Primeros caracteres:', process.env.OPENAI_API_KEY2?.substring(0, 20) + '...');
     
     // Intentar listar modelos como prueba simple
     const models = await openai.models.list();
@@ -43,13 +43,13 @@ router.post('/transcribe', async (req: Request, res: Response) => {
   
   try {
     console.log('🎤 Solicitud de transcripción recibida');
-    console.log('📋 OpenAI API Key configurada:', !!process.env.OPENAI_API_KEY);
+    console.log('📋 OpenAI API Key2 configurada:', !!process.env.OPENAI_API_KEY2);
     
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('❌ Error: OpenAI API key no está configurada');
+    if (!process.env.OPENAI_API_KEY2) {
+      console.error('❌ Error: OPENAI_API_KEY2 no está configurada');
       return res.status(500).json({
         success: false,
-        error: 'OpenAI API key no configurada en el servidor'
+        error: 'OPENAI_API_KEY2 no configurada en el servidor'
       });
     }
 
