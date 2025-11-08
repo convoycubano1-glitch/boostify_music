@@ -2,15 +2,16 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, ChevronRight, Check, Film, Music, Palette } from "lucide-react";
+import { Sparkles, ChevronRight, Check, Film, Music, Palette, MapPin, Shirt, Clock, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 interface ConceptSelectionModalProps {
   open: boolean;
-  concepts: any[]; // Array of 3 concept proposals
+  concepts: any[];
   directorName: string;
   onSelect: (concept: any) => void;
 }
@@ -32,18 +33,18 @@ export function ConceptSelectionModal({
   return (
     <Dialog open={open} modal={true}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-background via-background to-orange-950/20" data-testid="modal-concept-selection">
-        <DialogHeader>
-          <DialogTitle className="text-3xl font-bold text-center flex items-center justify-center gap-3">
-            <Sparkles className="h-8 w-8 text-orange-500" />
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-2xl md:text-3xl font-bold text-center flex items-center justify-center gap-3">
+            <Sparkles className="h-7 w-7 md:h-8 md:w-8 text-orange-500" />
             {directorName} te propone 3 conceptos creativos
           </DialogTitle>
-          <p className="text-center text-muted-foreground mt-2">
-            Selecciona el concepto que mejor se adapte a tu visión musical
+          <p className="text-center text-sm md:text-base text-muted-foreground mt-2">
+            Selecciona el concepto que mejor capture la esencia de tu música
           </p>
         </DialogHeader>
 
-        <ScrollArea className="h-[600px] pr-4 mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ScrollArea className="max-h-[65vh] pr-4 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {concepts.map((concept, index) => (
               <motion.div
                 key={index}
@@ -53,89 +54,137 @@ export function ConceptSelectionModal({
               >
                 <Card
                   className={cn(
-                    "p-6 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-xl h-full",
-                    selectedConcept === concept && "border-orange-500 bg-orange-500/10 shadow-orange-500/20"
+                    "p-5 md:p-6 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-xl h-full flex flex-col",
+                    selectedConcept === concept && "border-2 border-orange-500 bg-orange-500/10 shadow-lg shadow-orange-500/20"
                   )}
                   onClick={() => setSelectedConcept(concept)}
                   data-testid={`concept-${index}`}
                 >
-                  {/* Header with number */}
-                  <div className="flex items-start justify-between mb-4">
+                  {/* Cover Image */}
+                  {concept.coverImage && (
+                    <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden group">
+                      <img 
+                        src={concept.coverImage} 
+                        alt={concept.title}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4">
+                        <p className="text-white font-bold text-lg md:text-xl mb-1">{concept.artistName || 'Artist Name'}</p>
+                        <p className="text-white/90 text-sm md:text-base">{concept.songTitle || 'Song Title'}</p>
+                      </div>
+                      {selectedConcept === concept && (
+                        <div className="absolute top-2 right-2">
+                          <div className="bg-orange-500 text-white rounded-full p-2 shadow-lg">
+                            <Check className="h-5 w-5" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
                     <div className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold transition-all",
-                      selectedConcept === concept ? "bg-orange-500 text-white" : "bg-muted"
+                      "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-lg md:text-xl font-bold transition-all shadow-lg",
+                      selectedConcept === concept ? "bg-orange-500 text-white ring-4 ring-orange-500/30" : "bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900 dark:to-orange-800"
                     )}>
                       {selectedConcept === concept ? (
-                        <Check className="h-6 w-6" />
+                        <Check className="h-5 w-5 md:h-6 md:w-6" />
                       ) : (
                         <span>#{index + 1}</span>
                       )}
                     </div>
                     
                     {selectedConcept === concept && (
-                      <Badge className="bg-orange-500">
-                        Seleccionado
+                      <Badge className="bg-orange-500 text-white">
+                        ✓ Seleccionado
                       </Badge>
                     )}
                   </div>
 
-                  {/* Concept Title */}
+                  {/* Title */}
                   {concept.title && (
-                    <h3 className="text-xl font-bold mb-3">
+                    <h3 className="text-lg md:text-xl font-bold mb-3 text-foreground">
                       {concept.title}
                     </h3>
                   )}
 
-                  {/* Concept Description */}
-                  {concept.description && (
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-4">
-                      {concept.description}
-                    </p>
-                  )}
-
-                  {/* Visual Style */}
-                  {concept.visual_style && (
-                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Palette className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs font-semibold uppercase">Estilo Visual</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {concept.visual_style}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Narrative Approach */}
-                  {concept.narrative_approach && (
-                    <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Film className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs font-semibold uppercase">Narrativa</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {concept.narrative_approach}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Key Scenes */}
-                  {concept.key_scenes && concept.key_scenes.length > 0 && (
+                  {/* Story Concept - Main Description */}
+                  {concept.story_concept && (
                     <div className="mb-4">
+                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
+                        {concept.story_concept}
+                      </p>
+                    </div>
+                  )}
+
+                  <Separator className="my-3" />
+
+                  {/* Visual Theme */}
+                  {concept.visual_theme && (
+                    <div className="mb-3 p-3 bg-muted/30 rounded-lg border border-muted">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Eye className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Tema Visual</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {concept.visual_theme}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Mood Progression */}
+                  {concept.mood_progression && (
+                    <div className="mb-3 p-3 bg-muted/30 rounded-lg border border-muted">
                       <div className="flex items-center gap-2 mb-2">
                         <Music className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs font-semibold uppercase">Escenas Clave</span>
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Progresión Emocional</span>
                       </div>
-                      <div className="space-y-1">
-                        {concept.key_scenes.slice(0, 3).map((scene: string, i: number) => (
-                          <div key={i} className="text-xs text-muted-foreground flex items-start gap-2">
-                            <span className="text-orange-500 font-bold">•</span>
-                            <span className="line-clamp-2">{scene}</span>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {concept.mood_progression}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Wardrobe */}
+                  {concept.main_wardrobe && (
+                    <div className="mb-3 p-3 bg-muted/30 rounded-lg border border-muted">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Shirt className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Vestuario</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {concept.main_wardrobe.outfit_description}
+                      </p>
+                      {concept.main_wardrobe.colors && concept.main_wardrobe.colors.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {concept.main_wardrobe.colors.map((color: string, i: number) => (
+                            <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0">
+                              {color}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Locations */}
+                  {concept.locations && concept.locations.length > 0 && (
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MapPin className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Locaciones</span>
+                      </div>
+                      <div className="space-y-2">
+                        {concept.locations.slice(0, 2).map((location: any, i: number) => (
+                          <div key={i} className="pl-3 border-l-2 border-orange-500/50">
+                            <p className="text-xs font-semibold text-foreground">{location.name}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{location.description}</p>
                           </div>
                         ))}
-                        {concept.key_scenes.length > 3 && (
-                          <p className="text-xs text-muted-foreground italic">
-                            +{concept.key_scenes.length - 3} escenas más...
+                        {concept.locations.length > 2 && (
+                          <p className="text-xs text-muted-foreground italic pl-3">
+                            +{concept.locations.length - 2} locaciones más
                           </p>
                         )}
                       </div>
@@ -144,30 +193,43 @@ export function ConceptSelectionModal({
 
                   {/* Color Palette */}
                   {concept.color_palette && (
-                    <div className="mb-4">
-                      <span className="text-xs font-semibold uppercase text-muted-foreground">Paleta de Colores</span>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {(Array.isArray(concept.color_palette) 
-                          ? concept.color_palette 
-                          : typeof concept.color_palette === 'string' 
-                            ? concept.color_palette.split(',') 
-                            : []
-                        ).slice(0, 4).map((color: string, i: number) => (
-                          <Badge key={i} variant="outline" className="text-xs">
-                            {typeof color === 'string' ? color.trim() : color}
-                          </Badge>
-                        ))}
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Palette className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Paleta de Colores</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(() => {
+                          const colors = concept.color_palette.primary_colors || [];
+                          return colors.slice(0, 4).map((color: string, i: number) => (
+                            <Badge key={i} variant="outline" className="text-[10px] px-2 py-0.5">
+                              {color}
+                            </Badge>
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
 
-                  {/* Mood */}
-                  {concept.mood && (
-                    <div className="pt-4 border-t border-muted">
-                      <span className="text-xs font-semibold uppercase text-muted-foreground">Atmósfera</span>
-                      <p className="text-sm font-medium text-orange-500 mt-1">
-                        {concept.mood}
-                      </p>
+                  {/* Key Narrative Moments */}
+                  {concept.key_narrative_moments && concept.key_narrative_moments.length > 0 && (
+                    <div className="mt-auto pt-3 border-t border-muted">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Momentos Clave</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {concept.key_narrative_moments.slice(0, 2).map((moment: any, i: number) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
+                              {moment.timestamp}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground flex-1 line-clamp-2">
+                              {moment.description}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </Card>
@@ -177,17 +239,27 @@ export function ConceptSelectionModal({
         </ScrollArea>
 
         {/* Continue Button */}
-        <div className="flex justify-between items-center mt-6 pt-6 border-t">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 pt-4 border-t">
+          <div className="text-sm text-center sm:text-left">
             {selectedConcept ? (
-              <span className="text-green-500 flex items-center gap-2">
-                <Check className="h-4 w-4" />
-                Concepto seleccionado
-              </span>
+              <div className="space-y-1">
+                <p className="text-green-500 flex items-center justify-center sm:justify-start gap-2 font-semibold">
+                  <Check className="h-4 w-4" />
+                  Concepto seleccionado
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedConcept.title}
+                </p>
+              </div>
             ) : (
-              <span>
-                Selecciona uno de los 3 conceptos propuestos
-              </span>
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">
+                  Selecciona un concepto
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Elige la propuesta que mejor se adapte a tu visión
+                </p>
+              </div>
             )}
           </div>
           
@@ -195,10 +267,11 @@ export function ConceptSelectionModal({
             size="lg"
             onClick={handleContinue}
             disabled={!selectedConcept}
-            className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white gap-2 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto"
             data-testid="button-continue-concept"
           >
-            Continuar al Timeline
+            <Sparkles className="h-5 w-5" />
+            Generar Video Musical
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>

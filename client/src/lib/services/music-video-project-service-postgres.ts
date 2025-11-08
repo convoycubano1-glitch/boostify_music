@@ -35,6 +35,8 @@ export interface MusicVideoProjectPostgres {
     description: string;
     duration: { min: number; max: number };
   };
+  generatedConcepts?: any[];
+  selectedConcept?: any;
   status: "draft" | "generating_script" | "generating_images" | "generating_videos" | "completed";
   progress?: {
     scriptGenerated: boolean;
@@ -69,6 +71,8 @@ class MusicVideoProjectServicePostgres {
     videoStyle?: any;
     artistReferenceImages?: string[];
     selectedEditingStyle?: any;
+    generatedConcepts?: any[];
+    selectedConcept?: any;
     status?: "draft" | "generating_script" | "generating_images" | "generating_videos" | "completed";
     progress?: {
       scriptGenerated: boolean;

@@ -985,7 +985,71 @@ export function MusicVideoAI() {
       );
       
       console.log('✅ Conceptos generados:', concepts.length);
-      setConceptProposals(concepts);
+      
+      // Generar portadas para cada concepto
+      setProgressMessage("Generando portadas para cada concepto...");
+      const conceptsWithCovers = await Promise.all(
+        concepts.map(async (concept, index) => {
+          try {
+            console.log(`🎨 Generando portada ${index + 1}/3 para: ${concept.title}`);
+            
+            // Crear prompt para portada de álbum
+            const coverPrompt = `Professional music album cover art. Title: "${concept.title}". Artist: ${projectName || 'Artist Name'}. Song: ${selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title'}. Visual style: ${concept.visual_theme || concept.description}. ${concept.color_palette?.primary_colors ? `Color palette: ${concept.color_palette.primary_colors.join(', ')}` : ''}. Minimalist, professional, high-quality design.`;
+            
+            const response = await fetch('/api/gemini-image/generate-single', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                prompt: coverPrompt,
+                seed: seed + index + 1000
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error('Failed to generate cover');
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.imageUrl) {
+              console.log(`✅ Portada ${index + 1} generada exitosamente`);
+              
+              // Subir a Firebase Storage si hay usuario
+              let coverUrl = data.imageUrl;
+              if (user?.uid) {
+                try {
+                  coverUrl = await uploadImageFromUrl(data.imageUrl, user.uid, `${projectName}/concepts`);
+                  console.log(`✅ Portada ${index + 1} guardada en Firebase Storage`);
+                } catch (uploadError) {
+                  console.warn(`⚠️ Error subiendo portada ${index + 1} a Firebase:`, uploadError);
+                }
+              }
+              
+              return {
+                ...concept,
+                coverImage: coverUrl,
+                artistName: projectName || 'Artist Name',
+                songTitle: selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title'
+              };
+            } else {
+              throw new Error(data.error || 'No image URL returned');
+            }
+          } catch (error) {
+            console.error(`❌ Error generando portada ${index + 1}:`, error);
+            // Retornar concepto sin portada en caso de error
+            return {
+              ...concept,
+              coverImage: null,
+              artistName: projectName || 'Artist Name',
+              songTitle: selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title'
+            };
+          }
+        })
+      );
+      
+      console.log('✅ Todos los conceptos tienen portadas generadas');
+      
+      setConceptProposals(conceptsWithCovers);
       setIsGeneratingConcepts(false);
       setShowProgress(false);
       
@@ -1004,20 +1068,63 @@ export function MusicVideoAI() {
       // Volver al modal de director
       setShowDirectorSelection(true);
     }
-  }, [audioBuffer, artistReferenceImages, toast]);
+  }, [audioBuffer, artistReferenceImages, toast, projectName, selectedFile, seed, user, uploadImageFromUrl]);
 
   // Handler para cuando se selecciona un concepto
   const handleConceptSelection = useCallback(async (concept: any) => {
     console.log('🎨 Concepto seleccionado:', concept.title || 'Concepto');
     
     setSelectedConcept(concept);
+    
+    // Guardar concepto en la base de datos
+    if (user?.uid) {
+      try {
+        console.log('💾 Guardando concepto seleccionado en base de datos...');
+        
+        const projectData = {
+          userId: user.uid,
+          projectName: projectName || `Video ${Date.now()}`,
+          audioUrl: selectedFile?.name || '',
+          audioDuration: audioBuffer?.duration,
+          transcription: transcription,
+          timelineItems: timelineItems,
+          selectedDirector: videoStyle.selectedDirector,
+          videoStyle: videoStyle,
+          artistReferenceImages: artistReferenceImages,
+          selectedConcept: concept,
+          generatedConcepts: conceptProposals,
+          status: 'generating_script' as const,
+          progress: {
+            scriptGenerated: false,
+            imagesGenerated: 0,
+            totalImages: 0,
+            videosGenerated: 0,
+            totalVideos: 0
+          }
+        };
+        
+        await projectService.saveProject(projectData);
+        console.log('✅ Concepto guardado en base de datos');
+        
+      } catch (error) {
+        console.error('❌ Error guardando concepto:', error);
+        // Continuar de todas formas
+      }
+    }
+    
+    // Cerrar modal de concepto
     setShowConceptSelection(false);
+    
+    // Mostrar modal de progreso
+    setShowProgress(true);
+    setCurrentProgressStage("script");
+    setProgressMessage("Generando guión cinematográfico...");
     
     // Proceder a generar el script completo y las imágenes
     console.log('📜 Generando script final basado en el concepto...');
     await executeScriptGeneration();
     
-  }, [executeScriptGeneration]);
+  }, [executeScriptGeneration, user, projectName, selectedFile, audioBuffer, transcription, timelineItems, videoStyle, artistReferenceImages, conceptProposals, projectService]);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
