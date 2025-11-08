@@ -151,6 +151,66 @@ export async function getMockVoiceConversions(): Promise<VoiceConversionRecord[]
 }
 
 /**
+ * Sube una imagen desde una URL temporal a Firebase Storage
+ * @param imageUrl URL temporal de la imagen
+ * @param userId ID del usuario
+ * @param projectName Nombre del proyecto (opcional)
+ * @returns URL permanente de Firebase Storage
+ */
+export async function uploadImageFromUrl(imageUrl: string, userId: string, projectName?: string): Promise<string> {
+  try {
+    console.log("📤 Uploading image to Firebase Storage from URL:", imageUrl.substring(0, 100));
+    
+    // Descargar la imagen desde la URL temporal
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+    }
+    
+    const blob = await response.blob();
+    console.log("📥 Image downloaded, size:", blob.size, "bytes");
+    
+    // Crear un nombre único para el archivo
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${Math.random().toString(36).substring(7)}.jpg`;
+    
+    // Ruta organizada por usuario y proyecto
+    const projectPath = projectName ? `/${projectName.replace(/\s+/g, '_')}` : '';
+    const filePath = `music-video-images/${userId}${projectPath}/${fileName}`;
+    
+    console.log("📁 Uploading to path:", filePath);
+    
+    // Referencia al archivo en Storage
+    const storageRef = ref(storage, filePath);
+    
+    // Subir el archivo con metadatos
+    const metadata = {
+      contentType: blob.type || 'image/jpeg',
+      customMetadata: {
+        uploadedAt: new Date().toISOString(),
+        source: 'music-video-ai',
+        userId: userId
+      }
+    };
+    
+    const snapshot = await uploadBytes(storageRef, blob, metadata);
+    
+    // Obtener la URL permanente
+    const permanentUrl = await getDownloadURL(snapshot.ref);
+    console.log("✅ Image uploaded successfully to Firebase Storage");
+    console.log("🔗 Permanent URL:", permanentUrl.substring(0, 100));
+    
+    return permanentUrl;
+  } catch (error: any) {
+    console.error("❌ Error uploading image to Firebase Storage:", error);
+    
+    // Si falla la subida, devolver la URL original como fallback
+    console.log("⚠️ Fallback: Using original temporary URL");
+    return imageUrl;
+  }
+}
+
+/**
  * Elimina un archivo de Storage
  * @param fileUrl URL del archivo a eliminar
  */

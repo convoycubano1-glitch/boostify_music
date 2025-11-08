@@ -151,10 +151,11 @@ router.post('/generate-single-with-multiple-faces', async (req: Request, res: Re
 
     // Si Gemini tuvo éxito, retornar
     if (result.success && result.imageUrl) {
-      console.log('✅ Imagen generada con Gemini');
+      console.log('✅ Imagen generada con Gemini (Nano Banana)');
       return res.json({
         success: true,
-        imageUrl: result.imageUrl
+        imageUrl: result.imageUrl,
+        provider: 'gemini'
       });
     }
 
@@ -200,7 +201,7 @@ router.post('/generate-single-with-multiple-faces', async (req: Request, res: Re
     console.log(`🎨 Generando con FAL AI FLUX Kontext Pro (${referenceImagesBase64.length} referencias, seed: ${seed || 'auto'})...`);
     
     const falResponse = await axios.post(
-      'https://fal.run/fal-ai/flux-kontext-lora-pro',
+      'https://fal.run/fal-ai/flux-pro/kontext',
       requestBody,
       {
         headers: {

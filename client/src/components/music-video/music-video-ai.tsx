@@ -67,6 +67,7 @@ import { musicVideoProjectServicePostgres, type MusicVideoProjectPostgres } from
 import { ProjectManager } from "./project-manager";
 import { VideoModelSelector } from "./video-model-selector";
 import { getDirectorByName, getDirectorById, type DirectorProfile } from "../../data/directors";
+import { uploadImageFromUrl } from "../../lib/firebase-storage";
 
 // Fal.ai configuration
 fal.config({
@@ -279,6 +280,14 @@ export function MusicVideoAI() {
   const [transcription, setTranscription] = useState<string>("");
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<number | null>(null);
+  
+  // DEBUG: Monitor timeline changes
+  useEffect(() => {
+    console.log(`🔍 [TIMELINE STATE] Timeline updated: ${timelineItems.length} items`);
+    if (timelineItems.length > 0) {
+      console.log('🔍 [TIMELINE STATE] Timeline items:', timelineItems);
+    }
+  }, [timelineItems]);
   const [isExporting, setIsExporting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -483,9 +492,17 @@ export function MusicVideoAI() {
         scenes = parsedScript;
       }
       
+      console.log(`🔍 [SYNC DEBUG] Scenes count: ${scenes.length}`);
+      console.log('🔍 [SYNC DEBUG] Scenes data:', scenes);
+      
       if (scenes.length > 0) {
         const segments = createSegmentsFromScenes(scenes, buffer.duration);
+        console.log(`🔍 [SYNC DEBUG] Segments created: ${segments.length}`);
+        console.log('🔍 [SYNC DEBUG] Segments data:', segments);
+        
         setTimelineItems(segments);
+        console.log('✅ [SYNC DEBUG] setTimelineItems called with', segments.length, 'items');
+        
         setCurrentStep(4);
         
         // Scroll automático al módulo 4 "Estilo Visual"
@@ -495,6 +512,8 @@ export function MusicVideoAI() {
             block: 'center' 
           });
         }, 500);
+      } else {
+        console.error('❌ [SYNC DEBUG] NO SCENES FOUND IN SCRIPT!');
       }
       
       setProgressPercentage(100);
@@ -1158,7 +1177,7 @@ export function MusicVideoAI() {
         }
         
         // Check if we have valid scenes
-        if (scenes.length > 0 && scenes[0].scene_id) {
+        if (scenes.length > 0) {
           segments = createSegmentsFromScenes(scenes, audioBuffer.duration);
           toast({
             title: "Synchronizing",
@@ -1207,10 +1226,21 @@ export function MusicVideoAI() {
       const duration = (scene.duration || 3.5) * 1000; // Duration in milliseconds (default 3.5s)
       const endTime = startTime + duration;
       
-      console.log(`🎬 Creating clip ${scene.scene_id}: start=${scene.start_time}s, duration=${scene.duration}s`);
+      // Support both 'id' and 'scene_id' for compatibility
+      // Convert "scene-1" to 1, "scene-2" to 2, etc.
+      let sceneId = index + 1; // Default fallback
+      if (scene.id) {
+        const match = scene.id.toString().match(/\d+/);
+        sceneId = match ? parseInt(match[0]) : index + 1;
+      } else if (scene.scene_id) {
+        const match = scene.scene_id.toString().match(/\d+/);
+        sceneId = match ? parseInt(match[0]) : index + 1;
+      }
+      
+      console.log(`🎬 Creating clip ${sceneId}: start=${scene.start_time}s, duration=${scene.duration}s`);
       
       segments.push({
-        id: `scene-${scene.scene_id}`,
+        id: sceneId, // CRITICAL: Use numeric ID for React keys
         type: 'image', // Image type for proper display
         group: 1,
         title: scene.title || `Scene ${scene.scene_id}`,
@@ -1218,6 +1248,8 @@ export function MusicVideoAI() {
         end_time: endTime,
         duration: duration,
         shotType: scene.shot_type || scene.camera?.lens || 'MS', // Shot type from JSON
+        description: scene.description || `Scene ${scene.scene_id}`,
+        imagePrompt: scene.imagePrompt || scene.description || '', // CRITICAL: Add imagePrompt from scene
         thumbnail: '', // Will be assigned when image is generated
         imageUrl: '', // Will be assigned when image is generated
         itemProps: {
@@ -1790,8 +1822,18 @@ ${transcription}`;
           throw new Error(data.error || 'Error generating image');
         }
 
-        console.log(`✅ Imagen generada con referencias faciales`);
-        return data.imageUrl;
+        console.log(`✅ Imagen generada con referencias faciales: ${data.imageUrl.substring(0, 100)}`);
+        
+        // CRITICAL: Upload image to Firebase Storage for persistence
+        if (user?.uid) {
+          console.log(`📤 Subiendo imagen a Firebase Storage...`);
+          const permanentUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
+          console.log(`✅ Imagen guardada permanentemente en Firebase Storage`);
+          return permanentUrl;
+        } else {
+          console.warn(`⚠️ No user ID - returning temporary URL`);
+          return data.imageUrl;
+        }
         
       } catch (error) {
         console.error(`Error generating image with faces for segment ${item.id}:`, error);
@@ -1841,7 +1883,17 @@ ${transcription}`;
         
         if (imageUrl) {
           console.log(`Image successfully generated for segment ${item.id}: ${imageUrl}`);
-          return imageUrl;
+          
+          // CRITICAL: Upload image to Firebase Storage for persistence
+          if (user?.uid) {
+            console.log(`📤 Subiendo imagen de FLUX a Firebase Storage...`);
+            const permanentUrl = await uploadImageFromUrl(imageUrl, user.uid, projectName);
+            console.log(`✅ Imagen de FLUX guardada permanentemente en Firebase Storage`);
+            return permanentUrl;
+          } else {
+            console.warn(`⚠️ No user ID - returning temporary FLUX URL`);
+            return imageUrl;
+          }
         } else {
           throw new Error("No image URL received in response");
         }
@@ -2112,7 +2164,7 @@ ${transcription}`;
       return;
     }
 
-    const imageUrl = scene.generatedImage || scene.imageUrl || scene.firebaseUrl || '';
+    const imageUrl = (scene.generatedImage || scene.imageUrl || scene.firebaseUrl || '') as string;
 
     setIsGeneratingVideos(true);
     try {
@@ -2120,7 +2172,7 @@ ${transcription}`;
       
       const result = await generateVideoWithFAL(modelId, {
         prompt,
-        imageUrl: imageUrl,
+        imageUrl,
         duration: "5",
         aspectRatio: "16:9"
       });
@@ -2173,7 +2225,7 @@ ${transcription}`;
     try {
       const scenes = scenesWithImages.map(item => ({
         prompt: item.imagePrompt || item.description || "Cinematic video animation",
-        imageUrl: item.generatedImage || ""
+        imageUrl: (item.generatedImage || item.firebaseUrl || "") as string
       }));
 
       const results = await generateMultipleVideos(modelId, scenes);
@@ -2459,13 +2511,17 @@ ${transcription}`;
                 currentPrompt: item.imagePrompt || ''
               }));
 
-              // Generar la imagen
+              // Generar la imagen (ahora retorna URL permanente de Firebase)
               const imageUrl = await generateImageForSegment(item);
               
-              // Actualizar timeline inmediatamente
+              // Actualizar timeline inmediatamente con URL permanente
               setTimelineItems(prev => prev.map(timelineItem => 
                 timelineItem.id === item.id 
-                  ? { ...timelineItem, generatedImage: imageUrl as string } 
+                  ? { 
+                      ...timelineItem, 
+                      generatedImage: imageUrl as string,
+                      firebaseUrl: imageUrl as string  // También guardar en firebaseUrl para persistencia
+                    } 
                   : timelineItem
               ));
               

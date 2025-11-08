@@ -1,0 +1,41 @@
+ Generando UNA imagen con 3 referencias faciales
+📝 Prompt: Long shot of the artist walking through the Garden of Hope. She is now wearing a simple, natural lin...
+Generando imagen con 3 referencias faciales...
+🔑 Intentando generación con API key 1/1...
+✅ Generación exitosa con API key 1
+Imagen con rostros adaptados generada exitosamente
+✅ Imagen generada con Gemini
+9:42:38 PM [express] 📤 Response: POST /generate-single-with-multiple-faces 200 in 4918ms
+9:42:40 PM [express] 📥 Incoming request: POST /api/gemini-image/generate-single-with-multiple-faces
+🎬 Generando UNA imagen con 3 referencias faciales
+📝 Prompt: Extreme close-up of flowers in the Garden of Hope. The colors are vibrant and saturated. Water dropl...
+Generando imagen con 3 referencias faciales...
+🔑 Intentando generación con API key 1/1...
+✅ Generación exitosa con API key 1
+Texto de respuesta: I will generate an extreme close-up image of colorful flowers with water droplets in the Garden of Hope, maintaining a vibrant style and using natural lighting, while ensuring the person from the reference images is consistently integrated into the scene with the exact same facial features, skin tone, and identity, seamlessly blending their presence with the floral elements in a peaceful and serene setting.
+
+
+Imagen con rostros adaptados generada exitosamente
+✅ Imagen generada con Gemini
+9:42:46 PM [express] 📤 Response: POST /generate-single-with-multiple-faces 200 in 6226ms
+9:42:48 PM [express] 📥 Incoming request: POST /api/gemini-image/generate-single-with-multiple-faces
+🎬 Generando UNA imagen con 3 referencias faciales
+📝 Prompt: Close up of the artist's face in the Garden of Hope. She looks directly into the camera with a confi...
+Generando imagen con 3 referencias faciales...
+🔑 Intentando generación con API key 1/1...
+✅ Generación exitosa con API key 1
+Texto de respuesta: I will generate a close-up shot of the artist's face, ensuring her features, skin tone, and overall appearance remain consistent with the provided reference images. She will be looking directly at the camera with a confident expression and a slight smile, bathed in soft, golden-hour lighting. The background will be a blurred view of the Garden of Hope, created with a 50mm lens in a cinematic style with a color temperature of 5600K, and the camera will perform a slow upward tilt.
+
+
+Imagen con rostros adaptados generada exitosamente
+✅ Imagen generada con Gemini
+9:42:53 PM [express] 📤 Response: POST /generate-single-with-multiple-faces 200 in 4681ms
+9:42:56 PM [express] 📥 Incoming request: POST /api/gemini-image/generate-single-with-multiple-faces
+🎬 Generando UNA imagen con 3 referencias faciales
+📝 Prompt: Wide shot of the Garden of Hope from a drone perspective. The camera slowly rises, revealing the ful...
+Generando imagen con 3 referencias faciales...
+🔑 Intentando generación con API key 1/1...
+✅ Generación exitosa con API key 1
+Imagen con rostros adaptados generada exitosamente
+✅ Imagen generada con Gemini
+9:43:04 PM [express] 📤 Response: POST /generate-single-with-multiple-faces 200 in 7959ms
