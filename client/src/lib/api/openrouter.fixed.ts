@@ -945,6 +945,132 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
 }
 
 /**
+ * Genera 3 propuestas de concepto visual diferentes para que el usuario escoja
+ * 
+ * @param lyrics La transcripción de la letra de la canción
+ * @param directorName Nombre del director para adaptar el estilo
+ * @param artistReferences Imágenes de referencia del artista
+ * @param audioDuration Duración del audio en segundos
+ * @returns Promise con array de 3 conceptos visuales
+ */
+export async function generateThreeConceptProposals(
+  lyrics: string,
+  directorName: string,
+  artistReferences?: string[],
+  audioDuration?: number
+): Promise<MusicVideoConcept[]> {
+  try {
+    console.log("🎨 Generando 3 propuestas de concepto visual...");
+    
+    const apiKey = env.VITE_OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error("OpenRouter API key missing");
+    }
+    
+    const headers = {
+      "Authorization": `Bearer ${apiKey.trim()}`,
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "Boostify Music Video Concept Generator",
+      "Content-Type": "application/json"
+    };
+    
+    const prompt = `Based on these lyrics and the director ${directorName}, create THREE DIFFERENT creative concepts for a music video.
+
+LYRICS:
+${lyrics}
+
+${audioDuration ? `DURATION: ${Math.floor(audioDuration)} seconds` : ''}
+DIRECTOR: ${directorName}
+
+${artistReferences && artistReferences.length > 0 ? `NOTE: The artist has ${artistReferences.length} reference images provided. Use these to inform wardrobe and styling consistency.` : ''}
+
+Create THREE DISTINCT visual concepts, each with a different creative approach:
+- Concept 1: Bold and artistic
+- Concept 2: Narrative-driven storytelling
+- Concept 3: Performance-focused with strong visuals
+
+Return ONLY valid JSON with this structure:
+{
+  "concepts": [
+    {
+      "title": "Concept title",
+      "story_concept": "Complete narrative description...",
+      "visual_theme": "Main visual theme...",
+      "mood_progression": "How the mood evolves...",
+      "main_wardrobe": {
+        "outfit_description": "Detailed outfit description",
+        "colors": ["color1", "color2"],
+        "style": "urban/elegant/casual/etc",
+        "accessories": ["accessory1", "accessory2"],
+        "hair_makeup": "Hair and makeup description"
+      },
+      "locations": [
+        {
+          "name": "Location name",
+          "description": "Detailed description",
+          "mood": "Mood of this location",
+          "scenes_usage": "When/how this location is used"
+        }
+      ],
+      "color_palette": {
+        "primary_colors": ["color1", "color2"],
+        "accent_colors": ["color3"],
+        "mood_colors": "Description of color mood"
+      },
+      "recurring_visual_elements": ["element1", "element2"],
+      "key_narrative_moments": [
+        {
+          "timestamp": "0:30",
+          "description": "What happens at this moment"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert music video creative director working with ${directorName}. Create three distinct, creative concepts that showcase different approaches to the same song.`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.9,
+        max_tokens: 8000,
+        response_format: { type: "json_object" }
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error generating concepts: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const conceptContent = data.choices?.[0]?.message?.content;
+    
+    if (!conceptContent) {
+      throw new Error("No concept content received");
+    }
+    
+    const result = JSON.parse(conceptContent);
+    console.log("✅ 3 conceptos visuales generados exitosamente");
+    return result.concepts || [];
+    
+  } catch (error) {
+    console.error("Error generating concept proposals:", error);
+    throw error;
+  }
+}
+
+/**
  * Genera el concepto visual y narrativo del video musical PRIMERO
  * Este concepto se usa como base para generar un script más coherente
  * 
@@ -1297,7 +1423,15 @@ CRITICAL REQUIREMENTS:
 1. Return EXACTLY the number of scenes specified in the user prompt
 2. STRICT 50/50 BALANCE: Half the scenes MUST be "performance" (artist performing) and half MUST be "b-roll" (environmental/story scenes)
 3. VARY shot types - NEVER use the same type consecutively
-4. Use professional cinematography shot type codes
+4. Use FULL DESCRIPTIVE NAMES for shot types - NEVER use abbreviations
+
+🚨 MANDATORY: Use ONLY these EXACT shot type names (full names only):
+"Extreme Close-Up", "Close-Up", "Medium Close-Up", "Medium Shot", "Medium Wide Shot", 
+"Long Shot", "Wide Shot", "Extreme Wide Shot", "Over-the-Shoulder", "Point of View", 
+"High Angle", "Low Angle", "Dutch Angle"
+
+❌ WRONG: "ECU", "CU", "MCU", "MS", "WS", "EWS", "OTS", "POV", "HIGH", "LOW", "DUTCH"
+✅ CORRECT: "Close-Up", "Medium Shot", "Wide Shot", "Extreme Close-Up"
 
 RESPONSE FORMAT (JSON):
 {
@@ -1308,7 +1442,7 @@ RESPONSE FORMAT (JSON):
       "duration": 3.0,  // Must be between 2-4 seconds, aligned with musical phrases
       "lyrics_segment": "The exact lyrics being sung in this scene (for performance scenes)",
       "role": "performance" | "b-roll",
-      "shot_type": "ECU" | "CU" | "MCU" | "MS" | "MWS" | "LS" | "WS" | "EWS" | "OTS" | "POV" | "HIGH" | "LOW" | "DUTCH",
+      "shot_type": "Extreme Close-Up" | "Close-Up" | "Medium Close-Up" | "Medium Shot" | "Medium Wide Shot" | "Long Shot" | "Wide Shot" | "Extreme Wide Shot" | "Over-the-Shoulder" | "Point of View" | "High Angle" | "Low Angle" | "Dutch Angle",  // USE FULL NAMES ONLY!
       "camera_movement": "static" | "pan" | "tilt" | "dolly" | "zoom" | "handheld" | "steadicam" | "crane" | "drone" | "tracking",
       "lens": "14mm" | "24mm" | "35mm" | "50mm" | "85mm" | "135mm",
       "visual_style": "cinematic" | "vibrant" | "muted" | "high-contrast" | "moody" | "warm" | "cool" | "saturated" | "desaturated",
@@ -1337,20 +1471,28 @@ RESPONSE FORMAT (JSON):
   ]
 }
 
-SHOT TYPE GUIDE:
-- ECU (Extreme Close-Up): Eyes, lips, hands - maximum intimacy and emotion
-- CU (Close-Up): Face and shoulders - intimate connection
-- MCU (Medium Close-Up): Head to chest - personal moments
-- MS (Medium Shot): Waist up - standard performance
-- MWS (Medium Wide Shot): Knees up - movement with context
-- LS (Long Shot): Full body - complete performance
-- WS (Wide Shot): Artist in environment - establishing
-- EWS (Extreme Wide Shot): Vast environment - scale
-- OTS (Over-the-Shoulder): Perspective and connection
-- POV (Point of View): First person perspective
-- HIGH (High Angle): Vulnerability, looking down
-- LOW (Low Angle): Power, looking up
-- DUTCH (Dutch Angle): Tension, tilted frame
+🎥 SHOT TYPE NAMES - USE FULL DESCRIPTIVE NAMES ONLY:
+
+ALWAYS use the FULL NAME, NEVER abbreviations:
+- "Extreme Close-Up" → Eyes, lips, hands - maximum intimacy and emotion
+- "Close-Up" → Face and shoulders - intimate connection
+- "Medium Close-Up" → Head to chest - personal moments
+- "Medium Shot" → Waist up - standard performance
+- "Medium Wide Shot" → Knees up - movement with context
+- "Long Shot" → Full body - complete performance
+- "Wide Shot" → Artist in environment - establishing
+- "Extreme Wide Shot" → Vast environment - scale
+- "Over-the-Shoulder" → Perspective and connection
+- "Point of View" → First person perspective
+- "High Angle" → Vulnerability, looking down
+- "Low Angle" → Power, looking up
+- "Dutch Angle" → Tension, tilted frame
+
+🚨 CRITICAL: In your JSON response, the "shot_type" field MUST contain the FULL NAME:
+Example: "shot_type": "Close-Up"  ✅ CORRECT
+Example: "shot_type": "Medium Shot"  ✅ CORRECT
+Example: "shot_type": "CU"  ❌ WRONG - Use full name!
+Example: "shot_type": "MS"  ❌ WRONG - Use full name!
 
 CRITICAL BALANCE RULES:
 - For every scene with role "performance", create a scene with role "b-roll"

@@ -48,6 +48,7 @@ import {
   generateVideoPromptWithRetry, 
   generateMusicVideoScript,
   generateMusicVideoConcept,
+  generateThreeConceptProposals,
   type VideoPromptParams 
 } from "../../lib/api/openrouter";
 import { upscaleVideo } from "../../lib/api/video-service";
@@ -376,6 +377,75 @@ export function MusicVideoAI() {
     generatedImages: [] as Array<{ id: string; url: string; prompt: string }>,
     status: ''
   });
+  
+  // Estados para las 3 propuestas de concepto
+  const [conceptProposals, setConceptProposals] = useState<any[]>([]);
+  const [selectedConcept, setSelectedConcept] = useState<any | null>(null);
+  const [isGeneratingConcepts, setIsGeneratingConcepts] = useState(false);
+
+  // Función para generar 3 propuestas de concepto
+  const generateConceptProposals = async () => {
+    if (!transcription) {
+      toast({
+        title: "Error",
+        description: "Necesitas transcribir el audio primero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!videoStyle.selectedDirector) {
+      toast({
+        title: "Error",
+        description: "Selecciona un director primero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingConcepts(true);
+    setShowProgress(true);
+    setCurrentProgressStage("script");
+    setProgressPercentage(0);
+    setProgressMessage("Generando 3 propuestas de concepto...");
+
+    try {
+      console.log("🎨 Generando 3 propuestas de concepto...");
+      
+      const audioDurationInSeconds = audioBuffer?.duration || undefined;
+      
+      const concepts = await generateThreeConceptProposals(
+        transcription,
+        videoStyle.selectedDirector.name,
+        artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
+        audioDurationInSeconds
+      );
+
+      setConceptProposals(concepts);
+      setProgressPercentage(100);
+      
+      // Cambiar a paso 1.7 para mostrar los conceptos
+      setCurrentStep(1.7);
+      
+      toast({
+        title: "✅ Conceptos generados",
+        description: "Elige el concepto que más te guste para continuar",
+      });
+
+    } catch (error) {
+      console.error("Error generando conceptos:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error generando conceptos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingConcepts(false);
+      setShowProgress(false);
+      setProgressPercentage(0);
+      setProgressMessage("");
+    }
+  };
 
   // Función auxiliar para ejecutar la generación del script automáticamente
   const executeScriptGeneration = async (transcriptionText: string, buffer: AudioBuffer) => {
@@ -413,18 +483,14 @@ export function MusicVideoAI() {
       
       const audioDurationInSeconds = buffer.duration;
       
-      // 🆕 PASO 1: Generar concepto visual primero
-      console.log('🎨 [CONCEPTO] Generando concepto visual y narrativo...');
-      const concept = await generateMusicVideoConcept(
-        transcriptionText,
-        artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
-        audioDurationInSeconds
-      );
+      // 🆕 Usar el concepto seleccionado por el usuario
+      console.log('🎨 [CONCEPTO] Usando concepto seleccionado por el usuario...');
+      const concept = selectedConcept;
       
       if (concept) {
-        console.log('✅ [CONCEPTO] Concepto generado:', concept);
+        console.log('✅ [CONCEPTO] Concepto seleccionado:', concept);
       } else {
-        console.log('⚠️ [CONCEPTO] No se pudo generar concepto, continuando sin él');
+        console.log('⚠️ [CONCEPTO] No hay concepto seleccionado, continuando sin él');
       }
       
       // PASO 2: Generar script usando el concepto como base Y perfil completo del director
@@ -520,18 +586,18 @@ export function MusicVideoAI() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('✅ [SYNC] Timeline sincronizado exitosamente');
       
-      // CAMBIO: El flujo automático termina aquí
-      // El usuario decide cuándo generar las imágenes
-      setProgressPercentage(100);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setShowProgress(false);
-      
+      // 🚀 CONTINUAR AUTOMÁTICAMENTE CON GENERACIÓN DE IMÁGENES
+      // El estilo y director ya están en el JSON del script, no necesita selección manual
+      console.log('🚀 [FLUJO AUTOMÁTICO] Disparando generación de imágenes automáticamente...');
       toast({
         title: "Timeline sincronizado",
-        description: "El timeline está listo. Ahora puedes generar las imágenes cuando quieras.",
+        description: "Generando imágenes automáticamente con los datos del guion...",
       });
       
-      console.log('✅ [FLUJO AUTOMÁTICO] Terminado - Timeline listo para generación de imágenes');
+      // Llamar a executeImageGeneration pasando el script
+      await executeImageGeneration(script);
+      
+      console.log('✅ [FLUJO AUTOMÁTICO] Script → Timeline → Imágenes completado');
       
     } catch (error) {
       console.error("❌ [SYNC] Error in sync and image generation:", error);
@@ -4426,6 +4492,83 @@ ${transcription}`;
                         transition={{ duration: 0.3 }}
                         className="space-y-4"
                       >
+                        {/* Sección para seleccionar director */}
+                        <div className="border border-orange-500/30 rounded-lg p-4 bg-orange-950/20">
+                          <div className="flex items-center gap-2 mb-3">
+                            <User className="h-5 w-5 text-orange-400" />
+                            <Label className="text-base font-semibold text-orange-400">
+                              Seleccionar Director
+                            </Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            Elige un director para definir el estilo visual del video musical
+                          </p>
+                          
+                          {directors.length > 0 ? (
+                            <div className="space-y-3">
+                              <Select
+                                value={videoStyle.selectedDirector?.id || ""}
+                                onValueChange={(directorId) => {
+                                  const director = directors.find(d => d.id === directorId);
+                                  setVideoStyle(prev => ({
+                                    ...prev,
+                                    selectedDirector: director || null
+                                  }));
+                                }}
+                              >
+                                <SelectTrigger className="bg-black/40">
+                                  <SelectValue placeholder="Seleccionar director" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {directors.map((director) => (
+                                    <SelectItem key={director.id} value={director.id}>
+                                      <div className="flex items-center gap-2">
+                                        {director.imageUrl && (
+                                          <img
+                                            src={director.imageUrl}
+                                            alt={director.name}
+                                            className="w-8 h-8 rounded-full object-cover"
+                                          />
+                                        )}
+                                        <div className="grid gap-0.5">
+                                          <span className="font-medium">{director.name}</span>
+                                          <span className="text-xs text-muted-foreground">{director.specialty}</span>
+                                        </div>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              {videoStyle.selectedDirector && (
+                                <div className="p-3 bg-black/40 rounded-lg border border-orange-500/20">
+                                  <div className="flex items-center gap-3">
+                                    {videoStyle.selectedDirector.imageUrl && (
+                                      <img
+                                        src={videoStyle.selectedDirector.imageUrl}
+                                        alt={videoStyle.selectedDirector.name}
+                                        className="w-12 h-12 rounded-full object-cover"
+                                      />
+                                    )}
+                                    <div className="space-y-1">
+                                      <h4 className="font-semibold text-sm">{videoStyle.selectedDirector.name}</h4>
+                                      <p className="text-xs text-muted-foreground">{videoStyle.selectedDirector.specialty}</p>
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-orange-500 text-sm">★</span>
+                                        <span className="text-xs">{videoStyle.selectedDirector.rating?.toFixed(1) || 'N/A'}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="p-3 bg-black/40 rounded-lg">
+                              <p className="text-xs text-muted-foreground">Cargando directores...</p>
+                            </div>
+                          )}
+                        </div>
+                        
                         {/* Sección para subir imágenes de referencia del artista */}
                         <div className="border border-purple-500/30 rounded-lg p-4 bg-purple-950/20">
                           <div className="flex items-center gap-2 mb-3">
@@ -4488,18 +4631,126 @@ ${transcription}`;
                         </div>
                         
                         <Button
-                          onClick={() => setCurrentStep(2)}
+                          onClick={generateConceptProposals}
+                          disabled={!videoStyle.selectedDirector || isGeneratingConcepts}
                           className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-md"
                           data-testid="continue-to-next-step"
                         >
-                          <motion.div 
-                            className="mr-2"
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ repeat: Infinity, duration: 1.5 }}
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                          </motion.div>
-                          Continuar al siguiente paso
+                          {isGeneratingConcepts ? (
+                            <motion.div className="flex items-center justify-center">
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <span>Generando conceptos...</span>
+                            </motion.div>
+                          ) : (
+                            <motion.div 
+                              className="flex items-center"
+                              whileHover={{ scale: 1.02 }}
+                            >
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              <span>Generar 3 Propuestas de Concepto</span>
+                            </motion.div>
+                          )}
+                        </Button>
+                      </motion.div>
+                    )}
+                    
+                    {/* Paso 1.7: Mostrar 3 propuestas de concepto para que el usuario escoja */}
+                    {currentStep === 1.7 && conceptProposals.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="space-y-4 mt-6"
+                      >
+                        <div className="text-center mb-6">
+                          <h3 className="text-xl font-bold text-orange-500 mb-2">🎬 Elige tu Concepto Favorito</h3>
+                          <p className="text-sm text-muted-foreground">
+                            El director {videoStyle.selectedDirector?.name} ha creado 3 propuestas diferentes. Selecciona la que más te guste.
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {conceptProposals.map((concept, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className={cn(
+                                "border rounded-lg p-4 cursor-pointer transition-all",
+                                selectedConcept === concept
+                                  ? "border-orange-500 bg-orange-500/10 shadow-lg"
+                                  : "border-zinc-700 bg-black/40 hover:border-orange-400/50"
+                              )}
+                              onClick={() => setSelectedConcept(concept)}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-bold text-lg text-orange-400">
+                                  {concept.title || `Concepto ${index + 1}`}
+                                </h4>
+                                {selectedConcept === concept && (
+                                  <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                                )}
+                              </div>
+                              
+                              <div className="space-y-2 text-sm">
+                                <div>
+                                  <span className="font-semibold text-white">Historia:</span>
+                                  <p className="text-muted-foreground line-clamp-3">
+                                    {concept.story_concept}
+                                  </p>
+                                </div>
+                                
+                                <div>
+                                  <span className="font-semibold text-white">Tema Visual:</span>
+                                  <p className="text-muted-foreground line-clamp-2">
+                                    {concept.visual_theme}
+                                  </p>
+                                </div>
+                                
+                                {concept.color_palette && (
+                                  <div>
+                                    <span className="font-semibold text-white">Paleta:</span>
+                                    <div className="flex gap-1 mt-1">
+                                      {concept.color_palette.primary_colors?.slice(0, 3).map((color: string, i: number) => (
+                                        <div
+                                          key={i}
+                                          className="w-6 h-6 rounded-full border border-white/20"
+                                          style={{ backgroundColor: color }}
+                                          title={color}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                        
+                        <Button
+                          onClick={() => {
+                            if (selectedConcept) {
+                              setCurrentStep(2);
+                              toast({
+                                title: "Concepto seleccionado",
+                                description: "Ahora puedes generar el guion completo",
+                              });
+                            } else {
+                              toast({
+                                title: "Selecciona un concepto",
+                                description: "Haz clic en una de las propuestas para continuar",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          disabled={!selectedConcept}
+                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-md"
+                        >
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Continuar con este concepto
                         </Button>
                       </motion.div>
                     )}
