@@ -97,7 +97,9 @@ export async function createCheckoutSession(priceId: string): Promise<string> {
     }
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    throw new Error('No se pudo crear la sesión de pago. Por favor, contacta al soporte.');
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    throw error instanceof Error ? error : new Error('No se pudo crear la sesión de pago. Por favor, contacta al soporte.');
   }
 }
 

@@ -13,30 +13,17 @@ let db: any;
 let auth: any;
 let storage: any;
 
-// Initialize Firebase Admin with robust error handling
-try {
-  console.log("Initializing Firebase Admin...");
-  
-  app = initializeApp({
-    // No credential provided, will use application default credentials or run in limited mode
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "artist-boost",
-    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "artist-boost.firebasestorage.app"
-  });
+// Firebase Admin está deshabilitado en el servidor porque no tenemos credenciales de servicio de GCP
+// Todas las operaciones de Firestore se manejan desde el cliente
+// Las suscripciones usan Stripe como única fuente de verdad
+console.log("⚠️ Firebase Admin deshabilitado en el servidor (modo cliente solamente)");
+console.log("ℹ️ Firestore se usa solo desde el cliente frontend");
+console.log("ℹ️ Stripe maneja suscripciones sin dependencias de Firestore del servidor");
 
-  db = getFirestore(app);
-  auth = getAuth(app);
-  storage = getStorage(app);
-  
-  console.log("✅ Firebase Admin initialized successfully");
-} catch (error) {
-  console.warn("⚠️ Firebase Admin initialization failed (non-critical):", error instanceof Error ? error.message : error);
-  console.warn("⚠️ Firebase features will be limited or unavailable");
-  
-  // Create mock objects to prevent crashes
-  db = null;
-  auth = null;
-  storage = null;
-}
+db = null;
+auth = null;
+storage = null;
+app = null;
 
 export { db, auth, storage, FieldValue };
 

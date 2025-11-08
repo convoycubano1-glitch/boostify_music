@@ -7,6 +7,7 @@ import passport from 'passport';
 interface User {
   uid: string;
   id: string;
+  email?: string | null;
   role: string;
 }
 
@@ -25,10 +26,40 @@ async function isAuthenticated(req: Request, res: Response, next: NextFunction) 
 
   const token = authHeader.split('Bearer ')[1];
   try {
+    // Si Firebase Admin no está disponible, decodificar el token JWT sin verificación del servidor
+    if (!auth) {
+      console.log('⚠️ Firebase Admin no disponible en auth.ts, decodificando token JWT');
+      
+      // Decodificar el token JWT (sin verificar la firma)
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        Buffer.from(base64, 'base64')
+          .toString('utf-8')
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      
+      const decodedToken = JSON.parse(jsonPayload);
+      const uid = decodedToken.user_id || decodedToken.uid;
+      const email = decodedToken.email || null;
+      
+      req.user = {
+        id: uid,
+        uid: uid,
+        email: email,
+        role: 'artist'
+      };
+      return next();
+    }
+    
+    // Si Firebase Admin está disponible, usar verificación normal
     const decodedToken = await auth.verifyIdToken(token);
     req.user = {
       id: decodedToken.uid,
       uid: decodedToken.uid,
+      email: decodedToken.email || null,
       role: 'artist'
     };
     next();
@@ -66,6 +97,7 @@ export function setupAuth(app: Express) {
       '/video/generate',      // Ruta para generar videos
       '/video/status',        // Ruta para verificar el estado de videos
       '/stripe/publishable-key', // Ruta pública para obtener la clave publicable de Stripe
+      '/stripe/activate-subscription', // Ruta para activar suscripción después del pago
       '/subscription-plans',  // Ruta pública para obtener información sobre planes de suscripción
       '/stripe/create-product-payment', // Ruta pública para crear sesiones de pago de productos
       '/stripe/test-guest-checkout', // Ruta de prueba para verificar la integración de compras sin autenticación

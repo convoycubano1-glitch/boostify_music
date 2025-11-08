@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
@@ -10,11 +10,16 @@ import { useSubscription } from '../lib/context/subscription-context';
  */
 export default function SubscriptionCancelledPage() {
   const { refreshSubscription, subscription } = useSubscription();
+  const [hasRefreshed, setHasRefreshed] = useState(false);
   
-  // Refresh subscription status when page loads
+  // Refresh subscription status when page loads (only once)
   useEffect(() => {
-    refreshSubscription();
-  }, [refreshSubscription]);
+    if (!hasRefreshed) {
+      refreshSubscription().finally(() => {
+        setHasRefreshed(true);
+      });
+    }
+  }, [hasRefreshed, refreshSubscription]);
   
   return (
     <div className="container max-w-2xl mx-auto px-4 py-16">

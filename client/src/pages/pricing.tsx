@@ -125,27 +125,6 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-zinc-900 text-white">
-      {/* Hero section with gradient background */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 z-0" />
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-orange-500/20 rounded-full filter blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-red-500/20 rounded-full filter blur-3xl" />
-        
-        <motion.div 
-          className="container relative z-10 mx-auto px-4 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-            Find the Perfect Plan for Your Music Career
-          </h1>
-          <p className="text-xl mb-12 max-w-3xl mx-auto text-white/80">
-            Unlock powerful tools and resources designed to elevate your music production and promotion strategy
-          </p>
-        </motion.div>
-      </section>
-      
       {/* Pricing plans section */}
       <section className="py-16 relative z-10">
         <div className="container mx-auto px-4">

@@ -758,8 +758,8 @@ export default function ProducerToolsPage() {
             </div>
           </div>
 
-          {/* AI Tools Section */}
-          <div className="mb-12">
+          {/* AI Tools Section - Temporarily disabled */}
+          {/* <div className="mb-12">
             <div className="flex flex-col md:flex-row items-center justify-between mb-8">
               <div>
                 <h2 className="text-3xl font-bold text-gradient-primary mb-2">AI Music Generation</h2>
@@ -776,10 +776,10 @@ export default function ProducerToolsPage() {
             >
               <MusicAIGenerator />
             </motion.div>
-          </div>
+          </div> */}
           
-          {/* Audio Mastering & Voice Conversion Section */}
-          <div className="mt-8">
+          {/* Audio Mastering & Voice Conversion Section - Temporarily disabled */}
+          {/* <div className="mt-8">
             <div className="flex flex-col md:flex-row items-center justify-between mb-8">
               <div className="text-center md:text-left">
                 <h2 className="text-3xl font-bold text-gradient-primary mb-2">Audio Production Suite</h2>
@@ -789,7 +789,6 @@ export default function ProducerToolsPage() {
                 <Music4 className="h-3.5 w-3.5 mr-1" /> Professional Quality
               </Badge>
             </div>
-            {/* Sección móvil optimizada con disposición de columnas */}
             <div className="space-y-6 lg:space-y-0 lg:grid lg:gap-8 lg:grid-cols-2">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -798,7 +797,6 @@ export default function ProducerToolsPage() {
                 className="backdrop-blur-sm border border-blue-500/10 rounded-lg shadow-lg hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300"
               >
                 <div className="relative">
-                  {/* Selector para cambiar entre la versión antigua y moderna */}
                   <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1.5 border border-muted shadow-sm">
                     <span className="text-xs text-muted-foreground font-medium">
                       {useModernUI ? "Moderna" : "Clásica"}
@@ -810,7 +808,6 @@ export default function ProducerToolsPage() {
                     />
                   </div>
                   
-                  {/* Renderizado condicional del componente */}
                   {useModernUI ? <ModernAudioSuite /> : <AudioMastering />}
                 </div>
               </motion.div>
@@ -823,7 +820,7 @@ export default function ProducerToolsPage() {
                 <ProfessionalVoiceCloning />
               </motion.div>
             </div>
-          </div>
+          </div> */}
         </div>
       </ScrollArea>
     </div>

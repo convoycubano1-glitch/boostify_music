@@ -24,7 +24,8 @@ import {
   Puzzle,
   PlusCircle,
   Zap,
-  Sparkles
+  Sparkles,
+  X
 } from "lucide-react";
 import { SiInstagram, SiSpotify, SiYoutube } from "react-icons/si";
 import "./ecosystem-dashboard.css";
@@ -86,6 +87,21 @@ export default function EcosystemDashboard() {
 
   // Estado para la herramienta seleccionada
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  
+  // Estado para el ancho de la ventana (para responsividad)
+  const [windowWidth, setWindowWidth] = useState<number>(
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  );
+
+  // Efecto para manejar el redimensionamiento de la ventana
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Efecto para cargar las métricas del usuario
   useEffect(() => {
@@ -113,9 +129,9 @@ export default function EcosystemDashboard() {
     fetchMetrics();
   }, [user, toast]);
 
-  // Definir las herramientas para cada órbita con sus ángulos (calculados automáticamente más abajo)
+  // Definir las herramientas para las dos órbitas EXTERIORES
   const toolsData: EcosystemTool[] = [
-    // Órbita interna - Herramientas esenciales
+    // Órbita media (segunda línea) - Herramientas principales
     {
       id: "music-generator",
       name: "Music Generator",
@@ -125,7 +141,7 @@ export default function EcosystemDashboard() {
       stats: metrics.musicGenerated,
       statsLabel: "Tracks",
       color: "text-orange-500",
-      orbit: 'inner'
+      orbit: 'middle'
     },
     {
       id: "music-videos",
@@ -136,7 +152,7 @@ export default function EcosystemDashboard() {
       stats: metrics.musicVideos,
       statsLabel: "Videos",
       color: "text-purple-600",
-      orbit: 'inner'
+      orbit: 'middle'
     },
     {
       id: "ai-agents",
@@ -147,7 +163,7 @@ export default function EcosystemDashboard() {
       stats: metrics.aiAgentsUsed,
       statsLabel: "Active Agents",
       color: "text-purple-500",
-      orbit: 'inner'
+      orbit: 'middle'
     },
     {
       id: "artist-image",
@@ -158,10 +174,8 @@ export default function EcosystemDashboard() {
       stats: metrics.styleRecommendations,
       statsLabel: "Styles",
       color: "text-pink-500",
-      orbit: 'inner'
+      orbit: 'middle'
     },
-
-    // Órbita media - Herramientas de distribución
     {
       id: "store",
       name: "Merchandise",
@@ -174,52 +188,6 @@ export default function EcosystemDashboard() {
       orbit: 'middle'
     },
     {
-      id: "youtube",
-      name: "YouTube Boost",
-      description: "Grow your channel",
-      icon: SiYoutube,
-      route: "/youtube-views",
-      stats: metrics.youtubeViews,
-      statsLabel: "Views",
-      color: "text-red-500",
-      orbit: 'middle'
-    },
-    {
-      id: "instagram",
-      name: "Instagram Boost",
-      description: "Increase Instagram reach",
-      icon: SiInstagram,
-      route: "/instagram-boost",
-      stats: metrics.instagramFollowers,
-      statsLabel: "Followers",
-      color: "text-pink-500",
-      orbit: 'middle'
-    },
-    {
-      id: "spotify",
-      name: "Spotify Boost",
-      description: "Increase streams",
-      icon: SiSpotify,
-      route: "/spotify",
-      stats: metrics.spotifyFollowers,
-      statsLabel: "Followers",
-      color: "text-green-500",
-      orbit: 'middle'
-    },
-    {
-      id: "tv",
-      name: "Boostify TV",
-      description: "Watch content",
-      icon: Tv,
-      route: "/boostify-tv",
-      stats: 24,
-      statsLabel: "Videos",
-      color: "text-red-500",
-      orbit: 'middle'
-    },
-
-    // Órbita externa - Herramientas analíticas y educativas
-    {
       id: "education",
       name: "Education Hub",
       description: "Learn music industry skills",
@@ -228,7 +196,7 @@ export default function EcosystemDashboard() {
       stats: metrics.coursesEnrolled,
       statsLabel: "Courses",
       color: "text-blue-500",
-      orbit: 'outer'
+      orbit: 'middle'
     },
     {
       id: "analytics",
@@ -239,6 +207,52 @@ export default function EcosystemDashboard() {
       stats: metrics.totalEngagement,
       statsLabel: "Engagement",
       color: "text-blue-600",
+      orbit: 'middle'
+    },
+
+    // Órbita externa (tercera línea) - Servicios y redes sociales
+    {
+      id: "youtube",
+      name: "YouTube Boost",
+      description: "Grow your channel",
+      icon: SiYoutube,
+      route: "/youtube-views",
+      stats: metrics.youtubeViews,
+      statsLabel: "Views",
+      color: "text-red-500",
+      orbit: 'outer'
+    },
+    {
+      id: "instagram",
+      name: "Instagram Boost",
+      description: "Increase Instagram reach",
+      icon: SiInstagram,
+      route: "/instagram-boost",
+      stats: metrics.instagramFollowers,
+      statsLabel: "Followers",
+      color: "text-pink-500",
+      orbit: 'outer'
+    },
+    {
+      id: "spotify",
+      name: "Spotify Boost",
+      description: "Increase streams",
+      icon: SiSpotify,
+      route: "/spotify",
+      stats: metrics.spotifyFollowers,
+      statsLabel: "Followers",
+      color: "text-green-500",
+      orbit: 'outer'
+    },
+    {
+      id: "tv",
+      name: "Boostify TV",
+      description: "Watch content",
+      icon: Tv,
+      route: "/boostify-tv",
+      stats: 24,
+      statsLabel: "Videos",
+      color: "text-red-500",
       orbit: 'outer'
     },
     {
@@ -297,7 +311,7 @@ export default function EcosystemDashboard() {
     return {
       ...tool,
       angle: orbitIndex * angleStep,
-      orbitSpeed: tool.orbit === 'inner' ? 120 : tool.orbit === 'middle' ? 180 : 240, // Velocidad más lenta (120, 180, 240 segundos)
+      orbitSpeed: tool.orbit === 'middle' ? 80 : 120, // Velocidad más lenta (80, 120 segundos)
       animationOffset: 0 // Añadir para evitar errores
     };
   });
@@ -305,12 +319,43 @@ export default function EcosystemDashboard() {
   // Estado para el seguimiento de la posición de cada herramienta (para efectos de tamaño)
   const [toolPositions, setToolPositions] = useState<{[key: string]: {angle: number, distanceFromCenter: number}}>({}); 
 
-  // Función para calcular la posición en la órbita
+  // Función para calcular la posición en la órbita con soporte responsive
+  // Los radios deben coincidir exactamente con el CSS de las órbitas (mitad del ancho/alto)
   const getPositionInOrbit = (orbit: string, angle: number) => {
-    // Radios ajustados para coincidir con los nuevos tamaños de órbitas
-    const radius = orbit === 'inner' ? 110 : orbit === 'middle' ? 180 : 250;
-    const x = Math.cos((angle - 90) * Math.PI / 180) * radius;
-    const y = Math.sin((angle - 90) * Math.PI / 180) * radius;
+    // Detectar el tamaño de la pantalla para ajustar radios
+    const width = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    
+    let innerRadius = 100;  // 200px / 2
+    let middleRadius = 160; // 320px / 2
+    let outerRadius = 220;  // 440px / 2
+    
+    // Ajustar radios según el tamaño de pantalla (debe coincidir con el CSS)
+    if (width >= 1440) {
+      innerRadius = 125;  // 250px / 2
+      middleRadius = 200; // 400px / 2
+      outerRadius = 275;  // 550px / 2
+    } else if (width <= 480) {
+      innerRadius = 60;   // 120px / 2
+      middleRadius = 100; // 200px / 2
+      outerRadius = 140;  // 280px / 2
+    } else if (width <= 640) {
+      innerRadius = 70;   // 140px / 2
+      middleRadius = 120; // 240px / 2
+      outerRadius = 170;  // 340px / 2
+    } else if (width <= 768) {
+      innerRadius = 80;   // 160px / 2
+      middleRadius = 135; // 270px / 2
+      outerRadius = 190;  // 380px / 2
+    } else if (width <= 1024) {
+      innerRadius = 90;   // 180px / 2
+      middleRadius = 150; // 300px / 2
+      outerRadius = 210;  // 420px / 2
+    }
+    
+    const radius = orbit === 'inner' ? innerRadius : orbit === 'middle' ? middleRadius : outerRadius;
+    const angleRad = (angle - 90) * Math.PI / 180;
+    const x = Math.cos(angleRad) * radius;
+    const y = Math.sin(angleRad) * radius;
     return { x, y, radius };
   };
   
@@ -355,33 +400,28 @@ export default function EcosystemDashboard() {
   }, []);
 
   return (
+    <>
+    {/* Título antes del contenedor de órbitas */}
+    <motion.div 
+      className="text-center px-4 mb-6 md:mb-8 lg:mb-10"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+    >
+      <h2 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2 bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+        Your Complete Creator Suite
+      </h2>
+      <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto">
+        Everything you need to create, grow, and monetize your content
+      </p>
+    </motion.div>
+
     <div className="ecosystem-container">
       {/* Fondo con degradado */}
       <div className="ecosystem-bg-gradient" />
       
       {/* Efecto de partículas o brillo */}
       <div className="ecosystem-bg-texture" style={{ backgroundImage: "url('/assets/noise.svg')" }} />
-      
-      {/* Textos motivacionales */}
-      <div className="motivational-text-container">
-        <motion.div 
-          className="boostify-brand"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.5 }}
-        >
-          <span className="text-orange-500 font-bold">Boostify</span>
-        </motion.div>
-        
-        <motion.div 
-          className="motivational-text"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: messageVisible ? 1 : 0 }}
-          transition={{ duration: 1 }}
-        >
-          {motivationalMessages[currentMessageIndex]}
-        </motion.div>
-      </div>
       
       {/* Centro - Video en loop difuminado con resplandor mejorado */}
       <motion.div 
@@ -414,182 +454,83 @@ export default function EcosystemDashboard() {
         </video>
       </motion.div>
       
-      {/* Órbita interna */}
-      <div className="orbit inner-orbit">
-        {toolsWithAngles
-          .filter(tool => tool.orbit === 'inner')
-          .map((tool, index) => {
-            // Calcular la posición exacta en la órbita
-            const angle = (index * (360 / toolsWithAngles.filter(t => t.orbit === 'inner').length)) * (Math.PI / 180);
-            const radius = 110; // Radio reducido para coincidir con el nuevo tamaño de órbita
-            const x = radius * Math.cos(angle);
-            const y = radius * Math.sin(angle);
-            
-            return (
-              <motion.div
-                key={tool.id}
-                className="orbit-item"
-                style={{
-                  position: 'absolute',
-                  x, y,
-                  transformOrigin: "center center" // Para asegurar rotación desde el centro
-                }}
-                initial={{ rotate: index * (360 / toolsWithAngles.filter(t => t.orbit === 'inner').length) }}
-                animate={{
-                  rotate: [index * (360 / toolsWithAngles.filter(t => t.orbit === 'inner').length), 
-                          index * (360 / toolsWithAngles.filter(t => t.orbit === 'inner').length) + 360]
-                }}
-                transition={{
-                  duration: 40, // Mucho más lento para que parezca respiración
-                  repeat: Infinity,
-                  ease: "easeInOut" // Cambio a easeInOut para un movimiento más natural
-                }}
-              >
-                <motion.div 
-                  className="ecosystem-tool-icon"
-                  // Este elemento NO debe rotar para mantener la orientación correcta
-                  animate={{ 
-                    // Contra-rotación para mantener el icono siempre derecho
-                    rotate: [-index * (360 / toolsWithAngles.filter(t => t.orbit === 'inner').length), 
-                            -index * (360 / toolsWithAngles.filter(t => t.orbit === 'inner').length) - 360]
-                  }}
-                  transition={{ duration: 40, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <Link href={tool.route}>
-                    <div 
-                      className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper"
-                      onClick={() => setSelectedTool(tool.id)}
-                    >
-                      <tool.icon className={`h-6 w-6 ${tool.color}`} />
-                      
-                      <div className="ecosystem-tool-label">
-                        {tool.name}
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              </motion.div>
-            );
-          })}
-      </div>
+      {/* Órbita interna - solo línea decorativa, sin iconos */}
+      <div className="orbit inner-orbit"></div>
       
-      {/* Órbita media */}
+      {/* Órbita media - primera órbita con iconos */}
       <div className="orbit middle-orbit">
         {toolsWithAngles
           .filter(tool => tool.orbit === 'middle')
           .map((tool, index) => {
-            // Calcular la posición exacta en la órbita
-            const angle = (index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length)) * (Math.PI / 180);
-            const radius = 180; // Radio reducido para coincidir con el nuevo tamaño de órbita
-            const x = radius * Math.cos(angle);
-            const y = radius * Math.sin(angle);
+            const middleTools = toolsWithAngles.filter(t => t.orbit === 'middle');
+            const angleInDegrees = index * (360 / middleTools.length);
+            const position = getPositionInOrbit('middle', angleInDegrees);
             
             return (
-              <motion.div
+              <div
                 key={tool.id}
                 className="orbit-item"
                 style={{
                   position: 'absolute',
-                  x, y,
-                  transformOrigin: "center center" // Para asegurar rotación desde el centro
-                }}
-                initial={{ rotate: index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length) }}
-                animate={{
-                  rotate: [index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length), 
-                          index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length) + 360]
-                }}
-                transition={{
-                  duration: 45, // Ligeramente más rápido que el interno
-                  repeat: Infinity,
-                  ease: "easeInOut" // Cambio a easeInOut para un movimiento más natural
+                  left: `calc(50% + ${position.x}px)`,
+                  top: `calc(50% + ${position.y}px)`,
+                  transform: 'translate(-50%, -50%)',
                 }}
               >
-                <motion.div 
-                  className="ecosystem-tool-icon"
-                  // Contra-rotación para mantener el icono correctamente orientado
-                  animate={{ 
-                    rotate: [-index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length), 
-                            -index * (360 / toolsWithAngles.filter(t => t.orbit === 'middle').length) - 360]
-                  }}
-                  transition={{ duration: 45, repeat: Infinity, ease: "easeInOut" }}
-                >
+                <div className="ecosystem-tool-icon">
                   <Link href={tool.route}>
                     <div 
-                      className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper"
-                      onClick={() => setSelectedTool(tool.id)}
+                      className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex items-center justify-center cursor-pointer tool-icon-wrapper"
+                      data-testid={`tool-icon-${tool.id}`}
                     >
-                      <tool.icon className={`h-6 w-6 ${tool.color}`} />
+                      <tool.icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 ${tool.color}`} />
                       
                       <div className="ecosystem-tool-label">
                         {tool.name}
                       </div>
                     </div>
                   </Link>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             );
           })}
       </div>
       
-      {/* Órbita externa */}
+      {/* Órbita externa - segunda órbita con iconos */}
       <div className="orbit outer-orbit">
         {toolsWithAngles
           .filter(tool => tool.orbit === 'outer')
           .map((tool, index) => {
-            // Calcular la posición exacta en la órbita
-            const angle = (index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length)) * (Math.PI / 180);
-            const radius = 250; // Radio reducido para coincidir con el nuevo tamaño de órbita
-            const x = radius * Math.cos(angle);
-            const y = radius * Math.sin(angle);
-            
-            // Calcular el ángulo actual para saber si está cerca del centro
-            const currentAngle = 0; // Inicializado a 0, se actualizará con onAnimationUpdate
-            const isCloseToCenterClass = isApproachingCenter(tool.id, currentAngle) ? "approaching-center" : "";
+            const outerTools = toolsWithAngles.filter(t => t.orbit === 'outer');
+            const angleInDegrees = index * (360 / outerTools.length);
+            const position = getPositionInOrbit('outer', angleInDegrees);
             
             return (
-              <motion.div
+              <div
                 key={tool.id}
-                id={`orbit-item-${tool.id}`}
-                className={`orbit-item ${isCloseToCenterClass}`}
+                className="orbit-item"
                 style={{
                   position: 'absolute',
-                  x, y,
-                  transformOrigin: "center center" // Para asegurar rotación desde el centro
-                }}
-                initial={{ rotate: index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length) }}
-                animate={{
-                  rotate: [index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length), 
-                          index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length) + 360]
-                }}
-                transition={{
-                  duration: 50, // Ligeramente más rápido que el medio
-                  repeat: Infinity,
-                  ease: "easeInOut" // Movimiento más natural tipo respiración
+                  left: `calc(50% + ${position.x}px)`,
+                  top: `calc(50% + ${position.y}px)`,
+                  transform: 'translate(-50%, -50%)',
                 }}
               >
-                <motion.div 
-                  className="ecosystem-tool-icon"
-                  // Contra-rotación para mantener el icono correctamente orientado
-                  animate={{ 
-                    rotate: [-index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length), 
-                            -index * (360 / toolsWithAngles.filter(t => t.orbit === 'outer').length) - 360]
-                  }}
-                  transition={{ duration: 50, repeat: Infinity, ease: "easeInOut" }}
-                >
+                <div className="ecosystem-tool-icon">
                   <Link href={tool.route}>
                     <div 
-                      className="h-14 w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex flex-col items-center justify-center cursor-pointer tool-icon-wrapper"
-                      onClick={() => setSelectedTool(tool.id)}
+                      className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full bg-background/40 backdrop-blur-md border border-orange-500/30 shadow-lg flex items-center justify-center cursor-pointer tool-icon-wrapper"
+                      data-testid={`tool-icon-${tool.id}`}
                     >
-                      <tool.icon className={`h-6 w-6 ${tool.color}`} />
+                      <tool.icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 ${tool.color}`} />
                       
                       <div className="ecosystem-tool-label">
                         {tool.name}
                       </div>
                     </div>
                   </Link>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             );
           })}
       </div>
@@ -619,40 +560,47 @@ export default function EcosystemDashboard() {
               if (!tool) return null;
               
               return (
-                <div className="flex items-start gap-4">
-                  <div className={`h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0`}>
-                    <tool.icon className={`h-6 w-6 ${tool.color}`} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold">{tool.name}</h3>
-                    <p className="text-sm text-muted-foreground">{tool.description}</p>
-                    <div className="mt-2 flex items-baseline">
-                      <span className={`text-2xl font-bold ${tool.color}`}>
-                        {typeof tool.stats === 'number' ? tool.stats.toLocaleString() : '0'}
-                      </span>
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        {tool.statsLabel}
-                      </span>
-                    </div>
-                  </div>
-                  <Link href={tool.route}>
-                    <motion.button 
-                      className="px-4 py-2 bg-orange-500 text-white rounded-md flex items-center gap-2"
-                      whileHover={{ scale: 1.05, backgroundColor: "#f97316" }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Zap className="h-4 w-4" />
-                      <span>Launch</span>
-                    </motion.button>
-                  </Link>
+                <div className="relative">
                   <motion.button 
-                    className="ml-2 p-2 rounded-full border border-orange-500/20"
-                    whileHover={{ scale: 1.05, borderColor: "rgba(249, 115, 22, 0.5)" }}
+                    className="absolute -top-2 -right-2 p-1.5 rounded-full bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 z-10"
+                    whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedTool(null)}
+                    data-testid="button-close-tool-panel"
                   >
-                    <Sparkles className="h-4 w-4 text-orange-500" />
+                    <X className="h-4 w-4 text-orange-500" />
                   </motion.button>
+                  
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                    <div className={`h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0`}>
+                      <tool.icon className={`h-6 w-6 ${tool.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold truncate">{tool.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{tool.description}</p>
+                      <div className="mt-2 flex items-baseline gap-1">
+                        <span className={`text-xl sm:text-2xl font-bold ${tool.color}`}>
+                          {typeof tool.stats === 'number' ? tool.stats.toLocaleString() : '0'}
+                        </span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">
+                          {tool.statsLabel}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Link href={tool.route} className="flex-1 sm:flex-initial">
+                        <motion.button 
+                          className="w-full px-3 sm:px-4 py-2 bg-orange-500 text-white rounded-md flex items-center justify-center gap-2 text-sm"
+                          whileHover={{ scale: 1.05, backgroundColor: "#ea580c" }}
+                          whileTap={{ scale: 0.95 }}
+                          data-testid={`button-launch-${tool.id}`}
+                        >
+                          <Zap className="h-4 w-4" />
+                          <span>Abrir</span>
+                        </motion.button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               );
             })()}
@@ -660,5 +608,76 @@ export default function EcosystemDashboard() {
         )}
       </AnimatePresence>
     </div>
+
+    {/* Sección de descripción de iconos - Fuera de la órbita */}
+    <div className="w-full bg-background -mt-8 md:-mt-12 py-2 md:py-4">
+      <motion.div 
+        className="max-w-7xl mx-auto px-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+      >
+        {/* Core Tools - Middle Orbit */}
+        <div className="mb-8">
+          <h3 className="text-lg md:text-xl font-semibold mb-4 text-center text-orange-500">
+            Core Creation Tools
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+            {toolsData.filter(tool => tool.orbit === 'middle').map((tool) => (
+              <Link key={tool.id} href={tool.route}>
+                <motion.div
+                  className="p-3 md:p-4 rounded-lg bg-card border border-border hover:border-orange-500/30 transition-all cursor-pointer"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className={`h-8 w-8 md:h-10 md:w-10 rounded-lg bg-gradient-to-br from-orange-500/10 to-pink-500/10 flex items-center justify-center border border-orange-500/20`}>
+                      <tool.icon className={`h-4 w-4 md:h-5 md:w-5 ${tool.color}`} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-xs md:text-sm mb-1">{tool.name}</h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {tool.description}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Services - Outer Orbit */}
+        <div>
+          <h3 className="text-lg md:text-xl font-semibold mb-4 text-center text-pink-500">
+            Growth & Business Services
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 md:gap-4">
+            {toolsData.filter(tool => tool.orbit === 'outer').map((tool) => (
+              <Link key={tool.id} href={tool.route}>
+                <motion.div
+                  className="p-3 md:p-4 rounded-lg bg-card border border-border hover:border-pink-500/30 transition-all cursor-pointer"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <div className={`h-8 w-8 md:h-10 md:w-10 rounded-lg bg-gradient-to-br from-orange-500/10 to-pink-500/10 flex items-center justify-center border border-pink-500/20`}>
+                      <tool.icon className={`h-4 w-4 md:h-5 md:w-5 ${tool.color}`} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-xs md:text-sm mb-1">{tool.name}</h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {tool.description}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+    </>
   );
 }

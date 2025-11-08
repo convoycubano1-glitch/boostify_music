@@ -380,7 +380,8 @@ const Router = () => {
       </Switch>
       <BottomNav />
       {showRadio && <BoostifyRadio onClose={() => setShowRadio(false)} />}
-      <CustomerServiceAgent />
+      {/* CustomerServiceAgent - Temporarily disabled */}
+      {/* <CustomerServiceAgent /> */}
     </>
   );
 };

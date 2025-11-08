@@ -1,23 +1,52 @@
 import { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
 import { authenticate } from '../middleware/auth';
-import { findUserByStripeCustomerId } from '../utils/firestore-helpers';
-import { db } from '../firebase';
+import { db } from '../db';
+import { bookings, payments } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 
-// Inicializar Stripe con la clave secreta
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Inicializar Stripe con la clave secreta (usar testing key si está disponible)
+const stripeKey = process.env.TESTING_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+const stripe = new Stripe(stripeKey!, {
   apiVersion: '2025-01-27.acacia' as any, // Usar la última versión de la API
 });
+
+console.log('🔑 Using Stripe key:', stripeKey ? (stripeKey.startsWith('sk_test_') ? 'TEST MODE' : 'LIVE MODE') : 'NOT FOUND');
 
 /**
  * URL base para redirecciones de Stripe
  * En producción, esta URL debería ser configurable y apuntar al dominio real
  */
-const BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://artistboost.replit.app'
-  : 'https://workspace.replit.app';
+const getBaseUrl = () => {
+  // En producción, usar el dominio de producción
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://artistboost.replit.app';
+  }
+  
+  // En desarrollo, construir la URL usando las variables de entorno de Replit
+  const replId = process.env.REPL_ID;
+  const replSlug = process.env.REPL_SLUG;
+  const replOwner = process.env.REPL_OWNER;
+  
+  // Si tenemos REPLIT_DOMAINS (variable que contiene el dominio actual), usarla
+  if (process.env.REPLIT_DOMAINS) {
+    const domains = process.env.REPLIT_DOMAINS.split(',');
+    return `https://${domains[0]}`;
+  }
+  
+  // Construir URL de desarrollo manualmente
+  if (replSlug && replOwner) {
+    return `https://${replSlug}.${replOwner}.repl.co`;
+  }
+  
+  // Fallback a localhost si nada más funciona
+  return 'http://localhost:5000';
+};
+
+const BASE_URL = getBaseUrl();
+console.log('🔗 Stripe BASE_URL configurada:', BASE_URL);
 
 /**
  * Mapeo de planes a IDs de precio en Stripe
@@ -76,27 +105,41 @@ router.post('/create-subscription', authenticate, async (req: Request, res: Resp
       return res.status(400).json({ success: false, message: 'Plan o precio no especificado' });
     }
 
-    // Obtener información del usuario de Firestore
-    const userSnap = await db.collection('users').doc(userId).get();
-    const userData = userSnap.data();
+    // Buscar o crear cliente en Stripe usando el email del usuario autenticado
+    const userEmail = req.user?.email;
+    let customerId: string;
     
-    // Verificar si el usuario ya tiene un customerID en Stripe
-    let customerId = userData?.stripeCustomerId;
+    // Si no hay email, usar un email placeholder basado en el UID
+    const emailToUse = userEmail || `${userId}@placeholder.artistboost.app`;
     
-    if (!customerId) {
-      // Crear un nuevo cliente en Stripe si no existe
-      const customer = await stripe.customers.create({
-        email: userData?.email || undefined,
-        name: userData?.displayName || undefined,
-        metadata: { firebaseUserId: userId }
+    console.log(`Creating Stripe customer for user ${userId} with email ${emailToUse}`);
+    
+    // Buscar cliente existente en Stripe por email o por metadata
+    const existingCustomers = await stripe.customers.list({
+      email: emailToUse,
+      limit: 1
+    });
+    
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+    } else {
+      // Buscar por metadata si no se encontró por email
+      const customersByMetadata = await stripe.customers.search({
+        query: `metadata['firebaseUserId']:'${userId}'`,
+        limit: 1
       });
       
-      customerId = customer.id;
-      
-      // Guardar el customerId en Firestore
-      await db.collection('users').doc(userId).update({
-        stripeCustomerId: customerId
-      });
+      if (customersByMetadata.data.length > 0) {
+        customerId = customersByMetadata.data[0].id;
+      } else {
+        // Crear un nuevo cliente en Stripe si no existe
+        const customer = await stripe.customers.create({
+          email: emailToUse,
+          metadata: { firebaseUserId: userId }
+        });
+        
+        customerId = customer.id;
+      }
     }
     
     // Crear sesión de checkout
@@ -117,8 +160,8 @@ router.post('/create-subscription', authenticate, async (req: Request, res: Resp
         }
       ],
       mode: 'subscription',
-      success_url: `${BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/subscription-cancelled`,
+      success_url: `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/subscription/cancelled`,
       metadata: {
         userId,
         planId: planKey
@@ -324,27 +367,40 @@ router.post('/create-music-video-payment', authenticate, async (req: Request, re
       return res.status(400).json({ success: false, message: 'ID de video no especificado' });
     }
     
-    // Obtener información del usuario de Firestore
-    const userSnap = await db.collection('users').doc(userId).get();
-    const userData = userSnap.data();
+    // Buscar o crear cliente en Stripe usando el email del usuario autenticado
+    const userEmail = req.user?.email;
+    let customerId: string;
     
-    // Verificar si el usuario ya tiene un customerID en Stripe
-    let customerId = userData?.stripeCustomerId;
+    if (!userEmail) {
+      return res.status(400).json({ success: false, message: 'Email del usuario no disponible' });
+    }
     
-    if (!customerId) {
-      // Crear un nuevo cliente en Stripe si no existe
-      const customer = await stripe.customers.create({
-        email: userData?.email || undefined,
-        name: userData?.displayName || undefined,
-        metadata: { firebaseUserId: userId }
+    // Buscar cliente existente en Stripe por email
+    const existingCustomers = await stripe.customers.list({
+      email: userEmail,
+      limit: 1
+    });
+    
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+    } else {
+      // Buscar por metadata si no se encontró por email
+      const customersByMetadata = await stripe.customers.search({
+        query: `metadata['firebaseUserId']:'${userId}'`,
+        limit: 1
       });
       
-      customerId = customer.id;
-      
-      // Guardar el customerId en Firestore
-      await db.collection('users').doc(userId).update({
-        stripeCustomerId: customerId
-      });
+      if (customersByMetadata.data.length > 0) {
+        customerId = customersByMetadata.data[0].id;
+      } else {
+        // Crear un nuevo cliente en Stripe si no existe
+        const customer = await stripe.customers.create({
+          email: emailToUse,
+          metadata: { firebaseUserId: userId }
+        });
+        
+        customerId = customer.id;
+      }
     }
     
     // Verificar si el usuario ya ha comprado este video
@@ -401,6 +457,143 @@ router.post('/create-music-video-payment', authenticate, async (req: Request, re
     res.status(500).json({
       success: false,
       message: error.message || 'Error al crear sesión de checkout'
+    });
+  }
+});
+
+/**
+ * Crear un pago único para un booking de músico
+ * Esta ruta permite reservar servicios de músicos con split de pagos
+ * La plataforma cobra 20% de comisión y el músico recibe 80%
+ */
+router.post('/create-musician-booking', authenticate, async (req: Request, res: Response) => {
+  try {
+    const {
+      musicianId,
+      musicianName,
+      price,
+      tempo,
+      musicalKey,
+      style,
+      projectDeadline,
+      additionalNotes
+    } = req.body;
+    
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+    
+    if (!musicianId) {
+      return res.status(400).json({ success: false, message: 'ID de músico no especificado' });
+    }
+    
+    if (!price || price <= 0) {
+      return res.status(400).json({ success: false, message: 'Precio inválido' });
+    }
+    
+    // Calcular la comisión de la plataforma (20%) y el monto del músico (80%)
+    const totalAmount = parseFloat(price);
+    const platformFee = totalAmount * 0.20; // 20% para la plataforma
+    const musicianAmount = totalAmount * 0.80; // 80% para el músico
+    
+    console.log(`💰 Booking - Total: $${totalAmount}, Platform fee: $${platformFee}, Musician: $${musicianAmount}`);
+    
+    // TODO: Aquí deberías buscar el userId de PostgreSQL basado en el userId de Firebase
+    // Por ahora usaremos un valor temporal
+    const tempUserId = 1; // Esto debe ser reemplazado con la búsqueda real del user.id
+    
+    // Crear el booking en la base de datos
+    const [booking] = await db.insert(bookings).values({
+      userId: tempUserId,
+      musicianId,
+      price: totalAmount.toFixed(2),
+      currency: 'usd',
+      tempo,
+      musicalKey,
+      style,
+      projectDeadline: projectDeadline ? new Date(projectDeadline) : null,
+      additionalNotes,
+      status: 'pending',
+      paymentStatus: 'pending'
+    }).returning();
+    
+    console.log(`📝 Booking creado con ID: ${booking.id}`);
+    
+    // Buscar o crear cliente en Stripe
+    const userEmail = req.user?.email;
+    let customerId: string;
+    
+    const emailToUse = userEmail || `${userId}@placeholder.artistboost.app`;
+    
+    // Buscar cliente existente
+    const existingCustomers = await stripe.customers.list({
+      email: emailToUse,
+      limit: 1
+    });
+    
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+    } else {
+      // Crear nuevo cliente
+      const customer = await stripe.customers.create({
+        email: emailToUse,
+        metadata: { firebaseUserId: userId }
+      });
+      customerId = customer.id;
+    }
+    
+    // Crear sesión de checkout para el pago
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `Booking con ${musicianName || 'Músico'}`,
+              description: `Servicio de ${style || 'música'} - Sesión profesional`
+            },
+            unit_amount: Math.round(totalAmount * 100) // Convertir a centavos
+          },
+          quantity: 1
+        }
+      ],
+      mode: 'payment',
+      success_url: `${BASE_URL}/booking-success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
+      cancel_url: `${BASE_URL}/booking-cancelled?booking_id=${booking.id}`,
+      metadata: {
+        userId,
+        bookingId: booking.id.toString(),
+        musicianId,
+        type: 'musician_booking',
+        platformFee: platformFee.toFixed(2),
+        musicianAmount: musicianAmount.toFixed(2)
+      }
+    });
+    
+    // Crear registro de pago pendiente
+    await db.insert(payments).values({
+      bookingId: booking.id,
+      stripePaymentIntentId: session.payment_intent as string || 'pending',
+      stripeCheckoutSessionId: session.id,
+      amount: totalAmount.toFixed(2),
+      platformFee: platformFee.toFixed(2),
+      musicianAmount: musicianAmount.toFixed(2),
+      currency: 'usd',
+      status: 'pending'
+    });
+    
+    console.log(`✅ Sesión de checkout creada: ${session.id}`);
+    
+    res.json({ success: true, url: session.url, bookingId: booking.id });
+  } catch (error: any) {
+    console.error('Error al crear booking de músico:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al crear booking'
     });
   }
 });
@@ -618,17 +811,62 @@ router.get('/product-purchase-status/:productId', async (req: Request, res: Resp
 });
 
 /**
+ * Activar suscripción manualmente después del checkout
+ * Este endpoint se usa cuando no se puede usar webhook (desarrollo)
+ */
+router.post('/activate-subscription', async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId requerido' });
+    }
+    
+    // Obtener la sesión de checkout de Stripe
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    
+    if (session.payment_status !== 'paid') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'El pago no se ha completado' 
+      });
+    }
+    
+    // Activar la suscripción
+    await handleSuccessfulSubscription(session);
+    
+    return res.json({ 
+      success: true, 
+      message: 'Suscripción activada exitosamente' 
+    });
+    
+  } catch (error: any) {
+    console.error('Error al activar suscripción:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+});
+
+/**
  * Webhook para manejar eventos de pago de Stripe
  * Esta ruta recibe notificaciones de Stripe cuando se completan o fallan pagos
  */
 router.post('/webhook', async (req: Request, res: Response) => {
   const signature = req.headers['stripe-signature'] as string;
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  
+  // Usar el webhook secret correspondiente al entorno
+  const endpointSecret = process.env.NODE_ENV === 'production'
+    ? process.env.STRIPE_WEBHOOK_SECRET
+    : (process.env.STRIPE_WEBHOOK_SECRET_DEV || process.env.STRIPE_WEBHOOK_SECRET);
   
   if (!endpointSecret) {
     console.error('Webhook secret no configurado');
     return res.status(500).json({ success: false, message: 'Webhook secret no configurado' });
   }
+  
+  console.log(`🔔 Webhook recibido en modo ${process.env.NODE_ENV || 'development'}`);
   
   let event;
   
@@ -649,11 +887,13 @@ router.post('/webhook', async (req: Request, res: Response) => {
     case 'checkout.session.completed':
       const session = event.data.object;
       
-      // Determinar el tipo de pago (suscripción, video musical o producto)
+      // Determinar el tipo de pago (suscripción, video musical, producto o booking de músico)
       if (session.metadata.type === 'music_video') {
         await handleSuccessfulVideoPayment(session);
       } else if (session.metadata.type === 'store_product') {
         await handleSuccessfulProductPayment(session);
+      } else if (session.metadata.type === 'musician_booking') {
+        await handleSuccessfulMusicianBooking(session);
       } else {
         // Asumimos que es una suscripción si no tiene un tipo específico
         await handleSuccessfulSubscription(session);
@@ -671,6 +911,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
 /**
  * Manejar pago exitoso de suscripción
+ * Actualiza Firestore con la información de la suscripción
  */
 async function handleSuccessfulSubscription(session: any) {
   try {
@@ -681,15 +922,45 @@ async function handleSuccessfulSubscription(session: any) {
       return;
     }
     
-    // Actualizar plan del usuario en Firestore
-    await db.collection('users').doc(userId).update({
-      plan: planId || 'basic',
-      subscriptionId: session.subscription,
-      subscriptionStatus: 'active',
-      subscriptionUpdatedAt: new Date()
-    });
+    const plan = planId || 'basic';
+    const subscriptionId = session.subscription;
+    const customerId = session.customer;
     
-    console.log(`Suscripción actualizada para el usuario ${userId} al plan ${planId}`);
+    console.log(`✅ Procesando suscripción para usuario ${userId}, plan: ${plan}`);
+    
+    // Obtener detalles de la suscripción de Stripe
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    const currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
+    const currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+    
+    // Crear documento de suscripción en Firestore
+    const subscriptionData = {
+      userId: userId,
+      plan: plan,
+      status: 'active',
+      currentPeriodStart: currentPeriodStart,
+      currentPeriodEnd: currentPeriodEnd,
+      cancelAtPeriodEnd: false,
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // Guardar la suscripción en la colección 'subscriptions'
+    const subscriptionRef = await db.collection('subscriptions').add(subscriptionData);
+    
+    console.log(`  📝 Suscripción creada en Firestore: ${subscriptionRef.id}`);
+    
+    // Actualizar o crear el documento user_subscriptions para vincular al usuario
+    await db.collection('user_subscriptions').doc(userId).set({
+      activeSubscriptionId: subscriptionRef.id,
+      updatedAt: new Date()
+    }, { merge: true });
+    
+    console.log(`  ✅ Usuario ${userId} ahora tiene acceso al plan ${plan}`);
+    
   } catch (error) {
     console.error('Error al procesar pago de suscripción:', error);
   }
@@ -821,37 +1092,23 @@ async function handleSuccessfulProductPayment(session: any) {
 
 /**
  * Manejar cancelación de suscripción
+ * Nota: No usamos Firestore del servidor. El cliente consultará directamente a Stripe.
  */
 async function handleCancelledSubscription(subscription: any) {
   try {
     const { userId } = subscription.metadata;
+    const customerId = subscription.customer;
     
-    if (!userId) {
-      // Intentar encontrar el usuario por su customer ID
-      const user = await findUserByStripeCustomerId(subscription.customer);
-      
-      if (!user) {
-        console.error(`No se encontró el usuario para la suscripción ${subscription.id}`);
-        return;
-      }
-      
-      // Actualizar el estado de la suscripción en Firestore
-      await db.collection('users').doc(user.id).update({
-        subscriptionStatus: 'cancelled',
-        subscriptionCancelledAt: new Date()
-      });
-      
-      console.log(`Suscripción cancelada para el usuario ${user.id}`);
-      return;
+    // Registrar el evento (Stripe mantiene el estado de la suscripción)
+    console.log(`❌ Suscripción cancelada`);
+    console.log(`   Subscription ID: ${subscription.id}`);
+    console.log(`   Customer ID: ${customerId}`);
+    if (userId) {
+      console.log(`   User ID: ${userId}`);
     }
+    console.log(`   ℹ️ El cliente consultará el estado directamente desde Stripe`);
     
-    // Actualizar el estado de la suscripción en Firestore
-    await db.collection('users').doc(userId).update({
-      subscriptionStatus: 'cancelled',
-      subscriptionCancelledAt: new Date()
-    });
-    
-    console.log(`Suscripción cancelada para el usuario ${userId}`);
+    // No se necesita actualizar Firestore - el cliente usa Stripe como fuente de verdad
   } catch (error) {
     console.error('Error al procesar cancelación de suscripción:', error);
   }

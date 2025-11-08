@@ -3,14 +3,28 @@
 .ecosystem-container {
   position: relative;
   width: 100%;
-  min-height: 85vh;
+  min-height: 70vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
+  overflow: visible;
   background-color: var(--background);
-  padding: 2rem 0;
+  padding: 2rem 0 3rem 0;
+}
+
+@media (min-width: 768px) {
+  .ecosystem-container {
+    min-height: 75vh;
+    padding: 3rem 0 4rem 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ecosystem-container {
+    min-height: 80vh;
+    padding: 3rem 0 5rem 0;
+  }
 }
 
 .ecosystem-bg-gradient {
@@ -96,8 +110,8 @@
 
 .ecosystem-avatar {
   position: absolute;
-  width: 120px;
-  height: 120px;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   background-color: rgba(249, 115, 22, 0.1);
   border: 2px solid rgba(249, 115, 22, 0.3);
@@ -128,22 +142,23 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  z-index: 10;
+  z-index: 5;
+  pointer-events: none;
 }
 
 .inner-orbit {
-  width: 220px;
-  height: 220px;
+  width: 200px;
+  height: 200px;
 }
 
 .middle-orbit {
-  width: 360px;
-  height: 360px;
+  width: 320px;
+  height: 320px;
 }
 
 .outer-orbit {
-  width: 500px;
-  height: 500px;
+  width: 440px;
+  height: 440px;
 }
 
 .orbit-item {
@@ -152,6 +167,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   transform-origin: center;
+  pointer-events: auto;
+  z-index: 50;
 }
 
 .ecosystem-tool-icon {
@@ -160,24 +177,36 @@
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  z-index: 20;
+  z-index: 50;
   transform-origin: center;
+}
+
+.ecosystem-tool-icon a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  position: relative;
+  z-index: 51;
 }
 
 .ecosystem-tool-label {
   position: absolute;
-  top: calc(100% + 2px);
+  top: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(0.9);
   white-space: nowrap;
   font-size: 0.7rem;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.9);
   color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  opacity: 0.8;
-  z-index: 21;
+  padding: 4px 10px;
+  border-radius: 6px;
+  opacity: 0;
+  z-index: 1000;
   pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 /* Estilos para el modal de explicación */
@@ -315,11 +344,12 @@
   width: calc(100% - 60px);
   max-width: 800px;
   background-color: var(--background);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(249, 115, 22, 0.3);
   border-radius: 12px;
   padding: 16px;
   z-index: 100;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 20px rgba(249, 115, 22, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .ecosystem-add-button {
@@ -356,23 +386,25 @@
   transition: transform 0.5s ease;
 }
 
-/* Estilos para asegurar que el texto siempre sea visible */
-.ecosystem-tool-label {
-  opacity: 0.9;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  transform: translateY(0);
-  transition: transform 0.3s ease, opacity 0.3s ease;
+/* Mostrar etiqueta solo al hacer hover */
+.tool-icon-wrapper:hover .ecosystem-tool-label {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
 }
 
-.ecosystem-tool-icon:hover .ecosystem-tool-label {
-  opacity: 1;
-  transform: translateY(2px);
+/* Mejorar el efecto hover del icono */
+.tool-icon-wrapper:hover {
+  border-color: rgba(249, 115, 22, 0.6) !important;
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.4) !important;
+  background-color: rgba(249, 115, 22, 0.1) !important;
+  transform: scale(1.1) !important;
 }
 
 /* Transiciones suaves para los elementos interactivos */
 .tool-icon-wrapper {
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 50;
 }
 
 .orbit-item.approaching-center .tool-icon-wrapper {
@@ -414,29 +446,30 @@
 /* Diferentes tiempos para cada órbita para un efecto más natural */
 .inner-orbit {
   animation-duration: 6s;
-  border: 1.5px dashed rgba(249, 115, 22, 0.25);
+  border: 1.5px dashed rgba(249, 115, 22, 0.3);
 }
 
 .middle-orbit {
-  animation-duration: 8s;
-  border: 1.5px dashed rgba(249, 115, 22, 0.2);
+  animation-duration: 9s;
+  border: 1.5px dashed rgba(249, 115, 22, 0.25);
 }
 
 .outer-orbit {
-  animation-duration: 10s;
-  border: 1.5px dashed rgba(249, 115, 22, 0.15);
+  animation-duration: 12s;
+  border: 1.5px dashed rgba(249, 115, 22, 0.2);
 }
 
 /* Animación de respiración para los elementos orbitales */
 @keyframes breatheSize {
   0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.03); }
   100% { transform: scale(1); }
 }
 
-/* Aplicar respiración a los iconos de herramientas */
+/* Aplicar respiración suave a los iconos de herramientas */
 .tool-icon-wrapper {
-  animation: breatheSize 4s infinite ease-in-out;
+  animation: breatheSize 6s infinite ease-in-out;
+  will-change: transform;
 }
 
 /* Estilos para los textos motivacionales */
@@ -495,15 +528,68 @@
 }
 
 /* Media queries para hacer el dashboard responsive */
-@media (max-width: 768px) {
+
+/* Tablets y pantallas medianas (hasta 1024px) */
+@media (max-width: 1024px) {
+  .ecosystem-container {
+    min-height: 80vh;
+    padding: 1.5rem 0;
+  }
+
   .inner-orbit {
     width: 180px;
     height: 180px;
   }
   
   .middle-orbit {
-    width: 280px;
-    height: 280px;
+    width: 300px;
+    height: 300px;
+  }
+  
+  .outer-orbit {
+    width: 420px;
+    height: 420px;
+  }
+  
+  .ecosystem-tool-label {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+  }
+
+  .ecosystem-avatar {
+    width: 180px;
+    height: 180px;
+  }
+
+  .boostify-brand {
+    font-size: 2rem;
+  }
+
+  .motivational-text {
+    font-size: 1.1rem;
+  }
+
+  .ecosystem-info-panel {
+    width: calc(100% - 40px);
+    padding: 14px;
+  }
+}
+
+/* Tablets y móviles grandes (hasta 768px) */
+@media (max-width: 768px) {
+  .ecosystem-container {
+    min-height: 75vh;
+    padding: 1rem 0;
+  }
+
+  .inner-orbit {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .middle-orbit {
+    width: 270px;
+    height: 270px;
   }
   
   .outer-orbit {
@@ -511,30 +597,81 @@
     height: 380px;
   }
   
+  .ecosystem-avatar {
+    width: 160px;
+    height: 160px;
+  }
+
   .ecosystem-tool-icon > div {
-    transform: scale(0.75);
+    height: 48px !important;
+    width: 48px !important;
+  }
+
+  .ecosystem-tool-icon > div svg {
+    height: 20px !important;
+    width: 20px !important;
   }
   
   .ecosystem-tool-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
+    padding: 1px 6px;
+    top: calc(100% + 1px);
+  }
+
+  .boostify-brand {
+    font-size: 1.75rem;
+  }
+
+  .motivational-text {
+    font-size: 1rem;
+    max-width: 90%;
+  }
+
+  .motivational-text-container {
+    top: 20px;
   }
   
   /* Ajustes de tooltips para dispositivos medianos */
   .tool-tooltip {
     width: 180px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     top: -120px;
+    padding: 12px;
   }
   
   .outer-orbit .tool-tooltip {
-    top: -130px; /* Ajustado para órbita exterior en dispositivos medianos */
+    top: -130px;
+  }
+
+  .ecosystem-info-panel {
+    width: calc(100% - 30px);
+    padding: 12px;
+    bottom: 20px;
+  }
+
+  .ecosystem-add-button {
+    width: 45px;
+    height: 45px;
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .ecosystem-add-button svg {
+    height: 20px;
+    width: 20px;
   }
 }
 
+/* Móviles (hasta 640px) */
 @media (max-width: 640px) {
+  .ecosystem-container {
+    min-height: 70vh;
+    padding: 0.75rem 0;
+  }
+
   .inner-orbit {
-    width: 160px;
-    height: 160px;
+    width: 140px;
+    height: 140px;
   }
   
   .middle-orbit {
@@ -543,22 +680,204 @@
   }
   
   .outer-orbit {
-    width: 320px;
-    height: 320px;
+    width: 340px;
+    height: 340px;
+  }
+
+  .ecosystem-avatar {
+    width: 140px;
+    height: 140px;
   }
   
   /* Hacer los iconos más pequeños en móviles */
   .ecosystem-tool-icon > div {
-    transform: scale(0.65);
+    height: 40px !important;
+    width: 40px !important;
+  }
+
+  .ecosystem-tool-icon > div svg {
+    height: 18px !important;
+    width: 18px !important;
+  }
+
+  .ecosystem-tool-label {
+    font-size: 0.55rem;
+    padding: 1px 4px;
+    white-space: normal;
+    max-width: 60px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .boostify-brand {
+    font-size: 1.5rem;
+  }
+
+  .motivational-text {
+    font-size: 0.9rem;
+    max-width: 95%;
+  }
+
+  .motivational-text-container {
+    top: 15px;
   }
   
   /* Ajustar los tooltips para dispositivos pequeños */
   .tool-tooltip {
     width: 160px;
     top: -100px;
+    font-size: 0.75rem;
+    padding: 10px;
   }
   
   .outer-orbit .tool-tooltip {
     top: -110px;
+  }
+
+  .ecosystem-info-panel {
+    width: calc(100% - 20px);
+    padding: 10px;
+    bottom: 15px;
+  }
+
+  .ecosystem-add-button {
+    width: 40px;
+    height: 40px;
+    bottom: 15px;
+    right: 15px;
+  }
+
+  .ecosystem-add-button svg {
+    height: 18px;
+    width: 18px;
+  }
+
+  /* Reducir tamaño de texto en panel de información */
+  .ecosystem-info-panel h3 {
+    font-size: 0.95rem;
+  }
+
+  .ecosystem-info-panel p {
+    font-size: 0.75rem;
+  }
+
+  .ecosystem-info-panel button {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+}
+
+/* Móviles muy pequeños (hasta 480px) */
+@media (max-width: 480px) {
+  .ecosystem-container {
+    min-height: 65vh;
+  }
+
+  .inner-orbit {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .middle-orbit {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .outer-orbit {
+    width: 280px;
+    height: 280px;
+  }
+
+  .ecosystem-avatar {
+    width: 120px;
+    height: 120px;
+  }
+
+  .ecosystem-tool-icon > div {
+    height: 36px !important;
+    width: 36px !important;
+  }
+
+  .ecosystem-tool-icon > div svg {
+    height: 16px !important;
+    width: 16px !important;
+  }
+
+  .boostify-brand {
+    font-size: 1.25rem;
+  }
+
+  .motivational-text {
+    font-size: 0.8rem;
+  }
+
+  .ecosystem-tool-label {
+    font-size: 0.5rem;
+    max-width: 50px;
+  }
+
+  .tool-tooltip {
+    display: none; /* Ocultar tooltips en pantallas muy pequeñas para evitar problemas */
+  }
+}
+
+/* Mejoras adicionales para touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .ecosystem-tool-icon > div {
+    transition: transform 0.2s ease;
+  }
+
+  .ecosystem-tool-icon > div:active {
+    transform: scale(1.15);
+  }
+
+  .tool-tooltip {
+    display: none; /* Ocultar tooltips en dispositivos táctiles */
+  }
+}
+
+/* Optimizaciones para pantallas grandes */
+@media (min-width: 1440px) {
+  .inner-orbit {
+    width: 250px;
+    height: 250px;
+  }
+  
+  .middle-orbit {
+    width: 400px;
+    height: 400px;
+  }
+  
+  .outer-orbit {
+    width: 550px;
+    height: 550px;
+  }
+
+  .ecosystem-avatar {
+    width: 250px;
+    height: 250px;
+  }
+  
+  .ecosystem-tool-icon > div {
+    height: 60px !important;
+    width: 60px !important;
+  }
+
+  .ecosystem-tool-icon > div svg {
+    height: 28px !important;
+    width: 28px !important;
+  }
+  
+  .ecosystem-tool-label {
+    font-size: 0.75rem;
+    padding: 5px 12px;
+  }
+
+  .boostify-brand {
+    font-size: 3rem;
+  }
+
+  .motivational-text {
+    font-size: 1.5rem;
   }
 }

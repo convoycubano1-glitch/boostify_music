@@ -25,10 +25,10 @@ export function BookingDialog({ musician, trigger }: BookingDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Book a Session</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg sm:text-xl">Book a Session</DialogTitle>
+          <DialogDescription className="text-sm">
             Complete the form below to book a session with {musician.title}
           </DialogDescription>
         </DialogHeader>

@@ -185,36 +185,37 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
   ];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Book Session with {musician.title}</h3>
-        <p className="text-muted-foreground mb-6">
+        <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-4">Book Session with {musician.title}</h3>
+        <p className="text-sm text-muted-foreground mb-4 sm:mb-6">
           Please provide details about your musical requirements
         </p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="tempo">Tempo (BPM)</Label>
+          <Label htmlFor="tempo" className="text-sm">Tempo (BPM)</Label>
           <Input
             id="tempo"
             type="number"
             min="40"
             max="240"
             placeholder="120"
+            className="text-sm"
             onChange={(e) => handleChange("tempo", e.target.value)}
           />
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="key">Musical Key</Label>
+          <Label htmlFor="key" className="text-sm">Musical Key</Label>
           <Select onValueChange={(value) => handleChange("key", value)}>
-            <SelectTrigger>
+            <SelectTrigger className="text-sm">
               <SelectValue placeholder="Select key" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[200px]">
               {musicalKeys.map((key) => (
-                <SelectItem key={key} value={key}>
+                <SelectItem key={key} value={key} className="text-sm">
                   {key}
                 </SelectItem>
               ))}
@@ -223,70 +224,80 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="style">Style/Genre</Label>
+          <Label htmlFor="style" className="text-sm">Style/Genre</Label>
           <Input
             id="style"
             placeholder="e.g., Rock, Jazz, Pop"
+            className="text-sm"
             onChange={(e) => handleChange("style", e.target.value)}
           />
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="projectDeadline">Project Deadline</Label>
+          <Label htmlFor="projectDeadline" className="text-sm">Project Deadline</Label>
           <Input
             id="projectDeadline"
             type="date"
+            className="text-sm"
             onChange={(e) => handleChange("projectDeadline", e.target.value)}
           />
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="additionalNotes">Additional Notes</Label>
+          <Label htmlFor="additionalNotes" className="text-sm">Additional Notes</Label>
           <Textarea
             id="additionalNotes"
             placeholder="Describe any specific requirements or preferences..."
+            className="text-sm min-h-[80px] sm:min-h-[100px]"
             onChange={(e) => handleChange("additionalNotes", e.target.value)}
           />
         </div>
 
         {/* Demo Generation Section */}
-        <div className="space-y-4 pt-4">
+        <div className="space-y-3 sm:space-y-4 pt-2 sm:pt-4">
           <div className="flex justify-between items-center">
             <Button
               type="button"
               onClick={generateDemo}
               disabled={isGeneratingDemo || !formData.style || !formData.tempo || !formData.key}
               variant="secondary"
-              className="gap-2"
+              className="gap-2 text-xs sm:text-sm h-9 sm:h-10"
+              size="sm"
             >
               {isGeneratingDemo ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating Demo...
+                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                  <span className="hidden xs:inline">Generating...</span>
+                  <span className="xs:hidden">...</span>
                 </>
               ) : audioUrl ? (
                 <>
-                  <RefreshCw className="h-4 w-4" />
-                  Regenerate Demo
+                  <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden xs:inline">Regenerate Demo</span>
+                  <span className="xs:hidden">Regenerate</span>
                 </>
               ) : (
-                "Generate Demo"
+                <>
+                  <span className="hidden xs:inline">Generate Demo</span>
+                  <span className="xs:hidden">Demo</span>
+                </>
               )}
             </Button>
           </div>
 
           {audioUrl && (
-            <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+            <div className="flex items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-muted rounded-lg">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={togglePlay}
+                className="h-8 w-8 sm:h-10 sm:w-10"
               >
                 {isPlaying ? (
-                  <PauseCircle className="h-6 w-6" />
+                  <PauseCircle className="h-5 w-5 sm:h-6 sm:w-6" />
                 ) : (
-                  <PlayCircle className="h-6 w-6" />
+                  <PlayCircle className="h-5 w-5 sm:h-6 sm:w-6" />
                 )}
               </Button>
               <audio
@@ -296,27 +307,36 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               />
-              <span className="flex-grow text-sm">Preview your demo</span>
+              <span className="flex-grow text-xs sm:text-sm">Preview your demo</span>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={deleteDemo}
-                className="text-destructive hover:text-destructive"
+                className="text-destructive hover:text-destructive h-8 w-8 sm:h-10 sm:w-10"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex justify-end gap-4">
-        <Button type="button" variant="outline" onClick={onClose}>
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-4 pt-2">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onClose}
+          className="w-full sm:w-auto text-sm h-10"
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting} className="bg-primary">
-          {isSubmitting ? "Processing Payment..." : `Book Session ($${musician.price})`}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting} 
+          className="bg-primary w-full sm:w-auto text-sm h-10"
+        >
+          {isSubmitting ? "Processing..." : `Book ($${musician.price})`}
         </Button>
       </div>
     </form>

@@ -1,0 +1,35 @@
+
+stripe-service.ts:101 Error stack: Error: 500: {"success":false,"message":"The file at AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8 does not exist, or it is not a file. ENOENT: no such file or directory, lstat '/home/runner/workspace/AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8'"}
+    at throwIfResNotOk (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/queryClient.ts:6:11)
+    at async apiRequest (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/queryClient.ts:41:5)
+    at async createCheckoutSession (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/stripe-service.ts:29:22)
+    at async handleSubscribe (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/subscription/pricing-plans.tsx:270:30)
+pricing-plans.tsx:294 Error al crear sesión de checkout: Error: 500: {"success":false,"message":"The file at AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8 does not exist, or it is not a file. ENOENT: no such file or directory, lstat '/home/runner/workspace/AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8'"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:66:5)
+    at async createCheckoutSession (stripe-service.ts:85:22)
+    at async handleSubscribe (pricing-plans.tsx:283:30)
+pricing-plans.tsx:301 Error starting checkout: Error: 500: {"success":false,"message":"The file at AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8 does not exist, or it is not a file. ENOENT: no such file or directory, lstat '/home/runner/workspace/AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8'"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:66:5)
+    at async createCheckoutSession (stripe-service.ts:85:22)
+    at async handleSubscribe (pricing-plans.tsx:283:30)
+
+﻿
+
+Press ctrl i to turn on code suggestions. Press ctrl x to disable code suggestions.
+ctrl
+i
+ to turn on code suggestions. Don't show again NEW
+
+Full stack trace AI agent in Performance panel
+The Performance panel now integrates a more capable AI agent that has full access to the stack trace.
+
+AI code completion in Sources and Console
+Code completion powered by AI is now available in the Sources panel and the Console.
+
+Google Developer Program support
+The Google Developer Program, a ready-made subscription and community platform, is now in DevTools, offering a more personalized experience, a badge system, and easier discovery of new features.
+
+One main 'Debug with AI' button
+The primary action bar at the top of DevTools now features the primary "Debug with AI" button which opens the 'AI assistance' panel in a right-hand side bar.
