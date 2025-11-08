@@ -13,7 +13,7 @@ import {
 import { useToast } from "../../hooks/use-toast";
 import { generateAudioWithFal } from "../../lib/api/fal-ai";
 import { PlayCircle, PauseCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
-import type { MusicianService } from "../pages/producer-tools";
+import type { MusicianService } from "../../pages/producer-tools";
 import { createCheckoutSession } from "../../lib/api/stripe-service";
 import { auth } from "../../lib/firebase";
 
