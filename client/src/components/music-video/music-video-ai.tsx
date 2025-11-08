@@ -663,15 +663,25 @@ export function MusicVideoAI() {
             
             // Actualizar el timeline INMEDIATAMENTE con esta imagen
             setTimelineItems(prevItems => {
+              console.log(`🔍 [MATCH] Buscando timeline item para escena ${sceneIndex}`);
+              console.log(`📋 [MATCH] Timeline items actuales:`, prevItems.map(i => i.id));
+              
               return prevItems.map(item => {
                 // Buscar el item que corresponde a esta escena
-                const sceneIdMatch = item.id.toString().match(/scene-(\d+)/);
-                if (!sceneIdMatch) return item;
+                // Extraer el número de escena del ID, manejando formatos como:
+                // "scene-1", "scene-scene-1", etc.
+                const sceneNumberMatch = item.id.toString().match(/(\d+)$/);
+                if (!sceneNumberMatch) {
+                  console.log(`⚠️ [MATCH] Item ${item.id} no tiene número al final`);
+                  return item;
+                }
                 
-                const itemSceneId = parseInt(sceneIdMatch[1]);
+                const itemSceneNumber = parseInt(sceneNumberMatch[1]);
+                console.log(`🔢 [MATCH] Item ${item.id} -> número ${itemSceneNumber}, buscando ${sceneIndex}`);
                 
-                if (itemSceneId === sceneIndex) {
+                if (itemSceneNumber === sceneIndex) {
                   console.log(`🖼️ [IMG ${sceneIndex}] ✅ Actualizando timeline item ${item.id} en TIEMPO REAL`);
+                  console.log(`📸 [IMG ${sceneIndex}] URL: ${data.imageUrl.substring(0, 50)}...`);
                   return {
                     ...item,
                     imageUrl: data.imageUrl,

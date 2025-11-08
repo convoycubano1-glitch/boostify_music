@@ -621,3 +621,81 @@ export const insertGeneratedVideoSchema = createInsertSchema(generatedVideos);
 export const selectGeneratedVideoSchema = createSelectSchema(generatedVideos);
 export type GeneratedVideo = typeof generatedVideos.$inferSelect;
 export type NewGeneratedVideo = typeof generatedVideos.$inferInsert;
+
+export const musicVideoProjects = pgTable("music_video_projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  projectName: text("project_name").notNull(),
+  
+  // Audio data
+  audioUrl: text("audio_url"),
+  audioDuration: decimal("audio_duration", { precision: 10, scale: 2 }),
+  transcription: text("transcription"),
+  
+  // Script data
+  scriptContent: text("script_content"),
+  
+  // Timeline data (JSON con todos los items del timeline)
+  timelineItems: json("timeline_items").$type<any[]>().notNull().default([]),
+  
+  // Style & Director data
+  selectedDirector: json("selected_director").$type<{
+    id: string;
+    name: string;
+    specialty: string;
+    style: string;
+    experience: string;
+  }>(),
+  videoStyle: json("video_style").$type<{
+    cameraFormat: string;
+    mood: string;
+    characterStyle: string;
+    colorPalette: string;
+    visualIntensity: number;
+    narrativeIntensity: number;
+    selectedDirector: any;
+  }>(),
+  
+  // Reference images
+  artistReferenceImages: json("artist_reference_images").$type<string[]>().default([]),
+  
+  // Editing style
+  selectedEditingStyle: json("selected_editing_style").$type<{
+    id: string;
+    name: string;
+    description: string;
+    duration: { min: number; max: number };
+  }>(),
+  
+  // Project status
+  status: text("status", { 
+    enum: ["draft", "generating_script", "generating_images", "generating_videos", "completed"] 
+  }).default("draft").notNull(),
+  
+  // Progress tracking
+  progress: json("progress").$type<{
+    scriptGenerated: boolean;
+    imagesGenerated: number;
+    totalImages: number;
+    videosGenerated: number;
+    totalVideos: number;
+  }>().default({
+    scriptGenerated: false,
+    imagesGenerated: 0,
+    totalImages: 0,
+    videosGenerated: 0,
+    totalVideos: 0
+  }),
+  
+  // Metadata
+  lastModified: timestamp("last_modified").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  
+  // Tags for organization
+  tags: json("tags").$type<string[]>().default([]),
+});
+
+export const insertMusicVideoProjectSchema = createInsertSchema(musicVideoProjects);
+export const selectMusicVideoProjectSchema = createSelectSchema(musicVideoProjects);
+export type MusicVideoProject = typeof musicVideoProjects.$inferSelect;
+export type NewMusicVideoProject = typeof musicVideoProjects.$inferInsert;

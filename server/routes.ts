@@ -50,6 +50,7 @@ import audioTranscriptionRouter from './routes/audio-transcription'; // Import t
 import generatedVideosRouter from './routes/generated-videos'; // Import the generated videos router
 import minimaxVideoRouter from './routes/minimax-video'; // Import the MiniMax video generation router
 import musiciansRouter from './routes/musicians'; // Import the musicians router
+import musicVideoProjectsRouter from './routes/music-video-projects'; // Import the music video projects router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -185,6 +186,11 @@ export function registerRoutes(app: Express): HttpServer {
   console.log('📢 Registrando router de videos generados en /api/videos');
   app.use('/api/videos', generatedVideosRouter);
   console.log('✅ Router de videos generados registrado');
+  
+  // Registrar el router para proyectos de music video (guardado/carga)
+  console.log('📢 Registrando router de proyectos de music video en /api/music-video-projects');
+  app.use('/api/music-video-projects', musicVideoProjectsRouter);
+  console.log('✅ Router de proyectos de music video registrado');
   
   // ☑️ Rutas de Kling API ahora están separadas en su propio router
   // Véase server/routes/kling-api.ts para la implementación
