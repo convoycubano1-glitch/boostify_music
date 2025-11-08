@@ -1091,6 +1091,74 @@ async function handleSuccessfulProductPayment(session: any) {
 }
 
 /**
+ * Manejar pago exitoso de booking de músico
+ * Actualiza el booking y el pago en PostgreSQL con los detalles de la comisión
+ */
+async function handleSuccessfulMusicianBooking(session: any) {
+  try {
+    const { bookingId, userId, musicianId, platformFee, musicianAmount } = session.metadata;
+    
+    if (!bookingId) {
+      console.error('No se encontró bookingId en los metadatos de la sesión');
+      return;
+    }
+    
+    console.log(`💰 Procesando pago exitoso de booking #${bookingId}`);
+    console.log(`   Total: $${session.amount_total / 100}`);
+    console.log(`   Platform fee (20%): $${platformFee}`);
+    console.log(`   Musician amount (80%): $${musicianAmount}`);
+    
+    // Buscar el payment pendiente por sessionId
+    const [payment] = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.stripeCheckoutSessionId, session.id))
+      .limit(1);
+    
+    if (!payment) {
+      console.log(`No se encontró payment pendiente para sessionId ${session.id}, creando nuevo registro`);
+      
+      // Crear un nuevo registro si no existe
+      await db.insert(payments).values({
+        bookingId: parseInt(bookingId),
+        stripePaymentIntentId: session.payment_intent as string,
+        stripeCheckoutSessionId: session.id,
+        amount: (session.amount_total / 100).toFixed(2),
+        platformFee: platformFee,
+        musicianAmount: musicianAmount,
+        currency: session.currency,
+        status: 'completed'
+      });
+    } else {
+      // Actualizar el payment existente
+      await db
+        .update(payments)
+        .set({
+          stripePaymentIntentId: session.payment_intent as string,
+          status: 'completed'
+        })
+        .where(eq(payments.id, payment.id));
+    }
+    
+    // Actualizar el booking
+    await db
+      .update(bookings)
+      .set({
+        status: 'confirmed',
+        paymentStatus: 'paid'
+      })
+      .where(eq(bookings.id, parseInt(bookingId)));
+    
+    console.log(`✅ Booking #${bookingId} confirmado y pago procesado exitosamente`);
+    console.log(`   Musician ID: ${musicianId}`);
+    console.log(`   Platform earned: $${platformFee}`);
+    console.log(`   Musician will receive: $${musicianAmount}`);
+  } catch (error) {
+    console.error('Error al procesar pago de booking de músico:', error);
+  }
+}
+
+/**
  * Manejar cancelación de suscripción
  * Nota: No usamos Firestore del servidor. El cliente consultará directamente a Stripe.
  */

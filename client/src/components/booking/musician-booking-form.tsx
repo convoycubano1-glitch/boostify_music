@@ -55,7 +55,8 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
     try {
       console.log('Starting booking process with data:', {
         musicianId: musician.id,
-        price: musician.price
+        price: musician.price,
+        formData
       });
 
       // Comprobar si el usuario es administrador (convoycubano@gmail.com)
@@ -79,17 +80,41 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
       const token = await auth.currentUser?.getIdToken();
       
       if (!token) {
-        throw new Error("No se pudo obtener el token de autenticación");
+        throw new Error("Could not get authentication token");
       }
       
-      // Usar el ID del músico como priceId temporal para bookings
-      // En un sistema real, esto sería un ID de Stripe registrado
-      const priceId = `musician_${musician.id}`;
-      
-      const response = await createCheckoutSession(token, priceId);
+      // Crear booking de músico con el nuevo endpoint
+      const response = await fetch('/api/stripe/create-musician-booking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          musicianId: musician.id,
+          musicianName: musician.title,
+          price: musician.price,
+          tempo: formData.tempo || null,
+          musicalKey: formData.key || null,
+          style: formData.style || null,
+          projectDeadline: formData.projectDeadline || null,
+          additionalNotes: formData.additionalNotes || null
+        })
+      });
 
-      // Si llegamos aquí, la redirección a Stripe debería haber ocurrido
-      console.log('Booking process completed, should have redirected to Stripe');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create booking');
+      }
+
+      if (data.success && data.url) {
+        // Redirigir a Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+
     } catch (error) {
       console.error('Error in booking process:', error);
       toast({
