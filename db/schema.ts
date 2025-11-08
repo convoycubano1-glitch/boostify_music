@@ -108,10 +108,28 @@ export const payments = pgTable("payments", {
   metadata: json("metadata")
 });
 
+export const musicians = pgTable("musicians", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  name: text("name").notNull(),
+  photo: text("photo").notNull(),
+  referencePhoto: text("reference_photo"),
+  instrument: text("instrument").notNull(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  rating: decimal("rating", { precision: 3, scale: 2 }).default('5.0').notNull(),
+  totalReviews: integer("total_reviews").default(0).notNull(),
+  genres: text("genres").array().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  musicianId: text("musician_id").notNull(),
+  musicianId: integer("musician_id").references(() => musicians.id).notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   currency: text("currency").default("usd").notNull(),
   tempo: text("tempo"),
@@ -285,13 +303,26 @@ export const usersRelations = relations(users, ({ many }) => ({
   audioDemos: many(audioDemos),
   events: many(events),
   achievements: many(userAchievements),
-  media: many(artistMedia)
+  media: many(artistMedia),
+  musicians: many(musicians)
+}));
+
+export const musiciansRelations = relations(musicians, ({ one, many }) => ({
+  user: one(users, {
+    fields: [musicians.userId],
+    references: [users.id],
+  }),
+  bookings: many(bookings)
 }));
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
   user: one(users, {
     fields: [bookings.userId],
     references: [users.id],
+  }),
+  musician: one(musicians, {
+    fields: [bookings.musicianId],
+    references: [musicians.id],
   }),
   audioDemo: one(audioDemos, {
     fields: [bookings.audioDemoId],
@@ -432,6 +463,9 @@ export const selectUserAchievementSchema = createSelectSchema(userAchievements);
 export const insertArtistMediaSchema = createInsertSchema(artistMedia);
 export const selectArtistMediaSchema = createSelectSchema(artistMedia);
 
+export const insertMusicianSchema = createInsertSchema(musicians).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectMusicianSchema = createSelectSchema(musicians);
+
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
 export type InsertBooking = typeof bookings.$inferInsert;
@@ -472,6 +506,8 @@ export type InsertUserAchievement = typeof userAchievements.$inferInsert;
 export type SelectUserAchievement = typeof userAchievements.$inferSelect;
 export type InsertArtistMedia = typeof artistMedia.$inferInsert;
 export type SelectArtistMedia = typeof artistMedia.$inferSelect;
+export type InsertMusician = typeof musicians.$inferInsert;
+export type SelectMusician = typeof musicians.$inferSelect;
 
 // Red Social Simulada
 export const socialUsers = pgTable("social_users", {
