@@ -4,8 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Label } from "../ui/label";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Film, Play, Loader2, Sparkles } from "lucide-react";
+import { Film, Play, Loader2, Sparkles, AlertCircle, CheckCircle2 } from "lucide-react";
 import { FAL_VIDEO_MODELS, getRecommendedModels } from "../../lib/api/fal-video-service";
+import { Alert, AlertDescription } from "../ui/alert";
 
 interface VideoModelSelectorProps {
   onGenerateVideo: (modelId: string, sceneId?: number) => Promise<void>;
@@ -39,13 +40,26 @@ export function VideoModelSelector({
         </Badge>
       </div>
 
+      {hasImages && (
+        <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-700 dark:text-green-300">
+            ✓ All images generated! You can now create videos
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-3">
         <div className="space-y-2">
           <Label htmlFor="model-select" className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
             Select Video Model
           </Label>
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
+          <Select 
+            value={selectedModel} 
+            onValueChange={setSelectedModel}
+            disabled={!hasImages}
+          >
             <SelectTrigger id="model-select" className="w-full">
               <SelectValue placeholder="Choose a video model" />
             </SelectTrigger>
@@ -65,7 +79,7 @@ export function VideoModelSelector({
           </Select>
         </div>
 
-        {currentModel && (
+        {currentModel && hasImages && (
           <div className="p-3 bg-white/50 dark:bg-black/20 rounded-md border">
             <p className="text-sm font-medium mb-1">{currentModel.name}</p>
             <p className="text-xs text-muted-foreground mb-2">{currentModel.description}</p>
@@ -81,7 +95,7 @@ export function VideoModelSelector({
           <Button
             onClick={() => onGenerateAllVideos(selectedModel)}
             disabled={isGenerating || !hasImages || scenesCount === 0}
-            className="flex-1"
+            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             size="lg"
             data-testid="button-generate-all-videos"
           >
@@ -100,13 +114,16 @@ export function VideoModelSelector({
         </div>
 
         {!hasImages && (
-          <p className="text-sm text-amber-600 dark:text-amber-400 text-center">
-            ⚠️ Generate images first before creating videos
-          </p>
+          <Alert variant="destructive" className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-amber-700 dark:text-amber-300">
+              Generate images first before creating videos
+            </AlertDescription>
+          </Alert>
         )}
 
         <p className="text-xs text-muted-foreground text-center">
-          Click on individual images in the timeline to generate video for that scene only
+          💡 Click on individual images in the timeline to generate video for that scene only
         </p>
       </div>
     </Card>

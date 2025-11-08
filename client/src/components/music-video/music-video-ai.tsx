@@ -78,9 +78,9 @@ async function transcribeAudio(file: File) {
 
     console.log('🌐 Fetching /api/audio/transcribe...');
     
-    // Crear AbortController para timeout de 10 minutos
+    // Crear AbortController para timeout de 15 minutos (para archivos grandes)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutos
+    const timeoutId = setTimeout(() => controller.abort(), 900000); // 15 minutos
     
     try {
       const response = await fetch('/api/audio/transcribe', {
@@ -98,13 +98,21 @@ async function transcribeAudio(file: File) {
         console.log('📦 Data received:', data);
       } catch (parseError) {
         console.error('❌ Error parsing response JSON:', parseError);
-        throw new Error('Server response is not valid JSON');
+        throw new Error('El servidor no respondió correctamente. Por favor, intenta de nuevo.');
       }
 
       if (!response.ok || !data.success) {
-        const errorMsg = data.error || `Server error: ${response.status} ${response.statusText}`;
+        const errorMsg = data.error || `Error del servidor: ${response.status}`;
         console.error('❌ Error in server response:', errorMsg);
-        throw new Error(errorMsg);
+        
+        // Mejorar mensajes de error para el usuario
+        if (errorMsg.includes('Connection error') || errorMsg.includes('ECONNRESET')) {
+          throw new Error('Error de conexión con OpenAI. Por favor, intenta de nuevo. Si el problema persiste, verifica tu conexión a internet o intenta con un archivo de audio más pequeño.');
+        } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+          throw new Error('La transcripción está tomando demasiado tiempo. Intenta con un archivo más corto o intenta de nuevo.');
+        } else {
+          throw new Error(errorMsg);
+        }
       }
 
       if (!data.transcription || !data.transcription.text) {
@@ -115,7 +123,7 @@ async function transcribeAudio(file: File) {
       return data.transcription.text;
     } catch (fetchError: any) {
       if (fetchError.name === 'AbortError') {
-        throw new Error('Transcription timeout - the audio file may be too large or the service is slow');
+        throw new Error('La transcripción tardó demasiado tiempo (más de 15 minutos). Por favor, intenta con un archivo de audio más corto.');
       }
       throw fetchError;
     }
@@ -1296,9 +1304,7 @@ export function MusicVideoAI() {
     }
 
     setIsGeneratingImages(true);
-    setShowProgress(true);
-    setCurrentProgressStage("images");
-    setProgressPercentage(0);
+    setIsGeneratingShots(true); // Abrir modal de progreso
     
     try {
       const parsedScript = JSON.parse(scriptContent);
@@ -1320,12 +1326,23 @@ export function MusicVideoAI() {
         description: `Starting generation of ${scenes.length} scenes with Gemini 2.5 Flash Image...`,
       });
       
-      // Actualizar progreso inicialmente
-      setProgressPercentage(10);
+      // Inicializar progreso del modal
+      setGenerationProgress({
+        current: 0,
+        total: scenes.length,
+        percentage: 0,
+        currentPrompt: '',
+        generatedImages: [],
+        status: 'Preparando generación...'
+      });
 
-      // Prepare scenes in the format expected by Gemini using the NEW schema
-      const geminiScenes = scenes.map((scene: any) => {
-        // Use fields from the new MusicVideoScene schema
+      let successCount = 0;
+
+      // Generar imágenes UNA POR UNA (secuencialmente)
+      for (let i = 0; i < scenes.length; i++) {
+        const scene = scenes[i];
+        
+        // Preparar datos de la escena
         const shotType = scene.shot_type || "MS";
         const cameraMovement = scene.camera_movement || "static";
         const lens = scene.lens || "standard";
@@ -1335,103 +1352,100 @@ export function MusicVideoAI() {
         const location = scene.location || "performance space";
         const colorTemp = scene.color_temperature || "5000K";
         
-        return {
-          id: scene.scene_id || `scene-${Math.random()}`,
-          scene: description, // Use complete description that already includes all details
-          camera: `${lens} lens, ${shotType} shot, ${cameraMovement} movement`,
-          lighting: `${lighting} lighting, ${colorTemp} color temperature`,
-          style: `${visualStyle} style, ${location}`,
-          movement: cameraMovement
-        };
-      });
-
-      // Call Gemini endpoint with multiple facial references
-      setProgressPercentage(30);
-      const response = await fetch('/api/gemini-image/generate-batch-with-multiple-faces', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          scenes: geminiScenes,
-          referenceImagesBase64: artistReferenceImages
-        }),
-      });
-
-      setProgressPercentage(70);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const prompt = `${description}. ${lens} lens, ${shotType} shot, ${cameraMovement} movement, ${lighting} lighting, ${colorTemp} color temperature, ${visualStyle} style, ${location}`;
         
-        // Detectar error de cuota excedida
-        if (response.status === 429 || errorData.error?.includes('quota') || errorData.error?.includes('RESOURCE_EXHAUSTED')) {
-          throw new Error('Has excedido el límite de imágenes gratuitas de Gemini (100/día). Intenta de nuevo mañana o usa un API key de pago.');
+        // Actualizar progreso ANTES de generar
+        setGenerationProgress(prev => ({
+          ...prev,
+          status: `Generando imagen ${i + 1} de ${scenes.length}...`,
+          currentPrompt: prompt
+        }));
+
+        try {
+          // Generar imagen individual
+          const response = await fetch('/api/gemini-image/generate-single-with-multiple-faces', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              prompt: prompt,
+              referenceImagesBase64: artistReferenceImages,
+              seed: seed + (i + 1)
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            
+            if (response.status === 429 || errorData.error?.includes('quota') || errorData.error?.includes('RESOURCE_EXHAUSTED')) {
+              throw new Error('Has excedido el límite de imágenes gratuitas de Gemini (100/día). Intenta de nuevo mañana o usa un API key de pago.');
+            }
+            
+            throw new Error(errorData.error || `Server error: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          
+          if (data.success && data.imageUrl) {
+            successCount++;
+            
+            const sceneId = scene.scene_id || (i + 1);
+            
+            // Actualizar timeline item inmediatamente
+            setTimelineItems(prevItems => {
+              return prevItems.map(item => {
+                const sceneIdMatch = item.id.toString().match(/scene-(\d+)/);
+                if (!sceneIdMatch) return item;
+                
+                const itemSceneId = parseInt(sceneIdMatch[1]);
+                
+                if (itemSceneId === sceneId) {
+                  return {
+                    ...item,
+                    imageUrl: data.imageUrl,
+                    thumbnail: data.imageUrl,
+                    url: data.imageUrl,
+                    generatedImage: data.imageUrl,
+                    metadata: {
+                      ...item.metadata,
+                      isGeneratedImage: true,
+                      imageGeneratedAt: new Date().toISOString(),
+                      scene_id: sceneId,
+                      shot_type: shotType,
+                      role: item.metadata?.role || 'performance'
+                    }
+                  };
+                }
+                
+                return item;
+              });
+            });
+            
+            // Actualizar galería del modal INMEDIATAMENTE
+            setGenerationProgress(prev => ({
+              ...prev,
+              current: successCount,
+              percentage: Math.round((successCount / scenes.length) * 100),
+              status: `✅ Imagen ${i + 1} completada`,
+              generatedImages: [...prev.generatedImages, {
+                id: String(sceneId),
+                url: data.imageUrl,
+                prompt: prompt
+              }]
+            }));
+            
+            console.log(`✅ Image ${i + 1}/${scenes.length} generated successfully`);
+          }
+        } catch (error) {
+          console.error(`Error generating image ${i + 1}:`, error);
+          // Continuar con la siguiente imagen en caso de error
         }
-        
-        throw new Error(errorData.error || `Server error: ${response.statusText}`);
       }
-
-      const data = await response.json();
-      setProgressPercentage(90);
-      
-      if (!data.success || !data.results) {
-        // Detectar error de cuota en la respuesta
-        if (data.error?.includes('quota') || data.error?.includes('RESOURCE_EXHAUSTED')) {
-          throw new Error('Has excedido el límite de imágenes gratuitas de Gemini (100/día). Intenta de nuevo mañana o usa un API key de pago.');
-        }
-        throw new Error(data.error || 'Error generating images');
-      }
-
-      // Update timeline items with generated images
-      // IMPORTANTE: El servidor devuelve results indexados por scene_id (ej: 1, 2, 3...)
-      setTimelineItems(prevItems => {
-        return prevItems.map(item => {
-          // Only process image/scene clips
-          if (item.type !== 'image' && !item.id.toString().startsWith('scene-')) {
-            return item;
-          }
-          
-          // Extraer el scene_id del item.id (formato: "scene-1", "scene-2", etc)
-          const sceneIdMatch = item.id.toString().match(/scene-(\d+)/);
-          if (!sceneIdMatch) {
-            console.warn(`⚠️ No se pudo extraer scene_id de ${item.id}`);
-            return item;
-          }
-          
-          const sceneId = parseInt(sceneIdMatch[1]);
-          
-          // Backend returns results indexed by scene_id
-          const imageResult = data.results[sceneId];
-          
-          console.log(`📍 Assigning image for scene ${sceneId} to ${item.id}:`, imageResult?.success ? 'YES' : 'NO', imageResult?.imageUrl ? `URL: ${imageResult.imageUrl.substring(0, 50)}...` : '');
-          
-          if (imageResult && imageResult.success && imageResult.imageUrl) {
-            return {
-              ...item,
-              imageUrl: imageResult.imageUrl,
-              thumbnail: imageResult.imageUrl,
-              url: imageResult.imageUrl, // Also assign to url for compatibility
-              metadata: {
-                ...item.metadata,
-                isGeneratedImage: true,
-                imageGeneratedAt: new Date().toISOString(),
-                scene_id: sceneId,
-                shot_type: item.shotType || item.metadata?.shot_type,
-                role: item.metadata?.role || 'performance'
-              }
-            };
-          }
-          
-          console.warn(`⚠️ Could not assign image to ${item.id} (scene ${sceneId})`);
-          return item;
-        });
-      });
-
-      setProgressPercentage(100);
-      await new Promise(resolve => setTimeout(resolve, 500));
       
       toast({
         title: "Success!",
-        description: `${parsedScript.length} images generated with Gemini Nano Banana`,
+        description: `${successCount}/${scenes.length} images generated with Gemini`,
       });
 
       setCurrentStep(5);
@@ -1444,8 +1458,16 @@ export function MusicVideoAI() {
       });
     } finally {
       setIsGeneratingImages(false);
-      setShowProgress(false);
-      setProgressPercentage(0);
+      setIsGeneratingShots(false); // Cerrar modal
+      // Resetear progreso
+      setGenerationProgress({
+        current: 0,
+        total: 0,
+        percentage: 0,
+        currentPrompt: '',
+        generatedImages: [],
+        status: ''
+      });
     }
   };
   
@@ -4901,6 +4923,7 @@ ${transcription}`;
                       onLoadProject={handleLoadProject}
                       isSaving={isSavingProject}
                       currentProjectId={currentProjectId}
+                      hasImages={timelineItems.some(item => item.generatedImage || item.firebaseUrl)}
                     />
                   </div>
                 )}

@@ -374,7 +374,7 @@ export default function HomePage() {
   };
 
   // Calculate days until launch
-  const launchDate = new Date('2025-04-01T00:00:00');
+  const launchDate = new Date('2025-12-26T00:00:00');
   const now = new Date();
   const diffTime = launchDate.getTime() - now.getTime();
   const daysUntilLaunch = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -420,7 +420,7 @@ export default function HomePage() {
                   className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-4 py-1 text-sm"
                   variant="outline"
                 >
-                  Launch in {daysUntilLaunch} days — April 1st, 2025
+                  Launch in {daysUntilLaunch} days — December 26th, 2025
                 </Badge>
               </motion.div>
 

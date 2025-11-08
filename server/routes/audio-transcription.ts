@@ -10,10 +10,36 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// Ruta de prueba para verificar la API key
+router.get('/test-connection', async (req: Request, res: Response) => {
+  try {
+    console.log('🧪 Probando conexión con OpenAI...');
+    console.log('📋 API Key presente:', !!process.env.OPENAI_API_KEY);
+    console.log('📋 Primeros caracteres:', process.env.OPENAI_API_KEY?.substring(0, 20) + '...');
+    
+    // Intentar listar modelos como prueba simple
+    const models = await openai.models.list();
+    console.log('✅ Conexión exitosa con OpenAI');
+    
+    return res.json({
+      success: true,
+      message: 'Conexión exitosa con OpenAI',
+      modelCount: models.data.length
+    });
+  } catch (error: any) {
+    console.error('❌ Error probando conexión:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      type: error.constructor.name
+    });
+  }
+});
+
 router.post('/transcribe', async (req: Request, res: Response) => {
-  // Aumentar el timeout de esta ruta a 10 minutos
-  req.setTimeout(600000); // 10 minutos en milisegundos
-  res.setTimeout(600000);
+  // Aumentar el timeout de esta ruta a 15 minutos para archivos grandes
+  req.setTimeout(900000); // 15 minutos en milisegundos
+  res.setTimeout(900000);
   
   try {
     console.log('🎤 Solicitud de transcripción recibida');
@@ -86,12 +112,59 @@ router.post('/transcribe', async (req: Request, res: Response) => {
     
     console.log(`📂 Archivo renombrado a: ${tempPathWithExtension}`);
 
-    const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(tempPathWithExtension),
-      model: 'whisper-1',
-      language: 'es',
-      response_format: 'verbose_json'
-    });
+    // Reintentar hasta 5 veces con timeout más largo
+    let transcription;
+    let retries = 5;
+    let lastError;
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`🔄 Intento ${attempt} de ${retries}...`);
+        
+        // Crear un nuevo stream en cada intento
+        const fileStream = fs.createReadStream(tempPathWithExtension);
+        
+        transcription = await openai.audio.transcriptions.create({
+          file: fileStream,
+          model: 'whisper-1',
+          language: 'es',
+          response_format: 'verbose_json'
+        }, {
+          timeout: 300000, // 5 minutos de timeout por solicitud
+          maxRetries: 0 // Desactivar reintentos internos para controlarlos nosotros
+        });
+        
+        console.log(`✅ Transcripción exitosa en intento ${attempt}`);
+        break; // Éxito, salir del loop
+        
+      } catch (error: any) {
+        lastError = error;
+        console.error(`❌ Error en intento ${attempt}:`, error.message);
+        console.error(`📝 Error code:`, error.code);
+        console.error(`📝 Error type:`, error.constructor.name);
+        
+        // Si es el último intento, lanzar el error
+        if (attempt === retries) {
+          throw error;
+        }
+        
+        // Si es un error de conexión, esperar antes de reintentar
+        if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || 
+            error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' ||
+            error.message?.includes('Connection') || error.message?.includes('network')) {
+          const waitTime = attempt * 3000; // 3s, 6s, 9s, 12s
+          console.log(`⏳ Esperando ${waitTime/1000}s antes de reintentar...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+          // Si no es error de conexión, no reintentar
+          throw error;
+        }
+      }
+    }
+    
+    if (!transcription) {
+      throw lastError || new Error('No se pudo completar la transcripción');
+    }
     
     console.log('✅ Transcripción completada exitosamente');
 

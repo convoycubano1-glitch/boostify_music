@@ -4,9 +4,10 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Save, FolderOpen, Trash2, Loader2, Download, Calendar } from "lucide-react";
+import { Save, FolderOpen, Trash2, Loader2, Download, Calendar, Edit3, ExternalLink } from "lucide-react";
 import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
 import { useToast } from "../../hooks/use-toast";
+import { useLocation } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ interface ProjectManagerProps {
   onLoadProject: (project: MusicVideoProject) => void;
   isSaving: boolean;
   currentProjectId?: string;
+  hasImages?: boolean; // Nuevo: para mostrar el botón del editor profesional
 }
 
 export function ProjectManager({
@@ -34,9 +36,11 @@ export function ProjectManager({
   onSaveProject,
   onLoadProject,
   isSaving,
-  currentProjectId
+  currentProjectId,
+  hasImages = false
 }: ProjectManagerProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [projects, setProjects] = useState<MusicVideoProject[]>([]);
   const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -100,9 +104,23 @@ export function ProjectManager({
     loadProjects();
   };
 
+  // Open in Professional Editor
+  const openInProfessionalEditor = () => {
+    if (!currentProjectId) {
+      toast({
+        title: "Save project first",
+        description: "Please save your project before opening it in the editor",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setLocation(`/professional-editor?projectId=${currentProjectId}`);
+  };
+
   return (
     <>
-      <Card className="p-4 space-y-3 border-2 border-primary/20">
+      <Card className="p-4 space-y-3 border-2 border-primary/20 bg-gradient-to-br from-orange-50/30 to-red-50/30 dark:from-orange-950/10 dark:to-red-950/10">
         <div className="flex items-center gap-2">
           <Save className="h-4 w-4 text-primary" />
           <h3 className="font-semibold">Project Management</h3>
@@ -126,7 +144,7 @@ export function ProjectManager({
           <Button
             onClick={onSaveProject}
             disabled={isSaving || !projectName.trim()}
-            className="flex-1"
+            className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
             data-testid="button-save-project"
           >
             {isSaving ? (
@@ -152,8 +170,22 @@ export function ProjectManager({
           </Button>
         </div>
 
+        {/* Open in Professional Editor - Solo se muestra si el proyecto está guardado y tiene imágenes */}
+        {currentProjectId && hasImages && (
+          <Button
+            onClick={openInProfessionalEditor}
+            variant="outline"
+            className="w-full border-2 border-purple-500/30 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+            data-testid="button-open-in-editor"
+          >
+            <Edit3 className="mr-2 h-4 w-4" />
+            Open in Professional Editor
+            <ExternalLink className="ml-2 h-3 w-3" />
+          </Button>
+        )}
+
         <p className="text-xs text-muted-foreground">
-          💾 Projects are auto-saved every 5 seconds while you work
+          💾 {currentProjectId ? 'Project saved!' : 'Save your project to access the Professional Editor'}
         </p>
       </Card>
 
