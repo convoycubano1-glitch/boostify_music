@@ -62,6 +62,8 @@ import { generateMusicVideoPrompts } from "../../lib/api/music-video-generator";
 import { FAL_VIDEO_MODELS, generateVideoWithFAL, generateMultipleVideos } from "../../lib/api/fal-video-service";
 import DynamicProgressTracker from "./dynamic-progress-tracker";
 import { CreativeOnboardingModal } from "./creative-onboarding-modal";
+import { DirectorSelectionModal } from "./director-selection-modal";
+import { ConceptSelectionModal } from "./concept-selection-modal";
 import { applyLipSync } from "../../lib/api/fal-lipsync";
 import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
 import { musicVideoProjectServicePostgres, type MusicVideoProjectPostgres } from "../../lib/services/music-video-project-service-postgres";
@@ -367,6 +369,9 @@ export function MusicVideoAI() {
   
   // Estado para modal de onboarding
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showDirectorSelection, setShowDirectorSelection] = useState(false);
+  const [showConceptSelection, setShowConceptSelection] = useState(false);
+  const [selectedVisualStyle, setSelectedVisualStyle] = useState<string>("");
 
   // Estados para el modal de progreso de generación de imágenes
   const [generationProgress, setGenerationProgress] = useState({
@@ -872,13 +877,11 @@ export function MusicVideoAI() {
       imagesCount: referenceImages.length
     });
     
-    // Establecer las imágenes de referencia
+    // Establecer las imágenes de referencia y el archivo de audio
     setArtistReferenceImages(referenceImages);
+    setSelectedFile(audioFile);
     
-    // Cerrar el modal de onboarding
-    setShowOnboarding(false);
-    
-    // Preparar el audio buffer y comenzar transcripción automáticamente
+    // Preparar el audio buffer
     const reader = new FileReader();
     reader.onload = async (e) => {
       if (e.target?.result instanceof ArrayBuffer) {
@@ -887,61 +890,134 @@ export function MusicVideoAI() {
         }
         const buffer = await audioContext.current.decodeAudioData(e.target.result);
         setAudioBuffer(buffer);
-        
-        // Iniciar transcripción automáticamente
-        console.log('🎤 Starting auto transcription:', audioFile.name, `(${(audioFile.size / 1024 / 1024).toFixed(2)} MB)`);
-        setIsTranscribing(true);
-        setShowProgress(true);
-        setCurrentProgressStage("transcription");
-        setProgressPercentage(0);
-        
-        const progressInterval = setInterval(() => {
-          setProgressPercentage(prev => {
-            if (prev >= 90) return prev;
-            return prev + Math.random() * 15;
-          });
-        }, 500);
-        
-        try {
-          console.log('📤 Sending file to server for transcription...');
-          const transcriptionText = await transcribeAudio(audioFile);
-          console.log('✅ Transcription completed, length:', transcriptionText.length, 'characters');
-          clearInterval(progressInterval);
-          setProgressPercentage(100);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setTranscription(transcriptionText);
-          setCurrentStep(1.5);
-          
-          setShowProgress(false);
-          setIsTranscribing(false);
-          setProgressPercentage(0);
-          
-          // IMPORTANTE: Establecer el archivo DESPUÉS de procesar para evitar duplicación
-          setSelectedFile(audioFile);
-          
-          console.log('✅ [TRANSCRIPCIÓN COMPLETADA] Usuario puede ahora seleccionar director');
-          
-          toast({
-            title: "✅ Transcripción completada",
-            description: "Ahora puedes seleccionar un director y estilo para continuar",
-          });
-          
-        } catch (err) {
-          console.error("❌ Error transcribing audio:", err);
-          clearInterval(progressInterval);
-          toast({
-            title: "Error de transcripción",
-            description: err instanceof Error ? err.message : "Error al transcribir el audio. Por favor intenta de nuevo.",
-            variant: "destructive",
-          });
-          setIsTranscribing(false);
-          setShowProgress(false);
-          setProgressPercentage(0);
-        }
       }
     };
     reader.readAsArrayBuffer(audioFile);
-  }, [toast, executeScriptGeneration]);
+    
+    // Cerrar el modal de onboarding y mostrar el modal de selección de director
+    setShowOnboarding(false);
+    setShowDirectorSelection(true);
+    
+    console.log('✅ [ONBOARDING COMPLETADO] Mostrando modal de selección de director');
+  }, []);
+
+  // Handler para cuando se selecciona director y estilo
+  const handleDirectorSelection = useCallback(async (director: DirectorProfile, style: string) => {
+    console.log('🎬 Director seleccionado:', director.name, '| Estilo:', style);
+    
+    // Guardar director y estilo
+    setVideoStyle(prev => ({
+      ...prev,
+      selectedDirector: director as any // Type compatibility fix
+    }));
+    setSelectedVisualStyle(style);
+    
+    // Cerrar modal de director
+    setShowDirectorSelection(false);
+    
+    // Iniciar transcripción si aún no se ha hecho
+    if (!transcription && selectedFile) {
+      console.log('🎤 Iniciando transcripción automática...');
+      setIsTranscribing(true);
+      setShowProgress(true);
+      setCurrentProgressStage("transcription");
+      setProgressPercentage(0);
+      
+      const progressInterval = setInterval(() => {
+        setProgressPercentage(prev => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 15;
+        });
+      }, 500);
+      
+      try {
+        const transcriptionText = await transcribeAudio(selectedFile);
+        console.log('✅ Transcripción completada, length:', transcriptionText.length, 'characters');
+        clearInterval(progressInterval);
+        setProgressPercentage(100);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setTranscription(transcriptionText);
+        setCurrentStep(1.5);
+        
+        setShowProgress(false);
+        setIsTranscribing(false);
+        setProgressPercentage(0);
+        
+        // Generar conceptos automáticamente
+        console.log('🎨 Generando 3 conceptos creativos...');
+        await handleGenerateConcepts(transcriptionText, director);
+        
+      } catch (err) {
+        console.error("❌ Error transcribing audio:", err);
+        clearInterval(progressInterval);
+        toast({
+          title: "Error de transcripción",
+          description: err instanceof Error ? err.message : "Error al transcribir el audio",
+          variant: "destructive",
+        });
+        setIsTranscribing(false);
+        setShowProgress(false);
+        setProgressPercentage(0);
+        // Volver al modal de selección
+        setShowDirectorSelection(true);
+      }
+    } else if (transcription) {
+      // Si ya hay transcripción, generar conceptos directamente
+      await handleGenerateConcepts(transcription, director);
+    }
+  }, [transcription, selectedFile, toast]);
+
+  // Handler para generar conceptos
+  const handleGenerateConcepts = useCallback(async (transcriptionText: string, director: DirectorProfile) => {
+    setIsGeneratingConcepts(true);
+    setShowProgress(true);
+    setCurrentProgressStage("concepts");
+    setProgressMessage("Generando 3 propuestas creativas...");
+    
+    try {
+      const audioDurationInSeconds = audioBuffer ? audioBuffer.duration : 180;
+      
+      const concepts = await generateThreeConceptProposals(
+        transcriptionText,
+        director.name,
+        artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
+        audioDurationInSeconds
+      );
+      
+      console.log('✅ Conceptos generados:', concepts.length);
+      setConceptProposals(concepts);
+      setIsGeneratingConcepts(false);
+      setShowProgress(false);
+      
+      // Mostrar modal de selección de concepto
+      setShowConceptSelection(true);
+      
+    } catch (err) {
+      console.error("❌ Error generando conceptos:", err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Error generando conceptos",
+        variant: "destructive",
+      });
+      setIsGeneratingConcepts(false);
+      setShowProgress(false);
+      // Volver al modal de director
+      setShowDirectorSelection(true);
+    }
+  }, [audioBuffer, artistReferenceImages, toast]);
+
+  // Handler para cuando se selecciona un concepto
+  const handleConceptSelection = useCallback(async (concept: any) => {
+    console.log('🎨 Concepto seleccionado:', concept.title || 'Concepto');
+    
+    setSelectedConcept(concept);
+    setShowConceptSelection(false);
+    
+    // Proceder a generar el script completo y las imágenes
+    console.log('📜 Generando script final basado en el concepto...');
+    await executeScriptGeneration();
+    
+  }, [executeScriptGeneration]);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -3873,6 +3949,20 @@ ${transcription}`;
       <CreativeOnboardingModal
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
+      />
+
+      {/* Modal de Selección de Director y Estilo */}
+      <DirectorSelectionModal
+        open={showDirectorSelection}
+        onSelect={handleDirectorSelection}
+      />
+
+      {/* Modal de Selección de Concepto */}
+      <ConceptSelectionModal
+        open={showConceptSelection}
+        concepts={conceptProposals}
+        directorName={videoStyle.selectedDirector?.name || "El Director"}
+        onSelect={handleConceptSelection}
       />
 
       {/* Modal de Progreso de Generación de Imágenes */}
