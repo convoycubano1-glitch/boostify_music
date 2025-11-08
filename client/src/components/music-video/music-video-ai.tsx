@@ -63,6 +63,7 @@ import DynamicProgressTracker from "./dynamic-progress-tracker";
 import { CreativeOnboardingModal } from "./creative-onboarding-modal";
 import { applyLipSync } from "../../lib/api/fal-lipsync";
 import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
+import { musicVideoProjectServicePostgres, type MusicVideoProjectPostgres } from "../../lib/services/music-video-project-service-postgres";
 import { ProjectManager } from "./project-manager";
 import { VideoModelSelector } from "./video-model-selector";
 import { getDirectorByName, getDirectorById, type DirectorProfile } from "../../data/directors";
@@ -1952,7 +1953,7 @@ ${transcription}`;
   };
 
   /**
-   * Guardar proyecto en Firestore
+   * Guardar proyecto en PostgreSQL
    */
   const handleSaveProject = async () => {
     if (!user?.uid) {
@@ -1975,23 +1976,56 @@ ${transcription}`;
 
     setIsSavingProject(true);
     try {
-      const projectId = await musicVideoProjectService.saveProject(
-        user.uid,
+      const imagesGenerated = timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length;
+      const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
+      
+      const result = await musicVideoProjectServicePostgres.saveProject({
+        userId: user.uid,
         projectName,
-        {
-          audioUrl: audioUrl || "",
-          timelineItems,
-          artistReferences: artistReferenceImages,
-          editingStyle: selectedEditingStyle.id,
-          duration: estimatedDuration
+        audioUrl: audioUrl || undefined,
+        audioDuration: audioBuffer?.duration,
+        transcription: transcription || undefined,
+        scriptContent: scriptContent || undefined,
+        timelineItems,
+        selectedDirector: videoStyle.selectedDirector ? {
+          id: videoStyle.selectedDirector.id || '',
+          name: videoStyle.selectedDirector.name || '',
+          specialty: videoStyle.selectedDirector.specialty || '',
+          style: videoStyle.selectedDirector.style || '',
+          experience: videoStyle.selectedDirector.experience || ''
+        } : undefined,
+        videoStyle: {
+          cameraFormat: videoStyle.cameraFormat,
+          mood: videoStyle.mood,
+          characterStyle: videoStyle.characterStyle,
+          colorPalette: videoStyle.colorPalette,
+          visualIntensity: videoStyle.visualIntensity,
+          narrativeIntensity: videoStyle.narrativeIntensity,
+          selectedDirector: videoStyle.selectedDirector
         },
-        currentProjectId
-      );
+        artistReferenceImages,
+        selectedEditingStyle: {
+          id: selectedEditingStyle.id,
+          name: selectedEditingStyle.name,
+          description: selectedEditingStyle.description,
+          duration: selectedEditingStyle.duration
+        },
+        status: videosGenerated === timelineItems.length && timelineItems.length > 0 ? "completed" : 
+                imagesGenerated > 0 ? "generating_images" :
+                scriptContent ? "generating_script" : "draft",
+        progress: {
+          scriptGenerated: !!scriptContent,
+          imagesGenerated,
+          totalImages: timelineItems.length,
+          videosGenerated,
+          totalVideos: timelineItems.length
+        }
+      });
 
-      setCurrentProjectId(projectId);
+      setCurrentProjectId(result.project.id);
       toast({
         title: "Project saved",
-        description: `"${projectName}" has been saved successfully`
+        description: `"${projectName}" has been ${result.isNew ? 'created' : 'updated'} successfully`
       });
     } catch (error) {
       console.error('Error saving project:', error);
@@ -2006,18 +2040,52 @@ ${transcription}`;
   };
 
   /**
-   * Cargar proyecto desde Firestore
+   * Cargar proyecto desde PostgreSQL
    */
-  const handleLoadProject = (project: MusicVideoProject) => {
-    setProjectName(project.name);
-    setCurrentProjectId(project.id);
-    setAudioUrl(project.audioUrl);
-    setTimelineItems(project.timelineItems);
-    setArtistReferenceImages(project.artistReferences);
+  const handleLoadProject = async (projectId: string) => {
+    if (!user?.uid) return;
     
-    const editingStyle = editingStyles.find(s => s.id === project.editingStyle);
-    if (editingStyle) {
-      setSelectedEditingStyle(editingStyle);
+    try {
+      const project = await musicVideoProjectServicePostgres.getProject(projectId);
+      if (!project) {
+        toast({
+          title: "Error",
+          description: "Project not found",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setProjectName(project.projectName);
+      setCurrentProjectId(project.id);
+      setAudioUrl(project.audioUrl || null);
+      setTranscription(project.transcription || "");
+      setScriptContent(project.scriptContent || "");
+      setTimelineItems(project.timelineItems);
+      setArtistReferenceImages(project.artistReferenceImages || []);
+      
+      if (project.videoStyle) {
+        setVideoStyle(project.videoStyle as any);
+      }
+      
+      if (project.selectedEditingStyle) {
+        const editingStyle = editingStyles.find(s => s.id === project.selectedEditingStyle?.id);
+        if (editingStyle) {
+          setSelectedEditingStyle(editingStyle);
+        }
+      }
+      
+      toast({
+        title: "Project loaded",
+        description: `"${project.projectName}" has been loaded successfully`
+      });
+    } catch (error) {
+      console.error('Error loading project:', error);
+      toast({
+        title: "Error loading project",
+        description: "Could not load the project",
+        variant: "destructive"
+      });
     }
   };
 
@@ -3555,6 +3623,59 @@ ${transcription}`;
 
     loadDirectors();
   }, []);
+
+  // Auto-save project cuando cambien datos importantes
+  useEffect(() => {
+    if (!user?.uid || !projectName.trim() || timelineItems.length === 0) {
+      return; // No auto-guardar si no hay usuario, nombre de proyecto o timeline items
+    }
+
+    const imagesGenerated = timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length;
+    const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
+
+    musicVideoProjectServicePostgres.autoSave({
+      userId: user.uid,
+      projectName,
+      audioUrl: audioUrl || undefined,
+      audioDuration: audioBuffer?.duration,
+      transcription: transcription || undefined,
+      scriptContent: scriptContent || undefined,
+      timelineItems,
+      selectedDirector: videoStyle.selectedDirector ? {
+        id: videoStyle.selectedDirector.id || '',
+        name: videoStyle.selectedDirector.name || '',
+        specialty: videoStyle.selectedDirector.specialty || '',
+        style: videoStyle.selectedDirector.style || '',
+        experience: videoStyle.selectedDirector.experience || ''
+      } : undefined,
+      videoStyle: {
+        cameraFormat: videoStyle.cameraFormat,
+        mood: videoStyle.mood,
+        characterStyle: videoStyle.characterStyle,
+        colorPalette: videoStyle.colorPalette,
+        visualIntensity: videoStyle.visualIntensity,
+        narrativeIntensity: videoStyle.narrativeIntensity,
+        selectedDirector: videoStyle.selectedDirector
+      },
+      artistReferenceImages,
+      selectedEditingStyle: {
+        id: selectedEditingStyle.id,
+        name: selectedEditingStyle.name,
+        description: selectedEditingStyle.description,
+        duration: selectedEditingStyle.duration
+      },
+      status: videosGenerated === timelineItems.length && timelineItems.length > 0 ? "completed" : 
+              imagesGenerated > 0 ? "generating_images" :
+              scriptContent ? "generating_script" : "draft",
+      progress: {
+        scriptGenerated: !!scriptContent,
+        imagesGenerated,
+        totalImages: timelineItems.length,
+        videosGenerated,
+        totalVideos: timelineItems.length
+      }
+    }, 10000); // Auto-save después de 10 segundos de inactividad
+  }, [user?.uid, projectName, audioUrl, transcription, scriptContent, timelineItems, videoStyle, artistReferenceImages, selectedEditingStyle, audioBuffer?.duration]);
 
   // Convertir los pasos para el componente EnhancedProgressSteps
   // Definir los pasos del workflow con el tipo Step importado

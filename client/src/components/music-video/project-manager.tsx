@@ -6,6 +6,7 @@ import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Save, FolderOpen, Trash2, Loader2, Download, Calendar, Edit3, ExternalLink } from "lucide-react";
 import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
+import { musicVideoProjectServicePostgres, type MusicVideoProjectPostgres } from "../../lib/services/music-video-project-service-postgres";
 import { useToast } from "../../hooks/use-toast";
 import { useLocation } from "wouter";
 import {
@@ -23,7 +24,7 @@ interface ProjectManagerProps {
   projectName: string;
   onProjectNameChange: (name: string) => void;
   onSaveProject: () => Promise<void>;
-  onLoadProject: (project: MusicVideoProject) => void;
+  onLoadProject: (projectId: string) => void;
   isSaving: boolean;
   currentProjectId?: string;
   hasImages?: boolean; // Nuevo: para mostrar el botón del editor profesional
@@ -41,18 +42,18 @@ export function ProjectManager({
 }: ProjectManagerProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [projects, setProjects] = useState<MusicVideoProject[]>([]);
+  const [projects, setProjects] = useState<MusicVideoProjectPostgres[]>([]);
   const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  // Load user projects
+  // Load user projects from PostgreSQL
   const loadProjects = async () => {
     if (!userId) return;
     
     setIsLoading(true);
     try {
-      const userProjects = await musicVideoProjectService.getUserProjects(userId);
+      const userProjects = await musicVideoProjectServicePostgres.getUserProjects(userId);
       setProjects(userProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
@@ -66,11 +67,11 @@ export function ProjectManager({
     }
   };
 
-  // Delete project
+  // Delete project from PostgreSQL
   const handleDeleteProject = async (projectId: string) => {
     setIsDeleting(projectId);
     try {
-      await musicVideoProjectService.deleteProject(projectId);
+      await musicVideoProjectServicePostgres.deleteProject(projectId);
       toast({
         title: "Project deleted",
         description: "Project has been successfully deleted"
@@ -88,14 +89,10 @@ export function ProjectManager({
     }
   };
 
-  // Load project
-  const handleLoadProject = (project: MusicVideoProject) => {
-    onLoadProject(project);
+  // Load project (calls parent handler with projectId)
+  const handleLoadProject = (project: MusicVideoProjectPostgres) => {
+    onLoadProject(project.id);
     setIsLoadDialogOpen(false);
-    toast({
-      title: "Project loaded",
-      description: `Loaded "${project.name}" successfully`
-    });
   };
 
   // Open load dialog and refresh projects
@@ -219,24 +216,29 @@ export function ProjectManager({
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-lg mb-1">{project.name}</h4>
+                        <h4 className="font-semibold text-lg mb-1">{project.projectName}</h4>
                         <div className="flex flex-wrap gap-2 mb-2">
                           <Badge variant="outline">
-                            {project.totalScenes} scenes
+                            {project.timelineItems.length} scenes
                           </Badge>
                           <Badge variant="outline">
-                            {project.generatedImages} images
+                            {project.progress?.imagesGenerated || 0} images
                           </Badge>
                           <Badge variant="outline">
-                            {project.generatedVideos} videos
+                            {project.progress?.videosGenerated || 0} videos
                           </Badge>
-                          <Badge variant="outline">
-                            {Math.round(project.duration)}s
+                          {project.audioDuration && (
+                            <Badge variant="outline">
+                              {Math.round(Number(project.audioDuration))}s
+                            </Badge>
+                          )}
+                          <Badge variant={project.status === "completed" ? "default" : "secondary"}>
+                            {project.status}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          <span>Updated: {project.updatedAt.toLocaleDateString()}</span>
+                          <span>Updated: {new Date(project.lastModified).toLocaleDateString()}</span>
                         </div>
                       </div>
 
