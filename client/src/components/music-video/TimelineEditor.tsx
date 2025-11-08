@@ -909,7 +909,7 @@ export function TimelineEditor({
                         <div
                           key={clip.id}
                           className={cn(
-                            "absolute h-20 rounded cursor-pointer transition-all",
+                            "absolute h-20 rounded cursor-pointer transition-all overflow-hidden",
                             isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-gray-900" : "",
                             clip.locked ? "opacity-50 cursor-not-allowed" : ""
                           )}
@@ -917,7 +917,13 @@ export function TimelineEditor({
                             left: `${clipLeft}px`,
                             width: `${clipWidth}px`,
                             backgroundColor: layerColor.bg,
-                            top: '8px'
+                            top: '8px',
+                            backgroundImage: clip.imageUrl || clip.thumbnail 
+                              ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${clip.imageUrl || clip.thumbnail})`
+                              : undefined,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat'
                           }}
                           onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'body')}
                           onTouchStart={(e) => handleTouchStart(e, clip.id, 'body')}
@@ -925,15 +931,15 @@ export function TimelineEditor({
                         >
                           {/* Clip content */}
                           <div className="p-2 h-full flex flex-col justify-between overflow-hidden">
-                            <div className="text-xs font-semibold truncate text-white">
+                            <div className="text-xs font-semibold truncate text-white drop-shadow-lg">
                               {clip.title}
                             </div>
                             {clip.imagePrompt && (
-                              <div className="text-[10px] text-white/70 truncate">
+                              <div className="text-[10px] text-white/90 truncate drop-shadow">
                                 {clip.imagePrompt}
                               </div>
                             )}
-                            <div className="text-[9px] text-white/50">
+                            <div className="text-[9px] text-white/70 drop-shadow">
                               {formatTime(clip.duration)}
                             </div>
                           </div>
