@@ -1456,5 +1456,14 @@ export function registerRoutes(app: Express): HttpServer {
   });
 
   const httpServer = createServer(app);
+  
+  // Configurar timeouts largos para soportar transcripciones de audio largas
+  // Timeout de 15 minutos (900000ms) para permitir procesamiento de archivos grandes
+  httpServer.timeout = 900000; // 15 minutos
+  httpServer.keepAliveTimeout = 900000; // 15 minutos
+  httpServer.headersTimeout = 910000; // 15 minutos + 10 segundos
+  
+  console.log('⏱️ Server timeouts configured: 15 minutes for long-running operations');
+  
   return httpServer;
 }

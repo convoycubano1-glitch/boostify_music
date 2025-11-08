@@ -607,10 +607,15 @@ export function MusicVideoAI() {
 
           const data = await response.json();
           
-          // Verificar que la respuesta tenga éxito Y que imageUrl sea una string válida
-          if (data.success && data.imageUrl && typeof data.imageUrl === 'string' && data.imageUrl.startsWith('http')) {
+          // Verificar que la respuesta tenga éxito Y que imageUrl sea una string válida (HTTP o data URI)
+          const isValidImageUrl = data.imageUrl && 
+                                  typeof data.imageUrl === 'string' && 
+                                  (data.imageUrl.startsWith('http') || data.imageUrl.startsWith('data:image/'));
+          
+          if (data.success && isValidImageUrl) {
             generatedCount++;
             console.log(`✅ [IMG ${sceneIndex}/${totalScenes}] Imagen generada exitosamente`);
+            console.log(`📸 URL tipo: ${data.imageUrl.substring(0, 30)}...`);
             
             // Actualizar el progreso del modal INMEDIATAMENTE para mostrar la imagen
             setGenerationProgress(prev => ({
@@ -4055,10 +4060,11 @@ ${transcription}`;
                   >
                     <Input
                       type="file"
-                      accept="audio/mpeg,audio/mp3,audio/mp4,audio/wav,audio/aac,audio/x-m4a,audio/ogg,audio/webm,audio/flac"
+                      accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.webm"
                       onChange={handleFileChange}
                       disabled={isTranscribing}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      data-testid="input-audio-file"
                     />
                     <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
                       <Upload className="h-8 w-8 text-orange-400 mb-1" />

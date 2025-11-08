@@ -129,7 +129,7 @@ router.post('/generate-with-face', async (req: Request, res: Response) => {
 // Nuevo endpoint para generar UNA imagen con MÚLTIPLES referencias faciales
 router.post('/generate-single-with-multiple-faces', async (req: Request, res: Response) => {
   try {
-    const { prompt, referenceImagesBase64, seed } = req.body;
+    const { prompt, referenceImagesBase64, seed, scene, sceneId } = req.body;
 
     if (!prompt || !referenceImagesBase64 || !Array.isArray(referenceImagesBase64)) {
       return res.status(400).json({
@@ -141,17 +141,88 @@ router.post('/generate-single-with-multiple-faces', async (req: Request, res: Re
     console.log(`🎬 Generando UNA imagen con ${referenceImagesBase64.length} referencias faciales`);
     console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
 
+    // Intentar primero con Gemini
     const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
-    const imageUrl = await generateImageWithMultipleFaceReferences(
+    const result = await generateImageWithMultipleFaceReferences(
       prompt,
       referenceImagesBase64,
       seed
     );
 
-    return res.json({
-      success: true,
-      imageUrl
-    });
+    // Si Gemini tuvo éxito, retornar
+    if (result.success && result.imageUrl) {
+      console.log('✅ Imagen generada con Gemini');
+      return res.json({
+        success: true,
+        imageUrl: result.imageUrl
+      });
+    }
+
+    // Si Gemini falló (cuota excedida), usar FAL AI como fallback
+    console.log('⚠️ Gemini falló, usando FAL AI FLUX Kontext Pro como fallback...');
+    
+    // Generar con FAL AI
+    const axios = (await import('axios')).default;
+    const FAL_API_KEY = process.env.FAL_API_KEY;
+    
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'Gemini agotó su cuota y FAL_API_KEY no está configurada para fallback'
+      });
+    }
+
+    // Mejorar prompt para FLUX Kontext Pro
+    const enhancedPrompt = `${prompt}. Maintain exact facial features and identity, professional photography, cinematic lighting, 8k resolution.`;
+    
+    const requestBody: any = {
+      prompt: enhancedPrompt,
+      image_size: "landscape_16_9",
+      num_inference_steps: 35,
+      guidance_scale: 4.5,
+      num_images: 1,
+      enable_safety_checker: false,
+      output_format: "jpeg",
+      sync_mode: true
+    };
+
+    // Agregar imágenes de referencia si hay
+    if (referenceImagesBase64 && referenceImagesBase64.length > 0) {
+      requestBody.reference_images = referenceImagesBase64.slice(0, 3);
+      requestBody.reference_image_weight = 0.8;
+    }
+
+    // Agregar seed si está disponible
+    if (seed) {
+      requestBody.seed = seed;
+    }
+
+    console.log(`🎨 Generando con FAL AI FLUX Kontext Pro (${referenceImagesBase64.length} referencias, seed: ${seed || 'auto'})...`);
+    
+    const falResponse = await axios.post(
+      'https://fal.run/fal-ai/flux-kontext-lora-pro',
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 120000
+      }
+    );
+
+    if (falResponse.data && falResponse.data.images && falResponse.data.images.length > 0) {
+      const imageUrl = falResponse.data.images[0].url;
+      console.log(`✅ Imagen generada exitosamente con FAL AI (fallback)`);
+      return res.json({
+        success: true,
+        imageUrl: imageUrl,
+        provider: 'fal'
+      });
+    }
+
+    throw new Error('FAL AI no retornó imágenes');
+
   } catch (error: any) {
     console.error('Error generating single image with multiple faces:', error);
     return res.status(500).json({
