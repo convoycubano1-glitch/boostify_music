@@ -23,6 +23,7 @@ import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } f
 import { BookingDialog } from "../components/booking/booking-dialog";
 import { ProfessionalVoiceCloning } from "../components/music/ProfessionalVoiceCloning";
 import { AddMusicianForm } from "../components/booking/add-musician-form";
+import { AdminMusiciansPanel } from "../components/booking/admin-musicians-panel";
 import { FileExchangeHub } from "../components/producer/FileExchangeHub";
 import { StudioVideoCall } from "../components/producer/StudioVideoCall";
 import { ProductionProgressContainer } from "../components/producer/ProductionProgressContainer";
@@ -663,6 +664,11 @@ export default function ProducerToolsPage() {
               )}
             </div>
           </motion.div>
+
+          {/* Admin Musicians Panel */}
+          <div className="mb-12 mt-16">
+            <AdminMusiciansPanel />
+          </div>
 
           {/* Production Tools Section */}
           <div className="mb-12">
