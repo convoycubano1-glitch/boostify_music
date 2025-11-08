@@ -1,17 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Film, Sparkles, ChevronRight, Check, Star } from "lucide-react";
+import { Film, Sparkles, ChevronRight, Check, Star, Loader2, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { getAllDirectors, type DirectorProfile } from "@/data/directors";
 import { cn } from "@/lib/utils";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+
+interface Director {
+  id: string;
+  name: string;
+  specialty: string;
+  experience: string;
+  style: string;
+  rating: number;
+  imageUrl?: string;
+}
 
 interface DirectorSelectionModalProps {
   open: boolean;
-  onSelect: (director: DirectorProfile, style: string) => void;
+  onSelect: (director: Director, style: string) => void;
 }
 
 const VISUAL_STYLES = [
@@ -23,38 +35,56 @@ const VISUAL_STYLES = [
   { id: "natural", name: "Natural", description: "Organic, authentic, and documentary-style", icon: "🌿" }
 ];
 
-// Gradientes únicos para cada director
-const DIRECTOR_GRADIENTS = [
-  "from-purple-500 to-pink-500",
-  "from-blue-500 to-cyan-500",
-  "from-orange-500 to-red-500",
-  "from-green-500 to-emerald-500",
-  "from-indigo-500 to-purple-500",
-  "from-yellow-500 to-orange-500",
-  "from-pink-500 to-rose-500",
-  "from-teal-500 to-blue-500",
-];
-
-// Función para obtener iniciales
-const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(word => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-};
-
 export function DirectorSelectionModal({ open, onSelect }: DirectorSelectionModalProps) {
-  const [selectedDirector, setSelectedDirector] = useState<DirectorProfile | null>(null);
+  const { toast } = useToast();
+  const [selectedDirector, setSelectedDirector] = useState<Director | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
-  const directors = getAllDirectors();
+  const [directors, setDirectors] = useState<Director[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDirectors = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "directors"));
+        const directorsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Director[];
+        setDirectors(directorsData);
+      } catch (error) {
+        console.error("Error loading directors:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load directors. Using fallback data.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (open) {
+      fetchDirectors();
+    }
+  }, [open, toast]);
 
   const handleContinue = () => {
     if (selectedDirector && selectedStyle) {
       onSelect(selectedDirector, selectedStyle);
     }
   };
+
+  if (loading) {
+    return (
+      <Dialog open={open} modal={true}>
+        <DialogContent className="max-w-5xl max-h-[85vh]">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} modal={true}>
@@ -93,13 +123,26 @@ export function DirectorSelectionModal({ open, onSelect }: DirectorSelectionModa
                     data-testid={`director-${director.id}`}
                   >
                     <div className="flex items-start gap-3">
-                      {/* Avatar con iniciales */}
+                      {/* Avatar con imagen profesional desde Firestore */}
                       <div className={cn(
-                        "w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 transition-all bg-gradient-to-br text-white font-bold text-xl shadow-lg",
-                        DIRECTOR_GRADIENTS[index % DIRECTOR_GRADIENTS.length],
+                        "w-20 h-20 rounded-lg flex-shrink-0 overflow-hidden bg-orange-500/10 flex items-center justify-center transition-all",
                         selectedDirector?.id === director.id && "ring-4 ring-orange-500/50"
                       )}>
-                        {getInitials(director.name)}
+                        {director.imageUrl ? (
+                          <img
+                            src={director.imageUrl}
+                            alt={`${director.name} - ${director.specialty}`}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(director.name);
+                            }}
+                          />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center">
+                            <Award className="h-8 w-8 text-orange-500" />
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex-1 min-w-0">
@@ -110,23 +153,22 @@ export function DirectorSelectionModal({ open, onSelect }: DirectorSelectionModa
                           )}
                         </div>
                         
-                        <p className="text-xs md:text-sm text-muted-foreground mb-2 line-clamp-1">
+                        <p className="text-sm font-medium text-orange-500 mb-1">
                           {director.specialty}
                         </p>
                         
                         <div className="flex items-center gap-1 mb-2">
-                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                          <span className="text-xs font-semibold">{director.rating || 4.5}</span>
-                          <span className="text-xs text-muted-foreground ml-1">• {director.experience}</span>
+                          <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
+                          <span className="text-sm font-medium">{director.rating || 4.5}</span>
                         </div>
                         
-                        <div className="flex flex-wrap gap-1">
-                          {director.visual_style?.signature_techniques?.slice(0, 2).map((spec: string, i: number) => (
-                            <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
-                              {spec}
-                            </Badge>
-                          ))}
-                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {director.experience}
+                        </p>
+                        
+                        <p className="text-sm text-muted-foreground">
+                          Style: {director.style}
+                        </p>
                       </div>
                     </div>
                   </Card>

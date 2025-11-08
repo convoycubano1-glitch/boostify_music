@@ -147,9 +147,14 @@ export function ConceptSelectionModal({
                     <div className="mb-4">
                       <span className="text-xs font-semibold uppercase text-muted-foreground">Paleta de Colores</span>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {concept.color_palette.split(',').slice(0, 4).map((color: string, i: number) => (
+                        {(Array.isArray(concept.color_palette) 
+                          ? concept.color_palette 
+                          : typeof concept.color_palette === 'string' 
+                            ? concept.color_palette.split(',') 
+                            : []
+                        ).slice(0, 4).map((color: string, i: number) => (
                           <Badge key={i} variant="outline" className="text-xs">
-                            {color.trim()}
+                            {typeof color === 'string' ? color.trim() : color}
                           </Badge>
                         ))}
                       </div>
