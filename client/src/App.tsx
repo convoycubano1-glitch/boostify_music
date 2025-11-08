@@ -11,6 +11,7 @@ import { SubscriptionProvider } from "./lib/context/subscription-context";
 import { SubscriptionPlan } from "./lib/api/subscription-service";
 import { ViteHMRErrorHandler } from "./components/improved-websocket-context";
 import { EditorProvider } from "./lib/context/editor-context";
+import { GlobalAuthGuard } from "./lib/global-auth-guard";
 import NotFound from "./pages/not-found";
 import AdminPage from "./pages/admin";
 import AIAgentsPage from "./pages/ai-agents";
@@ -303,7 +304,7 @@ const Router = () => {
         {getRouteComponent("/events", WrappedEventsPage, 'basic')}
         {getRouteComponent("/videos", WrappedVideosPage, 'basic')}
         {getRouteComponent("/blog", WrappedBlogPage, 'basic')}
-        {getRouteComponent("/store", WrappedStorePage, null)}
+        {getRouteComponent("/store", WrappedStorePage, 'free')}
         {getRouteComponent("/education", WrappedEducationPage, 'basic')}
         {getRouteComponent("/course/:id", WrappedCourseDetailPage, 'basic')}
         {getRouteComponent("/social-network", WrappedSocialNetworkPage, 'basic')}
@@ -328,51 +329,51 @@ const Router = () => {
         {getRouteComponent("/image-generator", WrappedImageGeneratorPage, 'pro')}
         
         {/* Rutas para suscripción PREMIUM ($149.99) */}
-        {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, null)}
-        {getRouteComponent("/music-video-workflow", WrappedMusicVideoWorkflowPage, null)}
+        {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, 'free')}
+        {getRouteComponent("/music-video-workflow", WrappedMusicVideoWorkflowPage, 'free')}
         {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
         {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
         {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
         {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
         {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
         {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
-        {getRouteComponent("/affiliates", WrappedAffiliatesPage, null)}
+        {getRouteComponent("/affiliates", WrappedAffiliatesPage, 'free')}
         {getRouteComponent("/boostify-international", WrappedBoostifyInternationalPage, 'premium')}
         
         {/* Rutas administrativas especiales */}
         {getRouteComponent("/admin", WrappedAdminPage, 'free')} {/* Admin tiene acceso con verificación especial */}
         
-        {/* Rutas experimentales que son públicas para todos */}
-        {getRouteComponent("/boostify-tv", WrappedBoostifyTVPage, null)}
-        {getRouteComponent("/artist-image-advisor-improved", WrappedArtistImageAdvisorImproved, null)}
-        {getRouteComponent("/image-generator-simple", WrappedImageGeneratorSimplePage, null)}
-        {getRouteComponent("/face-swap", WrappedFaceSwapPage, null)}
-        {getRouteComponent("/kling-tools", WrappedKlingToolsPage, null)}
-        {getRouteComponent("/kling-store", WrappedKlingStorePage, null)}
-        {getRouteComponent("/kling-test", WrappedKlingTestPage, null)}
-        {getRouteComponent("/video-generation-test", WrappedVideoGenerationTestPage, null)}
-        {getRouteComponent("/camera-movements-test", WrappedCameraMovementsTestPage, null)}
-        {getRouteComponent("/music-mastering", WrappedMusicMasteringPage, null)}
-        {getRouteComponent("/vrl", WrappedVirtualRecordLabelPage, null)}
-        {getRouteComponent("/virtual-record-label", WrappedVirtualRecordLabelPage, null)}
-        {getRouteComponent("/test-progress", WrappedTestProgressPage, null)}
-        {getRouteComponent("/plugins", WrappedPluginsPage, null)}
-        {getRouteComponent("/try-on", WrappedTryOnPage, null)}
-        {getRouteComponent("/try-on-page", WrappedTryOnPage, null)}
-        {getRouteComponent("/professional-editor", WrappedProfessionalEditorPage, null)}
-        {getRouteComponent("/layer-filter-demo", WrappedLayerFilterDemoPage, null)}
-        {getRouteComponent("/animated-workflow", WrappedAnimatedWorkflowPage, null)}
-        {getRouteComponent("/tokenization", WrappedTokenizationPage, null)}
+        {/* Rutas que requieren autenticación con plan 'free' mínimo */}
+        {getRouteComponent("/boostify-tv", WrappedBoostifyTVPage, 'free')}
+        {getRouteComponent("/artist-image-advisor-improved", WrappedArtistImageAdvisorImproved, 'free')}
+        {getRouteComponent("/image-generator-simple", WrappedImageGeneratorSimplePage, 'free')}
+        {getRouteComponent("/face-swap", WrappedFaceSwapPage, 'free')}
+        {getRouteComponent("/kling-tools", WrappedKlingToolsPage, 'free')}
+        {getRouteComponent("/kling-store", WrappedKlingStorePage, 'free')}
+        {getRouteComponent("/kling-test", WrappedKlingTestPage, 'free')}
+        {getRouteComponent("/video-generation-test", WrappedVideoGenerationTestPage, 'free')}
+        {getRouteComponent("/camera-movements-test", WrappedCameraMovementsTestPage, 'free')}
+        {getRouteComponent("/music-mastering", WrappedMusicMasteringPage, 'free')}
+        {getRouteComponent("/vrl", WrappedVirtualRecordLabelPage, 'free')}
+        {getRouteComponent("/virtual-record-label", WrappedVirtualRecordLabelPage, 'free')}
+        {getRouteComponent("/test-progress", WrappedTestProgressPage, 'free')}
+        {getRouteComponent("/plugins", WrappedPluginsPage, 'free')}
+        {getRouteComponent("/try-on", WrappedTryOnPage, 'free')}
+        {getRouteComponent("/try-on-page", WrappedTryOnPage, 'free')}
+        {getRouteComponent("/professional-editor", WrappedProfessionalEditorPage, 'free')}
+        {getRouteComponent("/layer-filter-demo", WrappedLayerFilterDemoPage, 'free')}
+        {getRouteComponent("/animated-workflow", WrappedAnimatedWorkflowPage, 'free')}
+        {getRouteComponent("/tokenization", WrappedTokenizationPage, 'free')}
         {getRouteComponent("/resources", WrappedResourcesPage, null)}
         {getRouteComponent("/tips", WrappedTipsPage, null)}
         {getRouteComponent("/guides", WrappedGuidesPage, null)}
         {getRouteComponent("/tools", WrappedToolsPage, null)}
         {getRouteComponent("/features", WrappedFeaturesPage, null)}
-        {getRouteComponent("/tools/royalty-calculator", WrappedToolsPage, null)}
-        {getRouteComponent("/tools/press-kit", WrappedToolsPage, null)}
-        {getRouteComponent("/tools/release-planner", WrappedToolsPage, null)}
-        {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, null)}
-        {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, null)}
+        {getRouteComponent("/tools/royalty-calculator", WrappedToolsPage, 'free')}
+        {getRouteComponent("/tools/press-kit", WrappedToolsPage, 'free')}
+        {getRouteComponent("/tools/release-planner", WrappedToolsPage, 'free')}
+        {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, 'free')}
+        {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, 'free')}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />
@@ -421,10 +422,12 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <SubscriptionProvider>
-              <EditorProvider>
-                <Router />
-                <Toaster />
-              </EditorProvider>
+              <GlobalAuthGuard>
+                <EditorProvider>
+                  <Router />
+                  <Toaster />
+                </EditorProvider>
+              </GlobalAuthGuard>
             </SubscriptionProvider>
           </AuthProvider>
         </QueryClientProvider>

@@ -165,7 +165,7 @@ export function LipSyncIntegration({ onApplyLipSync, isLoading = false }: LipSyn
                     <Input
                       id="audio-file"
                       type="file"
-                      accept="audio/*"
+                      accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.webm"
                       onChange={handleFileChange}
                       className="hidden"
                     />

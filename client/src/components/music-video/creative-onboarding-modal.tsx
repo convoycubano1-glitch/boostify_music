@@ -336,7 +336,7 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
                 >
                   <input
                     type="file"
-                    accept="audio/*"
+                    accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.webm"
                     onChange={handleAudioUpload}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     data-testid="input-audio"

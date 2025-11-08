@@ -625,7 +625,7 @@ export function DirectorsList() {
               <Label>Upload Song</Label>
               <Input
                 type="file"
-                accept="audio/*"
+                accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.webm"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {

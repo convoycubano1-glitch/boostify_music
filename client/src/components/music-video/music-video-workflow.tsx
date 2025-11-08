@@ -796,7 +796,7 @@ export function MusicVideoWorkflow({ onComplete }: MusicVideoWorkflowProps) {
                   <div className="flex flex-col gap-2">
                     <Input
                       type="file"
-                      accept="audio/*"
+                      accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.webm"
                       onChange={(e) => e.target.files && e.target.files[0] && handleAudioUpload(e.target.files[0])}
                       className="text-sm"
                     />
