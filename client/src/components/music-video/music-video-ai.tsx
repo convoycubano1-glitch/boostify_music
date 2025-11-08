@@ -2012,6 +2012,24 @@ ${transcription}`;
     }
   };
 
+  // Calculamos un estimado de duración antes de generar los clips
+  // para evitar la dependencia circular
+  const estimatedDuration = useMemo(() => {
+    // Si tenemos audioBuffer, usamos su duración como fuente principal
+    if (audioBuffer) {
+      return audioBuffer.duration;
+    }
+    
+    // Si tenemos items de timeline, calculamos la duración en base a ellos
+    if (timelineItems.length > 0) {
+      const lastItem = timelineItems[timelineItems.length - 1];
+      return (lastItem.end_time - timelineItems[0].start_time) / 1000; // Convertir a segundos
+    }
+    
+    // Duración predeterminada si no hay otras fuentes
+    return 180; // 3 minutos por defecto
+  }, [audioBuffer, timelineItems]);
+
   // Auto-guardar proyecto cada 5 segundos cuando hay cambios
   useEffect(() => {
     if (user?.uid && projectName && timelineItems.length > 0 && audioUrl) {
@@ -2541,24 +2559,6 @@ ${transcription}`;
       </div>
     </div>
   ), [currentTime, selectedShot]);
-
-  // Calculamos un estimado de duración antes de generar los clips
-  // para evitar la dependencia circular
-  const estimatedDuration = useMemo(() => {
-    // Si tenemos audioBuffer, usamos su duración como fuente principal
-    if (audioBuffer) {
-      return audioBuffer.duration;
-    }
-    
-    // Si tenemos items de timeline, calculamos la duración en base a ellos
-    if (timelineItems.length > 0) {
-      const lastItem = timelineItems[timelineItems.length - 1];
-      return (lastItem.end_time - timelineItems[0].start_time) / 1000; // Convertir a segundos
-    }
-    
-    // Duración predeterminada si no hay otras fuentes
-    return 180; // 3 minutos por defecto
-  }, [audioBuffer, timelineItems]);
 
   // Mapa de clips organizados por capas para el editor profesional multicanal
   const clips: TimelineClip[] = useMemo(() => {
