@@ -275,6 +275,7 @@ export function MusicVideoAI() {
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
   const [transcription, setTranscription] = useState<string>("");
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
+  const [selectedSceneId, setSelectedSceneId] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -553,115 +554,146 @@ export function MusicVideoAI() {
 
       // Decidir qué endpoint usar basado en si hay imágenes de referencia
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
+      
+      console.log(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${geminiScenes.length}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
+      
+      // Inicializar el estado de progreso del modal
+      setGenerationProgress({
+        current: 0,
+        total: geminiScenes.length,
+        percentage: 0,
+        currentPrompt: 'Iniciando generación...',
+        generatedImages: [],
+        status: 'Preparando generación de imágenes...'
+      });
+      
+      // Usar generación SECUENCIAL - una imagen a la vez
       const endpoint = hasReferenceImages 
-        ? '/api/gemini-image/generate-batch-with-multiple-faces'
+        ? '/api/gemini-image/generate-single-with-multiple-faces'
         : '/api/gemini-image/generate-batch';
       
-      console.log(`📸 [IMG] Usando endpoint: ${endpoint}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
+      let generatedCount = 0;
+      const totalScenes = geminiScenes.length;
       
-      const requestBody = hasReferenceImages
-        ? { scenes: geminiScenes, referenceImagesBase64: artistReferenceImages }
-        : { scenes: geminiScenes };
-      
-      setProgressPercentage(30);
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      setProgressPercentage(70);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setProgressPercentage(90);
-      
-      if (!data.success || !data.results) {
-        throw new Error(data.error || 'Error generating images');
-      }
-
-      console.log(`✅ [IMG] Recibidas ${Object.keys(data.results).length} imágenes del servidor`);
-      console.log(`🗺️ [IMG] Mapeo de resultados:`, Object.keys(data.results));
-      
-      // Verificar si se alcanzó el límite de cuota
-      if (data.quotaExceeded) {
-        console.warn(`⚠️ [IMG] Límite de cuota alcanzado: ${data.successCount}/${data.totalScenes} imágenes generadas`);
+      // Generar una imagen a la vez
+      for (let i = 0; i < geminiScenes.length; i++) {
+        const scene = geminiScenes[i];
+        const sceneIndex = i + 1;
         
-        toast({
-          title: "⚠️ Límite de API Alcanzado",
-          description: data.message || `Se generaron ${data.successCount}/${data.totalScenes} imágenes. La cuota se restablecerá en 24 horas.`,
-          variant: "destructive",
-        });
-      } else if (data.usedFallback) {
-        // Informar si se usó FAL AI como fallback
-        console.log(`📢 [IMG] Se usó FAL AI como fallback: ${data.falCount} imágenes`);
+        console.log(`🎨 [IMG ${sceneIndex}/${totalScenes}] Generando imagen para escena...`);
         
-        toast({
-          title: "✅ Imágenes Generadas",
-          description: data.message || `${data.geminiCount} con Gemini Nano Banana, ${data.falCount} con FAL AI (fallback).`,
-        });
-      }
-      
-      // Actualizar timeline con las imágenes generadas
-      // IMPORTANTE: El servidor devuelve results indexados por scene_id (ej: 1, 2, 3...)
-      setTimelineItems(prevItems => {
-        return prevItems.map(item => {
-          // Solo procesar items de tipo imagen o que sean escenas
-          if (item.type !== 'image' && !item.id.toString().startsWith('scene-')) {
-            return item;
-          }
-          
-          // Extraer el scene_id del item.id (formato: "scene-1", "scene-2", etc)
-          const sceneIdMatch = item.id.toString().match(/scene-(\d+)/);
-          if (!sceneIdMatch) {
-            console.warn(`⚠️ [IMG] No se pudo extraer scene_id de ${item.id}`);
-            return item;
-          }
-          
-          const sceneId = parseInt(sceneIdMatch[1]);
-          
-          // Buscar el resultado correspondiente por scene_id
-          const imageResult = data.results[sceneId];
-          
-          if (imageResult && imageResult.success && imageResult.imageUrl) {
-            console.log(`🖼️ [IMG] ✅ Scene ${sceneId} → Timeline item ${item.id} actualizado con imagen`);
-            return {
-              ...item,
-              imageUrl: imageResult.imageUrl,
-              thumbnail: imageResult.imageUrl,
-              url: imageResult.imageUrl,
-              metadata: {
-                ...item.metadata,
-                isGeneratedImage: true,
-                imageGeneratedAt: new Date().toISOString(),
-                scene_id: sceneId,
-                shot_type: item.shotType || item.metadata?.shot_type,
-                role: item.metadata?.role || 'performance'
+        try {
+          const requestBody = hasReferenceImages
+            ? { 
+                scene: scene, 
+                sceneId: sceneIndex,
+                referenceImagesBase64: artistReferenceImages 
               }
-            };
+            : { scenes: [scene] };
+          
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error(`❌ [IMG ${sceneIndex}] Error:`, errorData.error);
+            continue; // Continuar con la siguiente imagen
+          }
+
+          const data = await response.json();
+          
+          // Verificar que la respuesta tenga éxito Y que imageUrl sea una string válida
+          if (data.success && data.imageUrl && typeof data.imageUrl === 'string' && data.imageUrl.startsWith('http')) {
+            generatedCount++;
+            console.log(`✅ [IMG ${sceneIndex}/${totalScenes}] Imagen generada exitosamente`);
+            
+            // Actualizar el progreso del modal INMEDIATAMENTE para mostrar la imagen
+            setGenerationProgress(prev => ({
+              ...prev,
+              current: generatedCount,
+              total: totalScenes,
+              percentage: Math.round((generatedCount / totalScenes) * 100),
+              currentPrompt: scene.scene || 'Generating...',
+              generatedImages: [
+                ...prev.generatedImages,
+                {
+                  id: `scene-${sceneIndex}`,
+                  url: data.imageUrl,
+                  prompt: scene.scene || `Scene ${sceneIndex}`
+                }
+              ],
+              status: `Generando imagen ${generatedCount} de ${totalScenes}...`
+            }));
+            
+            // Actualizar el timeline INMEDIATAMENTE con esta imagen
+            setTimelineItems(prevItems => {
+              return prevItems.map(item => {
+                // Buscar el item que corresponde a esta escena
+                const sceneIdMatch = item.id.toString().match(/scene-(\d+)/);
+                if (!sceneIdMatch) return item;
+                
+                const itemSceneId = parseInt(sceneIdMatch[1]);
+                
+                if (itemSceneId === sceneIndex) {
+                  console.log(`🖼️ [IMG ${sceneIndex}] ✅ Actualizando timeline item ${item.id} en TIEMPO REAL`);
+                  return {
+                    ...item,
+                    imageUrl: data.imageUrl,
+                    thumbnail: data.imageUrl,
+                    url: data.imageUrl,
+                    generatedImage: data.imageUrl,
+                    metadata: {
+                      ...item.metadata,
+                      isGeneratedImage: true,
+                      imageGeneratedAt: new Date().toISOString(),
+                      scene_id: sceneIndex,
+                      shot_type: item.shotType || item.metadata?.shot_type,
+                      role: item.metadata?.role || 'performance'
+                    }
+                  };
+                }
+                
+                return item;
+              });
+            });
+            
+            // Actualizar progreso general
+            const progress = 30 + ((generatedCount / totalScenes) * 60);
+            setProgressPercentage(Math.round(progress));
+            
           } else {
-            console.warn(`⚠️ [IMG] ❌ Scene ${sceneId} no tiene imagen generada (quotaError o error de generación)`);
+            console.warn(`⚠️ [IMG ${sceneIndex}] No se generó imagen:`, data.error || 'Unknown error');
           }
           
-          return item;
+        } catch (error) {
+          console.error(`❌ [IMG ${sceneIndex}] Error en generación:`, error);
+          continue;
+        }
+      }
+      
+      console.log(`✅ [IMG] Generación completada: ${generatedCount}/${totalScenes} imágenes generadas`);
+      
+      if (generatedCount < totalScenes) {
+        toast({
+          title: "⚠️ Generación Parcial",
+          description: `Se generaron ${generatedCount}/${totalScenes} imágenes correctamente.`,
+          variant: "default",
         });
-      });
+      }
 
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Solo mostrar mensaje de éxito completo si no hubo error de cuota
-      if (!data.quotaExceeded) {
-        toast({
-          title: "¡Proceso Completado!",
-          description: `Video musical listo con ${scenes.length} escenas generadas`,
-        });
-      }
+      // Mostrar mensaje de éxito
+      toast({
+        title: "¡Proceso Completado!",
+        description: `${generatedCount} imágenes generadas exitosamente`,
+      });
 
       console.log('✅ [IMG] Imágenes generadas exitosamente');
       console.log('🎉 [FLUJO AUTOMÁTICO] COMPLETADO - Todas las fases ejecutadas');
@@ -670,6 +702,16 @@ export function MusicVideoAI() {
       setIsGeneratingImages(false);
       setShowProgress(false);
       setProgressPercentage(0);
+      
+      // Limpiar el estado de progreso
+      setGenerationProgress({
+        current: 0,
+        total: 0,
+        percentage: 0,
+        currentPrompt: '',
+        generatedImages: [],
+        status: ''
+      });
       
       // 📍 SCROLL AUTOMÁTICO AL TIMELINE - Centrado en pantalla
       setTimeout(() => {
@@ -4948,6 +4990,7 @@ ${transcription}`;
                       isGenerating={isGeneratingVideos}
                       scenesCount={timelineItems.length}
                       hasImages={timelineItems.some(item => item.generatedImage || item.firebaseUrl)}
+                      selectedSceneId={selectedSceneId}
                     />
                   </div>
                 )}
@@ -5308,6 +5351,7 @@ ${transcription}`;
                       onPlay={() => setIsPlaying(true)}
                       onPause={() => setIsPlaying(false)}
                       isPlaying={isPlaying}
+                      onSceneSelect={setSelectedSceneId}
                       onRegenerateImage={(clipId) => {
                         const item = timelineItems.find(item => item.id === clipId);
                         if (item) {

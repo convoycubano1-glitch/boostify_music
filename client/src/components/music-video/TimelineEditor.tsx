@@ -128,6 +128,7 @@ interface TimelineEditorProps {
   onPlay: () => void;
   onPause: () => void;
   isPlaying: boolean;
+  onSceneSelect?: (clipId: number | null) => void;
   onRegenerateImage?: (clipId: number) => void;
   onSplitClip?: (clipId: number, splitTime: number) => void;
   beatsData?: BeatMap;
@@ -151,6 +152,7 @@ export function TimelineEditor({
   onPlay,
   onPause,
   isPlaying,
+  onSceneSelect,
   onRegenerateImage,
   onSplitClip,
   beatsData,
@@ -162,6 +164,11 @@ export function TimelineEditor({
   const [zoom, setZoom] = useState(1);
   const [tool, setTool] = useState<ToolMode>('select');
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
+  
+  // Notify parent when selection changes
+  useEffect(() => {
+    onSceneSelect?.(selectedClip);
+  }, [selectedClip, onSceneSelect]);
   const [showWaveform, setShowWaveform] = useState<boolean>(true);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [showSafeAreas, setShowSafeAreas] = useState(false);

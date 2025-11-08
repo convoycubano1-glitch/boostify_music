@@ -1,12 +1,53 @@
 /**
  * Servicio de generación de imágenes con Gemini 2.5 Flash Image (Nano Banana)
  * Para crear imágenes cinematográficas de alta calidad para videos musicales
+ * Con sistema de fallback automático entre múltiples API keys
  */
 import { GoogleGenAI, Modality } from "@google/genai";
 
-const ai = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY || "" 
-});
+// Configurar múltiples clientes de Gemini para fallback automático
+const apiKeys = [
+  process.env.GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY2
+].filter(key => key && key.length > 0);
+
+const geminiClients = apiKeys.map(key => new GoogleGenAI({ apiKey: key || "" }));
+
+// Cliente principal (para compatibilidad con código legacy)
+const ai = geminiClients[0] || new GoogleGenAI({ apiKey: "" });
+
+/**
+ * Intenta generar contenido con fallback automático entre API keys
+ * Si una key alcanza su límite de cuota (error 429), automáticamente intenta con la siguiente
+ */
+async function generateContentWithFallback(params: any): Promise<any> {
+  let lastError: any = null;
+  
+  for (let i = 0; i < geminiClients.length; i++) {
+    try {
+      console.log(`🔑 Intentando generación con API key ${i + 1}/${geminiClients.length}...`);
+      const client = geminiClients[i];
+      const response = await client.models.generateContent(params);
+      console.log(`✅ Generación exitosa con API key ${i + 1}`);
+      return response;
+    } catch (error: any) {
+      lastError = error;
+      
+      // Si es error 429 (quota exceeded), intentar con la siguiente key
+      if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+        console.warn(`⚠️ API key ${i + 1} sin cuota disponible, intentando con siguiente key...`);
+        continue;
+      }
+      
+      // Para otros errores, lanzar inmediatamente
+      throw error;
+    }
+  }
+  
+  // Si llegamos aquí, todas las keys fallaron
+  console.error('❌ Todas las API keys agotaron su cuota');
+  throw lastError || new Error('Todas las API keys de Gemini han alcanzado su límite de cuota');
+}
 
 export interface CinematicScene {
   id: number;
@@ -35,14 +76,14 @@ export async function generateCinematicImage(
   prompt: string
 ): Promise<ImageGenerationResult> {
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY no está configurada');
+    if (geminiClients.length === 0) {
+      throw new Error('No hay API keys de Gemini configuradas');
     }
 
     console.log('Generando imagen con Gemini:', prompt.substring(0, 100) + '...');
 
-    // Usar el modelo de generación de imágenes de Gemini 2.5 Flash
-    const response = await ai.models.generateContent({
+    // Usar el modelo de generación de imágenes con fallback automático
+    const response = await generateContentWithFallback({
       model: "gemini-2.0-flash-preview-image-generation",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
@@ -295,8 +336,8 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
     // Agregar el prompt al final
     parts.push({ text: combinedPrompt });
 
-    // Usar Gemini con múltiples imágenes de referencia
-    const response = await ai.models.generateContent({
+    // Usar Gemini con múltiples imágenes de referencia y fallback automático
+    const response = await generateContentWithFallback({
       model: "gemini-2.0-flash-preview-image-generation",
       contents: [
         { 

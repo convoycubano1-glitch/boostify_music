@@ -14,6 +14,7 @@ interface VideoModelSelectorProps {
   isGenerating: boolean;
   scenesCount: number;
   hasImages: boolean;
+  selectedSceneId?: number | null;
 }
 
 export function VideoModelSelector({
@@ -21,7 +22,8 @@ export function VideoModelSelector({
   onGenerateAllVideos,
   isGenerating,
   scenesCount,
-  hasImages
+  hasImages,
+  selectedSceneId
 }: VideoModelSelectorProps) {
   const [selectedModel, setSelectedModel] = useState(FAL_VIDEO_MODELS.KLING_2_1_PRO_I2V.id);
   
@@ -92,6 +94,27 @@ export function VideoModelSelector({
         )}
 
         <div className="flex gap-2">
+          {selectedSceneId !== null && selectedSceneId !== undefined && (
+            <Button
+              onClick={() => onGenerateVideo(selectedModel, selectedSceneId)}
+              disabled={isGenerating || !hasImages}
+              className="flex-1 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
+              size="lg"
+              data-testid="button-generate-selected-video"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Play className="mr-2 h-4 w-4" />
+                  Generate Video for Scene #{selectedSceneId}
+                </>
+              )}
+            </Button>
+          )}
           <Button
             onClick={() => onGenerateAllVideos(selectedModel)}
             disabled={isGenerating || !hasImages || scenesCount === 0}
