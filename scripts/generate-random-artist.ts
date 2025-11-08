@@ -462,21 +462,22 @@ async function main() {
   }
 }
 
-// Ejecutar el script si es llamado directamente
-// Usando la forma de módulos ES para detectar si es el archivo principal
-// En lugar de require.main === module que es específico de CommonJS
-const isMainModule = import.meta.url === `file://${process.argv[1]}`;
-if (isMainModule) {
-  main()
-    .then(() => {
-      console.log('Proceso completado exitosamente.');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Error en el proceso:', error);
-      process.exit(1);
-    });
-}
+// DISABLED: Do not auto-execute during server startup
+// This code was causing API calls during module initialization in production
+// If you need to run this script directly, uncomment and run with: node --loader ts-node/esm scripts/generate-random-artist.ts
+
+// const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+// if (isMainModule) {
+//   main()
+//     .then(() => {
+//       console.log('Proceso completado exitosamente.');
+//       process.exit(0);
+//     })
+//     .catch((error) => {
+//       console.error('Error en el proceso:', error);
+//       process.exit(1);
+//     });
+// }
 
 // Exportar funciones para uso en otros archivos
 // Nota: generateRandomArtist ya está exportado directamente arriba
