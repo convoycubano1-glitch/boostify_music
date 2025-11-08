@@ -285,94 +285,41 @@ export default function ProducerToolsPage() {
 
   const loadMusicianImages = async () => {
     try {
-      console.log("Starting to load musician images...");
+      console.log("Loading musicians from PostgreSQL...");
       setIsLoadingImages(true);
 
-      const storedImages = await getStoredMusicianImages();
-      console.log("Retrieved stored images:", storedImages);
+      const response = await fetch('/api/musicians');
+      const result = await response.json();
 
-      if (storedImages && storedImages.length > 0) {
-        // Crear un mapa de imágenes por categoría
-        const imagesByCategory = storedImages.reduce((acc, img) => {
-          if (!acc[img.category]) {
-            acc[img.category] = [];
-          }
-          acc[img.category].push(img.url);
-          return acc;
-        }, {} as Record<string, string[]>);
+      if (result.success && result.data) {
+        const dbMusicians = result.data.map((m: any) => ({
+          id: String(m.id),
+          userId: m.userId || `user-${m.id}`,
+          title: m.name,
+          photo: m.photo,
+          instrument: m.instrument,
+          category: m.category,
+          description: m.description,
+          price: typeof m.price === 'string' ? parseFloat(m.price) : m.price,
+          rating: typeof m.rating === 'string' ? parseFloat(m.rating) : m.rating,
+          totalReviews: m.totalReviews || 0,
+          genres: m.genres || []
+        }));
 
-        console.log("Images grouped by category:", imagesByCategory);
-
-        // Asignar imágenes predefinidas para cada músico
-        // Esto garantiza que cada músico tenga su propia imagen consistente
-        const predefinedImages: Record<string, string> = {
-          "Alex Rivera": "https://fal.media/files/lion/0Yt3i5dtnFhLWLrwCWPf8_ee5a759c737c46729e4e45bf6d8f8bf8.jpg",
-          "Sarah Johnson": "https://fal.media/files/tiger/ZA-Dhf_yr3gSdFYoXtFA7_07c64d9dfff243b78deebc7d36bc7ee7.jpg",
-          "Miguel Torres": "https://fal.media/files/lion/6kQHDeoRbAw967gWtOIhj_bad0644f5e4040038fcfacfa58fc4a53.jpg",
-          "John Smith": "https://fal.media/files/rabbit/rxCMh6_XR_2Hw3E7yK7uU_ec1ff464e0fb4d59ad93872c0a47c4f4.jpg",
-          "Lisa Chen": "https://fal.media/files/koala/9teXqGpjZlk-o-kVu9vZy_61fccb781e3748c181d0b744375e7939.jpg",
-          "David Wilson": "https://fal.media/files/elephant/2hMFRub3fi0sHoEQSEX5t_2ee52261424047b3957275eab33bf070.jpg",
-          "Emma Watson": "https://fal.media/files/zebra/Jy2A-uRG59pZzWRI15m4m_57bdefae1e5d4d9b96d89763b0558b92.jpg",
-          "Carlos Ruiz": "https://fal.media/files/zebra/WEqNVS4NDcCqCyiG6P527_4a5104d4c1f54426b704931f208eee7c.jpg",
-          "Sophie Martin": "https://fal.media/files/monkey/WAiQgINO5zOQ9jermZTNG_f0b3dd90634b47abbd21c28709953704.jpg",
-          "Maria García": "https://fal.media/files/koala/aPxr5fmwvJp31YVV8oPS3_f6c9acd30fc041e993ee2530472d44ec.jpg",
-          "James Brown": "https://fal.media/files/penguin/Br3ttzJv9-3_FVXtfDFb9_0cbfac20c9b348bc99dc8981c7fee564.jpg",
-          "Luna Kim": "https://fal.media/files/zebra/G1kOorawegMCHryO1RTW3_c89d1bafdad9496b899f307aed6d0c9b.jpg",
-          "Mark Davis": "https://fal.media/files/rabbit/2II1s_a8uZL-uOIfDdHE-_6eb5e5918c5747ecbc36e3cf415aee49.jpg",
-          "Ana Silva": "https://fal.media/files/lion/jg_i5oyzlx4nKXrwH4oxS_5f7a05882eb2478fa156ccfe428f0187.jpg",
-          "Tom Wilson": "https://fal.media/files/kangaroo/JgFrut-dvBy9uunJG_S1o_5d9f6390615640f38eeff5cdb76a5926.jpg"
-        };
-
-        const updatedMusicians = musicians.map(musician => {
-          const musicianName = musician.title;
-          // Usar la imagen predefinida para este músico específico
-          if (musicianName in predefinedImages) {
-            console.log(`Assigning predefined image for ${musicianName}:`, predefinedImages[musicianName]);
-            return {
-              ...musician,
-              userId: `user-${musician.id}`,
-              photo: predefinedImages[musicianName]
-            };
-          }
-          
-          // Fallback al sistema de categorías si no hay imagen predefinida
-          const categoryImages = imagesByCategory[musician.category] || [];
-          const imageIndex = parseInt(musician.id) % (categoryImages.length || 1);
-
-          if (categoryImages.length > 0) {
-            console.log(`Assigning category image for ${musician.title} (${musician.category}):`, categoryImages[imageIndex]);
-            return {
-              ...musician,
-              userId: `user-${musician.id}`,
-              photo: categoryImages[imageIndex]
-            };
-          }
-
-          console.log(`No image found for ${musician.title} (${musician.category}), using placeholder`);
-          return {
-            ...musician,
-            userId: `user-${musician.id}`,
-            photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
-          };
-        });
-
-        console.log("Final updated musicians:", updatedMusicians);
-        setMusiciansState(updatedMusicians);
+        console.log(`Loaded ${dbMusicians.length} musicians from database`);
+        setMusiciansState(dbMusicians);
       } else {
-        console.log("No images found in Firestore, using default images");
-        setMusiciansState(musicians.map(musician => ({
-          ...musician,
-          userId: `user-${musician.id}`,
-          photo: `/assets/musicians/${musician.category.toLowerCase()}-placeholder.jpg`
-        })));
+        console.log("No musicians found in database, using defaults");
+        setMusiciansState(musicians);
       }
     } catch (error) {
-      console.error("Error loading musician images:", error);
+      console.error("Error loading musicians:", error);
       toast({
         title: "Error",
-        description: "Failed to load musician images",
+        description: "Failed to load musicians from database",
         variant: "destructive"
       });
+      setMusiciansState(musicians);
     } finally {
       setIsLoadingImages(false);
       setImagesLoaded(true);

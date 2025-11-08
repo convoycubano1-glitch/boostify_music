@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, json, decimal, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
+import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -463,7 +464,12 @@ export const selectUserAchievementSchema = createSelectSchema(userAchievements);
 export const insertArtistMediaSchema = createInsertSchema(artistMedia);
 export const selectArtistMediaSchema = createSelectSchema(artistMedia);
 
-export const insertMusicianSchema = createInsertSchema(musicians).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMusicianSchema = createInsertSchema(musicians)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    price: z.union([z.string(), z.number()]).transform(val => String(val)),
+    rating: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+  });
 export const selectMusicianSchema = createSelectSchema(musicians);
 
 export type InsertUser = typeof users.$inferInsert;

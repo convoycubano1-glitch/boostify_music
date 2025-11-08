@@ -109,6 +109,7 @@ export function setupAuth(app: Express) {
     // Patrones de rutas públicas que se verifican con startsWith
     const publicRoutePatterns = [
       '/stripe/product-purchase-status', // Rutas para verificar estado de compra de productos (sin / al final)
+      '/musicians',                      // Rutas de músicos (GET, POST, PATCH, DELETE)
     ];
     
     // Añadir soporte para coincidencia parcial de rutas públicas

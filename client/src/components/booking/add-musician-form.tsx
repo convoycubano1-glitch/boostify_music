@@ -6,10 +6,11 @@ import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
 import { useToast } from "../../hooks/use-toast";
-import { generateImageWithFal } from "../../lib/api/fal-ai";
+import { generateImageFromPrompt } from "../../lib/api/gemini-image";
 import { Loader2, Image as ImageIcon, Upload, ChevronDown, FileText, X } from "lucide-react";
 import { apiRequest, queryClient } from "../../lib/queryClient";
 import { z } from "zod";
+import musicianPrompts from "../../data/musician-prompts.json";
 
 interface AddMusicianFormProps {
   onClose: () => void;
@@ -49,28 +50,63 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
 
   const handleReferenceImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please select an image under 10MB",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!file) return;
 
-      setReferenceImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setReferenceImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-
+    // Validate file type - Accept all image formats including HEIC (iPhone)
+    const validImageTypes = ['image/', '.heic', '.heif'];
+    const isValidImage = validImageTypes.some(type => 
+      file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')
+    );
+    
+    if (!isValidImage) {
       toast({
-        title: "Reference Image Uploaded",
-        description: "You can now generate a professional photo based on this reference",
+        title: "Invalid File Type",
+        description: "Please select a valid image file (JPG, PNG, WEBP, HEIC, etc.)",
+        variant: "destructive",
       });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
     }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image under 10MB",
+        variant: "destructive",
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setReferenceImageFile(file);
+    
+    // Read file as base64 data URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setReferenceImagePreview(base64String);
+      console.log("✅ Reference image loaded successfully");
+      console.log("   - File size:", (file.size / 1024).toFixed(2), "KB");
+      console.log("   - Base64 length:", base64String.length);
+      toast({
+        title: "Reference Image Uploaded ✓",
+        description: "Ready to generate professional photo with Gemini AI",
+      });
+    };
+    reader.onerror = () => {
+      console.error("❌ Error reading file:", reader.error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to read the image file. Please try again.",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const clearReferenceImage = () => {
@@ -79,6 +115,11 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    console.log("Reference image cleared");
+    toast({
+      title: "Reference Removed",
+      description: "Reference photo has been cleared",
+    });
   };
 
   const handleGenerateImage = async () => {
@@ -93,31 +134,75 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
 
     setIsGeneratingImage(true);
     try {
-      let prompt = `professional portrait of a ${formData.category.toLowerCase()} musician with their ${formData.instrument.toLowerCase()} in a professional studio setting, high-end DSLR camera shot, photorealistic, 4k quality, detailed facial features, warm studio lighting`;
+      // Get professional prompt from JSON based on category
+      const categoryPrompts = musicianPrompts[formData.category as keyof typeof musicianPrompts] || musicianPrompts.Other;
+      let prompt = categoryPrompts.prompt;
+      let negativePrompt = categoryPrompts.negativePrompt;
       
+      // Customize prompt with specific instrument
+      prompt = prompt.replace(/guitar|drums|piano|vocals|bass/gi, formData.instrument.toLowerCase());
+      
+      let result;
+      
+      // Use Gemini with face reference if user uploaded a reference image
       if (referenceImagePreview) {
-        prompt = `${prompt}, similar appearance and style to reference image`;
-      }
-      
-      const result = await generateImageWithFal({
-        prompt,
-        negativePrompt: "deformed, unrealistic, cartoon, anime, illustration, low quality, blurry, distorted features",
-        imageSize: "landscape_16_9",
-        ...(referenceImagePreview && { imageUrl: referenceImagePreview })
-      });
-
-      if (result.data && result.data.images && result.data.images[0]) {
-        setGeneratedImageUrl(result.data.images[0].url);
         toast({
-          title: "Success",
-          description: "Profile image generated successfully",
+          title: "Processing with Gemini",
+          description: "Generating professional photo based on your reference image...",
         });
+        
+        // Extract base64 from data URL (remove the data:image/xxx;base64, prefix)
+        const base64Data = referenceImagePreview.includes(',') 
+          ? referenceImagePreview.split(',')[1] 
+          : referenceImagePreview;
+        
+        console.log("Sending reference image to Gemini, base64 length:", base64Data.length);
+        
+        const response = await fetch('/api/gemini-image/generate-with-face', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt,
+            referenceImageBase64: base64Data
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
+        
+        result = await response.json();
+        console.log("Gemini response received, success:", result.success);
+      } else {
+        // Generate without reference image
+        toast({
+          title: "Generating with Gemini",
+          description: "Creating professional musician portrait...",
+        });
+        
+        result = await generateImageFromPrompt(prompt);
+      }
+
+      if (result.success && result.imageBase64) {
+        // Convert base64 to data URL for display
+        const imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
+        setGeneratedImageUrl(imageDataUrl);
+        console.log("Generated image set successfully, length:", result.imageBase64.length);
+        toast({
+          title: "Success!",
+          description: `Professional ${formData.category} photo generated with Gemini Imagen 3`,
+        });
+      } else {
+        throw new Error(result.error || "No image data in response");
       }
     } catch (error) {
-      console.error("Error generating image:", error);
+      console.error("Error generating image with Gemini:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate profile image",
+        title: "Generation Failed",
+        description: error instanceof Error ? error.message : "Failed to generate profile image. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -171,24 +256,39 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
       const musicianData = {
         name: formData.name,
         description: formData.description,
-        price: formData.price,
+        price: parseFloat(formData.price),
         category: formData.category,
         instrument: formData.instrument,
         genres: genresList,
-        photo: generatedImageUrl,
-        referencePhoto: referenceImagePreview || null,
+        photo: generatedImageUrl, // Base64 data URL from Gemini
+        referencePhoto: referenceImagePreview || null, // Base64 data URL if uploaded
         rating: "5.0",
         totalReviews: 0,
         isActive: true,
       };
 
-      await apiRequest('/musicians', {
+      console.log("Submitting musician data to database:", {
+        ...musicianData,
+        photo: `[base64 ${generatedImageUrl?.length} chars]`,
+        referencePhoto: referenceImagePreview ? `[base64 ${referenceImagePreview.length} chars]` : null
+      });
+
+      const response = await fetch('/api/musicians', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(musicianData),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to save musician: ${response.status}`);
+      }
+
+      const savedMusician = await response.json();
+
+      console.log("Musician saved to database successfully:", savedMusician);
 
       await queryClient.invalidateQueries({ queryKey: ['/api/musicians'] });
 
@@ -348,13 +448,13 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         <div className="space-y-3 border rounded-lg p-4 bg-muted/20">
           <div className="flex items-center justify-between">
             <Label htmlFor="reference-image" className="text-sm font-semibold">
-              Reference Photo (Optional)
+              Reference Photo (Optional) - Uses Gemini AI
             </Label>
             <input
               ref={fileInputRef}
               type="file"
               id="reference-image"
-              accept="image/*"
+              accept="image/*,.heic,.heif"
               className="hidden"
               onChange={handleReferenceImageUpload}
             />
@@ -370,7 +470,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Upload a reference photo to generate a similar professional image
+            Upload a reference photo. Gemini Imagen 3 will generate a similar professional musician portrait
           </p>
           {referenceImagePreview && (
             <div className="relative aspect-video rounded-lg overflow-hidden border bg-muted">
@@ -411,7 +511,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
             ) : (
               <>
                 <ImageIcon className="mr-2 h-4 w-4" />
-                Generate Professional Photo
+                Generate with Gemini (nano banana)
               </>
             )}
           </Button>
