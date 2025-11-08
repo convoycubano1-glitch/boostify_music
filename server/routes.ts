@@ -49,6 +49,7 @@ import geminiImageRouter from './routes/gemini-image'; // Import the Gemini imag
 import audioTranscriptionRouter from './routes/audio-transcription'; // Import the audio transcription router
 import generatedVideosRouter from './routes/generated-videos'; // Import the generated videos router
 import minimaxVideoRouter from './routes/minimax-video'; // Import the MiniMax video generation router
+import musiciansRouter from './routes/musicians'; // Import the musicians router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -478,6 +479,10 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Register affiliate program routes
   app.use('/api/affiliate', affiliateRouter);
+  
+  // Register musicians routes
+  app.use('/api', musiciansRouter);
+  
   app.post('/api/music/test-integration', (req, res) => {
     try {
       const { prompt = 'Una melodía suave de piano' } = req.body;

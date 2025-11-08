@@ -1,35 +1,85 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
 import { useToast } from "../../hooks/use-toast";
 import { generateImageWithFal } from "../../lib/api/fal-ai";
-import { Loader2, Image as ImageIcon } from "lucide-react";
-import { db } from "../../lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import type { MusicianService } from "../pages/producer-tools";
+import { Loader2, Image as ImageIcon, Upload, ChevronDown, FileText, X } from "lucide-react";
+import { apiRequest, queryClient } from "../../lib/queryClient";
+import { z } from "zod";
 
 interface AddMusicianFormProps {
   onClose: () => void;
   onSuccess: () => void;
 }
 
+const musicianFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  price: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Price must be a positive number"),
+  category: z.string().min(1, "Category is required"),
+  instrument: z.string().min(1, "Instrument is required"),
+  genres: z.string().min(1, "At least one genre is required"),
+});
+
 export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
+  const [referenceImagePreview, setReferenceImagePreview] = useState<string | null>(null);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    title: "",
+    name: "",
     description: "",
     price: "",
     category: "",
     instrument: "",
     genres: "",
   });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleReferenceImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image under 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setReferenceImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReferenceImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      toast({
+        title: "Reference Image Uploaded",
+        description: "You can now generate a professional photo based on this reference",
+      });
+    }
+  };
+
+  const clearReferenceImage = () => {
+    setReferenceImageFile(null);
+    setReferenceImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleGenerateImage = async () => {
     if (!formData.category || !formData.instrument) {
@@ -43,12 +93,17 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
 
     setIsGeneratingImage(true);
     try {
-      const prompt = `professional portrait of a ${formData.category.toLowerCase()} musician with their ${formData.instrument.toLowerCase()} in a professional studio setting, high-end DSLR camera shot, photorealistic, 4k quality, detailed facial features`;
+      let prompt = `professional portrait of a ${formData.category.toLowerCase()} musician with their ${formData.instrument.toLowerCase()} in a professional studio setting, high-end DSLR camera shot, photorealistic, 4k quality, detailed facial features, warm studio lighting`;
+      
+      if (referenceImagePreview) {
+        prompt = `${prompt}, similar appearance and style to reference image`;
+      }
       
       const result = await generateImageWithFal({
         prompt,
-        negativePrompt: "deformed, unrealistic, cartoon, anime, illustration, low quality, blurry",
-        imageSize: "landscape_16_9"
+        negativePrompt: "deformed, unrealistic, cartoon, anime, illustration, low quality, blurry, distorted features",
+        imageSize: "landscape_16_9",
+        ...(referenceImagePreview && { imageUrl: referenceImagePreview })
       });
 
       if (result.data && result.data.images && result.data.images[0]) {
@@ -72,37 +127,74 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!acceptedTerms) {
+      toast({
+        title: "Terms Required",
+        description: "Please accept the terms and conditions to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const validation = musicianFormSchema.safeParse(formData);
+    if (!validation.success) {
+      const fieldErrors: Record<string, string> = {};
+      validation.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0].toString()] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      toast({
+        title: "Validation Error",
+        description: "Please fix the errors in the form",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!generatedImageUrl) {
+      toast({
+        title: "Missing Image",
+        description: "Please generate a profile image first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      if (!generatedImageUrl) {
-        throw new Error("Please generate a profile image first");
-      }
+      const genresList = formData.genres.split(',').map(g => g.trim()).filter(g => g.length > 0);
 
-      const genresList = formData.genres.split(',').map(g => g.trim());
-
-      const musicianData: Partial<MusicianService> = {
-        title: formData.title,
+      const musicianData = {
+        name: formData.name,
         description: formData.description,
-        price: parseFloat(formData.price),
+        price: formData.price,
         category: formData.category,
         instrument: formData.instrument,
         genres: genresList,
         photo: generatedImageUrl,
-        rating: 5.0,
+        referencePhoto: referenceImagePreview || null,
+        rating: "5.0",
         totalReviews: 0,
+        isActive: true,
       };
 
-      // Save to Firestore
-      const musiciansRef = collection(db, "musicians");
-      await addDoc(musiciansRef, {
-        ...musicianData,
-        createdAt: serverTimestamp()
+      await apiRequest('/musicians', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(musicianData),
       });
+
+      await queryClient.invalidateQueries({ queryKey: ['/api/musicians'] });
 
       toast({
         title: "Success",
-        description: "Musician added successfully",
+        description: "Musician added successfully to the database",
       });
 
       onSuccess();
@@ -124,96 +216,191 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
       ...prev,
       [field]: value
     }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
-  const categories = ["Guitar", "Drums", "Piano", "Vocals", "Production", "Other"];
+  const categories = ["Guitar", "Drums", "Piano", "Vocals", "Bass", "Production", "Brass", "Strings", "Other"];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 max-h-[80vh] overflow-y-auto px-1">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Add New Musician</h3>
-        <p className="text-muted-foreground mb-6">
-          Fill in the details to add a new musician to the platform
+        <h3 className="text-lg sm:text-xl font-semibold mb-2">Add New Musician</h3>
+        <p className="text-sm text-muted-foreground mb-4 sm:mb-6">
+          Fill in the details to add a new professional musician to the platform
         </p>
       </div>
 
-      <div className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="title">Name</Label>
-          <Input
-            id="title"
-            required
-            placeholder="e.g., John Smith"
-            onChange={(e) => handleChange("title", e.target.value)}
-          />
+      <div className="grid gap-4 sm:gap-6">
+        {/* Two-column layout on desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name" className="text-sm">
+              Full Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="name"
+              required
+              data-testid="input-musician-name"
+              placeholder="e.g., John Smith"
+              value={formData.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+              className={errors.name ? "border-destructive" : ""}
+            />
+            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="category" className="text-sm">
+              Category <span className="text-destructive">*</span>
+            </Label>
+            <Select required value={formData.category} onValueChange={(value) => handleChange("category", value)}>
+              <SelectTrigger data-testid="select-musician-category">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.category && <p className="text-xs text-destructive">{errors.category}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="instrument" className="text-sm">
+              Instrument <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="instrument"
+              required
+              data-testid="input-musician-instrument"
+              placeholder="e.g., Electric Guitar, Drums, Piano"
+              value={formData.instrument}
+              onChange={(e) => handleChange("instrument", e.target.value)}
+              className={errors.instrument ? "border-destructive" : ""}
+            />
+            {errors.instrument && <p className="text-xs text-destructive">{errors.instrument}</p>}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="price" className="text-sm">
+              Price per Session ($) <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="price"
+              type="number"
+              required
+              data-testid="input-musician-price"
+              min="0"
+              step="0.01"
+              placeholder="e.g., 120"
+              value={formData.price}
+              onChange={(e) => handleChange("price", e.target.value)}
+              className={errors.price ? "border-destructive" : ""}
+            />
+            {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
+          </div>
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="category">Category</Label>
-          <Select required onValueChange={(value) => handleChange("category", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="instrument">Instrument</Label>
-          <Input
-            id="instrument"
-            required
-            placeholder="e.g., Electric Guitar, Drums, Piano"
-            onChange={(e) => handleChange("instrument", e.target.value)}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="price">Price per Session ($)</Label>
-          <Input
-            id="price"
-            type="number"
-            required
-            min="0"
-            step="0.01"
-            placeholder="e.g., 120"
-            onChange={(e) => handleChange("price", e.target.value)}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="genres">Genres (comma-separated)</Label>
+          <Label htmlFor="genres" className="text-sm">
+            Genres (comma-separated) <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="genres"
             required
+            data-testid="input-musician-genres"
             placeholder="e.g., Rock, Blues, Jazz"
+            value={formData.genres}
             onChange={(e) => handleChange("genres", e.target.value)}
+            className={errors.genres ? "border-destructive" : ""}
           />
+          {errors.genres && <p className="text-xs text-destructive">{errors.genres}</p>}
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description" className="text-sm">
+            Description <span className="text-destructive">*</span>
+          </Label>
           <Textarea
             id="description"
             required
-            placeholder="Describe the musician's experience and expertise..."
+            data-testid="textarea-musician-description"
+            placeholder="Describe the musician's experience, expertise, and notable achievements..."
+            value={formData.description}
             onChange={(e) => handleChange("description", e.target.value)}
+            className={`min-h-[100px] ${errors.description ? "border-destructive" : ""}`}
           />
+          {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+        </div>
+
+        {/* Reference Image Upload Section */}
+        <div className="space-y-3 border rounded-lg p-4 bg-muted/20">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="reference-image" className="text-sm font-semibold">
+              Reference Photo (Optional)
+            </Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              id="reference-image"
+              accept="image/*"
+              className="hidden"
+              onChange={handleReferenceImageUpload}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-testid="button-upload-reference"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Reference
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Upload a reference photo to generate a similar professional image
+          </p>
+          {referenceImagePreview && (
+            <div className="relative aspect-video rounded-lg overflow-hidden border bg-muted">
+              <img
+                src={referenceImagePreview}
+                alt="Reference"
+                className="w-full h-full object-cover"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="absolute top-2 right-2"
+                data-testid="button-clear-reference"
+                onClick={clearReferenceImage}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Image Generation Section */}
-        <div className="space-y-4 pt-4">
+        <div className="space-y-4 pt-2">
           <Button
             type="button"
             onClick={handleGenerateImage}
             disabled={isGeneratingImage || !formData.category || !formData.instrument}
             variant="secondary"
+            data-testid="button-generate-image"
             className="w-full"
           >
             {isGeneratingImage ? (
@@ -224,31 +411,132 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
             ) : (
               <>
                 <ImageIcon className="mr-2 h-4 w-4" />
-                Generate Profile Image
+                Generate Professional Photo
               </>
             )}
           </Button>
 
           {generatedImageUrl && (
-            <div className="aspect-video relative rounded-lg overflow-hidden border">
+            <div className="aspect-video relative rounded-lg overflow-hidden border-2 border-primary">
               <img
                 src={generatedImageUrl}
                 alt="Generated profile"
+                data-testid="img-generated-musician"
                 className="w-full h-full object-cover"
               />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                <p className="text-xs text-white font-semibold">✓ Profile Photo Generated</p>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Terms and Conditions */}
+        <div className="border rounded-lg">
+          <Collapsible open={isTermsOpen} onOpenChange={setIsTermsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50"
+                data-testid="button-toggle-terms"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Terms & Conditions for Musicians</span>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${
+                    isTermsOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-4 pb-4">
+              <div className="space-y-4 text-xs text-muted-foreground max-h-[300px] overflow-y-auto border rounded p-4 bg-muted/10">
+                
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">1. Platform Commission</h4>
+                  <p>
+                    By registering as a musician, you agree that the platform will retain a 20% commission on all bookings.
+                    You will receive 80% of the session price directly to your account.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">2. Professional Standards</h4>
+                  <p>
+                    All musicians must maintain professional standards in communication, delivery quality, and adherence to project
+                    deadlines. Failure to meet these standards may result in account suspension.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">3. Payment Processing</h4>
+                  <p>
+                    Payments are processed through Stripe. Funds from completed bookings are transferred within 3-5 business days
+                    after project completion and client approval.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">4. Profile Accuracy</h4>
+                  <p>
+                    You agree to provide accurate information about your skills, experience, and availability. Misleading
+                    information may result in immediate account termination.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-foreground mb-2">5. Client Communication</h4>
+                  <p>
+                    All communication with clients must occur through the platform's messaging system. Direct solicitation
+                    outside the platform is prohibited.
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t">
+                  <p className="italic text-foreground">
+                    By checking the box below, you acknowledge that you have read and agree to these terms and conditions.
+                  </p>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        {/* Terms Acceptance Checkbox */}
+        <div className="flex items-start space-x-3 p-4 border rounded-lg bg-muted/20">
+          <input
+            type="checkbox"
+            id="accept-terms"
+            checked={acceptedTerms}
+            data-testid="checkbox-accept-terms"
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300"
+          />
+          <label htmlFor="accept-terms" className="text-sm cursor-pointer">
+            I have read and accept the Terms & Conditions for musicians on this platform
+            <span className="text-destructive ml-1">*</span>
+          </label>
+        </div>
       </div>
 
-      <div className="flex justify-end gap-4">
-        <Button type="button" variant="outline" onClick={onClose}>
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onClose}
+          data-testid="button-cancel"
+          className="w-full sm:w-auto"
+        >
           Cancel
         </Button>
         <Button 
           type="submit" 
-          disabled={isSubmitting || !generatedImageUrl} 
-          className="bg-primary"
+          disabled={isSubmitting || !generatedImageUrl || !acceptedTerms} 
+          data-testid="button-submit-musician"
+          className="w-full sm:w-auto bg-primary"
         >
           {isSubmitting ? (
             <>
@@ -256,7 +544,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
               Adding Musician...
             </>
           ) : (
-            "Add Musician"
+            "Add Musician to Platform"
           )}
         </Button>
       </div>
