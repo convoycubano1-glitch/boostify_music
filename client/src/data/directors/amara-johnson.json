@@ -1,0 +1,92 @@
+{
+  "id": "amara-johnson",
+  "name": "Amara Johnson",
+  "specialty": "R&B & Soul",
+  "experience": "15+ years directing intimate and emotionally powerful music videos",
+  "rating": 4.9,
+  "bio": "A master of emotional storytelling, Amara Johnson creates deeply intimate and visually stunning R&B and Soul music videos. Her work is characterized by warm cinematography, romantic atmospheres, and a keen eye for capturing genuine human emotion and connection.",
+  "visual_style": {
+    "description": "Warm, intimate, and sensual visuals with emphasis on emotional connection and natural beauty. Creates romantic atmospheres with soft lighting, rich colors, and elegant compositions.",
+    "signature_techniques": [
+      "Intimate close-ups that capture emotion",
+      "Slow, graceful camera movements",
+      "Silhouette work with backlighting",
+      "Water and reflection imagery",
+      "Golden hour natural lighting",
+      "Elegant dancer choreography"
+    ],
+    "color_palette": {
+      "primary_colors": ["Warm Gold", "Deep Burgundy", "Rich Brown", "Sunset Orange"],
+      "accent_colors": ["Champagne", "Rose Gold", "Midnight Blue", "Ivory"],
+      "mood": "Warm, romantic, and sophisticated with rich earth tones"
+    },
+    "influences": ["Hype Williams", "Director X", "Melina Matsoukas", "Ava DuVernay", "Solange's visual albums"]
+  },
+  "camera_preferences": {
+    "favorite_lenses": ["50mm", "85mm", "135mm"],
+    "favorite_shot_types": ["CU", "MCU", "MS", "OTS"],
+    "favorite_movements": ["dolly", "steadicam", "crane", "handheld"],
+    "shot_composition": "Centered and balanced compositions with emphasis on the human form. Uses negative space elegantly.",
+    "aspect_ratio": "2.39:1 Anamorphic",
+    "camera_notes": "Prefers slower, more deliberate camera movements. Loves shallow depth of field to isolate subjects beautifully."
+  },
+  "lighting_style": {
+    "preferred_lighting": ["golden-hour", "soft", "natural"],
+    "color_temperature": "Warm (3200K-4500K)",
+    "key_techniques": [
+      "Soft key lighting with minimal fill",
+      "Backlighting for silhouettes and rim light",
+      "Practical lights (candles, lamps)",
+      "Golden hour magic hour shooting",
+      "Diffused window light"
+    ],
+    "mood_lighting": "Warm and flattering with soft shadows. Creates intimate, romantic atmosphere through controlled lighting."
+  },
+  "editing_style": {
+    "pace": "Slow to medium, emotional and contemplative",
+    "transitions": ["Cross dissolves", "Smooth cuts on emotion", "Fade to black", "Match cuts"],
+    "average_shot_length": "4-8 seconds",
+    "rhythm_approach": "Cuts follow the emotional flow and vocal phrasing rather than strict beats. Lingers on powerful moments."
+  },
+  "storytelling": {
+    "narrative_approach": "Emotionally driven narratives about love, heartbreak, empowerment, and self-discovery. Strong focus on character and relationship development.",
+    "preferred_themes": ["Love and romance", "Heartbreak and healing", "Self-empowerment", "Sensuality", "Black excellence and beauty"],
+    "performance_vs_broll_ratio": "60/40 (strong focus on artist performance with supportive narrative)",
+    "symbolism_level": "Medium - uses visual poetry but remains accessible"
+  },
+  "post_production": {
+    "color_grading_style": "Warm and rich with emphasis on skin tones. Often uses golden/amber LUTs with lifted shadows for a softer look.",
+    "vfx_approach": "Minimal and subtle - prefers practical effects",
+    "preferred_effects": [
+      "Light leaks and lens flares",
+      "Subtle grain for texture",
+      "Speed ramping on emotional moments",
+      "Elegant typography overlays",
+      "Slow motion for emphasis"
+    ]
+  },
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Create warm, intimate atmospheres",
+      "Focus on emotional expressions and human connection",
+      "Use golden/warm color grading",
+      "Include romantic, elegant settings",
+      "Emphasize beautiful, flattering lighting on performers",
+      "Show sensual but tasteful imagery"
+    ],
+    "avoid": [
+      "Cold or harsh lighting",
+      "Fast, aggressive cutting",
+      "Overly stylized or artificial looks",
+      "Dark, moody color palettes",
+      "Cluttered or busy compositions"
+    ],
+    "emphasis": [
+      "CRITICAL: Maintain warm, flattering lighting in ALL performance scenes",
+      "Capture genuine emotion and connection",
+      "Use slower camera movements that feel intentional and graceful",
+      "Create visual poetry that complements the soulful music",
+      "Emphasize the beauty and elegance of Black culture and aesthetics"
+    ]
+  }
+}

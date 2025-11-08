@@ -1,0 +1,93 @@
+{
+  "id": "david-kim",
+  "name": "David Kim",
+  "specialty": "Electronic & Techno",
+  "experience": "12+ years creating cutting-edge electronic music visuals",
+  "rating": 4.9,
+  "bio": "A visionary director at the intersection of technology and art, David Kim has redefined electronic music videos with his futuristic aesthetic and innovative use of digital effects. His work features immersive environments, cyberpunk aesthetics, and mesmerizing visual loops that perfectly complement electronic beats.",
+  "visual_style": {
+    "description": "Futuristic and hypnotic visuals with strong emphasis on digital effects, geometric patterns, and immersive environments. Creates otherworldly atmospheres with neon-lit cyberpunk aesthetics and abstract digital art.",
+    "signature_techniques": [
+      "Seamless visual loops synced to beat patterns",
+      "Geometric transformations and fractal animations",
+      "Holographic and glitch effects",
+      "Digital particle systems and data visualization",
+      "Cyberpunk neon-lit environments",
+      "Abstract digital landscapes"
+    ],
+    "color_palette": {
+      "primary_colors": ["Electric Blue", "Neon Purple", "Cyber Pink", "Digital Green"],
+      "accent_colors": ["Chrome Silver", "Holographic", "Deep Black", "White"],
+      "mood": "Futuristic, hypnotic, and high-energy with neon accents"
+    },
+    "influences": ["Cyberpunk 2077", "Blade Runner", "Tron", "Daft Punk's Electroma", "Ghost in the Shell"]
+  },
+  "camera_preferences": {
+    "favorite_lenses": ["14mm", "24mm", "35mm"],
+    "favorite_shot_types": ["WS", "EWS", "POV", "DUTCH"],
+    "favorite_movements": ["drone", "steadicam", "tracking", "crane"],
+    "shot_composition": "Symmetrical and geometric compositions with strong leading lines. Emphasizes perspective and depth in digital environments.",
+    "aspect_ratio": "21:9 Ultrawide",
+    "camera_notes": "Prefers smooth, floating camera movements that enhance the surreal digital atmosphere. Heavy use of time remapping and speed ramping."
+  },
+  "lighting_style": {
+    "preferred_lighting": ["neon", "dramatic", "mixed"],
+    "color_temperature": "Variable (often cool 5600K mixed with colored gels)",
+    "key_techniques": [
+      "Neon tube lighting",
+      "LED panels with color changing",
+      "Practical lights integrated into set design",
+      "Volumetric lighting (god rays)",
+      "Blacklight UV effects"
+    ],
+    "mood_lighting": "Electric and vibrant with strong color contrasts. Creates depth through layered colored lights."
+  },
+  "editing_style": {
+    "pace": "Fast to medium with rhythmic precision",
+    "transitions": ["Beat-synced cuts", "Glitch transitions", "Digital wipes", "Morphing"],
+    "average_shot_length": "1-3 seconds (beat-matched)",
+    "rhythm_approach": "Cuts precisely on every beat or every other beat. Uses visual effects to emphasize drops and buildups."
+  },
+  "storytelling": {
+    "narrative_approach": "Abstract and experiential rather than linear. Focuses on creating immersive visual journeys that match the sonic landscape.",
+    "preferred_themes": ["Digital consciousness", "Virtual reality", "Future cities", "Human-machine interface", "Transcendence"],
+    "performance_vs_broll_ratio": "30/70 (heavy emphasis on abstract digital environments)",
+    "symbolism_level": "High - uses visual metaphors for digital concepts"
+  },
+  "post_production": {
+    "color_grading_style": "Highly stylized with vibrant neons and deep blacks. Strong teal/orange or purple/green complementary schemes.",
+    "vfx_approach": "VFX-heavy with extensive digital effects",
+    "preferred_effects": [
+      "Glitch and datamosh effects",
+      "Particle simulations",
+      "3D motion graphics",
+      "Holographic overlays",
+      "Chromatic aberration",
+      "Digital noise and grain"
+    ]
+  },
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Create symmetrical, geometric compositions",
+      "Use neon lighting extensively (blues, purples, pinks)",
+      "Include futuristic/cyberpunk environments",
+      "Add digital effects and holographic elements",
+      "Emphasize depth and perspective",
+      "Match cuts precisely to electronic beats"
+    ],
+    "avoid": [
+      "Natural outdoor settings",
+      "Warm color palettes",
+      "Traditional cinematography",
+      "Static, documentary-style shots",
+      "Slow pacing that doesn't match the music"
+    ],
+    "emphasis": [
+      "CRITICAL: Every cut must be beat-synced with the electronic music",
+      "Create hypnotic, loop-able visual sequences",
+      "Use wide lenses to exaggerate perspective in digital spaces",
+      "Integrate practical neon lights and digital screens into scenes",
+      "Build visual intensity that matches musical buildups and drops"
+    ]
+  }
+}

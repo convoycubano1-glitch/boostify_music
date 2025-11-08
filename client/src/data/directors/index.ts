@@ -11,18 +11,33 @@ import type { DirectorProfile } from './director-schema';
 import sofiaRamirezData from './sofia-ramirez.json';
 import marcusChenData from './marcus-chen.json';
 import isabellaMorettiData from './isabella-moretti.json';
+import davidKimData from './david-kim.json';
+import amaraJohnsonData from './amara-johnson.json';
+import carlosRodriguezData from './carlos-rodriguez.json';
+import yukiTanakaData from './yuki-tanaka.json';
+import elenaPetrovData from './elena-petrov.json';
 
-// Export typed director profiles
+// Export typed director profiles (8 directores completos)
 export const DIRECTORS: DirectorProfile[] = [
   sofiaRamirezData as DirectorProfile,
   marcusChenData as DirectorProfile,
   isabellaMorettiData as DirectorProfile,
+  davidKimData as DirectorProfile,
+  amaraJohnsonData as DirectorProfile,
+  carlosRodriguezData as DirectorProfile,
+  yukiTanakaData as DirectorProfile,
+  elenaPetrovData as DirectorProfile,
 ];
 
 // Export individual directors for direct access
 export const SOFIA_RAMIREZ = sofiaRamirezData as DirectorProfile;
 export const MARCUS_CHEN = marcusChenData as DirectorProfile;
 export const ISABELLA_MORETTI = isabellaMorettiData as DirectorProfile;
+export const DAVID_KIM = davidKimData as DirectorProfile;
+export const AMARA_JOHNSON = amaraJohnsonData as DirectorProfile;
+export const CARLOS_RODRIGUEZ = carlosRodriguezData as DirectorProfile;
+export const YUKI_TANAKA = yukiTanakaData as DirectorProfile;
+export const ELENA_PETROV = elenaPetrovData as DirectorProfile;
 
 /**
  * Get director by ID

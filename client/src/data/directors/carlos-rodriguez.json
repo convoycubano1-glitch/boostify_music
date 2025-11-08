@@ -1,0 +1,94 @@
+{
+  "id": "carlos-rodriguez",
+  "name": "Carlos Rodriguez",
+  "specialty": "Latin & Reggaeton",
+  "experience": "10+ years creating vibrant Latin music videos",
+  "rating": 4.8,
+  "bio": "Known for his explosive energy and vibrant visuals, Carlos Rodriguez brings the heat of Latin America to every frame. His music videos are celebrations of culture, dance, and life, filled with dynamic choreography, saturated colors, and infectious energy that matches the rhythm of reggaeton and Latin music.",
+  "visual_style": {
+    "description": "Vibrant, energetic, and culturally rich visuals with emphasis on dance, color, and movement. Creates party atmospheres with tropical settings and dynamic choreography.",
+    "signature_techniques": [
+      "Dynamic multi-camera dance sequences",
+      "Vivid tropical color palettes",
+      "Crowd energy and party scenes",
+      "Smooth camera transitions through dancers",
+      "Beach and urban location mixing",
+      "Cultural celebration imagery"
+    ],
+    "color_palette": {
+      "primary_colors": ["Tropical Turquoise", "Sunset Orange", "Vibrant Red", "Lime Green"],
+      "accent_colors": ["Golden Yellow", "Hot Pink", "Purple", "White"],
+      "mood": "Energetic, celebratory, and vibrant with tropical warmth"
+    },
+    "influences": ["Jessy Terrero", "Fernando Lugo", "Marlon Peña", "Nuno Gomes", "Latin American culture and festivals"]
+  },
+  "camera_preferences": {
+    "favorite_lenses": ["24mm", "35mm", "50mm"],
+    "favorite_shot_types": ["MS", "MWS", "WS", "DUTCH", "POV"],
+    "favorite_movements": ["steadicam", "handheld", "crane", "tracking", "drone"],
+    "shot_composition": "Dynamic and energetic with movement in every frame. Loves Dutch angles and unconventional perspectives.",
+    "aspect_ratio": "16:9 Standard",
+    "camera_notes": "Highly mobile camera work that moves with the dancers. Loves circular movements around performers and seamless transitions."
+  },
+  "lighting_style": {
+    "preferred_lighting": ["natural", "mixed", "dramatic"],
+    "color_temperature": "Warm (3200K-5000K) for day, mixed with colored gels for night",
+    "key_techniques": [
+      "Natural sunlight for beach scenes",
+      "Colored party lights and strobes",
+      "Practical neon signs",
+      "Fire and pyrotechnics",
+      "LED panels with color changing"
+    ],
+    "mood_lighting": "Bright and energetic for day scenes, colorful and festive for party/night scenes."
+  },
+  "editing_style": {
+    "pace": "Fast and rhythmic, matching the dembow beat",
+    "transitions": ["Whip pans", "Beat-matched cuts", "Spin transitions", "Jump cuts"],
+    "average_shot_length": "1-2 seconds (very fast cutting)",
+    "rhythm_approach": "Cuts on every beat or every other beat. Emphasizes the reggaeton rhythm with visual punctuation."
+  },
+  "storytelling": {
+    "narrative_approach": "High-energy narratives celebrating life, love, dancing, and Latin culture. Often features romantic pursuit or party scenarios.",
+    "preferred_themes": ["Romance and seduction", "Party and celebration", "Latin pride", "Beach lifestyle", "Dance and movement"],
+    "performance_vs_broll_ratio": "50/50 (equal emphasis on performance and party/dance scenes)",
+    "symbolism_level": "Low - straightforward and celebratory"
+  },
+  "post_production": {
+    "color_grading_style": "Highly saturated and vibrant. Emphasizes warm skin tones and tropical colors. Often uses high contrast.",
+    "vfx_approach": "Moderate use of effects for style and energy",
+    "preferred_effects": [
+      "Speed ramping on dance moves",
+      "Color pops and selective saturation",
+      "Lens flares",
+      "Light leaks",
+      "Motion graphics for text/branding",
+      "Clone/multiplier effects for dancers"
+    ]
+  },
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Create vibrant, saturated color palettes",
+      "Include dynamic dance and choreography",
+      "Show party atmospheres with crowds",
+      "Mix tropical/beach settings with urban locations",
+      "Emphasize movement and energy in every frame",
+      "Celebrate Latin culture and aesthetics"
+    ],
+    "avoid": [
+      "Muted or desaturated colors",
+      "Static, slow-paced scenes",
+      "Cold color temperatures",
+      "Empty, isolated settings",
+      "Overly serious or dark tones"
+    ],
+    "emphasis": [
+      "CRITICAL: Match every cut to the reggaeton beat (dembow rhythm)",
+      "Keep the energy HIGH throughout - this is a party",
+      "Use fast cutting during high-energy moments",
+      "Include multiple dancers and crowd energy",
+      "Showcase beautiful beach locations and tropical settings",
+      "Celebrate Latin culture authentically and respectfully"
+    ]
+  }
+}

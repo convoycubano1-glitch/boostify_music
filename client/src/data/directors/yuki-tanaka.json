@@ -1,0 +1,94 @@
+{
+  "id": "yuki-tanaka",
+  "name": "Yuki Tanaka",
+  "specialty": "K-Pop & Asian Pop",
+  "experience": "8+ years creating polished K-Pop and Asian pop visuals",
+  "rating": 4.7,
+  "bio": "A meticulous perfectionist from Seoul, Yuki Tanaka creates the ultra-polished, high-fashion aesthetic that defines modern K-Pop. Her videos feature elaborate sets, synchronized choreography, stunning wardrobe changes, and the signature visual excess that K-Pop fans love.",
+  "visual_style": {
+    "description": "Ultra-polished, high-fashion visuals with elaborate sets, perfect choreography, and multiple concept changes. Creates candy-colored dreamscapes and futuristic fashion showcases.",
+    "signature_techniques": [
+      "Precision group choreography filming",
+      "Multiple outfit/concept changes within one video",
+      "Elaborate set designs with matching color schemes",
+      "Perfect symmetry in group formations",
+      "Fashion-forward styling and close-ups",
+      "Colorful graphic overlays and text"
+    ],
+    "color_palette": {
+      "primary_colors": ["Candy Pink", "Baby Blue", "Lavender", "Mint Green"],
+      "accent_colors": ["White", "Holographic Silver", "Peach", "Yellow"],
+      "mood": "Playful, polished, and youthful with pastel perfection"
+    },
+    "influences": ["SM Entertainment MVs", "YG Entertainment style", "Japanese visual kei", "Harajuku fashion", "Anime aesthetics"]
+  },
+  "camera_preferences": {
+    "favorite_lenses": ["35mm", "50mm", "85mm"],
+    "favorite_shot_types": ["MS", "MWS", "CU", "WS", "HIGH"],
+    "favorite_movements": ["steadicam", "crane", "dolly", "static"],
+    "shot_composition": "Perfectly symmetrical and balanced. Centers subjects precisely and uses geometric formations for groups.",
+    "aspect_ratio": "16:9 Standard (optimized for vertical cuts)",
+    "camera_notes": "Extremely controlled camera work with perfect framing. Loves overhead shots of choreography and beauty close-ups."
+  },
+  "lighting_style": {
+    "preferred_lighting": ["studio", "soft", "dramatic"],
+    "color_temperature": "Cool to neutral (5000K-5600K)",
+    "key_techniques": [
+      "High-key beauty lighting",
+      "Colored backdrop lighting",
+      "Ring lights for face close-ups",
+      "LED walls with custom graphics",
+      "Perfectly even lighting for groups"
+    ],
+    "mood_lighting": "Bright, clean, and polished. No harsh shadows on faces. Creates depth through colored backgrounds."
+  },
+  "editing_style": {
+    "pace": "Very fast with constant visual changes",
+    "transitions": ["Quick cuts", "Flash transitions", "Zoom transitions", "Scene wipes"],
+    "average_shot_length": "0.5-2 seconds (extremely fast)",
+    "rhythm_approach": "Rapid cutting with different angles of the same choreography. Emphasizes moments where all members are synchronized."
+  },
+  "storytelling": {
+    "narrative_approach": "Concept-driven with emphasis on visual themes and aesthetics over linear narrative. Often includes cute/quirky story elements.",
+    "preferred_themes": ["Youth and energy", "Dreams and aspirations", "Fashion and style", "Friendship", "Empowerment"],
+    "performance_vs_broll_ratio": "70/30 (heavy emphasis on choreography and performance)",
+    "symbolism_level": "Medium - uses visual concepts and themes"
+  },
+  "post_production": {
+    "color_grading_style": "Clean and vibrant with emphasis on pastel colors. Perfect skin tones and bright whites. Often uses different color grades for different concepts within one video.",
+    "vfx_approach": "Moderate to heavy use of motion graphics and clean VFX",
+    "preferred_effects": [
+      "Motion graphics and text overlays",
+      "Clean transitions and wipes",
+      "Sparkles and particle effects",
+      "Clone effects for dance formations",
+      "Beauty retouching",
+      "Animated graphics"
+    ]
+  },
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Create ultra-polished, perfect visuals",
+      "Use pastel and candy color schemes",
+      "Include elaborate sets and props",
+      "Show synchronized group choreography",
+      "Feature multiple outfit/concept changes",
+      "Maintain high-fashion aesthetic throughout"
+    ],
+    "avoid": [
+      "Gritty or raw aesthetics",
+      "Messy or imperfect compositions",
+      "Dark or moody color grading",
+      "Single static concept",
+      "Realistic/documentary style"
+    ],
+    "emphasis": [
+      "CRITICAL: Everything must be PERFECT - no imperfections in framing or lighting",
+      "Change concepts/outfits at least 2-3 times in the video",
+      "Use pastel colors and clean, bright lighting",
+      "Show the entire choreography from multiple angles",
+      "Create visually distinct 'eras' or concepts within the same video",
+      "Emphasize youth, energy, and fashion-forward styling"
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "id": "elena-petrov",
+  "name": "Elena Petrov",
+  "specialty": "Cinematic & Orchestral",
+  "experience": "20+ years directing epic cinematic music videos",
+  "rating": 5.0,
+  "bio": "A master of cinematic storytelling, Elena Petrov creates music videos that feel like short films. With a background in feature filmmaking, she brings Hollywood production values to music videos, creating epic narratives with stunning cinematography, elaborate production design, and emotional depth.",
+  "visual_style": {
+    "description": "Epic, cinematic visuals with film-quality production values. Creates sweeping narratives with dramatic lighting, elaborate costumes, and grand scale imagery.",
+    "signature_techniques": [
+      "Sweeping crane and drone shots",
+      "Epic landscape cinematography",
+      "Detailed period or fantasy costumes",
+      "Dramatic use of natural elements (fire, water, wind)",
+      "Long, unbroken takes with complex blocking",
+      "Classical painting-inspired compositions"
+    ],
+    "color_palette": {
+      "primary_colors": ["Deep Blue", "Forest Green", "Burgundy Red", "Charcoal"],
+      "accent_colors": ["Gold", "Silver", "Ivory", "Deep Purple"],
+      "mood": "Epic, dramatic, and timeless with rich, desaturated tones"
+    },
+    "influences": ["Roger Deakins", "Emmanuel Lubezki", "Terrence Malick", "Christopher Nolan", "Peter Jackson's LOTR"]
+  },
+  "camera_preferences": {
+    "favorite_lenses": ["35mm", "50mm", "85mm", "14mm"],
+    "favorite_shot_types": ["EWS", "WS", "LS", "MS", "CU"],
+    "favorite_movements": ["crane", "drone", "dolly", "steadicam", "static"],
+    "shot_composition": "Classical and painterly with strong attention to rule of thirds and leading lines. Creates depth through layered foreground, midground, background.",
+    "aspect_ratio": "2.39:1 Anamorphic",
+    "camera_notes": "Prefers slower, more deliberate movements that feel intentional. Loves long takes that showcase production design."
+  },
+  "lighting_style": {
+    "preferred_lighting": ["natural", "dramatic", "golden-hour"],
+    "color_temperature": "Variable depending on scene (often 5600K for day, 3200K for interiors)",
+    "key_techniques": [
+      "Natural light with minimal augmentation",
+      "Motivated lighting sources (windows, fire, candles)",
+      "High contrast ratios for drama",
+      "Practical fire and flame lighting",
+      "Volumetric lighting through atmosphere"
+    ],
+    "mood_lighting": "Dramatic and naturalistic. Creates mood through contrast and motivated sources rather than artificial setups."
+  },
+  "editing_style": {
+    "pace": "Slow to medium, deliberate and emotional",
+    "transitions": ["Cross dissolves", "L-cuts and J-cuts", "Match cuts", "Fade to black"],
+    "average_shot_length": "6-12 seconds (long for music videos)",
+    "rhythm_approach": "Cuts follow emotional beats and narrative progression rather than strict musical rhythm. Allows moments to breathe."
+  },
+  "storytelling": {
+    "narrative_approach": "Strong narrative focus with character arcs and emotional journeys. Treats music videos as short films with beginning, middle, and end.",
+    "preferred_themes": ["Epic journeys", "Love and loss", "Good vs evil", "Redemption", "Mythology and legend", "Human resilience"],
+    "performance_vs_broll_ratio": "20/80 (heavy emphasis on narrative and cinematography)",
+    "symbolism_level": "High - uses visual metaphors and layered meaning"
+  },
+  "post_production": {
+    "color_grading_style": "Cinematic and filmic with emphasis on rich blacks and controlled highlights. Often uses slight desaturation with selective color pops.",
+    "vfx_approach": "Subtle and invisible - prefers practical effects when possible",
+    "preferred_effects": [
+      "Subtle environmental enhancements",
+      "Sky replacements",
+      "Wire removals",
+      "Subtle speed ramping",
+      "Film grain and texture",
+      "Subtle color isolation"
+    ]
+  },
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Create epic, cinematic compositions",
+      "Use natural dramatic lighting",
+      "Include sweeping landscape shots",
+      "Feature elaborate costumes and production design",
+      "Build emotional narrative through visuals",
+      "Emphasize scale and grandeur"
+    ],
+    "avoid": [
+      "Fast, MTV-style cutting",
+      "Artificial or studio lighting",
+      "Modern urban settings (unless thematically appropriate)",
+      "Oversaturated colors",
+      "Gimmicky transitions or effects"
+    ],
+    "emphasis": [
+      "CRITICAL: Treat this like a short FILM, not a music video",
+      "Allow scenes to breathe - don't rush the pacing",
+      "Use wide establishing shots to show scale",
+      "Create emotional moments that resonate beyond the music",
+      "Emphasize production value and attention to detail",
+      "Build a complete narrative arc with beginning, middle, and end"
+    ]
+  }
+}
