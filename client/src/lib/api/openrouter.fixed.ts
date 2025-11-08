@@ -13,6 +13,7 @@ import {
   validateSceneBalance,
   generateVariedShotSequence
 } from "../../types/music-video-scene";
+import type { DirectorProfile } from "../../data/directors/director-schema";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -1070,19 +1071,20 @@ Return ONLY valid JSON matching this structure:
 
 /**
  * Genera un guion detallado para un video musical basado en la transcripción de la letra
- * AHORA USA EL CONCEPTO VISUAL como base para mayor coherencia
+ * AHORA USA EL CONCEPTO VISUAL Y PERFIL COMPLETO DEL DIRECTOR como base para mayor coherencia
  * 
  * @param lyrics La transcripción de la letra de la canción
  * @param audioAnalysis Análisis opcional de la pista de audio (beats, segmentos, etc)
- * @param director Información del director para adaptar el estilo cinematográfico
+ * @param director Perfil COMPLETO del director con todos sus detalles técnicos y estilísticos (DirectorProfile)
  * @param audioDuration Duración del audio en segundos para calcular número de escenas
+ * @param editingStyle Estilo de edición seleccionado
  * @param concept Concepto visual generado previamente (opcional pero recomendado)
  * @returns Promise con el guion en formato JSON estructurado
  */
 export async function generateMusicVideoScript(
   lyrics: string, 
   audioAnalysis?: any, 
-  director?: { name: string; specialty: string; style: string },
+  director?: DirectorProfile,
   audioDuration?: number,
   editingStyle?: { id: string; name: string; description: string; duration: { min: number; max: number } },
   concept?: MusicVideoConcept | null
@@ -1186,20 +1188,90 @@ Description: ${editingStyle?.description || 'Cuts synchronized with musical phra
 - B-roll scenes can fill instrumental breaks and transitions`;
     }
     
-    // Agregar información del director si está disponible
+    // Agregar PERFIL COMPLETO del director si está disponible
     if (director) {
-      userPrompt += `\n\nDIRECTOR STYLE ADAPTATION:
-This music video will be directed by ${director.name}, known for:
-- Specialty: ${director.specialty}
-- Visual Style: ${director.style}
+      console.log(`📽️ Usando perfil completo del director: ${director.name}`);
+      userPrompt += `\n\n🎬 DIRECTOR'S COMPLETE CINEMATIC PROFILE:
 
-IMPORTANT: Adapt the entire script to reflect ${director.name}'s unique cinematic signature. Every scene should embody their characteristic style in:
-- Camera choices and movements
-- Lighting design
-- Visual composition
-- Color palette
-- Scene transitions
-- Overall aesthetic approach`;
+**Director:** ${director.name}
+**Specialty:** ${director.specialty}
+**Bio:** ${director.bio}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📸 VISUAL STYLE & AESTHETIC:
+${director.visual_style.description}
+
+**Signature Techniques:**
+${director.visual_style.signature_techniques.map((tech, i) => `${i + 1}. ${tech}`).join('\n')}
+
+**Color Palette Philosophy:**
+• Primary Colors: ${director.visual_style.color_palette.primary_colors.join(', ')}
+• Accent Colors: ${director.visual_style.color_palette.accent_colors.join(', ')}
+• Mood: ${director.visual_style.color_palette.mood}
+
+**Creative Influences:** ${director.visual_style.influences.join(', ')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎥 CAMERA PREFERENCES:
+**Favorite Lenses:** ${director.camera_preferences.favorite_lenses.join(', ')}
+**Favorite Shot Types:** ${director.camera_preferences.favorite_shot_types.join(', ')}
+**Favorite Movements:** ${director.camera_preferences.favorite_movements.join(', ')}
+**Shot Composition Style:** ${director.camera_preferences.shot_composition}
+**Preferred Aspect Ratio:** ${director.camera_preferences.aspect_ratio}
+**Camera Notes:** ${director.camera_preferences.camera_notes}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 LIGHTING STYLE:
+**Preferred Lighting:** ${director.lighting_style.preferred_lighting.join(', ')}
+**Color Temperature:** ${director.lighting_style.color_temperature}
+**Key Techniques:** ${director.lighting_style.key_techniques.join(', ')}
+**Mood Lighting:** ${director.lighting_style.mood_lighting}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✂️ EDITING STYLE:
+**Pace:** ${director.editing_style.pace}
+**Transitions:** ${director.editing_style.transitions.join(', ')}
+**Average Shot Length:** ${director.editing_style.average_shot_length}
+**Rhythm Approach:** ${director.editing_style.rhythm_approach}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 STORYTELLING APPROACH:
+**Narrative Style:** ${director.storytelling.narrative_approach}
+**Preferred Themes:** ${director.storytelling.preferred_themes.join(', ')}
+**Performance vs B-roll Ratio:** ${director.storytelling.performance_vs_broll_ratio}
+**Symbolism Level:** ${director.storytelling.symbolism_level}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎨 POST-PRODUCTION STYLE:
+**Color Grading:** ${director.post_production.color_grading_style}
+**VFX Approach:** ${director.post_production.vfx_approach}
+**Preferred Effects:** ${director.post_production.preferred_effects.join(', ')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 AI GENERATION PRIORITIES:
+
+**MUST INCLUDE:**
+${director.ai_generation_notes.key_priorities.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+
+**MUST AVOID:**
+${director.ai_generation_notes.avoid.map((a, i) => `${i + 1}. ${a}`).join('\n')}
+
+**SPECIAL EMPHASIS:**
+${director.ai_generation_notes.emphasis.map((e, i) => `${i + 1}. ${e}`).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚨 CRITICAL INSTRUCTION:
+Every single scene MUST embody ${director.name}'s unique cinematic signature.
+Use the exact techniques, camera preferences, lighting style, and aesthetic described above.
+This is NOT a suggestion - it is a REQUIREMENT for EVERY scene you generate.`;
     }
     
     if (audioAnalysis) {

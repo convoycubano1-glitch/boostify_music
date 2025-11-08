@@ -1,0 +1,103 @@
+{
+  "id": "isabella-moretti",
+  "name": "Isabella Moretti",
+  "bio": "Former MTV director with global brand collaborations, specializing in pop and contemporary visuals. Known for high-fashion aesthetic with cutting-edge visual effects and polished production values.",
+  "specialty": "Pop & Contemporary",
+  "experience": "Former MTV director with global brand collaborations",
+  "rating": 4.7,
+  
+  "visual_style": {
+    "description": "High-fashion aesthetic with cutting-edge visual effects, glossy commercial look, trendsetting visuals",
+    "signature_techniques": [
+      "Fashion magazine-inspired compositions",
+      "Choreographed dance sequences",
+      "Luxury product integration",
+      "Symmetrical formation shots",
+      "Bold graphic text overlays",
+      "Color-coordinated set design"
+    ],
+    "color_palette": {
+      "primary_colors": ["Saturated pinks", "Electric blues", "Pure white", "Jet black"],
+      "accent_colors": ["Holographic metallics", "Neon green", "Rose gold"],
+      "mood": "Glamorous, energetic, aspirational, modern"
+    },
+    "influences": ["Dave Meyers", "Joseph Kahn", "Hannah Lux Davis"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["24mm", "50mm", "85mm portrait"],
+    "favorite_shot_types": ["MCU", "MS", "CU", "HIGH", "LOW"],
+    "favorite_movements": ["steadicam", "crane", "dolly", "tracking"],
+    "shot_composition": "Centered symmetrical framing, fashion-forward angles, beauty-focused compositions",
+    "aspect_ratio": "16:9 or 1:1 for social media optimization",
+    "camera_notes": "Smooth stabilized camera movements, beauty lighting angles, flattering for the artist"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["Studio lighting", "Beauty dish", "Ring lights", "Colored LED panels"],
+    "color_temperature": "Neutral 5600K daylight balanced, often with colored gels",
+    "key_techniques": [
+      "Three-point lighting for flattering beauty",
+      "Colored LED panels for background",
+      "Ring light for eye catchlights",
+      "High-key bright lighting setups"
+    ],
+    "mood_lighting": "Bright, polished, controlled studio look with vibrant color accents"
+  },
+  
+  "editing_style": {
+    "pace": "Energetic with synchronized choreography cuts",
+    "transitions": ["Quick cuts", "Whip pans", "Match cuts", "Graphic wipes"],
+    "average_shot_length": "2-4 seconds (medium-fast)",
+    "rhythm_approach": "Cuts synchronized to choreography and beat drops, rhythmic precision"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Performance showcase with fashion narrative, aspirational lifestyle storytelling",
+    "preferred_themes": ["Empowerment", "Glamour and luxury", "Dance and movement", "Self-expression"],
+    "performance_vs_broll_ratio": "70% performance / 30% B-roll (performance-focused)",
+    "symbolism_level": "Medium - some metaphors but mostly direct visual storytelling"
+  },
+  
+  "post_production": {
+    "color_grading_style": "High saturation, vibrant colors, clean whites, deep blacks, commercial polish",
+    "vfx_approach": "Heavy VFX integration - CGI backgrounds, motion graphics, seamless compositing",
+    "preferred_effects": [
+      "Motion graphics and text animations",
+      "CGI environments and effects",
+      "Beauty retouching and skin smoothing",
+      "Holographic and metallic effects"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Spotlight",
+      "artist": "Pop Sensation",
+      "year": 2021,
+      "key_techniques": ["Choreographed dance", "Fashion styling", "CGI integration"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Fashion-forward wardrobe and styling",
+      "Polished high-production-value aesthetic",
+      "Vibrant saturated colors",
+      "Choreographed performance moments",
+      "Beauty-focused artist shots"
+    ],
+    "avoid": [
+      "Gritty or raw aesthetics",
+      "Handheld shaky footage",
+      "Muted desaturated colors",
+      "Overly symbolic or abstract storytelling"
+    ],
+    "emphasis": [
+      "Artist beauty and charisma",
+      "Aspirational luxury lifestyle",
+      "Trend-setting fashion",
+      "Commercial appeal"
+    ]
+  }
+}

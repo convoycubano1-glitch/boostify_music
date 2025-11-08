@@ -1,0 +1,103 @@
+{
+  "id": "marcus-chen",
+  "name": "Marcus Chen",
+  "bio": "Award-winning director with 15+ years in music video production, specializing in alternative and indie rock visuals. Known for surrealist narratives with experimental techniques that push creative boundaries.",
+  "specialty": "Alternative & Indie Rock",
+  "experience": "Award-winning director with 15+ years in music video production",
+  "rating": 4.9,
+  
+  "visual_style": {
+    "description": "Surrealist narratives with experimental techniques, dreamlike visuals, symbolic storytelling, organic textures",
+    "signature_techniques": [
+      "Practical effects and in-camera tricks",
+      "Reversed footage sequences",
+      "Multiple exposure compositing",
+      "Symbolic visual metaphors",
+      "Time-lapse with long exposures",
+      "Unconventional camera rigs"
+    ],
+    "color_palette": {
+      "primary_colors": ["Muted earth tones", "Soft pastels", "Washed-out film look"],
+      "accent_colors": ["Rust orange", "Faded teal", "Vintage yellow"],
+      "mood": "Nostalgic, melancholic, dreamlike, contemplative"
+    },
+    "influences": ["Michel Gondry", "Spike Jonze", "Chris Cunningham"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["35mm", "50mm", "85mm"],
+    "favorite_shot_types": ["MS", "LS", "WS", "POV", "OTS"],
+    "favorite_movements": ["static", "slow pan", "dolly", "tracking"],
+    "shot_composition": "Centered symmetrical framing, lots of negative space, rule of thirds with breathing room",
+    "aspect_ratio": "2.39:1 anamorphic for cinematic feel",
+    "camera_notes": "Prefers locked-off tripod shots, slow deliberate movements, symmetrical compositions"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["Natural window light", "Soft diffused sources", "Practical lamps", "Golden hour"],
+    "color_temperature": "Warm 3200K-4000K for nostalgic feel",
+    "key_techniques": [
+      "Soft key light with minimal fill",
+      "Window light as primary source",
+      "Practical bulbs visible in frame",
+      "Underexposed moody shadows"
+    ],
+    "mood_lighting": "Soft, naturalistic, warm tones, embracing darkness and shadows"
+  },
+  
+  "editing_style": {
+    "pace": "Contemplative with bursts of energy during choruses",
+    "transitions": ["Match cuts", "Whip pans", "Dissolves", "Jump cuts"],
+    "average_shot_length": "4-7 seconds (medium to long)",
+    "rhythm_approach": "Cuts match emotional beats rather than strict rhythm, builds tension with longer holds"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Abstract storytelling with symbolic elements, surrealist narratives that require interpretation",
+    "preferred_themes": ["Isolation and connection", "Memory and nostalgia", "Identity exploration", "Existential questions"],
+    "performance_vs_broll_ratio": "40% performance / 60% B-roll (narrative-heavy)",
+    "symbolism_level": "High - uses metaphors, symbolic objects, and visual poetry"
+  },
+  
+  "post_production": {
+    "color_grading_style": "Film emulation, desaturated with warm lift in shadows, vintage look",
+    "vfx_approach": "Practical effects strongly preferred, uses in-camera techniques, minimal digital VFX",
+    "preferred_effects": [
+      "Film grain overlay",
+      "Light leaks for organic feel",
+      "Reversed/speed-ramped footage",
+      "Multiple exposure composites"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Echoes in Time",
+      "artist": "Indie Rock Collective",
+      "year": 2019,
+      "key_techniques": ["Reversed footage", "Practical effects", "Symmetrical framing"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Symbolic and metaphorical imagery",
+      "Natural lighting and organic textures",
+      "Muted, nostalgic color palette",
+      "Contemplative pacing with emotional peaks",
+      "Surreal and dreamlike scenarios"
+    ],
+    "avoid": [
+      "Overly saturated colors",
+      "Fast-paced frenetic cutting",
+      "Literal straightforward storytelling",
+      "Digital-looking VFX"
+    ],
+    "emphasis": [
+      "Emotional depth and vulnerability",
+      "Visual poetry and metaphor",
+      "Authentic, handcrafted aesthetic",
+      "Thought-provoking imagery"
+    ]
+  }
+}

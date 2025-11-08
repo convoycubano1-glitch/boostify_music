@@ -1,0 +1,103 @@
+{
+  "id": "sofia-ramirez",
+  "name": "Sofia Ramirez",
+  "bio": "Award-winning director specializing in urban and hip-hop visuals with over 10 years of experience directing music videos for top urban artists. Known for her dynamic street cinematography and bold color grading.",
+  "specialty": "Urban & Hip-Hop Visuals",
+  "experience": "10+ years directing music videos for top urban artists",
+  "rating": 4.8,
+  
+  "visual_style": {
+    "description": "Gritty urban realism with vibrant color pops, street culture aesthetic, high-energy performance shots",
+    "signature_techniques": [
+      "Low-angle power shots",
+      "360-degree rotations around artist",
+      "Slow-motion money/jewelry shots",
+      "Fast-paced montage sequences",
+      "Drone shots over cityscapes",
+      "Car interior close-ups with colored lighting"
+    ],
+    "color_palette": {
+      "primary_colors": ["Deep blues", "Neon purples", "Gold/yellow accents"],
+      "accent_colors": ["Hot pink", "Electric green", "Orange flames"],
+      "mood": "Bold, energetic, luxurious with street edge"
+    },
+    "influences": ["Hype Williams", "Director X", "Cole Bennett"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["16mm wide-angle", "24mm", "35mm"],
+    "favorite_shot_types": ["LOW", "DUTCH", "MCU", "ECU", "WS"],
+    "favorite_movements": ["handheld", "steadicam", "drone", "crane"],
+    "shot_composition": "Dynamic asymmetrical framing, rule of thirds broken intentionally, lots of headroom for swagger",
+    "aspect_ratio": "16:9 standard or 2.39:1 anamorphic for premium projects",
+    "camera_notes": "Loves handheld energy, frequently uses dutch angles for attitude, low angles to make artist look powerful"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["Colored gels", "Neon practical lights", "Hard dramatic shadows", "Backlit silhouettes"],
+    "color_temperature": "Mixed temperatures - cool blues (5600K) with warm tungsten accents (3200K)",
+    "key_techniques": [
+      "Rim lighting with colored gels",
+      "Harsh sunlight for outdoor scenes",
+      "Car headlights as practicals",
+      "LED strips and neon signs"
+    ],
+    "mood_lighting": "High contrast, saturated colors, dramatic shadows, lots of purple and blue tones"
+  },
+  
+  "editing_style": {
+    "pace": "Fast-paced with beat synchronization, frequent cuts on hi-hats and snares",
+    "transitions": ["Hard cuts", "Whip pans", "Speed ramps", "Flash frames"],
+    "average_shot_length": "1.5-3 seconds (very fast)",
+    "rhythm_approach": "Cuts synchronized to 808s and hi-hats, rhythmic editing"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Performance-heavy with lifestyle B-roll showing success, wealth, and street credibility",
+    "preferred_themes": ["Come-up story", "Wealth display", "Street loyalty", "Hustle and ambition"],
+    "performance_vs_broll_ratio": "60% performance / 40% B-roll",
+    "symbolism_level": "Direct and literal - shows money, jewelry, cars, city life"
+  },
+  
+  "post_production": {
+    "color_grading_style": "Teal and orange look, crushed blacks, lifted shadows, vibrant saturation",
+    "vfx_approach": "Practical effects preferred, minimal CGI, real locations and props",
+    "preferred_effects": [
+      "Color grading with heavy teal/orange",
+      "Slow-motion speed ramps",
+      "Light leaks and lens flares",
+      "Chromatic aberration for gritty feel"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Street Dreams",
+      "artist": "Various Urban Artists",
+      "year": 2020,
+      "key_techniques": ["Drone cityscape", "Low-angle power shots", "Neon purple lighting"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Urban environments (streets, rooftops, warehouses)",
+      "Low camera angles to empower the artist",
+      "Bold purple, blue, and gold color palette",
+      "Fast-paced energy with dynamic camera movements",
+      "Jewelry, cars, and wealth symbols in B-roll"
+    ],
+    "avoid": [
+      "Suburban or rural settings",
+      "Static tripod shots",
+      "Muted or desaturated colors",
+      "Slow contemplative pacing"
+    ],
+    "emphasis": [
+      "Artist confidence and swagger",
+      "Street credibility",
+      "Visual luxury and success",
+      "High-energy performance"
+    ]
+  }
+}

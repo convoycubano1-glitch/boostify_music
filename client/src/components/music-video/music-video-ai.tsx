@@ -65,6 +65,7 @@ import { applyLipSync } from "../../lib/api/fal-lipsync";
 import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
 import { ProjectManager } from "./project-manager";
 import { VideoModelSelector } from "./video-model-selector";
+import { getDirectorByName, getDirectorById, type DirectorProfile } from "../../data/directors";
 
 // Fal.ai configuration
 fal.config({
@@ -388,11 +389,17 @@ export function MusicVideoAI() {
         });
       }, 600);
       
-      const directorInfo = videoStyle.selectedDirector ? {
-        name: videoStyle.selectedDirector.name,
-        specialty: videoStyle.selectedDirector.specialty,
-        style: videoStyle.selectedDirector.style
-      } : undefined;
+      // 🎬 OBTENER PERFIL COMPLETO DEL DIRECTOR desde JSON
+      let directorProfile: DirectorProfile | undefined = undefined;
+      if (videoStyle.selectedDirector) {
+        directorProfile = getDirectorByName(videoStyle.selectedDirector.name);
+        if (directorProfile) {
+          console.log(`🎬 [DIRECTOR] Perfil completo cargado: ${directorProfile.name}`);
+          console.log(`📋 [DIRECTOR] Estilo: ${directorProfile.visual_style.description}`);
+        } else {
+          console.log(`⚠️ [DIRECTOR] No se encontró perfil JSON para ${videoStyle.selectedDirector.name}, usando datos básicos`);
+        }
+      }
       
       const audioDurationInSeconds = buffer.duration;
       
@@ -410,12 +417,12 @@ export function MusicVideoAI() {
         console.log('⚠️ [CONCEPTO] No se pudo generar concepto, continuando sin él');
       }
       
-      // PASO 2: Generar script usando el concepto como base
-      console.log('📝 [SCRIPT] Generando script con concepto...');
+      // PASO 2: Generar script usando el concepto como base Y perfil completo del director
+      console.log('📝 [SCRIPT] Generando script con concepto y perfil del director...');
       const scriptResponse = await generateMusicVideoScript(
         transcriptionText, 
         undefined, 
-        directorInfo,
+        directorProfile, // Ahora pasamos el perfil completo
         audioDurationInSeconds,
         undefined,
         concept
@@ -1035,12 +1042,14 @@ export function MusicVideoAI() {
         description: "Generating script based on song lyrics...",
       });
 
-      // Pass director information if selected
-      const directorInfo = videoStyle.selectedDirector ? {
-        name: videoStyle.selectedDirector.name,
-        specialty: videoStyle.selectedDirector.specialty,
-        style: videoStyle.selectedDirector.style
-      } : undefined;
+      // 🎬 OBTENER PERFIL COMPLETO DEL DIRECTOR desde JSON
+      let directorProfile: DirectorProfile | undefined = undefined;
+      if (videoStyle.selectedDirector) {
+        directorProfile = getDirectorByName(videoStyle.selectedDirector.name);
+        if (directorProfile) {
+          console.log(`🎬 [DIRECTOR] Perfil completo cargado: ${directorProfile.name}`);
+        }
+      }
       
       // Pass audio duration to generate scenes every ~4 seconds
       const audioDurationInSeconds = audioBuffer?.duration || undefined;
@@ -1059,12 +1068,12 @@ export function MusicVideoAI() {
         console.log('⚠️ [CONCEPTO] No se pudo generar concepto, continuando sin él');
       }
       
-      // PASO 2: Generar script usando el concepto como base
-      console.log('📝 [SCRIPT] Generando script con concepto...');
+      // PASO 2: Generar script usando el concepto y perfil completo del director
+      console.log('📝 [SCRIPT] Generando script con concepto y perfil del director...');
       const scriptResponse = await generateMusicVideoScript(
         transcription, 
         undefined, 
-        directorInfo,
+        directorProfile, // Ahora pasamos el perfil completo
         audioDurationInSeconds,
         undefined,
         concept
