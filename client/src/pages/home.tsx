@@ -1293,10 +1293,11 @@ export default function HomePage() {
               </div>
               
               <div className="mt-10 flex flex-wrap gap-4">
-                <Link href="/music-video">
+                <Link href="/ai-video-creation">
                   <Button 
                     size="lg" 
                     className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-6 text-lg font-medium hover:opacity-90"
+                    data-testid="button-create-music-video"
                   >
                     Create Music Video <Video className="ml-2 w-5 h-5" />
                   </Button>
@@ -1404,10 +1405,11 @@ export default function HomePage() {
                   <span className="text-white/70">AI-Generated • 4K Quality</span>
                 </div>
                 
-                <Link href="/music-video">
+                <Link href="/ai-video-creation">
                   <Button 
                     variant="ghost" 
                     className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                    data-testid="button-create-your-own"
                   >
                     Create Your Own <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>

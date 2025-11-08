@@ -65,6 +65,7 @@ export function WaveformTimeline({
     if (!waveformRef.current) return;
     
     let isMounted = true;
+    let wavesurferInstance: WaveSurfer | null = null;
     
     // Crear instancia de WaveSurfer si no existe
     if (!wavesurferRef.current) {
@@ -94,28 +95,40 @@ export function WaveformTimeline({
       });
       
       wavesurferRef.current = wavesurfer;
+      wavesurferInstance = wavesurfer;
     }
     
     // Cargar audio si hay URL
     if (audioUrl && wavesurferRef.current && isMounted) {
-      wavesurferRef.current.load(audioUrl);
+      wavesurferRef.current.load(audioUrl).catch(() => {
+        // Silenciar errores de carga durante cleanup
+      });
     }
     
     // Limpiar al desmontar
     return () => {
       isMounted = false;
-      if (wavesurferRef.current) {
-        try {
-          // Usar un try-catch para evitar que el error de "signal is aborted" interrumpa la aplicación
-          wavesurferRef.current.destroy();
-        } catch (err) {
-          // Silenciar error de "signal is aborted" que es normal durante actualizaciones
-          if (!err || !String(err).includes('signal is aborted')) {
-            console.warn("Error al destruir WaveSurfer:", err);
+      
+      // Limpiar la instancia local primero
+      if (wavesurferInstance) {
+        const ws = wavesurferInstance;
+        wavesurferInstance = null;
+        
+        // Usar setTimeout para dar tiempo a que se completen las operaciones pendientes
+        setTimeout(() => {
+          try {
+            // Remover todos los listeners antes de destruir
+            ws.unAll();
+            ws.destroy();
+          } catch (err) {
+            // Silenciar completamente el error de "signal is aborted"
           }
-        } finally {
-          wavesurferRef.current = null;
-        }
+        }, 0);
+      }
+      
+      // Limpiar la referencia
+      if (wavesurferRef.current) {
+        wavesurferRef.current = null;
       }
     };
   }, [audioUrl, onTimeUpdate]);
