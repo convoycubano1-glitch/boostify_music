@@ -6,8 +6,9 @@ import { Header } from "../components/layout/header";
 import { Badge } from "../components/ui/badge";
 import { Switch } from "../components/ui/switch";
 import { motion } from "framer-motion";
-import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2, PlayCircle } from "lucide-react";
+import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2, PlayCircle, ChevronDown, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
@@ -280,6 +281,7 @@ export default function ProducerToolsPage() {
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [showAddMusicianDialog, setShowAddMusicianDialog] = useState(false);
   const [useModernUI, setUseModernUI] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const loadMusicianImages = async () => {
     try {
@@ -821,6 +823,140 @@ export default function ProducerToolsPage() {
               </motion.div>
             </div>
           </div> */}
+
+          {/* Terms and Conditions Section */}
+          <div className="mt-16 mb-8 max-w-6xl mx-auto">
+            <Collapsible open={isTermsOpen} onOpenChange={setIsTermsOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full flex items-center justify-between p-6 hover:bg-muted/50 transition-colors border-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-base font-semibold">Booking Terms & Conditions</span>
+                  </div>
+                  <ChevronDown
+                    className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
+                      isTermsOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-6 pb-6">
+                <div className="space-y-6 text-sm text-muted-foreground mt-6 max-h-[500px] overflow-y-auto border rounded-lg p-6 bg-muted/20">
+                  
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">1. Service Agreement</h4>
+                    <p className="leading-relaxed">
+                      By booking a session with a musician through our platform, you agree to receive professional music services 
+                      as described in the musician's profile. The musician commits to delivering high-quality work according to 
+                      the specifications provided in your booking form.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">2. Payment Terms</h4>
+                    <p className="leading-relaxed mb-2">
+                      Payment is processed securely through Stripe. The total amount shown includes:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 ml-4">
+                      <li>80% goes directly to the musician for their services</li>
+                      <li>20% platform fee for facilitating the connection and payment processing</li>
+                    </ul>
+                    <p className="leading-relaxed mt-3">
+                      All payments are processed in USD. You will be redirected to Stripe's secure checkout page to complete your payment.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">3. Cancellation & Refund Policy</h4>
+                    <p className="leading-relaxed mb-2">
+                      <strong>Cancellation by Client:</strong>
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 ml-4">
+                      <li>Cancellations within 24 hours of booking: Full refund</li>
+                      <li>Cancellations 24-48 hours after booking: 50% refund</li>
+                      <li>Cancellations after 48 hours or after work has begun: No refund</li>
+                    </ul>
+                    <p className="leading-relaxed mt-3 mb-2">
+                      <strong>Cancellation by Musician:</strong> If a musician cancels, you will receive a full refund within 5-7 business days.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">4. Project Delivery</h4>
+                    <p className="leading-relaxed">
+                      The musician will deliver the completed work according to the deadline specified in your booking. 
+                      Delivery times may vary based on project complexity. You will receive the final files in professional-grade 
+                      formats suitable for commercial use.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">5. Intellectual Property Rights</h4>
+                    <p className="leading-relaxed">
+                      Upon full payment, you will own the rights to use the delivered music for your specified project. 
+                      The musician retains the right to showcase the work in their portfolio unless otherwise agreed upon. 
+                      Additional usage rights or exclusive licenses can be negotiated directly with the musician.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">6. Revisions & Modifications</h4>
+                    <p className="leading-relaxed">
+                      Most bookings include up to 2 rounds of reasonable revisions. Additional revisions may incur extra charges 
+                      to be agreed upon between you and the musician. Major changes to the project scope after booking may require 
+                      a new agreement.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">7. Communication & Collaboration</h4>
+                    <p className="leading-relaxed">
+                      You and the musician will communicate through our platform's messaging system. Response times may vary, 
+                      but musicians are expected to reply within 24-48 hours. For urgent matters, please indicate this in your 
+                      initial message.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">8. Quality Guarantee</h4>
+                    <p className="leading-relaxed">
+                      All musicians on our platform are verified professionals. If you're not satisfied with the final delivery, 
+                      please contact our support team within 7 days of receiving the files. We'll work to resolve the issue or 
+                      facilitate a partial refund if warranted.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">9. Confidentiality</h4>
+                    <p className="leading-relaxed">
+                      Musicians agree to keep your project details confidential. If your project requires an NDA, please discuss 
+                      this with the musician before booking, and we can facilitate the signing of appropriate legal documents.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">10. Dispute Resolution</h4>
+                    <p className="leading-relaxed">
+                      In case of disputes, our support team will mediate between you and the musician. If a resolution cannot 
+                      be reached, we reserve the right to make a final decision based on our platform policies and the evidence 
+                      provided by both parties.
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <p className="leading-relaxed italic">
+                      By proceeding with this booking, you acknowledge that you have read, understood, and agree to these terms 
+                      and conditions. For questions or concerns, please contact our support team before completing your booking.
+                    </p>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
         </div>
       </ScrollArea>
     </div>
