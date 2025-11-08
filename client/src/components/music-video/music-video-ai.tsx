@@ -912,15 +912,19 @@ export function MusicVideoAI() {
           setTranscription(transcriptionText);
           setCurrentStep(1.5);
           
-          console.log('🚀 [FLUJO AUTOMÁTICO] Iniciando - Paso 2: Generación de script');
-          console.log('🎯 [SIGUIENTE] Llamando executeScriptGeneration...');
-          
-          // Continuar automáticamente con la generación del script
-          await executeScriptGeneration(transcriptionText, buffer);
-          console.log('✅ [FLUJO AUTOMÁTICO] executeScriptGeneration completado');
+          setShowProgress(false);
+          setIsTranscribing(false);
+          setProgressPercentage(0);
           
           // IMPORTANTE: Establecer el archivo DESPUÉS de procesar para evitar duplicación
           setSelectedFile(audioFile);
+          
+          console.log('✅ [TRANSCRIPCIÓN COMPLETADA] Usuario puede ahora seleccionar director');
+          
+          toast({
+            title: "✅ Transcripción completada",
+            description: "Ahora puedes seleccionar un director y estilo para continuar",
+          });
           
         } catch (err) {
           console.error("❌ Error transcribing audio:", err);
@@ -1000,14 +1004,16 @@ export function MusicVideoAI() {
             setTranscription(transcriptionText);
             setCurrentStep(1.5);
             
-            console.log('🚀 [FLUJO AUTOMÁTICO] Iniciando - Paso 2: Generación de script');
-            console.log('📊 [ESTADO] showProgress:', true, 'currentProgressStage: transcription');
-            console.log('🎯 [SIGUIENTE] Llamando executeScriptGeneration...');
+            setShowProgress(false);
+            setIsTranscribing(false);
+            setProgressPercentage(0);
             
-            // Continuar automáticamente con la generación del script
-            await executeScriptGeneration(transcriptionText, buffer);
+            console.log('✅ [TRANSCRIPCIÓN COMPLETADA] Usuario puede ahora seleccionar director');
             
-            console.log('✅ [FLUJO AUTOMÁTICO] executeScriptGeneration completado');
+            toast({
+              title: "✅ Transcripción completada",
+              description: "Ahora puedes seleccionar un director y estilo para continuar",
+            });
             
           } catch (err) {
             console.error("❌ Error transcribing audio:", err);
