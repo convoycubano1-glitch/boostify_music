@@ -21,10 +21,15 @@ import {
   Users,
   Sparkles,
   Film,
-  Loader2
+  Loader2,
+  Edit3
 } from 'lucide-react';
 import { CinematicSceneEditor, type CinematicSceneData } from './CinematicSceneEditor';
 import { useToast } from "../../hooks/use-toast";
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../lib/firebase';
+import { musicVideoProjectService } from '../../lib/services/music-video-project-service';
+import { useLocation } from 'wouter';
 
 // Estilos de edición disponibles
 const editingStyles = [
@@ -58,6 +63,10 @@ export function MusicVideoWorkspaceComplete({
   projectName = "Mi Video Musical"
 }: MusicVideoWorkspaceCompleteProps) {
   const { toast } = useToast();
+  const [user] = useAuthState(auth);
+  const [, setLocation] = useLocation();
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [isSavingProject, setIsSavingProject] = useState(false);
   const [scenes, setScenes] = useState<CinematicSceneData[]>(getDefaultScenes());
   const [selectedSceneId, setSelectedSceneId] = useState<number>(scenes[0]?.id || 1);
   const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
@@ -402,6 +411,93 @@ export function MusicVideoWorkspaceComplete({
     }
   };
 
+  // Función para guardar y abrir en editor profesional
+  const handleOpenInProfessionalEditor = async () => {
+    if (!user) {
+      toast({
+        title: "Autenticación requerida",
+        description: "Debes iniciar sesión para usar el editor profesional",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!audioFile) {
+      toast({
+        title: "Audio requerido",
+        description: "Debes cargar un archivo de audio antes de abrir en el editor profesional",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingProject(true);
+    try {
+      // Convertir scenes a TimelineItems
+      const timelineItems = scenes.map((scene, index) => {
+        const startTime = index * 5000; // 5 segundos por escena por defecto
+        const duration = 5000;
+        
+        return {
+          id: scene.id,
+          group: 1, // Capa 1 por defecto
+          start_time: startTime,
+          end_time: startTime + duration,
+          duration: duration,
+          title: scene.scene.substring(0, 30) + '...',
+          imageUrl: scene.imageUrl,
+          imagePrompt: scene.scene,
+          shotType: scene.camera,
+          type: 'image',
+          metadata: {
+            lighting: scene.lighting,
+            style: scene.style,
+            movement: scene.movement,
+          }
+        };
+      });
+
+      // Calcular duración total
+      const totalDuration = scenes.length * 5; // en segundos
+
+      // Guardar proyecto
+      const savedProjectId = await musicVideoProjectService.saveProject(
+        user.uid,
+        projectName,
+        {
+          audioUrl: audioFile.url,
+          timelineItems: timelineItems,
+          artistReferences: referenceImages.map(img => img.preview),
+          editingStyle: editingStyle,
+          duration: totalDuration
+        },
+        currentProjectId || undefined
+      );
+
+      setCurrentProjectId(savedProjectId);
+
+      toast({
+        title: "Proyecto guardado",
+        description: "Abriendo en editor profesional...",
+      });
+
+      // Navegar al editor profesional con el projectId
+      setTimeout(() => {
+        setLocation(`/professional-editor?projectId=${savedProjectId}`);
+      }, 500);
+
+    } catch (error) {
+      console.error('Error saving project:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el proyecto",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProject(false);
+    }
+  };
+
   const selectedScene = scenes.find(s => s.id === selectedSceneId);
 
   return (
@@ -426,6 +522,27 @@ export function MusicVideoWorkspaceComplete({
                 >
                   <Download className="h-4 w-4 mr-1" />
                   Exportar JSON
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenInProfessionalEditor}
+                  disabled={isSavingProject || !audioFile}
+                  data-testid="button-open-professional-editor"
+                  className="text-xs md:text-sm"
+                >
+                  {isSavingProject ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Edit3 className="h-4 w-4 mr-1" />
+                      Editor Profesional
+                    </>
+                  )}
                 </Button>
                 
                 <Button

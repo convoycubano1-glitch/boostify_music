@@ -42,6 +42,7 @@ export function WaveformTimeline({
   
   // Estados locales
   const [zoom, setZoom] = useState(1);
+  const [isWaveSurferReady, setIsWaveSurferReady] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [dragData, setDragData] = useState<{
     clipId: number;
@@ -85,6 +86,7 @@ export function WaveformTimeline({
       wavesurfer.on('ready', () => {
         if (isMounted) {
           console.log('WaveSurfer está listo');
+          setIsWaveSurferReady(true);
         }
       });
       
@@ -94,20 +96,28 @@ export function WaveformTimeline({
         }
       });
       
+      // Al destruirse, marcar como no listo
+      wavesurfer.on('destroy', () => {
+        setIsWaveSurferReady(false);
+      });
+      
       wavesurferRef.current = wavesurfer;
       wavesurferInstance = wavesurfer;
     }
     
     // Cargar audio si hay URL
     if (audioUrl && wavesurferRef.current && isMounted) {
+      setIsWaveSurferReady(false); // Marcar como no listo mientras carga
       wavesurferRef.current.load(audioUrl).catch(() => {
         // Silenciar errores de carga durante cleanup
+        setIsWaveSurferReady(false);
       });
     }
     
     // Limpiar al desmontar
     return () => {
       isMounted = false;
+      setIsWaveSurferReady(false);
       
       // Limpiar la instancia local primero
       if (wavesurferInstance) {
@@ -135,28 +145,43 @@ export function WaveformTimeline({
   
   // Actualizar zoom en WaveSurfer
   useEffect(() => {
-    if (wavesurferRef.current) {
-      wavesurferRef.current.zoom(zoom * 50);
+    if (wavesurferRef.current && isWaveSurferReady) {
+      try {
+        wavesurferRef.current.zoom(zoom * 50);
+      } catch (err) {
+        // Silenciar errores si el audio no está cargado
+        console.warn('No se pudo aplicar zoom:', err);
+      }
     }
-  }, [zoom]);
+  }, [zoom, isWaveSurferReady]);
   
   // Sincronizar el progreso de WaveSurfer con el tiempo actual
   useEffect(() => {
-    if (wavesurferRef.current && !draggingPlayhead) {
-      wavesurferRef.current.seekTo(currentTime / duration);
+    if (wavesurferRef.current && isWaveSurferReady && !draggingPlayhead) {
+      try {
+        wavesurferRef.current.seekTo(currentTime / duration);
+      } catch (err) {
+        // Silenciar errores si el audio no está cargado
+        console.warn('No se pudo buscar posición:', err);
+      }
     }
-  }, [currentTime, duration, draggingPlayhead]);
+  }, [currentTime, duration, draggingPlayhead, isWaveSurferReady]);
   
   // Sincronizar el estado de reproducción
   useEffect(() => {
-    if (wavesurferRef.current) {
-      if (isPlaying) {
-        wavesurferRef.current.play();
-      } else {
-        wavesurferRef.current.pause();
+    if (wavesurferRef.current && isWaveSurferReady) {
+      try {
+        if (isPlaying) {
+          wavesurferRef.current.play();
+        } else {
+          wavesurferRef.current.pause();
+        }
+      } catch (err) {
+        // Silenciar errores si el audio no está cargado
+        console.warn('No se pudo cambiar estado de reproducción:', err);
       }
     }
-  }, [isPlaying]);
+  }, [isPlaying, isWaveSurferReady]);
   
   // Función para iniciar el arrastre de un clip
   const handleClipMouseDown = (

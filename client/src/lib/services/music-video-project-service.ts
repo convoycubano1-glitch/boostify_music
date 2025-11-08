@@ -1,6 +1,8 @@
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { TimelineItem } from '../../components/timeline/TimelineClipUnified';
+import type { TimelineClip } from '../../interfaces/timeline';
+import { ClipType } from '../../interfaces/timeline';
 
 /**
  * Interface for Music Video Project
@@ -180,6 +182,108 @@ class MusicVideoProjectService {
     }, delay);
 
     this.autoSaveTimers.set(key, timer);
+  }
+
+  /**
+   * Convert TimelineItem (old format) to TimelineClip (new format)
+   * Used for loading AI Video Creator projects into Professional Editor
+   */
+  convertTimelineItemToClip(item: TimelineItem): TimelineClip {
+    // Determine ClipType from TimelineItem
+    let clipType: ClipType = ClipType.IMAGE;
+    if (item.videoUrl || item.lipsyncVideoUrl) {
+      clipType = ClipType.VIDEO;
+    } else if (item.audioUrl) {
+      clipType = ClipType.AUDIO;
+    } else if (item.type === 'text') {
+      clipType = ClipType.TEXT;
+    } else if (item.type === 'transition') {
+      clipType = ClipType.TRANSITION;
+    }
+
+    // Determine layer ID (group represents layer in old format)
+    const layerId = typeof item.group === 'number' ? item.group : parseInt(String(item.group)) || 1;
+
+    const clip: TimelineClip = {
+      id: typeof item.id === 'number' ? item.id : parseInt(String(item.id)) || 0,
+      layerId: layerId,
+      type: clipType,
+      start: item.start_time / 1000, // Convert ms to seconds
+      duration: (item.end_time - item.start_time) / 1000, // Convert ms to seconds
+      title: item.title || `Scene ${item.id}`,
+      url: item.videoUrl || item.imageUrl || item.audioUrl,
+      thumbnailUrl: item.thumbnail || item.imageUrl,
+      metadata: {
+        ...item.metadata,
+        imagePrompt: item.imagePrompt,
+        shotType: item.shotType,
+        section: item.section,
+        firebaseUrl: item.firebaseUrl,
+        isGeneratedImage: !!item.generatedImage,
+        lipsync: item.lipsyncApplied ? {
+          applied: true,
+          videoUrl: item.lipsyncVideoUrl,
+          progress: item.lipsyncProgress,
+        } : undefined,
+        faceSwapApplied: item.faceSwapApplied,
+        movementApplied: item.movementApplied,
+        movementPattern: item.movementPattern,
+        movementIntensity: item.movementIntensity,
+      },
+      locked: false,
+      generatedImage: !!item.generatedImage,
+    };
+
+    return clip;
+  }
+
+  /**
+   * Convert array of TimelineItems to TimelineClips
+   */
+  convertTimelineItemsToClips(items: TimelineItem[]): TimelineClip[] {
+    return items.map(item => this.convertTimelineItemToClip(item));
+  }
+
+  /**
+   * Convert TimelineClip back to TimelineItem
+   * Used when saving from Professional Editor
+   */
+  convertClipToTimelineItem(clip: TimelineClip): TimelineItem {
+    const item: TimelineItem = {
+      id: clip.id,
+      group: clip.layerId,
+      start_time: clip.start * 1000, // Convert seconds to ms
+      end_time: (clip.start + clip.duration) * 1000, // Convert seconds to ms
+      duration: clip.duration * 1000,
+      title: clip.title,
+      thumbnail: clip.thumbnailUrl,
+      imageUrl: clip.type === ClipType.IMAGE ? clip.url : undefined,
+      videoUrl: clip.type === ClipType.VIDEO ? clip.url : undefined,
+      audioUrl: clip.type === ClipType.AUDIO ? clip.url : undefined,
+      type: clip.type.toLowerCase(),
+      imagePrompt: clip.metadata?.imagePrompt,
+      shotType: clip.metadata?.shotType,
+      section: clip.metadata?.section,
+      generatedImage: clip.generatedImage || clip.metadata?.isGeneratedImage,
+      firebaseUrl: clip.metadata?.firebaseUrl,
+      lipsyncApplied: clip.metadata?.lipsync?.applied,
+      lipsyncVideoUrl: clip.metadata?.lipsync?.videoUrl,
+      lipsyncProgress: clip.metadata?.lipsync?.progress,
+      faceSwapApplied: clip.metadata?.faceSwapApplied,
+      movementApplied: clip.metadata?.movementApplied,
+      movementPattern: clip.metadata?.movementPattern,
+      movementIntensity: clip.metadata?.movementIntensity,
+      metadata: clip.metadata,
+    };
+
+    return item;
+  }
+
+  /**
+   * Convert array of TimelineClips to TimelineItems
+   */
+  convertClipsToTimelineItems(clips: TimelineClip[]): TimelineItem[] {
+    return clips.map(clip => this.convertClipToTimelineItem(clip));
   }
 }
 
