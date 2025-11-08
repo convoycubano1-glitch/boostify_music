@@ -1921,9 +1921,18 @@ ${transcription}`;
   /**
    * Generar video individual para una escena
    */
-  const handleGenerateIndividualVideo = async (sceneId: number) => {
+  const handleGenerateIndividualVideo = async (modelId: string, sceneId?: number) => {
+    if (!sceneId) {
+      toast({
+        title: "Error",
+        description: "Please select a scene from the timeline",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const scene = timelineItems.find(item => item.id === sceneId);
-    if (!scene || !scene.generatedImage) {
+    if (!scene || (!scene.generatedImage && !scene.imageUrl && !scene.firebaseUrl)) {
       toast({
         title: "Cannot generate video",
         description: "Scene must have a generated image first",
@@ -1932,13 +1941,15 @@ ${transcription}`;
       return;
     }
 
+    const imageUrl = scene.generatedImage || scene.imageUrl || scene.firebaseUrl || '';
+
     setIsGeneratingVideos(true);
     try {
       const prompt = scene.imagePrompt || scene.description || "Cinematic video animation";
       
-      const result = await generateVideoWithFAL(selectedVideoModel, {
+      const result = await generateVideoWithFAL(modelId, {
         prompt,
-        imageUrl: scene.generatedImage,
+        imageUrl: imageUrl,
         duration: "5",
         aspectRatio: "16:9"
       });
