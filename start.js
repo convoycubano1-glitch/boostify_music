@@ -6,8 +6,8 @@ console.log('⚡ Iniciando servidor completo (Express + Vite)...');
 // Forzar modo desarrollo para Replit
 process.env.NODE_ENV = 'development';
 
-// Ejecutar el servidor con tsx (TypeScript runner)
-const server = spawn('npx', ['tsx', 'server/index.ts'], {
+// Ejecutar el servidor con nodemon (ya configurado en package.json)
+const server = spawn('npm', ['run', 'server:dev'], {
   stdio: 'inherit',
   shell: true,
   env: { ...process.env, NODE_ENV: 'development' }
