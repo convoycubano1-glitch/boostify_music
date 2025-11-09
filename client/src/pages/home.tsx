@@ -526,37 +526,6 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Stats Section - With Animated Counters */}
-      <section 
-        ref={statsRef}
-        className="py-16 bg-gradient-to-b from-black to-zinc-950 relative overflow-hidden"
-      >
-        {/* Background elements */}
-        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-orange-500/10 rounded-full filter blur-3xl opacity-30" />
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-red-500/10 rounded-full filter blur-3xl opacity-30" />
-        
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={statsControls}
-          className="container mx-auto px-4"
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500">
-            Platform Metrics
-          </h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {stats.map((stat, index) => (
-              <StatCard
-                key={index}
-                value={stat.value}
-                label={stat.label}
-                icon={stat.icon}
-              />
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
       {/* Complete Ecosystem for Artists - Orbital Visualization */}
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-zinc-950 to-black">
         <div className="absolute -top-40 -left-40 w-80 h-80 bg-orange-500/10 rounded-full filter blur-3xl animate-pulse" 
@@ -586,27 +555,79 @@ export default function HomePage() {
             
             {/* Ecosystem Orbital - Using Dashboard Component Logic */}
             <div className="relative w-full max-w-2xl mx-auto mb-16" style={{ height: '500px' }}>
-              {/* Central Circle with Artist Image */}
+              {/* Central Circle with Video */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-                <div className="relative w-32 h-32 md:w-40 md:h-40">
+                <div className="relative w-56 h-56 md:w-64 md:h-64">
                   {/* Glow effect */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500 to-red-500 animate-pulse opacity-50 blur-2xl"></div>
                   {/* Gradient border */}
-                  <div className="relative w-full h-full rounded-full bg-gradient-to-br from-orange-500 to-red-600 p-1.5">
-                    <div className="w-full h-full rounded-full overflow-hidden border-2 border-orange-500/30 bg-black">
-                      <img 
-                        src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop"
-                        alt="Artist at the center of Boostify ecosystem"
-                        className="w-full h-full object-cover"
+                  <div className="relative w-full h-full rounded-full bg-gradient-to-br from-orange-500 to-red-600 p-1">
+                    <div className="w-full h-full rounded-full overflow-hidden border-2 border-orange-500/30 bg-black relative group">
+                      {/* HeyGen Video Iframe */}
+                      <iframe 
+                        src="https://app.heygen.com/embedded-player/0009196373a6482ead79dc3a57328ddb?autoplay=false"
+                        title="Boostify Creator Video"
+                        className="absolute inset-0 w-[200%] h-[200%]"
+                        allow="encrypted-media; fullscreen;"
+                        allowFullScreen
+                        style={{ 
+                          border: 'none',
+                          left: '50%',
+                          top: '62%',
+                          transform: 'translate(-50%, -50%)'
+                        }}
                       />
+                      
+                      {/* Video Controls Overlay */}
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="w-8 h-8 rounded-full bg-orange-500/90 backdrop-blur-sm flex items-center justify-center hover:bg-orange-600 transition-colors shadow-lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const iframe = e.currentTarget.closest('.group')?.querySelector('iframe') as HTMLIFrameElement;
+                            if (iframe?.contentWindow) {
+                              // Toggle play/pause - HeyGen iframes may not support this, but we'll add UI for UX
+                              console.log('Video control clicked');
+                            }
+                          }}
+                          data-testid="button-video-play"
+                        >
+                          <Play className="h-4 w-4 text-white" />
+                        </motion.button>
+                        
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="w-8 h-8 rounded-full bg-orange-500/90 backdrop-blur-sm flex items-center justify-center hover:bg-orange-600 transition-colors shadow-lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const iframe = e.currentTarget.closest('.group')?.querySelector('iframe') as HTMLIFrameElement;
+                            if (iframe?.contentWindow) {
+                              console.log('Mute toggle clicked');
+                            }
+                          }}
+                          data-testid="button-video-mute"
+                        >
+                          <Volume2 className="h-4 w-4 text-white" />
+                        </motion.button>
+                      </div>
+                      
+                      {/* Click to interact hint */}
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        <div className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5">
+                          <p className="text-white text-xs font-semibold whitespace-nowrap">Click to Play</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Orbit Rings */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[240px] h-[240px] md:w-[320px] md:h-[320px] border border-orange-500/20 rounded-full"></div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] md:w-[440px] md:h-[440px] border border-orange-500/10 rounded-full"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[240px] h-[240px] md:w-[360px] md:h-[360px] border border-orange-500/20 rounded-full"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] md:w-[500px] md:h-[500px] border border-orange-500/10 rounded-full"></div>
 
               {/* Inner Orbit Icons - Static positioned using dashboard logic */}
               {[
@@ -618,22 +639,33 @@ export default function HomePage() {
                 { icon: BarChart2, route: "/analytics-dashboard", color: "text-blue-400" },
               ].map((tool, index, array) => {
                 const angleInDegrees = index * (360 / array.length);
-                const radius = 120; // Mobile
-                const radiusDesktop = 160; // Desktop
                 const angleRad = (angleInDegrees - 90) * Math.PI / 180;
-                const x = Math.cos(angleRad) * radius;
-                const y = Math.sin(angleRad) * radius;
+                
+                // Mobile positions
+                const radiusMobile = 120;
+                const xMobile = Math.cos(angleRad) * radiusMobile;
+                const yMobile = Math.sin(angleRad) * radiusMobile;
+                
+                // Desktop positions
+                const radiusDesktop = 180;
+                const xDesktop = Math.cos(angleRad) * radiusDesktop;
+                const yDesktop = Math.sin(angleRad) * radiusDesktop;
+                
                 const Icon = tool.icon;
                 
                 return (
                   <Link key={index} href={tool.route}>
                     <div
-                      className="absolute z-30"
+                      className="absolute z-30 inner-orbit-icon"
                       style={{
-                        left: `calc(50% + ${x}px)`,
-                        top: `calc(50% + ${y}px)`,
+                        '--x-mobile': `${xMobile}px`,
+                        '--y-mobile': `${yMobile}px`,
+                        '--x-desktop': `${xDesktop}px`,
+                        '--y-desktop': `${yDesktop}px`,
+                        left: `calc(50% + ${xMobile}px)`,
+                        top: `calc(50% + ${yMobile}px)`,
                         transform: 'translate(-50%, -50%)',
-                      }}
+                      } as React.CSSProperties}
                     >
                       <motion.div 
                         className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 backdrop-blur-md border-2 border-orange-500/50 shadow-lg flex items-center justify-center cursor-pointer hover:border-orange-500 hover:scale-110 transition-all"
@@ -657,22 +689,33 @@ export default function HomePage() {
                 { icon: Share2, route: "/promotion", color: "text-emerald-400" },
               ].map((tool, index, array) => {
                 const angleInDegrees = index * (360 / array.length);
-                const radius = 170; // Mobile
-                const radiusDesktop = 220; // Desktop
                 const angleRad = (angleInDegrees - 90) * Math.PI / 180;
-                const x = Math.cos(angleRad) * radius;
-                const y = Math.sin(angleRad) * radius;
+                
+                // Mobile positions
+                const radiusMobile = 170;
+                const xMobile = Math.cos(angleRad) * radiusMobile;
+                const yMobile = Math.sin(angleRad) * radiusMobile;
+                
+                // Desktop positions
+                const radiusDesktop = 250;
+                const xDesktop = Math.cos(angleRad) * radiusDesktop;
+                const yDesktop = Math.sin(angleRad) * radiusDesktop;
+                
                 const Icon = tool.icon;
                 
                 return (
                   <Link key={index} href={tool.route}>
                     <div
-                      className="absolute z-30"
+                      className="absolute z-30 outer-orbit-icon"
                       style={{
-                        left: `calc(50% + ${x}px)`,
-                        top: `calc(50% + ${y}px)`,
+                        '--x-mobile': `${xMobile}px`,
+                        '--y-mobile': `${yMobile}px`,
+                        '--x-desktop': `${xDesktop}px`,
+                        '--y-desktop': `${yDesktop}px`,
+                        left: `calc(50% + ${xMobile}px)`,
+                        top: `calc(50% + ${yMobile}px)`,
                         transform: 'translate(-50%, -50%)',
-                      }}
+                      } as React.CSSProperties}
                     >
                       <motion.div 
                         className="h-11 w-11 md:h-12 md:w-12 rounded-full bg-black/60 backdrop-blur-md border-2 border-orange-500/40 shadow-lg flex items-center justify-center cursor-pointer hover:border-orange-500 hover:scale-110 transition-all"
@@ -689,15 +732,50 @@ export default function HomePage() {
               {/* Responsive positioning for desktop */}
               <style>{`
                 @media (min-width: 768px) {
-                  [style*="calc(50% + "][style*="px)"] {
-                    left: calc(50% + var(--desktop-x, 0px)) !important;
-                    top: calc(50% + var(--desktop-y, 0px)) !important;
+                  .inner-orbit-icon {
+                    left: calc(50% + var(--x-desktop)) !important;
+                    top: calc(50% + var(--y-desktop)) !important;
+                  }
+                  .outer-orbit-icon {
+                    left: calc(50% + var(--x-desktop)) !important;
+                    top: calc(50% + var(--y-desktop)) !important;
                   }
                 }
               `}</style>
             </div>
           </motion.div>
         </div>
+      </section>
+
+      {/* Stats Section - With Animated Counters */}
+      <section 
+        ref={statsRef}
+        className="py-16 bg-gradient-to-b from-black to-zinc-950 relative overflow-hidden"
+      >
+        {/* Background elements */}
+        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-orange-500/10 rounded-full filter blur-3xl opacity-30" />
+        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-red-500/10 rounded-full filter blur-3xl opacity-30" />
+        
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={statsControls}
+          className="container mx-auto px-4"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500">
+            Platform Metrics
+          </h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {stats.map((stat, index) => (
+              <StatCard
+                key={index}
+                value={stat.value}
+                label={stat.label}
+                icon={stat.icon}
+              />
+            ))}
+          </div>
+        </motion.div>
       </section>
 
       {/* Music Video Generator Showcase */}
