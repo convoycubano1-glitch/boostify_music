@@ -80,4 +80,4 @@ task = "shell.exec"
 args = "npm run server:dev"
 
 [agent]
-integrations = ["javascript_stripe:1.0.0"]
+integrations = ["javascript_stripe:1.0.0", "javascript_gemini_ai_integrations:1.0.0"]
