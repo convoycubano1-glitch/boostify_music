@@ -356,24 +356,57 @@ export default function HomePage() {
     };
   }, [statsControls]);
 
-  // Ensure intro video plays automatically
+  // Ensure intro video plays automatically with IntersectionObserver
   useEffect(() => {
     const video = introVideoRef.current;
-    if (video) {
-      // Force play the video
+    if (!video) return;
+
+    // Try to play immediately
+    const attemptPlay = () => {
       const playPromise = video.play();
       if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.log('Video autoplay prevented:', error);
-          // Try to play on user interaction
-          const playOnInteraction = () => {
-            video.play();
-            document.removeEventListener('click', playOnInteraction);
-          };
-          document.addEventListener('click', playOnInteraction);
-        });
+        playPromise
+          .then(() => {
+            console.log('Video playing successfully');
+          })
+          .catch(() => {
+            console.log('Autoplay blocked by browser');
+          });
       }
-    }
+    };
+
+    // Observe when video enters viewport
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            attemptPlay();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(video);
+
+    // Also try on any user interaction
+    const playOnInteraction = () => {
+      attemptPlay();
+      window.removeEventListener('click', playOnInteraction);
+      window.removeEventListener('scroll', playOnInteraction);
+      window.removeEventListener('touchstart', playOnInteraction);
+    };
+
+    window.addEventListener('click', playOnInteraction, { once: true });
+    window.addEventListener('scroll', playOnInteraction, { once: true });
+    window.addEventListener('touchstart', playOnInteraction, { once: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('click', playOnInteraction);
+      window.removeEventListener('scroll', playOnInteraction);
+      window.removeEventListener('touchstart', playOnInteraction);
+    };
   }, []);
 
   const handleGoogleLogin = async () => {
@@ -583,34 +616,37 @@ export default function HomePage() {
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500 to-red-500 animate-pulse opacity-50 blur-2xl"></div>
                   {/* Gradient border */}
                   <div className="relative w-full h-full rounded-full bg-gradient-to-br from-orange-500 to-red-600 p-1">
-                    <div className="w-full h-full rounded-full overflow-hidden border-2 border-orange-500/30 bg-black relative group">
+                    <div className="w-full h-full rounded-full overflow-hidden border-2 border-orange-500/30 bg-gradient-to-br from-orange-900/50 via-black to-red-900/50 relative group">
                       {/* Intro Video */}
                       <video 
                         ref={introVideoRef}
-                        className="absolute inset-0 w-[200%] h-[200%] object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
                         autoPlay
                         loop
                         muted
                         playsInline
-                        preload="auto"
-                        poster="/assets/freepik__boostify_music_organe_abstract_icon.png"
-                        style={{ 
-                          left: '50%',
-                          top: '62%',
-                          transform: 'translate(-50%, -50%)'
-                        }}
+                        preload="metadata"
                         onError={(e) => {
                           console.error('Error loading intro video:', e);
                         }}
-                        onLoadedData={() => {
-                          console.log('Intro video loaded successfully');
+                        onLoadedMetadata={() => {
+                          console.log('Video metadata loaded');
                           if (introVideoRef.current) {
-                            introVideoRef.current.play().catch(e => console.log('Play error:', e));
+                            introVideoRef.current.play().catch(e => {
+                              console.log('Autoplay prevented, will play on interaction');
+                            });
+                          }
+                        }}
+                        onCanPlay={() => {
+                          console.log('Video can play');
+                          if (introVideoRef.current) {
+                            introVideoRef.current.play().catch(e => {
+                              console.log('Play attempt failed:', e);
+                            });
                           }
                         }}
                       >
                         <source src="/assets/intro-video.mp4" type="video/mp4" />
-                        Your browser does not support the video tag.
                       </video>
                       
                       {/* Video Controls Overlay */}
