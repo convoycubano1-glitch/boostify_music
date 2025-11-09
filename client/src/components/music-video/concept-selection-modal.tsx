@@ -32,18 +32,18 @@ export function ConceptSelectionModal({
 
   return (
     <Dialog open={open} modal={true}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden bg-gradient-to-br from-background via-background to-orange-950/20" data-testid="modal-concept-selection">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-2xl md:text-3xl font-bold text-center flex items-center justify-center gap-3">
-            <Sparkles className="h-7 w-7 md:h-8 md:w-8 text-orange-500" />
-            {directorName} te propone 3 conceptos creativos
+      <DialogContent className="max-w-7xl h-[95vh] sm:h-[90vh] flex flex-col bg-gradient-to-br from-background via-background to-orange-950/20 p-0 gap-0" data-testid="modal-concept-selection">
+        <DialogHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6 shrink-0">
+          <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-center flex items-center justify-center gap-2 sm:gap-3">
+            <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-orange-500" />
+            <span className="line-clamp-1">{directorName} te propone 3 conceptos</span>
           </DialogTitle>
-          <p className="text-center text-sm md:text-base text-muted-foreground mt-2">
+          <p className="text-center text-xs sm:text-sm md:text-base text-muted-foreground mt-1 sm:mt-2">
             Selecciona el concepto que mejor capture la esencia de tu música
           </p>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[65vh] pr-4 mt-4">
+        <ScrollArea className="flex-1 overflow-auto px-4 sm:px-6 py-2">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {concepts.map((concept, index) => (
               <motion.div
@@ -238,42 +238,68 @@ export function ConceptSelectionModal({
           </div>
         </ScrollArea>
 
-        {/* Continue Button */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 pt-4 border-t">
-          <div className="text-sm text-center sm:text-left">
-            {selectedConcept ? (
-              <div className="space-y-1">
-                <p className="text-green-500 flex items-center justify-center sm:justify-start gap-2 font-semibold">
+        {/* Continue Button - FIXED AT BOTTOM - ALWAYS VISIBLE */}
+        <div className="shrink-0 flex flex-col gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t bg-background shadow-lg">
+          {/* Mobile: Stack vertically */}
+          <div className="flex sm:hidden flex-col gap-3 w-full">
+            {selectedConcept && (
+              <div className="text-center">
+                <p className="text-sm text-green-500 flex items-center justify-center gap-2 font-semibold">
                   <Check className="h-4 w-4" />
-                  Concepto seleccionado
-                </p>
-                <p className="text-xs text-muted-foreground">
                   {selectedConcept.title}
                 </p>
               </div>
-            ) : (
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">
-                  Selecciona un concepto
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Elige la propuesta que mejor se adapte a tu visión
-                </p>
-              </div>
             )}
+            <Button
+              size="lg"
+              onClick={handleContinue}
+              disabled={!selectedConcept}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white gap-2 shadow-lg hover:shadow-xl transition-all w-full min-h-[52px] text-base font-semibold"
+              data-testid="button-continue-concept"
+            >
+              <Sparkles className="h-5 w-5" />
+              {selectedConcept ? 'Generar Video Musical' : 'Selecciona un Concepto'}
+              <ChevronRight className="h-5 w-5" />
+            </Button>
           </div>
-          
-          <Button
-            size="lg"
-            onClick={handleContinue}
-            disabled={!selectedConcept}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white gap-2 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto"
-            data-testid="button-continue-concept"
-          >
-            <Sparkles className="h-5 w-5" />
-            Generar Video Musical
-            <ChevronRight className="h-5 w-5" />
-          </Button>
+
+          {/* Desktop: Horizontal layout */}
+          <div className="hidden sm:flex flex-row justify-between items-center gap-4 w-full">
+            <div className="text-sm text-left">
+              {selectedConcept ? (
+                <div className="space-y-1">
+                  <p className="text-green-500 flex items-center gap-2 font-semibold">
+                    <Check className="h-4 w-4" />
+                    Concepto seleccionado
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedConcept.title}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">
+                    Selecciona un concepto
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Elige la propuesta que mejor se adapte a tu visión
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <Button
+              size="lg"
+              onClick={handleContinue}
+              disabled={!selectedConcept}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white gap-2 shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
+              data-testid="button-continue-concept"
+            >
+              <Sparkles className="h-5 w-5" />
+              Generar Video Musical
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

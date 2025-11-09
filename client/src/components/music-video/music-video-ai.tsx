@@ -996,7 +996,7 @@ export function MusicVideoAI() {
             // Crear prompt para portada de álbum
             const coverPrompt = `Professional music album cover art. Title: "${concept.title}". Artist: ${projectName || 'Artist Name'}. Song: ${selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title'}. Visual style: ${concept.visual_theme || concept.description}. ${concept.color_palette?.primary_colors ? `Color palette: ${concept.color_palette.primary_colors.join(', ')}` : ''}. Minimalist, professional, high-quality design.`;
             
-            const response = await fetch('/api/gemini-image/generate-single', {
+            const response = await fetch('/api/gemini-image/generate-simple', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
@@ -1103,7 +1103,7 @@ export function MusicVideoAI() {
           }
         };
         
-        await projectService.saveProject(projectData);
+        await musicVideoProjectServicePostgres.saveProject(projectData);
         console.log('✅ Concepto guardado en base de datos');
         
       } catch (error) {
@@ -1122,9 +1122,20 @@ export function MusicVideoAI() {
     
     // Proceder a generar el script completo y las imágenes
     console.log('📜 Generando script final basado en el concepto...');
-    await executeScriptGeneration();
     
-  }, [executeScriptGeneration, user, projectName, selectedFile, audioBuffer, transcription, timelineItems, videoStyle, artistReferenceImages, conceptProposals, projectService]);
+    if (transcription && audioBuffer) {
+      await executeScriptGeneration(transcription, audioBuffer);
+    } else {
+      console.error('❌ No hay transcripción o audioBuffer disponible');
+      toast({
+        title: "Error",
+        description: "Falta transcripción o audio para continuar",
+        variant: "destructive",
+      });
+      setShowProgress(false);
+    }
+    
+  }, [executeScriptGeneration, user, projectName, selectedFile, audioBuffer, transcription, timelineItems, videoStyle, artistReferenceImages, conceptProposals, toast]);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
