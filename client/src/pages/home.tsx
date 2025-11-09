@@ -625,7 +625,7 @@ export default function HomePage() {
                         loop
                         muted
                         playsInline
-                        preload="metadata"
+                        preload="auto"
                         onError={(e) => {
                           console.error('Error loading intro video:', e);
                         }}
@@ -646,7 +646,7 @@ export default function HomePage() {
                           }
                         }}
                       >
-                        <source src="/assets/intro-video.mp4" type="video/mp4" />
+                        <source src="/assets/hero-video.mp4" type="video/mp4" />
                       </video>
                       
                       {/* Video Controls Overlay */}
