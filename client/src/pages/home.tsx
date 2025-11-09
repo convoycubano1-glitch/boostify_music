@@ -567,12 +567,9 @@ export default function HomePage() {
                       <iframe 
                         src="https://app.heygen.com/embedded-player/0009196373a6482ead79dc3a57328ddb"
                         title="Boostify Creator Video"
-                        className="absolute inset-0 w-[200%] h-[200%]"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                        allowFullScreen
-                        loading="lazy"
-                        sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
-                        referrerPolicy="no-referrer-when-downgrade"
+                        className="absolute inset-0 w-[200%] h-[200%] pointer-events-auto"
+                        allow="autoplay; encrypted-media; fullscreen"
+                        allowFullScreen={true}
                         style={{ 
                           border: 'none',
                           left: '50%',
