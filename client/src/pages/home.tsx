@@ -565,11 +565,14 @@ export default function HomePage() {
                     <div className="w-full h-full rounded-full overflow-hidden border-2 border-orange-500/30 bg-black relative group">
                       {/* HeyGen Video Iframe */}
                       <iframe 
-                        src="https://app.heygen.com/embedded-player/0009196373a6482ead79dc3a57328ddb?autoplay=false"
+                        src="https://app.heygen.com/embedded-player/0009196373a6482ead79dc3a57328ddb"
                         title="Boostify Creator Video"
                         className="absolute inset-0 w-[200%] h-[200%]"
-                        allow="encrypted-media; fullscreen;"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                         allowFullScreen
+                        loading="lazy"
+                        sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+                        referrerPolicy="no-referrer-when-downgrade"
                         style={{ 
                           border: 'none',
                           left: '50%',
