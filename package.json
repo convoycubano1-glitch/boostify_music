@@ -99,6 +99,8 @@
     "node-watch": "^0.7.4",
     "nodemon": "^3.1.9",
     "openai": "^4.85.4",
+    "p-limit": "^7.2.0",
+    "p-retry": "^7.1.0",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "react": "^18.2.0",
