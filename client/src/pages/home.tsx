@@ -563,20 +563,21 @@ export default function HomePage() {
                   {/* Gradient border */}
                   <div className="relative w-full h-full rounded-full bg-gradient-to-br from-orange-500 to-red-600 p-1">
                     <div className="w-full h-full rounded-full overflow-hidden border-2 border-orange-500/30 bg-black relative group">
-                      {/* HeyGen Video Iframe */}
-                      <iframe 
-                        src="https://app.heygen.com/embedded-player/0009196373a6482ead79dc3a57328ddb"
-                        title="Boostify Creator Video"
-                        className="absolute inset-0 w-[200%] h-[200%] pointer-events-auto"
-                        allow="autoplay; encrypted-media; fullscreen"
-                        allowFullScreen={true}
+                      {/* Intro Video */}
+                      <video 
+                        className="absolute inset-0 w-[200%] h-[200%] object-cover"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
                         style={{ 
-                          border: 'none',
                           left: '50%',
                           top: '62%',
                           transform: 'translate(-50%, -50%)'
                         }}
-                      />
+                      >
+                        <source src="/assets/intro-video.mp4" type="video/mp4" />
+                      </video>
                       
                       {/* Video Controls Overlay */}
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
@@ -586,10 +587,13 @@ export default function HomePage() {
                           className="w-8 h-8 rounded-full bg-orange-500/90 backdrop-blur-sm flex items-center justify-center hover:bg-orange-600 transition-colors shadow-lg"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const iframe = e.currentTarget.closest('.group')?.querySelector('iframe') as HTMLIFrameElement;
-                            if (iframe?.contentWindow) {
-                              // Toggle play/pause - HeyGen iframes may not support this, but we'll add UI for UX
-                              console.log('Video control clicked');
+                            const video = e.currentTarget.closest('.group')?.querySelector('video') as HTMLVideoElement;
+                            if (video) {
+                              if (video.paused) {
+                                video.play();
+                              } else {
+                                video.pause();
+                              }
                             }
                           }}
                           data-testid="button-video-play"
@@ -603,22 +607,15 @@ export default function HomePage() {
                           className="w-8 h-8 rounded-full bg-orange-500/90 backdrop-blur-sm flex items-center justify-center hover:bg-orange-600 transition-colors shadow-lg"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const iframe = e.currentTarget.closest('.group')?.querySelector('iframe') as HTMLIFrameElement;
-                            if (iframe?.contentWindow) {
-                              console.log('Mute toggle clicked');
+                            const video = e.currentTarget.closest('.group')?.querySelector('video') as HTMLVideoElement;
+                            if (video) {
+                              video.muted = !video.muted;
                             }
                           }}
                           data-testid="button-video-mute"
                         >
                           <Volume2 className="h-4 w-4 text-white" />
                         </motion.button>
-                      </div>
-                      
-                      {/* Click to interact hint */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                        <div className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5">
-                          <p className="text-white text-xs font-semibold whitespace-nowrap">Click to Play</p>
-                        </div>
                       </div>
                     </div>
                   </div>
