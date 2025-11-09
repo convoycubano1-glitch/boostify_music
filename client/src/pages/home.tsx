@@ -309,6 +309,7 @@ export default function HomePage() {
   const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(true);
   const statsRef = useRef<HTMLDivElement>(null);
   const statsControls = useAnimation();
+  const introVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const viewInterval = setInterval(() => {
@@ -354,6 +355,26 @@ export default function HomePage() {
       observer.disconnect();
     };
   }, [statsControls]);
+
+  // Ensure intro video plays automatically
+  useEffect(() => {
+    const video = introVideoRef.current;
+    if (video) {
+      // Force play the video
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.log('Video autoplay prevented:', error);
+          // Try to play on user interaction
+          const playOnInteraction = () => {
+            video.play();
+            document.removeEventListener('click', playOnInteraction);
+          };
+          document.addEventListener('click', playOnInteraction);
+        });
+      }
+    }
+  }, []);
 
   const handleGoogleLogin = async () => {
     try {
@@ -565,18 +586,31 @@ export default function HomePage() {
                     <div className="w-full h-full rounded-full overflow-hidden border-2 border-orange-500/30 bg-black relative group">
                       {/* Intro Video */}
                       <video 
+                        ref={introVideoRef}
                         className="absolute inset-0 w-[200%] h-[200%] object-cover"
                         autoPlay
                         loop
                         muted
                         playsInline
+                        preload="auto"
+                        poster="/assets/freepik__boostify_music_organe_abstract_icon.png"
                         style={{ 
                           left: '50%',
                           top: '62%',
                           transform: 'translate(-50%, -50%)'
                         }}
+                        onError={(e) => {
+                          console.error('Error loading intro video:', e);
+                        }}
+                        onLoadedData={() => {
+                          console.log('Intro video loaded successfully');
+                          if (introVideoRef.current) {
+                            introVideoRef.current.play().catch(e => console.log('Play error:', e));
+                          }
+                        }}
                       >
                         <source src="/assets/intro-video.mp4" type="video/mp4" />
+                        Your browser does not support the video tag.
                       </video>
                       
                       {/* Video Controls Overlay */}
