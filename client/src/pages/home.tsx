@@ -8,7 +8,7 @@ import {
   MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, 
   Play, Volume2, ChevronRight, ArrowRight, Headphones, MoveRight, MousePointer,
   Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause, PlaySquare,
-  DollarSign, Share2, Users
+  DollarSign, Share2, Users, CheckCircle2
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
@@ -19,9 +19,11 @@ import { Footer } from "../components/layout/footer";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect, useRef } from "react";
+import { EarlyAccessModal } from "../components/early-access/early-access-modal";
+import { PricingPlans } from "../components/subscription/pricing-plans";
+import { SiYoutube, SiInstagram, SiTiktok, SiSpotify, SiX, SiFacebook, SiSoundcloud, SiApplemusic, SiLinkedin, SiDiscord, SiTwitch } from "react-icons/si";
 // Comentando los siguientes imports temporalmente ya que no son esenciales para la página inicial
 // import { SuperAgent } from "../components/agents/super-agent";
-// import { PricingPlans } from "../components/subscription/pricing-plans";
 
 /* =============================
    VARIANTES PARA ANIMACIONES
@@ -167,17 +169,17 @@ const educationFeatures = [
 
 const featureHighlights: FeatureHighlight[] = [
   {
-    title: "AI-Powered Content Creation",
-    description: "Create professional music videos, promotional materials, and social content in minutes with our advanced AI tools",
-    icon: Sparkles,
+    title: "AI-Powered Music Video Generator",
+    description: "The most powerful automated music video creation platform on the market. Create professional music videos, promotional materials, and social content in minutes with our advanced AI tools",
+    icon: Video,
     features: [
-      "Music Video Generation",
-      "Lipsync Technology",
-      "Virtual Try-On",
-      "AI Image Creation",
-      "Social Media Assets"
+      "Automated Music Video Generation",
+      "Advanced Lipsync Technology",
+      "Virtual Try-On & Face Swap",
+      "AI Image Creation & Enhancement",
+      "Social Media Ready Assets"
     ],
-    image: "/assets/ai-feature.webp"
+    image: "/assets/kling_20251109_Image_to_Video__2315_0_1762701277247.mp4"
   },
   {
     title: "Cross-Platform Analytics",
@@ -190,7 +192,7 @@ const featureHighlights: FeatureHighlight[] = [
       "Audience Demographics",
       "Trending Analysis"
     ],
-    image: "/assets/analytics-feature.webp"
+    image: "/assets/kling_20251109_Image_to_Video_dancing_sl_2309_0 (1)_1762701277248.mp4"
   },
   {
     title: "Smart Music Marketing",
@@ -203,7 +205,7 @@ const featureHighlights: FeatureHighlight[] = [
       "Budget Optimization",
       "Performance Tracking"
     ],
-    image: "/assets/marketing-feature.webp"
+    image: "/assets/kling_20251109_Image_to_Video_dancing_sl_2356_0_1762701277248.mp4"
   }
 ];
 
@@ -304,6 +306,7 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(true);
   const statsRef = useRef<HTMLDivElement>(null);
   const statsControls = useAnimation();
 
@@ -381,6 +384,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Promotional Banner */}
+      
       {/* Hero Section - Modern and Eye-catching */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
         {/* Background video with overlay */}
@@ -393,7 +398,7 @@ export default function HomePage() {
           disableRemotePlayback
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover"
-          src="/assets/Standard_Mode_Generated_Video (9).mp4"
+          src="/assets/kling_20251109_Image_to_Video_dancing_sl_2309_0 (1)_1762701934696.mp4"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black" />
         
@@ -552,6 +557,257 @@ export default function HomePage() {
         </motion.div>
       </section>
 
+      {/* Complete Ecosystem for Artists - Orbital Visualization */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-zinc-950 to-black">
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-orange-500/10 rounded-full filter blur-3xl animate-pulse" 
+             style={{ animationDuration: '8s' }} />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-red-500/10 rounded-full filter blur-3xl animate-pulse" 
+             style={{ animationDuration: '10s' }} />
+        
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 max-w-5xl mx-auto"
+          >
+            <Badge 
+              className="mb-6 bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-400 border-orange-500/30 px-6 py-2 text-base font-semibold"
+              variant="outline"
+            >
+              🎬 Complete Creator Suite
+            </Badge>
+            <h2 className="text-4xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-orange-200 to-white">
+              Everything You Need in One Place
+            </h2>
+            <p className="text-xl md:text-2xl text-white/70 leading-relaxed mb-12">
+              <span className="text-orange-400 font-semibold">The most powerful automated music video generator on the market.</span> Our suite of AI tools empowers artists to create stunning videos, promotional materials, and social media content without any technical skills
+            </p>
+            
+            {/* Ecosystem Orbital - Using Dashboard Component Logic */}
+            <div className="relative w-full max-w-2xl mx-auto mb-16" style={{ height: '500px' }}>
+              {/* Central Circle with Artist Image */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                <div className="relative w-32 h-32 md:w-40 md:h-40">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500 to-red-500 animate-pulse opacity-50 blur-2xl"></div>
+                  {/* Gradient border */}
+                  <div className="relative w-full h-full rounded-full bg-gradient-to-br from-orange-500 to-red-600 p-1.5">
+                    <div className="w-full h-full rounded-full overflow-hidden border-2 border-orange-500/30 bg-black">
+                      <img 
+                        src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop"
+                        alt="Artist at the center of Boostify ecosystem"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Orbit Rings */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[240px] h-[240px] md:w-[320px] md:h-[320px] border border-orange-500/20 rounded-full"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] md:w-[440px] md:h-[440px] border border-orange-500/10 rounded-full"></div>
+
+              {/* Inner Orbit Icons - Static positioned using dashboard logic */}
+              {[
+                { icon: SiYoutube, route: "/youtube-views", color: "text-red-500" },
+                { icon: Music2, route: "/music-generator", color: "text-orange-400" },
+                { icon: SiInstagram, route: "/instagram-boost", color: "text-pink-500" },
+                { icon: Video, route: "/music-video-creator", color: "text-purple-500" },
+                { icon: SiSpotify, route: "/spotify", color: "text-green-500" },
+                { icon: BarChart2, route: "/analytics-dashboard", color: "text-blue-400" },
+              ].map((tool, index, array) => {
+                const angleInDegrees = index * (360 / array.length);
+                const radius = 120; // Mobile
+                const radiusDesktop = 160; // Desktop
+                const angleRad = (angleInDegrees - 90) * Math.PI / 180;
+                const x = Math.cos(angleRad) * radius;
+                const y = Math.sin(angleRad) * radius;
+                const Icon = tool.icon;
+                
+                return (
+                  <Link key={index} href={tool.route}>
+                    <div
+                      className="absolute z-30"
+                      style={{
+                        left: `calc(50% + ${x}px)`,
+                        top: `calc(50% + ${y}px)`,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                    >
+                      <motion.div 
+                        className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/60 backdrop-blur-md border-2 border-orange-500/50 shadow-lg flex items-center justify-center cursor-pointer hover:border-orange-500 hover:scale-110 transition-all"
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Icon className={`h-5 w-5 md:h-6 md:w-6 ${tool.color}`} />
+                      </motion.div>
+                    </div>
+                  </Link>
+                );
+              })}
+
+              {/* Outer Orbit Icons */}
+              {[
+                { icon: Globe, route: "/global", color: "text-cyan-400" },
+                { icon: MessageCircle, route: "/messages", color: "text-yellow-500" },
+                { icon: Users, route: "/promotion", color: "text-blue-500" },
+                { icon: SiTiktok, route: "/social-network", color: "text-slate-300" },
+                { icon: FileText, route: "/blog", color: "text-indigo-400" },
+                { icon: Share2, route: "/promotion", color: "text-emerald-400" },
+              ].map((tool, index, array) => {
+                const angleInDegrees = index * (360 / array.length);
+                const radius = 170; // Mobile
+                const radiusDesktop = 220; // Desktop
+                const angleRad = (angleInDegrees - 90) * Math.PI / 180;
+                const x = Math.cos(angleRad) * radius;
+                const y = Math.sin(angleRad) * radius;
+                const Icon = tool.icon;
+                
+                return (
+                  <Link key={index} href={tool.route}>
+                    <div
+                      className="absolute z-30"
+                      style={{
+                        left: `calc(50% + ${x}px)`,
+                        top: `calc(50% + ${y}px)`,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                    >
+                      <motion.div 
+                        className="h-11 w-11 md:h-12 md:w-12 rounded-full bg-black/60 backdrop-blur-md border-2 border-orange-500/40 shadow-lg flex items-center justify-center cursor-pointer hover:border-orange-500 hover:scale-110 transition-all"
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Icon className={`h-4 w-4 md:h-5 md:w-5 ${tool.color}`} />
+                      </motion.div>
+                    </div>
+                  </Link>
+                );
+              })}
+
+              {/* Responsive positioning for desktop */}
+              <style>{`
+                @media (min-width: 768px) {
+                  [style*="calc(50% + "][style*="px)"] {
+                    left: calc(50% + var(--desktop-x, 0px)) !important;
+                    top: calc(50% + var(--desktop-y, 0px)) !important;
+                  }
+                }
+              `}</style>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Music Video Generator Showcase */}
+      <section className="py-24 bg-black relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-full filter blur-3xl"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Badge className="mb-6 bg-gradient-to-r from-orange-500/30 to-red-500/30 text-white border-orange-500/50 px-6 py-2 text-base font-bold">
+              ⚡ MOST POWERFUL ON THE MARKET
+            </Badge>
+            <h2 className="text-4xl md:text-6xl font-extrabold mb-6">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-orange-400">
+                Automated AI Music Video Generator
+              </span>
+            </h2>
+            <p className="text-xl md:text-2xl text-white/70 max-w-4xl mx-auto leading-relaxed">
+              Transform your music into stunning professional videos in minutes. Our AI handles everything - from concept to final render
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="max-w-7xl mx-auto"
+          >
+            <div className="relative rounded-3xl overflow-hidden border border-orange-500/20 shadow-2xl shadow-orange-500/10 bg-gradient-to-br from-zinc-900 via-zinc-900 to-orange-950/20">
+              <video 
+                src="/assets/kling_20251109_Image_to_Video__2315_0_1762701277247.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-auto"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent"></div>
+              
+              {/* Elegant overlay content */}
+              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                  <div className="flex-1 space-y-4">
+                    <div className="inline-block">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-px w-8 bg-gradient-to-r from-orange-500 to-transparent"></div>
+                        <span className="text-orange-400 text-sm font-semibold tracking-wider uppercase">Get Started</span>
+                      </div>
+                    </div>
+                    <h3 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+                      Start Creating Today
+                    </h3>
+                    <p className="text-white/60 text-base md:text-lg max-w-xl leading-relaxed">
+                      Join thousands of artists using AI to create professional music videos
+                    </p>
+                  </div>
+                  
+                  <div className="w-full md:w-auto">
+                    <Link href="/music-video-creator">
+                      <Button 
+                        size="lg" 
+                        className="w-full md:w-auto group bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold px-10 py-7 text-base md:text-lg shadow-2xl shadow-orange-500/40 hover:shadow-orange-500/60 transition-all duration-300 hover:scale-105"
+                      >
+                        <Video className="mr-3 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                        Create Your Music Video
+                        <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Decorative corner accents */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/10 to-transparent rounded-bl-full"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-orange-500/10 to-transparent rounded-tr-full"></div>
+            </div>
+
+            {/* Feature Pills */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+              <div className="bg-zinc-900/50 backdrop-blur border border-orange-500/20 rounded-xl p-4 text-center">
+                <Sparkles className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+                <p className="text-sm font-semibold">AI-Powered</p>
+                <p className="text-xs text-white/60 mt-1">Advanced algorithms</p>
+              </div>
+              <div className="bg-zinc-900/50 backdrop-blur border border-orange-500/20 rounded-xl p-4 text-center">
+                <Zap className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+                <p className="text-sm font-semibold">Lightning Fast</p>
+                <p className="text-xs text-white/60 mt-1">Minutes, not days</p>
+              </div>
+              <div className="bg-zinc-900/50 backdrop-blur border border-orange-500/20 rounded-xl p-4 text-center">
+                <Wand2 className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+                <p className="text-sm font-semibold">Full Automation</p>
+                <p className="text-xs text-white/60 mt-1">No skills needed</p>
+              </div>
+              <div className="bg-zinc-900/50 backdrop-blur border border-orange-500/20 rounded-xl p-4 text-center">
+                <CheckCircle2 className="h-6 w-6 text-orange-500 mx-auto mb-2" />
+                <p className="text-sm font-semibold">Pro Quality</p>
+                <p className="text-xs text-white/60 mt-1">Broadcast ready</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Web3 Music Tokenization Section */}
       <section className="py-20 bg-gradient-to-br from-black to-zinc-900 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]"></div>
@@ -675,13 +931,17 @@ export default function HomePage() {
                 </ul>
                 
                 <div className="flex gap-4">
-                  <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
-                    Explore Now
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" className="border-white/20">
-                    Learn More
-                  </Button>
+                  <Link href={index === 0 ? "/music-video-creator" : index === 1 ? "/analytics" : "/promotion"}>
+                    <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg shadow-orange-500/20">
+                      {index === 0 ? "Create Music Video" : "Explore Now"}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href={index === 0 ? "/ai-video-creation" : "/features"}>
+                    <Button variant="outline" className="border-white/20 hover:bg-white/10">
+                      Learn More
+                    </Button>
+                  </Link>
                 </div>
               </motion.div>
               
@@ -690,12 +950,33 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, scale: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
-                className={`rounded-2xl overflow-hidden shadow-2xl shadow-orange-500/5 border border-orange-500/10`}
+                className={`rounded-2xl overflow-hidden shadow-2xl shadow-orange-500/20 border-2 border-orange-500/20 hover:border-orange-500/40 transition-all duration-300`}
               >
-                <div className="relative aspect-video bg-zinc-800">
-                  {/* Placeholder for feature image */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-tr from-zinc-900 to-zinc-800">
-                    <feature.icon className="h-20 w-20 text-orange-500/20" />
+                <div className="relative aspect-video bg-zinc-900">
+                  {feature.image ? (
+                    feature.image.endsWith('.mp4') ? (
+                      <video 
+                        src={feature.image}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img 
+                        src={feature.image}
+                        alt={feature.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-tr from-zinc-900 to-zinc-800">
+                      <feature.icon className="h-20 w-20 text-orange-500/20" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <Play className="h-16 w-16 text-orange-500" />
                   </div>
                 </div>
               </motion.div>
@@ -704,61 +985,6 @@ export default function HomePage() {
         </section>
       ))}
 
-      {/* AI Music Video Section with Interactive Elements */}
-      <section className="py-24 relative overflow-hidden bg-gradient-to-b from-zinc-950 to-black">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-orange-500/10 rounded-full filter blur-3xl" />
-        
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16 max-w-3xl mx-auto"
-          >
-            <Badge 
-              className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-4 py-1 text-sm"
-              variant="outline"
-            >
-              AI-Powered Technology
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Create Professional Content in Minutes
-            </h2>
-            <p className="text-xl text-white/70">
-              Our suite of AI tools empowers artists to create stunning videos, artwork, and promotional materials without any technical skills
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {tools.map((tool, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-              >
-                <ToolCard {...tool} />
-              </motion.div>
-            ))}
-          </div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="mt-16 text-center"
-          >
-            <Link href="/ai-agents">
-              <Button variant="outline" className="border-white/20 hover:bg-white/10">
-                View All AI Tools
-                <ExternalLink className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
-      </section>
 
       {/* Pricing Section with Modern Design */}
       <section className="py-24 bg-gradient-to-b from-black to-zinc-950 relative overflow-hidden">
@@ -790,7 +1016,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            {/* <PricingPlans simplified withAnimation /> */}
+            <PricingPlans simplified withAnimation />
           </motion.div>
 
           <motion.div
@@ -1379,36 +1605,36 @@ export default function HomePage() {
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             viewport={{ once: true }}
-            className="max-w-4xl mx-auto rounded-xl overflow-hidden shadow-2xl shadow-purple-500/20 border-2 border-purple-500/30"
+            className="max-w-4xl mx-auto rounded-xl overflow-hidden shadow-2xl shadow-orange-500/20 border-2 border-orange-500/30"
           >
-            <div className="aspect-video relative">
-              <iframe 
-                className="w-full h-full absolute inset-0"
-                src="https://www.youtube.com/embed/O90iHkU3cPU?si=fkUJqyJ_F0tYJUxY" 
-                title="AI Generated Music Video"
-                frameBorder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowFullScreen
-              ></iframe>
+            <div className="aspect-video relative bg-black">
+              <video 
+                className="w-full h-full object-cover"
+                src="/assets/kling_20251109_Image_to_Video_dancing_sl_2309_0 (1)_1762701611874.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
             </div>
             
             <div className="bg-zinc-800 p-6">
-              <h3 className="text-xl font-bold text-white mb-2">Professional Quality Music Visualization</h3>
+              <h3 className="text-xl font-bold text-white mb-2">Professional AI-Generated Music Video</h3>
               <p className="text-white/70">
                 This video demonstrates the advanced capabilities of our AI technology in creating dynamic, 
-                synchronized visuals that perfectly match the mood and rhythm of the music.
+                professional music videos that perfectly capture the energy and style of your music.
               </p>
               
               <div className="mt-6 flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <Play className="w-5 h-5 text-purple-400" />
-                  <span className="text-white/70">AI-Generated • 4K Quality</span>
+                  <Play className="w-5 h-5 text-orange-400" />
+                  <span className="text-white/70">AI-Generated • Professional Quality</span>
                 </div>
                 
-                <Link href="/ai-video-creation">
+                <Link href="/music-video-creator">
                   <Button 
                     variant="ghost" 
-                    className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                    className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
                     data-testid="button-create-your-own"
                   >
                     Create Your Own <ArrowRight className="ml-2 w-4 h-4" />
@@ -1421,6 +1647,12 @@ export default function HomePage() {
       </section>
 
       <Footer />
+      
+      {/* Early Access Modal */}
+      <EarlyAccessModal 
+        open={showEarlyAccessModal} 
+        onClose={() => setShowEarlyAccessModal(false)} 
+      />
     </div>
   );
 }

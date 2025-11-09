@@ -1466,6 +1466,47 @@ export function registerRoutes(app: Express): HttpServer {
     }
   });
 
+  /**
+   * Early Access Signup - Send to Make.com webhook
+   */
+  app.post('/api/early-access/signup', async (req, res) => {
+    try {
+      const { name, artistName, phone, email } = req.body;
+      
+      // Validate input
+      if (!name || !artistName || !phone || !email) {
+        return res.status(400).json({
+          success: false,
+          error: 'All fields are required'
+        });
+      }
+
+      // Send to Make.com webhook
+      const webhookUrl = 'https://hook.us2.make.com/fdp25ml6h3r5781gocrujzqyuenp8ms6';
+      
+      await axios.post(webhookUrl, {
+        name,
+        artistName,
+        phone,
+        email,
+        timestamp: new Date().toISOString()
+      });
+
+      console.log('✅ Early access signup sent to webhook:', { name, artistName, email });
+
+      return res.json({
+        success: true,
+        message: 'Successfully registered for early access'
+      });
+    } catch (error: any) {
+      console.error('❌ Error sending early access signup to webhook:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to register for early access'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Configurar timeouts largos para soportar transcripciones de audio largas

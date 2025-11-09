@@ -104,6 +104,7 @@ export function setupAuth(app: Express) {
       '/affiliate/register',  // Ruta para registrarse como afiliado (temporal para desarrollo)
       '/affiliate/me',        // Ruta para obtener información del afiliado (temporal para desarrollo)
       '/gemini-image/generate-batch-with-multiple-faces', // Ruta para generar imágenes con Gemini
+      '/early-access/signup', // Ruta pública para registro de acceso temprano
     ];
     
     // Patrones de rutas públicas que se verifican con startsWith

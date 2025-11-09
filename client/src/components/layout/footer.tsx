@@ -73,27 +73,27 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Platform Features</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/features" className="hover:text-orange-500 transition-colors">
+                <Link href="/ai-agents" className="hover:text-orange-500 transition-colors">
                   AI-Powered Marketing
                 </Link>
               </li>
               <li>
-                <Link href="/content" className="hover:text-orange-500 transition-colors">
+                <Link href="/dashboard" className="hover:text-orange-500 transition-colors">
                   Content Management
                 </Link>
               </li>
               <li>
-                <Link href="/analytics" className="hover:text-orange-500 transition-colors">
+                <Link href="/analytics-dashboard" className="hover:text-orange-500 transition-colors">
                   Analytics Dashboard
                 </Link>
               </li>
               <li>
-                <Link href="/growth" className="hover:text-orange-500 transition-colors">
+                <Link href="/promotion" className="hover:text-orange-500 transition-colors">
                   Audience Growth
                 </Link>
               </li>
               <li>
-                <Link href="/video-creator" className="hover:text-orange-500 transition-colors">
+                <Link href="/music-video-creator" className="hover:text-orange-500 transition-colors">
                   AI Video Creator
                 </Link>
               </li>
@@ -137,17 +137,17 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Metafeed & Boostify</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/metaverse" className="hover:text-orange-500 transition-colors">
+                <Link href="/boostify-tv" className="hover:text-orange-500 transition-colors">
                   Metafeed Metaverse
                 </Link>
               </li>
               <li>
-                <Link href="/token" className="hover:text-orange-500 transition-colors">
+                <Link href="/tokenization" className="hover:text-orange-500 transition-colors">
                   Metafeed Token
                 </Link>
               </li>
               <li>
-                <Link href="/one-artist-token" className="hover:text-orange-500 transition-colors">
+                <Link href="/tokenization" className="hover:text-orange-500 transition-colors">
                   One Artist One Token
                 </Link>
               </li>
@@ -166,22 +166,22 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Avat Pro & Boostify</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/avatars" className="hover:text-orange-500 transition-colors">
+                <Link href="/artist-generator" className="hover:text-orange-500 transition-colors">
                   Hyper Realistic Avatars
                 </Link>
               </li>
               <li>
-                <Link href="/unreal-engine" className="hover:text-orange-500 transition-colors">
+                <Link href="/image-generator" className="hover:text-orange-500 transition-colors">
                   Unreal Engine
                 </Link>
               </li>
               <li>
-                <Link href="/motion-capture" className="hover:text-orange-500 transition-colors">
+                <Link href="/music-video-creator" className="hover:text-orange-500 transition-colors">
                   Motion Capture
                 </Link>
               </li>
               <li>
-                <Link href="/partnership" className="hover:text-orange-500 transition-colors">
+                <Link href="/affiliates" className="hover:text-orange-500 transition-colors">
                   View Partnership
                 </Link>
               </li>
@@ -208,7 +208,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/academy" className="hover:text-orange-500 transition-colors">
+                <Link href="/education" className="hover:text-orange-500 transition-colors">
                   Music Academy
                 </Link>
               </li>
@@ -220,22 +220,22 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Support</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/help" className="hover:text-orange-500 transition-colors">
+                <Link href="/resources" className="hover:text-orange-500 transition-colors">
                   Help Center
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-orange-500 transition-colors">
+                <Link href="/settings" className="hover:text-orange-500 transition-colors">
                   Contact Us
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="hover:text-orange-500 transition-colors">
+                <Link href="/resources" className="hover:text-orange-500 transition-colors">
                   Frequently Asked Questions
                 </Link>
               </li>
               <li>
-                <Link href="/status" className="hover:text-orange-500 transition-colors">
+                <Link href="/dashboard" className="hover:text-orange-500 transition-colors">
                   Service Status
                 </Link>
               </li>
