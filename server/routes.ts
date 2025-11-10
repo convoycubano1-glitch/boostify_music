@@ -51,8 +51,6 @@ import generatedVideosRouter from './routes/generated-videos'; // Import the gen
 import minimaxVideoRouter from './routes/minimax-video'; // Import the MiniMax video generation router
 import musiciansRouter from './routes/musicians'; // Import the musicians router
 import musicVideoProjectsRouter from './routes/music-video-projects'; // Import the music video projects router
-import geminiContentRouter from './routes/gemini-content'; // Import the Gemini content generation router
-import updateArtistRouter from './routes/update-artist'; // Import the update artist router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -178,12 +176,6 @@ export function registerRoutes(app: Express): HttpServer {
   // Registrar el router para Gemini Image Generation (Nano Banana)
   app.use('/api/gemini-image', geminiImageRouter);
   app.use('/api/minimax', minimaxVideoRouter);
-  
-  // Registrar el router para Gemini Content Generation (biografías, textos, imágenes)
-  app.use('/api/gemini-content', geminiContentRouter);
-  
-  // Registrar el router para actualizar datos del artista
-  app.use('/api/artist', updateArtistRouter);
   
   // Registrar el router para transcripción de audio
   console.log('📢 Registrando router de transcripción de audio en /api/audio');
