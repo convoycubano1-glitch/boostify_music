@@ -16,13 +16,29 @@ import {
   Calendar,
   Users,
   Music,
-  Check
+  Check,
+  Trash2,
+  Upload,
+  Plus,
+  X
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs, query, where, doc, setDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import { collection, getDocs, query, where, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { db, storage } from "../../firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { useToast } from "../../hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -116,6 +132,15 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   
+  const [isUploadingSong, setIsUploadingSong] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [showUploadSongDialog, setShowUploadSongDialog] = useState(false);
+  const [showUploadVideoDialog, setShowUploadVideoDialog] = useState(false);
+  const [newSongTitle, setNewSongTitle] = useState('');
+  const [newVideoTitle, setNewVideoTitle] = useState('');
+  const [newVideoUrl, setNewVideoUrl] = useState('');
+  const songFileInputRef = useRef<HTMLInputElement | null>(null);
+  
   const isOwnProfile = user?.uid === artistId;
   const colors = colorPalettes[selectedTheme];
 
@@ -138,7 +163,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   });
 
   // Query para canciones
-  const { data: songs = [] as Song[] } = useQuery<Song[]>({
+  const { data: songs = [] as Song[], refetch: refetchSongs } = useQuery<Song[]>({
     queryKey: ["songs", artistId],
     queryFn: async () => {
       try {
@@ -181,7 +206,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   });
 
   // Query para videos
-  const { data: videos = [] as Video[] } = useQuery<Video[]>({
+  const { data: videos = [] as Video[], refetch: refetchVideos } = useQuery<Video[]>({
     queryKey: ["videos", artistId],
     queryFn: async () => {
       try {
@@ -396,6 +421,146 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       toast({
         title: "Link copied!",
         description: "Profile link copied to clipboard.",
+      });
+    }
+  };
+
+  const handleUploadSong = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !newSongTitle.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a song title and select a file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingSong(true);
+    try {
+      const storageRef = ref(storage, `songs/${artistId}/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const audioUrl = await getDownloadURL(storageRef);
+
+      const newDocRef = doc(collection(db, "songs"));
+      await setDoc(newDocRef, {
+        name: newSongTitle,
+        audioUrl,
+        userId: artistId,
+        createdAt: new Date(),
+        storageRef: storageRef.fullPath,
+      });
+
+      toast({
+        title: "Song uploaded!",
+        description: "Your song has been added successfully.",
+      });
+
+      setNewSongTitle('');
+      setShowUploadSongDialog(false);
+      refetchSongs();
+    } catch (error) {
+      console.error("Error uploading song:", error);
+      toast({
+        title: "Upload failed",
+        description: "Could not upload the song. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingSong(false);
+    }
+  };
+
+  const handleDeleteSong = async (song: Song) => {
+    if (!confirm(`Are you sure you want to delete "${song.name}"?`)) return;
+
+    try {
+      await deleteDoc(doc(db, "songs", song.id));
+      
+      if (song.storageRef) {
+        try {
+          const storageRef = ref(storage, song.storageRef);
+          await deleteObject(storageRef);
+        } catch (err) {
+          console.error("Error deleting file from storage:", err);
+        }
+      }
+
+      toast({
+        title: "Song deleted",
+        description: "The song has been removed.",
+      });
+
+      refetchSongs();
+    } catch (error) {
+      console.error("Error deleting song:", error);
+      toast({
+        title: "Delete failed",
+        description: "Could not delete the song. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUploadVideo = async () => {
+    if (!newVideoTitle.trim() || !newVideoUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a video title and URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingVideo(true);
+    try {
+      const newDocRef = doc(collection(db, "videos"));
+      await setDoc(newDocRef, {
+        title: newVideoTitle,
+        url: newVideoUrl,
+        userId: artistId,
+        createdAt: new Date(),
+      });
+
+      toast({
+        title: "Video added!",
+        description: "Your video has been added successfully.",
+      });
+
+      setNewVideoTitle('');
+      setNewVideoUrl('');
+      setShowUploadVideoDialog(false);
+      refetchVideos();
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      toast({
+        title: "Upload failed",
+        description: "Could not add the video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingVideo(false);
+    }
+  };
+
+  const handleDeleteVideo = async (video: Video) => {
+    if (!confirm(`Are you sure you want to delete "${video.title}"?`)) return;
+
+    try {
+      await deleteDoc(doc(db, "videos", video.id));
+
+      toast({
+        title: "Video deleted",
+        description: "The video has been removed.",
+      });
+
+      refetchVideos();
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      toast({
+        title: "Delete failed",
+        description: "Could not delete the video. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -680,19 +845,21 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             </>
                           )}
                         </button>
-                        <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
-                          <button
-                            className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
-                            style={{ 
-                              backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
-                              color: 'white'
-                            }}
-                            data-testid={`button-create-video-${song.id}`}
-                          >
-                            <VideoIcon className="h-4 w-4 inline mr-1" />
-                            Crear Video
-                          </button>
-                        </Link>
+                        {isOwnProfile && (
+                          <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
+                            <button
+                              className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
+                              style={{ 
+                                backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                                color: 'white'
+                              }}
+                              data-testid={`button-create-video-${song.id}`}
+                            >
+                              <VideoIcon className="h-4 w-4 inline mr-1" />
+                              Crear Video
+                            </button>
+                          </Link>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -788,6 +955,22 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       <div className="p-3">
                         <h3 className="font-medium text-white text-sm">{product.name}</h3>
                         <p className="text-xs text-gray-400 mt-1 line-clamp-2">{product.description}</p>
+                        {product.sizes && product.sizes.length > 0 && (
+                          <div className="flex gap-1 mt-2 flex-wrap">
+                            {product.sizes.map((size, idx) => (
+                              <span 
+                                key={idx}
+                                className="text-xs px-2 py-0.5 rounded-full border"
+                                style={{ 
+                                  borderColor: colors.hexBorder,
+                                  color: colors.hexAccent 
+                                }}
+                              >
+                                {size}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <button
                           className="mt-2 w-full py-2 px-4 rounded-full text-xs font-medium transition duration-300"
                           style={{ 
