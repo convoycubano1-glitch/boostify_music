@@ -4,6 +4,11 @@
 import { Router, Request, Response } from 'express';
 import { generateCinematicImage, generateImageWithMultipleFaceReferences, generateImageWithFAL } from '../services/gemini-image-service';
 import { generateArtistBiography, type ArtistInfo } from '../services/gemini-profile-service';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2025-02-24.acacia'
+});
 
 const router = Router();
 
@@ -155,6 +160,112 @@ router.post('/generate-biography', async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       error: error.message || 'Failed to generate biography'
+    });
+  }
+});
+
+/**
+ * Genera imagen de producto de merchandise con Gemini
+ */
+router.post('/generate-product-image', async (req: Request, res: Response) => {
+  try {
+    const { productType, artistName, brandImage } = req.body;
+    
+    if (!productType) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product type is required'
+      });
+    }
+    
+    // Crear prompts específicos para cada tipo de producto
+    const productPrompts: Record<string, string> = {
+      'T-Shirt': `High-quality product photography: ${artistName} branded t-shirt mockup, front view, modern design, clean white background, professional e-commerce style, centered composition, soft studio lighting`,
+      'Hoodie': `Premium product photography: ${artistName} branded hoodie mockup, front view, comfortable fabric texture, clean white background, professional e-commerce style, centered composition, soft studio lighting`,
+      'Cap': `Professional product photography: ${artistName} branded baseball cap mockup, front view, embroidered logo, clean white background, e-commerce style, centered composition, soft studio lighting`,
+      'Poster': `Professional product mockup: ${artistName} poster design, framed on wall, modern artistic design, clean presentation, professional photography, centered composition, natural lighting`,
+      'Sticker Pack': `Product photography: ${artistName} exclusive sticker pack, multiple colorful stickers displayed, clean white background, professional e-commerce style, centered composition, bright lighting`,
+      'Vinyl Record': `Premium product photography: ${artistName} limited edition vinyl record, album cover visible, clean white background, professional music merchandise style, centered composition, soft studio lighting`
+    };
+    
+    const prompt = productPrompts[productType] || 
+      `Professional product photography: ${artistName} ${productType} merchandise, clean white background, e-commerce style, centered composition`;
+    
+    console.log(`🎨 Generating ${productType} product image...`);
+    
+    let result = await generateCinematicImage(prompt);
+    
+    // Si Gemini falla, intentar con FAL AI
+    if (!result.success && (result as any).quotaError) {
+      console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
+      result = await generateImageWithFAL(prompt, []);
+    }
+    
+    return res.json(result);
+  } catch (error: any) {
+    console.error('Error generating product image:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to generate product image'
+    });
+  }
+});
+
+/**
+ * Crea sesión de checkout de Stripe para comprar producto
+ */
+router.post('/create-checkout-session', async (req: Request, res: Response) => {
+  try {
+    const { productName, productPrice, productImage, artistName, productId, size } = req.body;
+    
+    if (!productName || !productPrice) {
+      return res.status(400).json({
+        success: false,
+        error: 'Product name and price are required'
+      });
+    }
+    
+    console.log(`💳 Creating Stripe checkout session for ${productName} (${size || 'default size'})...`);
+    
+    // Crear sesión de checkout de Stripe
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${productName}${size ? ` - Size: ${size}` : ''}`,
+              description: `${artistName} Official Merchandise`,
+              images: productImage ? [productImage] : undefined,
+            },
+            unit_amount: Math.round(productPrice * 100), // Convertir a centavos
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${req.headers.origin}/artist/${artistName}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/artist/${artistName}?canceled=true`,
+      metadata: {
+        productId: productId || '',
+        artistName: artistName || '',
+        size: size || '',
+      },
+    });
+    
+    console.log(`✅ Checkout session created: ${session.id}`);
+    
+    return res.json({
+      success: true,
+      sessionId: session.id,
+      url: session.url,
+    });
+  } catch (error: any) {
+    console.error('Error creating checkout session:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create checkout session'
     });
   }
 });
