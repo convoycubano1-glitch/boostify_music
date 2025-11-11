@@ -64,7 +64,7 @@ export interface ImageGenerationResult {
   imageUrl?: string;
   error?: string;
   quotaError?: boolean;
-  provider?: 'gemini' | 'fal' | 'unknown';
+  provider?: 'gemini' | 'fal' | 'fal-kontext' | 'unknown';
 }
 
 /**
@@ -84,7 +84,7 @@ export async function generateCinematicImage(
 
     // Usar el modelo de generación de imágenes con fallback automático
     const response = await generateContentWithFallback({
-      model: "gemini-2.0-flash-preview-image-generation",
+      model: "gemini-2.5-flash-image",
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         responseModalities: [Modality.TEXT, Modality.IMAGE],
@@ -200,7 +200,7 @@ IMPORTANT: Maintain the exact same face, facial features, and person from the re
 
     // Usar Gemini con imagen de referencia para edición
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-preview-image-generation",
+      model: "gemini-2.5-flash-image",
       contents: [
         { 
           role: "user", 
@@ -338,7 +338,7 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
 
     // Usar Gemini con múltiples imágenes de referencia y fallback automático
     const response = await generateContentWithFallback({
-      model: "gemini-2.0-flash-preview-image-generation",
+      model: "gemini-2.5-flash-image",
       contents: [
         { 
           role: "user", 
