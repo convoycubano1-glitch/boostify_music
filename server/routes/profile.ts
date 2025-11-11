@@ -74,17 +74,37 @@ router.get('/user/profile', authenticate, async (req: Request, res: Response) =>
   }
 });
 
-// GET /api/profile/:slug - Get public profile by slug
+// GET /api/profile/:slug - Get public profile by slug or UID
 router.get('/:slug', async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
     
-    // Get user by slug
-    const [user] = await db
+    // First, try to get user by slug
+    let [user] = await db
       .select()
       .from(users)
       .where(eq(users.slug, slug))
       .limit(1);
+    
+    // If not found by slug, try by username (which stores Firebase UID)
+    if (!user) {
+      [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, slug))
+        .limit(1);
+      
+      // If user exists but doesn't have a slug yet, create one
+      if (user && !user.slug) {
+        const defaultSlug = generateSlug(user.artistName || user.username || slug);
+        const [updated] = await db
+          .update(users)
+          .set({ slug: defaultSlug })
+          .where(eq(users.id, user.id))
+          .returning();
+        user = updated;
+      }
+    }
       
     if (!user) {
       return res.status(404).json({ message: 'Artist not found' });
