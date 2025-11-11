@@ -774,7 +774,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             </div>
 
             {/* Tarjeta de Songs/Tracks */}
-            {songs.length > 0 && (
+            {(songs.length > 0 || isOwnProfile) && (
               <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
                   <div 
@@ -784,6 +784,59 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     <Music className="h-5 w-5" />
                     Música ({songs.length})
                   </div>
+                  {isOwnProfile && (
+                    <Dialog open={showUploadSongDialog} onOpenChange={setShowUploadSongDialog}>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="rounded-full"
+                          style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
+                          data-testid="button-upload-song"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Subir Canción
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Subir Nueva Canción</DialogTitle>
+                          <DialogDescription>
+                            Agrega una nueva canción a tu perfil
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="song-title">Título de la Canción</Label>
+                            <Input
+                              id="song-title"
+                              value={newSongTitle}
+                              onChange={(e) => setNewSongTitle(e.target.value)}
+                              placeholder="Mi Nueva Canción"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="song-file">Archivo de Audio</Label>
+                            <Input
+                              id="song-file"
+                              type="file"
+                              accept="audio/*"
+                              ref={songFileInputRef}
+                              onChange={handleUploadSong}
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowUploadSongDialog(false)}
+                            disabled={isUploadingSong}
+                          >
+                            Cancelar
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
                 
                 <div className="space-y-3">
@@ -846,19 +899,35 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           )}
                         </button>
                         {isOwnProfile && (
-                          <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
+                          <>
+                            <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
+                              <button
+                                className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
+                                style={{ 
+                                  backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                                  color: 'white'
+                                }}
+                                data-testid={`button-create-video-${song.id}`}
+                              >
+                                <VideoIcon className="h-4 w-4 inline mr-1" />
+                                Crear Video
+                              </button>
+                            </Link>
                             <button
-                              className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
+                              className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 hover:bg-red-600"
                               style={{ 
-                                backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
-                                color: 'white'
+                                backgroundColor: 'transparent',
+                                borderColor: '#EF4444',
+                                borderWidth: '1px',
+                                color: '#EF4444'
                               }}
-                              data-testid={`button-create-video-${song.id}`}
+                              onClick={() => handleDeleteSong(song)}
+                              data-testid={`button-delete-song-${song.id}`}
                             >
-                              <VideoIcon className="h-4 w-4 inline mr-1" />
-                              Crear Video
+                              <Trash2 className="h-4 w-4 inline mr-1" />
+                              Borrar
                             </button>
-                          </Link>
+                          </>
                         )}
                       </div>
                     </div>
@@ -868,7 +937,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             )}
 
             {/* Tarjeta de Videos */}
-            {videos.length > 0 && (
+            {(videos.length > 0 || isOwnProfile) && (
               <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
                   <div 
@@ -878,37 +947,116 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     <VideoIcon className="h-5 w-5" />
                     Videos ({videos.length})
                   </div>
+                  {isOwnProfile && (
+                    <Dialog open={showUploadVideoDialog} onOpenChange={setShowUploadVideoDialog}>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="rounded-full"
+                          style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
+                          data-testid="button-upload-video"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Agregar Video
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Agregar Nuevo Video</DialogTitle>
+                          <DialogDescription>
+                            Agrega un video de YouTube u otra plataforma a tu perfil
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="video-title">Título del Video</Label>
+                            <Input
+                              id="video-title"
+                              value={newVideoTitle}
+                              onChange={(e) => setNewVideoTitle(e.target.value)}
+                              placeholder="Mi Video Musical"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="video-url">URL del Video</Label>
+                            <Input
+                              id="video-url"
+                              value={newVideoUrl}
+                              onChange={(e) => setNewVideoUrl(e.target.value)}
+                              placeholder="https://youtube.com/watch?v=..."
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowUploadVideoDialog(false)}
+                            disabled={isUploadingVideo}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            onClick={handleUploadVideo}
+                            disabled={isUploadingVideo}
+                            style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
+                          >
+                            {isUploadingVideo ? 'Agregando...' : 'Agregar Video'}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {videos.map((video, index) => (
-                    <a
+                    <div
                       key={video.id}
-                      href={video.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border cursor-pointer"
+                      className="rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border"
                       style={{ borderColor: colors.hexBorder }}
                       data-testid={`card-video-${index}`}
                     >
-                      {video.thumbnailUrl ? (
-                        <img
-                          src={video.thumbnailUrl}
-                          alt={video.title}
-                          className="w-full h-40 object-cover"
-                        />
-                      ) : (
-                        <div 
-                          className="w-full h-40 flex items-center justify-center"
-                          style={{ backgroundColor: `${colors.hexPrimary}33` }}
-                        >
-                          <VideoIcon className="h-12 w-12" style={{ color: colors.hexAccent }} />
-                        </div>
-                      )}
+                      <a
+                        href={video.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        {video.thumbnailUrl ? (
+                          <img
+                            src={video.thumbnailUrl}
+                            alt={video.title}
+                            className="w-full h-40 object-cover"
+                          />
+                        ) : (
+                          <div 
+                            className="w-full h-40 flex items-center justify-center"
+                            style={{ backgroundColor: `${colors.hexPrimary}33` }}
+                          >
+                            <VideoIcon className="h-12 w-12" style={{ color: colors.hexAccent }} />
+                          </div>
+                        )}
+                      </a>
                       <div className="p-3">
                         <h3 className="font-medium text-white text-sm">{video.title || 'Music Video'}</h3>
                         <p className="text-xs text-gray-400 mt-1">Powered by Boostify</p>
+                        {isOwnProfile && (
+                          <button
+                            className="mt-2 w-full py-2 px-4 rounded-full text-xs font-medium transition duration-300 hover:bg-red-600"
+                            style={{ 
+                              backgroundColor: 'transparent',
+                              borderColor: '#EF4444',
+                              borderWidth: '1px',
+                              color: '#EF4444'
+                            }}
+                            onClick={() => handleDeleteVideo(video)}
+                            data-testid={`button-delete-video-${video.id}`}
+                          >
+                            <Trash2 className="h-3 w-3 inline mr-1" />
+                            Borrar Video
+                          </button>
+                        )}
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </div>
               </div>
