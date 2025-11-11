@@ -1,5 +1,5 @@
 import React from 'react';
-import { MusicVideoWorkflow } from '../components/music-video/music-video-workflow';
+import MusicVideoWorkflow from '../components/music-video/music-video-workflow';
 import { toast } from '../hooks/use-toast';
 
 /**
