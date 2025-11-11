@@ -44,8 +44,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
   const [isGeneratingProfileImage, setIsGeneratingProfileImage] = useState(false);
   const [isGeneratingBannerImage, setIsGeneratingBannerImage] = useState(false);
   const [isUploadingReference, setIsUploadingReference] = useState(false);
+  const [isUploadingProfileImage, setIsUploadingProfileImage] = useState(false);
+  const [isUploadingBannerImage, setIsUploadingBannerImage] = useState(false);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
+  const bannerImageInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
 
@@ -90,6 +94,82 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
       });
     } finally {
       setIsUploadingReference(false);
+    }
+  };
+
+  // Subir imagen de perfil directamente
+  const handleUploadProfileImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Archivo inválido",
+        description: "Por favor selecciona una imagen (JPG, PNG, etc.).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingProfileImage(true);
+
+    try {
+      const storageRef = ref(storage, `artist-profiles/${artistId}/profile_${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      handleChange("profileImage", downloadURL);
+      toast({
+        title: "Imagen de perfil cargada",
+        description: "Tu imagen de perfil ha sido subida exitosamente.",
+      });
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la imagen de perfil.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingProfileImage(false);
+    }
+  };
+
+  // Subir imagen de banner directamente
+  const handleUploadBannerImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Archivo inválido",
+        description: "Por favor selecciona una imagen (JPG, PNG, etc.).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingBannerImage(true);
+
+    try {
+      const storageRef = ref(storage, `artist-profiles/${artistId}/banner_${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      handleChange("bannerImage", downloadURL);
+      toast({
+        title: "Imagen de banner cargada",
+        description: "Tu imagen de banner ha sido subida exitosamente.",
+      });
+    } catch (error) {
+      console.error("Error uploading banner image:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la imagen de banner.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingBannerImage(false);
     }
   };
 
@@ -430,70 +510,126 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
             </div>
           </div>
 
-          {/* Imagen de Perfil con botón de generar */}
+          {/* Imagen de Perfil con botón de generar y subir */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="profileImage">Imagen de Perfil</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGenerateProfileImage}
-                disabled={isGeneratingProfileImage || !formData.displayName}
-              >
-                {isGeneratingProfileImage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    Generar con IA
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <input
+                  ref={profileImageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/heic"
+                  onChange={handleUploadProfileImage}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => profileImageInputRef.current?.click()}
+                  disabled={isUploadingProfileImage}
+                >
+                  {isUploadingProfileImage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Subiendo...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Subir
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateProfileImage}
+                  disabled={isGeneratingProfileImage || !formData.displayName}
+                >
+                  {isGeneratingProfileImage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      IA
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             <Input
               id="profileImage"
               value={formData.profileImage}
               onChange={(e) => handleChange("profileImage", e.target.value)}
-              placeholder="https://ejemplo.com/imagen.jpg o se generará con IA"
+              placeholder="URL de imagen o usa los botones para subir/generar"
             />
             {formData.profileImage && (
               <img src={formData.profileImage} alt="Preview" className="w-20 h-20 object-cover rounded-full mt-2" />
             )}
           </div>
 
-          {/* Imagen de Banner con botón de generar */}
+          {/* Imagen de Banner con botón de generar y subir */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="bannerImage">Imagen de Banner (Hero)</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGenerateBannerImage}
-                disabled={isGeneratingBannerImage || !formData.displayName}
-              >
-                {isGeneratingBannerImage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    Generar con IA
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <input
+                  ref={bannerImageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/heic"
+                  onChange={handleUploadBannerImage}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => bannerImageInputRef.current?.click()}
+                  disabled={isUploadingBannerImage}
+                >
+                  {isUploadingBannerImage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Subiendo...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Subir
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateBannerImage}
+                  disabled={isGeneratingBannerImage || !formData.displayName}
+                >
+                  {isGeneratingBannerImage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      IA
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             <Input
               id="bannerImage"
               value={formData.bannerImage}
               onChange={(e) => handleChange("bannerImage", e.target.value)}
-              placeholder="https://ejemplo.com/banner.jpg o se generará con IA"
+              placeholder="URL de imagen o usa los botones para subir/generar"
             />
             {formData.bannerImage && (
               <img src={formData.bannerImage} alt="Preview" className="w-full h-24 object-cover rounded-lg mt-2" />
