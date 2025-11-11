@@ -89,13 +89,8 @@ class AuthService {
 
   async signInWithGoogle(redirectPath: string = '/dashboard'): Promise<User | null> {
     try {
-      // Detectar si estamos en Safari/iPad que tiene problemas con sessionStorage
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      // Usar localStorage en lugar de sessionStorage para Safari/iOS
-      const storage = (isSafari || isIOS) ? localStorage : sessionStorage;
-      storage.setItem('auth_redirect_path', redirectPath);
+      // Almacenar la ruta de redirección para usarla después de la autenticación
+      sessionStorage.setItem('auth_redirect_path', redirectPath);
       
       // Generar un proveedor específico para esta sesión para evitar problemas de caché
       const sessionProvider = new GoogleAuthProvider();
@@ -127,21 +122,15 @@ class AuthService {
           return this.signInAnonymously(redirectPath);
         }
         
-        // En Safari/iOS, NO usar signInWithRedirect porque causa problemas con sessionStorage
-        // En su lugar, usar autenticación anónima directamente
-        if (isSafari || isIOS) {
-          console.log('AuthService: Safari/iOS detectado, usando autenticación anónima en lugar de redirect');
-          return this.signInAnonymously(redirectPath);
-        }
-        
-        // Para otros navegadores, si el popup está bloqueado, intentar redirect
+        // Si el error es específicamente de popup bloqueado o error interno,
+        // intentamos con redirect que es más robusto
         if (popupError.code === 'auth/popup-blocked' || 
             popupError.code === 'auth/internal-error') {
           
           console.log('AuthService: Intentando autenticación con redirect como fallback');
           
           // Primero almacenamos información sobre el reintento para la redirección
-          storage.setItem('auth_redirect_attempt', 'true');
+          sessionStorage.setItem('auth_redirect_attempt', 'true');
           
           // Estrategia 2: Usar redirect como fallback
           await signInWithRedirect(this.auth, sessionProvider);
@@ -173,17 +162,12 @@ class AuthService {
    */
   async checkRedirectResult(): Promise<User | null> {
     try {
-      // Detectar si estamos en Safari/iPad
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const storage = (isSafari || isIOS) ? localStorage : sessionStorage;
-      
       // Comprobar si estamos regresando de una redirección de autenticación
-      if (storage.getItem('auth_redirect_attempt') === 'true') {
+      if (sessionStorage.getItem('auth_redirect_attempt') === 'true') {
         console.log('AuthService: Verificando resultado de redirección');
         
         // Limpiar la bandera de intento
-        storage.removeItem('auth_redirect_attempt');
+        sessionStorage.removeItem('auth_redirect_attempt');
         
         // Obtener el resultado de la redirección
         const result = await getRedirectResult(this.auth);
@@ -191,8 +175,8 @@ class AuthService {
           console.log('AuthService: Redirección exitosa, usuario autenticado');
           
           // Redirigir al path almacenado después de una autenticación exitosa
-          const redirectPath = storage.getItem('auth_redirect_path') || '/dashboard';
-          storage.removeItem('auth_redirect_path');
+          const redirectPath = sessionStorage.getItem('auth_redirect_path') || '/dashboard';
+          sessionStorage.removeItem('auth_redirect_path');
           
           if (typeof window !== 'undefined') {
             window.location.href = redirectPath;

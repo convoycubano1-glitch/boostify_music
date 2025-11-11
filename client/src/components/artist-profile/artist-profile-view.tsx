@@ -1,9 +1,8 @@
-import { Music, ShoppingBag, Play, Pause, Video } from "lucide-react";
+import { Music, ShoppingBag, Play, Pause } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { useState, useRef } from "react";
-import { useLocation } from "wouter";
 import type { ArtistProfile, Song, Merchandise } from "../../pages/artist-profile";
 
 interface ArtistProfileViewProps {
@@ -21,7 +20,6 @@ export function ArtistProfileView({
 }: ArtistProfileViewProps) {
   const [playingSongId, setPlayingSongId] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [, setLocation] = useLocation();
 
   const handlePlayPause = (song: Song) => {
     if (playingSongId === song.id) {
@@ -34,10 +32,6 @@ export function ArtistProfileView({
       }
       setPlayingSongId(song.id);
     }
-  };
-
-  const handleGenerateVideo = (song: Song) => {
-    setLocation(`/music-video-workflow?songId=${song.id}&songTitle=${encodeURIComponent(song.title)}`);
   };
 
   const coverImage = profile.coverImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&h=400&fit=crop';
@@ -132,30 +126,18 @@ export function ArtistProfileView({
                             </span>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant={playingSongId === song.id ? "default" : "outline"}
-                            onClick={() => handlePlayPause(song)}
-                            data-testid={`button-play-${song.id}`}
-                          >
-                            {playingSongId === song.id ? (
-                              <Pause className="h-4 w-4" />
-                            ) : (
-                              <Play className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => handleGenerateVideo(song)}
-                            className="gap-2"
-                            data-testid={`button-generate-video-${song.id}`}
-                          >
-                            <Video className="h-4 w-4" />
-                            <span className="hidden sm:inline">Generate Video</span>
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          variant={playingSongId === song.id ? "default" : "outline"}
+                          onClick={() => handlePlayPause(song)}
+                          data-testid={`button-play-${song.id}`}
+                        >
+                          {playingSongId === song.id ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
                     ))}
                   </div>

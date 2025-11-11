@@ -19,10 +19,8 @@ export default defineConfig({
   server: {
     allowedHosts: [
       'ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev',
-      'ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.repl.co',
       '.replit.dev',
       '.replit.app',
-      '.repl.co',
     ],
   },
   build: {
