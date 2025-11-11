@@ -21,15 +21,9 @@ export function BottomNav() {
   const doubleClickThreshold = 300; // ms
   const { user } = useAuth();
 
-  // Get current user's profile to retrieve their slug
-  const { data: userProfile } = useQuery<{ slug: string | null }>({
-    queryKey: ['/api/profile/user/profile'],
-    enabled: !!user,
-  });
-
-  // Navigate to artist profile using the user's slug
-  // Falls back to /profile if slug is not yet available
-  const profileHref = userProfile?.slug ? `/artist/${userProfile.slug}` : '/profile';
+  // Always navigate to the Boostify default profile
+  // This provides a consistent experience with demo content and video generation
+  const profileHref = '/artist/boostify';
 
   // Elementos de navegación para el botón "More" (23 páginas específicas) - Rutas verificadas contra App.tsx
   const moreNavItems = [
