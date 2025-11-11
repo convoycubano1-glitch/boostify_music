@@ -10,6 +10,7 @@ import {
   Video as VideoIcon,
   Share2,
   ShoppingBag,
+  ShoppingCart,
   MapPin,
   ExternalLink,
   Calendar,
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, setDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useToast } from "../../hooks/use-toast";
 
@@ -48,6 +49,17 @@ interface Video {
   createdAt?: any;
   views?: number;
   likes?: number;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  userId: string;
+  createdAt?: any;
 }
 
 // Paletas de colores
@@ -188,6 +200,98 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       }
     },
     enabled: !!artistId
+  });
+
+  // Query para productos con auto-generación
+  const { data: products = [] as Product[], refetch: refetchProducts } = useQuery<Product[]>({
+    queryKey: ["merchandise", artistId],
+    queryFn: async () => {
+      try {
+        const merchRef = collection(db, "merchandise");
+        const q = query(merchRef, where("userId", "==", artistId));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          return querySnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              name: data.name,
+              description: data.description,
+              price: data.price,
+              imageUrl: data.imageUrl,
+              category: data.category,
+              userId: data.userId,
+              createdAt: data.createdAt?.toDate(),
+            };
+          });
+        }
+
+        // Si no hay productos, generar 5 automáticamente
+        const artistName = userProfile?.displayName || userProfile?.name || "Artist";
+        const defaultProducts: Omit<Product, 'id'>[] = [
+          {
+            name: `${artistName} T-Shirt`,
+            description: `Official ${artistName} merchandise t-shirt with exclusive design`,
+            price: 29.99,
+            imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
+            category: 'Apparel',
+            userId: artistId,
+            createdAt: new Date(),
+          },
+          {
+            name: `${artistName} Hoodie`,
+            description: `Premium quality hoodie featuring ${artistName}'s brand logo`,
+            price: 49.99,
+            imageUrl: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400',
+            category: 'Apparel',
+            userId: artistId,
+            createdAt: new Date(),
+          },
+          {
+            name: `${artistName} Cap`,
+            description: `Stylish cap with embroidered ${artistName} logo`,
+            price: 24.99,
+            imageUrl: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400',
+            category: 'Accessories',
+            userId: artistId,
+            createdAt: new Date(),
+          },
+          {
+            name: `${artistName} Poster`,
+            description: `High-quality poster perfect for your room or studio`,
+            price: 14.99,
+            imageUrl: 'https://images.unsplash.com/photo-1626379801173-d0f23242cb27?w=400',
+            category: 'Art',
+            userId: artistId,
+            createdAt: new Date(),
+          },
+          {
+            name: `${artistName} Sticker Pack`,
+            description: `Pack of 10 exclusive stickers featuring ${artistName}'s brand`,
+            price: 9.99,
+            imageUrl: 'https://images.unsplash.com/photo-1609520778163-a16fb3b0453e?w=400',
+            category: 'Accessories',
+            userId: artistId,
+            createdAt: new Date(),
+          },
+        ];
+
+        // Guardar productos en Firebase
+        const savedProducts: Product[] = [];
+        for (const product of defaultProducts) {
+          const newDocRef = doc(collection(db, "merchandise"));
+          await setDoc(newDocRef, product);
+          savedProducts.push({ ...product, id: newDocRef.id });
+        }
+
+        return savedProducts;
+      } catch (error) {
+        console.error("Error fetching/creating merchandise:", error);
+        return [];
+      }
+    },
+    enabled: !!artistId && !!userProfile
   });
 
   const artist = {
@@ -494,29 +598,44 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           </span>
                         </div>
                       </div>
-                      <button
-                        className="py-2 px-4 rounded-full text-sm font-medium transition duration-300"
-                        style={{ 
-                          backgroundColor: playingSongId === song.id ? colors.hexPrimary : 'transparent',
-                          borderColor: colors.hexBorder,
-                          borderWidth: '1px',
-                          color: playingSongId === song.id ? 'white' : colors.hexAccent
-                        }}
-                        onClick={() => handlePlayPause(song)}
-                        data-testid={`button-play-${song.id}`}
-                      >
-                        {playingSongId === song.id ? (
-                          <>
-                            <Pause className="h-4 w-4 inline mr-1" />
-                            Pause
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-4 w-4 inline mr-1" />
-                            Play
-                          </>
-                        )}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          className="py-2 px-4 rounded-full text-sm font-medium transition duration-300"
+                          style={{ 
+                            backgroundColor: playingSongId === song.id ? colors.hexPrimary : 'transparent',
+                            borderColor: colors.hexBorder,
+                            borderWidth: '1px',
+                            color: playingSongId === song.id ? 'white' : colors.hexAccent
+                          }}
+                          onClick={() => handlePlayPause(song)}
+                          data-testid={`button-play-${song.id}`}
+                        >
+                          {playingSongId === song.id ? (
+                            <>
+                              <Pause className="h-4 w-4 inline mr-1" />
+                              Pause
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-4 w-4 inline mr-1" />
+                              Play
+                            </>
+                          )}
+                        </button>
+                        <Link href={`/ai-video-creation?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
+                          <button
+                            className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
+                            style={{ 
+                              backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                              color: 'white'
+                            }}
+                            data-testid={`button-create-video-${song.id}`}
+                          >
+                            <VideoIcon className="h-4 w-4 inline mr-1" />
+                            Crear Video
+                          </button>
+                        </Link>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -565,6 +684,65 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                         <p className="text-xs text-gray-400 mt-1">Powered by Boostify</p>
                       </div>
                     </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tarjeta de Tienda/Merchandise */}
+            {products.length > 0 && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div className="flex justify-between items-center mb-4">
+                  <div 
+                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    <ShoppingBag className="h-5 w-5" />
+                    Tienda Oficial ({products.length})
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {products.map((product, index) => (
+                    <div
+                      key={product.id}
+                      className="rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border group cursor-pointer"
+                      style={{ borderColor: colors.hexBorder }}
+                      data-testid={`card-product-${index}`}
+                    >
+                      <div className="relative">
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
+                          }}
+                        />
+                        <div className="absolute top-2 right-2">
+                          <span 
+                            className="text-xs font-bold py-1 px-2 rounded-full text-white"
+                            style={{ backgroundColor: colors.hexPrimary }}
+                          >
+                            ${product.price}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-3">
+                        <h3 className="font-medium text-white text-sm">{product.name}</h3>
+                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">{product.description}</p>
+                        <button
+                          className="mt-2 w-full py-2 px-4 rounded-full text-xs font-medium transition duration-300"
+                          style={{ 
+                            backgroundColor: colors.hexPrimary,
+                            color: 'white'
+                          }}
+                          data-testid={`button-buy-${product.id}`}
+                        >
+                          <ShoppingCart className="h-3 w-3 inline mr-1" />
+                          Comprar Ahora
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
