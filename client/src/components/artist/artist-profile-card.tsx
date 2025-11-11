@@ -1,70 +1,27 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Card } from "../ui/card";
 import { Button } from "../ui/button";
-import { ScrollArea } from "../ui/scroll-area";
-import { Badge } from "../ui/badge";
-import { MusicSection } from "./music-section";
-import { VideosSection } from "./videos-section";
+import { EditProfileDialog } from "./edit-profile-dialog";
+import { useAuth } from "../../hooks/use-auth";
 import {
   Play,
   Pause,
   Music2,
   Video as VideoIcon,
-  FileText,
-  ChartBar,
-  User,
-  MapPin,
-  Mail,
-  Phone,
-  Globe,
-  Instagram,
-  Twitter,
-  Youtube,
   Share2,
-  Calendar,
-  CalendarRange,
-  HeartPulse,
-  Users,
-  DollarSign,
-  Loader2,
   ShoppingBag,
-  ShoppingCart,
-  Store,
-  Ticket,
-  TicketCheck,
-  MessageCircle,
-  MessageSquare,
-  Shirt,
-  Paintbrush,
-  Check,
-  X,
-  Link as LinkIcon,
-  PlusCircle,
-  Info,
-  Music4,
-  DownloadCloud,
-  CreditCard
+  MapPin,
+  ExternalLink,
+  Calendar,
+  Users,
+  Music,
+  Check
 } from "lucide-react";
-import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useToast } from "../../hooks/use-toast";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
-
-// Importamos nuestros componentes de navegación
-import { SectionNavigation, SimpleSectionNavigation } from "../navigation/section-navigation";
-import { NavigationHeader, SimpleNavigationHeader } from "./section-navigation-wrapper";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -93,96 +50,64 @@ interface Video {
   likes?: number;
 }
 
-// Add ShareDialog component
-const ShareDialog = ({ isOpen, onClose, artistName, artistUrl }: { isOpen: boolean; onClose: (value?: boolean | undefined) => void; artistName: string; artistUrl: string }) => {
-  const fullUrl = `${window.location.origin}/profile/${artistUrl}`;
-  const { toast } = useToast(); // Añadiendo la referencia al hook de toast
-
-  const shareData = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=Check out ${artistName}'s profile`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(`Check out ${artistName}'s profile: ${fullUrl}`)}`,
-    instagram: `instagram://camera`, // Instagram doesn't support direct sharing, opens the app
-    tiktok: `https://www.tiktok.com/upload/`, // TikTok doesn't support direct sharing, opens upload page
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Share Profile</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Button
-            className="w-full bg-[#1877F2] hover:bg-[#166FE5]"
-            onClick={() => window.open(shareData.facebook, '_blank')}
-          >
-            Share on Facebook
-          </Button>
-          <Button
-            className="w-full bg-[#1DA1F2] hover:bg-[1A91DA]"
-            onClick={() => window.open(shareData.twitter, '_blank')}
-          >
-            Share on Twitter/X
-          </Button>
-          <Button
-            className="w-full bg-[#25D366] hover:bg-[#128C7E]"
-            onClick={() => window.open(shareData.whatsapp, '_blank')}
-          >
-            Share on WhatsApp
-          </Button>
-          <Button
-            className="w-full bg-[#E4405F] hover:bg-[#D93248]"
-            onClick={() => window.open(shareData.instagram, '_blank')}
-          >
-            Share on Instagram
-          </Button>
-          <Button
-            className="w-full bg-[#000000] hover:bg-[#333333]"
-            onClick={() => window.open(shareData.tiktok, '_blank')}
-          >
-            Share on TikTok
-          </Button>
-          <Button
-            className="w-full"
-            variant="outline"
-            onClick={() => {
-              navigator.clipboard.writeText(fullUrl);
-              toast({
-                title: "Link copied!",
-                description: "Profile link has been copied to your clipboard.",
-              });
-            }}
-          >
-            <LinkIcon className="mr-2 h-4 w-4" />
-            Copy Link
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+// Paletas de colores
+const colorPalettes = {
+  'Boostify Naranja': {
+    hexAccent: '#F97316',
+    hexPrimary: '#FF8800',
+    hexBorder: '#5E2B0C',
+    textMuted: 'gray-400',
+    bgGradient: "bg-gradient-to-br from-black via-gray-950 to-orange-950",
+    shadow: 'shadow-orange-900/10',
+  },
+  'Clásico Azul': {
+    hexAccent: '#3B82F6',
+    hexPrimary: '#2563EB',
+    hexBorder: '#1E40AF',
+    textMuted: 'slate-400',
+    bgGradient: "bg-gradient-to-br from-black via-slate-950 to-blue-950",
+    shadow: 'shadow-blue-900/10',
+  },
+  'Neon Verde': {
+    hexAccent: '#A3E635',
+    hexPrimary: '#84CC16',
+    hexBorder: '#4D7C0F',
+    textMuted: 'gray-400',
+    bgGradient: "bg-gradient-to-br from-black via-gray-950 to-green-950",
+    shadow: 'shadow-lime-900/10',
+  },
+  'Cyber Morado': {
+    hexAccent: '#F472B6',
+    hexPrimary: '#8B5CF6',
+    hexBorder: '#6D28D9',
+    textMuted: 'violet-300',
+    bgGradient: "bg-gradient-to-br from-black via-gray-950 to-violet-950",
+    shadow: 'shadow-violet-900/10',
+  },
+  'Tierra Suave': {
+    hexAccent: '#FBBF24',
+    hexPrimary: '#D97706',
+    hexBorder: '#78350F',
+    textMuted: 'stone-400',
+    bgGradient: "bg-gradient-to-br from-black via-stone-900 to-amber-950",
+    shadow: 'shadow-amber-900/10',
+  }
 };
 
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
-  // Estados para la reproducción de música
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(0);
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  
-  // Estados para diálogos y navegación
-  const [showMessageDialog, setShowMessageDialog] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
-  const [activeSection, setActiveSection] = useState<'music' | 'videos' | 'merch' | 'shows'>('music');
-  
-  // Estado para reproductor de audio
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [isAudioLoading, setIsAudioLoading] = useState(false);
-  
+  const [playingSongId, setPlayingSongId] = useState<string | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<keyof typeof colorPalettes>('Boostify Naranja');
+  const [merchFilter, setMerchFilter] = useState('Todo');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  const isOwnProfile = user?.uid === artistId;
+  const colors = colorPalettes[selectedTheme];
 
-  // Query para obtener datos del perfil del usuario desde Firestore
-  const { data: userProfile } = useQuery({
+  // Query para obtener perfil
+  const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["userProfile", artistId],
     queryFn: async () => {
       try {
@@ -199,8 +124,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     enabled: !!artistId
   });
 
-  // Query optimizada para obtener canciones
-  const { data: songs = [] as Song[], isLoading: isLoadingSongs } = useQuery<Song[]>({
+  // Query para canciones
+  const { data: songs = [] as Song[] } = useQuery<Song[]>({
     queryKey: ["songs", artistId],
     queryFn: async () => {
       try {
@@ -208,41 +133,32 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const q = query(songsRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
-        if (querySnapshot.empty) {
-          return [];
-        }
+        if (querySnapshot.empty) return [];
 
-        const songData = querySnapshot.docs.map((doc) => {
+        return querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
             id: doc.id,
             name: data.name,
             title: data.name,
             audioUrl: data.audioUrl,
-            duration: data.duration || "3:45", // Default duration
+            duration: data.duration || "3:45",
             userId: data.userId,
             createdAt: data.createdAt?.toDate(),
             storageRef: data.storageRef,
             coverArt: data.coverArt || '/assets/freepik__boostify_music_organe_abstract_icon.png'
           };
         });
-
-        return songData;
       } catch (error) {
         console.error("Error fetching songs:", error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar las canciones",
-          variant: "destructive",
-        });
         return [];
       }
     },
     enabled: !!artistId
   });
 
-  // Query optimizada para obtener videos
-  const { data: videos = [] as Video[], isLoading: isLoadingVideos } = useQuery<Video[]>({
+  // Query para videos
+  const { data: videos = [] as Video[] } = useQuery<Video[]>({
     queryKey: ["videos", artistId],
     queryFn: async () => {
       try {
@@ -250,42 +166,31 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const q = query(videosRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
-        if (querySnapshot.empty) {
-          return [];
-        }
+        if (querySnapshot.empty) return [];
 
-        const videoData = querySnapshot.docs.map((doc) => {
+        return querySnapshot.docs.map((doc) => {
           const data = doc.data();
           const videoId = data.url?.split('v=')?.[1] || data.url?.split('/')?.[3]?.split('?')?.[0];
           return {
             id: doc.id,
             title: data.title,
             url: data.url,
-            userId: data.userId || artistId, // Aseguramos que siempre haya un userId
+            userId: data.userId || artistId,
             thumbnailUrl: data.thumbnailUrl || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined),
             createdAt: data.createdAt?.toDate(),
-            views: Math.floor(Math.random() * 10000) + 1000, // Datos de muestra para mejorar UX
+            views: Math.floor(Math.random() * 10000) + 1000,
             likes: Math.floor(Math.random() * 500) + 50,
           };
         });
-
-        return videoData;
       } catch (error) {
         console.error("Error fetching videos:", error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los videos",
-          variant: "destructive",
-        });
         return [];
       }
     },
     enabled: !!artistId
   });
 
-  // Crear objeto de artista con datos reales o valores por defecto
   const artist = {
-    id: artistId,
     name: userProfile?.displayName || userProfile?.name || "Artist Name",
     genre: userProfile?.genre || "Music Artist",
     location: userProfile?.location || "",
@@ -293,732 +198,547 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     bannerImage: userProfile?.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80',
     biography: userProfile?.biography || "Music artist profile",
     followers: userProfile?.followers || 0,
-    tracks: songs.length,
-    videos: videos.length,
-    verified: userProfile?.verified || false,
-    socialLinks: userProfile?.socialLinks || [],
-    contactEmail: userProfile?.email || userProfile?.contactEmail || "",
-    contactPhone: userProfile?.contactPhone || "",
-    upcomingShows: userProfile?.upcomingShows || [],
-    merchandise: userProfile?.merchandise || []
+    instagram: userProfile?.instagram || "",
+    twitter: userProfile?.twitter || "",
+    youtube: userProfile?.youtube || "",
+    website: userProfile?.website || ""
   };
 
-  const togglePlay = (song: Song, index: number) => {
-    // Si ya estamos reproduciendo esta canción, la pausamos
-    if (isPlaying && currentTrack === index && currentAudio) {
-      currentAudio.pause();
-      setIsPlaying(false);
-      return;
+  const handlePlayPause = (song: Song) => {
+    if (playingSongId === song.id) {
+      audioRef.current?.pause();
+      setPlayingSongId(null);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.src = song.audioUrl;
+        audioRef.current.play();
+      }
+      setPlayingSongId(song.id);
     }
-    
-    // Si hay un audio reproduciéndose, lo detenemos primero
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.removeEventListener('ended', () => setIsPlaying(false));
-      setCurrentAudio(null);
-      setIsPlaying(false);
-    }
+  };
 
-    // Reproducimos la nueva canción
-    if (song.audioUrl) {
-      const audio = new Audio(song.audioUrl);
-
-      audio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        setCurrentAudio(null);
-      });
-
-      audio.addEventListener('error', (error) => {
-        console.error("Error playing audio:", error);
-        toast({
-          title: "Error",
-          description: "No se pudo reproducir el audio. Por favor, intente nuevamente.",
-          variant: "destructive",
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${artist.name} - Boostify Music`,
+          text: `Check out ${artist.name}'s profile on Boostify Music!`,
+          url: shareUrl,
         });
-        setIsPlaying(false);
-        setCurrentAudio(null);
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied!",
+        description: "Profile link copied to clipboard.",
       });
-
-      audio.play().catch((error) => {
-        console.error("Error playing audio:", error);
-        toast({
-          title: "Error",
-          description: "No se pudo reproducir el audio",
-          variant: "destructive",
-        });
-      });
-      setCurrentAudio(audio);
-      setCurrentTrack(index);
-      setIsPlaying(true);
     }
   };
 
-  // Ya definimos esta función anteriormente
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.3 },
-    },
-  };
-
-  // Función para formatear el tiempo de reproducción
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' + secs : secs}`;
-  };
-
-  // Componente para mostrar el progreso de reproducción
-  const AudioProgressBar = () => {
-    if (!currentAudio || currentTrack === -1) return null;
-    
-    return (
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-black/90 to-black/80 backdrop-blur-md p-3 z-50 border-t border-orange-500/20">
-        <div className="max-w-7xl mx-auto flex flex-col">
-          <div className="flex items-center justify-between w-full mb-2">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  if (isPlaying) {
-                    currentAudio?.pause();
-                    setIsPlaying(false);
-                  } else {
-                    currentAudio?.play();
-                    setIsPlaying(true);
-                  }
-                }}
-                className={`rounded-full transition-transform duration-300 ${
-                  isPlaying
-                    ? "bg-orange-500 text-white hover:bg-orange-600"
-                    : "hover:bg-orange-500/10"
-                }`}
-              >
-                {isPlaying ? (
-                  <Pause className="h-5 w-5" />
-                ) : (
-                  <Play className="h-5 w-5" />
-                )}
-              </Button>
-              <div>
-                <span className="font-medium text-white">
-                  {songs[currentTrack]?.name || songs[currentTrack]?.title}
-                </span>
-                <span className="text-sm text-white/70 block">
-                  {artist.name}
-                </span>
-              </div>
-            </div>
-            <div className="text-sm text-white/70">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </div>
-          </div>
-          
-          <div className="w-full bg-gray-700/30 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-orange-500 to-pink-500"
-              style={{ width: `${(currentTime / duration) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Eliminamos la implementación local del componente NavigationHeader ya que ahora 
-  // usamos el componente importado de section-navigation-wrapper.tsx
+  const cardStyles = `bg-gradient-to-b from-gray-900 to-gray-950 bg-opacity-90 rounded-3xl p-6 shadow-xl ${colors.shadow} transition-colors duration-500`;
+  const primaryBtn = `py-2 px-4 rounded-full text-sm font-semibold transition duration-300 shadow-lg whitespace-nowrap`;
+  
+  const merchCategories = ['Todo', 'Música', 'Videos', 'Shows'];
+  const totalPlays = songs.reduce((acc, song) => acc + (parseInt(song.duration?.split(':')[0] || '0') * 100), 0);
 
   return (
-    <>
-      <section className="relative w-full">
-        <motion.div
-          className="relative z-10 px-4 max-w-7xl mx-auto"
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-        >
-          {/* Banner y perfil de artista */}
-          <Card className="relative bg-gradient-to-b from-black/60 to-black/40 backdrop-blur-sm overflow-hidden border-orange-500/20 hover:border-orange-500/40 transition-all duration-300">
-            <div className="h-48 md:h-64 bg-gradient-to-r from-orange-600/20 to-red-500/20 rounded-t-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/90" />
-              <img
-                src={artist.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80'}
-                alt="Artist banner"
-                className="w-full h-full object-cover"
-              />
+    <div className={`min-h-screen ${colors.bgGradient} text-white transition-colors duration-500`}>
+      <audio ref={audioRef} onEnded={() => setPlayingSongId(null)} />
+      
+      {/* Hero Header */}
+      <header className="relative h-96 lg:h-[450px] w-full mb-8 overflow-hidden">
+        <img
+          src={artist.bannerImage}
+          alt={`${artist.name} Cover`}
+          className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
+          onError={(e) => { 
+            e.currentTarget.style.display = 'none';
+            if (e.currentTarget.parentElement) {
+              e.currentTarget.parentElement.style.background = 'black';
+            }
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+        
+        {/* Barra superior */}
+        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10">
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center font-bold text-sm tracking-widest text-white transition-colors duration-500"
+              style={{ backgroundImage: `linear-gradient(to bottom right, ${colors.hexAccent}, ${colors.hexPrimary})` }}
+            >
+              B
             </div>
-            
-            <div className="p-6 md:p-8 pb-4 -mt-16 relative">
-              <div className="flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6">
-                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-black/80 overflow-hidden flex-shrink-0 bg-orange-500/10 relative group">
-                  <img
-                    src={artist.profileImage || 'https://images.unsplash.com/photo-1618254394652-ca0bd54ae0f0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1153&q=80'}
-                    alt={artist.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                
-                <div className="flex-1 text-center md:text-left">
-                  <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-500">
-                    {artist.name}
-                  </h1>
-                  
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-3 flex-wrap">
-                    <Badge variant="outline" className="text-orange-400 border-orange-500/30">
-                      {artist.genre}
-                    </Badge>
-                    <Badge variant="outline" className="text-orange-400 border-orange-500/30">
-                      {artist.location}
-                    </Badge>
-                    <Badge variant="secondary" className="bg-orange-500/20 text-orange-200 hover:bg-orange-500/30">
-                      <Users className="w-3 h-3 mr-1" />
-                      {artist.followers.toLocaleString()} followers
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-center md:justify-start gap-2 text-sm">
-                    {artist.verified && (
-                      <span className="flex items-center text-green-400 gap-1">
-                        <Check className="w-4 h-4" />
-                        Verified Artist
-                      </span>
-                    )}
-                    <span className="flex items-center text-white/70 gap-1">
-                      <Music2 className="w-4 h-4" />
-                      {artist.tracks} tracks
-                    </span>
-                    <span className="flex items-center text-white/70 gap-1">
-                      <VideoIcon className="w-4 h-4" />
-                      {artist.videos} videos
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 mt-4 md:mt-0">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
-                        <DollarSign className="mr-2 h-4 w-4" />
-                        Support
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Support {artist.name}</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="flex justify-around">
-                          {[5, 10, 20].map((amount) => (
-                            <div key={amount} className="text-center">
-                              <div className="w-16 h-16 mx-auto mb-2 relative">
-                                <CircularProgressbar
-                                  value={amount * 5}
-                                  text={`$${amount}`}
-                                  styles={buildStyles({
-                                    textSize: '2rem',
-                                    pathColor: `rgba(249, 115, 22, ${amount / 20})`,
-                                    textColor: '#f97316',
-                                    trailColor: '#334155',
-                                  })}
-                                />
-                              </div>
-                              <span className="text-sm text-gray-400">One-time</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="text-center mt-4">
-                          <h3 className="font-semibold mb-2">Monthly Support</h3>
-                          <div className="flex justify-around gap-2">
-                            {[3, 9, 19].map((amount) => (
-                              <Button
-                                key={amount}
-                                variant="outline"
-                                className="flex flex-col h-auto py-2 px-4 border-orange-500/20 hover:bg-orange-500/10"
-                              >
-                                <span className="text-lg font-bold text-orange-500">${amount}</span>
-                                <span className="text-xs text-gray-400">/month</span>
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                        <Button className="mt-4">
-                          <CreditCard className="mr-2 h-4 w-4" />
-                          Continue to Payment
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+            <div>
+              <div className="text-xs uppercase tracking-widest text-white/80">Boostify Music</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              className="py-2 px-4 rounded-full text-sm font-semibold transition duration-200 bg-black/50 hover:bg-gray-800 backdrop-blur-sm"
+              style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
+              onClick={handleShare}
+              data-testid="button-share"
+            >
+              <Share2 className="h-4 w-4 inline mr-2" />
+              Compartir
+            </button>
+            {isOwnProfile && (
+              <Link href="/dashboard">
+                <button 
+                  className="py-2 px-4 rounded-full text-sm font-semibold transition duration-200 bg-black/50 hover:bg-gray-800 backdrop-blur-sm"
+                  style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
+                  data-testid="button-dashboard"
+                >
+                  Ir al dashboard
+                </button>
+              </Link>
+            )}
+          </div>
+        </div>
 
-                  <Button size="sm" variant="outline" className="rounded-full border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
-                    <HeartPulse className="mr-2 h-4 w-4" />
-                    Follow
-                  </Button>
+        {/* Contenido del artista en el hero */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-10">
+          <div className="text-4xl lg:text-6xl font-extrabold mb-2 text-white drop-shadow-lg" data-testid="text-artist-name">
+            {artist.name}
+          </div>
+          <div className="text-lg transition-colors duration-500" style={{ color: colors.hexAccent }}>
+            {artist.genre} {artist.location && `· ${artist.location}`}
+          </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {artist.instagram && (
+              <span 
+                className="text-xs rounded-full py-1 px-3 bg-black/50 backdrop-blur-sm border transition-colors duration-500"
+                style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
+              >
+                📸 @{artist.instagram}
+              </span>
+            )}
+            {videos.length > 0 && (
+              <span 
+                className="text-xs rounded-full py-1 px-3 bg-black/50 backdrop-blur-sm border transition-colors duration-500"
+                style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
+              >
+                🎬 {videos.length} Video{videos.length > 1 ? 's' : ''}
+              </span>
+            )}
+            {songs.length > 0 && (
+              <span 
+                className="text-xs rounded-full py-1 px-3 bg-black/50 backdrop-blur-sm border transition-colors duration-500"
+                style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
+              >
+                🎵 {songs.length} {songs.length === 1 ? 'Canción' : 'Canciones'}
+              </span>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto p-4 md:p-8 pt-0 pb-20 md:pb-8">
+        
+        {/* Selector de Paleta */}
+        <div 
+          className="mb-6 p-4 rounded-xl bg-gray-900/80 backdrop-blur-sm flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-500"
+          style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+        >
+          <label htmlFor="theme-selector" className="text-sm font-medium text-white whitespace-nowrap">
+            Personaliza tu Estilo:
+          </label>
+          <div className="flex-1 w-full max-w-sm">
+            <select
+              id="theme-selector"
+              value={selectedTheme}
+              onChange={(e) => setSelectedTheme(e.target.value as keyof typeof colorPalettes)}
+              className="block w-full py-2 px-3 text-sm rounded-full border bg-black text-white focus:ring-4 appearance-none cursor-pointer transition-colors duration-500"
+              style={{ borderColor: colors.hexBorder }}
+            >
+              {Object.keys(colorPalettes).map(themeName => (
+                <option key={themeName} value={themeName}>
+                  {themeName}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Main Layout */}
+        <main className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6">
+          {/* Columna Izquierda */}
+          <section className="flex flex-col gap-6">
+            
+            {/* Tarjeta de Información de Artista */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <div className="relative">
+                  <img
+                    src={artist.profileImage}
+                    alt={`${artist.name} Avatar`}
+                    className="w-44 h-44 rounded-3xl object-cover shadow-xl transition-colors duration-500"
+                    style={{ borderColor: colors.hexBorder, borderWidth: '1px', boxShadow: `0 4px 10px ${colors.hexAccent}50` }}
+                    data-testid="img-profile"
+                  />
+                  <div className="absolute -right-1 -bottom-1 py-1 px-2.5 text-xs rounded-full bg-green-500 text-green-950 font-semibold shadow-xl shadow-green-500/50">
+                    Verificado
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-3xl font-semibold text-white">{artist.name}</div>
+                  <div 
+                    className="text-sm mt-1 transition-colors duration-500" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    {artist.genre}
+                  </div>
+                  <div className="text-sm text-gray-400 mt-2 transition-colors duration-500">
+                    {artist.biography}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    {isOwnProfile ? (
+                      <EditProfileDialog
+                        artistId={artistId}
+                        currentData={{
+                          displayName: userProfile?.displayName || userProfile?.name || "",
+                          biography: userProfile?.biography || "",
+                          genre: userProfile?.genre || "",
+                          location: userProfile?.location || "",
+                          profileImage: userProfile?.photoURL || userProfile?.profileImage || "",
+                          bannerImage: userProfile?.bannerImage || "",
+                          contactEmail: userProfile?.email || userProfile?.contactEmail || "",
+                          contactPhone: userProfile?.contactPhone || "",
+                          instagram: userProfile?.instagram || "",
+                          twitter: userProfile?.twitter || "",
+                          youtube: userProfile?.youtube || "",
+                          spotify: userProfile?.spotify || "",
+                        }}
+                        onUpdate={() => refetchProfile()}
+                      />
+                    ) : (
+                      <>
+                        {artist.website && (
+                          <a 
+                            href={artist.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${primaryBtn} text-white hover:opacity-80`}
+                            style={{ backgroundColor: colors.hexPrimary }}
+                            data-testid="button-website"
+                          >
+                            <ExternalLink className="h-4 w-4 inline mr-2" />
+                            Website
+                          </a>
+                        )}
+                        <button 
+                          className={`${primaryBtn} bg-black hover:bg-gray-800`}
+                          style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
+                          onClick={handleShare}
+                          data-testid="button-share-profile"
+                        >
+                          Compartir perfil
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
-                <Card className="bg-black/40 backdrop-blur-sm border-orange-500/20 p-4 hover:border-orange-500/40 transition-all duration-300">
-                  <h3 className="font-semibold mb-2 flex items-center text-orange-400">
-                    <User className="w-4 h-4 mr-2" />
-                    Bio
-                  </h3>
-                  <ScrollArea className="h-24">
-                    <p className="text-sm text-white/70 leading-relaxed">
-                      {artist.biography}
-                    </p>
-                  </ScrollArea>
-                </Card>
+            </div>
+
+            {/* Tarjeta de Songs/Tracks */}
+            {songs.length > 0 && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div className="flex justify-between items-center mb-4">
+                  <div 
+                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    <Music className="h-5 w-5" />
+                    Música ({songs.length})
+                  </div>
+                </div>
                 
-                <Card className="bg-black/40 backdrop-blur-sm border-orange-500/20 p-4 hover:border-orange-500/40 transition-all duration-300">
-                  <h3 className="font-semibold mb-2 flex items-center text-orange-400">
-                    <TicketCheck className="w-4 h-4 mr-2" />
-                    Upcoming Shows
-                  </h3>
-                  {artist.upcomingShows.length > 0 ? (
-                    <div className="space-y-2">
-                      {artist.upcomingShows.slice(0, 2).map((show, index) => (
-                        <div 
-                          key={index}
-                          className="flex justify-between items-center p-2 rounded-md bg-black/30 hover:bg-black/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-md bg-gradient-to-br from-orange-500/30 to-red-500/30 flex flex-col items-center justify-center text-xs">
-                              <span className="font-bold text-orange-300">{new Date(show.date).toLocaleDateString('en-US', { month: 'short' })}</span>
-                              <span className="text-white">{new Date(show.date).getDate()}</span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">{show.venue}</p>
-                              <p className="text-xs text-white/60">{show.location}</p>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="ghost" className="text-xs h-7 hover:bg-orange-500/10 text-orange-400">
-                            Details
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full">
-                      <CalendarRange className="h-8 w-8 text-orange-500/40 mb-2" />
-                      <p className="text-sm text-white/60">No upcoming shows</p>
-                    </div>
-                  )}
-                  {artist.upcomingShows.length > 2 && (
-                    <Button 
-                      variant="link" 
-                      className="text-xs text-orange-400 p-0 h-auto mt-2 hover:text-orange-300"
-                      onClick={() => setActiveSection('shows')}
+                <div className="space-y-3">
+                  {songs.map((song) => (
+                    <div
+                      key={song.id}
+                      className="flex items-center gap-4 p-3 rounded-xl bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border"
+                      style={{ borderColor: colors.hexBorder }}
+                      data-testid={`card-song-${song.id}`}
                     >
-                      View all {artist.upcomingShows.length} shows →
-                    </Button>
-                  )}
-                </Card>
+                      <div className="flex-shrink-0">
+                        {song.coverArt ? (
+                          <img
+                            src={song.coverArt}
+                            alt={song.title || song.name}
+                            className="w-14 h-14 rounded-lg object-cover"
+                            data-testid={`img-song-cover-${song.id}`}
+                          />
+                        ) : (
+                          <div 
+                            className="w-14 h-14 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: `${colors.hexPrimary}33` }}
+                          >
+                            <Music className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate text-white" data-testid={`text-song-title-${song.id}`}>
+                          {song.title || song.name}
+                        </h3>
+                        <div className="flex gap-2 mt-1">
+                          <span className="text-xs text-gray-400">
+                            {song.duration || "3:45"}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="py-2 px-4 rounded-full text-sm font-medium transition duration-300"
+                        style={{ 
+                          backgroundColor: playingSongId === song.id ? colors.hexPrimary : 'transparent',
+                          borderColor: colors.hexBorder,
+                          borderWidth: '1px',
+                          color: playingSongId === song.id ? 'white' : colors.hexAccent
+                        }}
+                        onClick={() => handlePlayPause(song)}
+                        data-testid={`button-play-${song.id}`}
+                      >
+                        {playingSongId === song.id ? (
+                          <>
+                            <Pause className="h-4 w-4 inline mr-1" />
+                            Pause
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 inline mr-1" />
+                            Play
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-              
-              <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
-                {artist.socialLinks.map((link, index) => {
-                  const Icon = link.type === 'instagram' 
-                    ? Instagram 
-                    : link.type === 'twitter' 
-                      ? Twitter 
-                      : link.type === 'youtube' 
-                        ? Youtube 
-                        : Globe;
-                  
-                  return (
-                    <a 
-                      key={index}
-                      href={link.url}
+            )}
+
+            {/* Tarjeta de Videos */}
+            {videos.length > 0 && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div className="flex justify-between items-center mb-4">
+                  <div 
+                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    <VideoIcon className="h-5 w-5" />
+                    Videos ({videos.length})
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {videos.map((video, index) => (
+                    <a
+                      key={video.id}
+                      href={video.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-black/30 text-white/80 hover:bg-orange-500/20 hover:text-orange-300 transition-colors border border-orange-500/20"
+                      className="rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border cursor-pointer"
+                      style={{ borderColor: colors.hexBorder }}
+                      data-testid={`card-video-${index}`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span>{link.type.charAt(0).toUpperCase() + link.type.slice(1)}</span>
+                      {video.thumbnailUrl ? (
+                        <img
+                          src={video.thumbnailUrl}
+                          alt={video.title}
+                          className="w-full h-40 object-cover"
+                        />
+                      ) : (
+                        <div 
+                          className="w-full h-40 flex items-center justify-center"
+                          style={{ backgroundColor: `${colors.hexPrimary}33` }}
+                        >
+                          <VideoIcon className="h-12 w-12" style={{ color: colors.hexAccent }} />
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <h3 className="font-medium text-white text-sm">{video.title || 'Music Video'}</h3>
+                        <p className="text-xs text-gray-400 mt-1">Powered by Boostify</p>
+                      </div>
                     </a>
-                  );
-                })}
-                
-                <a 
-                  href={`mailto:${artist.contactEmail}`}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-black/30 text-white/80 hover:bg-orange-500/20 hover:text-orange-300 transition-colors border border-orange-500/20"
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </section>
+
+          {/* Columna Derecha */}
+          <section className="flex flex-col gap-6">
+            
+            {/* Tarjeta de Estadísticas */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div 
+                className="text-base font-semibold mb-4 transition-colors duration-500" 
+                style={{ color: colors.hexAccent }}
+              >
+                Estadísticas del Perfil
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Total Canciones</span>
+                  <span className="text-xl font-bold text-white">{songs.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Total Videos</span>
+                  <span className="text-xl font-bold text-white">{videos.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-400">Seguidores</span>
+                  <span className="text-xl font-bold text-white">{artist.followers.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tarjeta de Biografía */}
+            {artist.biography && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div 
+                  className="text-base font-semibold mb-3 transition-colors duration-500" 
+                  style={{ color: colors.hexAccent }}
                 >
-                  <Mail className="w-4 h-4" />
-                  <span>Email</span>
-                </a>
-                
-                {artist.contactPhone && (
-                  <a 
-                    href={`tel:${artist.contactPhone}`}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-black/30 text-white/80 hover:bg-orange-500/20 hover:text-orange-300 transition-colors border border-orange-500/20"
-                  >
-                    <Phone className="w-4 h-4" />
-                    <span>Phone</span>
-                  </a>
+                  Bio
+                </div>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  {artist.biography}
+                </p>
+              </div>
+            )}
+
+            {/* Tarjeta de Información */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div 
+                className="text-base font-semibold mb-3 transition-colors duration-500" 
+                style={{ color: colors.hexAccent }}
+              >
+                Información
+              </div>
+              <div className="space-y-3">
+                {artist.genre && (
+                  <div className="flex items-center gap-2">
+                    <Music2 className="h-4 w-4" style={{ color: colors.hexAccent }} />
+                    <span className="text-sm text-gray-300">{artist.genre}</span>
+                  </div>
+                )}
+                {artist.location && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" style={{ color: colors.hexAccent }} />
+                    <span className="text-sm text-gray-300">{artist.location}</span>
+                  </div>
+                )}
+                {artist.website && (
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4" style={{ color: colors.hexAccent }} />
+                    <a 
+                      href={artist.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm hover:underline"
+                      style={{ color: colors.hexAccent }}
+                    >
+                      {artist.website}
+                    </a>
+                  </div>
                 )}
               </div>
             </div>
-          </Card>
-          
-          {/* Componente de navegación para secciones */}
-          <NavigationHeader 
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-            onShare={() => setShowShareDialog(true)}
-            onMessage={() => setShowMessageDialog(true)}
-          />
-          
-          {/* Contenido de secciones */}
-          <div className="space-y-6 mb-20">
-            {activeSection === 'music' && (
-              <MusicSection 
-                songs={songs} 
-                isLoading={isLoadingSongs} 
-                currentTrack={currentTrack} 
-                isPlaying={isPlaying}
-                togglePlay={togglePlay}
-              />
+
+            {/* Tarjeta de Redes Sociales */}
+            {(artist.instagram || artist.twitter || artist.youtube) && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div 
+                  className="text-base font-semibold mb-3 transition-colors duration-500" 
+                  style={{ color: colors.hexAccent }}
+                >
+                  Redes Sociales
+                </div>
+                <div className="space-y-2">
+                  {artist.instagram && (
+                    <a 
+                      href={`https://instagram.com/${artist.instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-gray-800/50 transition-colors"
+                      style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+                    >
+                      <span className="text-sm">📸 Instagram</span>
+                      <span className="text-sm ml-auto" style={{ color: colors.hexAccent }}>
+                        @{artist.instagram}
+                      </span>
+                    </a>
+                  )}
+                  {artist.twitter && (
+                    <a 
+                      href={`https://twitter.com/${artist.twitter}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-gray-800/50 transition-colors"
+                      style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+                    >
+                      <span className="text-sm">𝕏 Twitter</span>
+                      <span className="text-sm ml-auto" style={{ color: colors.hexAccent }}>
+                        @{artist.twitter}
+                      </span>
+                    </a>
+                  )}
+                  {artist.youtube && (
+                    <a 
+                      href={artist.youtube}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-gray-800/50 transition-colors"
+                      style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+                    >
+                      <span className="text-sm">▶️ YouTube</span>
+                      <span className="text-sm ml-auto" style={{ color: colors.hexAccent }}>
+                        Ver canal
+                      </span>
+                    </a>
+                  )}
+                </div>
+              </div>
             )}
-            {activeSection === 'videos' && (
-              <VideosSection 
-                videos={videos} 
-                isLoading={isLoadingVideos}
-              />
-            )}
-            {activeSection === 'shows' && <ShowsSection />}
-            {activeSection === 'merch' && <MerchSection />}
+
+            {/* Upcoming Shows - Empty State */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div 
+                className="text-base font-semibold mb-3 transition-colors duration-500 flex items-center gap-2" 
+                style={{ color: colors.hexAccent }}
+              >
+                <Calendar className="h-5 w-5" />
+                Upcoming Shows
+              </div>
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 mx-auto mb-2" style={{ color: colors.hexAccent, opacity: 0.3 }} />
+                <p className="text-gray-400 text-sm">No upcoming shows</p>
+              </div>
+            </div>
+
+          </section>
+        </main>
+
+        {/* Footer */}
+        <footer className="mt-12 pt-6 border-t" style={{ borderColor: colors.hexBorder }}>
+          <div className="text-center">
+            <p className="text-sm text-gray-400">
+              Powered by <span style={{ color: colors.hexAccent }} className="font-semibold">Boostify Music</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              © {new Date().getFullYear()} All rights reserved.
+            </p>
           </div>
-        </motion.div>
-        
-        {/* Background decorativo */}
-        <div className="absolute top-0 inset-x-0 h-80 bg-gradient-to-b from-orange-950/30 to-transparent pointer-events-none z-0"></div>
-        
-        {/* Barra de progreso de reproducción */}
-        <AudioProgressBar />
-      </section>
-      
-      {/* Diálogo para mensajes */}
-      <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Message Artist</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="subject" className="text-sm font-medium">Subject</label>
-              <input
-                id="subject"
-                className="bg-black/30 border border-orange-500/20 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                placeholder="Enter subject..."
-              />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="message" className="text-sm font-medium">Message</label>
-              <textarea
-                id="message"
-                rows={4}
-                className="bg-black/30 border border-orange-500/20 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                placeholder="Write your message here..."
-              />
-            </div>
-            <div className="flex items-center gap-4 mt-4">
-              <Button variant="ghost" onClick={() => setShowMessageDialog(false)}>
-                Cancel
-              </Button>
-              <Button className="bg-orange-500 hover:bg-orange-600">
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Send Message
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo para compartir */}
-      <ShareDialog 
-        isOpen={showShareDialog}
-        onClose={() => setShowShareDialog(false)}
-        artistName={artist.name}
-        artistUrl="artistId"
-      />
-    </>
+        </footer>
+
+      </div>
+    </div>
   );
 }
-
-// Definimos las variantes para animaciones de las secciones
-const sectionItemVariants = {
-  hidden: { opacity: 0, x: -20 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.3 },
-  },
-};
-
-// Nota: Ya tenemos estos estados definidos arriba con useState y useQuery
-// No necesitamos redefinirlos aquí
-
-// Función para extraer ID de video de YouTube desde una URL
-const getYoutubeVideoId = (url: string): string => {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : '';
-};
-
-// Datos de prueba
-export const artist = {
-  id: "1",
-  name: "Luna Eclipse",
-  genre: "Electro-Pop",
-  location: "Los Angeles, CA",
-  profileImage: "https://images.unsplash.com/photo-1618254394652-ca0bd54ae0f0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1153&q=80",
-  bannerImage: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-  biography: "Luna Eclipse is an electro-pop artist based in Los Angeles. With a distinctive voice and innovative production, Luna creates immersive sonic landscapes that blend electronic elements with pop sensibilities. Luna's journey began in 2017 with the release of the debut EP 'Moonlight Shadows,' which quickly gained attention for its ethereal soundscapes and introspective lyrics. Since then, Luna has performed at major festivals including Coachella and Lollapalooza, and collaborated with renowned producers in the industry. Luna's music explores themes of human connection, technology, and emotional resilience in the modern world.",
-  followers: 34582,
-  tracks: 24,
-  videos: 12,
-  verified: true,
-  socialLinks: [
-    { type: "instagram", url: "https://instagram.com/lunaeclipse" },
-    { type: "twitter", url: "https://twitter.com/lunaeclipse" },
-    { type: "youtube", url: "https://youtube.com/lunaeclipse" }
-  ],
-  contactEmail: "booking@lunaeclipse.com",
-  contactPhone: "+1 (323) 555-1234",
-  upcomingShows: [
-    { 
-      date: "2023-12-10", 
-      venue: "The Echo", 
-      location: "Los Angeles, CA",
-      ticketLink: "https://tickets.com/lunaeclipse-echo"
-    },
-    { 
-      date: "2023-12-15", 
-      venue: "Bottom of the Hill", 
-      location: "San Francisco, CA",
-      ticketLink: "https://tickets.com/lunaeclipse-bottomhill"
-    },
-    { 
-      date: "2023-12-18", 
-      venue: "Doug Fir Lounge", 
-      location: "Portland, OR",
-      ticketLink: "https://tickets.com/lunaeclipse-dougfir"
-    },
-    { 
-      date: "2023-12-20", 
-      venue: "The Crocodile", 
-      location: "Seattle, WA",
-      ticketLink: "https://tickets.com/lunaeclipse-crocodile"
-    }
-  ],
-  merchandise: [
-    {
-      id: "merch-1",
-      name: "Cosmic Voyage Tee",
-      image: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1064&q=80",
-      price: 25,
-      category: "Apparel"
-    },
-    {
-      id: "merch-2",
-      name: "Eclipse Logo Hoodie",
-      image: "https://images.unsplash.com/photo-1618517351616-38fb9c5210c6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=987&q=80",
-      price: 45,
-      category: "Apparel"
-    },
-    {
-      id: "merch-3",
-      name: "Limited Vinyl Edition",
-      image: "https://images.unsplash.com/photo-1603048588665-791ca91d0e80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=880&q=80",
-      price: 30,
-      category: "Music"
-    },
-    {
-      id: "merch-4",
-      name: "Constellation Poster",
-      image: "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1015&q=80",
-      price: 15,
-      category: "Accessories"
-    },
-    {
-      id: "merch-5",
-      name: "Digital Album",
-      image: "https://images.unsplash.com/photo-1561131989-b8112bafbd43?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1064&q=80",
-      price: 10,
-      category: "Music"
-    },
-    {
-      id: "merch-6",
-      name: "Luna Tour Cap",
-      image: "https://images.unsplash.com/photo-1620231150904-a86b9802656a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=987&q=80",
-      price: 22,
-      category: "Apparel"
-    }
-  ]
-};
-
-// El componente MusicSection ahora se importa desde music-section.tsx
-
-// El componente VideosSection ahora se importa desde videos-section.tsx
-
-// Implementación del componente ShowsSection
-const ShowsSection = () => (
-  <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 overflow-hidden">
-    <motion.div variants={sectionItemVariants}>
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-semibold flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-          <Ticket className="w-6 h-6 mr-2 text-orange-500" />
-          Upcoming Shows
-        </h3>
-        <Button variant="ghost" size="sm" className="text-orange-500 hover:text-orange-400">
-          <span>Add Event</span>
-          <PlusCircle className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-      
-      <div className="space-y-4">
-        {artist.upcomingShows.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {artist.upcomingShows.map((show, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-                className="p-4 rounded-lg bg-black/30 border border-orange-500/10 hover:border-orange-500/30 transition-all duration-300"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-md bg-gradient-to-br from-orange-500/30 to-red-500/30 flex flex-col items-center justify-center text-sm shrink-0">
-                    <span className="font-bold text-orange-300">{new Date(show.date).toLocaleDateString('en-US', { month: 'short' })}</span>
-                    <span className="text-white text-lg">{new Date(show.date).getDate()}</span>
-                  </div>
-                  
-                  <div className="flex-1">
-                    <h4 className="font-medium mb-1">{show.venue}</h4>
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-white/70 flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" /> 
-                          {show.location}
-                        </span>
-                        <span className="text-sm text-white/70 flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" /> 
-                          {new Date(show.date).toLocaleDateString('en-US', { weekday: 'long', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                      
-                      <a 
-                        href={show.ticketLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors"
-                      >
-                        <TicketCheck className="h-3 w-3 mr-1" />
-                        Buy Tickets
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-black/20 rounded-lg p-8 text-center">
-            <CalendarRange className="h-12 w-12 text-orange-500/40 mx-auto mb-3" />
-            <p className="text-orange-100/70">No upcoming shows</p>
-            <p className="text-sm text-orange-300/50 mt-2">Schedule and announce your shows to fans</p>
-            <Button variant="outline" className="mt-4 border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Show
-            </Button>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  </Card>
-);
-
-// Implementación del componente MerchSection
-const MerchSection = () => (
-  <Card className="p-6 bg-black/40 backdrop-blur-sm border-orange-500/20 hover:border-orange-500/40 transition-all duration-300 overflow-hidden">
-    <motion.div variants={sectionItemVariants}>
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-semibold flex items-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-          <ShoppingBag className="w-6 h-6 mr-2 text-orange-500" />
-          Merchandise
-        </h3>
-        <Button variant="ghost" size="sm" className="text-orange-500 hover:text-orange-400">
-          <span>Manage Store</span>
-          <Store className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-      
-      <div className="space-y-4">
-        {artist.merchandise && artist.merchandise.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {artist.merchandise.map((item) => (
-              <motion.div
-                key={item.id}
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.2 }}
-                className="group rounded-lg overflow-hidden bg-black/30 border border-orange-500/10 hover:border-orange-500/30 transition-all duration-300"
-              >
-                <div className="aspect-square relative overflow-hidden">
-                  <img 
-                    src={item.image} 
-                    alt={item.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
-                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <Button size="sm" className="w-full bg-orange-500 hover:bg-orange-600">
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Add to Cart
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="p-4">
-                  <h4 className="font-medium mb-1">{item.name}</h4>
-                  <div className="flex justify-between items-center">
-                    <span className="text-orange-400 font-bold">${item.price.toFixed(2)}</span>
-                    <Badge variant="outline" className="text-xs border-orange-500/30 text-orange-300">
-                      {item.category}
-                    </Badge>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-black/20 rounded-lg p-8 text-center">
-            <Shirt className="h-12 w-12 text-orange-500/40 mx-auto mb-3" />
-            <p className="text-orange-100/70">No merchandise available</p>
-            <p className="text-sm text-orange-300/50 mt-2">Add merchandise to your store to sell to fans</p>
-            <Button variant="outline" className="mt-4 border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Merchandise
-            </Button>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  </Card>
-);

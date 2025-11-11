@@ -1,0 +1,734 @@
+import React, { useState, useEffect } from 'react';
+// Asumimos que Tailwind CSS está disponible en el entorno de Vite.
+
+// --- 1. DEFINICIÓN DE PALETAS DE COLORES Y ESTILOS (AHORA CON HEXADECIMALES) ---
+const colorPalettes = {
+  'Boostify Naranja': {
+    hexAccent: '#F97316', // Naranja brillante
+    hexPrimary: '#FF8800', // Naranja oscuro para fondo
+    hexBorder: '#5E2B0C', // Marrón oscuro/Naranja para borde
+    textMuted: 'gray-400',
+    bgGradient: "bg-gradient-to-br from-black via-gray-950 to-orange-950",
+    shadow: 'shadow-orange-900/10',
+    heroImage: 'uploaded:image.png-1d171780-809f-478f-b248-d3c0a8117762', 
+    avatarImage: 'uploaded:image.png-f16a2799-47d3-45e7-b718-3675b94fbb0e',
+  },
+  'Clásico Azul': {
+    hexAccent: '#3B82F6', // Azul brillante
+    hexPrimary: '#2563EB', // Azul primario
+    hexBorder: '#1E40AF', // Azul oscuro
+    textMuted: 'slate-400',
+    bgGradient: "bg-gradient-to-br from-black via-slate-950 to-blue-950",
+    shadow: 'shadow-blue-900/10',
+    heroImage: 'uploaded:image.png-4a0fb593-4393-4e3c-8d25-71890cb8704c',
+    avatarImage: 'uploaded:image.png-4a0fb593-4393-4e3c-8d25-71890cb8704c',
+  },
+  'Neon Verde': {
+    hexAccent: '#A3E635', // Verde Neón
+    hexPrimary: '#84CC16', // Verde Primario
+    hexBorder: '#4D7C0F', // Verde oscuro
+    textMuted: 'gray-400',
+    bgGradient: "bg-gradient-to-br from-black via-gray-950 to-green-950",
+    shadow: 'shadow-lime-900/10',
+    heroImage: 'uploaded:image.png-eeb76b04-d0b3-4bfb-bc5d-862d7cb07bca',
+    avatarImage: 'uploaded:image.png-64275c1c-e92f-4d9b-b480-524780415fc8',
+  },
+  'Cyber Morado': {
+    hexAccent: '#F472B6', // Rosa Neón
+    hexPrimary: '#8B5CF6', // Violeta Primario
+    hexBorder: '#6D28D9', // Morado oscuro
+    textMuted: 'violet-300',
+    bgGradient: "bg-gradient-to-br from-black via-gray-950 to-violet-950",
+    shadow: 'shadow-violet-900/10',
+    heroImage: 'uploaded:image.png-64275c1c-e92f-4d9b-b480-524780415fc8',
+    avatarImage: 'uploaded:image.png-4a0fb593-4393-4e3c-8d25-71890cb8704c',
+  },
+  'Tierra Suave': {
+    hexAccent: '#FBBF24', // Ámbar (Dorado)
+    hexPrimary: '#D97706', // Naranja/Marrón primario
+    hexBorder: '#78350F', // Marrón oscuro
+    textMuted: 'stone-400',
+    bgGradient: "bg-gradient-to-br from-black via-stone-900 to-amber-950",
+    shadow: 'shadow-amber-900/10',
+    heroImage: 'uploaded:image.png-85f28236-cd5b-4ce1-b071-77a692541114',
+    avatarImage: 'uploaded:image.png-f16a2799-47d3-45e7-b718-3675b94fbb0e',
+  }
+};
+
+// --- Componente Modal para manejar las acciones simuladas ---
+const ActionModal = ({ title, body, isOpen, onClose, theme }) => {
+  if (!isOpen) return null;
+  const colors = colorPalettes[theme];
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div 
+        className={`bg-slate-900 p-6 rounded-xl shadow-2xl max-w-sm w-full transition-colors duration-500`}
+        style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+      >
+        <div className="text-lg font-semibold text-white mb-2" id="modalTitle">{title}</div>
+        <div className={`text-sm mb-4`} style={{ color: colors.hexAccent }} id="modalBody">{body}</div>
+        <button 
+          className={`py-2 px-6 rounded-full text-white font-medium transition duration-200`} 
+          style={{ backgroundColor: colors.hexPrimary }}
+          onClick={onClose}
+        >
+          Entendido
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Componente Hero (Nueva Cabecera con Imagen Grande) ---
+const HeroHeader = ({ theme, handleAction }) => {
+  const colors = colorPalettes[theme];
+
+  return (
+    <header className="relative h-96 lg:h-[450px] w-full mb-8 overflow-hidden">
+      <img
+        src={colors.heroImage}
+        alt="Artista Redwine Hero"
+        className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
+        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.style.background = 'black'; }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+      
+      {/* Barra superior */}
+      <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10">
+        <div className="flex items-center gap-2">
+          {/* Logo con degradado dinámico */}
+          <div 
+            className={`w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center font-bold text-sm tracking-widest text-white transition-colors duration-500`}
+            style={{ backgroundImage: `linear-gradient(to bottom right, ${colors.hexAccent}, ${colors.hexPrimary})` }}
+          >
+            B
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-widest text-white/80">Boostify Music</div>
+          </div>
+        </div>
+        <button 
+          className={`py-2 px-4 rounded-full text-sm font-semibold transition duration-200 bg-black hover:bg-gray-800`}
+          style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
+          onClick={() => handleAction('Ir al dashboard')}
+        >
+          Ir al dashboard
+        </button>
+      </div>
+
+      {/* Contenido del artista en el hero */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-10">
+        <div className={`text-4xl lg:text-6xl font-extrabold mb-2 text-white drop-shadow-lg`}>Redwine</div>
+        <div className={`text-lg transition-colors duration-500`} style={{ color: colors.hexAccent }}>Blues / Soul / Urban Storytelling · Miami, FL</div>
+        <div className="flex flex-wrap gap-2 mt-3">
+          <span 
+            className={`text-xs rounded-full py-1 px-3 bg-black border transition-colors duration-500`}
+            style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
+          >
+            🎬 Video musical listo
+          </span>
+          <span 
+            className={`text-xs rounded-full py-1 px-3 bg-black border transition-colors duration-500`}
+            style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
+          >
+            🎧 Conectado a Spotify
+          </span>
+          <span 
+            className={`text-xs rounded-full py-1 px-3 bg-black border transition-colors duration-500`}
+            style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
+          >
+            💼 Abierto a sync & deals
+          </span>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+
+// --- Componente Principal de la Aplicación ---
+const App = () => {
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    body: ''
+  });
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [selectedTheme, setSelectedTheme] = useState('Boostify Naranja');
+  const [merchFilter, setMerchFilter] = useState('Todo');
+  
+  const theme = colorPalettes[selectedTheme];
+  const colors = theme;
+
+  // Datos de Merchandising - Usando tus nuevas imágenes y añadiendo categorías
+  const allMerchItems = [
+    { name: "Sudadera 'Harlem Nights'", price: "59.99 USD", img: 'uploaded:image.png-eeb76b04-d0b3-4bfb-bc5d-862d7cb07bca', category: 'Ropa' }, 
+    { name: "Gorra 'Redwine Logo'", price: "24.99 USD", img: 'uploaded:image.png-f16a2799-47d3-45e7-b718-3675b94fbb0e', category: 'Ropa' },
+    { name: "Vinilo 'El Silencio'", price: "39.99 USD", img: 'uploaded:image.png-4a0fb593-4393-4e3c-8d25-71890cb8704c', category: 'Música' },
+    { name: "Taza 'Soul & City'", price: "14.99 USD", img: 'uploaded:image.png-85f28236-cd5b-4ce1-b371-67e35e7519af', category: 'Coleccionables' },
+    { name: "CD Edición Especial", price: "19.99 USD", img: 'uploaded:image.png-e8086f32-4257-4719-b071-77a692541114', category: 'Música' },
+  ];
+  const merchCategories = ['Todo', 'Ropa', 'Música', 'Coleccionables'];
+
+  const filteredMerchItems = merchFilter === 'Todo' 
+    ? allMerchItems 
+    : allMerchItems.filter(item => item.category === merchFilter);
+
+  // Datos de Conciertos
+  const concertDates = [
+    { date: "20 DIC", city: "Miami, FL", venue: "The Fillmore Stage", tickets: true, key: 1 },
+    { date: "15 ENE", city: "New York, NY", venue: "Apollo Theater", tickets: true, key: 2 },
+    { date: "01 FEB", city: "Chicago, IL", venue: "The Metro", tickets: false, key: 3 },
+  ];
+
+  // Datos de Gallery (para que las imágenes estáticas funcionen)
+  const galleryImages = [
+    'uploaded:image.png-e8086f32-4257-4719-b071-77a692541114', // Baile
+    'uploaded:image.png-64275c1c-e92f-4d9b-b480-524780415fc8', // Joyas
+    'uploaded:image.png-c2b997e9-cbe7-44ce-b3f8-03cafab3fe8a' // Joyas
+  ];
+  
+  // Datos de Tracks (para que las imágenes estáticas funcionen)
+  const trackItems = [
+    { title: "El Silencio Grita", time: "3:42", img: 'uploaded:image.png-1d171780-809f-478f-b248-d3c0a8117762' },
+    { title: "Harlem Nights", time: "4:01", img: 'uploaded:image.png-f16a2799-47d3-45e7-b718-3675b94fbb0e' },
+    { title: "La Fórmula", time: "3:18", img: 'uploaded:image.png-4a0fb593-4393-4e3c-8d25-71890cb8704c' },
+  ];
+  
+  // Datos de Videos (para que las imágenes estáticas funcionen)
+  const videoItems = [
+    { title: "El Silencio Grita (Boostify Cut)", engine: "Powered by Boostify Video Engine", img: 'uploaded:image.png-e8086f32-4257-4719-b071-77a692541114' },
+    { title: "Harlem Nights · Episode 1", engine: "Boostify Cinematic Storytelling", img: 'uploaded:image.png-85f28236-cd5b-4ce1-b371-67e35e7519af' },
+  ];
+
+  // Función para manejar las acciones simuladas (en lugar de alert/confirm)
+  const handleAction = (title, body = '') => {
+    // Detener la propagación para botones anidados
+    if (event && event.stopPropagation) {
+      event.stopPropagation();
+    }
+    
+    setModalState({
+      isOpen: true,
+      title: title,
+      body: body || `Has activado la acción: "${title}". (En un entorno real, esta funcionalidad se ejecutaría o te redirigiría).`
+    });
+  };
+
+  const closeModal = () => {
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Estilos de clase de Tailwind adaptados
+  // Se usa bg-gradient para dar profundidad a las tarjetas
+  const cardStyles = `bg-gradient-to-b from-gray-900 to-gray-950 bg-opacity-90 rounded-3xl p-4 shadow-xl ${colors.shadow} transition-colors duration-500`;
+  const primaryBtn = `py-2 px-4 rounded-full text-sm font-semibold transition duration-300 shadow-lg whitespace-nowrap`;
+  const trackBtn = `py-1.5 px-3 rounded-full text-xs font-medium transition duration-300 whitespace-nowrap`;
+  const filterBtnStyle = (category) => 
+    `py-1 px-3 rounded-full text-xs font-medium transition duration-300 cursor-pointer whitespace-nowrap border
+     ${merchFilter === category 
+      ? `text-white shadow-md` 
+      : `bg-black text-${colors.textMuted} hover:bg-gray-800`}`;
+
+  // Usamos useEffect para asegurar que el año se obtenga en el cliente.
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
+
+  return (
+    <div className={`min-h-screen ${colors.bgGradient} text-white transition-colors duration-500`}>
+      <ActionModal {...modalState} onClose={closeModal} theme={selectedTheme} />
+      
+      {/* 2. Componente Hero con imagen dinámica */}
+      <HeroHeader theme={selectedTheme} handleAction={handleAction} />
+
+      <div className="max-w-6xl mx-auto p-4 md:p-8 pt-0 pb-20 md:pb-8">
+        
+        {/* Selector de Paleta y Estilo */}
+        <div 
+          className={`mb-6 p-4 rounded-xl bg-gray-900 flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-500`}
+          style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+        >
+          <label htmlFor="theme-selector" className="text-sm font-medium text-white whitespace-nowrap">
+            Personaliza tu Estilo:
+          </label>
+          <div className="flex-1 w-full max-w-sm">
+            <select
+              id="theme-selector"
+              value={selectedTheme}
+              onChange={(e) => setSelectedTheme(e.target.value)}
+              className={`block w-full py-2 px-3 text-sm rounded-full border bg-black text-white focus:ring-4 appearance-none cursor-pointer transition-colors duration-500`}
+              style={{ borderColor: colors.hexBorder, '--tw-ring-color': colors.hexPrimary }}
+            >
+              {Object.keys(colorPalettes).map(themeName => (
+                <option key={themeName} value={themeName}>
+                  {themeName}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+
+        {/* Main Layout (Dos columnas en PC, una en Móvil) */}
+        <main className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6">
+          {/* Columna Izquierda: Información Principal + Merch + Conciertos */}
+          <section className="flex flex-col gap-6">
+            {/* Tarjeta de Información de Artista */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <div className="relative">
+                  {/* Avatar/Imagen del artista (Pequeño) - Usando imagen dinámica */}
+                  <img
+                    src={colors.avatarImage}
+                    alt="Artista Avatar"
+                    className={`w-44 h-44 rounded-3xl object-cover shadow-xl shadow-opacity-50 transition-colors duration-500`}
+                    style={{ borderColor: colors.hexBorder, borderWidth: '1px', boxShadow: `0 4px 10px ${colors.hexAccent}50` }}
+                  />
+                  <div className="absolute -right-1 -bottom-1 py-1 px-2.5 text-xs rounded-full bg-green-500 text-green-950 font-semibold shadow-xl shadow-green-500/50">
+                    Verificado
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-3xl font-semibold text-white">Redwine</div>
+                  <div 
+                    className={`text-sm mt-1 transition-colors duration-500`} 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    This is Redwine
+                  </div>
+                  <div className={`text-sm text-[${colors.textMuted}] mt-2 transition-colors duration-500`}>
+                    Echa un vistazo a las acciones rápidas y estadísticas de tu perfil.
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    <button 
+                      className={`${primaryBtn} text-white hover:opacity-80`}
+                      style={{ backgroundColor: colors.hexPrimary }}
+                      onClick={() => handleAction('Escuchar en Spotify')}
+                    >
+                      Estadísticas de Spotify
+                    </button>
+                    <button 
+                      className={`${primaryBtn} bg-black hover:bg-gray-800`}
+                      style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
+                      onClick={() => handleAction('Compartir perfil')}
+                    >
+                      Compartir perfil
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tarjeta de Tienda / Merchandising */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex justify-between items-center mb-2">
+                <div 
+                  className={`text-base font-semibold transition-colors duration-500`} 
+                  style={{ color: colors.hexAccent }}
+                >
+                  Tienda Oficial (Merch)
+                </div>
+                <button 
+                  className={`text-xs hover:text-white transition duration-200`}
+                  style={{ color: colors.hexAccent }}
+                  onClick={() => handleAction('Ver toda la tienda', 'Redirigiendo a la tienda completa de Redwine.')}
+                >
+                  Ver todo ↗
+                </button>
+              </div>
+              <p className={`text-xs text-[${colors.textMuted}] mb-3 transition-colors duration-500`}>
+                Productos exclusivos, ediciones limitadas y vinilos de colección.
+              </p>
+              
+              {/* Filtros de Merchandising */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {merchCategories.map(category => (
+                  <button 
+                    key={category}
+                    className={filterBtnStyle(category)}
+                    style={merchFilter === category ? { backgroundColor: colors.hexPrimary, borderColor: colors.hexPrimary } : { borderColor: colors.hexBorder, color: colors.hexAccent }}
+                    onClick={() => setMerchFilter(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              {/* Grid de productos */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {filteredMerchItems.map((item, index) => (
+                  <div key={index} 
+                    className={`flex flex-col p-2 rounded-xl bg-black hover:bg-gray-900 transition duration-200 cursor-pointer border`}
+                    style={{ borderColor: colors.hexBorder }}
+                    onClick={() => handleAction(`Comprar: ${item.name}`, `Añadiendo "${item.name}" al carrito por ${item.price}.`)}
+                  >
+                    <img
+                      src={item.img}
+                      alt={item.name}
+                      className="w-full h-24 object-cover rounded-lg mb-2"
+                    />
+                    <div className="text-sm font-medium truncate text-white">{item.name}</div>
+                    <div 
+                      className={`text-xs font-semibold mt-0.5 transition-colors duration-500`}
+                      style={{ color: colors.hexAccent }}
+                    >
+                      {item.price}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tarjeta de Conciertos (Nueva estructura de Layout) */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex justify-between items-center mb-3">
+                <div 
+                  className={`text-base font-semibold transition-colors duration-500`} 
+                  style={{ color: colors.hexAccent }}
+                >
+                  Conciertos y Eventos
+                </div>
+                <button 
+                  className={`text-xs hover:text-white transition duration-200`}
+                  style={{ color: colors.hexAccent }}
+                  onClick={() => handleAction('Promover nuevo show', 'Accediendo al sistema de promoción de conciertos Boostify.')}
+                >
+                  Promover show
+                </button>
+              </div>
+              <div className="flex flex-col gap-4">
+                {concertDates.map((concert, index) => (
+                  <div key={concert.key} className="flex items-start justify-between">
+                    <div className="flex items-start gap-4 w-full">
+                      {/* Date block con acento */}
+                      <div 
+                        className={`flex flex-col items-center justify-center p-2 min-w-[60px] rounded-lg shadow-md transition-colors duration-500`}
+                        style={{ backgroundColor: `${colors.hexPrimary}33`, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                      >
+                        <div 
+                          className={`text-sm font-bold transition-colors duration-500`}
+                          style={{ color: colors.hexAccent }}
+                        >
+                          {concert.date.split(' ')[0]}
+                        </div>
+                        <div 
+                          className={`text-xs uppercase transition-colors duration-500`}
+                          style={{ color: `${colors.hexAccent}AA` }}
+                        >
+                          {concert.date.split(' ')[1]}
+                        </div>
+                      </div>
+                      
+                      {/* Info block */}
+                      <div className="flex-1">
+                        <div className="text-base font-medium text-white">{concert.city}</div>
+                        <div className={`text-sm text-[${colors.textMuted}] mt-0.5 transition-colors duration-500`}>{concert.venue}</div>
+                      </div>
+                    </div>
+                    
+                    {concert.tickets ? (
+                      <button 
+                        className={`${trackBtn} text-white hover:opacity-80 ml-2`}
+                        style={{ backgroundColor: colors.hexPrimary }}
+                        onClick={() => handleAction(`Comprar entradas: ${concert.city}`)}
+                      >
+                        Entradas
+                      </button>
+                    ) : (
+                      <span className={`text-xs text-[${colors.textMuted}] whitespace-nowrap transition-colors duration-500`}>Sold Out</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button 
+                className={`w-full mt-4 py-2 text-sm rounded-full hover:bg-gray-800 transition-colors duration-500`}
+                style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
+                onClick={() => handleAction('Ver mapa de Tour')}
+              >
+                Ver mapa de Tour y fechas completas
+              </button>
+            </div>
+
+            {/* Tarjeta de Galería - Usando tus imágenes nuevas */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex justify-between items-center mb-2">
+                <div 
+                  className={`text-base font-semibold transition-colors duration-500`} 
+                  style={{ color: colors.hexAccent }}
+                >
+                  Galería generada con IA
+                </div>
+                <button 
+                  className={`text-xs hover:text-white transition duration-200`}
+                  style={{ color: colors.hexAccent }}
+                  onClick={() => handleAction('Regenerar con Nano Banana', 'Iniciando generación de imágenes AI. Esto tomaría unos segundos en un entorno real.')}
+                >
+                  Regenerar con Nano Banana
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {galleryImages.map((src, index) => (
+                  <div key={index} className="rounded-xl overflow-hidden aspect-square">
+                    <img
+                      src={src}
+                      alt={`Galería ${index + 1}`}
+                      className="w-full h-full object-cover transition duration-300 hover:scale-105"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tarjeta de Biografía */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex justify-between items-center mb-2">
+                <div 
+                  className={`text-base font-semibold transition-colors duration-500`} 
+                  style={{ color: colors.hexAccent }}
+                >
+                  Biografía del artista
+                </div>
+                <button 
+                  className={`text-xs hover:text-white transition duration-200`}
+                  style={{ color: colors.hexAccent }}
+                  onClick={() => handleAction('Mejorar con IA (Gemini)', 'Gemini analizará tu texto y sugerirá una biografía más optimizada.')}
+                >
+                  Mejorar con IA (Gemini)
+                </button>
+              </div>
+              <p className={`text-sm text-gray-300 leading-relaxed whitespace-pre-line mt-1`}>
+                Redwine es un artista que mezcla blues, soul y poesía urbana.
+                Sus letras hablan de verdades incómodas, poder, calle y lealtad.
+                Desde Harlem hasta Miami, su universo visual está lleno de mafia, elegancia
+                y cicatrices emocionales.
+              </p>
+            </div>
+          </section>
+
+          {/* Columna Derecha: Música y Acciones */}
+          <section className="flex flex-col gap-6">
+            {/* Canciones Destacadas */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div 
+                className={`text-base font-semibold transition-colors duration-500 mb-3`}
+                style={{ color: colors.hexAccent }}
+              >
+                Canciones destacadas
+              </div>
+              <div className="flex flex-col gap-2">
+                {trackItems.map((track, index) => (
+                  <div 
+                    key={index} 
+                    className={`flex items-center gap-3 p-2 rounded-xl bg-black hover:bg-gray-900 transition duration-200 cursor-pointer border`}
+                    style={{ borderColor: colors.hexBorder }}
+                    onClick={() => handleAction(`Reproducir: ${track.title}`)}
+                  >
+                    <div className={`text-xs w-4 text-right text-[${colors.textMuted}] transition-colors duration-500`}>{index + 1}</div>
+                    <img
+                      src={track.img}
+                      alt={track.title}
+                      className="w-10 h-10 rounded-lg object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate text-white">{track.title}</div>
+                      <div className={`text-xs text-[${colors.textMuted}] mt-0.5 transition-colors duration-500`}>Redwine · {track.time}</div>
+                    </div>
+                    <button 
+                      className={`${trackBtn} hover:opacity-80`}
+                      style={{ backgroundColor: `${colors.hexPrimary}33`, color: colors.hexAccent, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                      onClick={(e) => { e.stopPropagation(); handleAction(`Crear Video: ${track.title}`); }}
+                    >
+                      Make your music video
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p className={`text-xs text-[${colors.textMuted}] mt-3 transition-colors duration-500`}>
+                Subtítulos realizados por la comunidad de Amara.org · Discografía completa disponible en Spotify.
+              </p>
+            </div>
+
+            {/* Discografía en Spotify */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex justify-between items-center mb-3">
+                <div 
+                  className={`text-base font-semibold transition-colors duration-500`}
+                  style={{ color: colors.hexAccent }}
+                >
+                  Discografía en Spotify
+                </div>
+                <a
+                  href="https://open.spotify.com/"
+                  target="_blank"
+                  className={`text-xs hover:underline transition-colors duration-500`}
+                  style={{ color: colors.hexAccent }}
+                >
+                  Abrir en Spotify ↗
+                </a>
+              </div>
+              <div className={`rounded-xl overflow-hidden border transition-colors duration-500`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <iframe
+                  src="https://open.spotify.com/embed/playlist/37i9dQZF1DX4Wsb4d7NKfP?utm_source=generator"
+                  width="100%"
+                  height="200"
+                  frameBorder="0"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                ></iframe>
+              </div>
+            </div>
+            
+            {/* Videos Musicales */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex justify-between items-center mb-3">
+                <div 
+                  className={`text-base font-semibold transition-colors duration-500`}
+                  style={{ color: colors.hexAccent }}
+                >
+                  Videos musicales
+                </div>
+                <button 
+                  className={`text-xs hover:text-white transition duration-200`}
+                  style={{ color: colors.hexAccent }}
+                  onClick={() => handleAction('Crear nuevo video', 'Accediendo al motor de video AI de Boostify.')}
+                >
+                  Crear nuevo video
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {videoItems.map((video, index) => (
+                  <div 
+                    key={index} 
+                    className={`relative rounded-xl overflow-hidden border cursor-pointer hover:opacity-90 transition duration-200`}
+                    style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+                    onClick={() => handleAction(`Reproducir Video: ${video.title}`)}
+                  >
+                    <img src={video.img} alt={`Video ${index + 1}`} className="w-full h-32 object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+                    <div className="absolute inset-0 flex flex-col justify-end p-2">
+                      <div 
+                        className={`w-6 h-6 rounded-full bg-white/20 border flex items-center justify-center text-xs text-white`}
+                        style={{ borderColor: colors.hexAccent }}
+                      >
+                        ▶
+                      </div>
+                      <div className="text-sm text-white font-medium truncate">{video.title}</div>
+                      <div className={`text-xs text-[${colors.textMuted}] mt-1 transition-colors duration-500`}>{video.engine}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Oportunidades & monetización */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="flex justify-between items-center mb-3">
+                <div 
+                  className={`text-base font-semibold transition-colors duration-500`}
+                  style={{ color: colors.hexAccent }}
+                >
+                  Oportunidades & monetización
+                </div>
+              </div>
+              <p className={`text-xs text-[${colors.textMuted}] mb-4 transition-colors duration-500`}>
+                Convierte tu perfil en un negocio activo. Estas herramientas se
+                desbloquean con tu suscripción Boostify.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { title: "Enviar tu música a la industria", badge: "Requiere suscripción", desc: "Somete tu música a catálogos, supervisores, playlists y directores de cine/TV desde un solo panel.", action: 'Acción: Enviar música a la industria', body: 'Se requiere suscripción para esta acción. Redirigiendo a página de pago.' },
+                  { title: "Encuentra nuevos fans", badge: null, desc: "Descubre audiencias afines dentro del ecosistema Boostify y conecta con seguidores que aman tu sonido.", action: 'Acción: Encuentra nuevos fans' },
+                  { title: "Vende tus productos", badge: null, desc: "Activa tu tienda para vender merchandising, beats, features, tickets y experiencias exclusivas.", action: 'Acción: Vende tus productos' },
+                  { title: "Genera tu brand", badge: "Brand AI", desc: "Diseña tu logo, paleta de colores, estilo visual y kit de marca completo con inteligencia artificial.", action: 'Acción: Genera tu brand (Brand AI)' },
+                ].map((action, index) => (
+                  <div 
+                    key={index} 
+                    className={`p-3 rounded-xl border bg-black hover:bg-gray-900 transition duration-200 cursor-pointer`}
+                    style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+                    onClick={() => handleAction(action.action, action.body)}
+                  >
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                      <div className="text-sm font-semibold truncate text-white">{action.title}</div>
+                      {action.badge && (
+                        <div 
+                          className={`text-xs py-0.5 px-2 rounded-full bg-gray-950 border whitespace-nowrap transition-colors duration-500`}
+                          style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
+                        >
+                          {action.badge}
+                        </div>
+                      )}
+                    </div>
+                    <p className={`text-xs text-[${colors.textMuted}] leading-snug transition-colors duration-500`}>{action.desc}</p>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Footer de Acciones */}
+              <div className="flex flex-col gap-3 mt-5">
+                <button 
+                  className={`${primaryBtn} w-full text-white hover:opacity-80`}
+                  style={{ backgroundColor: colors.hexPrimary }}
+                  onClick={() => handleAction('Upgrade a Boostify Pro', 'Iniciando proceso de compra. ¡Gracias por mejorar!')}
+                >
+                  Upgrade a Boostify Pro
+                </button>
+                <button 
+                  className={`${primaryBtn} w-full bg-black hover:bg-gray-800`}
+                  style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
+                  onClick={() => handleAction('Ver mis ingresos y estadísticas', 'Cargando panel de métricas y ganancias.')}
+                >
+                  Ver mis ingresos y estadísticas
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+        
+        {/* Footer para PC */}
+        <footer 
+          className={`hidden lg:flex justify-between text-xs text-[${colors.textMuted}] mt-8 pt-4 border-t transition-colors duration-500`}
+          style={{ borderColor: colors.hexBorder }}
+        >
+          <span>© {currentYear} Boostify Music · Todos los derechos reservados.</span>
+          <span>Demo de perfil · Visualización de UI / concepto.</span>
+        </footer>
+      </div>
+
+      {/* Mobile Navigation (Fijo en la parte inferior) */}
+      <nav 
+        className={`fixed bottom-0 left-0 right-0 flex justify-around bg-black bg-opacity-95 backdrop-blur-md border-t p-2 md:hidden z-40 shadow-2xl transition-colors duration-500`}
+        style={{ borderColor: colors.hexBorder }}
+      >
+        {/* Iconos simulados de Lucide */}
+        {[
+          { icon: '🏠', label: 'Home', action: 'Navegar: Home', active: false },
+          { icon: '🎬', label: 'Video', action: 'Navegar: Video', active: false },
+          { icon: '🎵', label: 'Music', action: 'Navegar: Music', active: true },
+          { icon: '👥', label: 'Social', action: 'Navegar: Social', active: false },
+          { icon: '☰', label: 'More', action: 'Navegar: More', active: false },
+        ].map((item, index) => (
+          <a 
+            key={index}
+            href="#" 
+            className={`flex flex-col items-center p-1 text-xs hover:opacity-100 transition duration-200 ${item.active ? 'font-semibold opacity-100' : 'opacity-80'}`} 
+            style={{ color: colors.hexAccent }}
+            onClick={() => handleAction(item.action)}
+          >
+            <span className="text-lg mb-0.5">{item.icon}</span>
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    </div>
+  );
+};
+
+export default App;
+
+
