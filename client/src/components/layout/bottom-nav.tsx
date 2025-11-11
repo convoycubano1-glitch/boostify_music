@@ -23,7 +23,7 @@ export function BottomNav() {
 
   // Get current user's profile to retrieve their slug
   const { data: userProfile } = useQuery<{ slug: string | null }>({
-    queryKey: ['/api/user/profile'],
+    queryKey: ['/api/profile/user/profile'],
     enabled: !!user,
   });
 
