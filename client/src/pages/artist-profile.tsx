@@ -1,95 +1,64 @@
-import { useState } from "react";
-import { useParams, useLocation } from "wouter";
-import { useAuth } from "../hooks/use-auth";
+import { useEffect, useState } from "react";
+import { useParams } from "wouter";
+import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { Head } from "../components/ui/head";
-import { useQuery } from "@tanstack/react-query";
-import { Button } from "../components/ui/button";
-import { Edit, Share2, Music, ShoppingBag } from "lucide-react";
-import { ArtistProfileView } from "../components/artist-profile/artist-profile-view";
-import { ArtistProfileEdit } from "../components/artist-profile/artist-profile-edit";
-
-export interface Song {
-  id: number;
-  userId: number;
-  title: string;
-  description: string | null;
-  audioUrl: string;
-  coverArt: string | null;
-  genre: string | null;
-  releaseDate: Date | null;
-  plays: number;
-  isPublished: boolean;
-  createdAt: Date;
-}
-
-export interface Merchandise {
-  id: number;
-  userId: number;
-  name: string;
-  description: string | null;
-  price: string;
-  images: string[];
-  category: string;
-  stock: number;
-  isAvailable: boolean;
-  createdAt: Date;
-}
-
-export interface ArtistProfile {
-  id: number;
-  username: string | null;
-  artistName: string | null;
-  slug: string | null;
-  biography: string | null;
-  genre: string | null;
-  location: string | null;
-  website: string | null;
-  profileImage: string | null;
-  coverImage: string | null;
-  instagramHandle: string | null;
-  twitterHandle: string | null;
-  youtubeChannel: string | null;
-  songs: Song[];
-  merchandise: Merchandise[];
-  videos: any[];
-}
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebase";
 
 export default function ArtistProfilePage() {
   const { slug } = useParams<{ slug: string }>();
-  const [, setLocation] = useLocation();
-  const { user } = useAuth();
-  const [editMode, setEditMode] = useState(false);
+  const [artistId, setArtistId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [artistData, setArtistData] = useState<any>(null);
 
-  const { data: profileData, isLoading, error } = useQuery<ArtistProfile>({
-    queryKey: [`/api/profile/${slug}`],
-    enabled: !!slug,
-  });
+  useEffect(() => {
+    const findArtistBySlug = async () => {
+      if (!slug) {
+        setError(true);
+        setIsLoading(false);
+        return;
+      }
 
-  const handleSlugUpdate = (newSlug: string) => {
-    setLocation(`/artist/${newSlug}`);
-    setEditMode(false);
-  };
+      try {
+        setIsLoading(true);
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("slug", "==", slug));
+        const querySnapshot = await getDocs(q);
 
-  const profile = profileData;
-  const songs = profile?.songs || [];
-  const merchandise = profile?.merchandise || [];
-  
-  const isOwner = user && profile && user.uid === String(profile.id);
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          setArtistId(userData.uid);
+          setArtistData(userData);
+          setError(false);
+        } else {
+          setError(true);
+        }
+      } catch (err) {
+        console.error("Error finding artist by slug:", err);
+        setError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    findArtistBySlug();
+  }, [slug]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading profile...</p>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <p className="text-white">Loading profile...</p>
       </div>
     );
   }
 
-  if (error || !profile) {
+  if (error || !artistId) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Artist Not Found</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-white mb-2">Artist Not Found</h1>
+          <p className="text-gray-400">
             The profile you're looking for doesn't exist.
           </p>
         </div>
@@ -97,29 +66,22 @@ export default function ArtistProfilePage() {
     );
   }
 
-  const fullUrl = window.location.origin + '/' + slug;
-  const profileImage = profile.profileImage || '/assets/default-avatar.png';
-  const artistName = profile.artistName || profile.username || 'Artist';
+  const fullUrl = `${window.location.origin}/artist/${slug}`;
+  
+  const getAbsoluteImageUrl = (imageUrl?: string) => {
+    if (!imageUrl) return `${window.location.origin}/assets/freepik__boostify_music_organe_abstract_icon.png`;
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `${window.location.origin}${imageUrl}`;
+  };
+
+  const profileImage = getAbsoluteImageUrl(artistData?.profileImage || artistData?.photoURL);
+  const artistName = artistData?.displayName || artistData?.name || 'Artist';
+  const biography = artistData?.biography || '';
 
   const title = `${artistName} - Music Artist Profile | Boostify Music`;
-  const description = `Check out ${artistName}'s music profile on Boostify Music. Listen to songs, view merchandise, and connect with this talented artist.`;
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: artistName,
-          text: `Check out ${artistName} on Boostify Music!`,
-          url: fullUrl,
-        });
-      } catch (err) {
-        console.error('Error sharing:', err);
-      }
-    } else {
-      navigator.clipboard.writeText(fullUrl);
-      alert('Profile link copied to clipboard!');
-    }
-  };
+  const description = biography 
+    ? `Check out ${artistName}'s music profile on Boostify Music. ${biography.slice(0, 150)}${biography.length > 150 ? '...' : ''}`
+    : `Discover and connect with ${artistName} on Boostify Music. Join our community of artists, producers, and music enthusiasts.`;
 
   return (
     <>
@@ -131,51 +93,8 @@ export default function ArtistProfilePage() {
         type="profile"
         siteName="Boostify Music"
       />
-      <div className="min-h-screen bg-background">
-        {isOwner && !editMode && (
-          <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-            <div className="container max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">This is your profile</p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleShare}
-                  data-testid="button-share"
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setEditMode(true)}
-                  data-testid="button-edit-profile"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {editMode && isOwner ? (
-          <ArtistProfileEdit
-            profile={profile}
-            songs={songs}
-            merchandise={merchandise}
-            currentSlug={slug}
-            onCancel={() => setEditMode(false)}
-            onSlugUpdate={handleSlugUpdate}
-          />
-        ) : (
-          <ArtistProfileView
-            profile={profile}
-            songs={songs}
-            merchandise={merchandise}
-            isOwner={!!isOwner}
-          />
-        )}
+      <div className="min-h-screen bg-black pt-4">
+        <ArtistProfileCard artistId={artistId} />
       </div>
     </>
   );

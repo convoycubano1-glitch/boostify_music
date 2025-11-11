@@ -3,32 +3,50 @@
 ## Overview
 Sistema simplificado para crear videos musicales con IA que permite a los usuarios subir canciones, extraer lyrics, generar scripts visuales y crear timelines con duraciones aleatorias.
 
+**URL de Producción**: https://boostify.replit.app
+
 ## Recent Changes (November 2024)
 
-### 🎯 Ajuste de Posición del Banner (LATEST)
+### 🎯 Control Deslizante de Posición del Banner + URLs Únicas de Artista (LATEST)
 **Fecha**: 11 de Noviembre, 2024
-**Objetivo**: Permitir al artista ajustar la posición de enfoque de la imagen del banner
+**Objetivo**: Mejorar precisión en el ajuste del banner y crear URLs compartibles para cada artista
 
 **Cambios implementados**:
-1. ✅ Campo `bannerPosition` agregado al perfil del artista:
-   - Se guarda en Firebase junto con los demás datos del perfil
-   - Valor por defecto: "center"
-   - Opciones disponibles: "top", "center", "bottom"
+1. ✅ **Slider de posición del banner** (0-100%):
+   - Control deslizante interactivo para ajuste preciso de posición vertical
+   - Almacenado como porcentaje numérico (0-100) en Firebase
+   - Convertido a CSS `object-position: center {valor}%`
+   - Preview en tiempo real mientras se ajusta
+   - Estilos CSS personalizados para el slider con efectos hover
 
-2. ✅ Controles visuales en el diálogo de edición:
-   - Tres botones para seleccionar posición: Arriba, Centro, Abajo
-   - Preview en tiempo real del banner con la posición seleccionada
-   - UI intuitiva con botones destacados según la selección actual
+2. ✅ **Sistema de slugs únicos**:
+   - Campo `slug` agregado al perfil del artista en Firebase
+   - Auto-generación desde `displayName` (ejemplo: "DJ Antonio" → "dj-antonio")
+   - Editable manualmente por el artista
+   - Guardado en Firebase junto con otros datos del perfil
+   - URLs del formato: `https://boostify.replit.app/artist/dj-antonio`
+   - Búsqueda en `/artist/:slug` mediante query en Firebase por campo `slug`
+   - URLs dinámicas usando `window.location.origin` (funcionan en dev y producción)
 
-3. ✅ Aplicación de posición en el perfil público:
-   - CSS `object-position` aplicado dinámicamente
-   - Permite enfocar partes específicas de imágenes verticales o paisajes
-   - Transición suave al cambiar la posición
+3. ✅ **UI mejorada para slugs**:
+   - Sección destacada con diseño visual en el diálogo de edición
+   - Preview de la URL completa en tiempo real
+   - Indicador visual cuando el slug es válido
+   - Generación automática al cambiar el nombre artístico
+
+4. ✅ **Aplicación en el perfil público**:
+   - Banner usa `object-position: center {bannerPosition}%`
+   - Permite ajuste preciso desde el borde superior (0%) hasta el inferior (100%)
+   - Transición suave con CSS transitions
 
 **Beneficios**:
-- 🎨 Mayor control sobre cómo se muestra el banner
-- 📱 Útil para imágenes que tienen el enfoque en arriba/abajo
-- ✨ Preview inmediato antes de guardar
+- 🎯 Control preciso sobre posición del banner (0-100%)
+- 🔗 URLs compartibles y personalizadas para cada artista
+- ✨ Auto-generación inteligente de slugs
+- 📱 Preview inmediato de la URL final
+- 🎨 Estilos visuales atractivos para el slider
+- 📲 QR Code actualizado automáticamente con el slug del artista
+- 🌐 Funciona en desarrollo y producción usando URLs dinámicas
 
 ### 📸 Subida Directa de Imágenes de Perfil y Banner
 **Fecha**: 11 de Noviembre, 2024
