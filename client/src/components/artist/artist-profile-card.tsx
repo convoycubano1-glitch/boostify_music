@@ -42,6 +42,7 @@ import {
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import QRCode from "react-qr-code";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -125,6 +126,153 @@ const colorPalettes = {
     shadow: 'shadow-amber-900/10',
   }
 };
+
+// Componente de Tarjeta de Artista con QR Code
+function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, profileUrl: string }) {
+  const [showDownload, setShowDownload] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const handleDownloadCard = async () => {
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = cardRef.current;
+      
+      if (!element) return;
+      
+      const opt = {
+        margin: 0,
+        filename: `${artist.name}-artist-card.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 3, useCORS: true },
+        jsPDF: { unit: 'mm', format: [85.6, 53.98], orientation: 'landscape' }
+      };
+      
+      await html2pdf().set(opt).from(element).save();
+      
+      toast({
+        title: "¡Tarjeta descargada!",
+        description: "Tu Artist Card ha sido descargada exitosamente",
+      });
+    } catch (error) {
+      console.error('Error downloading card:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo descargar la tarjeta",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Botón para obtener la tarjeta */}
+      <button
+        onClick={() => setShowDownload(!showDownload)}
+        className="w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl relative overflow-hidden group"
+        style={{
+          background: `linear-gradient(135deg, ${colors.hexPrimary} 0%, ${colors.hexAccent} 100%)`,
+          color: 'white',
+          boxShadow: `0 10px 30px ${colors.hexPrimary}40`
+        }}
+      >
+        <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+        <span className="relative flex items-center justify-center gap-3">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+          </svg>
+          {showDownload ? 'Ocultar Artist Card' : 'Get Your Artist Card'}
+        </span>
+      </button>
+
+      {/* Tarjeta elegante del artista */}
+      {showDownload && (
+        <div className="space-y-4">
+          <div 
+            ref={cardRef}
+            className="relative rounded-3xl overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, #000000 0%, #1a1a1a 50%, ${colors.hexPrimary}20 100%)`,
+              aspectRatio: '1.586',
+              maxWidth: '400px',
+              margin: '0 auto'
+            }}
+          >
+            {/* Patrón de fondo decorativo */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl" 
+                   style={{ background: colors.hexAccent }}></div>
+              <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl" 
+                   style={{ background: colors.hexPrimary }}></div>
+            </div>
+
+            {/* Contenido de la tarjeta */}
+            <div className="relative h-full p-8 flex flex-col justify-between">
+              {/* Header */}
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={artist.profileImage}
+                    alt={artist.name}
+                    className="w-20 h-20 rounded-2xl object-cover border-2"
+                    style={{ borderColor: colors.hexAccent }}
+                  />
+                  <div>
+                    <h3 className="text-2xl font-black text-white mb-1">{artist.name}</h3>
+                    <p className="text-sm font-medium" style={{ color: colors.hexAccent }}>
+                      {artist.genre}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* QR Code */}
+              <div className="flex justify-end items-end gap-6">
+                <div className="text-right">
+                  <p className="text-white font-bold text-lg mb-1">Scan to connect</p>
+                  <p className="text-gray-400 text-sm">Powered by Boostify</p>
+                </div>
+                <div className="bg-white p-3 rounded-2xl shadow-2xl">
+                  <QRCode
+                    value={profileUrl}
+                    size={100}
+                    level="H"
+                    fgColor="#000000"
+                    bgColor="#ffffff"
+                  />
+                </div>
+              </div>
+
+              {/* Línea decorativa con acento */}
+              <div 
+                className="absolute bottom-0 left-0 right-0 h-2"
+                style={{
+                  background: `linear-gradient(90deg, ${colors.hexPrimary} 0%, ${colors.hexAccent} 100%)`
+                }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Botón de descarga */}
+          <button
+            onClick={handleDownloadCard}
+            className="w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: colors.hexPrimary,
+              color: 'white',
+              boxShadow: `0 4px 14px ${colors.hexPrimary}50`
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download Artist Card
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Componente para comprar producto con selección de talla y Stripe Checkout
 function ProductBuyButton({ product, colors, artistName }: { product: Product, colors: any, artistName: string }) {
@@ -333,6 +481,204 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       title: "Layout actualizado",
       description: "El orden de las secciones se ha guardado",
     });
+  };
+
+  // Función para renderizar cada sección
+  const renderSection = (sectionId: string, index: number) => {
+    const sectionContent: { [key: string]: JSX.Element | null } = {
+      'songs': (songs.length > 0 || isOwnProfile) ? (
+        <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }} data-testid="section-songs">
+          <div className="flex justify-between items-center mb-4">
+            <div 
+              className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
+              style={{ color: colors.hexAccent }}
+            >
+              <Music className="h-5 w-5" />
+              Música ({songs.length})
+            </div>
+            {isOwnProfile && (
+              <Dialog open={showUploadSongDialog} onOpenChange={setShowUploadSongDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="rounded-full"
+                    style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
+                    data-testid="button-upload-song"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Subir Canción
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Subir Nueva Canción</DialogTitle>
+                    <DialogDescription>
+                      Agrega una nueva canción a tu perfil
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="song-title">Título de la Canción</Label>
+                      <Input
+                        id="song-title"
+                        value={newSongTitle}
+                        onChange={(e) => setNewSongTitle(e.target.value)}
+                        placeholder="Mi Nueva Canción"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="song-file">Archivo de Audio</Label>
+                      <Input
+                        id="song-file"
+                        type="file"
+                        accept="audio/*"
+                        ref={songFileInputRef}
+                        onChange={handleUploadSong}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowUploadSongDialog(false)}
+                      disabled={isUploadingSong}
+                    >
+                      Cancelar
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+          <div className="space-y-3">
+            {songs.map((song) => (
+              <div
+                key={song.id}
+                className="flex items-center gap-4 p-3 rounded-xl bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border"
+                style={{ borderColor: colors.hexBorder }}
+                data-testid={`card-song-${song.id}`}
+              >
+                {/* Song card content - same as before */}
+                <div className="flex-shrink-0">
+                  {song.coverArt ? (
+                    <img
+                      src={song.coverArt}
+                      alt={song.title || song.name}
+                      className="w-14 h-14 rounded-lg object-cover"
+                      data-testid={`img-song-cover-${song.id}`}
+                    />
+                  ) : (
+                    <div 
+                      className="w-14 h-14 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: `${colors.hexPrimary}33` }}
+                    >
+                      <Music className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold truncate text-white" data-testid={`text-song-title-${song.id}`}>
+                    {song.title || song.name}
+                  </h3>
+                  <div className="flex gap-2 mt-1">
+                    <span className="text-xs text-gray-400">
+                      {song.duration || "3:45"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="py-2 px-4 rounded-full text-sm font-medium transition duration-300"
+                    style={{ 
+                      backgroundColor: playingSongId === song.id ? colors.hexPrimary : 'transparent',
+                      borderColor: colors.hexBorder,
+                      borderWidth: '1px',
+                      color: playingSongId === song.id ? 'white' : colors.hexAccent
+                    }}
+                    onClick={() => handlePlayPause(song)}
+                    data-testid={`button-play-${song.id}`}
+                  >
+                    {playingSongId === song.id ? (
+                      <>
+                        <Pause className="h-4 w-4 inline mr-1" />
+                        Pause
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 inline mr-1" />
+                        Play
+                      </>
+                    )}
+                  </button>
+                  {isOwnProfile && (
+                    <>
+                      <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
+                        <button
+                          className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
+                          style={{ 
+                            backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            color: 'white'
+                          }}
+                          data-testid={`button-create-video-${song.id}`}
+                        >
+                          <VideoIcon className="h-4 w-4 inline mr-1" />
+                          Crear Video
+                        </button>
+                      </Link>
+                      <button
+                        className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 hover:bg-red-600"
+                        style={{ 
+                          backgroundColor: 'transparent',
+                          borderColor: '#EF4444',
+                          borderWidth: '1px',
+                          color: '#EF4444'
+                        }}
+                        onClick={() => handleDeleteSong(song)}
+                        data-testid={`button-delete-song-${song.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 inline mr-1" />
+                        Borrar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null,
+      'videos': null, // Will be defined separately
+      'merchandise': null, // Will be defined separately
+    };
+
+    const content = sectionContent[sectionId];
+    if (!content) return null;
+
+    if (isEditingLayout) {
+      return (
+        <Draggable key={sectionId} draggableId={sectionId} index={index}>
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.draggableProps}
+              className={`relative ${snapshot.isDragging ? 'z-50' : ''}`}
+            >
+              {/* Drag handle */}
+              <div 
+                {...provided.dragHandleProps}
+                className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab active:cursor-grabbing p-2 rounded-lg hover:bg-gray-800/50 transition-colors"
+                style={{ touchAction: 'none' }}
+              >
+                <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
+              </div>
+              {content}
+            </div>
+          )}
+        </Draggable>
+      );
+    }
+
+    return <div key={sectionId}>{content}</div>;
   };
   
   const isOwnProfile = user?.uid === artistId;
@@ -1370,6 +1716,15 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           {/* Columna Derecha */}
           <section className="flex flex-col gap-6">
             
+            {/* Artist Card con QR Code */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <ArtistCard 
+                artist={artist}
+                colors={colors}
+                profileUrl={`${window.location.origin}/artist/${userProfile?.slug || artistId}`}
+              />
+            </div>
+
             {/* Tarjeta de Estadísticas */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               <div 
