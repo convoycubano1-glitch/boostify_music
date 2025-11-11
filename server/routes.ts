@@ -46,6 +46,7 @@ import uploadApiRouter from './routes/upload-api'; // Import the upload API rout
 import fluxApiRouter from './routes/flux-api-proxy'; // Import the Flux API router
 import affiliateRouter from './routes/affiliate'; // Import the affiliate program router
 import geminiImageRouter from './routes/gemini-image'; // Import the Gemini image generation router
+import artistProfileRouter from './routes/artist-profile'; // Import the artist profile generation router
 import audioTranscriptionRouter from './routes/audio-transcription'; // Import the audio transcription router
 import generatedVideosRouter from './routes/generated-videos'; // Import the generated videos router
 import minimaxVideoRouter from './routes/minimax-video'; // Import the MiniMax video generation router
@@ -181,6 +182,10 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Registrar el router para Gemini Image Generation (Nano Banana)
   app.use('/api/gemini-image', geminiImageRouter);
+  
+  // Registrar el router para Artist Profile Generation (Gemini)
+  app.use('/api/artist-profile', artistProfileRouter);
+  
   app.use('/api/minimax', minimaxVideoRouter);
   
   // Registrar el router para transcripción de audio

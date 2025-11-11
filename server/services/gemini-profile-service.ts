@@ -1,0 +1,85 @@
+/**
+ * Servicio de Gemini para generación de contenido de perfil de artistas
+ * Genera biografías profesionales basadas en información del artista
+ */
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || "",
+  },
+});
+
+export interface ArtistInfo {
+  name?: string;
+  genre?: string;
+  location?: string;
+  experience?: string;
+  achievements?: string;
+  influences?: string;
+}
+
+export interface BiographyResult {
+  success: boolean;
+  biography?: string;
+  error?: string;
+}
+
+/**
+ * Genera una biografía profesional de artista usando Gemini
+ */
+export async function generateArtistBiography(artistInfo: ArtistInfo): Promise<BiographyResult> {
+  try {
+    const { name, genre, location, experience, achievements, influences } = artistInfo;
+
+    // Construir prompt personalizado
+    const prompt = `You are a professional music biographer. Write a compelling, professional artist biography in Spanish (150-200 words) based on the following information:
+
+Artist Name: ${name || 'Unknown Artist'}
+Genre: ${genre || 'Various genres'}
+Location: ${location || 'Location not specified'}
+${experience ? `Experience: ${experience}` : ''}
+${achievements ? `Achievements: ${achievements}` : ''}
+${influences ? `Influences: ${influences}` : ''}
+
+Guidelines:
+- Write in third person
+- Make it engaging and professional
+- Highlight unique aspects of the artist
+- Keep it concise but impactful
+- Use a tone that reflects the genre
+- Write entirely in Spanish
+- DO NOT include title or heading, just the biography text
+
+Generate the biography now:`;
+
+    console.log('🎵 Generating artist biography with Gemini...');
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const biography = response.text?.trim() || "";
+    
+    if (!biography) {
+      throw new Error('No biography text generated');
+    }
+
+    console.log('✅ Biography generated successfully');
+
+    return {
+      success: true,
+      biography
+    };
+
+  } catch (error: any) {
+    console.error('Error generating biography:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to generate biography'
+    };
+  }
+}
