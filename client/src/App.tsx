@@ -101,6 +101,7 @@ import ToolsPage from "./pages/tools";
 import FeaturesPage from "./pages/features";
 import AIVideoCreationPage from "./pages/ai-video-creation";
 import TimelineDemoPage from "./pages/timeline-demo";
+import DebugFirebasePage from "./pages/debug-firebase";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -277,6 +278,7 @@ const Router = () => {
   const WrappedFeaturesPage = withPageWrapper(FeaturesPage);
   const WrappedAIVideoCreationPage = withPageWrapper(AIVideoCreationPage);
   const WrappedTimelineDemoPage = withPageWrapper(TimelineDemoPage);
+  const WrappedDebugFirebasePage = withPageWrapper(DebugFirebasePage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -386,6 +388,7 @@ const Router = () => {
         {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, 'free')}
         {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, 'free')}
         {getRouteComponent("/timeline-demo", WrappedTimelineDemoPage, 'free')}
+        {getRouteComponent("/debug-firebase", WrappedDebugFirebasePage, null)}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />

@@ -228,6 +228,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryFn: async () => {
       try {
         console.log(`🛍️ Fetching merchandise for artist: ${artistId}`);
+        console.log(`👤 User profile loaded:`, userProfile ? 'YES' : 'NO');
         const merchRef = collection(db, "merchandise");
         const q = query(merchRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
@@ -316,12 +317,22 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         console.log(`🎉 Successfully created ${savedProducts.length} products`);
         return savedProducts;
       } catch (error) {
-        console.error("Error fetching/creating merchandise:", error);
+        console.error("❌ Error fetching/creating merchandise:", error);
         return [];
       }
     },
-    enabled: !!artistId && !!userProfile
+    enabled: !!artistId
   });
+
+  // Log cuando products cambie
+  useEffect(() => {
+    console.log(`🛍️ Products state updated: ${products.length} products`);
+    if (products.length > 0) {
+      console.log('✅ MERCHANDISE SECTION SHOULD BE VISIBLE');
+    } else {
+      console.log('⚠️ MERCHANDISE SECTION IS HIDDEN (no products)');
+    }
+  }, [products]);
 
   const artist = {
     name: userProfile?.displayName || userProfile?.name || "Artist Name",
@@ -651,7 +662,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             </>
                           )}
                         </button>
-                        <Link href={`/ai-video-creation?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
+                        <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
                           <button
                             className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
                             style={{ 
