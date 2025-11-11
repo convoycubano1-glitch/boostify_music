@@ -20,7 +20,9 @@ import {
   Trash2,
   Upload,
   Plus,
-  X
+  X,
+  GripVertical,
+  Layout
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +41,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -251,8 +254,7 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
                   backgroundColor: selectedSize === size ? colors.hexPrimary : 'transparent',
                   borderColor: colors.hexBorder,
                   borderWidth: '1px',
-                  color: selectedSize === size ? 'white' : colors.hexAccent,
-                  ringColor: colors.hexPrimary
+                  color: selectedSize === size ? 'white' : colors.hexAccent
                 }}
               >
                 {size}
@@ -303,6 +305,35 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [newVideoTitle, setNewVideoTitle] = useState('');
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const songFileInputRef = useRef<HTMLInputElement | null>(null);
+  
+  // Estados para drag-and-drop del layout
+  const [isEditingLayout, setIsEditingLayout] = useState(false);
+  const [sectionOrder, setSectionOrder] = useState<string[]>(['songs', 'videos', 'merchandise']);
+  
+  // Cargar orden guardado al montar
+  useEffect(() => {
+    const savedOrder = localStorage.getItem(`profile-layout-${artistId}`);
+    if (savedOrder) {
+      setSectionOrder(JSON.parse(savedOrder));
+    }
+  }, [artistId]);
+  
+  // Manejar reordenamiento de secciones
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(sectionOrder);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    setSectionOrder(items);
+    localStorage.setItem(`profile-layout-${artistId}`, JSON.stringify(items));
+    
+    toast({
+      title: "Layout actualizado",
+      description: "El orden de las secciones se ha guardado",
+    });
+  };
   
   const isOwnProfile = user?.uid === artistId;
   const colors = colorPalettes[selectedTheme];
@@ -927,24 +958,41 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   
                   <div className="flex flex-wrap gap-3 mt-4">
                     {isOwnProfile ? (
-                      <EditProfileDialog
-                        artistId={artistId}
-                        currentData={{
-                          displayName: userProfile?.displayName || userProfile?.name || "",
-                          biography: userProfile?.biography || "",
-                          genre: userProfile?.genre || "",
-                          location: userProfile?.location || "",
-                          profileImage: userProfile?.photoURL || userProfile?.profileImage || "",
-                          bannerImage: userProfile?.bannerImage || "",
-                          contactEmail: userProfile?.email || userProfile?.contactEmail || "",
-                          contactPhone: userProfile?.contactPhone || "",
-                          instagram: userProfile?.instagram || "",
-                          twitter: userProfile?.twitter || "",
-                          youtube: userProfile?.youtube || "",
-                          spotify: userProfile?.spotify || "",
-                        }}
-                        onUpdate={() => refetchProfile()}
-                      />
+                      <>
+                        <EditProfileDialog
+                          artistId={artistId}
+                          currentData={{
+                            displayName: userProfile?.displayName || userProfile?.name || "",
+                            biography: userProfile?.biography || "",
+                            genre: userProfile?.genre || "",
+                            location: userProfile?.location || "",
+                            profileImage: userProfile?.photoURL || userProfile?.profileImage || "",
+                            bannerImage: userProfile?.bannerImage || "",
+                            contactEmail: userProfile?.email || userProfile?.contactEmail || "",
+                            contactPhone: userProfile?.contactPhone || "",
+                            instagram: userProfile?.instagram || "",
+                            twitter: userProfile?.twitter || "",
+                            youtube: userProfile?.youtube || "",
+                            spotify: userProfile?.spotify || "",
+                          }}
+                          onUpdate={() => refetchProfile()}
+                        />
+                        <Button
+                          size="sm"
+                          variant={isEditingLayout ? "default" : "outline"}
+                          className="rounded-full"
+                          style={{
+                            backgroundColor: isEditingLayout ? colors.hexPrimary : 'transparent',
+                            borderColor: colors.hexBorder,
+                            color: isEditingLayout ? 'white' : colors.hexAccent
+                          }}
+                          onClick={() => setIsEditingLayout(!isEditingLayout)}
+                          data-testid="button-edit-layout"
+                        >
+                          <Layout className="h-4 w-4 mr-2" />
+                          {isEditingLayout ? 'Guardar Layout' : 'Personalizar Layout'}
+                        </Button>
+                      </>
                     ) : (
                       <>
                         {artist.website && (
