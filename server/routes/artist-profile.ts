@@ -178,14 +178,14 @@ router.post('/generate-product-image', async (req: Request, res: Response) => {
       });
     }
     
-    // Crear prompts específicos para cada tipo de producto
+    // Crear prompts específicos y únicos para cada tipo de producto
     const productPrompts: Record<string, string> = {
-      'T-Shirt': `High-quality product photography: ${artistName} branded t-shirt mockup, front view, modern design, clean white background, professional e-commerce style, centered composition, soft studio lighting`,
-      'Hoodie': `Premium product photography: ${artistName} branded hoodie mockup, front view, comfortable fabric texture, clean white background, professional e-commerce style, centered composition, soft studio lighting`,
-      'Cap': `Professional product photography: ${artistName} branded baseball cap mockup, front view, embroidered logo, clean white background, e-commerce style, centered composition, soft studio lighting`,
-      'Poster': `Professional product mockup: ${artistName} poster design, framed on wall, modern artistic design, clean presentation, professional photography, centered composition, natural lighting`,
-      'Sticker Pack': `Product photography: ${artistName} exclusive sticker pack, multiple colorful stickers displayed, clean white background, professional e-commerce style, centered composition, bright lighting`,
-      'Vinyl Record': `Premium product photography: ${artistName} limited edition vinyl record, album cover visible, clean white background, professional music merchandise style, centered composition, soft studio lighting`
+      'T-Shirt': `High-end product photography: premium black cotton t-shirt with ${artistName} logo embroidered on chest, front and center view, folded sleeves style, isolated on pure white background, professional e-commerce lighting, sharp focus, 4K quality`,
+      'Hoodie': `Premium streetwear photography: oversized ${artistName} branded hoodie in dark gray, kangaroo pocket visible, hood up, front facing, isolated white background, soft shadows, studio quality, commercial product shot`,
+      'Cap': `Professional headwear photography: snapback baseball cap with ${artistName} embroidered patch on front panel, 3/4 angle view showing curved brim, navy blue color, white background, product photography lighting, ultra sharp`,
+      'Poster': `Music poster mockup: framed ${artistName} concert poster on white wall, minimalist modern design with bold typography, 24x36 inches, gallery frame, soft ambient lighting, interior photography style, centered composition`,
+      'Sticker Pack': `Product flat lay photography: set of 10 vinyl stickers featuring ${artistName} brand logos and artwork, arranged in grid pattern, vibrant colors, matte finish, white background, overhead shot, crisp details, commercial quality`,
+      'Vinyl Record': `Luxury music product photography: ${artistName} limited edition vinyl record, colorful swirl pattern on disc, album artwork cover leaning against it, black sleeve visible, white background, dramatic side lighting, audiophile quality presentation`
     };
     
     const prompt = productPrompts[productType] || 

@@ -169,7 +169,7 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
       {/* Botón para obtener la tarjeta */}
       <button
         onClick={() => setShowDownload(!showDownload)}
-        className="w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl relative overflow-hidden group"
+        className="w-full py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl font-bold text-base md:text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl relative overflow-hidden group"
         style={{
           background: `linear-gradient(135deg, ${colors.hexPrimary} 0%, ${colors.hexAccent} 100%)`,
           color: 'white',
@@ -177,11 +177,12 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
         }}
       >
         <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-        <span className="relative flex items-center justify-center gap-3">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <span className="relative flex items-center justify-center gap-2 md:gap-3">
+          <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
           </svg>
-          {showDownload ? 'Ocultar Artist Card' : 'Get Your Artist Card'}
+          <span className="hidden sm:inline">{showDownload ? 'Ocultar Artist Card' : 'Get Your Artist Card'}</span>
+          <span className="sm:hidden">{showDownload ? 'Ocultar' : 'Artist Card'}</span>
         </span>
       </button>
 
@@ -190,36 +191,36 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
         <div className="space-y-4">
           <div 
             ref={cardRef}
-            className="relative rounded-3xl overflow-hidden"
+            className="relative rounded-2xl md:rounded-3xl overflow-hidden"
             style={{
               background: `linear-gradient(135deg, #000000 0%, #1a1a1a 50%, ${colors.hexPrimary}20 100%)`,
               aspectRatio: '1.586',
-              maxWidth: '400px',
+              maxWidth: '100%',
               margin: '0 auto'
             }}
           >
             {/* Patrón de fondo decorativo */}
             <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl" 
+              <div className="absolute top-0 right-0 w-32 h-32 md:w-64 md:h-64 rounded-full blur-3xl" 
                    style={{ background: colors.hexAccent }}></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl" 
+              <div className="absolute bottom-0 left-0 w-32 h-32 md:w-64 md:h-64 rounded-full blur-3xl" 
                    style={{ background: colors.hexPrimary }}></div>
             </div>
 
             {/* Contenido de la tarjeta */}
-            <div className="relative h-full p-8 flex flex-col justify-between">
+            <div className="relative h-full p-4 md:p-8 flex flex-col justify-between">
               {/* Header */}
               <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4">
                   <img
                     src={artist.profileImage}
                     alt={artist.name}
-                    className="w-20 h-20 rounded-2xl object-cover border-2"
+                    className="w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl object-cover border-2"
                     style={{ borderColor: colors.hexAccent }}
                   />
                   <div>
-                    <h3 className="text-2xl font-black text-white mb-1">{artist.name}</h3>
-                    <p className="text-sm font-medium" style={{ color: colors.hexAccent }}>
+                    <h3 className="text-lg md:text-2xl font-black text-white mb-1">{artist.name}</h3>
+                    <p className="text-xs md:text-sm font-medium" style={{ color: colors.hexAccent }}>
                       {artist.genre}
                     </p>
                   </div>
@@ -227,15 +228,24 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
               </div>
 
               {/* QR Code */}
-              <div className="flex justify-end items-end gap-6">
-                <div className="text-right">
-                  <p className="text-white font-bold text-lg mb-1">Scan to connect</p>
-                  <p className="text-gray-400 text-sm">Powered by Boostify</p>
+              <div className="flex justify-end items-end gap-3 md:gap-6">
+                <div className="text-right hidden sm:block">
+                  <p className="text-white font-bold text-sm md:text-lg mb-1">Scan to connect</p>
+                  <p className="text-gray-400 text-xs md:text-sm">Powered by Boostify</p>
                 </div>
-                <div className="bg-white p-3 rounded-2xl shadow-2xl">
+                <div className="bg-white p-2 md:p-3 rounded-xl md:rounded-2xl shadow-2xl">
+                  <QRCode
+                    value={profileUrl}
+                    size={80}
+                    className="md:hidden"
+                    level="H"
+                    fgColor="#000000"
+                    bgColor="#ffffff"
+                  />
                   <QRCode
                     value={profileUrl}
                     size={100}
+                    className="hidden md:block"
                     level="H"
                     fgColor="#000000"
                     bgColor="#ffffff"
@@ -357,7 +367,7 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
       <button
         onClick={handleBuyClick}
         disabled={isProcessing}
-        className="mt-2 w-full py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        className="mt-2 w-full py-1.5 md:py-2.5 px-3 md:px-4 rounded-full text-xs md:text-sm font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         style={{ 
           backgroundColor: colors.hexPrimary,
           color: 'white',
@@ -366,14 +376,15 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
         data-testid={`button-buy-${product.id}`}
       >
         {isProcessing ? (
-          <span className="flex items-center justify-center gap-2">
-            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-            Procesando...
+          <span className="flex items-center justify-center gap-1 md:gap-2">
+            <div className="animate-spin h-3 w-3 md:h-4 md:w-4 border-2 border-white border-t-transparent rounded-full"></div>
+            <span className="hidden sm:inline">Procesando...</span>
           </span>
         ) : (
           <>
-            <ShoppingCart className="h-4 w-4 inline mr-2" />
-            Comprar Ahora ${product.price}
+            <ShoppingCart className="h-3 w-3 md:h-4 md:w-4 inline mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Comprar Ahora ${product.price}</span>
+            <span className="sm:hidden">${product.price}</span>
           </>
         )}
       </button>
@@ -483,203 +494,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     });
   };
 
-  // Función para renderizar cada sección
-  const renderSection = (sectionId: string, index: number) => {
-    const sectionContent: { [key: string]: JSX.Element | null } = {
-      'songs': (songs.length > 0 || isOwnProfile) ? (
-        <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }} data-testid="section-songs">
-          <div className="flex justify-between items-center mb-4">
-            <div 
-              className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
-              style={{ color: colors.hexAccent }}
-            >
-              <Music className="h-5 w-5" />
-              Música ({songs.length})
-            </div>
-            {isOwnProfile && (
-              <Dialog open={showUploadSongDialog} onOpenChange={setShowUploadSongDialog}>
-                <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    className="rounded-full"
-                    style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
-                    data-testid="button-upload-song"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Subir Canción
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Subir Nueva Canción</DialogTitle>
-                    <DialogDescription>
-                      Agrega una nueva canción a tu perfil
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="song-title">Título de la Canción</Label>
-                      <Input
-                        id="song-title"
-                        value={newSongTitle}
-                        onChange={(e) => setNewSongTitle(e.target.value)}
-                        placeholder="Mi Nueva Canción"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="song-file">Archivo de Audio</Label>
-                      <Input
-                        id="song-file"
-                        type="file"
-                        accept="audio/*"
-                        ref={songFileInputRef}
-                        onChange={handleUploadSong}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowUploadSongDialog(false)}
-                      disabled={isUploadingSong}
-                    >
-                      Cancelar
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-          <div className="space-y-3">
-            {songs.map((song) => (
-              <div
-                key={song.id}
-                className="flex items-center gap-4 p-3 rounded-xl bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border"
-                style={{ borderColor: colors.hexBorder }}
-                data-testid={`card-song-${song.id}`}
-              >
-                {/* Song card content - same as before */}
-                <div className="flex-shrink-0">
-                  {song.coverArt ? (
-                    <img
-                      src={song.coverArt}
-                      alt={song.title || song.name}
-                      className="w-14 h-14 rounded-lg object-cover"
-                      data-testid={`img-song-cover-${song.id}`}
-                    />
-                  ) : (
-                    <div 
-                      className="w-14 h-14 rounded-lg flex items-center justify-center"
-                      style={{ backgroundColor: `${colors.hexPrimary}33` }}
-                    >
-                      <Music className="h-6 w-6" style={{ color: colors.hexAccent }} />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold truncate text-white" data-testid={`text-song-title-${song.id}`}>
-                    {song.title || song.name}
-                  </h3>
-                  <div className="flex gap-2 mt-1">
-                    <span className="text-xs text-gray-400">
-                      {song.duration || "3:45"}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="py-2 px-4 rounded-full text-sm font-medium transition duration-300"
-                    style={{ 
-                      backgroundColor: playingSongId === song.id ? colors.hexPrimary : 'transparent',
-                      borderColor: colors.hexBorder,
-                      borderWidth: '1px',
-                      color: playingSongId === song.id ? 'white' : colors.hexAccent
-                    }}
-                    onClick={() => handlePlayPause(song)}
-                    data-testid={`button-play-${song.id}`}
-                  >
-                    {playingSongId === song.id ? (
-                      <>
-                        <Pause className="h-4 w-4 inline mr-1" />
-                        Pause
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 inline mr-1" />
-                        Play
-                      </>
-                    )}
-                  </button>
-                  {isOwnProfile && (
-                    <>
-                      <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
-                        <button
-                          className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
-                          style={{ 
-                            backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
-                            color: 'white'
-                          }}
-                          data-testid={`button-create-video-${song.id}`}
-                        >
-                          <VideoIcon className="h-4 w-4 inline mr-1" />
-                          Crear Video
-                        </button>
-                      </Link>
-                      <button
-                        className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 hover:bg-red-600"
-                        style={{ 
-                          backgroundColor: 'transparent',
-                          borderColor: '#EF4444',
-                          borderWidth: '1px',
-                          color: '#EF4444'
-                        }}
-                        onClick={() => handleDeleteSong(song)}
-                        data-testid={`button-delete-song-${song.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 inline mr-1" />
-                        Borrar
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null,
-      'videos': null, // Will be defined separately
-      'merchandise': null, // Will be defined separately
-    };
-
-    const content = sectionContent[sectionId];
-    if (!content) return null;
-
-    if (isEditingLayout) {
-      return (
-        <Draggable key={sectionId} draggableId={sectionId} index={index}>
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.draggableProps}
-              className={`relative ${snapshot.isDragging ? 'z-50' : ''}`}
-            >
-              {/* Drag handle */}
-              <div 
-                {...provided.dragHandleProps}
-                className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab active:cursor-grabbing p-2 rounded-lg hover:bg-gray-800/50 transition-colors"
-                style={{ touchAction: 'none' }}
-              >
-                <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
-              </div>
-              {content}
-            </div>
-          )}
-        </Draggable>
-      );
-    }
-
-    return <div key={sectionId}>{content}</div>;
-  };
   
   const isOwnProfile = user?.uid === artistId;
   const colors = colorPalettes[selectedTheme];
@@ -1155,7 +969,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       <audio ref={audioRef} onEnded={() => setPlayingSongId(null)} />
       
       {/* Hero Header */}
-      <header className="relative h-96 lg:h-[450px] w-full mb-8 overflow-hidden">
+      <header className="relative h-72 md:h-96 lg:h-[450px] w-full mb-6 md:mb-8 overflow-hidden">
         <img
           src={artist.bannerImage}
           alt={`${artist.name} Cover`}
@@ -1170,36 +984,37 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
         
         {/* Barra superior */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10">
-          <div className="flex items-center gap-2">
+        <div className="absolute top-0 left-0 right-0 p-3 md:p-4 flex justify-between items-center z-10">
+          <div className="flex items-center gap-1.5 md:gap-2">
             <div 
-              className="w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center font-bold text-sm tracking-widest text-white transition-colors duration-500"
+              className="w-8 h-8 md:w-9 md:h-9 rounded-lg md:rounded-xl bg-gradient-to-br flex items-center justify-center font-bold text-xs md:text-sm tracking-widest text-white transition-colors duration-500"
               style={{ backgroundImage: `linear-gradient(to bottom right, ${colors.hexAccent}, ${colors.hexPrimary})` }}
             >
               B
             </div>
-            <div>
+            <div className="hidden sm:block">
               <div className="text-xs uppercase tracking-widest text-white/80">Boostify Music</div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 md:gap-2">
             <button 
-              className="py-2 px-4 rounded-full text-sm font-semibold transition duration-200 bg-black/50 hover:bg-gray-800 backdrop-blur-sm"
+              className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-semibold transition duration-200 bg-black/50 hover:bg-gray-800 backdrop-blur-sm"
               style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
               onClick={handleShare}
               data-testid="button-share"
             >
-              <Share2 className="h-4 w-4 inline mr-2" />
-              Compartir
+              <Share2 className="h-3 w-3 md:h-4 md:w-4 inline md:mr-2" />
+              <span className="hidden md:inline">Compartir</span>
             </button>
             {isOwnProfile && (
               <Link href="/dashboard">
                 <button 
-                  className="py-2 px-4 rounded-full text-sm font-semibold transition duration-200 bg-black/50 hover:bg-gray-800 backdrop-blur-sm"
+                  className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-semibold transition duration-200 bg-black/50 hover:bg-gray-800 backdrop-blur-sm"
                   style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
                   data-testid="button-dashboard"
                 >
-                  Ir al dashboard
+                  <span className="hidden md:inline">Ir al dashboard</span>
+                  <span className="md:hidden">Dashboard</span>
                 </button>
               </Link>
             )}
@@ -1369,9 +1184,21 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </div>
 
-            {/* Tarjeta de Songs/Tracks */}
-            {(songs.length > 0 || isOwnProfile) && (
-              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="profile-sections" isDropDisabled={!isEditingLayout}>
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-6">
+                    {sectionOrder.map((sectionId, index) => {
+                      let sectionElement = null;
+                      
+                      if (sectionId === 'songs' && (songs.length > 0 || isOwnProfile)) {
+                        sectionElement = (
+            <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              {isEditingLayout && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing">
+                  <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                </div>
+              )}
                 <div className="flex justify-between items-center mb-4">
                   <div 
                     className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
@@ -1470,9 +1297,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
-                          className="py-2 px-4 rounded-full text-sm font-medium transition duration-300"
+                          className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-medium transition duration-300"
                           style={{ 
                             backgroundColor: playingSongId === song.id ? colors.hexPrimary : 'transparent',
                             borderColor: colors.hexBorder,
@@ -1484,13 +1311,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                         >
                           {playingSongId === song.id ? (
                             <>
-                              <Pause className="h-4 w-4 inline mr-1" />
-                              Pause
+                              <Pause className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
+                              <span className="hidden sm:inline">Pause</span>
                             </>
                           ) : (
                             <>
-                              <Play className="h-4 w-4 inline mr-1" />
-                              Play
+                              <Play className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
+                              <span className="hidden sm:inline">Play</span>
                             </>
                           )}
                         </button>
@@ -1498,19 +1325,20 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           <>
                             <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
                               <button
-                                className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
+                                className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
                                 style={{ 
                                   backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
                                   color: 'white'
                                 }}
                                 data-testid={`button-create-video-${song.id}`}
                               >
-                                <VideoIcon className="h-4 w-4 inline mr-1" />
-                                Crear Video
+                                <VideoIcon className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
+                                <span className="hidden sm:inline">Crear Video</span>
+                                <span className="sm:hidden">Video</span>
                               </button>
                             </Link>
                             <button
-                              className="py-2 px-4 rounded-full text-sm font-medium transition duration-300 hover:bg-red-600"
+                              className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-medium transition duration-300 hover:bg-red-600"
                               style={{ 
                                 backgroundColor: 'transparent',
                                 borderColor: '#EF4444',
@@ -1520,8 +1348,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                               onClick={() => handleDeleteSong(song)}
                               data-testid={`button-delete-song-${song.id}`}
                             >
-                              <Trash2 className="h-4 w-4 inline mr-1" />
-                              Borrar
+                              <Trash2 className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
+                              <span className="hidden sm:inline">Borrar</span>
                             </button>
                           </>
                         )}
@@ -1530,11 +1358,15 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Tarjeta de Videos */}
-            {(videos.length > 0 || isOwnProfile) && (
-              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                        );
+                      } else if (sectionId === 'videos' && (videos.length > 0 || isOwnProfile)) {
+                        sectionElement = (
+            <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              {isEditingLayout && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing">
+                  <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                </div>
+              )}
                 <div className="flex justify-between items-center mb-4">
                   <div 
                     className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
@@ -1656,11 +1488,15 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Tarjeta de Tienda/Merchandise */}
-            {products.length > 0 && (
-              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                        );
+                      } else if (sectionId === 'merchandise' && products.length > 0) {
+                        sectionElement = (
+            <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              {isEditingLayout && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing">
+                  <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                </div>
+              )}
                 <div className="flex justify-between items-center mb-4">
                   <div 
                     className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
@@ -1670,11 +1506,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     Tienda Oficial ({products.length})
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-2 gap-2 md:gap-3">
                   {products.map((product, index) => (
                     <div
                       key={product.id}
-                      className="rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border group cursor-pointer"
+                      className="rounded-lg md:rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border group cursor-pointer"
                       style={{ borderColor: colors.hexBorder }}
                       data-testid={`card-product-${index}`}
                     >
@@ -1682,23 +1518,24 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                         <img
                           src={product.imageUrl}
                           alt={product.name}
-                          className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-32 md:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
                           onError={(e) => {
                             e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
                           }}
                         />
-                        <div className="absolute top-2 right-2">
+                        <div className="absolute top-1 right-1 md:top-2 md:right-2">
                           <span 
-                            className="text-xs font-bold py-1 px-2 rounded-full text-white"
+                            className="text-xs font-bold py-0.5 px-1.5 md:py-1 md:px-2 rounded-full text-white"
                             style={{ backgroundColor: colors.hexPrimary }}
                           >
                             ${product.price}
                           </span>
                         </div>
                       </div>
-                      <div className="p-3">
-                        <h3 className="font-medium text-white text-sm">{product.name}</h3>
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-2">{product.description}</p>
+                      <div className="p-2 md:p-3">
+                        <h3 className="font-medium text-white text-xs md:text-sm truncate">{product.name}</h3>
+                        <p className="text-xs text-gray-400 mt-1 line-clamp-1 md:line-clamp-2 hidden md:block">{product.description}</p>
                         <ProductBuyButton 
                           product={product} 
                           colors={colors} 
@@ -1709,7 +1546,31 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   ))}
                 </div>
               </div>
-            )}
+                        );
+                      }
+
+                      if (!sectionElement) return null;
+
+                      return (
+                        <Draggable key={sectionId} draggableId={sectionId} index={index} isDragDisabled={!isEditingLayout}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={snapshot.isDragging ? 'opacity-50' : ''}
+                            >
+                              {sectionElement}
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
 
           </section>
 
