@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,10 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "../../hooks/use-toast";
-import { Loader2, Sparkles, Wand2, Edit2 } from "lucide-react";
-import { db } from "../../firebase";
+import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon } from "lucide-react";
+import { db, storage } from "../../firebase";
 import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface EditProfileDialogProps {
   artistId: string;
@@ -42,6 +43,9 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
   const [isGeneratingBiography, setIsGeneratingBiography] = useState(false);
   const [isGeneratingProfileImage, setIsGeneratingProfileImage] = useState(false);
   const [isGeneratingBannerImage, setIsGeneratingBannerImage] = useState(false);
+  const [isUploadingReference, setIsUploadingReference] = useState(false);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
 
@@ -49,6 +53,44 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Subir imagen de referencia
+  const handleReferenceImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Archivo inválido",
+        description: "Por favor selecciona una imagen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingReference(true);
+
+    try {
+      const storageRef = ref(storage, `artist-references/${artistId}/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      setReferenceImage(downloadURL);
+      toast({
+        title: "Imagen cargada",
+        description: "Ahora puedes generar tu perfil y banner con esta imagen de referencia.",
+      });
+    } catch (error) {
+      console.error("Error uploading reference image:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la imagen de referencia.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingReference(false);
+    }
   };
 
   const handleGenerateBiography = async () => {
@@ -117,6 +159,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
           artistName: formData.displayName,
           genre: formData.genre,
           style: "Professional portrait, studio lighting, artistic aesthetic",
+          referenceImage: referenceImage || undefined,
         }),
       });
 
@@ -164,6 +207,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
           genre: formData.genre,
           style: "Wide cinematic banner, professional music artist aesthetic",
           mood: "Creative and energetic atmosphere",
+          referenceImage: referenceImage || undefined,
         }),
       });
 
@@ -223,6 +267,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         twitter: formData.twitter || "",
         youtube: formData.youtube || "",
         spotify: formData.spotify || "",
+        referenceImage: referenceImage || "",
         updatedAt: new Date(),
       };
 
@@ -273,9 +318,54 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Subida de Imagen de Referencia */}
+          <div className="space-y-2 border rounded-lg p-4 bg-orange-500/5 border-orange-500/20">
+            <Label className="text-orange-400 font-semibold">🎨 Imagen de Referencia para IA</Label>
+            <p className="text-xs text-gray-400">
+              Sube una foto tuya para que la IA genere imágenes personalizadas de tu perfil y banner
+            </p>
+            <div className="flex gap-2 items-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleReferenceImageUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingReference}
+              >
+                {isUploadingReference ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Subir Imagen
+                  </>
+                )}
+              </Button>
+              {referenceImage && (
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-green-500" />
+                  <span className="text-xs text-green-500">Imagen cargada ✓</span>
+                </div>
+              )}
+            </div>
+            {referenceImage && (
+              <img src={referenceImage} alt="Reference" className="w-32 h-32 object-cover rounded-lg mt-2" />
+            )}
+          </div>
+
           {/* Nombre Artístico */}
           <div className="space-y-2">
-            <Label htmlFor="displayName">Nombre Artístico</Label>
+            <Label htmlFor="displayName">Nombre Artístico *</Label>
             <Input
               id="displayName"
               value={formData.displayName}
@@ -343,13 +433,13 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
           {/* Imagen de Perfil con botón de generar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="profileImage">URL de Imagen de Perfil</Label>
+              <Label htmlFor="profileImage">Imagen de Perfil</Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleGenerateProfileImage}
-                disabled={isGeneratingProfileImage}
+                disabled={isGeneratingProfileImage || !formData.displayName}
               >
                 {isGeneratingProfileImage ? (
                   <>
@@ -368,20 +458,23 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
               id="profileImage"
               value={formData.profileImage}
               onChange={(e) => handleChange("profileImage", e.target.value)}
-              placeholder="https://ejemplo.com/imagen.jpg"
+              placeholder="https://ejemplo.com/imagen.jpg o se generará con IA"
             />
+            {formData.profileImage && (
+              <img src={formData.profileImage} alt="Preview" className="w-20 h-20 object-cover rounded-full mt-2" />
+            )}
           </div>
 
           {/* Imagen de Banner con botón de generar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="bannerImage">URL de Imagen de Banner</Label>
+              <Label htmlFor="bannerImage">Imagen de Banner (Hero)</Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleGenerateBannerImage}
-                disabled={isGeneratingBannerImage}
+                disabled={isGeneratingBannerImage || !formData.displayName}
               >
                 {isGeneratingBannerImage ? (
                   <>
@@ -400,8 +493,11 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
               id="bannerImage"
               value={formData.bannerImage}
               onChange={(e) => handleChange("bannerImage", e.target.value)}
-              placeholder="https://ejemplo.com/banner.jpg"
+              placeholder="https://ejemplo.com/banner.jpg o se generará con IA"
             />
+            {formData.bannerImage && (
+              <img src={formData.bannerImage} alt="Preview" className="w-full h-24 object-cover rounded-lg mt-2" />
+            )}
           </div>
 
           {/* Información de Contacto */}
@@ -482,7 +578,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving || !formData.displayName}>
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
