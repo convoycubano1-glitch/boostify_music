@@ -262,22 +262,37 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         console.log(`📊 Merchandise query returned ${querySnapshot.size} documents`);
 
         if (!querySnapshot.empty) {
-          const productsData = querySnapshot.docs.map((doc) => {
-            const data = doc.data();
-            console.log('🛍️ Product data:', { id: doc.id, name: data.name, price: data.price });
-            return {
-              id: doc.id,
-              name: data.name,
-              description: data.description,
-              price: data.price,
-              imageUrl: data.imageUrl,
-              category: data.category,
-              userId: data.userId,
-              createdAt: data.createdAt?.toDate(),
-            };
-          });
-          console.log(`✅ Successfully loaded ${productsData.length} existing products`);
-          return productsData;
+          // Verificar si los productos existentes tienen tallas (productos nuevos)
+          const firstProduct = querySnapshot.docs[0].data();
+          const hasNewFormat = firstProduct.sizes !== undefined;
+          
+          if (hasNewFormat) {
+            // Cargar productos actualizados con tallas
+            const productsData = querySnapshot.docs.map((doc) => {
+              const data = doc.data();
+              console.log('🛍️ Product data:', { id: doc.id, name: data.name, price: data.price, sizes: data.sizes });
+              return {
+                id: doc.id,
+                name: data.name,
+                description: data.description,
+                price: data.price,
+                imageUrl: data.imageUrl,
+                category: data.category,
+                sizes: data.sizes,
+                userId: data.userId,
+                createdAt: data.createdAt?.toDate(),
+              };
+            });
+            console.log(`✅ Successfully loaded ${productsData.length} existing products with sizes`);
+            return productsData;
+          } else {
+            // Productos viejos sin tallas - borrarlos y regenerar
+            console.log('🗑️ Deleting old products without sizes...');
+            const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
+            await Promise.all(deletePromises);
+            console.log('✅ Old products deleted, will regenerate new ones');
+            // Continuar con la generación de nuevos productos
+          }
         }
 
         // Si no hay productos, generar 6 automáticamente usando la imagen del brand del artista
