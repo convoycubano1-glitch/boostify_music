@@ -123,6 +123,169 @@ const colorPalettes = {
   }
 };
 
+// Componente para comprar producto con selección de talla y Stripe Checkout
+function ProductBuyButton({ product, colors, artistName }: { product: Product, colors: any, artistName: string }) {
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+
+  const handleBuyClick = () => {
+    if (!product.sizes || product.sizes.length === 0) {
+      // Si no tiene tallas, comprar directamente
+      handleCheckout('');
+    } else if (product.sizes.length === 1) {
+      // Si solo hay una talla, seleccionarla automáticamente
+      handleCheckout(product.sizes[0]);
+    } else {
+      // Si hay múltiples tallas, mostrar diálogo
+      setShowDialog(true);
+    }
+  };
+
+  const handleCheckout = async (size: string) => {
+    try {
+      setIsProcessing(true);
+      
+      console.log('💳 Iniciando checkout de Stripe para:', product.name);
+      
+      const response = await fetch('/api/artist/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: product.name,
+          productPrice: product.price,
+          productImage: product.imageUrl,
+          artistName: artistName,
+          productId: product.id,
+          size: size
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.url) {
+        console.log('✅ Checkout session creada, redirigiendo...');
+        // Redirigir a Stripe Checkout
+        window.location.href = result.url;
+      } else {
+        throw new Error(result.error || 'Error al crear sesión de checkout');
+      }
+    } catch (error: any) {
+      console.error('❌ Error al procesar checkout:', error);
+      toast({
+        title: "Error al procesar la compra",
+        description: error.message || "Intenta de nuevo más tarde",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+      setShowDialog(false);
+    }
+  };
+
+  return (
+    <>
+      {product.sizes && product.sizes.length > 0 && (
+        <div className="flex gap-1 mt-2 flex-wrap">
+          {product.sizes.map((size, idx) => (
+            <span 
+              key={idx}
+              className="text-xs px-2 py-0.5 rounded-full border"
+              style={{ 
+                borderColor: colors.hexBorder,
+                color: colors.hexAccent 
+              }}
+            >
+              {size}
+            </span>
+          ))}
+        </div>
+      )}
+      
+      <button
+        onClick={handleBuyClick}
+        disabled={isProcessing}
+        className="mt-2 w-full py-2.5 px-4 rounded-full text-sm font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ 
+          backgroundColor: colors.hexPrimary,
+          color: 'white',
+          boxShadow: `0 4px 14px 0 ${colors.hexPrimary}40`
+        }}
+        data-testid={`button-buy-${product.id}`}
+      >
+        {isProcessing ? (
+          <span className="flex items-center justify-center gap-2">
+            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+            Procesando...
+          </span>
+        ) : (
+          <>
+            <ShoppingCart className="h-4 w-4 inline mr-2" />
+            Comprar Ahora ${product.price}
+          </>
+        )}
+      </button>
+
+      {/* Diálogo para seleccionar talla */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="bg-gray-950 border border-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Selecciona tu talla</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Elige la talla para {product.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-3 gap-2 py-4">
+            {product.sizes?.map((size) => (
+              <button
+                key={size}
+                onClick={() => setSelectedSize(size)}
+                className={`py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                  selectedSize === size 
+                    ? 'ring-2 scale-105' 
+                    : 'hover:scale-105'
+                }`}
+                style={{
+                  backgroundColor: selectedSize === size ? colors.hexPrimary : 'transparent',
+                  borderColor: colors.hexBorder,
+                  borderWidth: '1px',
+                  color: selectedSize === size ? 'white' : colors.hexAccent,
+                  ringColor: colors.hexPrimary
+                }}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              onClick={() => setShowDialog(false)}
+              variant="outline"
+              className="border-gray-700 text-gray-400 hover:bg-gray-900"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => handleCheckout(selectedSize)}
+              disabled={!selectedSize || isProcessing}
+              className="font-semibold"
+              style={{
+                backgroundColor: colors.hexPrimary,
+                color: 'white'
+              }}
+            >
+              {isProcessing ? 'Procesando...' : `Continuar con ${selectedSize}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [playingSongId, setPlayingSongId] = useState<string | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<keyof typeof colorPalettes>('Boostify Naranja');
@@ -295,77 +458,101 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           }
         }
 
-        // Si no hay productos, generar 6 automáticamente usando la imagen del brand del artista
+        // Si no hay productos, generar 6 automáticamente con imágenes únicas
         const artistName = userProfile?.displayName || userProfile?.name || "Artist";
         const brandImage = userProfile?.profileImage || userProfile?.photoURL || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
         
-        const defaultProducts: Omit<Product, 'id'>[] = [
+        const productTypes = [
           {
+            type: 'T-Shirt',
             name: `${artistName} T-Shirt`,
             description: `Official ${artistName} merchandise t-shirt with exclusive design`,
             price: 29.99,
-            imageUrl: brandImage,
             category: 'Apparel',
             sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-            userId: artistId,
-            createdAt: new Date(),
           },
           {
+            type: 'Hoodie',
             name: `${artistName} Hoodie`,
             description: `Premium quality hoodie featuring ${artistName}'s brand logo`,
             price: 49.99,
-            imageUrl: brandImage,
             category: 'Apparel',
             sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-            userId: artistId,
-            createdAt: new Date(),
           },
           {
+            type: 'Cap',
             name: `${artistName} Cap`,
             description: `Stylish cap with embroidered ${artistName} logo`,
             price: 24.99,
-            imageUrl: brandImage,
             category: 'Accessories',
             sizes: ['One Size'],
-            userId: artistId,
-            createdAt: new Date(),
           },
           {
+            type: 'Poster',
             name: `${artistName} Poster`,
             description: `High-quality poster perfect for your room or studio`,
             price: 14.99,
-            imageUrl: brandImage,
             category: 'Art',
             sizes: ['18x24"', '24x36"'],
-            userId: artistId,
-            createdAt: new Date(),
           },
           {
+            type: 'Sticker Pack',
             name: `${artistName} Sticker Pack`,
             description: `Pack of 10 exclusive stickers featuring ${artistName}'s brand`,
             price: 9.99,
-            imageUrl: brandImage,
             category: 'Accessories',
             sizes: ['3"', '5"'],
-            userId: artistId,
-            createdAt: new Date(),
           },
           {
+            type: 'Vinyl Record',
             name: `${artistName} Vinyl Record`,
             description: `Limited edition vinyl featuring ${artistName}'s best tracks`,
             price: 34.99,
-            imageUrl: brandImage,
             category: 'Music',
             sizes: ['12"'],
-            userId: artistId,
-            createdAt: new Date(),
           },
         ];
 
-        // Guardar productos en Firebase
-        console.log(`🏭 Generating ${defaultProducts.length} default products for ${artistName}...`);
+        console.log(`🏭 Generating ${productTypes.length} products with unique images for ${artistName}...`);
         const savedProducts: Product[] = [];
-        for (const product of defaultProducts) {
+        
+        for (const productDef of productTypes) {
+          console.log(`🎨 Generating image for ${productDef.type}...`);
+          
+          let productImage = brandImage;
+          try {
+            const imageResponse = await fetch('/api/artist/generate-product-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                productType: productDef.type,
+                artistName: artistName,
+                brandImage: brandImage
+              })
+            });
+            
+            const imageResult = await imageResponse.json();
+            if (imageResult.success && imageResult.imageUrl) {
+              productImage = imageResult.imageUrl;
+              console.log(`✅ Generated unique image for ${productDef.type}`);
+            } else {
+              console.warn(`⚠️ Failed to generate image for ${productDef.type}, using brand image`);
+            }
+          } catch (error) {
+            console.error(`❌ Error generating image for ${productDef.type}:`, error);
+          }
+          
+          const product = {
+            name: productDef.name,
+            description: productDef.description,
+            price: productDef.price,
+            imageUrl: productImage,
+            category: productDef.category,
+            sizes: productDef.sizes,
+            userId: artistId,
+            createdAt: new Date(),
+          };
+          
           const newDocRef = doc(collection(db, "merchandise"));
           await setDoc(newDocRef, product);
           savedProducts.push({ ...product, id: newDocRef.id });
@@ -1118,33 +1305,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       <div className="p-3">
                         <h3 className="font-medium text-white text-sm">{product.name}</h3>
                         <p className="text-xs text-gray-400 mt-1 line-clamp-2">{product.description}</p>
-                        {product.sizes && product.sizes.length > 0 && (
-                          <div className="flex gap-1 mt-2 flex-wrap">
-                            {product.sizes.map((size, idx) => (
-                              <span 
-                                key={idx}
-                                className="text-xs px-2 py-0.5 rounded-full border"
-                                style={{ 
-                                  borderColor: colors.hexBorder,
-                                  color: colors.hexAccent 
-                                }}
-                              >
-                                {size}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <button
-                          className="mt-2 w-full py-2 px-4 rounded-full text-xs font-medium transition duration-300"
-                          style={{ 
-                            backgroundColor: colors.hexPrimary,
-                            color: 'white'
-                          }}
-                          data-testid={`button-buy-${product.id}`}
-                        >
-                          <ShoppingCart className="h-3 w-3 inline mr-1" />
-                          Comprar Ahora
-                        </button>
+                        <ProductBuyButton 
+                          product={product} 
+                          colors={colors} 
+                          artistName={artist.name}
+                        />
                       </div>
                     </div>
                   ))}
