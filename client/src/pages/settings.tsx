@@ -21,6 +21,8 @@ import {
   Music,
   Upload,
   Loader2,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useSettingsStore, themeOptions, densityOptions, languageOptions } from "../store/settings-store";
@@ -54,6 +56,11 @@ export default function SettingsPage() {
   const [artistProfileData, setArtistProfileData] = useState<any>(null);
   const [isLoadingArtistProfile, setIsLoadingArtistProfile] = useState(true);
   const [isSavingArtistProfile, setIsSavingArtistProfile] = useState(false);
+  
+  // Estados para generación con Gemini
+  const [isGeneratingBiography, setIsGeneratingBiography] = useState(false);
+  const [isGeneratingProfileImage, setIsGeneratingProfileImage] = useState(false);
+  const [isGeneratingBannerImage, setIsGeneratingBannerImage] = useState(false);
   
   // Schemas de validación
   const profileSchema = z.object({
@@ -193,6 +200,156 @@ export default function SettingsPage() {
 
     loadArtistProfile();
   }, [user?.uid]);
+  
+  // Funciones de generación con Gemini
+  const handleGenerateBiography = async () => {
+    const currentName = artistProfileForm.getValues("displayName");
+    const currentGenre = artistProfileForm.getValues("genre");
+    const currentLocation = artistProfileForm.getValues("location");
+
+    if (!currentName) {
+      toast({
+        title: "Nombre requerido",
+        description: "Debes ingresar tu nombre artístico primero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingBiography(true);
+
+    try {
+      const response = await fetch('/api/artist-profile/generate-biography', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: currentName,
+          genre: currentGenre,
+          location: currentLocation,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.biography) {
+        artistProfileForm.setValue("biography", data.biography, { shouldDirty: true });
+        toast({
+          title: "Biografía generada",
+          description: "Tu biografía ha sido generada automáticamente. Puedes editarla si deseas.",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to generate biography');
+      }
+    } catch (error: any) {
+      console.error("Error generating biography:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar la biografía. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingBiography(false);
+    }
+  };
+
+  const handleGenerateProfileImage = async () => {
+    const currentName = artistProfileForm.getValues("displayName");
+    const currentGenre = artistProfileForm.getValues("genre");
+
+    if (!currentName) {
+      toast({
+        title: "Nombre requerido",
+        description: "Debes ingresar tu nombre artístico primero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingProfileImage(true);
+
+    try {
+      const response = await fetch('/api/artist-profile/generate-profile-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistName: currentName,
+          genre: currentGenre,
+          style: "Professional portrait, studio lighting, artistic aesthetic",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.imageUrl) {
+        artistProfileForm.setValue("profileImage", data.imageUrl, { shouldDirty: true });
+        toast({
+          title: "Imagen de perfil generada",
+          description: "Tu imagen de perfil ha sido generada. Copia la URL si deseas usarla.",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to generate profile image');
+      }
+    } catch (error: any) {
+      console.error("Error generating profile image:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar la imagen de perfil. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingProfileImage(false);
+    }
+  };
+
+  const handleGenerateBannerImage = async () => {
+    const currentName = artistProfileForm.getValues("displayName");
+    const currentGenre = artistProfileForm.getValues("genre");
+
+    if (!currentName) {
+      toast({
+        title: "Nombre requerido",
+        description: "Debes ingresar tu nombre artístico primero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingBannerImage(true);
+
+    try {
+      const response = await fetch('/api/artist-profile/generate-banner-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistName: currentName,
+          genre: currentGenre,
+          style: "Wide cinematic banner, professional music artist aesthetic",
+          mood: "Creative and energetic atmosphere",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.imageUrl) {
+        artistProfileForm.setValue("bannerImage", data.imageUrl, { shouldDirty: true });
+        toast({
+          title: "Imagen de banner generada",
+          description: "Tu imagen de banner ha sido generada. Copia la URL si deseas usarla.",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to generate banner image');
+      }
+    } catch (error: any) {
+      console.error("Error generating banner image:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar la imagen de banner. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingBannerImage(false);
+    }
+  };
   
   // Manejadores para guardar cada formulario
   const handleProfileSubmit = (values: z.infer<typeof profileSchema>) => {
@@ -378,7 +535,29 @@ export default function SettingsPage() {
                     name="biography"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Biografía</FormLabel>
+                        <div className="flex items-center justify-between mb-2">
+                          <FormLabel>Biografía</FormLabel>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleGenerateBiography}
+                            disabled={isGeneratingBiography}
+                            data-testid="button-generate-biography"
+                          >
+                            {isGeneratingBiography ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generando...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Generar con IA
+                              </>
+                            )}
+                          </Button>
+                        </div>
                         <FormControl>
                           <Textarea 
                             placeholder="Cuéntanos tu historia como artista..." 
@@ -430,7 +609,29 @@ export default function SettingsPage() {
                     name="profileImage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>URL de Imagen de Perfil</FormLabel>
+                        <div className="flex items-center justify-between mb-2">
+                          <FormLabel>URL de Imagen de Perfil</FormLabel>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleGenerateProfileImage}
+                            disabled={isGeneratingProfileImage}
+                            data-testid="button-generate-profile-image"
+                          >
+                            {isGeneratingProfileImage ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generando...
+                              </>
+                            ) : (
+                              <>
+                                <Wand2 className="mr-2 h-4 w-4" />
+                                Generar con IA
+                              </>
+                            )}
+                          </Button>
+                        </div>
                         <FormControl>
                           <Input 
                             placeholder="https://ejemplo.com/imagen.jpg" 
@@ -451,7 +652,29 @@ export default function SettingsPage() {
                     name="bannerImage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>URL de Imagen de Banner</FormLabel>
+                        <div className="flex items-center justify-between mb-2">
+                          <FormLabel>URL de Imagen de Banner</FormLabel>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleGenerateBannerImage}
+                            disabled={isGeneratingBannerImage}
+                            data-testid="button-generate-banner-image"
+                          >
+                            {isGeneratingBannerImage ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generando...
+                              </>
+                            ) : (
+                              <>
+                                <Wand2 className="mr-2 h-4 w-4" />
+                                Generar con IA
+                              </>
+                            )}
+                          </Button>
+                        </div>
                         <FormControl>
                           <Input 
                             placeholder="https://ejemplo.com/banner.jpg" 
