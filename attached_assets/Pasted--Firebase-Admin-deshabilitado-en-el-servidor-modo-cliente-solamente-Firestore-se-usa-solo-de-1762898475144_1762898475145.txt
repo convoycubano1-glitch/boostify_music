@@ -1,0 +1,62 @@
+⚠️ Firebase Admin deshabilitado en el servidor (modo cliente solamente)
+ℹ️ Firestore se usa solo desde el cliente frontend
+ℹ️ Stripe maneja suscripciones sin dependencias de Firestore del servidor
+🔑 Using Stripe key: TEST MODE
+🔗 Stripe BASE_URL configurada: https://artistboost.replit.app
+9:59:59 PM [api-proxy] ✅ All API keys are configured
+9:59:59 PM [express] 🔄 Starting server setup...
+🔍 Environment Check Results:
+⚠️ Warning: FAL_KEY environment variable is not set (FAL API access)
+✅ OPENAI_API_KEY is configured and ready for use
+✅ SESSION_SECRET is configured and ready for use
+✅ DATABASE_URL is configured and ready for use
+ℹ️ Some environment variables are missing. This might be expected in development.
+9:59:59 PM [express] 📁 Serving uploaded files from: /home/runner/workspace/uploads
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+📢 Registrando router de transcripción de audio en /api/audio
+✅ Router de transcripción de audio registrado
+📢 Registrando router de videos generados en /api/videos
+✅ Router de videos generados registrado
+📢 Registrando router de proyectos de music video en /api/music-video-projects
+✅ Router de proyectos de music video registrado
+📢 Registrando rutas de perfil de artista
+✅ Rutas de perfil, songs, merch, AI assistant, Gemini agents y contratos registradas
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+APIFY_API_TOKEN is configured and ready for use
+✅ Subscription-protected routes are registered
+⏱️ Server timeouts configured: 15 minutes for long-running operations
+9:59:59 PM [express] 🛠 Running in development mode
+9:59:59 PM [express] 🔍 Vite will handle frontend routes in development mode
+9:59:59 PM [express] ✅ OPENAI_API_KEY is configured and ready for use
+9:59:59 PM [express] 🛠 Setting up Vite development server
+9:59:59 PM [express] 📌 Configuring Vite to handle frontend routes like "/"
+9:59:59 PM [express] ✅ Server started on port 5000
+9:59:59 PM [express] 🌍 Environment: development
+9:59:59 PM [express] 📂 Static files served from: /home/runner/workspace/client/public
+9:59:59 PM [express] 🔗 Access URL: https://workspace.replit.app
+10:00:00 PM [express] 📥 Incoming request: GET /
+10:00:01 PM [express] 📤 Response: GET / 200 in 143ms
+10:00:02 PM [express] 📥 Incoming request: GET /@vite/client
+10:00:02 PM [express] 📥 Incoming request: GET /src/index.css
+10:00:02 PM [express] 📥 Incoming request: GET /
+10:00:02 PM [express] 📥 Incoming request: GET /src/main.tsx
+10:00:02 PM [express] 📤 Response: GET /src/main.tsx 200 in 5ms
+10:00:02 PM [express] 📥 Incoming request: GET /@react-refresh
+10:00:02 PM [express] 📤 Response: GET /@vite/client 200 in 74ms
+10:00:02 PM [express] 📤 Response: GET /@react-refresh 200 in 152ms
+10:00:02 PM [express] 📤 Response: GET / 200 in 260ms
+10:00:04 PM [express] 📥 Incoming request: GET /@vite/client
+10:00:04 PM [express] 📥 Incoming request: GET /src/main.tsx
+10:00:04 PM [express] 📤 Response: GET /@vite/client 304 in 6ms
+10:00:04 PM [express] 📥 Incoming request: GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs
+10:00:04 PM [express] 📤 Response: GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs 304 in 20ms
+10:00:04 PM [express] 📥 Incoming request: GET /@react-refresh
+10:00:04 PM [express] 📤 Response: GET /@react-refresh 304 in 3ms
+10:00:05 PM [express] 📥 Incoming request: GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs
+10:00:05 PM [vite] Pre-transform error: [postcss] Cannot find module '@tailwindcss/typography'
+Require stack:
+- /home/runner/workspace/tailwind.config.js

@@ -2,7 +2,7 @@
  * Rutas para perfil de artista con generación automática de Gemini + Nano Banana
  */
 import { Router, Request, Response } from 'express';
-import { generateCinematicImage, generateImageWithMultipleFaceReferences } from '../services/gemini-image-service';
+import { generateCinematicImage, generateImageWithMultipleFaceReferences, generateImageWithFAL } from '../services/gemini-image-service';
 import { generateArtistBiography, type ArtistInfo } from '../services/gemini-profile-service';
 
 const router = Router();
@@ -29,7 +29,7 @@ router.post('/generate-profile-image', async (req: Request, res: Response) => {
     High quality portrait photography, studio lighting, professional artist photograph, 
     centered composition, clean background, artistic and professional aesthetic.`;
     
-    console.log('🎨 Generating profile image with Nano Banana (Gemini 2.5 Flash Image)...');
+    console.log('🎨 Generating profile image with Gemini (with FAL AI fallback)...');
     
     let result;
     
@@ -38,11 +38,27 @@ router.post('/generate-profile-image', async (req: Request, res: Response) => {
       console.log('👤 Using reference image for facial consistency...');
       const referenceImages = [referenceImage];
       result = await generateImageWithMultipleFaceReferences(basePrompt, referenceImages);
+      
+      // Si Gemini falla por cuota, intentar con FAL AI
+      if (!result.success && (result as any).quotaError) {
+        console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
+        result = await generateImageWithFAL(basePrompt, referenceImages);
+      }
     } else {
       // Sin referencia, usar generación normal
       result = await generateCinematicImage(basePrompt);
+      
+      // Si Gemini falla por cuota, intentar con FAL AI
+      if (!result.success && (result as any).quotaError) {
+        console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
+        result = await generateImageWithFAL(basePrompt, []);
+      }
     }
     
+    console.log('🎨 Profile image result:', { success: result.success, hasError: !!result.error, provider: result.provider });
+    if (!result.success) {
+      console.error('❌ Profile image generation failed:', result.error);
+    }
     return res.json(result);
   } catch (error: any) {
     console.error('Error generating profile image:', error);
@@ -76,7 +92,7 @@ router.post('/generate-banner-image', async (req: Request, res: Response) => {
     Wide format banner, 16:9 aspect ratio, cinematic lighting, professional music artist aesthetic, 
     vibrant colors, high quality photography, artistic and dynamic composition.`;
     
-    console.log('🎨 Generating banner image with Nano Banana (Gemini 2.5 Flash Image)...');
+    console.log('🎨 Generating banner image with Gemini (with FAL AI fallback)...');
     
     let result;
     
@@ -85,11 +101,27 @@ router.post('/generate-banner-image', async (req: Request, res: Response) => {
       console.log('👤 Using reference image for facial consistency in banner...');
       const referenceImages = [referenceImage];
       result = await generateImageWithMultipleFaceReferences(basePrompt, referenceImages);
+      
+      // Si Gemini falla por cuota, intentar con FAL AI
+      if (!result.success && (result as any).quotaError) {
+        console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
+        result = await generateImageWithFAL(basePrompt, referenceImages);
+      }
     } else {
       // Sin referencia, usar generación normal
       result = await generateCinematicImage(basePrompt);
+      
+      // Si Gemini falla por cuota, intentar con FAL AI
+      if (!result.success && (result as any).quotaError) {
+        console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
+        result = await generateImageWithFAL(basePrompt, []);
+      }
     }
     
+    console.log('🎨 Banner image result:', { success: result.success, hasError: !!result.error, provider: result.provider });
+    if (!result.success) {
+      console.error('❌ Banner image generation failed:', result.error);
+    }
     return res.json(result);
   } catch (error: any) {
     console.error('Error generating banner image:', error);

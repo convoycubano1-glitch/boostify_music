@@ -1,0 +1,48 @@
+~/workspace$ export NODE_ENV=development && npm run dev
+
+> rest-express@1.0.0 dev
+> concurrently "npm run server:dev" "npm run client:dev"
+
+[1] 
+[1] > rest-express@1.0.0 client:dev
+[1] > cd client && vite
+[1] 
+[0] 
+[0] > rest-express@1.0.0 server:dev
+[0] > npx tsx watch server/index.ts
+[0] 
+[1] Re-optimizing dependencies because vite config has changed
+[1] 
+[1]   VITE v5.4.21  ready in 1164 ms
+[1] 
+[1]   ➜  Local:   http://localhost:5000/
+[1]   ➜  Network: http://172.31.86.162:5000/
+[0] ⚠️ Firebase Admin deshabilitado en el servidor (modo cliente solamente)
+[0] ℹ️ Firestore se usa solo desde el cliente frontend
+[0] ℹ️ Stripe maneja suscripciones sin dependencias de Firestore del servidor
+[0] 🔑 Using Stripe key: TEST MODE
+[0] 🔗 Stripe BASE_URL configurada: https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev
+[0] 9:07:01 PM [api-proxy] ✅ All API keys are configured
+[0] 9:07:01 PM [express] 🔄 Starting server setup...
+[0] ✅ All critical environment variables are properly configured
+[0] 9:07:01 PM [express] 📁 Serving uploaded files from: /home/runner/workspace/uploads
+[0] 📢 Registrando router de transcripción de audio en /api/audio
+[0] ✅ Router de transcripción de audio registrado
+[0] 📢 Registrando router de videos generados en /api/videos
+[0] ✅ Router de videos generados registrado
+[0] 📢 Registrando router de proyectos de music video en /api/music-video-projects
+[0] ✅ Router de proyectos de music video registrado
+[0] 📢 Registrando rutas de perfil de artista
+[0] ✅ Rutas de perfil, songs, merch, AI assistant, Gemini agents y contratos registradas
+[0] APIFY_API_TOKEN is configured and ready for use
+[0] ✅ Subscription-protected routes are registered
+[0] ⏱️ Server timeouts configured: 15 minutes for long-running operations
+[0] 9:07:01 PM [express] 🛠 Running in development mode
+[0] 9:07:01 PM [express] 🔍 Vite will handle frontend routes in development mode
+[0] 9:07:01 PM [express] ✅ OPENAI_API_KEY is configured and ready for use
+[0] 9:07:01 PM [express] 🛠 Setting up Vite development server
+[0] 9:07:01 PM [express] 📌 Configuring Vite to handle frontend routes like "/"
+[0] 9:07:01 PM [express] ✅ Server started on port 3000
+[0] 9:07:01 PM [express] 🌍 Environment: development
+[0] 9:07:01 PM [express] 📂 Static files served from: /home/runner/workspace/client/public
+[0] 9:07:01 PM [express] 🔗 Access URL: https://workspace.replit.app

@@ -1,0 +1,40 @@
+⚠️ Firebase Admin deshabilitado en el servidor (modo cliente solamente)
+ℹ️ Firestore se usa solo desde el cliente frontend
+ℹ️ Stripe maneja suscripciones sin dependencias de Firestore del servidor
+🔑 Using Stripe key: TEST MODE
+🔗 Stripe BASE_URL configurada: https://artistboost.replit.app
+9:58:56 PM [api-proxy] ✅ All API keys are configured
+9:58:56 PM [express] 🔄 Starting server setup...
+🔍 Environment Check Results:
+⚠️ Warning: FAL_KEY environment variable is not set (FAL API access)
+✅ OPENAI_API_KEY is configured and ready for use
+✅ SESSION_SECRET is configured and ready for use
+✅ DATABASE_URL is configured and ready for use
+ℹ️ Some environment variables are missing. This might be expected in development.
+9:58:56 PM [express] 📁 Serving uploaded files from: /home/runner/workspace/uploads
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+📢 Registrando router de transcripción de audio en /api/audio
+✅ Router de transcripción de audio registrado
+📢 Registrando router de videos generados en /api/videos
+✅ Router de videos generados registrado
+📢 Registrando router de proyectos de music video en /api/music-video-projects
+✅ Router de proyectos de music video registrado
+📢 Registrando rutas de perfil de artista
+✅ Rutas de perfil, songs, merch, AI assistant, Gemini agents y contratos registradas
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+APIFY_API_TOKEN is configured and ready for use
+✅ Subscription-protected routes are registered
+⏱️ Server timeouts configured: 15 minutes for long-running operations
+9:58:56 PM [express] 🛠 Running in development mode
+9:58:56 PM [express] 🔍 Vite will handle frontend routes in development mode
+9:58:56 PM [express] ✅ OPENAI_API_KEY is configured and ready for use
+9:58:56 PM [express] 🛠 Setting up Vite development server
+9:58:56 PM [express] 📌 Configuring Vite to handle frontend routes like "/"
+9:58:56 PM [express] ❌ Error: Port 5000 is already in use. Please kill any processes using this port and try again.
+9:58:56 PM [express] 💡 Tip: You can find and kill the process using this port with:
+9:58:56 PM [express]    lsof -i :5000 | grep LISTEN     # Find process ID (PID)
+9:58:56 PM [express]    kill -9 <PID>                  # Kill the process

@@ -324,7 +324,20 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
     
     // Agregar todas las imágenes de referencia primero
     for (let i = 0; i < Math.min(referenceImagesBase64.length, 3); i++) {
-      const base64Data = referenceImagesBase64[i].split(',')[1] || referenceImagesBase64[i];
+      let base64Data = referenceImagesBase64[i];
+      
+      // Si es una URL, descargar la imagen y convertirla a base64
+      if (base64Data.startsWith('http://') || base64Data.startsWith('https://')) {
+        console.log(`📥 Descargando imagen de referencia ${i + 1} desde URL...`);
+        const axios = (await import('axios')).default;
+        const response = await axios.get(base64Data, { responseType: 'arraybuffer' });
+        base64Data = Buffer.from(response.data, 'binary').toString('base64');
+        console.log(`✅ Imagen descargada y convertida a base64`);
+      } else {
+        // Si ya es base64, extraer solo los datos (quitar el prefijo data:image/...)
+        base64Data = base64Data.split(',')[1] || base64Data;
+      }
+      
       parts.push({
         inlineData: {
           data: base64Data,
@@ -487,7 +500,7 @@ Create a high-quality, professional music video frame with cinematic composition
  * USAR IMÁGENES DE REFERENCIA SUBIDAS POR EL USUARIO
  * USA SEMILLA (SEED) PARA COHERENCIA VISUAL
  */
-async function generateImageWithFAL(
+export async function generateImageWithFAL(
   prompt: string,
   referenceImagesBase64: string[],
   seed?: number

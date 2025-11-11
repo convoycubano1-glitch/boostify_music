@@ -8,6 +8,9 @@ import cors from 'cors';
 import fs from 'fs';
 import fileUpload from 'express-fileupload';
 
+// FORCE development mode
+process.env.NODE_ENV = 'development';
+
 const app = express();
 
 // Enable CORS for development
@@ -197,8 +200,9 @@ app.use((req, res, next) => {
       });
     }
 
-    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) :
-      (process.env.REPLIT_PORT ? parseInt(process.env.REPLIT_PORT, 10) : 5000);
+    const PORT = process.env.NODE_ENV !== "production" ? 5000 :
+      (process.env.PORT ? parseInt(process.env.PORT, 10) :
+      (process.env.REPLIT_PORT ? parseInt(process.env.REPLIT_PORT, 10) : 5000));
 
     const isReplitEnv = !!process.env.REPL_SLUG || !!process.env.REPLIT_IDENTITY;
 

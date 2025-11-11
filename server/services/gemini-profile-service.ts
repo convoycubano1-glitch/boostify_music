@@ -56,11 +56,17 @@ Guidelines:
 Generate the biography now:`;
 
     console.log('🎵 Generating artist biography with Gemini...');
+    console.log('📝 Artist info:', JSON.stringify(artistInfo));
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    const response = await Promise.race([
+      ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      }),
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+      )
+    ]);
 
     const biography = response.text?.trim() || "";
     
@@ -68,7 +74,7 @@ Generate the biography now:`;
       throw new Error('No biography text generated');
     }
 
-    console.log('✅ Biography generated successfully');
+    console.log('✅ Biography generated successfully:', biography.substring(0, 100) + '...');
 
     return {
       success: true,
@@ -76,7 +82,8 @@ Generate the biography now:`;
     };
 
   } catch (error: any) {
-    console.error('Error generating biography:', error);
+    console.error('❌ Error generating biography:', error.message);
+    console.error('Stack:', error.stack);
     return {
       success: false,
       error: error.message || 'Failed to generate biography'

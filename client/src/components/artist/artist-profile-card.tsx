@@ -59,6 +59,7 @@ interface Product {
   imageUrl: string;
   category: string;
   userId: string;
+  sizes?: string[];
   createdAt?: any;
 }
 
@@ -254,15 +255,18 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           return productsData;
         }
 
-        // Si no hay productos, generar 5 automáticamente
+        // Si no hay productos, generar 6 automáticamente usando la imagen del brand del artista
         const artistName = userProfile?.displayName || userProfile?.name || "Artist";
+        const brandImage = userProfile?.profileImage || userProfile?.photoURL || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
+        
         const defaultProducts: Omit<Product, 'id'>[] = [
           {
             name: `${artistName} T-Shirt`,
             description: `Official ${artistName} merchandise t-shirt with exclusive design`,
             price: 29.99,
-            imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
+            imageUrl: brandImage,
             category: 'Apparel',
+            sizes: ['S', 'M', 'L', 'XL', 'XXL'],
             userId: artistId,
             createdAt: new Date(),
           },
@@ -270,8 +274,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             name: `${artistName} Hoodie`,
             description: `Premium quality hoodie featuring ${artistName}'s brand logo`,
             price: 49.99,
-            imageUrl: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400',
+            imageUrl: brandImage,
             category: 'Apparel',
+            sizes: ['S', 'M', 'L', 'XL', 'XXL'],
             userId: artistId,
             createdAt: new Date(),
           },
@@ -279,8 +284,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             name: `${artistName} Cap`,
             description: `Stylish cap with embroidered ${artistName} logo`,
             price: 24.99,
-            imageUrl: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400',
+            imageUrl: brandImage,
             category: 'Accessories',
+            sizes: ['One Size'],
             userId: artistId,
             createdAt: new Date(),
           },
@@ -288,8 +294,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             name: `${artistName} Poster`,
             description: `High-quality poster perfect for your room or studio`,
             price: 14.99,
-            imageUrl: 'https://images.unsplash.com/photo-1626379801173-d0f23242cb27?w=400',
+            imageUrl: brandImage,
             category: 'Art',
+            sizes: ['18x24"', '24x36"'],
             userId: artistId,
             createdAt: new Date(),
           },
@@ -297,8 +304,19 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             name: `${artistName} Sticker Pack`,
             description: `Pack of 10 exclusive stickers featuring ${artistName}'s brand`,
             price: 9.99,
-            imageUrl: 'https://images.unsplash.com/photo-1609520778163-a16fb3b0453e?w=400',
+            imageUrl: brandImage,
             category: 'Accessories',
+            sizes: ['3"', '5"'],
+            userId: artistId,
+            createdAt: new Date(),
+          },
+          {
+            name: `${artistName} Vinyl Record`,
+            description: `Limited edition vinyl featuring ${artistName}'s best tracks`,
+            price: 34.99,
+            imageUrl: brandImage,
+            category: 'Music',
+            sizes: ['12"'],
             userId: artistId,
             createdAt: new Date(),
           },

@@ -1,0 +1,19 @@
+3.png?alt=media&token=dcd03bd0-9a75-494f-b1a1-139e5fc6ba30\"","status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"contents[0].parts[0].inline_data.data","description":"Invalid value at 'contents[0].parts[0].inline_data.data' (TYPE_BYTES), Base64 decoding failed for \"https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-references%2FcoqofMnNMQUmnqU39h5EEO05Lwi1%2F1762898954421_freepik__cara-de-el__11803.png?alt=media&token=dcd03bd0-9a75-494f-b1a1-139e5fc6ba30\""}]}]}}
+10:09:47 PM [express] 📤 Response: POST /generate-profile-image 200 in 306ms
+10:09:49 PM [express] 📥 Incoming request: POST /api/artist-profile/generate-banner-image
+🎨 Generating banner image with Nano Banana (Gemini 2.5 Flash Image)...
+👤 Using reference image for facial consistency in banner...
+Generando imagen con 1 referencias faciales...
+🔑 Intentando generación con API key 1/1...
+Error generando imagen con múltiples referencias faciales: ApiError: {"error":{"code":400,"message":"Invalid value at 'contents[0].parts[0].inline_data.data' (TYPE_BYTES), Base64 decoding failed for \"https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-references%2FcoqofMnNMQUmnqU39h5EEO05Lwi1%2F1762898954421_freepik__cara-de-el__11803.png?alt=media&token=dcd03bd0-9a75-494f-b1a1-139e5fc6ba30\"","status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"contents[0].parts[0].inline_data.data","description":"Invalid value at 'contents[0].parts[0].inline_data.data' (TYPE_BYTES), Base64 decoding failed for \"https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-references%2FcoqofMnNMQUmnqU39h5EEO05Lwi1%2F1762898954421_freepik__cara-de-el__11803.png?alt=media&token=dcd03bd0-9a75-494f-b1a1-139e5fc6ba30\""}]}]}}
+    at throwErrorIfNotOK (/home/runner/workspace/node_modules/@google/genai/src/_api_client.ts:826:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/node_modules/@google/genai/src/_api_client.ts:487:9)
+    at async Models.Models.generateContent (/home/runner/workspace/node_modules/@google/genai/src/models.ts:69:14)
+    at async generateContentWithFallback (/home/runner/workspace/server/services/gemini-image-service.ts:30:24)
+    at async generateImageWithMultipleFaceReferences (/home/runner/workspace/server/services/gemini-image-service.ts:340:22)
+    at async <anonymous> (/home/runner/workspace/server/routes/artist-profile.ts:91:16) {
+  status: 400
+}
+🎨 Banner image result: { success: false, hasError: true }
+❌ Banner image generation failed: {"error":{"code":400,"message":"Invalid value at 'contents[0].parts[0].inline_data.data' (TYPE_BYTES), Base64 decoding failed for \"https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-references%2FcoqofMnNMQUmnqU39h5EEO05Lwi1%2F1762898954421_freepik__cara-de-el__11803.png?alt=media&token=dcd03bd0-9a75-494f-b1a1-139e5fc6ba30\"","status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"contents[0].parts[0].inline_data.data","description":"Invalid value at 'contents[0].parts[0].inline_data.data' (TYPE_BYTES), Base64 decoding failed for \"https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-references%2FcoqofMnNMQUmnqU39h5EEO05Lwi1%2F1762898954421_freepik__cara-de-el__11803.png?alt=media&token=dcd03bd0-9a75-494f-b1a1-139e5fc6ba30\""}]}]}}
