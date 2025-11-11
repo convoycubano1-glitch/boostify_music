@@ -4,8 +4,18 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Header } from "../components/layout/header";
 import { ContractForm, type ContractFormValues } from "../components/contracts/contract-form";
-import { generateContract } from "../lib/openai";
-import { saveContract, getUserContracts, deleteContract, updateContract, type Contract } from "../lib/contracts";
+import { 
+  generateContract, 
+  analyzeContract,
+  getContractTemplates,
+  generateFromTemplate,
+  saveContract, 
+  getUserContracts, 
+  deleteContract, 
+  updateContract, 
+  type Contract,
+  type ContractTemplate 
+} from "../lib/gemini-contracts";
 import html2pdf from 'html2pdf.js';
 import {
   Dialog,
@@ -228,19 +238,19 @@ export default function ContractsPage() {
       title: string;
       type: string;
       content: string;
-      status: string;
+      status: 'draft' | 'active' | 'signed' | 'expired';
     }) => {
       if (!auth.currentUser) {
         throw new Error('Usuario no autenticado');
       }
-      // Añadir campos requeridos: userId y createdAt
-      const completeContractData = {
-        ...contractData,
-        userId: auth.currentUser.uid,
-        createdAt: new Date()
-      };
-      console.log('Saving contract with data:', completeContractData);
-      return await saveContract(completeContractData);
+      
+      console.log('Saving contract with data:', contractData);
+      return await saveContract({
+        title: contractData.title,
+        content: contractData.content,
+        contractType: contractData.type,
+        status: contractData.status
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -262,7 +272,13 @@ export default function ContractsPage() {
   const handleGenerateContract = async (values: ContractFormValues) => {
     setIsGenerating(true);
     try {
-      const contract = await generateContract(values);
+      const contract = await generateContract({
+        contractType: values.type,
+        artistName: values.artistName,
+        clientName: values.otherParty,
+        paymentTerms: values.terms,
+        additionalClauses: values.additionalDetails
+      });
       setGeneratedContract(contract);
       setContractTitle(`${values.type} Agreement - ${values.artistName}`);
       toast({
@@ -306,7 +322,7 @@ export default function ContractsPage() {
         title: contractTitle,
         type: "legal",
         content: generatedContract,
-        status: "draft"
+        status: "draft" as const
       });
 
       setGeneratedContract(null);
@@ -317,15 +333,27 @@ export default function ContractsPage() {
     }
   };
 
-  // Función para analizar contratos usando AI
-  const analyzeContract = async (contractText: string) => {
+  // Función para analizar contratos usando Gemini AI
+  const analyzeContractFunction = async (contractText: string) => {
     setIsAnalyzing(true);
     try {
-      const analysis = await generateContract({ // Modificar esta función para analizar en lugar de generar
-        type: "analysis",
-        content: contractText
-      });
-      setAnalysisResult(analysis);
+      const analysis = await analyzeContract(contractText);
+      
+      const formattedAnalysis = `
+📊 RESUMEN:
+${analysis.summary}
+
+⚠️ RIESGOS IDENTIFICADOS:
+${analysis.risks.map((risk, i) => `${i + 1}. ${risk}`).join('\n')}
+
+💡 RECOMENDACIONES:
+${analysis.recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
+
+🔑 TÉRMINOS CLAVE:
+${analysis.keyTerms.map((term, i) => `${i + 1}. ${term.term}: ${term.description}`).join('\n')}
+`;
+      
+      setAnalysisResult(formattedAnalysis);
     } catch (error) {
       console.error('Error analyzing contract:', error);
       toast({
@@ -494,7 +522,7 @@ export default function ContractsPage() {
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell py-4">
                                   <Badge variant="outline" className="text-sm px-3 py-1">
-                                    {contract.type}
+                                    {contract.contractType || 'Legal'}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="py-4">
@@ -615,7 +643,7 @@ export default function ContractsPage() {
                       className="min-h-[150px] md:min-h-[200px]"
                     />
                     <Button
-                      onClick={() => analyzeContract(contractToAnalyze)}
+                      onClick={() => analyzeContractFunction(contractToAnalyze)}
                       disabled={isAnalyzing || !contractToAnalyze}
                       className="w-full bg-orange-500 hover:bg-orange-600"
                     >

@@ -37,6 +37,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { db } from "../firebase";
 import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "../hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 // Investment Calculator Component
 function InvestmentCalculator() {
   const [investmentAmount, setInvestmentAmount] = useState(5000);
@@ -45,17 +47,68 @@ function InvestmentCalculator() {
   const [monthlyReturn, setMonthlyReturn] = useState(0);
   const [totalReturn, setTotalReturn] = useState(0);
   const [finalAmount, setFinalAmount] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
 
   // Recalculate returns whenever inputs change
   useEffect(() => {
-    const calculatedMonthlyReturn = (investmentAmount * returnRate) / 100;
+    // Calculate return rate based on amount
+    let adjustedReturnRate = 0.04; // 4% default
+    if (investmentAmount >= 10000) adjustedReturnRate = 0.06; // 6%
+    else if (investmentAmount >= 5000) adjustedReturnRate = 0.05; // 5%
+    
+    setReturnRate(adjustedReturnRate * 100);
+    
+    const calculatedMonthlyReturn = investmentAmount * adjustedReturnRate;
     const calculatedTotalReturn = calculatedMonthlyReturn * durationMonths;
     const calculatedFinalAmount = investmentAmount + calculatedTotalReturn;
 
     setMonthlyReturn(calculatedMonthlyReturn);
     setTotalReturn(calculatedTotalReturn);
     setFinalAmount(calculatedFinalAmount);
-  }, [investmentAmount, returnRate, durationMonths]);
+  }, [investmentAmount, durationMonths]);
+
+  // Handle investment with Stripe
+  const handleInvestWithStripe = async () => {
+    try {
+      setIsProcessing(true);
+      
+      if (investmentAmount < 2000) {
+        toast({
+          title: "Invalid Amount",
+          description: "Minimum investment is $2,000 USD",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      // Call API to create Stripe checkout session
+      const response = await axios.post('/api/investors/investment/create-checkout', {
+        amount: investmentAmount,
+        planType: investmentAmount >= 10000 ? 'premium' : investmentAmount >= 5000 ? 'standard' : 'basic',
+        duration: durationMonths
+      });
+
+      if (response.data.success && response.data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.url;
+      }
+
+    } catch (error: any) {
+      console.error("Error creating checkout session:", error);
+      
+      const errorMessage = error.response?.data?.message || "Error processing payment. Please try again.";
+      
+      toast({
+        title: "Payment Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
@@ -164,9 +217,23 @@ function InvestmentCalculator() {
               </div>
             </div>
 
-            <Button className="w-full bg-orange-500 hover:bg-orange-600 mt-4">
-              <DollarSign className="mr-2 h-4 w-4" />
-              Invertir Ahora
+            <Button 
+              className="w-full bg-orange-500 hover:bg-orange-600 mt-4"
+              onClick={handleInvestWithStripe}
+              disabled={isProcessing || investmentAmount < 2000}
+              data-testid="button-invest-stripe"
+            >
+              {isProcessing ? (
+                <>
+                  <Clock className="mr-2 h-4 w-4 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Pagar con Stripe
+                </>
+              )}
             </Button>
           </div>
         </Card>
@@ -459,7 +526,7 @@ function InvestorRegistrationForm() {
     },
   });
 
-  // Handle form submission
+  // Handle form submission using API
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsSubmitting(true);
@@ -474,59 +541,42 @@ function InvestorRegistrationForm() {
         return;
       }
       
-      // Create document with investor data
-      const investorData = {
-        ...values,
-        userId: user.uid,
+      // Call API to register investor
+      const response = await axios.post('/api/investors/register', {
+        fullName: values.fullName,
+        email: values.email,
+        phone: values.phone,
+        country: values.country,
         investmentAmount: parseFloat(values.investmentAmount),
-        createdAt: serverTimestamp(),
-        status: "pending"
-      };
+        investmentGoals: values.investmentGoals,
+        riskTolerance: values.riskTolerance,
+        investorType: values.investorType,
+        termsAccepted: values.termsAccepted
+      });
       
-      // Direct Firestore access (with updated security rules)
-      try {
-        // Add document to Firestore collection
-        const docRef = await addDoc(collection(db, "investors"), investorData);
-        console.log("Investor registration saved with ID:", docRef.id);
-        
+      if (response.data.success) {
         toast({
           title: "Registration Successful",
           description: "Your investor registration has been submitted successfully.",
-          variant: "default",
         });
         
         // Reset form
         form.reset();
-      } catch (firestoreError) {
-        console.error("Firestore error:", firestoreError);
         
-        if (firestoreError instanceof Error && firestoreError.message.includes("permission-denied")) {
-          toast({
-            title: "Permission Error",
-            description: "You don't have permission to register as an investor. Please check your account or contact support.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Registration Failed",
-            description: "There was an error registering your investor information. Please try again.",
-            variant: "destructive",
-          });
-        }
-        
-        throw firestoreError;
+        // Refresh investor data
+        window.location.reload();
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting investor registration:", error);
       
-      if (!(error instanceof Error) || !error.message.includes("permission-denied")) {
-        toast({
-          title: "Registration Failed",
-          description: "There was an unexpected error. Please try again or contact support.",
-          variant: "destructive",
-        });
-      }
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || "There was an unexpected error. Please try again.";
+      
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -744,35 +794,35 @@ function InvestorRegistrationForm() {
 }
 
 // Componente Estadísticas del Inversor 
-function InvestorStats() {
+function InvestorStats({ investorData, globalStats }: { investorData?: any; globalStats?: any }) {
   const stats = [
     { 
-      title: "Inversores Activos", 
-      value: "187", 
+      title: "Total Invertido", 
+      value: `$${(investorData?.stats?.totalInvested || 0).toLocaleString()}`, 
       growth: "+12%", 
-      icon: Users,
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10" 
-    },
-    { 
-      title: "Inversión Promedio", 
-      value: "$7,250", 
-      growth: "+5%", 
       icon: DollarSign,
       color: "text-green-500",
       bgColor: "bg-green-500/10" 
     },
     { 
-      title: "Retorno Promedio", 
-      value: "4.8%", 
-      growth: "+0.2%", 
+      title: "Valor Actual", 
+      value: `$${(investorData?.stats?.currentValue || 0).toLocaleString()}`, 
+      growth: `+${(((investorData?.stats?.currentValue - investorData?.stats?.totalInvested) / (investorData?.stats?.totalInvested || 1)) * 100).toFixed(1)}%`, 
       icon: TrendingUp,
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10" 
+    },
+    { 
+      title: "Retornos Totales", 
+      value: `$${(investorData?.stats?.totalReturns || 0).toLocaleString()}`, 
+      growth: "+15%", 
+      icon: Target,
       color: "text-orange-500",
       bgColor: "bg-orange-500/10" 
     },
     { 
-      title: "Capital Recaudado", 
-      value: "$3.2M", 
+      title: "Capital Plataforma", 
+      value: `$${((globalStats?.data?.totalCapital || 0) / 1000000).toFixed(1)}M`, 
       growth: "+8%", 
       icon: BarChart,
       color: "text-purple-500",
@@ -805,20 +855,29 @@ function InvestorStats() {
 export default function InvestorsDashboard() {
   const [selectedTab, setSelectedTab] = useState("overview");
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // Simulated user investment data
+  // Query investor data from API
+  const { data: investorData, isLoading: isLoadingInvestor } = useQuery({
+    queryKey: ['/api/investors/me'],
+    enabled: !!user,
+  });
+
+  // Query global stats from API
+  const { data: globalStats } = useQuery({
+    queryKey: ['/api/investors/stats'],
+  });
+
+  // Extract investment data
   const investmentData = {
-    totalInvested: 5000,
-    currentValue: 5450,
-    monthlyReturns: [
-      { month: 'Jan', return: 4.2 },
-      { month: 'Feb', return: 5.1 },
-      { month: 'Mar', return: 4.8 },
-      { month: 'Apr', return: 5.3 },
-      { month: 'May', return: 4.9 },
-      { month: 'Jun', return: 5.5 }
-    ],
-    nextPaymentDate: '2025-03-15',
+    totalInvested: investorData?.data?.stats?.totalInvested || 0,
+    currentValue: investorData?.data?.stats?.currentValue || 0,
+    monthlyReturns: investorData?.data?.investments?.slice(0, 6).map((inv: any, idx: number) => ({
+      month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][idx],
+      return: (inv.totalReturns / inv.amount * 100) || 0
+    })) || [],
+    nextPaymentDate: investorData?.data?.investments?.[0]?.nextPaymentDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     investmentRounds: [
       { name: 'Seed Round', date: '2024-06-01', status: 'Closed', raised: '$500K' },
       { name: 'Angel Round', date: '2024-09-15', status: 'Closed', raised: '$1.2M' },
@@ -826,6 +885,8 @@ export default function InvestorsDashboard() {
       { name: 'Series B', date: '2025-07-15', status: 'Upcoming', target: '$8M' }
     ]
   };
+
+  const isRegistered = investorData?.data?.registered || false;
 
   // Handle investment button click - Directs the user to the registration form
   const handleInvestNow = () => {
@@ -904,7 +965,7 @@ export default function InvestorsDashboard() {
               {/* Overview Tab */}
               <TabsContent value="overview">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <InvestorStats />
+                  <InvestorStats investorData={investorData?.data} globalStats={globalStats} />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6 mb-8">

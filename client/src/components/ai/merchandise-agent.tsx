@@ -1,11 +1,14 @@
 // src/components/ai/merchandise-agent.tsx
 
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
-import { openRouterService } from "../../lib/api/openrouteraiagents";
+import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
+import { db } from "../../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Button } from "../ui/button";
 
 export function MerchandiseAgent() {
   const { user } = useAuth();
@@ -17,6 +20,37 @@ export function MerchandiseAgent() {
     iconColor: "text-white",
     accentColor: "#F59E0B",
     personality: "🛍️ Creative Designer",
+  };
+
+  const saveToFirestore = async (data: {
+    ideas: string;
+    params: any;
+  }) => {
+    if (!user) return;
+
+    try {
+      const ideasRef = collection(db, 'merchandiseIdeas');
+      await addDoc(ideasRef, {
+        userId: user.uid,
+        ideas: data.ideas,
+        productType: data.params.productType,
+        style: data.params.style,
+        timestamp: serverTimestamp(),
+        agentType: 'merchandise'
+      });
+
+      toast({
+        title: "Saved Successfully",
+        description: "Your merchandise ideas have been saved to your library.",
+      });
+    } catch (error) {
+      console.error('Error saving to Firestore:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save ideas. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const actions: AgentAction[] = [
@@ -61,23 +95,24 @@ export function MerchandiseAgent() {
           return;
         }
         try {
-          const prompt = `Generate merchandise designs with the following parameters:
-          Product Type: ${params.productType}
-          Design Style: ${params.style}
-
-          Provide detailed design descriptions and concepts.`;
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "merchandise",
-            user.uid,
-            "You are a creative designer specializing in music merchandise."
-          );
-          setResult(response);
-          toast({
-            title: "Products Designed",
-            description: "Your merchandise designs have been generated successfully.",
+          const ideas = await geminiAgentsService.generateMerchandiseIdeas({
+            artistStyle: params.style,
+            targetMarket: params.productType
           });
-          return response;
+
+          setResult(ideas);
+          
+          // Guardar automáticamente en Firestore
+          await saveToFirestore({
+            ideas,
+            params
+          });
+
+          toast({
+            title: "Products Designed & Saved",
+            description: "Your merchandise designs have been generated and saved successfully.",
+          });
+          return ideas;
         } catch (error) {
           console.error("Detailed error designing products:", {
             message: error.message,

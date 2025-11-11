@@ -1,0 +1,90 @@
+{
+  "query": "Bad Bunny",
+  "artist": {
+    "name": "Bad Bunny",
+    "real_name": "Benito Antonio Martínez Ocasio",
+    "country": "Puerto Rico",
+    "genres": [
+      "Latin trap",
+      "Reggaeton",
+      "Latin pop",
+      "Hip hop"
+    ],
+    "biography": "Texto de biografía corta del artista...",
+    "profiles": {
+      "website": "https://example.com",
+      "spotify": {
+        "name": "Bad Bunny",
+        "url": "https://open.spotify.com/artist/..."
+      },
+      "youtube": {
+        "channel_name": "Bad Bunny",
+        "url": "https://www.youtube.com/channel/..."
+      },
+      "instagram": {
+        "handle": "@badbunnypr",
+        "url": "https://www.instagram.com/badbunnypr/"
+      },
+      "facebook": {
+        "page_name": "Bad Bunny",
+        "url": "https://www.facebook.com/BadBunnyOfficial/"
+      },
+      "tiktok": {
+        "handle": "@badbunny",
+        "url": "https://www.tiktok.com/@badbunny"
+      }
+    },
+    "top_youtube_videos": [
+      {
+        "title": "Bad Bunny - WHERE SHE GOES (Official Video)",
+        "url": "https://www.youtube.com/watch?v=bef8QLNHubw",
+        "thumbnail_url": "https://img.youtube.com/vi/bef8QLNHubw/hqdefault.jpg",
+        "type": "official_music_video"
+      },
+      {
+        "title": "BAD BUNNY - MONACO (Official Video)",
+        "url": "https://www.youtube.com/watch?v=J-7knuczw2E",
+        "thumbnail_url": "https://img.youtube.com/vi/J-7knuczw2E/hqdefault.jpg",
+        "type": "official_music_video"
+      },
+      {
+        "title": "Bad Bunny - Otro Atardecer (Visualizer)",
+        "url": "https://www.youtube.com/watch?v=XXXXXXXXXXX",
+        "thumbnail_url": "https://img.youtube.com/vi/XXXXXXXXXXX/hqdefault.jpg",
+        "type": "visualizer"
+      }
+    ],
+    "concerts": {
+      "upcoming": [
+        {
+          "tour_name": "Debí Tirar Más Fotos World Tour",
+          "location": {
+            "city": "San Juan",
+            "country": "Puerto Rico",
+            "venue": "Coliseo de Puerto Rico"
+          },
+          "date": "2025-07-10",
+          "status": "scheduled",
+          "source": "ticketmaster"
+        }
+      ],
+      "highlights": [
+        {
+          "event_name": "World’s Hottest Tour",
+          "year": 2022,
+          "note": "Gira de estadios récord con fechas icónicas como Yankee Stadium."
+        }
+      ]
+    }
+  },
+  "meta": {
+    "source": "Boostify Music Artist Search",
+    "last_updated_utc": "2025-11-10T00:00:00Z",
+    "debug": {
+      "spotify": true,
+      "youtube": true,
+      "social_scraper": true,
+      "concerts_provider": true
+    }
+  }
+}

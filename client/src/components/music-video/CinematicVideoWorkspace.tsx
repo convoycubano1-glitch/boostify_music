@@ -15,11 +15,26 @@ import {
   Wand2,
   Trash2,
   Play,
-  Music
+  Music,
+  Save,
+  Loader2
 } from 'lucide-react';
 import { CinematicSceneEditor, type CinematicSceneData } from './CinematicSceneEditor';
 import { useToast } from "../../hooks/use-toast";
 import { generateBatchImages, type CinematicScene } from "../../lib/api/gemini-image";
+import { createProjectWithImages } from "../../lib/services/video-project-service";
+import { useAuth } from "../../hooks/use-auth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Progress } from "../ui/progress";
 
 interface CinematicVideoWorkspaceProps {
   initialScenes?: CinematicSceneData[];
@@ -33,6 +48,7 @@ export function CinematicVideoWorkspace({
   projectName = "Mi Video Musical"
 }: CinematicVideoWorkspaceProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [scenes, setScenes] = useState<CinematicSceneData[]>(
     initialScenes.length > 0 ? initialScenes : getDefaultScenes()
   );
@@ -40,6 +56,11 @@ export function CinematicVideoWorkspace({
     scenes.length > 0 ? scenes[0].id : 1
   );
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [isSavingProject, setIsSavingProject] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveProjectName, setSaveProjectName] = useState(projectName);
+  const [saveProgress, setSaveProgress] = useState(0);
+  const [saveStatus, setSaveStatus] = useState("");
 
   const handleSceneUpdate = (updatedScene: CinematicSceneData) => {
     setScenes(prev => 
@@ -198,6 +219,104 @@ export function CinematicVideoWorkspace({
     }
   };
 
+  const handleSaveProject = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para guardar proyectos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const scenesWithImages = scenes.filter(s => s.imageUrl);
+    if (scenesWithImages.length === 0) {
+      toast({
+        title: "No hay imágenes",
+        description: "Genera las imágenes antes de guardar el proyecto",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowSaveDialog(true);
+  };
+
+  const confirmSaveProject = async () => {
+    if (!user || !saveProjectName.trim()) return;
+
+    setIsSavingProject(true);
+    setSaveProgress(0);
+    setSaveStatus("Iniciando...");
+
+    try {
+      const scenesWithImages = scenes.filter(s => s.imageUrl);
+      
+      const generatedImages = scenesWithImages.map(scene => ({
+        sceneId: `scene-${scene.id}`,
+        imageData: scene.imageUrl!
+      }));
+
+      const totalDuration = scenesWithImages.length * 4;
+      
+      const scriptData = {
+        scenes: scenesWithImages.map((scene, index) => ({
+          scene_id: `scene-${scene.id}`,
+          start_time: index * 4,
+          duration: 4,
+          description: scene.scene,
+          shot_type: "Medium Shot",
+          camera_movement: scene.movement || "static",
+          lens: scene.camera || "50mm",
+          visual_style: scene.style || "cinematic",
+          lighting: scene.lighting || "natural",
+          role: index % 2 === 0 ? "performance" : "b-roll",
+          image_url: scene.imageUrl || "",
+          location: ""
+        })) as any[],
+        duration: totalDuration,
+        sceneCount: scenesWithImages.length
+      };
+
+      const { projectId, project } = await createProjectWithImages(
+        saveProjectName.trim(),
+        user.uid,
+        scriptData,
+        generatedImages,
+        {
+          audioUrl,
+          createdFrom: "cinematic-workspace"
+        },
+        (progress, status) => {
+          setSaveProgress(progress);
+          setSaveStatus(status);
+        }
+      );
+
+      setShowSaveDialog(false);
+      
+      toast({
+        title: "¡Proyecto guardado!",
+        description: `${saveProjectName} ha sido guardado exitosamente con ${scenesWithImages.length} escenas.`
+      });
+
+      console.log("Proyecto guardado:", { projectId, project });
+    } catch (error: any) {
+      console.error('Error guardando proyecto:', error);
+      toast({
+        title: "Error al guardar",
+        description: error.message || "No se pudo guardar el proyecto. Intente nuevamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingProject(false);
+      setSaveProgress(0);
+      setSaveStatus("");
+    }
+  };
+
+  const hasGeneratedImages = scenes.some(s => s.imageUrl);
+
   const selectedScene = scenes.find(s => s.id === selectedSceneId);
 
   return (
@@ -263,10 +382,76 @@ export function CinematicVideoWorkspace({
                 <Wand2 className="h-4 w-4 mr-1" />
                 {isGeneratingAll ? "Generando..." : "Generar Todas"}
               </Button>
+
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleSaveProject}
+                disabled={!hasGeneratedImages || isSavingProject}
+                data-testid="button-save-project"
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                Guardar Proyecto
+              </Button>
             </div>
           </div>
         </CardHeader>
       </Card>
+
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Guardar Proyecto</DialogTitle>
+            <DialogDescription>
+              El proyecto se guardará con todas las imágenes generadas en Firebase Storage.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="project-name">Nombre del Proyecto</Label>
+              <Input
+                id="project-name"
+                value={saveProjectName}
+                onChange={(e) => setSaveProjectName(e.target.value)}
+                placeholder="Ej: Mi Video Musical - Versión 1"
+                disabled={isSavingProject}
+                data-testid="input-project-name"
+              />
+            </div>
+
+            {isSavingProject && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{saveStatus}</span>
+                  <span className="font-medium">{Math.round(saveProgress)}%</span>
+                </div>
+                <Progress value={saveProgress} className="h-2" />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSaveDialog(false)}
+              disabled={isSavingProject}
+              data-testid="button-cancel-save"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmSaveProject}
+              disabled={isSavingProject || !saveProjectName.trim()}
+              data-testid="button-confirm-save"
+            >
+              {isSavingProject && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Contenido principal: Lista de escenas y editor */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 overflow-hidden">

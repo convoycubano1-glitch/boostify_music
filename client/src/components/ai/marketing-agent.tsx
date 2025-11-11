@@ -1,12 +1,15 @@
 // src/components/ai/marketing-agent.tsx
 
-import { Megaphone } from "lucide-react";
+import { Megaphone, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "../../lib/api/openrouteraiagents";
+import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
+import { db } from "../../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Button } from "../ui/button";
 
 interface Step {
   message: string;
@@ -34,17 +37,49 @@ export function MarketingAgent() {
     setSteps([]);
 
     const simulatedSteps = [
-      "Analyzing target audience...",
+      "Analyzing target audience with AI...",
       "Evaluating market trends...",
-      "Developing strategy...",
+      "Developing comprehensive strategy...",
       "Optimizing campaign parameters...",
-      "Finalizing recommendations...",
+      "Finalizing professional recommendations...",
     ];
 
     for (let i = 0; i < simulatedSteps.length; i++) {
       setSteps((prev) => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
       setProgress((i + 1) * 20);
       await new Promise((resolve) => setTimeout(resolve, 1300));
+    }
+  };
+
+  const saveToFirestore = async (data: {
+    strategy: string;
+    params: any;
+  }) => {
+    if (!user) return;
+
+    try {
+      const strategiesRef = collection(db, 'marketingStrategies');
+      await addDoc(strategiesRef, {
+        userId: user.uid,
+        strategy: data.strategy,
+        targetAudience: data.params.target,
+        budget: data.params.budget,
+        platform: data.params.platform,
+        timestamp: serverTimestamp(),
+        agentType: 'marketing'
+      });
+
+      toast({
+        title: "Saved Successfully",
+        description: "Your marketing strategy has been saved to your library.",
+      });
+    } catch (error) {
+      console.error('Error saving to Firestore:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save strategy. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -101,32 +136,27 @@ export function MarketingAgent() {
         try {
           await simulateThinking();
 
-          const prompt = `Create a comprehensive marketing plan with the following parameters:
-          Target Audience: ${params.target}
-          Budget: $${params.budget}
-          Main Platform: ${params.platform}
+          const strategy = await geminiAgentsService.generateMarketingStrategy({
+            targetAudience: params.target,
+            budget: `$${params.budget}`,
+            platforms: [params.platform],
+            goals: "Music promotion and audience growth"
+          });
 
-          Please provide:
-          1. Campaign strategy
-          2. Content calendar
-          3. Budget allocation
-          4. KPIs and metrics
-          5. Growth projections`;
+          setResult(strategy);
+          
+          // Guardar automáticamente en Firestore
+          await saveToFirestore({
+            strategy,
+            params
+          });
 
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "marketing",
-            user.uid,
-            "You are an experienced digital marketing strategist specializing in music industry promotion and audience growth."
-          );
-
-          setResult(response);
           toast({
-            title: "Marketing Plan Generated",
+            title: "Marketing Plan Generated & Saved",
             description: "Your marketing strategy has been created successfully.",
           });
 
-          return response;
+          return strategy;
         } catch (error) {
           console.error("Detailed error generating marketing plan:", {
             message: error.message,

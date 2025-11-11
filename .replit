@@ -11,73 +11,25 @@ buildCommand = "npm run build"
 run = ["sh", "-c", "node dist/server/index.js"]
 build = ["sh", "-c", "npm run build"]
 
+[agent]
+integrations = ["javascript_stripe:1.0.0", "javascript_gemini_ai_integrations:1.0.0"]
+
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
 localPort = 5001
-externalPort = 4200
-
-[[ports]]
-localPort = 35591
-externalPort = 5000
-
-[[ports]]
-localPort = 39577
-externalPort = 3003
-
-[[ports]]
-localPort = 40103
 externalPort = 3001
 
 [[ports]]
-localPort = 41007
-externalPort = 3000
-
-[[ports]]
-localPort = 41609
+localPort = 37025
 externalPort = 3002
 
-[workflows]
-runButton = "Dev Server"
+[[ports]]
+localPort = 39711
+externalPort = 3003
 
-[[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[workflows.workflow.metadata]
-agentRequireRestartOnSave = false
-
-[[workflows.workflow.tasks]]
-task = "packager.installForAll"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node start.js"
-waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Dev Server"
-author = 17917355
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run client:dev"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run server:dev"
-
-[agent]
-integrations = ["javascript_stripe:1.0.0"]
+[[ports]]
+localPort = 40519
+externalPort = 3000

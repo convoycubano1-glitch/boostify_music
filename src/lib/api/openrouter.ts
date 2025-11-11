@@ -1,5 +1,0 @@
-// Este archivo es un simple wrapper para openrouter.fixed.ts
-import { env } from "../../env";
-
-// Exportamos todo desde el archivo corregido
-export * from './openrouter.fixed';

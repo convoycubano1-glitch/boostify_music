@@ -1,6 +1,7 @@
 /**
  * Editor de timeline principal
  * Componente principal para la edición de videos con timeline multiples capas
+ */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TimelineLayers } from './TimelineLayers';
 import { Button } from '../../../components/ui/button';

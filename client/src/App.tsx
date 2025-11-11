@@ -46,6 +46,7 @@ import MerchandisePage from "./pages/merchandise";
 import MessagesPage from "./pages/messages";
 import MusicVideoCreator from "./pages/music-video-creator";
 import MusicVideoWorkflowPage from "./pages/music-video-workflow-page";
+import MusicVideoWorkflowEnhancedPage from "./pages/music-video-workflow-enhanced";
 import MusicGeneratorPage from "./pages/music-generator";
 import NewsPage from "./pages/news";
 import PRPage from "./pages/pr";
@@ -72,9 +73,11 @@ import SocialNetworkPage from "./pages/social-network";
 import FirestoreSocialPage from "./pages/firestore-social";
 import { BottomNav } from "./components/layout/bottom-nav";
 import ProfilePage from "./pages/profile";
+import ArtistProfilePage from "./pages/artist-profile";
 import { BoostifyRadio } from "./components/radio/boostify-radio";
 import { CustomerServiceAgent } from "./components/agents/customer-service-agent";
 import AffiliatesPage from "./pages/affiliates";
+import InitProductsPage from "./pages/init-products";
 import MusicMasteringPage from "./pages/music-mastering";
 import VirtualRecordLabelPage from "./pages/virtual-record-label";
 import TestProgressPage from "./pages/test-progress";
@@ -97,6 +100,7 @@ import GuidesPage from "./pages/guides";
 import ToolsPage from "./pages/tools";
 import FeaturesPage from "./pages/features";
 import AIVideoCreationPage from "./pages/ai-video-creation";
+import TimelineDemoPage from "./pages/timeline-demo";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -193,6 +197,7 @@ const Router = () => {
   const WrappedPrivacyPage = withPageWrapper(PrivacyPage);
   const WrappedCookiesPage = withPageWrapper(CookiesPage);
   const WrappedProfilePage = withPageWrapper(ProfilePage);
+  const WrappedArtistProfilePage = withPageWrapper(ArtistProfilePage);
   const WrappedDashboardPage = withPageWrapper(DashboardPage);
   const WrappedAdminPage = withPageWrapper(AdminPage);
   const WrappedArtistDashboard = withPageWrapper(ArtistDashboard);
@@ -218,6 +223,7 @@ const Router = () => {
   const WrappedProducerToolsPage = withPageWrapper(ProducerToolsPage);
   const WrappedMusicVideoCreator = withPageWrapper(MusicVideoCreator);
   const WrappedMusicVideoWorkflowPage = withPageWrapper(MusicVideoWorkflowPage);
+  const WrappedMusicVideoWorkflowEnhancedPage = withPageWrapper(MusicVideoWorkflowEnhancedPage);
   const WrappedMusicGeneratorPage = withPageWrapper(MusicGeneratorPage);
   const WrappedRecordLabelServices = withPageWrapper(RecordLabelServices);
   const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
@@ -236,6 +242,7 @@ const Router = () => {
   const WrappedSmartCardsPage = withPageWrapper(SmartCardsPage);
   const WrappedInvestorsDashboard = withPageWrapper(InvestorsDashboard);
   const WrappedAffiliatesPage = withPageWrapper(AffiliatesPage);
+  const WrappedInitProductsPage = withPageWrapper(InitProductsPage);
   const WrappedSocialNetworkPage = withPageWrapper(SocialNetworkPage);
   const WrappedFirestoreSocialPage = withPageWrapper(FirestoreSocialPage);
   const WrappedImageGeneratorPage = withPageWrapper(ImageGeneratorPage);
@@ -269,6 +276,7 @@ const Router = () => {
   const WrappedToolsPage = withPageWrapper(ToolsPage);
   const WrappedFeaturesPage = withPageWrapper(FeaturesPage);
   const WrappedAIVideoCreationPage = withPageWrapper(AIVideoCreationPage);
+  const WrappedTimelineDemoPage = withPageWrapper(TimelineDemoPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -281,6 +289,7 @@ const Router = () => {
         {getRouteComponent("/privacy", WrappedPrivacyPage, null)}
         {getRouteComponent("/cookies", WrappedCookiesPage, null)}
         {getRouteComponent("/profile/:id", WrappedProfilePage, null)}
+        {getRouteComponent("/artist/:slug", WrappedArtistProfilePage, null)}
         {getRouteComponent("/pricing", WrappedPricingPage, null)}
         
         {/* Rutas de ejemplo básicas - requieren autenticación pero no suscripción */}
@@ -331,6 +340,7 @@ const Router = () => {
         {/* Rutas para suscripción PREMIUM ($149.99) */}
         {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, 'free')}
         {getRouteComponent("/music-video-workflow", WrappedMusicVideoWorkflowPage, 'free')}
+        {getRouteComponent("/music-video-flow", WrappedMusicVideoWorkflowEnhancedPage, 'free')}
         {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
         {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
         {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
@@ -338,6 +348,7 @@ const Router = () => {
         {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
         {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
         {getRouteComponent("/affiliates", WrappedAffiliatesPage, 'free')}
+        {getRouteComponent("/init-products", WrappedInitProductsPage, 'free')}
         {getRouteComponent("/boostify-international", WrappedBoostifyInternationalPage, 'premium')}
         
         {/* Rutas administrativas especiales */}
@@ -374,6 +385,7 @@ const Router = () => {
         {getRouteComponent("/tools/release-planner", WrappedToolsPage, 'free')}
         {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, 'free')}
         {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, 'free')}
+        {getRouteComponent("/timeline-demo", WrappedTimelineDemoPage, 'free')}
         
         {/* Página de error 404 */}
         <Route component={WrappedNotFound} />

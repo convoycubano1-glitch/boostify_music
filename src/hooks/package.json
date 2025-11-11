@@ -1,7 +1,0 @@
-{
-  "name": "@/hooks",
-  "version": "1.0.0",
-  "main": "/home/runner/workspace/client/src/hooks/index.js",
-  "module": "/home/runner/workspace/client/src/hooks/index.js",
-  "types": "/home/runner/workspace/client/src/hooks/index.d.ts"
-}

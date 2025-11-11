@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "../lib/queryClient";
 import { useAuth } from "../hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
 import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked, Zap, TrendingUp, Bell } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "../components/ui/button";
@@ -28,6 +29,8 @@ interface SocialUser {
   language: 'en' | 'es';
   isBot: boolean;
   personality?: string;
+  savedPosts?: string[];
+  likedPosts?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,6 +65,13 @@ export default function FirestoreSocialPage() {
   const { user } = useAuth() || {};
   const [activeTab, setActiveTab] = React.useState("feed");
   const [newPostContent, setNewPostContent] = React.useState("");
+  const [editingProfile, setEditingProfile] = React.useState(false);
+  const [profileData, setProfileData] = React.useState({
+    displayName: '',
+    bio: '',
+    interests: [] as string[],
+    language: 'en' as 'en' | 'es'
+  });
   const { toast } = useToast();
 
   // Referencia para el video de fondo
@@ -76,6 +86,34 @@ export default function FirestoreSocialPage() {
     }
   }, []);
 
+  // Sincronizar usuario con Firestore cuando se autentique
+  useEffect(() => {
+    if (user?.uid) {
+      syncUserWithFirestore();
+    }
+  }, [user?.uid]);
+
+  const syncUserWithFirestore = async () => {
+    if (!user) return;
+    
+    try {
+      await apiRequest({
+        url: "/api/firestore-social/users/sync",
+        method: "POST",
+        data: {
+          userId: user.uid,
+          displayName: user.displayName || user.email?.split('@')[0] || 'User',
+          avatar: user.photoURL,
+          bio: '',
+          interests: [],
+          language: 'en'
+        }
+      });
+    } catch (error) {
+      console.error("Error syncing user:", error);
+    }
+  };
+
   // Consulta para obtener usuarios
   const { data: users } = useQuery({
     queryKey: ["/api/firestore-social/users"],
@@ -86,6 +124,44 @@ export default function FirestoreSocialPage() {
       }) as Promise<SocialUser[]>;
     }
   });
+
+  // Consulta para obtener perfil del usuario actual
+  const { data: currentUserProfile, refetch: refetchProfile } = useQuery({
+    queryKey: ["/api/firestore-social/users", user?.uid],
+    queryFn: async () => {
+      if (!user?.uid) return null;
+      return apiRequest({ 
+        url: `/api/firestore-social/users/${user.uid}`, 
+        method: "GET" 
+      }) as Promise<SocialUser>;
+    },
+    enabled: !!user?.uid
+  });
+
+  // Consulta para obtener posts del usuario actual
+  const { data: userPosts, refetch: refetchUserPosts } = useQuery({
+    queryKey: ["/api/firestore-social/users", user?.uid, "posts"],
+    queryFn: async () => {
+      if (!user?.uid) return [];
+      return apiRequest({ 
+        url: `/api/firestore-social/users/${user.uid}/posts`, 
+        method: "GET" 
+      }) as Promise<Post[]>;
+    },
+    enabled: !!user?.uid && activeTab === "personal"
+  });
+
+  // Actualizar profileData cuando se cargue el perfil
+  useEffect(() => {
+    if (currentUserProfile) {
+      setProfileData({
+        displayName: currentUserProfile.displayName || '',
+        bio: currentUserProfile.bio || '',
+        interests: currentUserProfile.interests || [],
+        language: currentUserProfile.language || 'en'
+      });
+    }
+  }, [currentUserProfile]);
 
   // Consulta para obtener posts
   const { data: posts, refetch: refetchPosts } = useQuery({
@@ -111,13 +187,42 @@ export default function FirestoreSocialPage() {
     enabled: activeTab === "saved" // Solo se ejecuta cuando la pestaña "saved" está activa
   });
 
+  // Mutación para actualizar perfil
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: typeof profileData) => {
+      if (!user?.uid) throw new Error("User not authenticated");
+      return apiRequest({
+        url: `/api/firestore-social/users/${user.uid}`,
+        method: "PATCH",
+        data
+      }) as Promise<SocialUser>;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully",
+      });
+      setEditingProfile(false);
+      refetchProfile();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating profile",
+        description: "An error occurred while updating your profile. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error updating profile:", error);
+    }
+  });
+
   // Mutación para crear un nuevo post
   const createPostMutation = useMutation({
     mutationFn: async (content: string) => {
+      if (!user?.uid) throw new Error("User not authenticated");
       return apiRequest({
         url: "/api/firestore-social/posts",
         method: "POST",
-        data: { content, userId: "1" } // UserId por defecto (en producción usaríamos el ID real del usuario)
+        data: { content, userId: user.uid }
       }) as Promise<Post>;
     },
     onSuccess: () => {
@@ -127,6 +232,9 @@ export default function FirestoreSocialPage() {
       });
       setNewPostContent("");
       refetchPosts();
+      if (activeTab === "personal") {
+        refetchUserPosts();
+      }
     },
     onError: (error) => {
       toast({
@@ -200,14 +308,18 @@ export default function FirestoreSocialPage() {
   // Mutación para comentar en un post
   const commentPostMutation = useMutation({
     mutationFn: async ({ postId, content }: { postId: string; content: string }) => {
+      if (!user?.uid) throw new Error("User not authenticated");
       return apiRequest({
         url: `/api/firestore-social/posts/${postId}/comments`,
         method: "POST",
-        data: { content, userId: "1" } // UserId por defecto (en producción usaríamos el ID real del usuario)
+        data: { content, userId: user.uid }
       }) as Promise<Comment>;
     },
     onSuccess: () => {
       refetchPosts();
+      if (activeTab === "personal") {
+        refetchUserPosts();
+      }
     }
   });
 
@@ -584,13 +696,173 @@ export default function FirestoreSocialPage() {
               </TabsContent>
 
               <TabsContent value="personal">
-                <Card className="backdrop-blur-sm bg-card/90">
+                {/* Profile Card */}
+                <Card className="mb-6 backdrop-blur-sm bg-card/90">
                   <CardHeader>
-                    <CardTitle>My Profile</CardTitle>
-                    <CardDescription>Manage your profile and posts</CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>My Profile</CardTitle>
+                        <CardDescription>Manage your profile information</CardDescription>
+                      </div>
+                      {!editingProfile && (
+                        <Button 
+                          onClick={() => setEditingProfile(true)}
+                          variant="outline"
+                          size="sm"
+                          data-testid="button-edit-profile"
+                        >
+                          Edit Profile
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <p>Profile functionality in development.</p>
+                    {currentUserProfile ? (
+                      editingProfile ? (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Display Name</label>
+                            <input
+                              type="text"
+                              value={profileData.displayName}
+                              onChange={(e) => setProfileData({...profileData, displayName: e.target.value})}
+                              className="w-full px-3 py-2 rounded-md border bg-background"
+                              placeholder="Your name"
+                              data-testid="input-display-name"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Bio</label>
+                            <Textarea
+                              value={profileData.bio}
+                              onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                              placeholder="Tell us about yourself..."
+                              className="min-h-[100px]"
+                              data-testid="input-bio"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Language</label>
+                            <select
+                              value={profileData.language}
+                              onChange={(e) => setProfileData({...profileData, language: e.target.value as 'en' | 'es'})}
+                              className="w-full px-3 py-2 rounded-md border bg-background"
+                              data-testid="select-language"
+                            >
+                              <option value="en">English</option>
+                              <option value="es">Español</option>
+                            </select>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => updateProfileMutation.mutate(profileData)}
+                              disabled={updateProfileMutation.isPending}
+                              className="bg-gradient-to-r from-orange-500 to-red-500"
+                              data-testid="button-save-profile"
+                            >
+                              {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setEditingProfile(false);
+                                if (currentUserProfile) {
+                                  setProfileData({
+                                    displayName: currentUserProfile.displayName || '',
+                                    bio: currentUserProfile.bio || '',
+                                    interests: currentUserProfile.interests || [],
+                                    language: currentUserProfile.language || 'en'
+                                  });
+                                }
+                              }}
+                              variant="outline"
+                              data-testid="button-cancel-edit"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="w-20 h-20 ring-4 ring-primary/10">
+                              <AvatarImage src={currentUserProfile.avatar || user?.photoURL || ''} />
+                              <AvatarFallback className={getAvatarColor(currentUserProfile.displayName)}>
+                                {getInitials(currentUserProfile.displayName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <h3 className="text-xl font-bold">{currentUserProfile.displayName}</h3>
+                              <p className="text-sm text-muted-foreground">{user?.email}</p>
+                              <Badge variant="outline" className="mt-1">
+                                {currentUserProfile.language === 'es' ? '🇪🇸 Español' : '🇬🇧 English'}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {currentUserProfile.bio && (
+                            <div>
+                              <h4 className="font-medium mb-1">Bio</h4>
+                              <p className="text-muted-foreground">{currentUserProfile.bio}</p>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                            <div className="text-center">
+                              <p className="text-2xl font-bold">{userPosts?.length || 0}</p>
+                              <p className="text-xs text-muted-foreground">Posts</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-2xl font-bold">{currentUserProfile.likedPosts?.length || 0}</p>
+                              <p className="text-xs text-muted-foreground">Likes</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-2xl font-bold">{currentUserProfile.savedPosts?.length || 0}</p>
+                              <p className="text-xs text-muted-foreground">Saved</p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-muted-foreground">Loading profile...</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* User's Posts */}
+                <Card className="backdrop-blur-sm bg-card/90">
+                  <CardHeader>
+                    <CardTitle>My Posts</CardTitle>
+                    <CardDescription>Posts you've created</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {userPosts ? (
+                      userPosts.length > 0 ? (
+                        <div className="space-y-4">
+                          {userPosts.map((post) => <PostCard key={post.id} post={post} />)}
+                        </div>
+                      ) : (
+                        <div className="text-center py-10">
+                          <p className="text-muted-foreground">You haven't created any posts yet.</p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-4"
+                            onClick={() => setActiveTab("feed")}
+                          >
+                            Create your first post
+                          </Button>
+                        </div>
+                      )
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-muted-foreground">Loading posts...</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

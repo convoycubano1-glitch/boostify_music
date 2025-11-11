@@ -9,6 +9,7 @@ import { AffiliateEarnings } from "../components/affiliates/earnings";
 import { AffiliateContentGenerator } from "../components/affiliates/content-generator";
 import { AffiliateResources } from "../components/affiliates/resources";
 import { AffiliateSupport } from "../components/affiliates/affiliate-support";
+import { AffiliateSettings } from "../components/affiliates/settings";
 import { useAuth } from "../hooks/use-auth";
 import { db, auth } from "../lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
@@ -53,47 +54,37 @@ export default function AffiliatesPage() {
   const { user } = useAuth() || {};
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Query to check if the current user is an affiliate
-  const { data: affiliateData, isLoading: isLoadingAffiliateData } = useQuery<AffiliateDataType | null>({
-    queryKey: ["affiliate", user?.uid],
-    queryFn: async () => {
-      if (!user?.uid) return null;
-      
-      const affiliateRef = doc(db, "affiliates", user.uid);
-      const affiliateDoc = await getDoc(affiliateRef);
-      
-      if (affiliateDoc.exists()) {
-        return { ...affiliateDoc.data(), id: affiliateDoc.id } as AffiliateDataType;
-      }
-      
-      return null;
-    },
+  // Query to check if the current user is an affiliate using backend API
+  const { data: affiliateApiData, isLoading: isLoadingAffiliateData } = useQuery<{
+    success: boolean;
+    data?: AffiliateDataType;
+    message?: string;
+  }>({
+    queryKey: ["/api/affiliate/me"],
     enabled: !!user?.uid,
   });
 
+  // Extract affiliate data from API response
+  const affiliateData: AffiliateDataType | null = affiliateApiData?.success && affiliateApiData?.data
+    ? affiliateApiData.data 
+    : null;
+
   // Determine if we should show the registration form or the affiliate dashboard
-  // Para pruebas, puedes cambiar esta línea a `true` para ver el dashboard
-  const isAffiliate = true; // !!affiliateData;
+  const isAffiliate = !!affiliateData;
   
-  // Datos de afiliado de prueba para el modo de desarrollo
-  const mockAffiliateData = {
-    id: user?.uid || "mock-user-123",
-    level: "Premium",
-    name: user?.displayName || "Usuario de Prueba",
+  // Use real affiliate data from API
+  const currentAffiliateData = affiliateData || {
+    id: user?.uid || "",
+    level: "Básico",
+    name: user?.displayName || "Usuario",
     stats: {
-      totalClicks: 3254,
-      conversions: 187,
-      earnings: 1256.75,
-      pendingPayment: 342.50
+      totalClicks: 0,
+      conversions: 0,
+      earnings: 0,
+      pendingPayment: 0
     },
-    links: [
-      { id: "link1", name: "Enlace de promoción 1", url: "https://example.com/aff/1", clicks: 856, conversions: 45 },
-      { id: "link2", name: "Enlace de promoción 2", url: "https://example.com/aff/2", clicks: 542, conversions: 32 }
-    ],
-    paymentHistory: [
-      { id: "pay1", date: new Date(), amount: 287.75, status: "completed" },
-      { id: "pay2", date: new Date(), amount: 203.25, status: "completed" }
-    ],
+    links: [],
+    paymentHistory: [],
     savedContent: []
   };
 
@@ -250,29 +241,29 @@ export default function AffiliatesPage() {
                     <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0">
                       <Badge variant="outline" className="text-sm py-2 px-4 flex items-center gap-2 border-primary/20 bg-primary/10 text-primary">
                         <Award className="h-4 w-4 text-yellow-500" />
-                        <span>Nivel {mockAffiliateData.level || "Básico"}</span>
+                        <span>Nivel {currentAffiliateData.level || "Básico"}</span>
                       </Badge>
                       <Badge variant="secondary" className="text-sm py-2 px-4">
-                        ID: {user?.uid?.substring(0, 8) || "mock-123"}
+                        ID: {user?.uid?.substring(0, 8) || ""}
                       </Badge>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 bg-background/80 p-4 rounded-lg border border-primary/5">
                     <div className="flex flex-col items-center p-3 text-center">
-                      <div className="text-2xl font-bold text-primary">{mockAffiliateData.stats?.totalClicks?.toLocaleString() || "0"}</div>
+                      <div className="text-2xl font-bold text-primary">{currentAffiliateData.stats?.totalClicks?.toLocaleString() || "0"}</div>
                       <div className="text-xs text-muted-foreground mt-1">Clics Totales</div>
                     </div>
                     <div className="flex flex-col items-center p-3 text-center">
-                      <div className="text-2xl font-bold text-primary">{mockAffiliateData.stats?.conversions?.toLocaleString() || "0"}</div>
+                      <div className="text-2xl font-bold text-primary">{currentAffiliateData.stats?.conversions?.toLocaleString() || "0"}</div>
                       <div className="text-xs text-muted-foreground mt-1">Conversiones</div>
                     </div>
                     <div className="flex flex-col items-center p-3 text-center">
-                      <div className="text-2xl font-bold text-primary">${mockAffiliateData.stats?.earnings?.toLocaleString() || "0"}</div>
+                      <div className="text-2xl font-bold text-primary">${currentAffiliateData.stats?.earnings?.toLocaleString() || "0"}</div>
                       <div className="text-xs text-muted-foreground mt-1">Ganancias Totales</div>
                     </div>
                     <div className="flex flex-col items-center p-3 text-center">
-                      <div className="text-2xl font-bold text-primary">${mockAffiliateData.stats?.pendingPayment?.toLocaleString() || "0"}</div>
+                      <div className="text-2xl font-bold text-primary">${currentAffiliateData.stats?.pendingPayment?.toLocaleString() || "0"}</div>
                       <div className="text-xs text-muted-foreground mt-1">Pago Pendiente</div>
                     </div>
                   </div>
@@ -348,15 +339,15 @@ export default function AffiliatesPage() {
                 </TabsList>
                 
                 <TabsContent value="overview" className="space-y-4">
-                  <AffiliateOverview affiliateData={mockAffiliateData} />
+                  <AffiliateOverview affiliateData={currentAffiliateData as any} />
                 </TabsContent>
                 
                 <TabsContent value="links" className="space-y-4">
-                  <AffiliateLinks affiliateData={mockAffiliateData} />
+                  <AffiliateLinks affiliateData={currentAffiliateData as any} />
                 </TabsContent>
                 
                 <TabsContent value="earnings" className="space-y-4">
-                  <AffiliateEarnings affiliateData={mockAffiliateData} />
+                  <AffiliateEarnings affiliateData={currentAffiliateData} />
                 </TabsContent>
                 
                 <TabsContent value="content" className="space-y-6">
@@ -410,7 +401,7 @@ export default function AffiliatesPage() {
                     </div>
                   </div>
                   
-                  <AffiliateContentGenerator affiliateData={mockAffiliateData} />
+                  <AffiliateContentGenerator affiliateData={currentAffiliateData as any} />
                 </TabsContent>
                 
                 <TabsContent value="resources" className="space-y-4">
@@ -422,13 +413,7 @@ export default function AffiliatesPage() {
                 </TabsContent>
                 
                 <TabsContent value="settings" className="space-y-4">
-                  <div className="grid gap-4">
-                    <h3 className="text-lg font-medium">Account Settings</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Manage your affiliate information and payment preferences.
-                    </p>
-                    {/* Affiliate settings component here */}
-                  </div>
+                  <AffiliateSettings />
                 </TabsContent>
               </Tabs>
             </div>

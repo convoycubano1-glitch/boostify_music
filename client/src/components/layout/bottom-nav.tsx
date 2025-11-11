@@ -1,12 +1,14 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "../../lib/utils";
-import { 
+import {
   Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart2,
   MessageSquare, ShoppingBag, PhoneCall, Users, Layers, BarChart, Settings, BookOpen,
   Headphones, FileText, Rss, Send, Shield
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigationVisibility } from "../../hooks/use-navigation-visibility";
+import { useAuth } from "../../hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 
 export function BottomNav() {
   const [location] = useLocation();
@@ -17,6 +19,17 @@ export function BottomNav() {
   const navRef = useRef<HTMLDivElement>(null);
   const lastClickTimeRef = useRef<number>(0);
   const doubleClickThreshold = 300; // ms
+  const { user } = useAuth();
+
+  // Get current user's profile to retrieve their slug
+  const { data: userProfile } = useQuery<{ slug: string | null }>({
+    queryKey: ['/api/user/profile'],
+    enabled: !!user,
+  });
+
+  // Navigate to artist profile using the user's slug
+  // Falls back to /profile if slug is not yet available
+  const profileHref = userProfile?.slug ? `/artist/${userProfile.slug}` : '/profile';
 
   // Elementos de navegación para el botón "More" (23 páginas específicas) - Rutas verificadas contra App.tsx
   const moreNavItems = [
@@ -90,10 +103,10 @@ export function BottomNav() {
       plan: "premium" // Requiere suscripción premium
     },
     {
-      title: "Profile",
+      title: "My Profile",
       icon: User,
-      href: "/profile",
-      plan: "free" // Accesible para todos
+      href: profileHref,
+      plan: "free"
     },
   ];
 

@@ -143,6 +143,86 @@ export class FirestoreSocialNetworkService {
       throw error;
     }
   }
+
+  async createOrUpdateUserWithId(userId: string, userData: Partial<SocialUser>): Promise<SocialUser> {
+    try {
+      const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+      const data = toFirestore(userData);
+
+      if (userDoc.exists) {
+        // Usuario existe, actualizar
+        await db.collection(USERS_COLLECTION).doc(userId).update({
+          ...data,
+          updatedAt: toFirestoreDate(new Date())
+        });
+      } else {
+        // Usuario no existe, crear
+        await db.collection(USERS_COLLECTION).doc(userId).set({
+          displayName: userData.displayName || 'User',
+          bio: userData.bio || '',
+          interests: userData.interests || [],
+          language: userData.language || 'en',
+          isBot: false,
+          savedPosts: [],
+          likedPosts: [],
+          createdAt: toFirestoreDate(new Date()),
+          updatedAt: toFirestoreDate(new Date()),
+          ...data
+        });
+      }
+
+      const updatedDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+      return fromFirestore<SocialUser>(updatedDoc) as SocialUser;
+    } catch (error) {
+      console.error('Error creating/updating user with ID:', error);
+      throw error;
+    }
+  }
+
+  async updateUser(userId: string, updateData: Partial<SocialUser>): Promise<SocialUser | null> {
+    try {
+      const data = toFirestore(updateData);
+      
+      await db.collection(USERS_COLLECTION).doc(userId).update({
+        ...data,
+        updatedAt: toFirestoreDate(new Date())
+      });
+      
+      const updatedDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+      return fromFirestore<SocialUser>(updatedDoc);
+    } catch (error) {
+      console.error(`Error updating user with ID ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  async getUserPosts(userId: string): Promise<any[]> {
+    try {
+      const snapshot = await db.collection(POSTS_COLLECTION)
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+
+      const posts = await Promise.all(
+        snapshot.docs.map(async (doc) => {
+          const post = fromFirestore<Post>(doc) as Post;
+          const user = await this.getUserById(post.userId);
+          const comments = await this.getCommentsByPostId(post.id!);
+
+          return {
+            ...post,
+            user,
+            comments
+          };
+        })
+      );
+
+      return posts;
+    } catch (error) {
+      console.error(`Error getting posts for user ${userId}:`, error);
+      throw error;
+    }
+  }
   
   async getBotUsers(): Promise<SocialUser[]> {
     try {

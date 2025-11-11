@@ -1,12 +1,15 @@
 // src/components/ai/composer-agent.tsx
-import { Music2 } from "lucide-react";
+import { Music2, Download, Save } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { falService } from "../../lib/api/fal-service";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "../../lib/api/openrouteraiagents";
+import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
+import { db } from "../../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Button } from "../ui/button";
 
 interface Step {
   message: string;
@@ -55,40 +58,65 @@ export function ComposerAgent() {
     await simulateThinking([
       "Understanding theme and mood...",
       "Crafting lyrical structure...",
-      "Generating verses...",
-      "Adding chorus...",
-      "Finalizing lyrics..."
+      "Generating verses with Gemini AI...",
+      "Adding chorus and bridges...",
+      "Finalizing professional lyrics..."
     ]);
 
-    const lyricsPrompt = `Write lyrics for a song with the following parameters:
-    - Genre: ${params.genre}
-    - Mood: ${params.mood}
-    - Theme: ${params.theme}
-    - Language: ${params.language}
-    - Structure: ${params.structure}
-
-    Please write emotive and meaningful lyrics that capture the essence of the theme.
-    Structure the output with clear verse and chorus sections.`;
-
     try {
-      const response = await openRouterService.chatWithAgent(
-        lyricsPrompt,
-        'composer',
-        user?.uid || 'anonymous',
-        "You are an expert songwriter with deep knowledge of musical composition and lyrics writing."
-      );
+      const lyrics = await geminiAgentsService.generateMusicLyrics({
+        genre: params.genre,
+        mood: params.mood,
+        theme: params.theme,
+        language: params.language,
+        structure: params.structure
+      });
 
-      // Verifica si la respuesta existe o tiene una propiedad response
-      if (!response || typeof response.response !== 'string') {
-        console.error('Error: openRouterService.chatWithAgent returned invalid response', response);
-        throw new Error('No se pudo generar la letra. Por favor, intenta de nuevo.');
+      if (!lyrics) {
+        throw new Error('No lyrics generated');
       }
       
-      // Extraer solo la respuesta textual del objeto devuelto por el servicio
-      return response.response;
+      return lyrics;
     } catch (error) {
       console.error('Error generating lyrics:', error);
       throw new Error('No se pudo generar la letra. Por favor, intenta de nuevo.');
+    }
+  };
+
+  const saveToFirestore = async (data: {
+    lyrics: string;
+    musicUrl?: string;
+    params: any;
+  }) => {
+    if (!user) return;
+
+    try {
+      const compositionsRef = collection(db, 'compositions');
+      await addDoc(compositionsRef, {
+        userId: user.uid,
+        lyrics: data.lyrics,
+        musicUrl: data.musicUrl || null,
+        genre: data.params.genre,
+        mood: data.params.mood,
+        theme: data.params.theme,
+        language: data.params.language,
+        structure: data.params.structure,
+        tempo: data.params.tempo,
+        timestamp: serverTimestamp(),
+        agentType: 'composer'
+      });
+
+      toast({
+        title: "Saved Successfully",
+        description: "Your composition has been saved to your library.",
+      });
+    } catch (error) {
+      console.error('Error saving to Firestore:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save composition. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -228,9 +256,17 @@ ${firstVerseAndChorus}
 
           if (response?.musicUrl) {
             setGeneratedMusicUrl(response.musicUrl);
+            
+            // Guardar automáticamente en Firestore
+            await saveToFirestore({
+              lyrics,
+              musicUrl: response.musicUrl,
+              params
+            });
+            
             toast({
-              title: "Content Generated",
-              description: "Your lyrics and musical composition have been created successfully.",
+              title: "Content Generated & Saved",
+              description: "Your lyrics and musical composition have been created and saved successfully.",
             });
           } else {
             throw new Error('No music URL received in response');

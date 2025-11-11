@@ -105,6 +105,11 @@ app.use((req, res, next) => {
 
     const { checkEnvironment } = await import('./utils/environment-check');
     checkEnvironment();
+    
+    // Serve uploaded files statically
+    const uploadsPath = path.join(process.cwd(), 'uploads');
+    app.use('/uploads', express.static(uploadsPath));
+    log(`📁 Serving uploaded files from: ${uploadsPath}`);
 
     // IMPORTANT: Register API routes BEFORE static file serving
     const server = registerRoutes(app);

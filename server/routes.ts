@@ -51,6 +51,12 @@ import generatedVideosRouter from './routes/generated-videos'; // Import the gen
 import minimaxVideoRouter from './routes/minimax-video'; // Import the MiniMax video generation router
 import musiciansRouter from './routes/musicians'; // Import the musicians router
 import musicVideoProjectsRouter from './routes/music-video-projects'; // Import the music video projects router
+import profileRouter from './routes/profile'; // Import the profile router
+import songsRouter from './routes/songs'; // Import the songs router
+import merchRouter from './routes/merch'; // Import the merchandise router
+import aiAssistantRouter from './routes/ai-assistant'; // Import the AI assistant router
+import geminiAgentsRouter from './routes/gemini-agents'; // Import the Gemini agents router
+import contractsRouter from './routes/contracts'; // Import the contracts router with Gemini AI
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -191,6 +197,16 @@ export function registerRoutes(app: Express): HttpServer {
   console.log('📢 Registrando router de proyectos de music video en /api/music-video-projects');
   app.use('/api/music-video-projects', musicVideoProjectsRouter);
   console.log('✅ Router de proyectos de music video registrado');
+  
+  // Registrar rutas de perfil de artista, canciones y merchandise
+  console.log('📢 Registrando rutas de perfil de artista');
+  app.use('/api/profile', profileRouter);
+  app.use('/api/songs', songsRouter);
+  app.use('/api/merch', merchRouter);
+  app.use('/api/ai', aiAssistantRouter);
+  app.use('/api/gemini-agents', geminiAgentsRouter);
+  app.use('/api/contracts', contractsRouter);
+  console.log('✅ Rutas de perfil, songs, merch, AI assistant, Gemini agents y contratos registradas');
   
   // ☑️ Rutas de Kling API ahora están separadas en su propio router
   // Véase server/routes/kling-api.ts para la implementación

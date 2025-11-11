@@ -306,7 +306,24 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(true);
+  // Don't show modal to authenticated users or if previously dismissed
+  const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const dismissed = localStorage.getItem('earlyAccessModalDismissed');
+    return !dismissed;
+  });
+
+  // Hide modal when user logs in
+  useEffect(() => {
+    if (user) {
+      setShowEarlyAccessModal(false);
+    }
+  }, [user]);
+
+  const handleCloseModal = () => {
+    setShowEarlyAccessModal(false);
+    localStorage.setItem('earlyAccessModalDismissed', 'true');
+  };
   const statsRef = useRef<HTMLDivElement>(null);
   const statsControls = useAnimation();
   const introVideoRef = useRef<HTMLVideoElement>(null);
@@ -1796,7 +1813,7 @@ export default function HomePage() {
       {/* Early Access Modal */}
       <EarlyAccessModal 
         open={showEarlyAccessModal} 
-        onClose={() => setShowEarlyAccessModal(false)} 
+        onClose={handleCloseModal} 
       />
     </div>
   );

@@ -23,11 +23,13 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5000,
-    allowedHosts: 'all',
-    hmr: {
-      clientPort: 443,
-      host: 'all'
-    },
+    strictPort: false,
+    allowedHosts: [
+      'ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev',
+      '.replit.dev',
+      '.replit.app',
+      'localhost',
+    ],
   },
   build: {
     outDir: 'dist',

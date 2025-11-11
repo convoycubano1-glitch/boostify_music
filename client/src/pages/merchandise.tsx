@@ -286,7 +286,7 @@ export default function MerchandisePage() {
           className="absolute inset-0 w-full h-full object-cover"
           poster="/assets/cover.jpg"
         >
-          <source src="/assets/style_advisor_bg.mp4" type="video/mp4" />
+          <source src="/assets/hero-video.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative container mx-auto px-4 h-full flex flex-col justify-center">

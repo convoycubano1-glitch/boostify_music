@@ -37,6 +37,68 @@ router.get("/users/:id", async (req, res) => {
 });
 
 /**
+ * Sincronizar o crear perfil de usuario en Firestore
+ */
+router.post("/users/sync", async (req, res) => {
+  try {
+    const { userId, displayName, avatar, bio, interests, language } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+    
+    const userData = {
+      displayName: displayName || 'User',
+      avatar,
+      bio,
+      interests,
+      language: language || 'en'
+    };
+    
+    const user = await firestoreSocialNetworkService.createOrUpdateUserWithId(userId, userData);
+    res.json(user);
+  } catch (error) {
+    console.error("Error syncing user:", error);
+    res.status(500).json({ error: "Error syncing user" });
+  }
+});
+
+/**
+ * Actualizar perfil de usuario
+ */
+router.patch("/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    const updatedUser = await firestoreSocialNetworkService.updateUser(id, updateData);
+    
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Error updating user" });
+  }
+});
+
+/**
+ * Obtener posts de un usuario específico
+ */
+router.get("/users/:id/posts", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const posts = await firestoreSocialNetworkService.getUserPosts(id);
+    res.json(posts);
+  } catch (error) {
+    console.error("Error getting user posts:", error);
+    res.status(500).json({ error: "Error getting user posts" });
+  }
+});
+
+/**
  * Obtener todos los posts con sus usuarios y comentarios
  */
 router.get("/posts", async (req, res) => {

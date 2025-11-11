@@ -20,6 +20,36 @@ export const users = pgTable("users", {
   technicalRider: json("technical_rider"),
   spotifyToken: text("spotify_token"),
   instagramToken: text("instagram_token"),
+  slug: text("slug").unique(),
+  artistName: text("artist_name"),
+  profileImage: text("profile_image"),
+  coverImage: text("cover_image"),
+  realName: text("real_name"),
+  country: text("country"),
+  genres: text("genres").array(),
+  spotifyUrl: text("spotify_url"),
+  facebookUrl: text("facebook_url"),
+  tiktokUrl: text("tiktok_url"),
+  topYoutubeVideos: json("top_youtube_videos").$type<Array<{
+    title: string;
+    url: string;
+    thumbnailUrl: string;
+    type: string;
+  }>>(),
+  concerts: json("concerts").$type<{
+    upcoming: Array<{
+      tourName: string;
+      location: { city: string; country: string; venue: string };
+      date: string;
+      status: string;
+      source: string;
+    }>;
+    highlights: Array<{
+      eventName: string;
+      year: number;
+      note: string;
+    }>;
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -27,10 +57,43 @@ export const artistMedia = pgTable("artist_media", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
-  type: text("type", { enum: ["audio", "video"] }).notNull(),
+  type: text("type", { enum: ["video"] }).notNull(),
   storagePath: text("storage_path").notNull(),
   duration: text("duration"),
   thumbnail: text("thumbnail"),
+  description: text("description"),
+  isPublished: boolean("is_published").default(true).notNull(),
+  views: integer("views").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const songs = pgTable("songs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  audioUrl: text("audio_url").notNull(),
+  duration: text("duration"),
+  releaseDate: timestamp("release_date"),
+  genre: text("genre"),
+  coverArt: text("cover_art"),
+  isPublished: boolean("is_published").default(true).notNull(),
+  plays: integer("plays").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const merchandise = pgTable("merchandise", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  images: text("images").array().notNull(),
+  category: text("category", { enum: ["apparel", "accessories", "music", "other"] }).default("other").notNull(),
+  stock: integer("stock").default(0).notNull(),
+  isAvailable: boolean("is_available").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -305,7 +368,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   events: many(events),
   achievements: many(userAchievements),
   media: many(artistMedia),
-  musicians: many(musicians)
+  musicians: many(musicians),
+  songs: many(songs),
+  merchandise: many(merchandise)
 }));
 
 export const musiciansRelations = relations(musicians, ({ one, many }) => ({
@@ -422,6 +487,20 @@ export const artistMediaRelations = relations(artistMedia, ({ one }) => ({
   }),
 }));
 
+export const songsRelations = relations(songs, ({ one }) => ({
+  user: one(users, {
+    fields: [songs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const merchandiseRelations = relations(merchandise, ({ one }) => ({
+  user: one(users, {
+    fields: [merchandise.userId],
+    references: [users.id],
+  }),
+}));
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export const insertBookingSchema = createInsertSchema(bookings);
@@ -463,6 +542,17 @@ export const selectUserAchievementSchema = createSelectSchema(userAchievements);
 
 export const insertArtistMediaSchema = createInsertSchema(artistMedia);
 export const selectArtistMediaSchema = createSelectSchema(artistMedia);
+
+export const insertSongSchema = createInsertSchema(songs)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export const selectSongSchema = createSelectSchema(songs);
+
+export const insertMerchandiseSchema = createInsertSchema(merchandise)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    price: z.union([z.string(), z.number()]).transform(val => String(val)),
+  });
+export const selectMerchandiseSchema = createSelectSchema(merchandise);
 
 export const insertMusicianSchema = createInsertSchema(musicians)
   .omit({ id: true, createdAt: true, updatedAt: true })
@@ -512,6 +602,10 @@ export type InsertUserAchievement = typeof userAchievements.$inferInsert;
 export type SelectUserAchievement = typeof userAchievements.$inferSelect;
 export type InsertArtistMedia = typeof artistMedia.$inferInsert;
 export type SelectArtistMedia = typeof artistMedia.$inferSelect;
+export type InsertSong = typeof songs.$inferInsert;
+export type SelectSong = typeof songs.$inferSelect;
+export type InsertMerchandise = typeof merchandise.$inferInsert;
+export type SelectMerchandise = typeof merchandise.$inferSelect;
 export type InsertMusician = typeof musicians.$inferInsert;
 export type SelectMusician = typeof musicians.$inferSelect;
 

@@ -1,12 +1,15 @@
-import { Video } from "lucide-react";
+import { Video, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "../../lib/api/openrouteraiagents";
+import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
+import { db } from "../../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
+import { Button } from "../ui/button";
 
 interface Step {
   message: string;
@@ -69,6 +72,38 @@ export function VideoDirectorAgent() {
     }
   };
 
+  const saveToFirestore = async (data: {
+    script: string;
+    params: any;
+  }) => {
+    if (!user) return;
+
+    try {
+      const scriptsRef = collection(db, 'videoScripts');
+      await addDoc(scriptsRef, {
+        userId: user.uid,
+        script: data.script,
+        lyrics: data.params.lyrics,
+        visualStyle: data.params.style,
+        mood: data.params.mood,
+        timestamp: serverTimestamp(),
+        agentType: 'videoDirector'
+      });
+
+      toast({
+        title: "Saved Successfully",
+        description: "Your video script has been saved to your library.",
+      });
+    } catch (error) {
+      console.error('Error saving to Firestore:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save script. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const generateScript = async (params: any): Promise<string | void> => {
     if (!user) {
       toast({
@@ -82,33 +117,26 @@ export function VideoDirectorAgent() {
     try {
       await simulateThinking();
 
-      const prompt = `Create a detailed music video script with the following parameters:
-      Lyrics: ${params.lyrics}
-      Visual Style: ${params.style}
-      Mood: ${params.mood}
-
-      Please provide:
-      1. Scene-by-scene breakdown
-      2. Visual direction
-      3. Camera movements
-      4. Special effects suggestions
-      5. Narrative elements`;
-
-      const response = await openRouterService.chatWithAgent(
-        prompt,
-        "videoDirector",
-        user?.uid || 'anonymous',
-        "You are an experienced music video director with expertise in visual storytelling and cinematography."
-      );
-
-      // Extraer solo la respuesta textual del objeto devuelto por el servicio
-      setResult(response.response);
-      toast({
-        title: "Script Generated",
-        description: "Your music video script has been created successfully.",
+      const script = await geminiAgentsService.generateVideoScript({
+        lyrics: params.lyrics,
+        style: params.style,
+        mood: params.mood
       });
 
-      return response.response;
+      setResult(script);
+      
+      // Guardar automáticamente en Firestore
+      await saveToFirestore({
+        script,
+        params
+      });
+
+      toast({
+        title: "Script Generated & Saved",
+        description: "Your music video script has been created and saved successfully.",
+      });
+
+      return script;
     } catch (error) {
       console.error("Error generating script:", error);
       toast({

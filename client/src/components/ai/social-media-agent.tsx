@@ -1,11 +1,14 @@
 // src/components/ai/social-media-agent.tsx
 
-import { Share2 } from "lucide-react";
+import { Share2, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
-import { openRouterService } from "../../lib/api/openrouteraiagents";
+import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
+import { db } from "../../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Button } from "../ui/button";
 
 export function SocialMediaAgent() {
   const { user } = useAuth();
@@ -17,6 +20,37 @@ export function SocialMediaAgent() {
     iconColor: "text-white",
     accentColor: "#EC4899",
     personality: "📱 Digital Influencer",
+  };
+
+  const saveToFirestore = async (data: {
+    content: string;
+    params: any;
+  }) => {
+    if (!user) return;
+
+    try {
+      const contentRef = collection(db, 'socialMediaContent');
+      await addDoc(contentRef, {
+        userId: user.uid,
+        content: data.content,
+        platforms: data.params.platforms,
+        frequency: data.params.frequency,
+        timestamp: serverTimestamp(),
+        agentType: 'socialMedia'
+      });
+
+      toast({
+        title: "Saved Successfully",
+        description: "Your social media content has been saved to your library.",
+      });
+    } catch (error) {
+      console.error('Error saving to Firestore:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save content. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const actions: AgentAction[] = [
@@ -61,23 +95,25 @@ export function SocialMediaAgent() {
           return;
         }
         try {
-          const prompt = `Create a social media content calendar with the following parameters:
-          Platforms: ${params.platforms}
-          Frequency: ${params.frequency}
-
-          Please provide a detailed schedule with content ideas.`;
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "socialMedia",
-            user.uid,
-            "You are a social media expert specializing in content planning and engagement."
-          );
-          setResult(response);
-          toast({
-            title: "Content Planned",
-            description: "Your social media calendar has been created successfully.",
+          const content = await geminiAgentsService.generateSocialMediaContent({
+            platform: params.platforms,
+            contentType: "calendar",
+            tone: params.frequency
           });
-          return response;
+
+          setResult(content);
+          
+          // Guardar automáticamente en Firestore
+          await saveToFirestore({
+            content,
+            params
+          });
+
+          toast({
+            title: "Content Planned & Saved",
+            description: "Your social media calendar has been created and saved successfully.",
+          });
+          return content;
         } catch (error) {
           console.error("Detailed error planning content:", {
             message: error.message,

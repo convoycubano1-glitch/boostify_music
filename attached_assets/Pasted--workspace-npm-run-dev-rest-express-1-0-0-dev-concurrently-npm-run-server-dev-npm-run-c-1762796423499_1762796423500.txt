@@ -1,0 +1,79 @@
+~/workspace$ npm run dev
+
+> rest-express@1.0.0 dev
+> concurrently "npm run server:dev" "npm run client:dev"
+
+[1] 
+[1] > rest-express@1.0.0 client:dev
+[1] > cd client && vite
+[1] 
+[0] 
+[0] > rest-express@1.0.0 server:dev
+[0] > tsx watch server/index.ts
+[0] 
+[1] Port 5000 is in use, trying another one...
+[1] 
+[1]   VITE v5.4.21  ready in 622 ms
+[1] 
+[1]   ➜  Local:   http://localhost:5001/
+[1]   ➜  Network: http://172.31.77.2:5001/
+[1] node:internal/process/promises:391
+[1]     triggerUncaughtException(err, true /* fromPromise */);
+[1]     ^
+[1] 
+[1] [Failed to load PostCSS config: Failed to load PostCSS config (searchPath: /home/runner/workspace/client): [Error] Loading PostCSS Plugin failed: Cannot find module 'autoprefixer'
+[1] Require stack:
+[1] - /home/runner/workspace/client/postcss.config.js
+[1] 
+[1] (@/home/runner/workspace/client/postcss.config.js)
+[1] Error: Loading PostCSS Plugin failed: Cannot find module 'autoprefixer'
+[1] Require stack:
+[1] - /home/runner/workspace/client/postcss.config.js
+[1] 
+[1] (@/home/runner/workspace/client/postcss.config.js)
+[1]     at load (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33632:11)
+[1]     at file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33657:16
+[1]     at Array.map (<anonymous>)
+[1]     at plugins (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33656:8)
+[1]     at processResult (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33726:14)
+[1]     at file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33856:14]
+[1] 
+[1] Node.js v20.19.3
+[1] npm run client:dev exited with code 1
+[0] ⚠️ Firebase Admin deshabilitado en el servidor (modo cliente solamente)
+[0] ℹ️ Firestore se usa solo desde el cliente frontend
+[0] ℹ️ Stripe maneja suscripciones sin dependencias de Firestore del servidor
+[0] 🔑 Using Stripe key: TEST MODE
+[0] 🔗 Stripe BASE_URL configurada: https://artistboost.replit.app
+[0] 5:39:56 PM [api-proxy] ✅ All API keys are configured
+[0] 5:39:56 PM [express] 🔄 Starting server setup...
+[0] ✅ All critical environment variables are properly configured
+[0] 5:39:56 PM [express] 📁 Serving uploaded files from: /home/runner/workspace/uploads
+[0] Warning: connect.session() MemoryStore is not
+[0] designed for a production environment, as it will leak
+[0] memory, and will not scale past a single process.
+[0] 📢 Registrando router de transcripción de audio en /api/audio
+[0] ✅ Router de transcripción de audio registrado
+[0] 📢 Registrando router de videos generados en /api/videos
+[0] ✅ Router de videos generados registrado
+[0] 📢 Registrando router de proyectos de music video en /api/music-video-projects
+[0] ✅ Router de proyectos de music video registrado
+[0] 📢 Registrando rutas de perfil de artista
+[0] ✅ Rutas de perfil, songs, merch y AI assistant registradas
+[0] Warning: connect.session() MemoryStore is not
+[0] designed for a production environment, as it will leak
+[0] memory, and will not scale past a single process.
+[0] APIFY_API_TOKEN is configured and ready for use
+[0] ✅ Subscription-protected routes are registered
+[0] ⏱️ Server timeouts configured: 15 minutes for long-running operations
+[0] 5:39:56 PM [express] 🚀 Running in production mode
+[0] 5:39:56 PM [express] 📁 Serving static files from: /home/runner/workspace/dist/client
+[0] 5:39:56 PM [express] ✅ OPENAI_API_KEY is configured and ready for use
+[0] 5:39:56 PM [express] ✅ SESSION_SECRET is configured and ready for use
+[0] 5:39:56 PM [express] ✅ DATABASE_URL is configured and ready for use
+[0] 5:39:56 PM [express] ⚠️ Not running under PM2. For production, it is recommended to use PM2 for process management
+[0] 5:39:56 PM [express] 🚀 Starting server in production mode on port 5000
+[0] 5:39:56 PM [express] ❌ Error: Port 5000 is already in use. Please kill any processes using this port and try again.
+[0] 5:39:56 PM [express] 💡 Tip: You can find and kill the process using this port with:
+[0] 5:39:56 PM [express]    lsof -i :5000 | grep LISTEN     # Find process ID (PID)
+[0] 5:39:56 PM [express]    kill -9 <PID>                  # Kill the process

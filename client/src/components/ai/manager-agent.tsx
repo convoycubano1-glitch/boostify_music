@@ -1,12 +1,15 @@
 // src/components/ai/manager-agent.tsx
 
-import { UserCog } from "lucide-react";
+import { UserCog, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
-import { openRouterService } from "../../lib/api/openrouteraiagents";
+import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
+import { db } from "../../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Button } from "../ui/button";
 
 interface Step {
   message: string;
@@ -34,17 +37,48 @@ export function ManagerAgent() {
     setSteps([]);
 
     const simulatedSteps = [
-      "Initializing analysis engine...",
+      "Initializing analysis engine with AI...",
       "Loading historical data...",
       "Processing market trends...",
       "Generating strategic insights...",
-      "Optimizing recommendations...",
+      "Optimizing professional recommendations...",
     ];
 
     for (let i = 0; i < simulatedSteps.length; i++) {
       setSteps((prev) => [...prev, { message: simulatedSteps[i], timestamp: new Date() }]);
       setProgress((i + 1) * 20);
       await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+  };
+
+  const saveToFirestore = async (data: {
+    advice: string;
+    params: any;
+  }) => {
+    if (!user) return;
+
+    try {
+      const adviceRef = collection(db, 'careerAdvice');
+      await addDoc(adviceRef, {
+        userId: user.uid,
+        advice: data.advice,
+        metricsType: data.params.metrics,
+        timeframe: data.params.timeframe,
+        timestamp: serverTimestamp(),
+        agentType: 'manager'
+      });
+
+      toast({
+        title: "Saved Successfully",
+        description: "Your career advice has been saved to your library.",
+      });
+    } catch (error) {
+      console.error('Error saving to Firestore:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save advice. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -92,27 +126,24 @@ export function ManagerAgent() {
         try {
           await simulateThinking();
 
-          const prompt = `Analyze artist performance with the following parameters:
-          Metrics Type: ${params.metrics}
-          Time Period: ${params.timeframe}
+          const advice = await geminiAgentsService.generateCareerAdvice({
+            currentStage: `${params.metrics} metrics analysis`,
+            timeline: params.timeframe,
+            goals: "Performance optimization and career growth"
+          });
 
-          Please provide:
-          1. Performance analysis
-          2. Key metrics evaluation
-          3. Trend identification
-          4. Strategic recommendations`;
-
-          const response = await openRouterService.chatWithAgent(
-            prompt,
-            "manager",
-            user.uid,
-            "You are an experienced music industry executive with expertise in artist management and business strategy."
-          );
-
+          const response = { response: advice, timestamp: new Date() };
           setResult(response);
+          
+          // Guardar automáticamente en Firestore
+          await saveToFirestore({
+            advice,
+            params
+          });
+
           toast({
-            title: "Analysis Complete",
-            description: "Your performance analysis is ready.",
+            title: "Analysis Complete & Saved",
+            description: "Your performance analysis has been completed and saved.",
           });
 
           return response;

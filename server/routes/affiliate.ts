@@ -748,6 +748,128 @@ router.get('/earnings', authenticate, async (req: Request, res: Response) => {
 });
 
 /**
+ * PATCH /api/affiliate/settings/payment
+ * Actualiza la configuración de pago del afiliado
+ */
+router.patch('/settings/payment', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+    const {
+      paymentMethod,
+      paymentEmail,
+      bankDetails,
+      cryptoAddress,
+      minPayoutAmount,
+      autoPayoutEnabled
+    } = req.body;
+
+    // Verificar si el usuario es un afiliado
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
+    
+    if (!affiliateDoc.exists) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'No tienes permisos de afiliado' 
+      });
+    }
+
+    // Actualizar la configuración de pago
+    await affiliateRef.update({
+      paymentSettings: {
+        paymentMethod,
+        paymentEmail,
+        bankDetails,
+        cryptoAddress,
+        minPayoutAmount: minPayoutAmount || 50,
+        autoPayoutEnabled: autoPayoutEnabled !== undefined ? autoPayoutEnabled : true,
+        updatedAt: FieldValue.serverTimestamp()
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Configuración de pago actualizada correctamente'
+    });
+  } catch (error: any) {
+    console.error('Error al actualizar configuración de pago:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar configuración de pago',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/affiliate/stats
+ * Obtiene estadísticas resumidas del afiliado
+ */
+router.get('/stats', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+    
+    // Verificar si el usuario es un afiliado
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
+    
+    if (!affiliateDoc.exists) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'No tienes permisos de afiliado' 
+      });
+    }
+
+    const affiliateData = affiliateDoc.data();
+
+    // Obtener número de links activos
+    const linksSnapshot = await db.collection('affiliateLinks')
+      .where('affiliateId', '==', userId)
+      .get();
+    
+    // Obtener conversiones del último mes
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    
+    const recentConversionsSnapshot = await db.collection('affiliateConversions')
+      .where('affiliateId', '==', userId)
+      .where('createdAt', '>=', lastMonth)
+      .get();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        stats: affiliateData?.stats || {
+          totalClicks: 0,
+          conversions: 0,
+          earnings: 0,
+          pendingPayment: 0
+        },
+        activeLinks: linksSnapshot.size,
+        recentConversions: recentConversionsSnapshot.size,
+        level: affiliateData?.level || 'Básico',
+        status: affiliateData?.status || 'pending'
+      }
+    });
+  } catch (error: any) {
+    console.error('Error al obtener estadísticas:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas',
+      error: error.message
+    });
+  }
+});
+
+/**
  * Calcula la fecha del próximo pago de afiliados (ejemplo: día 15 del mes siguiente)
  */
 function getNextPaymentDate(): Date {

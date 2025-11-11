@@ -111,6 +111,7 @@ export function setupAuth(app: Express) {
     const publicRoutePatterns = [
       '/stripe/product-purchase-status', // Rutas para verificar estado de compra de productos (sin / al final)
       '/musicians',                      // Rutas de músicos (GET, POST, PATCH, DELETE)
+      '/profile/',                       // Rutas de perfiles de artistas (GET /api/profile/:slug es público)
     ];
     
     // Añadir soporte para coincidencia parcial de rutas públicas

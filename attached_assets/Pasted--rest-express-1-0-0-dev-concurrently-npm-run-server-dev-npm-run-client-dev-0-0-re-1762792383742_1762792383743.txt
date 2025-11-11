@@ -1,0 +1,48 @@
+> rest-express@1.0.0 dev
+> concurrently "npm run server:dev" "npm run client:dev"
+
+[0] 
+[0] > rest-express@1.0.0 server:dev
+[0] > tsx watch server/index.ts
+[0] 
+[1] 
+[1] > rest-express@1.0.0 client:dev
+[1] > cd client && vite
+[1] 
+[1] 
+[1]   VITE v5.4.21  ready in 369 ms
+[1] 
+[1]   ➜  Local:   http://localhost:5000/
+[1]   ➜  Network: http://172.31.77.2:5000/
+[1] node:internal/process/promises:391
+[1]     triggerUncaughtException(err, true /* fromPromise */);
+[1]     ^
+[1] 
+[1] [Failed to load PostCSS config: Failed to load PostCSS config (searchPath: /home/runner/workspace/client): [Error] Loading PostCSS Plugin failed: Cannot find module 'autoprefixer'
+[1] Require stack:
+[1] - /home/runner/workspace/client/postcss.config.js
+[1] 
+[1] (@/home/runner/workspace/client/postcss.config.js)
+[1] Error: Loading PostCSS Plugin failed: Cannot find module 'autoprefixer'
+[1] Require stack:
+[1] - /home/runner/workspace/client/postcss.config.js
+[1] 
+[1] (@/home/runner/workspace/client/postcss.config.js)
+[1]     at load (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33632:11)
+[1]     at file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33657:16
+[1]     at Array.map (<anonymous>)
+[1]     at plugins (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33656:8)
+[1]     at processResult (file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33726:14)
+[1]     at file:///home/runner/workspace/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:33856:14]
+[1] 
+[1] Node.js v20.19.3
+[1] npm run client:dev exited with code 1
+[0] /home/runner/workspace/server/routes/ai-assistant.ts:2
+[0] import { GoogleGenerativeAI } from '@google/genai';
+[0]          ^
+[0] 
+[0] SyntaxError: The requested module '@google/genai' does not provide an export named 'GoogleGenerativeAI'
+[0]     at ModuleJob._instantiate (node:internal/modules/esm/module_job:175:21)
+[0]     at async ModuleJob.run (node:internal/modules/esm/module_job:258:5)
+[0]     at async ModuleLoader.import (node:internal/modules/esm/loader:540:24)
+[0]     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
