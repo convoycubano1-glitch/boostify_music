@@ -141,14 +141,21 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ["songs", artistId],
     queryFn: async () => {
       try {
+        console.log(`🎵 Fetching songs for artist: ${artistId}`);
         const songsRef = collection(db, "songs");
         const q = query(songsRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
-        if (querySnapshot.empty) return [];
+        console.log(`📊 Songs query returned ${querySnapshot.size} documents`);
 
-        return querySnapshot.docs.map((doc) => {
+        if (querySnapshot.empty) {
+          console.log('⚠️ No songs found for this artist');
+          return [];
+        }
+
+        const songsData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
+          console.log('🎵 Song data:', { id: doc.id, name: data.name, audioUrl: data.audioUrl });
           return {
             id: doc.id,
             name: data.name,
@@ -161,8 +168,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             coverArt: data.coverArt || '/assets/freepik__boostify_music_organe_abstract_icon.png'
           };
         });
+        
+        console.log(`✅ Successfully loaded ${songsData.length} songs`);
+        return songsData;
       } catch (error) {
-        console.error("Error fetching songs:", error);
+        console.error("❌ Error fetching songs:", error);
         return [];
       }
     },
@@ -174,15 +184,22 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ["videos", artistId],
     queryFn: async () => {
       try {
+        console.log(`📹 Fetching videos for artist: ${artistId}`);
         const videosRef = collection(db, "videos");
         const q = query(videosRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
-        if (querySnapshot.empty) return [];
+        console.log(`📊 Videos query returned ${querySnapshot.size} documents`);
 
-        return querySnapshot.docs.map((doc) => {
+        if (querySnapshot.empty) {
+          console.log('⚠️ No videos found for this artist');
+          return [];
+        }
+
+        const videosData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           const videoId = data.url?.split('v=')?.[1] || data.url?.split('/')?.[3]?.split('?')?.[0];
+          console.log('📹 Video data:', { id: doc.id, title: data.title, url: data.url });
           return {
             id: doc.id,
             title: data.title,
@@ -194,8 +211,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             likes: Math.floor(Math.random() * 500) + 50,
           };
         });
+        
+        console.log(`✅ Successfully loaded ${videosData.length} videos`);
+        return videosData;
       } catch (error) {
-        console.error("Error fetching videos:", error);
+        console.error("❌ Error fetching videos:", error);
         return [];
       }
     },
@@ -207,13 +227,17 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ["merchandise", artistId],
     queryFn: async () => {
       try {
+        console.log(`🛍️ Fetching merchandise for artist: ${artistId}`);
         const merchRef = collection(db, "merchandise");
         const q = query(merchRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
+        console.log(`📊 Merchandise query returned ${querySnapshot.size} documents`);
+
         if (!querySnapshot.empty) {
-          return querySnapshot.docs.map((doc) => {
+          const productsData = querySnapshot.docs.map((doc) => {
             const data = doc.data();
+            console.log('🛍️ Product data:', { id: doc.id, name: data.name, price: data.price });
             return {
               id: doc.id,
               name: data.name,
@@ -225,6 +249,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               createdAt: data.createdAt?.toDate(),
             };
           });
+          console.log(`✅ Successfully loaded ${productsData.length} existing products`);
+          return productsData;
         }
 
         // Si no hay productos, generar 5 automáticamente
@@ -278,13 +304,16 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         ];
 
         // Guardar productos en Firebase
+        console.log(`🏭 Generating ${defaultProducts.length} default products for ${artistName}...`);
         const savedProducts: Product[] = [];
         for (const product of defaultProducts) {
           const newDocRef = doc(collection(db, "merchandise"));
           await setDoc(newDocRef, product);
           savedProducts.push({ ...product, id: newDocRef.id });
+          console.log(`✅ Product created: ${product.name}`);
         }
 
+        console.log(`🎉 Successfully created ${savedProducts.length} products`);
         return savedProducts;
       } catch (error) {
         console.error("Error fetching/creating merchandise:", error);
