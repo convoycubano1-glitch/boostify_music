@@ -21,10 +21,9 @@ export function BottomNav() {
   const doubleClickThreshold = 300; // ms
   const { user } = useAuth();
 
-  // Navigate to user's own profile if authenticated, otherwise to auth page
-  // Each user gets their own profile that they can edit
-  // The Boostify profile (/artist/boostify) remains as a reference example
-  const profileHref = user ? `/artist/${user.uid}` : '/auth';
+  // Always navigate to the Boostify default profile
+  // This provides a consistent experience with demo content and video generation
+  const profileHref = '/artist/boostify';
 
   // Elementos de navegación para el botón "More" (23 páginas específicas) - Rutas verificadas contra App.tsx
   const moreNavItems = [

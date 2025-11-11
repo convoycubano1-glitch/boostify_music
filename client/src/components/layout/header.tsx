@@ -117,7 +117,7 @@ export function Header() {
                 </Button>
               </div>
             ) : (
-              <Link href="/auth">
+              <Link href="/auth-page">
                 <Button size="sm" className="gap-1">
                   <LogIn className="h-4 w-4" />
                   Login

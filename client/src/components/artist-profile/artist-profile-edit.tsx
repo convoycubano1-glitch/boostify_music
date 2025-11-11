@@ -96,19 +96,6 @@ export function ArtistProfileEdit({
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-8">
-      {/* Reference Profile Banner */}
-      <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-        <div className="flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-primary mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium mb-1">Need inspiration? Check out our example profile!</p>
-            <p className="text-xs text-muted-foreground mb-2">
-              Visit the <a href="/artist/boostify" className="text-primary hover:underline font-medium">Boostify Demo Profile</a> to see how a complete artist profile looks with songs, branding, and "Generate Video" features.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Edit Profile</h1>
         <div className="flex gap-2">
