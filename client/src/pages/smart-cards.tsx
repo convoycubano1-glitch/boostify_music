@@ -15,8 +15,9 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../hooks/use-auth";
 import { useToast } from "../hooks/use-toast";
-import { mockArtist } from "../components/artist/artist-profile-card";
 import { useLocation } from "wouter";
+import { db } from "../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const cardPackages = [
   {
@@ -72,8 +73,29 @@ export default function SmartCardsPage() {
 
 
   const { data: artistData, isLoading } = useQuery({
-    queryKey: ["/api/artist-profile", user?.id],
-    queryFn: () => mockArtist
+    queryKey: ["/api/artist-profile", user?.uid],
+    queryFn: async () => {
+      if (!user?.uid) return null;
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          return querySnapshot.docs[0].data();
+        }
+        return {
+          name: user.displayName || "Artist Name",
+          displayName: user.displayName || "Artist Name",
+        };
+      } catch (error) {
+        console.error("Error fetching artist data:", error);
+        return {
+          name: user.displayName || "Artist Name",
+          displayName: user.displayName || "Artist Name",
+        };
+      }
+    },
+    enabled: !!user?.uid
   });
 
   const handlePackageSelect = (packageId: string) => {

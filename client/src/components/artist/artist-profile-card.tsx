@@ -181,6 +181,24 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   
   const { toast } = useToast();
 
+  // Query para obtener datos del perfil del usuario desde Firestore
+  const { data: userProfile } = useQuery({
+    queryKey: ["userProfile", artistId],
+    queryFn: async () => {
+      try {
+        const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", artistId)));
+        if (!userDoc.empty) {
+          return userDoc.docs[0].data();
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        return null;
+      }
+    },
+    enabled: !!artistId
+  });
+
   // Query optimizada para obtener canciones
   const { data: songs = [] as Song[], isLoading: isLoadingSongs } = useQuery<Song[]>({
     queryKey: ["songs", artistId],
@@ -264,6 +282,26 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     },
     enabled: !!artistId
   });
+
+  // Crear objeto de artista con datos reales o valores por defecto
+  const artist = {
+    id: artistId,
+    name: userProfile?.displayName || userProfile?.name || "Artist Name",
+    genre: userProfile?.genre || "Music Artist",
+    location: userProfile?.location || "",
+    profileImage: userProfile?.photoURL || userProfile?.profileImage || '/assets/freepik__boostify_music_organe_abstract_icon.png',
+    bannerImage: userProfile?.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80',
+    biography: userProfile?.biography || "Music artist profile",
+    followers: userProfile?.followers || 0,
+    tracks: songs.length,
+    videos: videos.length,
+    verified: userProfile?.verified || false,
+    socialLinks: userProfile?.socialLinks || [],
+    contactEmail: userProfile?.email || userProfile?.contactEmail || "",
+    contactPhone: userProfile?.contactPhone || "",
+    upcomingShows: userProfile?.upcomingShows || [],
+    merchandise: userProfile?.merchandise || []
+  };
 
   const togglePlay = (song: Song, index: number) => {
     // Si ya estamos reproduciendo esta canción, la pausamos
@@ -383,7 +421,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   {songs[currentTrack]?.name || songs[currentTrack]?.title}
                 </span>
                 <span className="text-sm text-white/70 block">
-                  {mockArtist.name}
+                  {artist.name}
                 </span>
               </div>
             </div>
@@ -420,7 +458,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             <div className="h-48 md:h-64 bg-gradient-to-r from-orange-600/20 to-red-500/20 rounded-t-lg relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/90" />
               <img
-                src={mockArtist.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80'}
+                src={artist.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80'}
                 alt="Artist banner"
                 className="w-full h-full object-cover"
               />
@@ -430,8 +468,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6">
                 <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-black/80 overflow-hidden flex-shrink-0 bg-orange-500/10 relative group">
                   <img
-                    src={mockArtist.profileImage || 'https://images.unsplash.com/photo-1618254394652-ca0bd54ae0f0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1153&q=80'}
-                    alt={mockArtist.name}
+                    src={artist.profileImage || 'https://images.unsplash.com/photo-1618254394652-ca0bd54ae0f0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1153&q=80'}
+                    alt={artist.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -439,24 +477,24 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 
                 <div className="flex-1 text-center md:text-left">
                   <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-500">
-                    {mockArtist.name}
+                    {artist.name}
                   </h1>
                   
                   <div className="flex items-center justify-center md:justify-start gap-2 mb-3 flex-wrap">
                     <Badge variant="outline" className="text-orange-400 border-orange-500/30">
-                      {mockArtist.genre}
+                      {artist.genre}
                     </Badge>
                     <Badge variant="outline" className="text-orange-400 border-orange-500/30">
-                      {mockArtist.location}
+                      {artist.location}
                     </Badge>
                     <Badge variant="secondary" className="bg-orange-500/20 text-orange-200 hover:bg-orange-500/30">
                       <Users className="w-3 h-3 mr-1" />
-                      {mockArtist.followers.toLocaleString()} followers
+                      {artist.followers.toLocaleString()} followers
                     </Badge>
                   </div>
                   
                   <div className="flex items-center justify-center md:justify-start gap-2 text-sm">
-                    {mockArtist.verified && (
+                    {artist.verified && (
                       <span className="flex items-center text-green-400 gap-1">
                         <Check className="w-4 h-4" />
                         Verified Artist
@@ -464,11 +502,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     )}
                     <span className="flex items-center text-white/70 gap-1">
                       <Music2 className="w-4 h-4" />
-                      {mockArtist.tracks} tracks
+                      {artist.tracks} tracks
                     </span>
                     <span className="flex items-center text-white/70 gap-1">
                       <VideoIcon className="w-4 h-4" />
-                      {mockArtist.videos} videos
+                      {artist.videos} videos
                     </span>
                   </div>
                 </div>
@@ -483,7 +521,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Support {mockArtist.name}</DialogTitle>
+                        <DialogTitle>Support {artist.name}</DialogTitle>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
                         <div className="flex justify-around">
@@ -543,7 +581,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   </h3>
                   <ScrollArea className="h-24">
                     <p className="text-sm text-white/70 leading-relaxed">
-                      {mockArtist.biography}
+                      {artist.biography}
                     </p>
                   </ScrollArea>
                 </Card>
@@ -553,9 +591,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     <TicketCheck className="w-4 h-4 mr-2" />
                     Upcoming Shows
                   </h3>
-                  {mockArtist.upcomingShows.length > 0 ? (
+                  {artist.upcomingShows.length > 0 ? (
                     <div className="space-y-2">
-                      {mockArtist.upcomingShows.slice(0, 2).map((show, index) => (
+                      {artist.upcomingShows.slice(0, 2).map((show, index) => (
                         <div 
                           key={index}
                           className="flex justify-between items-center p-2 rounded-md bg-black/30 hover:bg-black/50 transition-colors"
@@ -582,20 +620,20 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       <p className="text-sm text-white/60">No upcoming shows</p>
                     </div>
                   )}
-                  {mockArtist.upcomingShows.length > 2 && (
+                  {artist.upcomingShows.length > 2 && (
                     <Button 
                       variant="link" 
                       className="text-xs text-orange-400 p-0 h-auto mt-2 hover:text-orange-300"
                       onClick={() => setActiveSection('shows')}
                     >
-                      View all {mockArtist.upcomingShows.length} shows →
+                      View all {artist.upcomingShows.length} shows →
                     </Button>
                   )}
                 </Card>
               </div>
               
               <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
-                {mockArtist.socialLinks.map((link, index) => {
+                {artist.socialLinks.map((link, index) => {
                   const Icon = link.type === 'instagram' 
                     ? Instagram 
                     : link.type === 'twitter' 
@@ -619,16 +657,16 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 })}
                 
                 <a 
-                  href={`mailto:${mockArtist.contactEmail}`}
+                  href={`mailto:${artist.contactEmail}`}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-black/30 text-white/80 hover:bg-orange-500/20 hover:text-orange-300 transition-colors border border-orange-500/20"
                 >
                   <Mail className="w-4 h-4" />
                   <span>Email</span>
                 </a>
                 
-                {mockArtist.contactPhone && (
+                {artist.contactPhone && (
                   <a 
-                    href={`tel:${mockArtist.contactPhone}`}
+                    href={`tel:${artist.contactPhone}`}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-black/30 text-white/80 hover:bg-orange-500/20 hover:text-orange-300 transition-colors border border-orange-500/20"
                   >
                     <Phone className="w-4 h-4" />
@@ -717,7 +755,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       <ShareDialog 
         isOpen={showShareDialog}
         onClose={() => setShowShareDialog(false)}
-        artistName={mockArtist.name}
+        artistName={artist.name}
         artistUrl="artistId"
       />
     </>
@@ -745,7 +783,7 @@ const getYoutubeVideoId = (url: string): string => {
 };
 
 // Datos de prueba
-export const mockArtist = {
+export const artist = {
   id: "1",
   name: "Luna Eclipse",
   genre: "Electro-Pop",
@@ -856,9 +894,9 @@ const ShowsSection = () => (
       </div>
       
       <div className="space-y-4">
-        {mockArtist.upcomingShows.length > 0 ? (
+        {artist.upcomingShows.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {mockArtist.upcomingShows.map((show, index) => (
+            {artist.upcomingShows.map((show, index) => (
               <motion.div
                 key={index}
                 whileHover={{ scale: 1.02 }}
@@ -932,9 +970,9 @@ const MerchSection = () => (
       </div>
       
       <div className="space-y-4">
-        {mockArtist.merchandise && mockArtist.merchandise.length > 0 ? (
+        {artist.merchandise && artist.merchandise.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {mockArtist.merchandise.map((item) => (
+            {artist.merchandise.map((item) => (
               <motion.div
                 key={item.id}
                 whileHover={{ scale: 1.03 }}

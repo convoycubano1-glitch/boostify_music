@@ -2,6 +2,7 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -17,12 +18,18 @@ import {
   Shield,
   Palette,
   Globe,
+  Music,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useSettingsStore, themeOptions, densityOptions, languageOptions } from "../store/settings-store";
 import { useEffect, useState } from "react";
 import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../hooks/use-auth";
 import { z } from "zod";
+import { db } from "../firebase";
+import { collection, doc, setDoc, getDoc, query, where, getDocs } from "firebase/firestore";
 import {
   Form,
   FormControl,
@@ -38,15 +45,36 @@ import { zodResolver } from "@hookform/resolvers/zod";
 export default function SettingsPage() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Estado global de configuraciones
   const settings = useSettingsStore();
+  
+  // Estados para el perfil de artista
+  const [artistProfileData, setArtistProfileData] = useState<any>(null);
+  const [isLoadingArtistProfile, setIsLoadingArtistProfile] = useState(true);
+  const [isSavingArtistProfile, setIsSavingArtistProfile] = useState(false);
   
   // Schemas de validación
   const profileSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").optional(),
     email: z.string().email("Email inválido").optional(),
     language: z.enum(languageOptions)
+  });
+
+  const artistProfileSchema = z.object({
+    displayName: z.string().min(2, "El nombre artístico debe tener al menos 2 caracteres"),
+    biography: z.string().min(10, "La biografía debe tener al menos 10 caracteres").optional(),
+    genre: z.string().optional(),
+    location: z.string().optional(),
+    profileImage: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
+    bannerImage: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
+    contactEmail: z.string().email("Email inválido").optional().or(z.literal("")),
+    contactPhone: z.string().optional(),
+    instagram: z.string().optional(),
+    twitter: z.string().optional(),
+    youtube: z.string().optional(),
+    spotify: z.string().optional(),
   });
   
   const notificationsSchema = z.object({
@@ -105,6 +133,66 @@ export default function SettingsPage() {
       confirmPassword: ""
     }
   });
+
+  const artistProfileForm = useForm({
+    resolver: zodResolver(artistProfileSchema),
+    defaultValues: {
+      displayName: "",
+      biography: "",
+      genre: "",
+      location: "",
+      profileImage: "",
+      bannerImage: "",
+      contactEmail: "",
+      contactPhone: "",
+      instagram: "",
+      twitter: "",
+      youtube: "",
+      spotify: "",
+    }
+  });
+
+  // Cargar perfil de artista desde Firestore
+  useEffect(() => {
+    const loadArtistProfile = async () => {
+      if (!user?.uid) {
+        setIsLoadingArtistProfile(false);
+        return;
+      }
+
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          setArtistProfileData(userData);
+          
+          artistProfileForm.reset({
+            displayName: userData.displayName || userData.name || "",
+            biography: userData.biography || "",
+            genre: userData.genre || "",
+            location: userData.location || "",
+            profileImage: userData.profileImage || userData.photoURL || "",
+            bannerImage: userData.bannerImage || "",
+            contactEmail: userData.contactEmail || userData.email || "",
+            contactPhone: userData.contactPhone || "",
+            instagram: userData.instagram || "",
+            twitter: userData.twitter || "",
+            youtube: userData.youtube || "",
+            spotify: userData.spotify || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading artist profile:", error);
+      } finally {
+        setIsLoadingArtistProfile(false);
+      }
+    };
+
+    loadArtistProfile();
+  }, [user?.uid]);
   
   // Manejadores para guardar cada formulario
   const handleProfileSubmit = (values: z.infer<typeof profileSchema>) => {
@@ -113,6 +201,73 @@ export default function SettingsPage() {
       title: "Perfil actualizado",
       description: "Tu información de perfil ha sido actualizada."
     });
+  };
+
+  const handleArtistProfileSubmit = async (values: z.infer<typeof artistProfileSchema>) => {
+    if (!user?.uid) {
+      toast({
+        title: "Error",
+        description: "Debes estar autenticado para actualizar tu perfil.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingArtistProfile(true);
+
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("uid", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+
+      const profileData = {
+        uid: user.uid,
+        displayName: values.displayName,
+        name: values.displayName,
+        biography: values.biography || "",
+        genre: values.genre || "",
+        location: values.location || "",
+        profileImage: values.profileImage || "",
+        photoURL: values.profileImage || "",
+        bannerImage: values.bannerImage || "",
+        contactEmail: values.contactEmail || "",
+        contactPhone: values.contactPhone || "",
+        instagram: values.instagram || "",
+        twitter: values.twitter || "",
+        youtube: values.youtube || "",
+        spotify: values.spotify || "",
+        updatedAt: new Date(),
+      };
+
+      if (!querySnapshot.empty) {
+        // Actualizar documento existente
+        const userDocRef = querySnapshot.docs[0].ref;
+        await setDoc(userDocRef, profileData, { merge: true });
+      } else {
+        // Crear nuevo documento
+        const newDocRef = doc(collection(db, "users"));
+        await setDoc(newDocRef, {
+          ...profileData,
+          createdAt: new Date(),
+        });
+      }
+
+      toast({
+        title: "Perfil de artista actualizado",
+        description: "Tu información de perfil se ha guardado correctamente."
+      });
+
+      setArtistProfileData(profileData);
+    } catch (error) {
+      console.error("Error saving artist profile:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar tu perfil. Por favor intenta nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingArtistProfile(false);
+    }
   };
   
   const handleNotificationsSubmit = (values: z.infer<typeof notificationsSchema>) => {
@@ -163,8 +318,12 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-4 md:space-y-6">
+      <Tabs defaultValue="artist" className="space-y-4 md:space-y-6">
         <TabsList className="w-full h-auto flex flex-wrap justify-start md:justify-start gap-1 md:gap-2 p-1">
+          <TabsTrigger value="artist" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
+            <Music className="h-4 w-4" />
+            <span className="text-xs md:text-sm">Artist Profile</span>
+          </TabsTrigger>
           <TabsTrigger value="profile" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
             <User className="h-4 w-4" />
             <span className="text-xs md:text-sm">Profile</span>
@@ -182,6 +341,248 @@ export default function SettingsPage() {
             <span className="text-xs md:text-sm">Security</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="artist" className="space-y-4">
+          <Card className="p-3 md:p-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Artist Profile Information</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Esta información se mostrará en tu perfil público de artista
+            </p>
+            
+            {isLoadingArtistProfile ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+              </div>
+            ) : (
+              <Form {...artistProfileForm}>
+                <form onSubmit={artistProfileForm.handleSubmit(handleArtistProfileSubmit)} className="space-y-4">
+                  <FormField
+                    control={artistProfileForm.control}
+                    name="displayName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre Artístico *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Tu nombre artístico" {...field} data-testid="input-artist-name" />
+                        </FormControl>
+                        <FormDescription>
+                          Este será tu nombre público como artista
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={artistProfileForm.control}
+                    name="biography"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Biografía</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Cuéntanos tu historia como artista..." 
+                            className="min-h-[100px]"
+                            {...field}
+                            data-testid="input-biography"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Una breve descripción sobre ti y tu música
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={artistProfileForm.control}
+                      name="genre"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Género Musical</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ej: Pop, Rock, Hip-Hop" {...field} data-testid="input-genre" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={artistProfileForm.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ubicación</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ciudad, País" {...field} data-testid="input-location" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={artistProfileForm.control}
+                    name="profileImage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL de Imagen de Perfil</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="https://ejemplo.com/imagen.jpg" 
+                            {...field} 
+                            data-testid="input-profile-image"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          URL de tu foto de perfil (JPG, PNG, etc.)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={artistProfileForm.control}
+                    name="bannerImage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL de Imagen de Banner</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="https://ejemplo.com/banner.jpg" 
+                            {...field} 
+                            data-testid="input-banner-image"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          URL de tu imagen de portada (banner)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="text-sm font-semibold mb-3">Información de Contacto</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={artistProfileForm.control}
+                        name="contactEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email de Contacto</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="contacto@ejemplo.com" {...field} data-testid="input-contact-email" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={artistProfileForm.control}
+                        name="contactPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Teléfono</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+1 234 567 8900" {...field} data-testid="input-phone" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="text-sm font-semibold mb-3">Redes Sociales</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={artistProfileForm.control}
+                        name="instagram"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Instagram</FormLabel>
+                            <FormControl>
+                              <Input placeholder="@tuusuario" {...field} data-testid="input-instagram" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={artistProfileForm.control}
+                        name="twitter"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Twitter / X</FormLabel>
+                            <FormControl>
+                              <Input placeholder="@tuusuario" {...field} data-testid="input-twitter" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={artistProfileForm.control}
+                        name="youtube"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>YouTube</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://youtube.com/@tucanal" {...field} data-testid="input-youtube" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={artistProfileForm.control}
+                        name="spotify"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Spotify</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://open.spotify.com/artist/..." {...field} data-testid="input-spotify" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full md:w-auto"
+                    disabled={!artistProfileForm.formState.isDirty || isSavingArtistProfile}
+                    data-testid="button-save-artist-profile"
+                  >
+                    {isSavingArtistProfile ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      "Guardar Cambios"
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            )}
+          </Card>
+        </TabsContent>
 
         <TabsContent value="profile" className="space-y-4">
           <Card className="p-3 md:p-6">
