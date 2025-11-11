@@ -27,6 +27,8 @@ interface EditProfileDialogProps {
     location: string;
     profileImage: string;
     bannerImage: string;
+    bannerPosition?: string;
+    slug?: string;
     contactEmail: string;
     contactPhone: string;
     instagram: string;
@@ -57,6 +59,26 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Generar slug automáticamente desde el nombre del artista
+  const generateSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Eliminar caracteres especiales
+      .replace(/\s+/g, '-') // Reemplazar espacios con guiones
+      .replace(/-+/g, '-') // Reemplazar múltiples guiones con uno solo
+      .replace(/^-+|-+$/g, ''); // Eliminar guiones al inicio y final
+  };
+
+  // Actualizar slug automáticamente cuando cambia el nombre
+  const handleNameChange = (name: string) => {
+    handleChange('displayName', name);
+    if (!formData.slug || formData.slug === generateSlug(currentData.displayName)) {
+      // Solo auto-generar si no hay slug personalizado o si es el slug original
+      handleChange('slug', generateSlug(name));
+    }
   };
 
   // Subir imagen de referencia
@@ -341,6 +363,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         profileImage: formData.profileImage || "",
         photoURL: formData.profileImage || "",
         bannerImage: formData.bannerImage || "",
+        bannerPosition: formData.bannerPosition || "50",
+        slug: formData.slug || generateSlug(formData.displayName),
         contactEmail: formData.contactEmail || "",
         contactPhone: formData.contactPhone || "",
         instagram: formData.instagram || "",
@@ -449,9 +473,34 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
             <Input
               id="displayName"
               value={formData.displayName}
-              onChange={(e) => handleChange("displayName", e.target.value)}
+              onChange={(e) => handleNameChange(e.target.value)}
               placeholder="Tu nombre artístico"
             />
+          </div>
+
+          {/* Slug/URL Único */}
+          <div className="space-y-2 border rounded-lg p-4 bg-blue-500/5 border-blue-500/20">
+            <Label htmlFor="slug" className="text-blue-400 font-semibold">🔗 URL Único del Perfil</Label>
+            <p className="text-xs text-gray-400">
+              Esta es la dirección web personalizada de tu perfil que puedes compartir
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">{window.location.origin}/artist/</span>
+              <Input
+                id="slug"
+                value={formData.slug || ''}
+                onChange={(e) => handleChange("slug", generateSlug(e.target.value))}
+                placeholder="nombre-artista"
+                className="flex-1"
+              />
+            </div>
+            {formData.slug && (
+              <div className="flex items-center gap-2 p-2 bg-green-500/10 border border-green-500/20 rounded">
+                <span className="text-xs text-green-400 font-mono">
+                  {window.location.origin}/artist/{formData.slug}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Biografía con botón de generar */}
@@ -632,7 +681,40 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
               placeholder="URL de imagen o usa los botones para subir/generar"
             />
             {formData.bannerImage && (
-              <img src={formData.bannerImage} alt="Preview" className="w-full h-24 object-cover rounded-lg mt-2" />
+              <div className="space-y-3">
+                <img 
+                  src={formData.bannerImage} 
+                  alt="Preview" 
+                  className="w-full h-32 object-cover rounded-lg"
+                  style={{ objectPosition: `center ${formData.bannerPosition || '50'}%` }}
+                />
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm">Ajustar Posición del Banner</Label>
+                    <span className="text-xs text-gray-500">
+                      {formData.bannerPosition ? `${formData.bannerPosition}%` : '50%'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500">Arriba</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={formData.bannerPosition || '50'}
+                      onChange={(e) => handleChange('bannerPosition', e.target.value)}
+                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${formData.bannerPosition || 50}%, rgb(229, 231, 235) ${formData.bannerPosition || 50}%, rgb(229, 231, 235) 100%)`
+                      }}
+                    />
+                    <span className="text-xs text-gray-500">Abajo</span>
+                  </div>
+                  <p className="text-xs text-gray-400 italic">
+                    Arrastra el control para centrar la imagen donde desees
+                  </p>
+                </div>
+              </div>
             )}
           </div>
 

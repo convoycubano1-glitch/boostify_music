@@ -5,7 +5,63 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 🎨 Concepto-Primero con Referencias Visuales (LATEST)
+### 🎯 Ajuste de Posición del Banner (LATEST)
+**Fecha**: 11 de Noviembre, 2024
+**Objetivo**: Permitir al artista ajustar la posición de enfoque de la imagen del banner
+
+**Cambios implementados**:
+1. ✅ Campo `bannerPosition` agregado al perfil del artista:
+   - Se guarda en Firebase junto con los demás datos del perfil
+   - Valor por defecto: "center"
+   - Opciones disponibles: "top", "center", "bottom"
+
+2. ✅ Controles visuales en el diálogo de edición:
+   - Tres botones para seleccionar posición: Arriba, Centro, Abajo
+   - Preview en tiempo real del banner con la posición seleccionada
+   - UI intuitiva con botones destacados según la selección actual
+
+3. ✅ Aplicación de posición en el perfil público:
+   - CSS `object-position` aplicado dinámicamente
+   - Permite enfocar partes específicas de imágenes verticales o paisajes
+   - Transición suave al cambiar la posición
+
+**Beneficios**:
+- 🎨 Mayor control sobre cómo se muestra el banner
+- 📱 Útil para imágenes que tienen el enfoque en arriba/abajo
+- ✨ Preview inmediato antes de guardar
+
+### 📸 Subida Directa de Imágenes de Perfil y Banner
+**Fecha**: 11 de Noviembre, 2024
+**Objetivo**: Permitir subir imágenes JPG/PNG directamente desde dispositivos móviles (iPhone) además de generar con IA
+
+**Cambios implementados**:
+1. ✅ Funciones de subida directa en `edit-profile-dialog.tsx`:
+   - `handleUploadProfileImage()` - Sube imagen de perfil a Firebase Storage
+   - `handleUploadBannerImage()` - Sube imagen de banner a Firebase Storage
+   - Soporte para formatos: JPG, JPEG, PNG, WEBP, HEIC (compatible con iPhone)
+
+2. ✅ UI mejorada con doble opción:
+   - Botón "Subir" - Para subir archivo desde dispositivo
+   - Botón "IA" - Para generar imagen con Gemini AI
+   - Ambas opciones disponibles sin eliminar ninguna funcionalidad existente
+
+3. ✅ Optimización mobile-first completa:
+   - Grid de productos adaptativo (2 columnas en móvil, responsive en desktop)
+   - Botones de compra con texto condensado en móviles
+   - Header optimizado con tamaños adaptativos
+   - Alturas de hero banner responsive (h-72 en móvil → h-96 en desktop)
+
+4. ✅ Prompts mejorados para imágenes de productos:
+   - Cada tipo de producto (T-Shirt, Hoodie, Cap, Poster, Sticker Pack, Vinyl) tiene prompts únicos
+   - Detalles específicos de colores, ángulos, materiales y estilos fotográficos
+   - Mayor variedad y realismo en las imágenes generadas
+
+**Compatibilidad móvil**:
+- ✅ iPhone: Soporta HEIC, HEIF, JPG, PNG desde Photos
+- ✅ Android: JPG, PNG, WEBP
+- ✅ Responsive design 100% en todas las pantallas
+
+### 🎨 Concepto-Primero con Referencias Visuales
 **Fecha**: 8 de Noviembre, 2024
 **Objetivo**: Mejorar coherencia visual del script JSON generando concepto narrativo ANTES de las escenas
 
