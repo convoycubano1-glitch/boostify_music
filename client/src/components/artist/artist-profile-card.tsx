@@ -1288,7 +1288,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               data-testid="button-share"
             >
               <Share2 className="h-3 w-3 md:h-4 md:w-4 inline md:mr-2" />
-              <span className="hidden md:inline">Compartir</span>
+              <span className="hidden md:inline">{t('profile.share')}</span>
             </button>
             {isOwnProfile && (
               <Link href="/dashboard">
@@ -1518,7 +1518,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     style={{ color: colors.hexAccent }}
                   >
                     <Music className="h-5 w-5" />
-                    Música ({songs.length})
+                    {t('profile.sections.music')} ({songs.length})
                   </div>
                   {isOwnProfile && (
                     <Dialog open={showUploadSongDialog} onOpenChange={setShowUploadSongDialog}>
@@ -1686,7 +1686,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     style={{ color: colors.hexAccent }}
                   >
                     <VideoIcon className="h-5 w-5" />
-                    Videos ({videos.length})
+                    {t('profile.sections.videos')} ({videos.length})
                   </div>
                   {isOwnProfile && (
                     <Dialog open={showUploadVideoDialog} onOpenChange={setShowUploadVideoDialog}>
@@ -2567,7 +2567,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 style={{ color: colors.hexAccent }}
               >
                 <Calendar className="h-5 w-5" />
-                Upcoming Shows
+                {t('profile.shows.title')}
               </div>
               {shows.length > 0 ? (
                 <div className="space-y-3">
