@@ -1,0 +1,88 @@
+edit-profile-dialog.tsx:209 🎨 Generating image for Hoodie...
+edit-profile-dialog.tsx:223 📡 Response status for Hoodie: 401
+edit-profile-dialog.tsx:226 📦 Response data for Hoodie: {error: 'Authentication required'}
+edit-profile-dialog.tsx:232 ⚠️ Could not generate image for Hoodie. Error: Authentication required
+handleGenerateProducts @ edit-profile-dialog.tsx:232
+await in handleGenerateProducts
+callCallback2 @ chunk-NFC5BX5N.js?v=cc9bcd95:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=cc9bcd95:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=cc9bcd95:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=cc9bcd95:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=cc9bcd95:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=cc9bcd95:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=cc9bcd95:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=cc9bcd95:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=cc9bcd95:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=cc9bcd95:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=cc9bcd95:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=cc9bcd95:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=cc9bcd95:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5449Understand this warning
+edit-profile-dialog.tsx:209 🎨 Generating image for Cap...
+edit-profile-dialog.tsx:223 📡 Response status for Cap: 401
+edit-profile-dialog.tsx:226 📦 Response data for Cap: {error: 'Authentication required'}
+edit-profile-dialog.tsx:232 ⚠️ Could not generate image for Cap. Error: Authentication required
+handleGenerateProducts @ edit-profile-dialog.tsx:232
+await in handleGenerateProducts
+callCallback2 @ chunk-NFC5BX5N.js?v=cc9bcd95:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=cc9bcd95:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=cc9bcd95:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=cc9bcd95:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=cc9bcd95:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=cc9bcd95:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=cc9bcd95:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=cc9bcd95:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=cc9bcd95:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=cc9bcd95:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=cc9bcd95:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=cc9bcd95:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=cc9bcd95:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5449Understand this warning
+edit-profile-dialog.tsx:209 🎨 Generating image for Poster...
+edit-profile-dialog.tsx:223 📡 Response status for Poster: 401
+edit-profile-dialog.tsx:226 📦 Response data for Poster: {error: 'Authentication required'}
+edit-profile-dialog.tsx:232 ⚠️ Could not generate image for Poster. Error: Authentication required
+handleGenerateProducts @ edit-profile-dialog.tsx:232
+await in handleGenerateProducts
+callCallback2 @ chunk-NFC5BX5N.js?v=cc9bcd95:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=cc9bcd95:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=cc9bcd95:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=cc9bcd95:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=cc9bcd95:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=cc9bcd95:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=cc9bcd95:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=cc9bcd95:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=cc9bcd95:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=cc9bcd95:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=cc9bcd95:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=cc9bcd95:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=cc9bcd95:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5449Understand this warning
+edit-profile-dialog.tsx:209 🎨 Generating image for Sticker Pack...
+edit-profile-dialog.tsx:223 📡 Response status for Sticker Pack: 401
+edit-profile-dialog.tsx:226 📦 Response data for Sticker Pack: {error: 'Authentication required'}
+edit-profile-dialog.tsx:232 ⚠️ Could not generate image for Sticker Pack. Error: Authentication required
+handleGenerateProducts @ edit-profile-dialog.tsx:232
+await in handleGenerateProducts
+callCallback2 @ chunk-NFC5BX5N.js?v=cc9bcd95:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=cc9bcd95:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=cc9bcd95:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=cc9bcd95:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=cc9bcd95:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=cc9bcd95:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=cc9bcd95:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=cc9bcd95:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=cc9bcd95:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=cc9bcd95:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=cc9bcd95:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=cc9bcd95:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=cc9bcd95:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5449Understand this warning
+edit-profile-dialog.tsx:209 🎨 Generating image for Vinyl Record...
+edit-profile-dialog.tsx:223 📡 Response status for Vinyl Record: 401
+edit-profile-dialog.tsx:226 📦 Response data for Vinyl Record: {error: 'Authentication required'}
+edit-profile-dialog.tsx:232 ⚠️ Could not generate image for Vinyl Record. Error: Authentication required

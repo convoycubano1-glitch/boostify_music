@@ -72,6 +72,13 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
   const [isAddingShow, setIsAddingShow] = useState(false);
   const [isGeneratingProducts, setIsGeneratingProducts] = useState(false);
 
+  // Actualizar formData cuando se abre el diálogo o cambian los datos
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(currentData);
+    }
+  }, [isOpen, currentData]);
+
   // Cargar shows al abrir el diálogo
   useEffect(() => {
     if (isOpen && artistId) {
@@ -203,9 +210,10 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         
         let productImage = brandImage;
         try {
-          const imageResponse = await fetch('/api/artist/generate-product-image', {
+          const imageResponse = await fetch('/api/artist-profile/generate-product-image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include', // Enviar cookies de sesión
             body: JSON.stringify({
               productType: productDef.type,
               artistName: artistName,
@@ -213,16 +221,41 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
             })
           });
           
+          console.log(`📡 Response status for ${productDef.type}:`, imageResponse.status);
+          
           const imageResult = await imageResponse.json();
+          console.log(`📦 Response data for ${productDef.type}:`, imageResult);
           
           if (imageResult.success && imageResult.imageUrl) {
-            productImage = imageResult.imageUrl;
-            console.log(`✅ Image generated for ${productDef.type}`);
+            // Si la imagen es base64, subirla a Firebase Storage
+            if (imageResult.imageUrl.startsWith('data:')) {
+              console.log(`📤 Uploading base64 image to Firebase Storage for ${productDef.type}...`);
+              try {
+                // Convertir base64 a blob
+                const base64Response = await fetch(imageResult.imageUrl);
+                const blob = await base64Response.blob();
+                
+                // Subir a Firebase Storage
+                const timestamp = Date.now();
+                const storageRef = ref(storage, `merchandise/${artistId}/${productDef.type.toLowerCase().replace(/\s+/g, '-')}_${timestamp}.png`);
+                await uploadBytes(storageRef, blob);
+                const downloadURL = await getDownloadURL(storageRef);
+                
+                productImage = downloadURL;
+                console.log(`✅ Image uploaded to Storage for ${productDef.type}`);
+              } catch (uploadError) {
+                console.error(`❌ Error uploading image for ${productDef.type}:`, uploadError);
+                productImage = brandImage; // Usar imagen por defecto si falla la subida
+              }
+            } else {
+              productImage = imageResult.imageUrl;
+            }
+            console.log(`✅ Image ready for ${productDef.type}`);
           } else {
-            console.warn(`⚠️ Could not generate image for ${productDef.type}, using default`);
+            console.warn(`⚠️ Could not generate image for ${productDef.type}. Error:`, imageResult.error || 'No error message');
           }
         } catch (error) {
-          console.error(`Error generating image for ${productDef.type}:`, error);
+          console.error(`❌ Exception generating image for ${productDef.type}:`, error);
         }
         
         // Guardar producto en Firebase

@@ -1,33 +1,49 @@
+import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { Head } from "../components/ui/head";
-import { useQuery } from "@tanstack/react-query";
-
-interface ArtistProfileData {
-  id: number;
-  username: string;
-  artistName: string;
-  slug: string;
-  profileImage?: string;
-  coverImage?: string;
-  biography?: string;
-  genre?: string;
-  location?: string;
-  spotifyUrl?: string;
-  facebookUrl?: string;
-  tiktokUrl?: string;
-}
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebase";
 
 export default function ArtistProfilePage() {
   const { slug } = useParams<{ slug: string }>();
+  const [artistId, setArtistId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [artistData, setArtistData] = useState<any>(null);
 
-  // Fetch artist profile by slug from PostgreSQL API
-  const { data: artistData, isLoading, error } = useQuery<ArtistProfileData>({
-    queryKey: ['/api/profile', slug],
-    enabled: !!slug,
-  });
+  useEffect(() => {
+    const findArtistBySlug = async () => {
+      if (!slug) {
+        setError(true);
+        setIsLoading(false);
+        return;
+      }
 
-  const artistId = artistData?.id.toString();
+      try {
+        setIsLoading(true);
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("slug", "==", slug));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          setArtistId(userData.uid);
+          setArtistData(userData);
+          setError(false);
+        } else {
+          setError(true);
+        }
+      } catch (err) {
+        console.error("Error finding artist by slug:", err);
+        setError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    findArtistBySlug();
+  }, [slug]);
 
   if (isLoading) {
     return (
@@ -58,12 +74,12 @@ export default function ArtistProfilePage() {
     return `${window.location.origin}${imageUrl}`;
   };
 
-  // Preferir cover image sobre profile image para compartir (es más visual y llamativo)
+  // Preferir banner sobre profile image para compartir (es más visual y llamativo)
   const shareImage = getAbsoluteImageUrl(
-    artistData?.coverImage || artistData?.profileImage
+    artistData?.bannerImage || artistData?.profileImage || artistData?.photoURL
   );
   
-  const artistName = artistData?.artistName || 'Artist';
+  const artistName = artistData?.displayName || artistData?.name || 'Artist';
   const biography = artistData?.biography || '';
   const genre = artistData?.genre || '';
   const location = artistData?.location || '';

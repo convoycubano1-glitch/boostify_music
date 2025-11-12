@@ -1,0 +1,31 @@
+{
+    "genre": "Soul Blues",
+    "updatedAt": {
+        "type": "firestore/timestamp/1.0",
+        "seconds": 1762924144,
+        "nanoseconds": 517000000
+    },
+    "name": "Redwine",
+    "contactPhone": "+17865432478",
+    "bannerImage": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FcoqofMnNMQUmnqU39h5EEO05Lwi1%2Fbanner_1762917836570_freepik__-id-p5-durationsec-5-scenetype-plano-cerrado-locat__11811.jpeg?alt=media&token=de99b37e-32fe-462b-bfd7-c5430c8bd9e4",
+    "spotify": "https://open.spotify.com/intl-es/artist/4UIU2Qqu9cZ7XmPZqMC4Te",
+    "createdAt": {
+        "type": "firestore/timestamp/1.0",
+        "seconds": 1762899698,
+        "nanoseconds": 759000000
+    },
+    "contactEmail": "info@boostifymusic.com",
+    "youtube": "",
+    "profileImage": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FcoqofMnNMQUmnqU39h5EEO05Lwi1%2Fprofile_1762917799008_freepik__crea-la-portada-del-album-si-un-dia-caigo-preso-by__11813.jpeg?alt=media&token=d7ba6a96-2cc6-4de9-9b3f-5398e8695adb",
+    "uid": "coqofMnNMQUmnqU39h5EEO05Lwi1",
+    "location": "Miami , FL",
+    "bannerPosition": "41",
+    "twitter": "@redwine_music",
+    "instagram": "don_vincenzo_moretti",
+    "loopVideoUrl": "",
+    "photoURL": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FcoqofMnNMQUmnqU39h5EEO05Lwi1%2Fprofile_1762917799008_freepik__crea-la-portada-del-album-si-un-dia-caigo-preso-by__11813.jpeg?alt=media&token=d7ba6a96-2cc6-4de9-9b3f-5398e8695adb",
+    "displayName": "Redwine",
+    "referenceImage": "",
+    "slug": "redwine",
+    "biography": "Redwine emerge como una fuerza musical singular, cuya propuesta artística desafía las clasificaciones convencionales. Con una habilidad excepcional para navegar y fusionar \"varios géneros\", su sonido es un testimonio de una audacia creativa ilimitada. Cada composición es un lienzo donde la introspección melódica se entrelaza con ritmos innovadores y texturas sonoras inesperadas, creando una experiencia auditiva rica y profundamente envolvente.\n\nEsta versatilidad no es solo una muestra de su rango estilístico, sino el reflejo de una búsqueda artística constante, donde influencias dispares convergen para formar un lenguaje musical distintivo y cohesionado. Redwine posee la rara capacidad de evocar una amplia gama de emociones, transportando al oyente a paisajes sonoros únicos. Su música no solo se escucha, se siente, estableciendo una conexión íntima que trasciende barreras. En un panorama musical a menudo segmentado, Redwine se posiciona como un verdadero arquitecto de sonidos, uniendo mundos musicales y prometiendo una trayectoria tan impredecible como cautivadora."
+}
