@@ -83,6 +83,14 @@ interface Product {
   createdAt?: any;
 }
 
+interface Show {
+  id: string;
+  venue: string;
+  date: string;
+  location: string;
+  ticketUrl?: string;
+}
+
 // Paletas de colores
 const colorPalettes = {
   'Boostify Naranja': {
@@ -769,6 +777,48 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       console.log('⚠️ MERCHANDISE SECTION IS HIDDEN (no products)');
     }
   }, [products]);
+
+  // Query para shows
+  const { data: shows = [] as Show[], refetch: refetchShows } = useQuery<Show[]>({
+    queryKey: ["shows", artistId],
+    queryFn: async () => {
+      try {
+        console.log(`🎤 Fetching shows for artist: ${artistId}`);
+        const showsRef = collection(db, "shows");
+        const q = query(showsRef, where("userId", "==", artistId));
+        const querySnapshot = await getDocs(q);
+
+        console.log(`📊 Shows query returned ${querySnapshot.size} documents`);
+
+        if (querySnapshot.empty) {
+          console.log('⚠️ No shows found for this artist');
+          return [];
+        }
+
+        const showsData = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          console.log('🎤 Show data:', { id: doc.id, venue: data.venue, date: data.date });
+          return {
+            id: doc.id,
+            venue: data.venue,
+            date: data.date,
+            location: data.location,
+            ticketUrl: data.ticketUrl,
+          };
+        });
+        
+        // Ordenar por fecha (más próximos primero)
+        showsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        console.log(`✅ Successfully loaded ${showsData.length} shows`);
+        return showsData;
+      } catch (error) {
+        console.error("❌ Error fetching shows:", error);
+        return [];
+      }
+    },
+    enabled: !!artistId
+  });
 
   const artist = {
     name: userProfile?.displayName || userProfile?.name || "Artist Name",
@@ -1613,21 +1663,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </div>
 
-            {/* Tarjeta de Biografía */}
-            {artist.biography && (
-              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-                <div 
-                  className="text-base font-semibold mb-3 transition-colors duration-500" 
-                  style={{ color: colors.hexAccent }}
-                >
-                  Bio
-                </div>
-                <p className="text-sm text-gray-300 leading-relaxed">
-                  {artist.biography}
-                </p>
-              </div>
-            )}
-
             {/* Tarjeta de Información */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               <div 
@@ -1722,7 +1757,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             )}
 
-            {/* Upcoming Shows - Empty State */}
+            {/* Upcoming Shows */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               <div 
                 className="text-base font-semibold mb-3 transition-colors duration-500 flex items-center gap-2" 
@@ -1731,10 +1766,59 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 <Calendar className="h-5 w-5" />
                 Upcoming Shows
               </div>
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 mx-auto mb-2" style={{ color: colors.hexAccent, opacity: 0.3 }} />
-                <p className="text-gray-400 text-sm">No upcoming shows</p>
-              </div>
+              {shows.length > 0 ? (
+                <div className="space-y-3">
+                  {shows.map((show) => {
+                    const showDate = new Date(show.date);
+                    const formattedDate = showDate.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    });
+                    const formattedTime = showDate.toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    });
+                    
+                    return (
+                      <div 
+                        key={show.id}
+                        className="p-3 rounded-lg border transition-colors duration-200 hover:bg-gray-800/30"
+                        style={{ borderColor: colors.hexBorder }}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-white">{show.venue}</h4>
+                          {show.ticketUrl && (
+                            <a
+                              href={show.ticketUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs px-2 py-1 rounded font-medium hover:opacity-80 transition-opacity"
+                              style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
+                            >
+                              Tickets
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-400 mb-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formattedDate} • {formattedTime}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <MapPin className="h-4 w-4" />
+                          <span>{show.location}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 mx-auto mb-2" style={{ color: colors.hexAccent, opacity: 0.3 }} />
+                  <p className="text-gray-400 text-sm">No upcoming shows</p>
+                </div>
+              )}
             </div>
 
           </section>

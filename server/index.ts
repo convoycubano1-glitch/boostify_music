@@ -8,9 +8,6 @@ import cors from 'cors';
 import fs from 'fs';
 import fileUpload from 'express-fileupload';
 
-// FORCE development mode
-process.env.NODE_ENV = 'development';
-
 const app = express();
 
 // Enable CORS for development
@@ -122,7 +119,7 @@ app.use((req, res, next) => {
     if (process.env.NODE_ENV === "production") {
       log('🚀 Running in production mode');
 
-      const distPath = path.resolve(process.cwd(), 'dist', 'client');
+      const distPath = path.resolve(process.cwd(), 'dist', 'public');
       log(`📁 Serving static files from: ${distPath}`);
 
       // Serve static files
@@ -212,7 +209,7 @@ app.use((req, res, next) => {
 
     server.listen(PORT, '0.0.0.0', () => {
       log(`✅ Server started on port ${PORT}`);
-      log(`🌍 Environment: ${app.get("env")}`);
+      log(`🌍 Environment: ${process.env.NODE_ENV || app.get("env")}`);
       log(`📂 Static files served from: ${process.env.NODE_ENV === "production" ?
         path.resolve(process.cwd(), 'dist', 'public') :
         path.join(process.cwd(), 'client/public')}`);

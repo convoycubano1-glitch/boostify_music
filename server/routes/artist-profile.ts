@@ -178,14 +178,15 @@ router.post('/generate-product-image', async (req: Request, res: Response) => {
       });
     }
     
-    // Crear prompts específicos y únicos para cada tipo de producto
+    // Crear prompts específicos y únicos para cada tipo de producto con Boostify branding
+    const boostifyBranding = 'featuring Boostify logo (modern orange and black music platform branding)';
     const productPrompts: Record<string, string> = {
-      'T-Shirt': `High-end product photography: premium black cotton t-shirt with ${artistName} logo embroidered on chest, front and center view, folded sleeves style, isolated on pure white background, professional e-commerce lighting, sharp focus, 4K quality`,
-      'Hoodie': `Premium streetwear photography: oversized ${artistName} branded hoodie in dark gray, kangaroo pocket visible, hood up, front facing, isolated white background, soft shadows, studio quality, commercial product shot`,
-      'Cap': `Professional headwear photography: snapback baseball cap with ${artistName} embroidered patch on front panel, 3/4 angle view showing curved brim, navy blue color, white background, product photography lighting, ultra sharp`,
-      'Poster': `Music poster mockup: framed ${artistName} concert poster on white wall, minimalist modern design with bold typography, 24x36 inches, gallery frame, soft ambient lighting, interior photography style, centered composition`,
-      'Sticker Pack': `Product flat lay photography: set of 10 vinyl stickers featuring ${artistName} brand logos and artwork, arranged in grid pattern, vibrant colors, matte finish, white background, overhead shot, crisp details, commercial quality`,
-      'Vinyl Record': `Luxury music product photography: ${artistName} limited edition vinyl record, colorful swirl pattern on disc, album artwork cover leaning against it, black sleeve visible, white background, dramatic side lighting, audiophile quality presentation`
+      'T-Shirt': `High-end product photography: premium black cotton t-shirt ${boostifyBranding} embroidered on chest for ${artistName}, front and center view, folded sleeves style, isolated on pure white background, professional e-commerce lighting, sharp focus, 4K quality, modern streetwear aesthetic`,
+      'Hoodie': `Premium streetwear photography: oversized ${artistName} branded hoodie in dark charcoal ${boostifyBranding}, kangaroo pocket visible, hood up, front facing, isolated white background, soft shadows, studio quality, commercial product shot, urban fashion style`,
+      'Cap': `Professional headwear photography: snapback baseball cap ${boostifyBranding} embroidered on front panel for ${artistName}, 3/4 angle view showing curved brim, black with orange accents, white background, product photography lighting, ultra sharp, streetwear accessory`,
+      'Poster': `Music poster mockup: framed ${artistName} concert poster with Boostify branding on white wall, modern minimalist design with bold orange and black typography, 24x36 inches, gallery frame, soft ambient lighting, interior photography style, centered composition, music industry aesthetic`,
+      'Sticker Pack': `Product flat lay photography: set of 10 vinyl stickers featuring ${artistName} and Boostify brand elements, arranged in grid pattern, vibrant orange, black and white colors, matte finish, white background, overhead shot, crisp details, commercial quality, music lifestyle branding`,
+      'Vinyl Record': `Luxury music product photography: ${artistName} limited edition vinyl record with Boostify label, orange and black swirl pattern on disc, album artwork cover featuring Boostify branding leaning against it, black sleeve visible, white background, dramatic side lighting, audiophile quality presentation, collector's edition`
     };
     
     const prompt = productPrompts[productType] || 

@@ -7,7 +7,64 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 🎯 Control Deslizante de Posición del Banner + URLs Únicas de Artista (LATEST)
+### 🛍️ Generación de Productos con IA + Branding Boostify (LATEST)
+**Fecha**: 11 de Noviembre, 2024
+**Objetivo**: Generar productos de merchandise con imágenes únicas usando IA y branding de Boostify
+
+**Cambios implementados**:
+1. ✅ **Generación de imágenes únicas por producto**:
+   - Cada producto ahora tiene una imagen única generada con IA
+   - Prompts específicos para cada tipo (T-Shirt, Hoodie, Cap, Poster, Stickers, Vinyl)
+   - Incluyen branding de Boostify (colores naranja y negro)
+   - Estilo profesional de fotografía de producto
+
+2. ✅ **Botón en Editar Perfil**:
+   - Nueva sección "Merchandise" en el diálogo de edición
+   - Botón "Generar Productos con IA" con diseño atractivo
+   - Genera automáticamente 6 productos con imágenes únicas
+   - Estado de carga mientras se generan las imágenes
+
+3. ✅ **Preparación para Printful**:
+   - Nota visible sobre integración futura con Printful
+   - Estructura de productos compatible con print-on-demand
+   - Tallas configuradas para producción física
+
+**Beneficios**:
+- 🎨 Cada producto tiene una imagen profesional y única
+- 🏷️ Branding consistente de Boostify en todos los productos
+- ⚡ Generación automática en segundos
+- 🔮 Preparado para integración con Printful
+
+### 🎤 Gestión de Shows + Limpieza de UI
+**Fecha**: 11 de Noviembre, 2024
+**Objetivo**: Permitir a los artistas gestionar sus shows y eliminar secciones duplicadas
+
+**Cambios implementados**:
+1. ✅ **Sistema de gestión de shows**:
+   - Formulario en "Editar Perfil" para agregar shows
+   - Campos: Nombre del lugar, fecha/hora, ubicación, URL de tickets (opcional)
+   - Guardado en Firebase colección `shows`
+   - Opción para eliminar shows existentes
+   - Vista previa de todos los shows programados
+
+2. ✅ **Visualización de shows en el perfil**:
+   - Sección "Upcoming Shows" ahora muestra shows reales
+   - Ordenados por fecha (más próximos primero)
+   - Formato de fecha y hora localizado
+   - Botón de "Tickets" si hay URL disponible
+   - Estado vacío cuando no hay shows
+
+3. ✅ **Limpieza de UI**:
+   - Eliminada sección "Bio" duplicada (la biografía ya aparece arriba)
+   - Interfaz más limpia y organizada
+
+**Beneficios**:
+- 🎸 Los artistas pueden promocionar sus presentaciones en vivo
+- 🎫 Enlaces directos para compra de tickets
+- 📅 Gestión fácil desde el perfil
+- ✨ UI más limpia sin duplicación de información
+
+### 🎯 Control Deslizante de Posición del Banner + URLs Únicas de Artista
 **Fecha**: 11 de Noviembre, 2024
 **Objetivo**: Mejorar precisión en el ajuste del banner y crear URLs compartibles para cada artista
 

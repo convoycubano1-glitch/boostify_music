@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,10 +13,18 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "../../hooks/use-toast";
-import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag } from "lucide-react";
 import { db, storage } from "../../firebase";
-import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+interface Show {
+  id: string;
+  venue: string;
+  date: string;
+  location: string;
+  ticketUrl?: string;
+}
 
 interface EditProfileDialogProps {
   artistId: string;
@@ -56,6 +64,193 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
   const { toast } = useToast();
 
   const [formData, setFormData] = useState(currentData);
+  const [shows, setShows] = useState<Show[]>([]);
+  const [newShow, setNewShow] = useState({ venue: '', date: '', location: '', ticketUrl: '' });
+  const [isAddingShow, setIsAddingShow] = useState(false);
+  const [isGeneratingProducts, setIsGeneratingProducts] = useState(false);
+
+  // Cargar shows al abrir el diálogo
+  useEffect(() => {
+    if (isOpen && artistId) {
+      loadShows();
+    }
+  }, [isOpen, artistId]);
+
+  const loadShows = async () => {
+    try {
+      const showsRef = collection(db, "shows");
+      const q = query(showsRef, where("userId", "==", artistId));
+      const querySnapshot = await getDocs(q);
+      const showsData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        venue: doc.data().venue,
+        date: doc.data().date,
+        location: doc.data().location,
+        ticketUrl: doc.data().ticketUrl,
+      }));
+      showsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setShows(showsData);
+    } catch (error) {
+      console.error("Error loading shows:", error);
+    }
+  };
+
+  const handleAddShow = async () => {
+    if (!newShow.venue.trim() || !newShow.date || !newShow.location.trim()) {
+      toast({
+        title: "Campos requeridos",
+        description: "Por favor completa venue, fecha y ubicación.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAddingShow(true);
+    try {
+      const newDocRef = doc(collection(db, "shows"));
+      await setDoc(newDocRef, {
+        venue: newShow.venue,
+        date: newShow.date,
+        location: newShow.location,
+        ticketUrl: newShow.ticketUrl || '',
+        userId: artistId,
+        createdAt: new Date(),
+      });
+
+      toast({
+        title: "Show agregado",
+        description: "El show se agregó correctamente.",
+      });
+
+      setNewShow({ venue: '', date: '', location: '', ticketUrl: '' });
+      await loadShows();
+    } catch (error) {
+      console.error("Error adding show:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo agregar el show.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingShow(false);
+    }
+  };
+
+  const handleDeleteShow = async (showId: string) => {
+    try {
+      const showDoc = doc(db, "shows", showId);
+      await deleteDoc(showDoc);
+      
+      toast({
+        title: "Show eliminado",
+        description: "El show se eliminó correctamente.",
+      });
+
+      await loadShows();
+    } catch (error) {
+      console.error("Error deleting show:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el show.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGenerateProducts = async () => {
+    if (!formData.displayName) {
+      toast({
+        title: "Error",
+        description: "Por favor ingresa tu nombre artístico primero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingProducts(true);
+    try {
+      const artistName = formData.displayName;
+      const brandImage = formData.profileImage || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
+      
+      toast({
+        title: "Generando productos...",
+        description: "Esto puede tomar unos momentos. Estamos creando imágenes únicas para cada producto.",
+      });
+
+      // Eliminar productos existentes
+      const merchRef = collection(db, "merchandise");
+      const q = query(merchRef, where("userId", "==", artistId));
+      const querySnapshot = await getDocs(q);
+      const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
+      await Promise.all(deletePromises);
+
+      // Definir tipos de productos
+      const productTypes = [
+        { type: 'T-Shirt', name: `${artistName} T-Shirt`, description: `Official ${artistName} merchandise t-shirt with exclusive Boostify design`, price: 29.99, category: 'Apparel', sizes: ['S', 'M', 'L', 'XL', 'XXL'] },
+        { type: 'Hoodie', name: `${artistName} Hoodie`, description: `Premium quality hoodie featuring ${artistName} and Boostify branding`, price: 49.99, category: 'Apparel', sizes: ['S', 'M', 'L', 'XL', 'XXL'] },
+        { type: 'Cap', name: `${artistName} Cap`, description: `Stylish cap with embroidered ${artistName} and Boostify logo`, price: 24.99, category: 'Accessories', sizes: ['One Size'] },
+        { type: 'Poster', name: `${artistName} Poster`, description: `Limited edition concert poster featuring ${artistName}`, price: 19.99, category: 'Art', sizes: ['24x36"'] },
+        { type: 'Sticker Pack', name: `${artistName} Sticker Pack`, description: `Set of 10 vinyl stickers with ${artistName} branding`, price: 9.99, category: 'Accessories', sizes: ['Standard'] },
+        { type: 'Vinyl Record', name: `${artistName} Vinyl`, description: `Limited edition vinyl record by ${artistName}`, price: 34.99, category: 'Music', sizes: ['12"'] },
+      ];
+
+      // Generar productos con imágenes únicas
+      for (const productDef of productTypes) {
+        console.log(`🎨 Generating image for ${productDef.type}...`);
+        
+        let productImage = brandImage;
+        try {
+          const imageResponse = await fetch('/api/artist/generate-product-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              productType: productDef.type,
+              artistName: artistName,
+              brandImage: brandImage
+            })
+          });
+          
+          const imageResult = await imageResponse.json();
+          
+          if (imageResult.success && imageResult.imageUrl) {
+            productImage = imageResult.imageUrl;
+            console.log(`✅ Image generated for ${productDef.type}`);
+          } else {
+            console.warn(`⚠️ Could not generate image for ${productDef.type}, using default`);
+          }
+        } catch (error) {
+          console.error(`Error generating image for ${productDef.type}:`, error);
+        }
+        
+        // Guardar producto en Firebase
+        const newDocRef = doc(collection(db, "merchandise"));
+        await setDoc(newDocRef, {
+          name: productDef.name,
+          description: productDef.description,
+          price: productDef.price,
+          imageUrl: productImage,
+          category: productDef.category,
+          sizes: productDef.sizes,
+          userId: artistId,
+          createdAt: new Date(),
+        });
+      }
+
+      toast({
+        title: "¡Productos generados!",
+        description: `Se han creado ${productTypes.length} productos con imágenes únicas.`,
+      });
+    } catch (error) {
+      console.error("Error generating products:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron generar los productos. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingProducts(false);
+    }
+  };
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -788,6 +983,195 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
                   placeholder="https://open.spotify.com/artist/..."
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Gestión de Shows */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Próximos Shows
+              </h4>
+            </div>
+
+            {/* Formulario para agregar show */}
+            <div className="space-y-3 mb-4 p-3 bg-gray-900/30 rounded-lg border border-gray-700">
+              <h5 className="text-xs font-medium text-gray-400">Agregar Nuevo Show</h5>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="newShowVenue" className="text-xs">Nombre del Lugar *</Label>
+                  <Input
+                    id="newShowVenue"
+                    value={newShow.venue}
+                    onChange={(e) => setNewShow({ ...newShow, venue: e.target.value })}
+                    placeholder="Ej: Hard Rock Cafe"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="newShowDate" className="text-xs">Fecha y Hora *</Label>
+                  <Input
+                    id="newShowDate"
+                    type="datetime-local"
+                    value={newShow.date}
+                    onChange={(e) => setNewShow({ ...newShow, date: e.target.value })}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="newShowLocation" className="text-xs">Ubicación *</Label>
+                  <Input
+                    id="newShowLocation"
+                    value={newShow.location}
+                    onChange={(e) => setNewShow({ ...newShow, location: e.target.value })}
+                    placeholder="Ciudad, País"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="newShowTicketUrl" className="text-xs">URL de Tickets (opcional)</Label>
+                  <Input
+                    id="newShowTicketUrl"
+                    value={newShow.ticketUrl}
+                    onChange={(e) => setNewShow({ ...newShow, ticketUrl: e.target.value })}
+                    placeholder="https://..."
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <Button
+                type="button"
+                onClick={handleAddShow}
+                disabled={isAddingShow}
+                className="w-full h-9"
+                size="sm"
+              >
+                {isAddingShow ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Agregando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-3 w-3" />
+                    Agregar Show
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Lista de shows existentes */}
+            {shows.length > 0 && (
+              <div className="space-y-2">
+                <h5 className="text-xs font-medium text-gray-400 mb-2">Shows Programados ({shows.length})</h5>
+                {shows.map((show) => {
+                  const showDate = new Date(show.date);
+                  const formattedDate = showDate.toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  });
+                  const formattedTime = showDate.toLocaleTimeString('es-ES', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  });
+
+                  return (
+                    <div
+                      key={show.id}
+                      className="p-3 bg-gray-900/50 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h6 className="font-semibold text-sm text-white">{show.venue}</h6>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {formattedDate} • {formattedTime}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">{show.location}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteShow(show.id)}
+                          className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {show.ticketUrl && (
+                        <a
+                          href={show.ticketUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Ver tickets
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Gestión de Merchandise */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4" />
+                  Merchandise
+                </h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  Genera productos promocionales con imágenes únicas creadas por IA
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-orange-500/10 to-purple-500/10 rounded-lg border border-orange-500/20">
+              <div className="flex items-start gap-3 mb-3">
+                <Sparkles className="h-5 w-5 text-orange-400 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h5 className="text-sm font-semibold text-white mb-1">
+                    Generación Automática con IA
+                  </h5>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Crea 6 productos (T-Shirt, Hoodie, Gorra, Poster, Stickers, Vinyl) con imágenes únicas 
+                    generadas por Inteligencia Artificial usando el branding de Boostify.
+                  </p>
+                  <p className="text-xs text-orange-400 mt-2">
+                    💡 Próximamente: Integración con Printful para producción bajo demanda
+                  </p>
+                </div>
+              </div>
+              
+              <Button
+                type="button"
+                onClick={handleGenerateProducts}
+                disabled={isGeneratingProducts || !formData.displayName}
+                className="w-full"
+                style={{ 
+                  backgroundColor: isGeneratingProducts ? undefined : '#f97316',
+                  color: 'white'
+                }}
+              >
+                {isGeneratingProducts ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando productos e imágenes...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generar Productos con IA
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
