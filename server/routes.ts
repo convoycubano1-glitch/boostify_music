@@ -46,6 +46,7 @@ import fluxApiRouter from './routes/flux-api-proxy'; // Import the Flux API rout
 import affiliateRouter from './routes/affiliate'; // Import the affiliate program router
 import geminiImageRouter from './routes/gemini-image'; // Import the Gemini image generation router
 import artistProfileRouter from './routes/artist-profile'; // Import the artist profile generation router
+import imageGalleryRouter from './routes/image-gallery'; // Import the image gallery router
 import audioTranscriptionRouter from './routes/audio-transcription'; // Import the audio transcription router
 import generatedVideosRouter from './routes/generated-videos'; // Import the generated videos router
 import minimaxVideoRouter from './routes/minimax-video'; // Import the MiniMax video generation router
@@ -206,6 +207,9 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Registrar el router para Artist Profile Generation (Gemini)
   app.use('/api/artist-profile', artistProfileRouter);
+  
+  // Registrar el router para Image Gallery (generación de galerías de imágenes)
+  app.use('/api/image-gallery', imageGalleryRouter);
   
   app.use('/api/minimax', minimaxVideoRouter);
   
