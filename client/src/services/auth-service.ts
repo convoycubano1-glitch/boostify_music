@@ -96,7 +96,18 @@ class AuthService {
       const sessionProvider = new GoogleAuthProvider();
       sessionProvider.setCustomParameters({ prompt: 'select_account' });
       
-      // Estrategia 1: Usar popup (preferido por mejor experiencia de usuario)
+      // Detectar si estamos en un dispositivo móvil
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // En móviles, usar redirect directamente (los popups no funcionan bien)
+      if (isMobile) {
+        console.log('AuthService: Dispositivo móvil detectado, usando redirect');
+        sessionStorage.setItem('auth_redirect_attempt', 'true');
+        await signInWithRedirect(this.auth, sessionProvider);
+        return null;
+      }
+      
+      // Estrategia 1: Usar popup (preferido en desktop por mejor experiencia de usuario)
       try {
         console.log('AuthService: Intentando autenticación con popup');
         const result = await signInWithPopup(this.auth, sessionProvider);

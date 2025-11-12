@@ -18,6 +18,7 @@ import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Cale
 import { db, storage } from "../../firebase";
 import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { queryClient } from "../../lib/queryClient";
 
 interface Show {
   id: string;
@@ -585,6 +586,9 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         });
       }
 
+      // Invalidar caché de React Query para forzar actualización en todos los dispositivos
+      await queryClient.invalidateQueries({ queryKey: ["userProfile", artistId] });
+      
       toast({
         title: "Perfil actualizado",
         description: "Tu perfil se ha guardado correctamente.",
