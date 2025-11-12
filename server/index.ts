@@ -119,7 +119,7 @@ app.use((req, res, next) => {
     if (process.env.NODE_ENV === "production") {
       log('🚀 Running in production mode');
 
-      const distPath = path.resolve(process.cwd(), 'dist', 'public');
+      const distPath = path.resolve(process.cwd(), 'dist', 'client');
       log(`📁 Serving static files from: ${distPath}`);
 
       // Serve static files
@@ -211,7 +211,7 @@ app.use((req, res, next) => {
       log(`✅ Server started on port ${PORT}`);
       log(`🌍 Environment: ${process.env.NODE_ENV || app.get("env")}`);
       log(`📂 Static files served from: ${process.env.NODE_ENV === "production" ?
-        path.resolve(process.cwd(), 'dist', 'public') :
+        path.resolve(process.cwd(), 'dist', 'client') :
         path.join(process.cwd(), 'client/public')}`);
 
       const accessURL = isReplitEnv ?

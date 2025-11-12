@@ -7,7 +7,27 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 🛍️ Generación de Productos con IA + Branding Boostify (LATEST)
+### 🚀 Corrección de Deployment en Producción (LATEST)
+**Fecha**: 12 de Noviembre, 2024
+**Objetivo**: Corregir errores de deployment para publicación exitosa
+
+**Problemas resueltos**:
+1. ✅ **Eliminado NODE_ENV forzado**: Removida línea que forzaba modo development
+2. ✅ **Corregida ruta de archivos estáticos**: Servidor ahora busca en `dist/client` (donde realmente están los archivos compilados)
+3. ✅ **Build process verificado**: Los archivos se generan correctamente en `dist/client/`
+
+**Pasos para deployment exitoso**:
+1. Ir a "Deployments" en Replit
+2. En "Deployment Secrets", agregar:
+   - **KEY**: `NODE_ENV`
+   - **VALUE**: `production`
+3. Redeploy la aplicación
+4. El servidor detectará automáticamente el modo producción y servirá archivos estáticos correctamente
+
+**Archivos modificados**:
+- `server/index.ts`: Removida línea forzada de NODE_ENV y corregidas rutas de dist
+
+### 🛍️ Generación de Productos con IA + Branding Boostify
 **Fecha**: 11 de Noviembre, 2024
 **Objetivo**: Generar productos de merchandise con imágenes únicas usando IA y branding de Boostify
 
