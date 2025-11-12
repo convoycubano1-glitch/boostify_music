@@ -24,7 +24,9 @@ import {
   GripVertical,
   Layout,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -478,6 +480,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   // Estados para drag-and-drop del layout
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const [leftSections, setLeftSections] = useState<string[]>(['songs', 'videos', 'merchandise']);
+  const [isMerchandiseExpanded, setIsMerchandiseExpanded] = useState(true);
   
   // Cargar orden guardado al montar
   useEffect(() => {
@@ -858,6 +861,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     spotify: userProfile?.spotify || "",
     website: userProfile?.website || ""
   };
+
+  // DEBUG: Log completo del perfil de usuario y spotify
+  console.log('🔍 DEBUG - userProfile completo:', userProfile);
+  console.log('🔍 DEBUG - artist.spotify:', artist.spotify);
+  console.log('🔍 DEBUG - getSpotifyEmbedUrl result:', artist.spotify ? getSpotifyEmbedUrl(artist.spotify) : 'NO SPOTIFY URL');
 
   const handlePlayPause = (song: Song) => {
     if (playingSongId === song.id) {
@@ -1625,13 +1633,20 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               )}
                 <div className="flex justify-between items-center mb-4">
                   <div 
-                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
+                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 cursor-pointer"
                     style={{ color: colors.hexAccent }}
+                    onClick={() => setIsMerchandiseExpanded(!isMerchandiseExpanded)}
                   >
                     <ShoppingBag className="h-5 w-5" />
                     Tienda Oficial ({products.length})
+                    {isMerchandiseExpanded ? (
+                      <ChevronDown className="h-4 w-4 ml-auto" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 ml-auto" />
+                    )}
                   </div>
                 </div>
+                {isMerchandiseExpanded && (
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-2 md:gap-3">
                   {products.map((product, index) => (
                     <div
@@ -1671,6 +1686,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     </div>
                   ))}
                 </div>
+                )}
               </div>
                         );
                       }
@@ -1832,7 +1848,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
             {/* Spotify Player Embed */}
             {artist.spotify && getSpotifyEmbedUrl(artist.spotify) && (
-              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }} data-testid="spotify-widget">
                 <div 
                   className="text-base font-semibold mb-3 transition-colors duration-500 flex items-center gap-2" 
                   style={{ color: colors.hexAccent }}
@@ -1852,7 +1868,27 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     loading="lazy"
                     title="Spotify Artist Profile"
                     className="w-full"
+                    data-testid="spotify-iframe"
                   />
+                </div>
+              </div>
+            )}
+            
+            {/* DEBUG: Mostrar si Spotify debería estar visible */}
+            {artist.spotify && !getSpotifyEmbedUrl(artist.spotify) && (
+              <div className={cardStyles} style={{ borderColor: 'red', borderWidth: '2px' }}>
+                <div className="text-red-500 font-bold">⚠️ DEBUG: Spotify URL inválida</div>
+                <div className="text-sm text-gray-400 mt-2">
+                  URL: {artist.spotify}
+                </div>
+              </div>
+            )}
+            
+            {!artist.spotify && (
+              <div className={cardStyles} style={{ borderColor: 'yellow', borderWidth: '2px' }}>
+                <div className="text-yellow-500 font-bold">⚠️ DEBUG: No hay URL de Spotify</div>
+                <div className="text-sm text-gray-400 mt-2">
+                  Agrega tu URL de Spotify en "Editar Perfil"
                 </div>
               </div>
             )}

@@ -575,9 +575,13 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         updatedAt: new Date(),
       };
 
+      console.log('💾 DEBUG - Guardando perfil con Spotify:', profileData.spotify);
+      console.log('💾 DEBUG - FormData spotify antes de guardar:', formData.spotify);
+
       if (!querySnapshot.empty) {
         const userDocRef = querySnapshot.docs[0].ref;
         await setDoc(userDocRef, profileData, { merge: true });
+        console.log('💾 DEBUG - Perfil guardado exitosamente');
       } else {
         const newDocRef = doc(collection(db, "users"));
         await setDoc(newDocRef, {
