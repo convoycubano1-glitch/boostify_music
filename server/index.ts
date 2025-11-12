@@ -8,6 +8,16 @@ import cors from 'cors';
 import fs from 'fs';
 import fileUpload from 'express-fileupload';
 
+// Properly detect deployment environment
+// Use production mode only when actually deployed
+if (process.env.REPL_DEPLOYMENT === '1' || process.env.REPL_DEPLOYMENT === 'true') {
+  process.env.NODE_ENV = 'production';
+  log('🚀 Detected Replit deployment environment - using production mode');
+} else {
+  process.env.NODE_ENV = 'development';
+  log('🛠️ Local development environment detected - using development mode');
+}
+
 const app = express();
 
 // Enable CORS for development

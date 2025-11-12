@@ -1,6 +1,6 @@
 import { auth } from './firebase';
 import { type Express, type Request, type Response, type NextFunction } from "express";
-import session from 'express-session';
+import cookieSession from 'cookie-session';
 import passport from 'passport';
 
 // Define User interface para resolver problemas de tipado
@@ -70,15 +70,15 @@ async function isAuthenticated(req: Request, res: Response, next: NextFunction) 
 }
 
 export function setupAuth(app: Express) {
-  // Initialize session middleware
-  app.use(session({
-    secret: process.env.REPL_ID!,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+  // Use cookie-session for stateless session storage compatible with Cloud Run
+  // All session data is stored in encrypted cookies, no server-side storage needed
+  app.use(cookieSession({
+    name: 'session',
+    keys: [process.env.SESSION_SECRET || process.env.REPL_ID || 'fallback-secret-key'],
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax'
   }));
 
   app.use(passport.initialize());

@@ -153,7 +153,7 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
         filename: `${artist.name}-artist-card.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit: 'mm', format: [85.6, 53.98], orientation: 'landscape' }
+        jsPDF: { unit: 'mm', format: [85.6, 53.98] as any, orientation: 'landscape' as const }
       };
       
       await html2pdf().set(opt).from(element).save();

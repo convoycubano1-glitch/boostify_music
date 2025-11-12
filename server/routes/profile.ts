@@ -53,7 +53,6 @@ router.get('/user/profile', authenticate, async (req: Request, res: Response) =>
           password: 'firebase-user', // Placeholder since Firebase handles auth
           artistName: defaultUsername,
           slug: defaultSlug,
-          email: email,
         })
         .returning({
           id: users.id,
