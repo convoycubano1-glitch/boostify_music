@@ -217,6 +217,30 @@ router.post('/generate-product-image', async (req: Request, res: Response) => {
 });
 
 /**
+ * Helper para obtener la URL base según el entorno
+ * Igual que en stripe.ts para consistencia
+ */
+const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://artistboost.replit.app';
+  }
+  
+  if (process.env.REPLIT_DOMAINS) {
+    const domains = process.env.REPLIT_DOMAINS.split(',');
+    return `https://${domains[0]}`;
+  }
+  
+  const replSlug = process.env.REPL_SLUG;
+  const replOwner = process.env.REPL_OWNER;
+  
+  if (replSlug && replOwner) {
+    return `https://${replSlug}.${replOwner}.repl.co`;
+  }
+  
+  return 'http://localhost:5000';
+};
+
+/**
  * Crea sesión de checkout de Stripe para comprar producto
  */
 router.post('/create-checkout-session', async (req: Request, res: Response) => {
@@ -230,7 +254,9 @@ router.post('/create-checkout-session', async (req: Request, res: Response) => {
       });
     }
     
+    const BASE_URL = getBaseUrl();
     console.log(`💳 Creating Stripe checkout session for ${productName} (${size || 'default size'})...`);
+    console.log(`🔗 Using BASE_URL: ${BASE_URL}`);
     
     // Crear sesión de checkout de Stripe
     const session = await stripe.checkout.sessions.create({
@@ -250,16 +276,18 @@ router.post('/create-checkout-session', async (req: Request, res: Response) => {
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.origin}/artist/${artistName}?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/artist/${artistName}?canceled=true`,
+      success_url: `${BASE_URL}/artist/${artistName}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/artist/${artistName}?canceled=true`,
       metadata: {
         productId: productId || '',
         artistName: artistName || '',
         size: size || '',
+        type: 'merchandise',
       },
     });
     
     console.log(`✅ Checkout session created: ${session.id}`);
+    console.log(`✅ Success URL: ${BASE_URL}/artist/${artistName}?success=true&session_id={CHECKOUT_SESSION_ID}`);
     
     return res.json({
       success: true,
