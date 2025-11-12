@@ -322,7 +322,7 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
       
       console.log('💳 Iniciando checkout de Stripe para:', product.name);
       
-      const response = await fetch('/api/artist/create-checkout-session', {
+      const response = await fetch('/api/artist-profile/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

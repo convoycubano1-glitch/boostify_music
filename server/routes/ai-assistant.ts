@@ -10,13 +10,9 @@ import path from 'path';
 
 const router = Router();
 
-// Initialize Gemini client using Replit AI Integrations
+// Initialize Gemini client
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL!,
-  },
+  apiKey: process.env.GEMINI_API_KEY || "",
 });
 
 // Preset artistic prompts for cover generation
