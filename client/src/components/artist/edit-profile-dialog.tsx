@@ -71,13 +71,16 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
   const [newShow, setNewShow] = useState({ venue: '', date: '', location: '', ticketUrl: '' });
   const [isAddingShow, setIsAddingShow] = useState(false);
   const [isGeneratingProducts, setIsGeneratingProducts] = useState(false);
+  const [imageUpdateKey, setImageUpdateKey] = useState(0);
 
-  // Actualizar formData cuando se abre el diálogo o cambian los datos
+  // Actualizar formData cuando se abre el diálogo
   useEffect(() => {
     if (isOpen) {
+      console.log('🔄 Dialog opened, setting formData from currentData');
       setFormData(currentData);
+      setImageUpdateKey(0);
     }
-  }, [isOpen, currentData]);
+  }, [isOpen]);
 
   // Cargar shows al abrir el diálogo
   useEffect(() => {
@@ -453,7 +456,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
       const data = await response.json();
 
       if (data.success && data.biography) {
-        handleChange("biography", data.biography);
+        console.log('✅ Biografía generada exitosamente:', data.biography);
+        // Actualizar el estado directamente
+        setFormData(prev => ({
+          ...prev,
+          biography: data.biography
+        }));
         toast({
           title: "Biografía generada",
           description: "Tu biografía ha sido generada automáticamente con IA.",
@@ -500,7 +508,21 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
       const data = await response.json();
 
       if (data.success && data.imageUrl) {
-        handleChange("profileImage", data.imageUrl);
+        console.log('✅ Imagen de perfil generada exitosamente');
+        console.log('🖼️ Nueva URL de imagen de perfil:', data.imageUrl.substring(0, 100));
+        // Actualizar el estado directamente y forzar re-render
+        setFormData(prev => {
+          console.log('📝 Actualizando formData.profileImage');
+          return {
+            ...prev,
+            profileImage: data.imageUrl
+          };
+        });
+        setImageUpdateKey(prev => {
+          const newKey = prev + 1;
+          console.log('🔑 Image update key:', prev, '->', newKey);
+          return newKey;
+        });
         toast({
           title: "Imagen de perfil generada",
           description: "Tu imagen de perfil ha sido generada con IA.",
@@ -539,8 +561,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         body: JSON.stringify({
           artistName: formData.displayName,
           genre: formData.genre,
-          style: "Wide cinematic banner, professional music artist aesthetic",
-          mood: "Creative and energetic atmosphere",
+          style: `Professional music artist hero banner for Boostify platform. Wide cinematic 16:9 format perfect for hero section. 
+                  Artistic composition featuring ${formData.displayName} with Boostify's signature orange (#FF6B35) and black color palette. 
+                  Modern music industry aesthetic with professional lighting and dynamic energy. 
+                  ${referenceImage ? 'Incorporate the artist\'s face/identity from reference image naturally into the artistic scene.' : ''}
+                  High-end music platform vibe, premium quality, artistic and creative atmosphere.`,
+          mood: `Energetic, creative, professional music industry atmosphere with Boostify brand identity (orange and black accents)`,
           referenceImage: referenceImage || undefined,
         }),
       });
@@ -548,7 +574,21 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
       const data = await response.json();
 
       if (data.success && data.imageUrl) {
-        handleChange("bannerImage", data.imageUrl);
+        console.log('✅ Banner generado exitosamente');
+        console.log('🖼️ Nueva URL de banner:', data.imageUrl.substring(0, 100));
+        // Actualizar el estado directamente y forzar re-render
+        setFormData(prev => {
+          console.log('📝 Actualizando formData.bannerImage');
+          return {
+            ...prev,
+            bannerImage: data.imageUrl
+          };
+        });
+        setImageUpdateKey(prev => {
+          const newKey = prev + 1;
+          console.log('🔑 Image update key:', prev, '->', newKey);
+          return newKey;
+        });
         toast({
           title: "Imagen de banner generada",
           description: "Tu imagen de banner ha sido generada con IA.",
@@ -568,6 +608,35 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
     }
   };
 
+  // Convertir base64 a Firebase Storage URL
+  const uploadBase64ToStorage = async (base64Data: string, fileName: string): Promise<string> => {
+    // Extraer el tipo MIME y los datos base64
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error('Invalid base64 string');
+    }
+
+    const contentType = matches[1];
+    const base64Content = matches[2];
+    
+    // Convertir base64 a blob
+    const byteCharacters = atob(base64Content);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: contentType });
+
+    // Subir a Firebase Storage
+    const storageRef = ref(storage, `artist-profiles/${artistId}/${fileName}`);
+    await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(storageRef);
+    
+    console.log('☁️ Imagen base64 subida a Storage:', downloadURL);
+    return downloadURL;
+  };
+
   const handleSave = async () => {
     if (!artistId) {
       toast({
@@ -581,6 +650,20 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
     setIsSaving(true);
 
     try {
+      // Convertir imágenes base64 a URLs de Storage si es necesario
+      let profileImageUrl = formData.profileImage || "";
+      let bannerImageUrl = formData.bannerImage || "";
+
+      if (profileImageUrl.startsWith('data:')) {
+        console.log('🔄 Convirtiendo imagen de perfil base64 a Storage...');
+        profileImageUrl = await uploadBase64ToStorage(profileImageUrl, `profile_${Date.now()}.png`);
+      }
+
+      if (bannerImageUrl.startsWith('data:')) {
+        console.log('🔄 Convirtiendo imagen de banner base64 a Storage...');
+        bannerImageUrl = await uploadBase64ToStorage(bannerImageUrl, `banner_${Date.now()}.png`);
+      }
+
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("uid", "==", artistId));
       const querySnapshot = await getDocs(q);
@@ -592,9 +675,9 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         biography: formData.biography || "",
         genre: formData.genre || "",
         location: formData.location || "",
-        profileImage: formData.profileImage || "",
-        photoURL: formData.profileImage || "",
-        bannerImage: formData.bannerImage || "",
+        profileImage: profileImageUrl,
+        photoURL: profileImageUrl,
+        bannerImage: bannerImageUrl,
         bannerPosition: String(formData.bannerPosition || "50"),
         loopVideoUrl: formData.loopVideoUrl || "",
         slug: formData.slug || generateSlug(formData.displayName),
@@ -908,7 +991,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
               placeholder="URL de imagen o usa los botones para subir/generar"
             />
             {formData.profileImage && (
-              <img src={formData.profileImage} alt="Preview" className="w-20 h-20 object-cover rounded-full mt-2" />
+              <img 
+                key={`profile-${imageUpdateKey}-${formData.profileImage.substring(0, 50)}`}
+                src={formData.profileImage} 
+                alt="Preview" 
+                className="w-20 h-20 object-cover rounded-full mt-2" 
+              />
             )}
           </div>
 
@@ -974,6 +1062,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
               <div className="space-y-3">
                 {formData.bannerImage.match(/\.(mp4|mov|avi|webm)$/i) || formData.bannerImage.includes('video') ? (
                   <video 
+                    key={`banner-${imageUpdateKey}-${formData.bannerImage.substring(0, 50)}`}
                     src={formData.bannerImage} 
                     className="w-full h-32 object-cover rounded-lg"
                     style={{ objectPosition: `center ${formData.bannerPosition || '50'}%` }}
@@ -984,6 +1073,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
                   />
                 ) : (
                   <img 
+                    key={`banner-${imageUpdateKey}-${formData.bannerImage.substring(0, 50)}`}
                     src={formData.bannerImage} 
                     alt="Preview" 
                     className="w-full h-32 object-cover rounded-lg"

@@ -1013,6 +1013,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     location: userProfile?.location || "",
     profileImage: userProfile?.photoURL || userProfile?.profileImage || '/assets/freepik__boostify_music_organe_abstract_icon.png',
     bannerImage: userProfile?.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80',
+    loopVideoUrl: userProfile?.loopVideoUrl || "",
+    bannerPosition: userProfile?.bannerPosition || "50",
     biography: userProfile?.biography || "Music artist profile",
     followers: userProfile?.followers || 0,
     instagram: userProfile?.instagram || "",
@@ -1213,40 +1215,55 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       
       {/* Hero Header */}
       <header className="relative h-72 md:h-96 lg:h-[450px] w-full mb-6 md:mb-8 overflow-hidden">
-        {(artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i) || artist.bannerImage?.includes('video')) ? (
-          <video
-            src={artist.bannerImage}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
-            style={{ objectPosition: `center ${(artist as any).bannerPosition || '50'}%` }}
-          />
-        ) : (artist as any).loopVideoUrl ? (
-          <video
-            src={(artist as any).loopVideoUrl}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
-            style={{ objectPosition: `center ${(artist as any).bannerPosition || '50'}%` }}
-          />
-        ) : (
-          <img
-            src={artist.bannerImage}
-            alt={`${artist.name} Cover`}
-            className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
-            style={{ objectPosition: `center ${(artist as any).bannerPosition || '50'}%` }}
-            onError={(e) => { 
-              e.currentTarget.style.display = 'none';
-              if (e.currentTarget.parentElement) {
-                e.currentTarget.parentElement.style.background = 'black';
-              }
-            }}
-          />
-        )}
+        {(() => {
+          // Detectar si es video (por extensión o por metadata)
+          const isVideo = artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i) || 
+                         artist.bannerImage?.includes('video') ||
+                         artist.bannerImage?.includes('.mp4') ||
+                         artist.bannerImage?.includes('.webm') ||
+                         artist.bannerImage?.includes('.mov');
+          
+          const videoUrl = artist.loopVideoUrl || (isVideo ? artist.bannerImage : null);
+          
+          console.log('🎬 Video detection:', { 
+            bannerImage: artist.bannerImage?.substring(0, 100), 
+            loopVideoUrl: artist.loopVideoUrl,
+            isVideo, 
+            videoUrl: videoUrl?.substring(0, 100) 
+          });
+          
+          if (videoUrl) {
+            return (
+              <video
+                key={videoUrl}
+                src={videoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
+                style={{ objectPosition: `center ${artist.bannerPosition}%` }}
+                onCanPlay={() => console.log('✅ Hero video can play')}
+                onError={(e) => console.error('❌ Hero video error:', e)}
+              />
+            );
+          }
+          
+          return (
+            <img
+              src={artist.bannerImage}
+              alt={`${artist.name} Cover`}
+              className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
+              style={{ objectPosition: `center ${artist.bannerPosition}%` }}
+              onError={(e) => { 
+                e.currentTarget.style.display = 'none';
+                if (e.currentTarget.parentElement) {
+                  e.currentTarget.parentElement.style.background = 'black';
+                }
+              }}
+            />
+          );
+        })()}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
         
         {/* Barra superior */}
@@ -2162,18 +2179,17 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </div>
 
-            {/* Tarjeta de Análisis de Actividad - Solo visible para el artista */}
-            {isOwnProfile && (
-              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-                <div 
-                  className="text-base font-semibold mb-4 transition-colors duration-500" 
-                  style={{ color: colors.hexAccent }}
-                >
-                  Análisis de Actividad
-                </div>
-                
-                {/* Gráfico de Área - Actividad Semanal */}
-                <div className="mb-4">
+            {/* Tarjeta de Análisis de Actividad - Visible para todos */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div 
+                className="text-base font-semibold mb-4 transition-colors duration-500" 
+                style={{ color: colors.hexAccent }}
+              >
+                Análisis de Actividad
+              </div>
+              
+              {/* Gráfico de Área - Actividad Semanal */}
+              <div className="mb-4">
                   <div className="text-xs text-gray-400 mb-2">Actividad de los últimos 7 días</div>
                   <div className="h-40">
                     <ResponsiveContainer width="100%" height="100%">
@@ -2273,64 +2289,61 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     </div>
                   </motion.div>
                 </div>
-              </div>
-            )}
+            </div>
 
-            {/* Tarjeta CTA: Gana Dinero con tu Talento - Solo visible para el artista */}
-            {isOwnProfile && (
-              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
-                {/* Fondo decorativo */}
-                <div className="absolute inset-0 opacity-10" style={{
-                  background: `radial-gradient(circle at 30% 50%, ${colors.hexPrimary}, transparent 70%)`
-                }}></div>
-                
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Music className="h-6 w-6" style={{ color: colors.hexAccent }} />
-                    <div 
-                      className="text-base font-bold transition-colors duration-500" 
-                      style={{ color: colors.hexAccent }}
-                    >
-                      Monetiza Tu Talento
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-gray-300 mb-4 leading-relaxed">
-                    ¿Eres músico o productor? Vende tus servicios profesionales y convierte tu pasión en ingresos
-                  </p>
-                  
-                  <Link href="/producer-tools">
-                    <button
-                      className="w-full py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
-                      style={{ 
-                        background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
-                        color: 'white'
-                      }}
-                      data-testid="button-producer-tools"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      <span>Descubre Producer Tools</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </Link>
-                  
-                  <div className="mt-3 flex items-center justify-center gap-4 text-xs text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
-                      Beats
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
-                      Mezclas
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
-                      Master
-                    </span>
+            {/* Tarjeta CTA: Monetiza Tu Talento - Visible para todos */}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
+              {/* Fondo decorativo */}
+              <div className="absolute inset-0 opacity-10" style={{
+                background: `radial-gradient(circle at 30% 50%, ${colors.hexPrimary}, transparent 70%)`
+              }}></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <Music className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                  <div 
+                    className="text-base font-bold transition-colors duration-500" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    Monetiza Tu Talento
                   </div>
                 </div>
+                
+                <p className="text-sm text-gray-300 mb-4 leading-relaxed">
+                  ¿Eres músico o productor? Vende tus servicios profesionales y convierte tu pasión en ingresos
+                </p>
+                
+                <Link href="/producer-tools">
+                  <button
+                    className="w-full py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                      color: 'white'
+                    }}
+                    data-testid="button-producer-tools"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Descubre Producer Tools</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </Link>
+                
+                <div className="mt-3 flex items-center justify-center gap-4 text-xs text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                    Beats
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                    Mezclas
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                    Master
+                  </span>
+                </div>
               </div>
-            )}
+            </div>
 
             {/* Tarjeta de Información */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
@@ -2436,8 +2449,48 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <Music className="h-5 w-5" />
                   Spotify
                 </div>
-                {/* Contenedor mejorado para móvil */}
-                <div className="rounded-lg overflow-hidden w-full relative" style={{ backgroundColor: 'rgba(0,0,0,0.3)', minHeight: '400px' }}>
+                {/* Contenedor mejorado con background artístico */}
+                <div 
+                  className="rounded-lg overflow-hidden w-full relative" 
+                  style={{ 
+                    minHeight: '400px',
+                    background: `
+                      linear-gradient(135deg, 
+                        ${colors.hexPrimary}15 0%, 
+                        rgba(0,0,0,0.4) 25%, 
+                        rgba(0,0,0,0.6) 50%,
+                        rgba(0,0,0,0.4) 75%,
+                        ${colors.hexAccent}10 100%
+                      )
+                    `,
+                    position: 'relative'
+                  }}
+                >
+                  {/* Elementos decorativos de fondo */}
+                  <div 
+                    className="absolute inset-0 opacity-20 pointer-events-none"
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(circle at 20% 30%, ${colors.hexPrimary}40 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, ${colors.hexAccent}30 0%, transparent 50%)
+                      `
+                    }}
+                  />
+                  
+                  {/* Patrón de ondas musicales */}
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 h-32 opacity-10 pointer-events-none"
+                    style={{
+                      background: `repeating-linear-gradient(
+                        90deg,
+                        ${colors.hexPrimary} 0px,
+                        transparent 2px,
+                        transparent 20px,
+                        ${colors.hexPrimary} 22px
+                      )`
+                    }}
+                  />
+
                   {/* Iframe de Spotify con mejor visibilidad */}
                   <iframe
                     style={{ 
@@ -2446,7 +2499,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       height: '400px',
                       border: 'none',
                       display: 'block',
-                      background: 'transparent'
+                      background: 'transparent',
+                      position: 'relative',
+                      zIndex: 1
                     }}
                     src={getSpotifyEmbedUrl(artist.spotify) || ''}
                     width="100%"
@@ -2462,7 +2517,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   />
                   
                   {/* Botón de Spotify siempre visible en móviles */}
-                  <div className="md:absolute md:bottom-3 md:right-3 mt-3 md:mt-0 flex justify-center md:justify-end">
+                  <div className="md:absolute md:bottom-3 md:right-3 mt-3 md:mt-0 flex justify-center md:justify-end" style={{ position: 'relative', zIndex: 2 }}>
                     <a
                       href={artist.spotify}
                       target="_blank"
