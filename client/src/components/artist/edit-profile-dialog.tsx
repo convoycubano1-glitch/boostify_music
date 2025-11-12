@@ -12,6 +12,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
+import { Badge } from "../ui/badge";
 import { useToast } from "../../hooks/use-toast";
 import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag } from "lucide-react";
 import { db, storage } from "../../firebase";
@@ -1011,13 +1012,19 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="spotify">Spotify</Label>
+                <Label htmlFor="spotify" className="flex items-center gap-2">
+                  Spotify Artist URL
+                  <Badge variant="outline" className="text-xs">Embed</Badge>
+                </Label>
                 <Input
                   id="spotify"
                   value={formData.spotify}
                   onChange={(e) => handleChange("spotify", e.target.value)}
                   placeholder="https://open.spotify.com/artist/..."
                 />
+                <p className="text-xs text-gray-400 italic">
+                  Pega la URL de tu perfil de artista de Spotify. Se mostrará un reproductor en tu página.
+                </p>
               </div>
             </div>
           </div>

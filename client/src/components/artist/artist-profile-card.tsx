@@ -1049,12 +1049,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         {/* Barra superior */}
         <div className="absolute top-0 left-0 right-0 p-3 md:p-4 flex justify-between items-center z-10">
           <div className="flex items-center gap-1.5 md:gap-2">
-            <div 
-              className="w-8 h-8 md:w-9 md:h-9 rounded-lg md:rounded-xl bg-gradient-to-br flex items-center justify-center font-bold text-xs md:text-sm tracking-widest text-white transition-colors duration-500"
-              style={{ backgroundImage: `linear-gradient(to bottom right, ${colors.hexAccent}, ${colors.hexPrimary})` }}
-            >
-              B
-            </div>
+            <img 
+              src="/assets/boostify-logo.svg" 
+              alt="Boostify Logo"
+              className="w-8 h-8 md:w-9 md:h-9 transition-all duration-500"
+            />
             <div className="hidden sm:block">
               <div className="text-xs uppercase tracking-widest text-white/80">Boostify Music</div>
             </div>
