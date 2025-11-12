@@ -506,6 +506,22 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const isOwnProfile = user?.uid === artistId;
   const colors = colorPalettes[selectedTheme];
 
+  // Helper function to extract Spotify Artist ID from URL
+  const getSpotifyEmbedUrl = (spotifyUrl: string): string | null => {
+    if (!spotifyUrl) return null;
+    
+    // Match patterns like:
+    // https://open.spotify.com/artist/3TVXtAsR1Inumwj472S9r4
+    // open.spotify.com/artist/3TVXtAsR1Inumwj472S9r4
+    const artistMatch = spotifyUrl.match(/artist\/([a-zA-Z0-9]+)/);
+    
+    if (artistMatch && artistMatch[1]) {
+      return `https://open.spotify.com/embed/artist/${artistMatch[1]}?utm_source=generator`;
+    }
+    
+    return null;
+  };
+
   // Query para obtener perfil
   const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["userProfile", artistId],
