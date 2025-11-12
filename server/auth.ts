@@ -72,13 +72,20 @@ async function isAuthenticated(req: Request, res: Response, next: NextFunction) 
 export function setupAuth(app: Express) {
   // Use cookie-session for stateless session storage compatible with Cloud Run
   // All session data is stored in encrypted cookies, no server-side storage needed
+  // Optimized for cross-platform compatibility (iOS Safari, Chrome, etc.)
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   app.use(cookieSession({
     name: 'session',
     keys: [process.env.SESSION_SECRET || process.env.REPL_ID || 'fallback-secret-key'],
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction, // Solo HTTPS en producción
     httpOnly: true,
-    sameSite: 'lax'
+    sameSite: 'lax', // 'lax' es más compatible con iOS que 'strict'
+    // Agregar configuración adicional para mejor compatibilidad
+    signed: true,
+    overwrite: true,
+    path: '/'
   }));
 
   app.use(passport.initialize());

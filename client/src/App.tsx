@@ -74,6 +74,7 @@ import FirestoreSocialPage from "./pages/firestore-social";
 import { BottomNav } from "./components/layout/bottom-nav";
 import ProfilePage from "./pages/profile";
 import ArtistProfilePage from "./pages/artist-profile";
+import DiagnosticsPage from "./pages/diagnostics";
 import { BoostifyRadio } from "./components/radio/boostify-radio";
 import { CustomerServiceAgent } from "./components/agents/customer-service-agent";
 import AffiliatesPage from "./pages/affiliates";
@@ -279,6 +280,7 @@ const Router = () => {
   const WrappedAIVideoCreationPage = withPageWrapper(AIVideoCreationPage);
   const WrappedTimelineDemoPage = withPageWrapper(TimelineDemoPage);
   const WrappedDebugFirebasePage = withPageWrapper(DebugFirebasePage);
+  const WrappedDiagnosticsPage = withPageWrapper(DiagnosticsPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -287,6 +289,7 @@ const Router = () => {
         {/* Rutas públicas - accesibles sin autenticación */}
         {getRouteComponent("/", WrappedHomePage, null)}
         {getRouteComponent("/auth", WrappedAuthPage, null)}
+        {getRouteComponent("/diagnostics", WrappedDiagnosticsPage, null)}
         {getRouteComponent("/terms", WrappedTermsPage, null)}
         {getRouteComponent("/privacy", WrappedPrivacyPage, null)}
         {getRouteComponent("/cookies", WrappedCookiesPage, null)}

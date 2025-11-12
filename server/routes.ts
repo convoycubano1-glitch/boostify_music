@@ -124,6 +124,35 @@ export function registerRoutes(app: Express): HttpServer {
     
     res.status(200).json(status);
   });
+  
+  // Endpoint de diagnóstico para verificar conectividad desde cualquier dispositivo
+  app.get('/api/diagnostics', (req, res) => {
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+    const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+    const cookies = req.headers.cookie || 'no cookies';
+    
+    res.status(200).json({
+      success: true,
+      message: '¡Servidor funcionando correctamente!',
+      device: {
+        userAgent,
+        isIOS,
+        isSafari,
+        platform: isIOS ? 'iOS' : 'other',
+      },
+      network: {
+        ip: req.ip || req.connection.remoteAddress,
+        protocol: req.protocol,
+        secure: req.secure,
+      },
+      cookies: {
+        present: cookies !== 'no cookies',
+        count: cookies.split(';').length,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
 
   // Register translation routes
   app.use('/api', translationRouter);

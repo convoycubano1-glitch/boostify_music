@@ -644,11 +644,30 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       try {
         console.log(`🛍️ Fetching merchandise for artist: ${artistId}`);
         console.log(`👤 User profile loaded:`, userProfile ? 'YES' : 'NO');
+        console.log(`🔍 DEBUG - Artist ID being used for query:`, artistId);
+        console.log(`🔍 DEBUG - Artist ID type:`, typeof artistId);
+        
         const merchRef = collection(db, "merchandise");
         const q = query(merchRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
         console.log(`📊 Merchandise query returned ${querySnapshot.size} documents`);
+        
+        // Log todos los productos en Firestore con este userId
+        if (!querySnapshot.empty) {
+          console.log(`📦 Products found in Firestore:`);
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            console.log(`  - Product ID: ${doc.id}`, {
+              name: data.name,
+              userId: data.userId,
+              hasImage: !!data.imageUrl,
+              imageUrl: data.imageUrl?.substring(0, 80) + '...'
+            });
+          });
+        } else {
+          console.log(`⚠️ No products found for userId: ${artistId}`);
+        }
 
         if (!querySnapshot.empty) {
           // Verificar si los productos existentes tienen tallas (productos nuevos)
@@ -1856,34 +1875,50 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <Music className="h-5 w-5" />
                   Spotify
                 </div>
-                <div className="rounded-lg overflow-hidden w-full relative bg-black/20">
+                {/* Contenedor mejorado para móvil */}
+                <div className="rounded-lg overflow-hidden w-full relative" style={{ backgroundColor: 'rgba(0,0,0,0.3)', minHeight: '400px' }}>
+                  {/* Iframe de Spotify con mejor visibilidad */}
                   <iframe
-                    style={{ borderRadius: '12px', minHeight: '380px', border: 'none' }}
+                    style={{ 
+                      borderRadius: '12px', 
+                      minHeight: '400px',
+                      height: '400px',
+                      border: 'none',
+                      display: 'block',
+                      background: 'transparent'
+                    }}
                     src={getSpotifyEmbedUrl(artist.spotify) || ''}
                     width="100%"
-                    height="380"
+                    height="400"
                     frameBorder="0"
                     allowFullScreen
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                    loading="lazy"
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox"
+                    loading="eager"
                     title="Spotify Artist Profile"
-                    className="w-full"
+                    className="w-full spotify-embed"
                     data-testid="spotify-iframe"
                   />
-                  {/* Fallback link para dispositivos que bloqueen el iframe */}
-                  <div className="absolute bottom-3 right-3 z-10">
+                  
+                  {/* Botón de Spotify siempre visible en móviles */}
+                  <div className="md:absolute md:bottom-3 md:right-3 mt-3 md:mt-0 flex justify-center md:justify-end">
                     <a
                       href={artist.spotify}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold shadow-lg hover:opacity-90 transition-opacity"
+                      className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-105"
                       style={{ backgroundColor: '#1DB954', color: 'white' }}
+                      data-testid="button-open-spotify"
                     >
-                      <Music className="h-4 w-4" />
-                      Abrir en Spotify
+                      <Music className="h-5 w-5" />
+                      <span className="font-semibold">Abrir en Spotify</span>
                     </a>
                   </div>
+                </div>
+                
+                {/* Mensaje de ayuda para móviles */}
+                <div className="mt-2 text-xs text-gray-400 text-center md:hidden">
+                  Si no ves el reproductor, usa el botón "Abrir en Spotify"
                 </div>
               </div>
             )}

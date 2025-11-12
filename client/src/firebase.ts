@@ -64,17 +64,35 @@ const auth = getAuth(app);
 let db: Firestore;
 
 try {
-  // First attempt: Create with advanced persistence settings
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-      tabManager: persistentMultipleTabManager()
-    })
-  });
-  console.log("Firestore initialized with enhanced persistence");
+  // Detectar si estamos en un entorno con restricciones (iOS Safari, modo incógnito, etc.)
+  const isRestrictedEnv = (() => {
+    try {
+      const test = 'test';
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      return false;
+    } catch {
+      return true; // Safari privado, iOS restrictivo, etc.
+    }
+  })();
+
+  if (isRestrictedEnv) {
+    // En entornos restrictivos, usar Firestore sin persistencia
+    console.log("🔒 Restricted environment detected (iOS Safari/Private mode) - Using Firestore without persistence");
+    db = getFirestore(app);
+  } else {
+    // En entornos normales, usar persistencia avanzada
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+        tabManager: persistentMultipleTabManager()
+      })
+    });
+    console.log("✅ Firestore initialized with enhanced persistence");
+  }
 } catch (error) {
-  // Fallback: If advanced persistence fails, use standard Firestore
-  console.warn("Enhanced persistence failed, using standard Firestore:", error);
+  // Fallback: Si falla cualquier cosa, usar Firestore estándar
+  console.warn("⚠️ Enhanced persistence failed, using standard Firestore:", error);
   db = getFirestore(app);
 }
 

@@ -22,20 +22,32 @@ export default function ArtistProfilePage() {
 
       try {
         setIsLoading(true);
+        console.log(`🔍 [PRODUCTION] Looking for artist with slug: ${slug}`);
+        console.log(`🔍 [PRODUCTION] Current URL:`, window.location.href);
+        console.log(`🔍 [PRODUCTION] Firebase configured:`, !!db);
+        
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("slug", "==", slug));
         const querySnapshot = await getDocs(q);
 
+        console.log(`🔍 [PRODUCTION] Query result: ${querySnapshot.size} users found`);
+
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
+          console.log(`✅ [PRODUCTION] Artist found:`, {
+            uid: userData.uid,
+            name: userData.displayName || userData.name,
+            slug: userData.slug
+          });
           setArtistId(userData.uid);
           setArtistData(userData);
           setError(false);
         } else {
+          console.warn(`⚠️ [PRODUCTION] No artist found with slug: ${slug}`);
           setError(true);
         }
       } catch (err) {
-        console.error("Error finding artist by slug:", err);
+        console.error("❌ [PRODUCTION] Error finding artist by slug:", err);
         setError(true);
       } finally {
         setIsLoading(false);
