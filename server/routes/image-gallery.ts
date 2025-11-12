@@ -76,14 +76,17 @@ router.post('/create-and-generate', async (req: Request, res: Response) => {
       }
 
       if (result.success && result.imageUrl) {
+        // Retornar las imágenes como data URLs
+        // El frontend se encargará de subirlas a Firebase Storage
         generatedImages.push({
           id: `img-${Date.now()}-${i}`,
-          url: result.imageUrl,
+          url: result.imageUrl, // Data URL (base64)
           prompt: imagePrompts[i],
           createdAt: new Date().toISOString(),
           isVideo: false
         });
         successCount++;
+        console.log(`✅ Imagen ${i + 1} generada exitosamente`);
       } else {
         console.error(`❌ Error generando imagen ${i + 1}:`, result.error);
       }

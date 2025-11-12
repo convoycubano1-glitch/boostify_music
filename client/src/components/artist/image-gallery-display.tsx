@@ -45,28 +45,44 @@ export function ImageGalleryDisplay({ artistId, isOwner = false }: ImageGalleryD
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('🖼️ ImageGalleryDisplay montado para artistId:', artistId);
     loadGalleries();
   }, [artistId]);
 
   const loadGalleries = async () => {
     try {
       setIsLoading(true);
+      console.log('📥 Cargando galerías para artistId:', artistId);
+      
       const galleriesRef = collection(db, "image_galleries");
       const q = query(
         galleriesRef,
-        where("userId", "==", artistId),
-        orderBy("createdAt", "desc")
+        where("userId", "==", artistId)
       );
       
       const querySnapshot = await getDocs(q);
-      const galleriesData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ImageGallery[];
+      console.log('📊 Documentos encontrados:', querySnapshot.size);
       
+      const galleriesData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        console.log('📄 Documento:', doc.id, data);
+        return {
+          id: doc.id,
+          ...data,
+        } as ImageGallery;
+      });
+      
+      // Ordenar en el cliente en lugar de Firestore para evitar índices
+      galleriesData.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA; // Más reciente primero
+      });
+      
+      console.log('✅ Galerías cargadas:', galleriesData.length);
       setGalleries(galleriesData);
     } catch (error) {
-      console.error("Error loading galleries:", error);
+      console.error("❌ Error loading galleries:", error);
       toast({
         title: "Error",
         description: "No se pudieron cargar las galerías",

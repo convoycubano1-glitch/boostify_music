@@ -1,0 +1,71 @@
+chunk-NFC5BX5N.js?v=cc9bcd95:521 Warning: Connect(Droppable): Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.
+    at Provider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=cc9bcd95:749:20)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=cc9bcd95:7266:25)
+    at ErrorBoundary2 (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=cc9bcd95:1763:35)
+    at DragDropContext (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=cc9bcd95:7386:19)
+    at section
+    at main
+    at div
+    at div
+    at ArtistProfileCard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/artist/artist-profile-card.tsx:834:37)
+    at div
+    at ProfilePage (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/profile.tsx:25:18)
+    at div
+    at PageWrapper (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=bmlONfkTBifzE6zFGvd1m:173:24)
+    at Route (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cc9bcd95:206:16)
+    at ProtectedRoute (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cc9bcd95:262:17)
+    at Router (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=bmlONfkTBifzE6zFGvd1m:215:37)
+    at EditorProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/editor-context.tsx:56:34)
+    at GlobalAuthGuard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/global-auth-guard.tsx:42:35)
+    at SubscriptionProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/subscription-context.tsx:32:40)
+    at AuthProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/hooks/use-auth.tsx:28:32)
+    at QueryClientProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=cc9bcd95:3093:3)
+    at div
+    at ErrorBoundary (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=bmlONfkTBifzE6zFGvd1m:122:5)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=bmlONfkTBifzE6zFGvd1m:435:37)
+printWarning @ chunk-NFC5BX5N.js?v=cc9bcd95:521
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/image-gallery/create-and-generate net::ERR_EMPTY_RESPONSE
+window.fetch @ hmr-error-handler.ts:15
+handleGenerateGallery @ image-gallery-generator.tsx:145
+await in handleGenerateGallery
+callCallback2 @ chunk-NFC5BX5N.js?v=cc9bcd95:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=cc9bcd95:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=cc9bcd95:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=cc9bcd95:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=cc9bcd95:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=cc9bcd95:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=cc9bcd95:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=cc9bcd95:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=cc9bcd95:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=cc9bcd95:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=cc9bcd95:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=cc9bcd95:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=cc9bcd95:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5449
+image-gallery-generator.tsx:238 Error generating gallery: TypeError: Failed to fetch
+    at window.fetch (hmr-error-handler.ts:15:12)
+    at handleGenerateGallery (image-gallery-generator.tsx:145:32)
+handleGenerateGallery @ image-gallery-generator.tsx:238
+await in handleGenerateGallery
+callCallback2 @ chunk-NFC5BX5N.js?v=cc9bcd95:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=cc9bcd95:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=cc9bcd95:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=cc9bcd95:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=cc9bcd95:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=cc9bcd95:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=cc9bcd95:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=cc9bcd95:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=cc9bcd95:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=cc9bcd95:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=cc9bcd95:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=cc9bcd95:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=cc9bcd95:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=cc9bcd95:5449
+api/image-gallery/create-and-generate:1  Failed to load resource: net::ERR_EMPTY_RESPONSE
+image-gallery-generator.tsx:238 Error generating gallery: TypeError: Failed to fetch
+    at window.fetch (hmr-error-handler.ts:15:12)
+    at handleGenerateGallery (image-gallery-generator.tsx:145:32)
+handleGenerateGallery @ image-gallery-generator.tsx:238

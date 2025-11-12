@@ -14,7 +14,8 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { useToast } from "../../hooks/use-toast";
-import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images } from "lucide-react";
+import { ImageGalleryGenerator } from "./image-gallery-generator";
 import { db, storage } from "../../firebase";
 import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -1409,6 +1410,54 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
                   </>
                 )}
               </Button>
+            </div>
+          </div>
+
+          {/* Galería de Imágenes Profesionales */}
+          <div className="border-t pt-4">
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
+                  <Images className="h-4 w-4 text-purple-400" />
+                  <span className="text-purple-400">Galerías de Imágenes Profesionales</span>
+                </h4>
+                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 space-y-3">
+                  <p className="text-xs text-gray-400">
+                    Crea galerías de 6 imágenes profesionales para tus sencillos usando IA
+                  </p>
+                  
+                  <div className="space-y-2 text-xs text-gray-400">
+                    <p className="font-semibold text-purple-300">📸 ¿Cómo funciona?</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Sube 1-3 fotos tuyas (para mantener tu identidad facial)</li>
+                      <li>Ingresa el nombre de tu sencillo</li>
+                      <li>La IA generará 6 imágenes profesionales diferentes</li>
+                      <li>Las imágenes aparecerán automáticamente en tu perfil público</li>
+                    </ul>
+                    
+                    <p className="font-semibold text-purple-300 mt-3">✨ Incluye:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Close-up con iluminación dramática</li>
+                      <li>Foto en escenario performando</li>
+                      <li>Sesión urbana profesional</li>
+                      <li>Retrato artístico creativo</li>
+                      <li>Lifestyle natural</li>
+                      <li>Editorial de alta moda</li>
+                    </ul>
+
+                    <div className="mt-3 p-2 bg-orange-500/10 border border-orange-500/20 rounded">
+                      <p className="text-orange-300 font-semibold">💡 Tip Profesional:</p>
+                      <p className="mt-1">Usa fotos claras con buena iluminación donde se vea bien tu rostro. La IA mantendrá tus rasgos faciales en todas las 6 imágenes generadas.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <ImageGalleryGenerator
+                artistId={artistId}
+                artistName={currentData.displayName}
+                onGalleryCreated={onUpdate}
+              />
             </div>
           </div>
         </div>

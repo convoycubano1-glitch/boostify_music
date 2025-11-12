@@ -31,6 +31,7 @@ export function ImageGalleryGenerator({
 }: ImageGalleryGeneratorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState("");
   const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [singleName, setSingleName] = useState("");
   const [basePrompt, setBasePrompt] = useState("");
@@ -90,64 +91,144 @@ export function ImageGalleryGenerator({
     }
 
     setIsGenerating(true);
+    setGenerationStatus("Generando 6 imágenes profesionales con IA... (esto puede tardar 1-2 minutos)");
+    
     try {
-      // Subir las imágenes de referencia a Firebase Storage
-      const referenceUrls: string[] = [];
-      for (let i = 0; i < referenceImages.length; i++) {
-        const imageRef = ref(storage, `galleries/${artistId}/${Date.now()}-ref-${i}.jpg`);
-        
-        // Convertir base64 a blob
-        const base64Data = referenceImages[i].split(',')[1];
-        const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(r => r.blob());
-        
-        await uploadBytes(imageRef, blob);
-        const url = await getDownloadURL(imageRef);
-        referenceUrls.push(url);
-      }
-
-      // Llamar al backend para generar las 6 imágenes
-      const response = await fetch('/api/image-gallery/create-and-generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          singleName,
-          artistName,
-          basePrompt: basePrompt || `Professional promotional photos of ${artistName} for "${singleName}"`,
-          styleInstructions: styleInstructions || "Modern, high-quality, professional artist photography with creative lighting and composition",
-          referenceImages: referenceUrls
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Error al generar galería');
-      }
-
-      // Guardar la galería en Firestore
-      const galleryRef = doc(collection(db, "image_galleries"));
-      await setDoc(galleryRef, {
-        ...data.gallery,
-        id: galleryRef.id,
-        userId: artistId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-
-      toast({
-        title: "¡Galería creada!",
-        description: data.message,
-      });
-
-      // Limpiar formulario y cerrar
-      setSingleName("");
-      setBasePrompt("");
-      setStyleInstructions("");
-      setReferenceImages([]);
-      setIsOpen(false);
+      // NO subir a Firebase Storage - enviar directamente en base64
+      console.log('🎨 Iniciando generación de galería con imágenes en base64...');
+      console.log('📸 Número de imágenes de referencia:', referenceImages.length);
       
-      if (onGalleryCreated) {
-        onGalleryCreated();
+      // Crear AbortController con timeout de 5 minutos (300 segundos)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000);
+      
+      try {
+        const response = await fetch('/api/image-gallery/create-and-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            singleName,
+            artistName,
+            basePrompt: basePrompt || `Professional promotional photos of ${artistName} for "${singleName}"`,
+            styleInstructions: styleInstructions || "Modern, high-quality, professional artist photography with creative lighting and composition",
+            referenceImages: referenceImages // Enviar base64 directamente
+          }),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Respuesta del servidor:', data);
+
+        if (!data.success) {
+          throw new Error(data.error || 'Error al generar galería');
+        }
+
+        console.log('✅ Galería generada con éxito:', data.gallery.generatedImages.length, 'imágenes');
+        
+        // Subir las imágenes generadas (data URLs) a Firebase Storage
+        setGenerationStatus("Subiendo imágenes a Firebase Storage...");
+        const uploadedImageUrls: string[] = [];
+        
+        for (let i = 0; i < data.gallery.generatedImages.length; i++) {
+          const img = data.gallery.generatedImages[i];
+          try {
+            console.log(`📤 Subiendo imagen ${i + 1}/${data.gallery.generatedImages.length} a Storage...`);
+            
+            const imagePath = `galleries/${artistId}/${Date.now()}-gen-${i}.jpg`;
+            const imageRef = ref(storage, imagePath);
+            
+            // Convertir data URL a blob
+            const base64Data = img.url.split(',')[1];
+            const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(r => r.blob());
+            
+            await uploadBytes(imageRef, blob);
+            const url = await getDownloadURL(imageRef);
+            
+            uploadedImageUrls.push(url);
+            console.log(`✅ Imagen ${i + 1} subida: ${url}`);
+          } catch (uploadError: any) {
+            console.error(`❌ Error subiendo imagen ${i + 1}:`, uploadError);
+            // Si falla, usar la data URL original como fallback
+            uploadedImageUrls.push(img.url);
+          }
+        }
+
+        // Guardar la galería en Firestore con las URLs de Storage
+        try {
+          console.log('🔍 [DEBUG] Iniciando guardado en Firestore');
+          console.log('🔍 [DEBUG] DB config:', db);
+          
+          const galleryRef = doc(collection(db, "image_galleries"));
+          console.log('✅ [DEBUG] Referencia creada con ID:', galleryRef.id);
+          
+          // Actualizar las URLs en las imágenes generadas
+          const generatedImagesWithUrls = data.gallery.generatedImages.map((img: any, index: number) => ({
+            ...img,
+            url: uploadedImageUrls[index]
+          }));
+          
+          const galleryData = {
+            id: galleryRef.id,
+            userId: artistId,
+            singleName,
+            artistName,
+            basePrompt: basePrompt || `Professional promotional photos of ${artistName} for "${singleName}"`,
+            styleInstructions: styleInstructions || "Modern, high-quality, professional artist photography with creative lighting and composition",
+            referenceImageUrls: referenceImages, // Guardar las imágenes de referencia en base64 temporalmente
+            generatedImages: generatedImagesWithUrls,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            isPublic: true
+          };
+          
+          setGenerationStatus("Guardando galería en tu perfil...");
+          console.log('💾 [DEBUG] Guardando en Firestore:', galleryData);
+          console.log('💾 [DEBUG] Collection: image_galleries, Doc ID:', galleryRef.id);
+          
+          await setDoc(galleryRef, galleryData);
+          console.log('✅ [DEBUG] setDoc completado exitosamente');
+          console.log('✅ Galería guardada en Firestore con ID:', galleryRef.id);
+        } catch (firestoreError: any) {
+          console.error('❌ [FIRESTORE ERROR] Error guardando galería:', firestoreError);
+          console.error('❌ [FIRESTORE ERROR] Código:', firestoreError.code);
+          console.error('❌ [FIRESTORE ERROR] Mensaje:', firestoreError.message);
+          console.error('❌ [FIRESTORE ERROR] Stack:', firestoreError.stack);
+          throw new Error(`Error al guardar en Firestore: ${firestoreError.message}`);
+        }
+
+        toast({
+          title: "¡Galería creada!",
+          description: data.message || `Se generaron ${data.successCount || 0} imágenes exitosamente`,
+        });
+
+        // Limpiar formulario y cerrar
+        setSingleName("");
+        setBasePrompt("");
+        setStyleInstructions("");
+        setReferenceImages([]);
+        setGenerationStatus("");
+        setIsOpen(false);
+        
+        // Esperar un poco antes de recargar para que Firestore se sincronice
+        setTimeout(() => {
+          if (onGalleryCreated) {
+            console.log('🔄 Llamando a onGalleryCreated callback');
+            onGalleryCreated();
+          }
+        }, 1000);
+
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('La generación tomó demasiado tiempo. Por favor intenta de nuevo.');
+        }
+        throw fetchError;
       }
 
     } catch (error: any) {
@@ -159,6 +240,7 @@ export function ImageGalleryGenerator({
       });
     } finally {
       setIsGenerating(false);
+      setGenerationStatus("");
     }
   };
 
@@ -267,6 +349,21 @@ export function ImageGalleryGenerator({
             />
           </div>
 
+          {/* Indicador de progreso */}
+          {isGenerating && generationStatus && (
+            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-400">{generationStatus}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Por favor espera, este proceso puede tardar 1-2 minutos...
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <Button
             onClick={handleGenerateGallery}
             disabled={isGenerating || referenceImages.length === 0 || !singleName.trim()}
@@ -276,7 +373,7 @@ export function ImageGalleryGenerator({
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Generando 6 imágenes...
+                Generando...
               </>
             ) : (
               <>
@@ -286,9 +383,11 @@ export function ImageGalleryGenerator({
             )}
           </Button>
 
-          <p className="text-xs text-muted-foreground text-center">
-            La generación puede tardar 1-2 minutos. Las imágenes mantendrán la identidad facial del artista.
-          </p>
+          {!isGenerating && (
+            <p className="text-xs text-muted-foreground text-center">
+              La generación puede tardar 1-2 minutos. Las imágenes mantendrán la identidad facial del artista.
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

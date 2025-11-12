@@ -27,15 +27,31 @@ async function generateContentWithFallback(params: any): Promise<any> {
     try {
       console.log(`🔑 Intentando generación con API key ${i + 1}/${geminiClients.length}...`);
       const client = geminiClients[i];
-      const response = await client.models.generateContent(params);
+      
+      // Agregar timeout de 60 segundos para evitar colgarse indefinidamente
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Gemini API timeout después de 60 segundos')), 60000);
+      });
+      
+      const generationPromise = client.models.generateContent(params);
+      
+      const response = await Promise.race([generationPromise, timeoutPromise]);
       console.log(`✅ Generación exitosa con API key ${i + 1}`);
       return response;
     } catch (error: any) {
       lastError = error;
       
+      console.error(`❌ Error con API key ${i + 1}:`, error.message);
+      
       // Si es error 429 (quota exceeded), intentar con la siguiente key
       if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
         console.warn(`⚠️ API key ${i + 1} sin cuota disponible, intentando con siguiente key...`);
+        continue;
+      }
+      
+      // Si es timeout, intentar con la siguiente key
+      if (error.message?.includes('timeout')) {
+        console.warn(`⏱️ API key ${i + 1} timeout, intentando con siguiente key...`);
         continue;
       }
       
@@ -45,8 +61,8 @@ async function generateContentWithFallback(params: any): Promise<any> {
   }
   
   // Si llegamos aquí, todas las keys fallaron
-  console.error('❌ Todas las API keys agotaron su cuota');
-  throw lastError || new Error('Todas las API keys de Gemini han alcanzado su límite de cuota');
+  console.error('❌ Todas las API keys agotaron su cuota o fallaron');
+  throw lastError || new Error('Todas las API keys de Gemini han fallado');
 }
 
 export interface CinematicScene {
@@ -326,16 +342,35 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
     for (let i = 0; i < Math.min(referenceImagesBase64.length, 3); i++) {
       let base64Data = referenceImagesBase64[i];
       
+      console.log(`🔍 Procesando imagen de referencia ${i + 1}...`);
+      
       // Si es una URL, descargar la imagen y convertirla a base64
       if (base64Data.startsWith('http://') || base64Data.startsWith('https://')) {
         console.log(`📥 Descargando imagen de referencia ${i + 1} desde URL...`);
-        const axios = (await import('axios')).default;
-        const response = await axios.get(base64Data, { responseType: 'arraybuffer' });
-        base64Data = Buffer.from(response.data, 'binary').toString('base64');
-        console.log(`✅ Imagen descargada y convertida a base64`);
+        try {
+          const axios = (await import('axios')).default;
+          const response = await axios.get(base64Data, { 
+            responseType: 'arraybuffer',
+            timeout: 10000 // 10 segundos timeout
+          });
+          base64Data = Buffer.from(response.data, 'binary').toString('base64');
+          console.log(`✅ Imagen ${i + 1} descargada y convertida a base64`);
+        } catch (downloadError: any) {
+          console.error(`❌ Error descargando imagen ${i + 1}:`, downloadError.message);
+          // Saltar esta imagen si falla la descarga
+          continue;
+        }
+      } else if (base64Data.startsWith('data:')) {
+        // Si es un data URL, extraer solo los datos (quitar el prefijo data:image/...)
+        const parts = base64Data.split(',');
+        if (parts.length === 2) {
+          base64Data = parts[1];
+          console.log(`✅ Imagen ${i + 1} extraída de data URL`);
+        } else {
+          console.warn(`⚠️ Data URL inválido para imagen ${i + 1}, usando tal cual`);
+        }
       } else {
-        // Si ya es base64, extraer solo los datos (quitar el prefijo data:image/...)
-        base64Data = base64Data.split(',')[1] || base64Data;
+        console.log(`✅ Imagen ${i + 1} ya está en base64 puro`);
       }
       
       parts.push({

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { EditProfileDialog } from "./edit-profile-dialog";
-import { ImageGalleryGenerator } from "./image-gallery-generator";
 import { ImageGalleryDisplay } from "./image-gallery-display";
 import { useAuth } from "../../hooks/use-auth";
 import { useTranslation } from "react-i18next";
@@ -572,6 +571,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const [leftSections, setLeftSections] = useState<string[]>(['songs', 'videos', 'social-hub', 'merchandise']);
   const [isMerchandiseExpanded, setIsMerchandiseExpanded] = useState(true);
+  
+  // Galleries refresh key
+  const [galleriesRefreshKey, setGalleriesRefreshKey] = useState(0);
   
   // Cargar orden guardado al montar
   useEffect(() => {
@@ -1427,7 +1429,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             youtube: userProfile?.youtube || "",
                             spotify: userProfile?.spotify || "",
                           }}
-                          onUpdate={() => refetchProfile()}
+                          onUpdate={() => {
+                            setGalleriesRefreshKey(prev => prev + 1);
+                            refetchProfile();
+                          }}
                         />
                         <Button
                           size="sm"
@@ -1444,11 +1449,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           <Layout className="h-4 w-4 mr-2" />
                           {isEditingLayout ? 'Guardar Layout' : 'Personalizar Layout'}
                         </Button>
-                        <ImageGalleryGenerator
-                          artistId={artistId}
-                          artistName={artist.name}
-                          onGalleryCreated={() => refetchProfile()}
-                        />
                       </>
                     ) : (
                       <>
@@ -2569,6 +2569,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
             {/* Image Galleries */}
             <ImageGalleryDisplay 
+              key={`galleries-${galleriesRefreshKey}`}
               artistId={artistId} 
               isOwner={isOwnProfile}
             />

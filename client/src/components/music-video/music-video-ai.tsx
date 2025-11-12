@@ -734,6 +734,21 @@ export function MusicVideoAI() {
             console.log(`✅ [IMG ${sceneIndex}/${totalScenes}] Imagen generada exitosamente`);
             console.log(`📸 URL tipo: ${data.imageUrl.substring(0, 30)}...`);
             
+            // 💾 GUARDAR EN FIREBASE STORAGE para persistencia
+            let permanentImageUrl = data.imageUrl;
+            if (user?.uid) {
+              try {
+                console.log(`📤 [FIREBASE ${sceneIndex}] Subiendo imagen a Firebase Storage...`);
+                permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
+                console.log(`✅ [FIREBASE ${sceneIndex}] Imagen guardada permanentemente`);
+              } catch (uploadError) {
+                console.warn(`⚠️ [FIREBASE ${sceneIndex}] Error subiendo a Firebase, usando URL temporal:`, uploadError);
+                // Continuar con la URL temporal si falla Firebase
+              }
+            } else {
+              console.warn(`⚠️ [FIREBASE ${sceneIndex}] No user ID - usando URL temporal`);
+            }
+            
             // Actualizar el progreso del modal INMEDIATAMENTE para mostrar la imagen
             setGenerationProgress(prev => ({
               ...prev,
@@ -745,7 +760,7 @@ export function MusicVideoAI() {
                 ...prev.generatedImages,
                 {
                   id: `scene-${sceneIndex}`,
-                  url: data.imageUrl,
+                  url: permanentImageUrl,
                   prompt: scene.scene || `Scene ${sceneIndex}`
                 }
               ],
@@ -772,13 +787,13 @@ export function MusicVideoAI() {
                 
                 if (itemSceneNumber === sceneIndex) {
                   console.log(`🖼️ [IMG ${sceneIndex}] ✅ Actualizando timeline item ${item.id} en TIEMPO REAL`);
-                  console.log(`📸 [IMG ${sceneIndex}] URL: ${data.imageUrl.substring(0, 50)}...`);
+                  console.log(`📸 [IMG ${sceneIndex}] URL: ${permanentImageUrl.substring(0, 50)}...`);
                   return {
                     ...item,
-                    imageUrl: data.imageUrl,
-                    thumbnail: data.imageUrl,
-                    url: data.imageUrl,
-                    generatedImage: data.imageUrl,
+                    imageUrl: permanentImageUrl,
+                    thumbnail: permanentImageUrl,
+                    url: permanentImageUrl,
+                    generatedImage: permanentImageUrl,
                     metadata: {
                       ...item.metadata,
                       isGeneratedImage: true,
@@ -1686,194 +1701,6 @@ export function MusicVideoAI() {
       setIsGeneratingFullVideo(false);
     }
   };
-
-  // Generate all images for timeline scenes using Gemini with facial references
-  const generateAllSceneImages = async () => {
-    if (!scriptContent) {
-      toast({
-        title: "Error",
-        description: "You must first generate the script",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (artistReferenceImages.length === 0) {
-      toast({
-        title: "Warning",
-        description: "No reference images. Images will be generated without facial consistency",
-      });
-    }
-
-    setIsGeneratingImages(true);
-    setIsGeneratingShots(true); // Abrir modal de progreso
-    
-    try {
-      const parsedScript = JSON.parse(scriptContent);
-      
-      // Extract scenes from correct format
-      let scenes = [];
-      if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
-        scenes = parsedScript.scenes;
-      } else if (Array.isArray(parsedScript)) {
-        scenes = parsedScript;
-      }
-      
-      if (scenes.length === 0) {
-        throw new Error("The script has no valid scenes");
-      }
-
-      toast({
-        title: "Generating images",
-        description: `Starting generation of ${scenes.length} scenes with Gemini 2.5 Flash Image...`,
-      });
-      
-      // Inicializar progreso del modal
-      setGenerationProgress({
-        current: 0,
-        total: scenes.length,
-        percentage: 0,
-        currentPrompt: '',
-        generatedImages: [],
-        status: 'Preparando generación...'
-      });
-
-      let successCount = 0;
-
-      // Generar imágenes UNA POR UNA (secuencialmente)
-      for (let i = 0; i < scenes.length; i++) {
-        const scene = scenes[i];
-        
-        // Preparar datos de la escena
-        const shotType = scene.shot_type || "MS";
-        const cameraMovement = scene.camera_movement || "static";
-        const lens = scene.lens || "standard";
-        const lighting = scene.lighting || "natural";
-        const visualStyle = scene.visual_style || "cinematic";
-        const description = scene.description || "";
-        const location = scene.location || "performance space";
-        const colorTemp = scene.color_temperature || "5000K";
-        
-        const prompt = `${description}. ${lens} lens, ${shotType} shot, ${cameraMovement} movement, ${lighting} lighting, ${colorTemp} color temperature, ${visualStyle} style, ${location}`;
-        
-        // Actualizar progreso ANTES de generar
-        setGenerationProgress(prev => ({
-          ...prev,
-          status: `Generando imagen ${i + 1} de ${scenes.length}...`,
-          currentPrompt: prompt
-        }));
-
-        try {
-          // Generar imagen individual
-          const response = await fetch('/api/gemini-image/generate-single-with-multiple-faces', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              prompt: prompt,
-              referenceImagesBase64: artistReferenceImages,
-              seed: seed + (i + 1)
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            
-            if (response.status === 429 || errorData.error?.includes('quota') || errorData.error?.includes('RESOURCE_EXHAUSTED')) {
-              throw new Error('Has excedido el límite de imágenes gratuitas de Gemini (100/día). Intenta de nuevo mañana o usa un API key de pago.');
-            }
-            
-            throw new Error(errorData.error || `Server error: ${response.statusText}`);
-          }
-
-          const data = await response.json();
-          
-          if (data.success && data.imageUrl) {
-            successCount++;
-            
-            const sceneId = scene.scene_id || (i + 1);
-            
-            // Actualizar timeline item inmediatamente
-            setTimelineItems(prevItems => {
-              return prevItems.map(item => {
-                const sceneIdMatch = item.id.toString().match(/scene-(\d+)/);
-                if (!sceneIdMatch) return item;
-                
-                const itemSceneId = parseInt(sceneIdMatch[1]);
-                
-                if (itemSceneId === sceneId) {
-                  return {
-                    ...item,
-                    imageUrl: data.imageUrl,
-                    thumbnail: data.imageUrl,
-                    url: data.imageUrl,
-                    generatedImage: data.imageUrl,
-                    metadata: {
-                      ...item.metadata,
-                      isGeneratedImage: true,
-                      imageGeneratedAt: new Date().toISOString(),
-                      scene_id: sceneId,
-                      shot_type: shotType,
-                      role: item.metadata?.role || 'performance'
-                    }
-                  };
-                }
-                
-                return item;
-              });
-            });
-            
-            // Actualizar galería del modal INMEDIATAMENTE
-            setGenerationProgress(prev => ({
-              ...prev,
-              current: successCount,
-              percentage: Math.round((successCount / scenes.length) * 100),
-              status: `✅ Imagen ${i + 1} completada`,
-              generatedImages: [...prev.generatedImages, {
-                id: String(sceneId),
-                url: data.imageUrl,
-                prompt: prompt
-              }]
-            }));
-            
-            console.log(`✅ Image ${i + 1}/${scenes.length} generated successfully`);
-          }
-        } catch (error) {
-          console.error(`Error generating image ${i + 1}:`, error);
-          // Continuar con la siguiente imagen en caso de error
-        }
-      }
-      
-      toast({
-        title: "Success!",
-        description: `${successCount}/${scenes.length} images generated with Gemini`,
-      });
-
-      setCurrentStep(5);
-    } catch (error) {
-      console.error("Error generating images:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error generating images",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingImages(false);
-      setIsGeneratingShots(false); // Cerrar modal
-      // Resetear progreso
-      setGenerationProgress({
-        current: 0,
-        total: 0,
-        percentage: 0,
-        currentPrompt: '',
-        generatedImages: [],
-        status: ''
-      });
-    }
-  };
-  
-
 
   const generateVideoScriptFromAudio = async () => {
     if (!transcription || timelineItems.length === 0) return;
@@ -5612,34 +5439,6 @@ ${transcription}`;
                         </motion.div>
                       )}
                     </Button>
-                    
-                    {/* Botón para generar imágenes con Gemini */}
-                    {timelineItems.length > 0 && scriptContent && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.1 }}
-                        className="mt-3"
-                      >
-                        <Button
-                          onClick={generateAllSceneImages}
-                          disabled={isGeneratingImages || !scriptContent}
-                          className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 border-0 shadow-md"
-                        >
-                          {isGeneratingImages ? (
-                            <motion.div className="flex items-center justify-center gap-2" animate={{ opacity: [0.7, 1] }} transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              <span>Generando imágenes con Gemini...</span>
-                            </motion.div>
-                          ) : (
-                            <motion.div className="flex items-center justify-center" whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
-                              <Sparkles className="mr-2 h-4 w-4" />
-                              <span>Generar Imágenes ({artistReferenceImages.length > 0 ? `${artistReferenceImages.length} referencias` : 'sin referencias'})</span>
-                            </motion.div>
-                          )}
-                        </Button>
-                      </motion.div>
-                    )}
                   </motion.div>
                 </motion.div>
 

@@ -46,9 +46,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Increase JSON size limit to handle image data URLs
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: false, limit: '20mb' }));
+// Increase JSON size limit to handle image data URLs (6 images x 2MB = 12MB + overhead)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 // Gestión de errores para express.json
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -124,6 +124,10 @@ app.use((req, res, next) => {
 
     // IMPORTANT: Register API routes BEFORE static file serving
     const server = registerRoutes(app);
+    
+    // Aumentar timeout del servidor a 5 minutos (300 segundos) para generar galerías de imágenes
+    server.timeout = 300000; // 5 minutos en milisegundos
+    log('⏱️ Server timeout set to 5 minutes for long-running image generation requests');
 
     // Setup static file serving based on environment
     // This must come AFTER API routes registration
