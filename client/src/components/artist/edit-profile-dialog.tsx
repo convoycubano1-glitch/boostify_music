@@ -626,6 +626,56 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
       // Invalidar caché de React Query para forzar actualización en todos los dispositivos
       await queryClient.invalidateQueries({ queryKey: ["userProfile", artistId] });
       
+      // 🔔 Enviar datos al webhook de Make.com para automatización
+      try {
+        console.log('📡 Enviando datos de perfil al webhook de Make.com...');
+        const webhookUrl = 'https://hook.us2.make.com/jeo56r778isvcxe4q7ntg3n9f3ykbsnf';
+        
+        const webhookData = {
+          timestamp: new Date().toISOString(),
+          event: 'profile_updated',
+          artistId: artistId,
+          profile: {
+            displayName: profileData.displayName,
+            biography: profileData.biography,
+            genre: profileData.genre,
+            location: profileData.location,
+            profileImage: profileData.profileImage,
+            bannerImage: profileData.bannerImage,
+            bannerPosition: profileData.bannerPosition,
+            loopVideoUrl: profileData.loopVideoUrl,
+            slug: profileData.slug,
+            contactEmail: profileData.contactEmail,
+            contactPhone: profileData.contactPhone,
+            socialMedia: {
+              instagram: profileData.instagram,
+              twitter: profileData.twitter,
+              youtube: profileData.youtube,
+              spotify: profileData.spotify,
+            },
+            referenceImage: profileData.referenceImage,
+            updatedAt: profileData.updatedAt.toISOString(),
+          }
+        };
+
+        const webhookResponse = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookData)
+        });
+
+        if (webhookResponse.ok) {
+          console.log('✅ Datos enviados exitosamente al webhook de Make.com');
+        } else {
+          console.warn('⚠️ El webhook respondió con status:', webhookResponse.status);
+        }
+      } catch (webhookError) {
+        // No bloqueamos el flujo si el webhook falla
+        console.error('❌ Error enviando datos al webhook (no crítico):', webhookError);
+      }
+      
       toast({
         title: "Perfil actualizado",
         description: "Tu perfil se ha guardado correctamente.",

@@ -203,49 +203,56 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
         <div className="space-y-4">
           <div 
             ref={cardRef}
-            className="relative rounded-2xl md:rounded-3xl overflow-hidden"
+            className="relative rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl"
             style={{
-              background: `linear-gradient(135deg, #000000 0%, #1a1a1a 50%, ${colors.hexPrimary}20 100%)`,
               aspectRatio: '1.586',
               maxWidth: '100%',
               margin: '0 auto'
             }}
           >
-            {/* Patrón de fondo decorativo */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-0 right-0 w-32 h-32 md:w-64 md:h-64 rounded-full blur-3xl" 
-                   style={{ background: colors.hexAccent }}></div>
-              <div className="absolute bottom-0 left-0 w-32 h-32 md:w-64 md:h-64 rounded-full blur-3xl" 
-                   style={{ background: colors.hexPrimary }}></div>
+            {/* Imagen de fondo con overlay */}
+            <div className="absolute inset-0">
+              <img
+                src={artist.bannerImage || artist.profileImage}
+                alt={artist.name}
+                className="w-full h-full object-cover"
+              />
+              {/* Overlay oscuro con gradiente */}
+              <div 
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(135deg, 
+                    rgba(0,0,0,0.85) 0%, 
+                    rgba(0,0,0,0.7) 40%, 
+                    ${colors.hexPrimary}40 70%,
+                    ${colors.hexAccent}30 100%)`
+                }}
+              ></div>
+              {/* Patrón de puntos */}
+              <div className="absolute inset-0 opacity-10" style={{
+                backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+                backgroundSize: '20px 20px'
+              }}></div>
             </div>
 
             {/* Contenido de la tarjeta */}
-            <div className="relative h-full p-4 md:p-8 flex flex-col justify-between">
-              {/* Header */}
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-2 md:gap-4">
-                  <img
-                    src={artist.profileImage}
-                    alt={artist.name}
-                    className="w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl object-cover border-2"
-                    style={{ borderColor: colors.hexAccent }}
-                  />
-                  <div>
-                    <h3 className="text-lg md:text-2xl font-black text-white mb-1">{artist.name}</h3>
-                    <p className="text-xs md:text-sm font-medium" style={{ color: colors.hexAccent }}>
-                      {artist.genre}
-                    </p>
-                  </div>
+            <div className="relative h-full p-4 md:p-6 flex flex-col justify-between">
+              {/* Header con QR Code */}
+              <div className="flex justify-between items-start gap-4">
+                {/* Logo Boostify */}
+                <div 
+                  className="px-4 py-2 rounded-full text-xs md:text-sm font-black backdrop-blur-md border-2"
+                  style={{ 
+                    background: 'rgba(0,0,0,0.5)',
+                    borderColor: colors.hexAccent,
+                    color: colors.hexAccent
+                  }}
+                >
+                  BOOSTIFY
                 </div>
-              </div>
 
-              {/* QR Code */}
-              <div className="flex justify-end items-end gap-3 md:gap-6">
-                <div className="text-right hidden sm:block">
-                  <p className="text-white font-bold text-sm md:text-lg mb-1">Scan to connect</p>
-                  <p className="text-gray-400 text-xs md:text-sm">Powered by Boostify</p>
-                </div>
-                <div className="bg-white p-2 md:p-3 rounded-xl md:rounded-2xl shadow-2xl">
+                {/* QR Code arriba a la derecha */}
+                <div className="bg-white p-2 md:p-3 rounded-xl shadow-2xl">
                   <QRCode
                     value={profileUrl}
                     size={80}
@@ -256,7 +263,7 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
                   />
                   <QRCode
                     value={profileUrl}
-                    size={100}
+                    size={120}
                     className="hidden md:block"
                     level="H"
                     fgColor="#000000"
@@ -265,11 +272,89 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
                 </div>
               </div>
 
-              {/* Línea decorativa con acento */}
+              {/* Sección principal */}
+              <div className="flex items-end gap-4 md:gap-6">
+                {/* Imagen del artista */}
+                <div className="relative flex-shrink-0">
+                  <img
+                    src={artist.profileImage}
+                    alt={artist.name}
+                    className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-2xl object-cover border-4 shadow-2xl"
+                    style={{ borderColor: colors.hexAccent }}
+                  />
+                </div>
+
+                {/* Info del artista */}
+                <div className="flex-1 pb-2">
+                  <h3 className="text-2xl md:text-3xl lg:text-5xl font-black text-white mb-1 md:mb-2 drop-shadow-lg">
+                    {artist.name}
+                  </h3>
+                  <p 
+                    className="text-sm md:text-base lg:text-xl font-bold mb-2 md:mb-3 drop-shadow-lg" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    {artist.genre}
+                  </p>
+                  
+                  {/* Links rápidos */}
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-bold backdrop-blur-md border transition-all duration-200 flex items-center gap-1 hover:scale-105"
+                      style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        borderColor: 'rgba(255,255,255,0.3)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="hidden sm:inline">Profile</span>
+                    </a>
+                    <a
+                      href={`${profileUrl}#merchandise`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-bold backdrop-blur-md border transition-all duration-200 flex items-center gap-1 hover:scale-105"
+                      style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        borderColor: 'rgba(255,255,255,0.3)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      </svg>
+                      <span className="hidden sm:inline">Merch</span>
+                    </a>
+                    <a
+                      href={`${profileUrl}#shows`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-bold backdrop-blur-md border transition-all duration-200 flex items-center gap-1 hover:scale-105"
+                      style={{
+                        background: 'rgba(255,255,255,0.15)',
+                        borderColor: 'rgba(255,255,255,0.3)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span className="hidden sm:inline">Shows</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Barra decorativa inferior */}
               <div 
-                className="absolute bottom-0 left-0 right-0 h-2"
+                className="absolute bottom-0 left-0 right-0 h-1.5 md:h-2"
                 style={{
-                  background: `linear-gradient(90deg, ${colors.hexPrimary} 0%, ${colors.hexAccent} 100%)`
+                  background: `linear-gradient(90deg, ${colors.hexPrimary} 0%, ${colors.hexAccent} 50%, ${colors.hexPrimary} 100%)`
                 }}
               ></div>
             </div>
@@ -479,7 +564,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   
   // Estados para drag-and-drop del layout
   const [isEditingLayout, setIsEditingLayout] = useState(false);
-  const [leftSections, setLeftSections] = useState<string[]>(['songs', 'videos', 'merchandise']);
+  const [leftSections, setLeftSections] = useState<string[]>(['songs', 'videos', 'social-hub', 'merchandise']);
   const [isMerchandiseExpanded, setIsMerchandiseExpanded] = useState(true);
   
   // Cargar orden guardado al montar
@@ -701,6 +786,20 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             console.log('✅ Old products deleted, will regenerate new ones');
             // Continuar con la generación de nuevos productos
           }
+          
+          // NUEVO: Detectar si todos los productos tienen la misma imagen (error de generación)
+          if (querySnapshot.docs.length > 2) {
+            const allImages = querySnapshot.docs.map(doc => doc.data().imageUrl);
+            const uniqueImages = new Set(allImages);
+            if (uniqueImages.size === 1 && allImages[0] !== undefined) {
+              console.log('⚠️ [PRODUCTION] All products have the SAME image - This is a generation error!');
+              console.log('🗑️ [PRODUCTION] Deleting products with duplicate images and regenerating...');
+              const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
+              await Promise.all(deletePromises);
+              console.log('✅ [PRODUCTION] Old products with duplicate images deleted');
+              // Continuar con la generación de nuevos productos
+            }
+          }
         }
 
         // Si no hay productos, generar 6 automáticamente con imágenes únicas
@@ -762,11 +861,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const savedProducts: Product[] = [];
         
         for (const productDef of productTypes) {
-          console.log(`🎨 Generating image for ${productDef.type}...`);
+          console.log(`🎨 [PRODUCTION] Generating image for ${productDef.type}...`);
           
           let productImage = brandImage;
           try {
-            const imageResponse = await fetch('/api/artist/generate-product-image', {
+            console.log(`📡 [PRODUCTION] Calling API: /api/artist-profile/generate-product-image`);
+            const imageResponse = await fetch('/api/artist-profile/generate-product-image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -776,15 +876,31 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               })
             });
             
+            console.log(`📊 [PRODUCTION] API Response Status: ${imageResponse.status} ${imageResponse.statusText}`);
+            
             const imageResult = await imageResponse.json();
+            console.log(`🔍 [PRODUCTION] API Result for ${productDef.type}:`, {
+              success: imageResult.success,
+              hasImageUrl: !!imageResult.imageUrl,
+              imageUrlPreview: imageResult.imageUrl?.substring(0, 100),
+              error: imageResult.error,
+              provider: imageResult.provider
+            });
+            
             if (imageResult.success && imageResult.imageUrl) {
               productImage = imageResult.imageUrl;
-              console.log(`✅ Generated unique image for ${productDef.type}`);
+              console.log(`✅ [PRODUCTION] Generated unique image for ${productDef.type} via ${imageResult.provider || 'Gemini'}`);
             } else {
-              console.warn(`⚠️ Failed to generate image for ${productDef.type}, using brand image`);
+              console.warn(`⚠️ [PRODUCTION] Failed to generate image for ${productDef.type}:`, imageResult.error || 'Unknown error');
+              console.warn(`⚠️ [PRODUCTION] Using fallback brand image for ${productDef.type}`);
             }
           } catch (error) {
-            console.error(`❌ Error generating image for ${productDef.type}:`, error);
+            console.error(`❌ [PRODUCTION] Error generating image for ${productDef.type}:`, error);
+            console.error(`❌ [PRODUCTION] Error details:`, {
+              message: error instanceof Error ? error.message : 'Unknown',
+              name: error instanceof Error ? error.name : 'Unknown'
+            });
+            console.warn(`⚠️ [PRODUCTION] Using fallback brand image for ${productDef.type}`);
           }
           
           const product = {
@@ -1641,6 +1757,131 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   ))}
                 </div>
               </div>
+                        );
+                      } else if (sectionId === 'social-hub') {
+                        // Elemento circular con iconos de redes sociales
+                        sectionElement = (
+            <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              {isEditingLayout && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing">
+                  <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                </div>
+              )}
+              
+              {/* Contenedor del elemento circular */}
+              <div className="relative py-8 md:py-12 overflow-hidden bg-black rounded-2xl">
+                {/* Fondo degradado animado */}
+                <div className="absolute inset-0" style={{
+                  background: `radial-gradient(circle at 50% 50%, ${colors.hexPrimary}30 0%, ${colors.hexAccent}20 30%, #000000 70%)`
+                }}></div>
+                
+                {/* Patrón de puntos */}
+                <div className="absolute inset-0 opacity-20" style={{
+                  backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                  backgroundSize: '30px 30px'
+                }}></div>
+
+                {/* Elemento circular central con iconos de redes sociales */}
+                <div className="relative flex items-center justify-center">
+                  <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96">
+                    {/* Círculos decorativos de fondo */}
+                    <div 
+                      className="absolute inset-0 rounded-full opacity-20 blur-2xl animate-pulse"
+                      style={{ background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})` }}
+                    ></div>
+                    <div 
+                      className="absolute inset-4 rounded-full opacity-30"
+                      style={{ 
+                        background: `conic-gradient(from 0deg, ${colors.hexPrimary}, ${colors.hexAccent}, ${colors.hexPrimary})`,
+                        animation: 'spin 20s linear infinite'
+                      }}
+                    ></div>
+                    
+                    {/* Imagen del artista en el centro */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="relative w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56">
+                        <img
+                          src={artist.profileImage}
+                          alt={artist.name}
+                          className="w-full h-full rounded-full object-cover border-4 shadow-2xl"
+                          style={{ borderColor: colors.hexAccent }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Iconos de redes sociales alrededor del círculo */}
+                    {(() => {
+                      const socialIcons = [
+                        { icon: '🌐', name: 'Website', show: true, url: `/artist/${(artist as any).slug}` },
+                        { icon: '▶️', name: 'YouTube', show: artist.youtube, url: artist.youtube },
+                        { icon: '🎵', name: 'TikTok', show: true, url: '#' },
+                        { icon: '📸', name: 'Instagram', show: artist.instagram, url: artist.instagram },
+                        { icon: '🎧', name: 'Spotify', show: artist.spotify, url: artist.spotify },
+                        { icon: '📱', name: 'Twitter', show: artist.twitter, url: artist.twitter },
+                        { icon: '🎶', name: 'Music', show: true, url: '#' },
+                        { icon: '📹', name: 'Videos', show: true, url: '#' },
+                      ];
+
+                      const visibleIcons = socialIcons.filter(s => s.show);
+                      const angleStep = 360 / visibleIcons.length;
+                      const radius = 140; // Radio en pixels para desktop
+                      const radiusMd = 120; // Radio para tablet
+                      const radiusSm = 100; // Radio para móvil
+
+                      return visibleIcons.map((social, index) => {
+                        const angle = (angleStep * index - 90) * (Math.PI / 180);
+                        const xSm = Math.cos(angle) * radiusSm;
+                        const ySm = Math.sin(angle) * radiusSm;
+
+                        return (
+                          <a
+                            key={index}
+                            href={isOwnProfile ? social.url : '/auth'}
+                            onClick={(e) => {
+                              if (!isOwnProfile) {
+                                e.preventDefault();
+                                window.location.href = '/auth';
+                              }
+                            }}
+                            className="absolute group cursor-pointer"
+                            style={{
+                              top: `calc(50% + ${ySm}px)`,
+                              left: `calc(50% + ${xSm}px)`,
+                              transform: 'translate(-50%, -50%)',
+                            }}
+                          >
+                            <div 
+                              className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full backdrop-blur-md border-2 flex items-center justify-center text-xl md:text-2xl lg:text-3xl transition-all duration-300 hover:scale-125 hover:rotate-12 shadow-xl"
+                              style={{ 
+                                background: 'rgba(0,0,0,0.7)',
+                                borderColor: colors.hexAccent,
+                                boxShadow: `0 0 20px ${colors.hexAccent}50`
+                              }}
+                            >
+                              {social.icon}
+                            </div>
+                            {!isOwnProfile && (
+                              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div className="text-xs bg-black/90 px-2 py-1 rounded-md" style={{ color: colors.hexAccent }}>
+                                  Join Boostify
+                                </div>
+                              </div>
+                            )}
+                          </a>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                <style dangerouslySetInnerHTML={{__html: `
+                  @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                  }
+                `}} />
+              </div>
+            </div>
                         );
                       } else if (sectionId === 'merchandise' && (products.length > 0 || isOwnProfile)) {
                         sectionElement = (

@@ -5,7 +5,14 @@
  * Updated with improved persistence configuration for production
  */
 import { initializeApp, FirebaseApp, FirebaseOptions } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
+import { 
+  getAuth, 
+  Auth,
+  setPersistence, 
+  browserLocalPersistence,
+  browserSessionPersistence,
+  indexedDBLocalPersistence
+} from "firebase/auth";
 import { 
   getFirestore, 
   Firestore, 
@@ -58,6 +65,31 @@ try {
 // Initialize Firebase app
 const app = initializeApp(enhancedConfig);
 const auth = getAuth(app);
+
+// Configurar persistencia de Auth para iOS
+// iOS Safari puede tener problemas con persistencia, configuramos múltiples estrategias
+// Intentar configurar persistencia con fallback para iOS
+(async () => {
+  try {
+    // Intentar usar indexedDB primero (más robusto)
+    await setPersistence(auth, indexedDBLocalPersistence);
+    console.log('✅ [iOS] Auth persistence: indexedDB');
+  } catch (indexedDBError) {
+    try {
+      // Si falla indexedDB, usar localStorage
+      await setPersistence(auth, browserLocalPersistence);
+      console.log('✅ [iOS] Auth persistence: localStorage');
+    } catch (localStorageError) {
+      try {
+        // Último recurso: sessionStorage
+        await setPersistence(auth, browserSessionPersistence);
+        console.log('⚠️ [iOS] Auth persistence: sessionStorage (menos persistente)');
+      } catch (sessionError) {
+        console.warn('❌ [iOS] No se pudo configurar persistencia:', sessionError);
+      }
+    }
+  }
+})();
 
 // Initialize Firestore with more reliable settings to prevent "failed-precondition" errors
 // We're using a simplified configuration that's more stable across browsers and environments

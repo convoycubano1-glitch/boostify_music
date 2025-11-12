@@ -89,8 +89,9 @@ class AuthService {
 
   async signInWithGoogle(redirectPath: string = '/dashboard'): Promise<User | null> {
     try {
-      // Almacenar la ruta de redirección para usarla después de la autenticación
-      sessionStorage.setItem('auth_redirect_path', redirectPath);
+      // USAR LOCALSTORAGE en lugar de sessionStorage para iOS Safari
+      // sessionStorage se borra en iOS entre redirecciones
+      localStorage.setItem('auth_redirect_path', redirectPath);
       
       // Generar un proveedor específico para esta sesión para evitar problemas de caché
       const sessionProvider = new GoogleAuthProvider();
@@ -101,8 +102,11 @@ class AuthService {
       
       // En móviles, usar redirect directamente (los popups no funcionan bien)
       if (isMobile) {
-        console.log('AuthService: Dispositivo móvil detectado, usando redirect');
-        sessionStorage.setItem('auth_redirect_attempt', 'true');
+        console.log('🔐 [iOS] Dispositivo móvil detectado, usando redirect');
+        console.log('🔐 [iOS] Guardando flag en localStorage');
+        // USAR LOCALSTORAGE para iOS - sessionStorage se borra
+        localStorage.setItem('auth_redirect_attempt', 'true');
+        localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
         await signInWithRedirect(this.auth, sessionProvider);
         return null;
       }
@@ -141,7 +145,9 @@ class AuthService {
           console.log('AuthService: Intentando autenticación con redirect como fallback');
           
           // Primero almacenamos información sobre el reintento para la redirección
-          sessionStorage.setItem('auth_redirect_attempt', 'true');
+          // USAR LOCALSTORAGE para iOS - sessionStorage se borra
+          localStorage.setItem('auth_redirect_attempt', 'true');
+          localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
           
           // Estrategia 2: Usar redirect como fallback
           await signInWithRedirect(this.auth, sessionProvider);
@@ -170,39 +176,57 @@ class AuthService {
   /**
    * Verifica si hay un resultado de redirección pendiente (después de loginWithRedirect)
    * Este método debe llamarse al iniciar la aplicación para manejar el flujo de redirección
+   * MEJORADO PARA iOS: Usa localStorage y SIEMPRE verifica getRedirectResult
    */
   async checkRedirectResult(): Promise<User | null> {
     try {
-      // Comprobar si estamos regresando de una redirección de autenticación
-      if (sessionStorage.getItem('auth_redirect_attempt') === 'true') {
-        console.log('AuthService: Verificando resultado de redirección');
+      console.log('🔐 [iOS] Verificando resultado de redirección...');
+      
+      // SIEMPRE verificar getRedirectResult en caso de que venimos de una redirección
+      // No depender solo de flags porque iOS Safari puede borrar sessionStorage
+      const result = await getRedirectResult(this.auth);
+      
+      if (result && result.user) {
+        console.log('✅ [iOS] Redirección exitosa! Usuario autenticado:', result.user.email);
         
-        // Limpiar la bandera de intento
-        sessionStorage.removeItem('auth_redirect_attempt');
+        // Limpiar flags de localStorage
+        localStorage.removeItem('auth_redirect_attempt');
+        localStorage.removeItem('auth_redirect_timestamp');
         
-        // Obtener el resultado de la redirección
-        const result = await getRedirectResult(this.auth);
-        if (result) {
-          console.log('AuthService: Redirección exitosa, usuario autenticado');
-          
-          // Redirigir al path almacenado después de una autenticación exitosa
-          const redirectPath = sessionStorage.getItem('auth_redirect_path') || '/dashboard';
-          sessionStorage.removeItem('auth_redirect_path');
-          
-          if (typeof window !== 'undefined') {
-            window.location.href = redirectPath;
-          }
-          
-          return result.user;
-        } else {
-          console.log('AuthService: No hay resultado de redirección o fue cancelado');
-          return null;
+        // Redirigir al path almacenado después de una autenticación exitosa
+        const redirectPath = localStorage.getItem('auth_redirect_path') || '/dashboard';
+        localStorage.removeItem('auth_redirect_path');
+        
+        console.log('🔐 [iOS] Redirigiendo a:', redirectPath);
+        
+        if (typeof window !== 'undefined') {
+          window.location.href = redirectPath;
+        }
+        
+        return result.user;
+      }
+      
+      // Si no hay resultado pero había un intento reciente, limpiar flags viejos
+      const redirectTimestamp = localStorage.getItem('auth_redirect_timestamp');
+      if (redirectTimestamp) {
+        const elapsed = Date.now() - parseInt(redirectTimestamp);
+        // Si pasaron más de 5 minutos, limpiar flags viejos
+        if (elapsed > 5 * 60 * 1000) {
+          console.log('🧹 [iOS] Limpiando flags viejos de redirección');
+          localStorage.removeItem('auth_redirect_attempt');
+          localStorage.removeItem('auth_redirect_timestamp');
         }
       }
       
+      console.log('🔐 [iOS] No hay resultado de redirección pendiente');
       return null;
     } catch (redirectError) {
-      console.error('AuthService: Error al verificar resultado de redirección:', redirectError);
+      console.error('❌ [iOS] Error al verificar resultado de redirección:', redirectError);
+      
+      // Limpiar flags en caso de error
+      localStorage.removeItem('auth_redirect_attempt');
+      localStorage.removeItem('auth_redirect_timestamp');
+      
       return null;
     }
   }

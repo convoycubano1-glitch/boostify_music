@@ -178,15 +178,19 @@ router.post('/generate-product-image', async (req: Request, res: Response) => {
       });
     }
     
-    // Crear prompts específicos y únicos para cada tipo de producto con Boostify branding
-    const boostifyBranding = 'featuring Boostify logo (modern orange and black music platform branding)';
+    // Crear prompts específicos para productos de colaboración artista x Boostify
     const productPrompts: Record<string, string> = {
-      'T-Shirt': `High-end product photography: premium black cotton t-shirt ${boostifyBranding} embroidered on chest for ${artistName}, front and center view, folded sleeves style, isolated on pure white background, professional e-commerce lighting, sharp focus, 4K quality, modern streetwear aesthetic`,
-      'Hoodie': `Premium streetwear photography: oversized ${artistName} branded hoodie in dark charcoal ${boostifyBranding}, kangaroo pocket visible, hood up, front facing, isolated white background, soft shadows, studio quality, commercial product shot, urban fashion style`,
-      'Cap': `Professional headwear photography: snapback baseball cap ${boostifyBranding} embroidered on front panel for ${artistName}, 3/4 angle view showing curved brim, black with orange accents, white background, product photography lighting, ultra sharp, streetwear accessory`,
-      'Poster': `Music poster mockup: framed ${artistName} concert poster with Boostify branding on white wall, modern minimalist design with bold orange and black typography, 24x36 inches, gallery frame, soft ambient lighting, interior photography style, centered composition, music industry aesthetic`,
-      'Sticker Pack': `Product flat lay photography: set of 10 vinyl stickers featuring ${artistName} and Boostify brand elements, arranged in grid pattern, vibrant orange, black and white colors, matte finish, white background, overhead shot, crisp details, commercial quality, music lifestyle branding`,
-      'Vinyl Record': `Luxury music product photography: ${artistName} limited edition vinyl record with Boostify label, orange and black swirl pattern on disc, album artwork cover featuring Boostify branding leaning against it, black sleeve visible, white background, dramatic side lighting, audiophile quality presentation, collector's edition`
+      'T-Shirt': `Premium collaboration merchandise: black cotton t-shirt with "${artistName} x Boostify" co-branded design, large artist name on front in bold typography, small orange Boostify logo on chest, modern streetwear aesthetic combining artist's style with orange and black color scheme, front view centered on pure white background, professional e-commerce photography, sharp focus, 4K quality`,
+      
+      'Hoodie': `High-end collaboration streetwear: oversized hoodie featuring "${artistName} x Boostify" branding, artist name prominently displayed on chest, Boostify logo on sleeve in vibrant orange, dark charcoal or black base color with orange accent details, hood up, kangaroo pocket visible, front facing view, isolated white background, studio lighting, commercial product shot, urban fashion collaboration aesthetic`,
+      
+      'Cap': `Professional headwear collaboration: premium snapback cap with "${artistName} x Boostify" embroidered on front panel, artist name as main focus with small Boostify logo integrated, black cap with vibrant orange bill and accents, 3/4 angle view showing curved brim and depth, white background, product photography lighting, ultra sharp details, limited edition collaboration piece`,
+      
+      'Poster': `Music collaboration poster design: framed concert poster featuring "${artistName} x Boostify" at top, bold modern typography combining artist's name with Boostify branding elements, vibrant orange and black color palette, dynamic graphic design with music industry aesthetic, artist's silhouette or abstract representation, 24x36 inches in black gallery frame on white wall, soft ambient lighting, centered composition, professional interior photography`,
+      
+      'Sticker Pack': `Collaboration merchandise flat lay: set of 10 premium vinyl stickers featuring "${artistName} x Boostify" designs, mix of artist name stickers and Boostify logo variations, vibrant orange, black and white color scheme, arranged in attractive grid pattern, matte finish quality, white background, overhead shot, crisp details, commercial photography, music lifestyle collaboration branding`,
+      
+      'Vinyl Record': `Limited edition collaboration vinyl: "${artistName} x Boostify" exclusive vinyl record with striking orange and black swirl pattern on disc, custom album artwork featuring both artist name and Boostify branding prominently, modern design combining artist's aesthetic with Boostify's orange/black identity, black sleeve with orange accents visible, record partially out of sleeve, white background, dramatic side lighting, audiophile quality presentation, collector's edition collaboration piece`
     };
     
     const prompt = productPrompts[productType] || 

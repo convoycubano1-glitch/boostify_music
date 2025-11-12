@@ -23,6 +23,26 @@ export default function AuthPage() {
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [email, setEmail] = useState("");
   
+  // Log de diagnóstico para iOS
+  useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    console.log('🔐 [AUTH PAGE] Diagnóstico de inicio:');
+    console.log('  - Es móvil:', isMobile);
+    console.log('  - Es iOS:', isIOS);
+    console.log('  - User Agent:', navigator.userAgent);
+    console.log('  - localStorage disponible:', typeof localStorage !== 'undefined');
+    console.log('  - sessionStorage disponible:', typeof sessionStorage !== 'undefined');
+    
+    // Verificar si hay flags de redirección pendientes
+    if (localStorage.getItem('auth_redirect_attempt')) {
+      console.log('🔐 [AUTH PAGE] ⚠️ Hay un intento de redirección pendiente!');
+      console.log('  - Timestamp:', localStorage.getItem('auth_redirect_timestamp'));
+      console.log('  - Redirect path:', localStorage.getItem('auth_redirect_path'));
+    }
+  }, []);
+  
   // Comprueba la conectividad con Google cuando el componente se monta
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
