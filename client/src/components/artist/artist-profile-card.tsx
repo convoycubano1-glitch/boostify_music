@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { EditProfileDialog } from "./edit-profile-dialog";
+import { ImageGalleryGenerator } from "./image-gallery-generator";
+import { ImageGalleryDisplay } from "./image-gallery-display";
 import { useAuth } from "../../hooks/use-auth";
 import { useTranslation } from "react-i18next";
 import {
@@ -1442,6 +1444,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           <Layout className="h-4 w-4 mr-2" />
                           {isEditingLayout ? 'Guardar Layout' : 'Personalizar Layout'}
                         </Button>
+                        <ImageGalleryGenerator
+                          artistId={artistId}
+                          artistName={artist.name}
+                          onGalleryCreated={() => refetchProfile()}
+                        />
                       </>
                     ) : (
                       <>
@@ -2559,6 +2566,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
               </div>
             )}
+
+            {/* Image Galleries */}
+            <ImageGalleryDisplay 
+              artistId={artistId} 
+              isOwner={isOwnProfile}
+            />
 
             {/* Upcoming Shows */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
