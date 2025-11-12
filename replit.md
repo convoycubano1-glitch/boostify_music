@@ -13,37 +13,40 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 **Problemas resueltos**:
 1. ✅ **Detección automática de deployment**: 
-   - Servidor detecta `REPL_DEPLOYMENT` env var automáticamente
-   - Modo development local / production en deployment
-   - Sin necesidad de configurar NODE_ENV manualmente
+   - Servidor detecta `REPLIT_DEPLOYMENT=1` (variable oficial de Replit)
+   - Modo development local / production en deployment automático
+   - Fuerza development mode en local, ignora NODE_ENV del sistema
 
 2. ✅ **Sesiones stateless para Cloud Run**:
    - Reemplazado `express-session` con `cookie-session`
    - Eliminado MemoryStore que causaba crash loops
-   - Todas las sesiones ahora almacenadas en cookies encriptadas
+   - Todas las sesiones almacenadas en cookies encriptadas
    - Compatible con múltiples instancias de Cloud Run
 
-3. ✅ **Rutas de archivos estáticos corregidas**:
-   - Build genera correctamente `dist/client/`
+3. ✅ **Build process verificado**:
+   - Build genera correctamente `dist/client/` con todos los assets
    - Servidor sirve desde la ruta correcta en producción
    - Archivos estáticos accesibles sin errores 404
 
-**Configuración de deployment**:
-1. El servidor detecta automáticamente el entorno
-2. En deployment, se activa modo production automáticamente
-3. Sesiones funcionan sin servidor stateful
-4. Compatible con arquitectura serverless de Cloud Run
+**Cómo funciona**:
+1. **En local**: Servidor detecta ausencia de `REPLIT_DEPLOYMENT` y usa modo development
+2. **En deployment**: Replit establece `REPLIT_DEPLOYMENT=1` automáticamente, servidor usa modo production
+3. **Sin configuración manual**: No necesitas establecer NODE_ENV manualmente
 
 **Archivos modificados**:
-- `server/index.ts`: Detección automática de REPL_DEPLOYMENT
+- `server/index.ts`: Detección de REPLIT_DEPLOYMENT (variable oficial)
 - `server/auth.ts`: Migrado a cookie-session para stateless sessions
-- `build-for-deploy.js`: Verificado que genera dist/client correctamente
+- `server/routes.ts`: Eliminada configuración duplicada de express-session
+- `build-for-deploy.js`: Genera dist/client correctamente
+- `package.json`: Agregado cookie-session como dependencia
 
 **Variables de entorno necesarias** (configurar en Replit Secrets):
 - `SESSION_SECRET`: Clave secreta para encriptar cookies de sesión
 - `OPENAI_API_KEY`: API key de OpenAI
 - `FAL_API_KEY`: API key de Fal.ai
-- Firebase credentials: Configurados en FIREBASE_CONFIG
+- Firebase credentials: Ya configurados en FIREBASE_CONFIG
+
+**NO necesitas configurar**: `NODE_ENV` ni `REPLIT_DEPLOYMENT` - se detectan automáticamente
 
 ### 🛍️ Generación de Productos con IA + Branding Boostify
 **Fecha**: 11 de Noviembre, 2024

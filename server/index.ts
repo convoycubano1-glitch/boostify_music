@@ -8,14 +8,15 @@ import cors from 'cors';
 import fs from 'fs';
 import fileUpload from 'express-fileupload';
 
-// Properly detect deployment environment
-// Use production mode only when actually deployed
-if (process.env.REPL_DEPLOYMENT === '1' || process.env.REPL_DEPLOYMENT === 'true') {
+// Detect deployment environment using Replit's official environment variable
+// REPLIT_DEPLOYMENT is set to '1' only in actual Cloud Run deployments
+if (process.env.REPLIT_DEPLOYMENT === '1') {
   process.env.NODE_ENV = 'production';
-  log('🚀 Detected Replit deployment environment - using production mode');
+  log('🚀 Detected Replit deployment (REPLIT_DEPLOYMENT=1) - using production mode');
 } else {
+  // Force development mode for local Replit environment
   process.env.NODE_ENV = 'development';
-  log('🛠️ Local development environment detected - using development mode');
+  log('🛠️ Local development environment - using development mode');
 }
 
 const app = express();

@@ -21,7 +21,6 @@ import { z } from "zod";
 import express from 'express';
 import passport from 'passport';
 import axios from 'axios';
-import session from 'express-session';
 import OpenAI from "openai";
 import { insertBookingSchema } from "./db/schema";
 import translationRouter from './routes/translation';
@@ -91,15 +90,8 @@ export function registerRoutes(app: Express): HttpServer {
     });
   });
   
-  // Initialize session middleware después de rutas públicas
-  app.use(session({
-    secret: process.env.REPL_ID!,
-    resave: false,
-    saveUninitialized: false,
-  }));
-
-  app.use(passport.initialize());
-  app.use(passport.session());
+  // Session middleware is configured in setupAuth() which is called later
+  // No need to configure it here to avoid duplication
 
   // Health check and status endpoints (no authentication required)
   app.get('/api/health', (req, res) => {
