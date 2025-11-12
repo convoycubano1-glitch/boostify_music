@@ -1020,18 +1020,30 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       
       {/* Hero Header */}
       <header className="relative h-72 md:h-96 lg:h-[450px] w-full mb-6 md:mb-8 overflow-hidden">
-        <img
-          src={artist.bannerImage}
-          alt={`${artist.name} Cover`}
-          className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
-          style={{ objectPosition: `center ${(artist as any).bannerPosition || '50'}%` }}
-          onError={(e) => { 
-            e.currentTarget.style.display = 'none';
-            if (e.currentTarget.parentElement) {
-              e.currentTarget.parentElement.style.background = 'black';
-            }
-          }}
-        />
+        {(artist as any).loopVideoUrl ? (
+          <video
+            src={(artist as any).loopVideoUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
+            style={{ objectPosition: `center ${(artist as any).bannerPosition || '50'}%` }}
+          />
+        ) : (
+          <img
+            src={artist.bannerImage}
+            alt={`${artist.name} Cover`}
+            className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
+            style={{ objectPosition: `center ${(artist as any).bannerPosition || '50'}%` }}
+            onError={(e) => { 
+              e.currentTarget.style.display = 'none';
+              if (e.currentTarget.parentElement) {
+                e.currentTarget.parentElement.style.background = 'black';
+              }
+            }}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
         
         {/* Barra superior */}
@@ -1180,7 +1192,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             location: userProfile?.location || "",
                             profileImage: userProfile?.photoURL || userProfile?.profileImage || "",
                             bannerImage: userProfile?.bannerImage || "",
-                            bannerPosition: (userProfile as any)?.bannerPosition || "50",
+                            bannerPosition: String((userProfile as any)?.bannerPosition || "50"),
+                            loopVideoUrl: (userProfile as any)?.loopVideoUrl || "",
                             slug: (userProfile as any)?.slug || "",
                             contactEmail: userProfile?.email || userProfile?.contactEmail || "",
                             contactPhone: userProfile?.contactPhone || "",

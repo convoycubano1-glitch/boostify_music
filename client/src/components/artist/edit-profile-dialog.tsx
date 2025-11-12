@@ -36,6 +36,7 @@ interface EditProfileDialogProps {
     profileImage: string;
     bannerImage: string;
     bannerPosition?: string;
+    loopVideoUrl?: string;
     slug?: string;
     contactEmail: string;
     contactPhone: string;
@@ -558,7 +559,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
         profileImage: formData.profileImage || "",
         photoURL: formData.profileImage || "",
         bannerImage: formData.bannerImage || "",
-        bannerPosition: formData.bannerPosition || "50",
+        bannerPosition: String(formData.bannerPosition || "50"),
+        loopVideoUrl: formData.loopVideoUrl || "",
         slug: formData.slug || generateSlug(formData.displayName),
         contactEmail: formData.contactEmail || "",
         contactPhone: formData.contactPhone || "",
@@ -909,6 +911,40 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
                     Arrastra el control para centrar la imagen donde desees
                   </p>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Video en Loop (Background Hero) */}
+          <div className="border-t pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Video de Fondo en Loop (Opcional)</h4>
+              <Badge variant="secondary" className="text-xs">Premium Feature</Badge>
+            </div>
+            <p className="text-xs text-gray-500">
+              Agrega un video que se reproducirá en loop como fondo de tu perfil para darle más estilo y profesionalismo.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="loopVideoUrl">URL del Video</Label>
+              <Input
+                id="loopVideoUrl"
+                value={formData.loopVideoUrl || ''}
+                onChange={(e) => handleChange("loopVideoUrl", e.target.value)}
+                placeholder="https://ejemplo.com/video.mp4"
+              />
+              <p className="text-xs text-gray-400 italic">
+                Sube tu video a Firebase Storage o usa una URL directa. Formatos: MP4, WebM.
+              </p>
+            </div>
+            {formData.loopVideoUrl && (
+              <div className="space-y-2">
+                <video
+                  src={formData.loopVideoUrl}
+                  className="w-full h-32 object-cover rounded-lg"
+                  autoPlay
+                  muted
+                  loop
+                />
               </div>
             )}
           </div>
