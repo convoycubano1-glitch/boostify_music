@@ -105,6 +105,7 @@ export function setupAuth(app: Express) {
       '/affiliate/me',        // Ruta para obtener información del afiliado (temporal para desarrollo)
       '/gemini-image/generate-batch-with-multiple-faces', // Ruta para generar imágenes con Gemini
       '/early-access/signup', // Ruta pública para registro de acceso temprano
+      '/artist-profile/create-checkout-session', // Ruta pública para checkout de productos de artistas (guest checkout)
     ];
     
     // Patrones de rutas públicas que se verifican con startsWith
