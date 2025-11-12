@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { EditProfileDialog } from "./edit-profile-dialog";
 import { useAuth } from "../../hooks/use-auth";
+import { useTranslation } from "react-i18next";
 import {
   Play,
   Pause,
@@ -546,6 +547,7 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
 }
 
 export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
+  const { t } = useTranslation();
   const [playingSongId, setPlayingSongId] = useState<string | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<keyof typeof colorPalettes>('Boostify Naranja');
   const [merchFilter, setMerchFilter] = useState('Todo');
@@ -2174,7 +2176,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       return score;
                     })()}%
                   </div>
-                  <div className="text-sm text-gray-400">Completo</div>
+                  <div className="text-sm text-gray-400">{t('profile.analytics.complete')}</div>
                 </div>
               </div>
             </div>
@@ -2185,23 +2187,23 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 className="text-base font-semibold mb-4 transition-colors duration-500" 
                 style={{ color: colors.hexAccent }}
               >
-                Análisis de Actividad
+                {t('profile.analytics.title')}
               </div>
               
               {/* Gráfico de Área - Actividad Semanal */}
               <div className="mb-4">
-                  <div className="text-xs text-gray-400 mb-2">Actividad de los últimos 7 días</div>
+                  <div className="text-xs text-gray-400 mb-2">{t('profile.analytics.lastSevenDays')}</div>
                   <div className="h-40">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={[
-                          { day: 'Lun', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
-                          { day: 'Mar', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
-                          { day: 'Mié', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
-                          { day: 'Jue', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
-                          { day: 'Vie', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
-                          { day: 'Sáb', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
-                          { day: 'Dom', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: t('profile.days.mon'), plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: t('profile.days.tue'), plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: t('profile.days.wed'), plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: t('profile.days.thu'), plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: t('profile.days.fri'), plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: t('profile.days.sat'), plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: t('profile.days.sun'), plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
                         ]}
                         margin={{ top: 5, right: 5, bottom: 5, left: 0 }}
                       >
@@ -2256,11 +2258,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <div className="flex items-center justify-center gap-4 mt-2 text-xs">
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.hexPrimary }}></div>
-                      <span className="text-gray-400">Reproducciones</span>
+                      <span className="text-gray-400">{t('profile.analytics.plays')}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.hexAccent }}></div>
-                      <span className="text-gray-400">Vistas</span>
+                      <span className="text-gray-400">{t('profile.analytics.views')}</span>
                     </div>
                   </div>
                 </div>
@@ -2272,7 +2274,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     style={{ backgroundColor: `${colors.hexPrimary}10`, borderColor: colors.hexBorder, borderWidth: '1px' }}
                     whileHover={{ scale: 1.05 }}
                   >
-                    <div className="text-xs text-gray-400 mb-1">Total Plays</div>
+                    <div className="text-xs text-gray-400 mb-1">{t('profile.analytics.totalPlays')}</div>
                     <div className="text-xl font-bold" style={{ color: colors.hexPrimary }}>
                       {(songs.length * Math.floor(Math.random() * 100 + 50)).toLocaleString()}
                     </div>
@@ -2283,7 +2285,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     style={{ backgroundColor: `${colors.hexAccent}10`, borderColor: colors.hexBorder, borderWidth: '1px' }}
                     whileHover={{ scale: 1.05 }}
                   >
-                    <div className="text-xs text-gray-400 mb-1">Total Views</div>
+                    <div className="text-xs text-gray-400 mb-1">{t('profile.analytics.totalViews')}</div>
                     <div className="text-xl font-bold" style={{ color: colors.hexAccent }}>
                       {(videos.length * Math.floor(Math.random() * 150 + 75)).toLocaleString()}
                     </div>
@@ -2305,12 +2307,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     className="text-base font-bold transition-colors duration-500" 
                     style={{ color: colors.hexAccent }}
                   >
-                    Monetiza Tu Talento
+                    {t('profile.monetize.title')}
                   </div>
                 </div>
                 
                 <p className="text-sm text-gray-300 mb-4 leading-relaxed">
-                  ¿Eres músico o productor? Vende tus servicios profesionales y convierte tu pasión en ingresos
+                  {t('profile.monetize.description')}
                 </p>
                 
                 <Link href="/producer-tools">
@@ -2323,7 +2325,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     data-testid="button-producer-tools"
                   >
                     <Sparkles className="h-4 w-4" />
-                    <span>Descubre Producer Tools</span>
+                    <span>{t('profile.monetize.cta')}</span>
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </Link>
@@ -2598,7 +2600,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                               className="text-xs px-2 py-1 rounded font-medium hover:opacity-80 transition-opacity"
                               style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
                             >
-                              Tickets
+                              {t('profile.shows.tickets')}
                             </a>
                           )}
                         </div>
@@ -2617,7 +2619,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               ) : (
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 mx-auto mb-2" style={{ color: colors.hexAccent, opacity: 0.3 }} />
-                  <p className="text-gray-400 text-sm">No upcoming shows</p>
+                  <p className="text-gray-400 text-sm">{t('profile.shows.noShows')}</p>
                 </div>
               )}
             </div>
@@ -2632,10 +2634,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <div className="text-center py-10">
                 <div className="mb-6">
                   <Music2 className="h-16 w-16 mx-auto mb-4" style={{ color: colors.hexAccent }} />
-                  <h3 className="text-3xl font-bold text-white mb-3">Impulsa tu carrera musical</h3>
+                  <h3 className="text-3xl font-bold text-white mb-3">{t('profile.cta.title')}</h3>
                   <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                    Únete a miles de artistas que ya están usando Boostify para gestionar su música, 
-                    conectar con fans y hacer crecer su audiencia
+                    {t('profile.cta.description')}
                   </p>
                 </div>
                 <Link href="/">
@@ -2644,12 +2645,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     data-testid="button-cta-bottom"
                   >
                     <Sparkles className="h-6 w-6" />
-                    Crear Mi Perfil Gratis
+                    {t('profile.cta.button')}
                     <ArrowRight className="h-6 w-6" />
                   </Button>
                 </Link>
                 <p className="text-gray-500 text-sm mt-4">
-                  Sin tarjeta de crédito • Configuración en 2 minutos
+                  {t('profile.cta.subtitle')}
                 </p>
               </div>
             </div>
@@ -2660,7 +2661,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         <footer className="mt-12 pt-6 border-t" style={{ borderColor: colors.hexBorder }}>
           <div className="text-center">
             <p className="text-sm text-gray-400">
-              Powered by <span style={{ color: colors.hexAccent }} className="font-semibold">Boostify Music</span>
+              {t('profile.footer.poweredBy')} <span style={{ color: colors.hexAccent }} className="font-semibold">Boostify Music</span>
             </p>
             <p className="text-xs text-gray-500 mt-1">
               © {new Date().getFullYear()} All rights reserved.
