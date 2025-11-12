@@ -700,11 +700,15 @@ export function MusicVideoAI() {
         console.log(`🎨 [IMG ${sceneIndex}/${totalScenes}] Generando imagen para escena...`);
         
         try {
+          // Construir el prompt desde el objeto scene
+          const prompt = `${scene.scene}. ${scene.camera}, ${scene.lighting}, ${scene.style}`;
+          
           const requestBody = hasReferenceImages
             ? { 
-                scene: scene, 
+                prompt: prompt,
                 sceneId: sceneIndex,
-                referenceImagesBase64: artistReferenceImages 
+                referenceImagesBase64: artistReferenceImages,
+                seed: seed + sceneIndex
               }
             : { scenes: [scene] };
           
