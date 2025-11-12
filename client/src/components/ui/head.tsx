@@ -56,7 +56,19 @@ export function Head({
       {/* Additional metadata for better sharing */}
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:locale" content="en_US" />
+      <meta property="og:image:alt" content={`${title} - Preview`} />
+      <meta property="og:locale" content="es_ES" />
+      <meta property="og:locale:alternate" content="en_US" />
+      
+      {/* WhatsApp optimizations */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Additional Twitter optimizations */}
+      <meta name="twitter:image:alt" content={`${title} - Preview`} />
+      
+      {/* Theme color for mobile browsers */}
+      <meta name="theme-color" content="#ea580c" />
+      <meta name="msapplication-TileColor" content="#ea580c" />
     </Helmet>
   );
 }

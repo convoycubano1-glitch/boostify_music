@@ -74,14 +74,29 @@ export default function ArtistProfilePage() {
     return `${window.location.origin}${imageUrl}`;
   };
 
-  const profileImage = getAbsoluteImageUrl(artistData?.profileImage || artistData?.photoURL);
+  // Preferir banner sobre profile image para compartir (es más visual y llamativo)
+  const shareImage = getAbsoluteImageUrl(
+    artistData?.bannerImage || artistData?.profileImage || artistData?.photoURL
+  );
+  
   const artistName = artistData?.displayName || artistData?.name || 'Artist';
   const biography = artistData?.biography || '';
+  const genre = artistData?.genre || '';
+  const location = artistData?.location || '';
 
-  const title = `${artistName} - Music Artist Profile | Boostify Music`;
-  const description = biography 
-    ? `Check out ${artistName}'s music profile on Boostify Music. ${biography.slice(0, 150)}${biography.length > 150 ? '...' : ''}`
-    : `Discover and connect with ${artistName} on Boostify Music. Join our community of artists, producers, and music enthusiasts.`;
+  // Título más llamativo y atractivo
+  const title = `🎵 ${artistName}${genre ? ` - ${genre}` : ''} | Boostify Music`;
+  
+  // Descripción mejorada con más contexto
+  let description = '';
+  if (biography) {
+    description = `${biography.slice(0, 150)}${biography.length > 150 ? '...' : ''}`;
+  } else {
+    description = `Descubre la música de ${artistName}${genre ? `, artista de ${genre}` : ''}${location ? ` desde ${location}` : ''}. Escucha sus canciones, mira sus videos y conecta directamente en Boostify Music 🎶`;
+  }
+  
+  // Agregar call-to-action al final
+  description += ` | Únete ahora a Boostify Music ✨`;
 
   return (
     <>
@@ -89,9 +104,10 @@ export default function ArtistProfilePage() {
         title={title}
         description={description}
         url={fullUrl}
-        image={profileImage}
+        image={shareImage}
         type="profile"
         siteName="Boostify Music"
+        twitterUsername="@boostifymusic"
       />
       <div className="min-h-screen bg-black pt-4">
         <ArtistProfileCard artistId={artistId} />
