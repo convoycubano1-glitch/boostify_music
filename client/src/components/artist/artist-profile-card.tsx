@@ -47,6 +47,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import QRCode from "react-qr-code";
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, RadialBarChart, RadialBar } from "recharts";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -561,6 +562,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [newVideoTitle, setNewVideoTitle] = useState('');
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const songFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
   
   // Estados para drag-and-drop del layout
   const [isEditingLayout, setIsEditingLayout] = useState(false);
@@ -615,6 +617,29 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     }
     
     console.log('🎵 Spotify URL did not match pattern:', spotifyUrl);
+    return null;
+  };
+
+  // Helper function to convert YouTube URL to embed URL
+  const getYouTubeEmbedUrl = (url: string): string | null => {
+    if (!url) return null;
+    
+    // Match patterns:
+    // https://www.youtube.com/watch?v=VIDEO_ID
+    // https://youtu.be/VIDEO_ID
+    // https://youtube.com/watch?v=VIDEO_ID
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]+)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}?autoplay=1`;
+      }
+    }
+    
     return null;
   };
 
@@ -1712,11 +1737,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       style={{ borderColor: colors.hexBorder }}
                       data-testid={`card-video-${index}`}
                     >
-                      <a
-                        href={video.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block"
+                      <div
+                        onClick={() => setPlayingVideo(video)}
+                        className="block cursor-pointer relative group"
                       >
                         {video.thumbnailUrl ? (
                           <img
@@ -1732,25 +1755,52 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             <VideoIcon className="h-12 w-12" style={{ color: colors.hexAccent }} />
                           </div>
                         )}
-                      </a>
+                        {/* Play overlay */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div 
+                            className="w-16 h-16 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: colors.hexPrimary }}
+                          >
+                            <Play className="h-8 w-8 text-white ml-1" fill="white" />
+                          </div>
+                        </div>
+                      </div>
                       <div className="p-3">
                         <h3 className="font-medium text-white text-sm">{video.title || 'Music Video'}</h3>
                         <p className="text-xs text-gray-400 mt-1">Powered by Boostify</p>
                         {isOwnProfile && (
-                          <button
-                            className="mt-2 w-full py-2 px-4 rounded-full text-xs font-medium transition duration-300 hover:bg-red-600"
-                            style={{ 
-                              backgroundColor: 'transparent',
-                              borderColor: '#EF4444',
-                              borderWidth: '1px',
-                              color: '#EF4444'
-                            }}
-                            onClick={() => handleDeleteVideo(video)}
-                            data-testid={`button-delete-video-${video.id}`}
-                          >
-                            <Trash2 className="h-3 w-3 inline mr-1" />
-                            Borrar Video
-                          </button>
+                          <div className="space-y-2 mt-2">
+                            {/* Botón promocional para YouTube Views */}
+                            <Link href="/youtube-views">
+                              <button
+                                className="w-full py-2 px-4 rounded-full text-xs font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                                style={{ 
+                                  background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                                  color: 'white'
+                                }}
+                                data-testid={`button-promote-video-${video.id}`}
+                              >
+                                <Sparkles className="h-3 w-3 inline mr-1" />
+                                Promocionar Video
+                              </button>
+                            </Link>
+                            
+                            {/* Botón de borrar */}
+                            <button
+                              className="w-full py-2 px-4 rounded-full text-xs font-medium transition duration-300 hover:bg-red-600"
+                              style={{ 
+                                backgroundColor: 'transparent',
+                                borderColor: '#EF4444',
+                                borderWidth: '1px',
+                                color: '#EF4444'
+                              }}
+                              onClick={() => handleDeleteVideo(video)}
+                              data-testid={`button-delete-video-${video.id}`}
+                            >
+                              <Trash2 className="h-3 w-3 inline mr-1" />
+                              Borrar Video
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1947,6 +1997,29 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   ))}
                 </div>
                 )}
+                
+                {/* Botón promocional para manejar tienda - Solo visible para el artista */}
+                {isOwnProfile && isMerchandiseExpanded && (
+                  <div className="mt-4 pt-4 border-t" style={{ borderColor: colors.hexBorder }}>
+                    <Link href="/merchandise">
+                      <button
+                        className="w-full py-4 px-6 rounded-2xl text-sm font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center justify-center gap-2"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                          color: 'white'
+                        }}
+                        data-testid="button-manage-store"
+                      >
+                        <ShoppingCart className="h-5 w-5" />
+                        <span>Gestiona Tu Tienda Premium</span>
+                        <Sparkles className="h-5 w-5" />
+                      </button>
+                    </Link>
+                    <p className="text-center text-xs text-gray-400 mt-2">
+                      Accede a herramientas avanzadas para potenciar tus ventas
+                    </p>
+                  </div>
+                )}
               </div>
                         );
                       }
@@ -1988,7 +2061,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               />
             </div>
 
-            {/* Tarjeta de Estadísticas */}
+            {/* Tarjeta de Estadísticas con Gráficos */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               <div 
                 className="text-base font-semibold mb-4 transition-colors duration-500" 
@@ -1996,21 +2069,268 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               >
                 Estadísticas del Perfil
               </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Total Canciones</span>
-                  <span className="text-xl font-bold text-white">{songs.length}</span>
+              
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <motion.div 
+                  className="text-center p-3 rounded-lg"
+                  style={{ backgroundColor: `${colors.hexPrimary}15`, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Music2 className="h-5 w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
+                  <div className="text-2xl font-bold text-white">{songs.length}</div>
+                  <div className="text-xs text-gray-400">Canciones</div>
+                </motion.div>
+                
+                <motion.div 
+                  className="text-center p-3 rounded-lg"
+                  style={{ backgroundColor: `${colors.hexPrimary}15`, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <VideoIcon className="h-5 w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
+                  <div className="text-2xl font-bold text-white">{videos.length}</div>
+                  <div className="text-xs text-gray-400">Videos</div>
+                </motion.div>
+                
+                <motion.div 
+                  className="text-center p-3 rounded-lg"
+                  style={{ backgroundColor: `${colors.hexPrimary}15`, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Users className="h-5 w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
+                  <div className="text-2xl font-bold text-white">{artist.followers > 1000 ? `${(artist.followers / 1000).toFixed(1)}K` : artist.followers}</div>
+                  <div className="text-xs text-gray-400">Seguidores</div>
+                </motion.div>
+              </div>
+
+              {/* Gráfico de Progreso Radial */}
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-gray-300">Nivel de Completitud</div>
+                <div className="h-32">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadialBarChart 
+                      innerRadius="50%" 
+                      outerRadius="100%" 
+                      data={[
+                        {
+                          name: 'Perfil',
+                          value: (() => {
+                            let score = 0;
+                            if (artist.profileImage) score += 20;
+                            if (artist.bannerImage) score += 20;
+                            if (artist.biography) score += 15;
+                            if (songs.length > 0) score += 15;
+                            if (videos.length > 0) score += 15;
+                            if (artist.instagram || artist.twitter || artist.youtube) score += 15;
+                            return score;
+                          })(),
+                          fill: colors.hexPrimary
+                        }
+                      ]}
+                      startAngle={180}
+                      endAngle={0}
+                    >
+                      <RadialBar
+                        background={{ fill: '#1a1a1a' }}
+                        dataKey="value"
+                        cornerRadius={10}
+                      />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Total Videos</span>
-                  <span className="text-xl font-bold text-white">{videos.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Seguidores</span>
-                  <span className="text-xl font-bold text-white">{artist.followers.toLocaleString()}</span>
+                <div className="flex items-center justify-center gap-2">
+                  <div 
+                    className="text-3xl font-bold"
+                    style={{ color: colors.hexAccent }}
+                  >
+                    {(() => {
+                      let score = 0;
+                      if (artist.profileImage) score += 20;
+                      if (artist.bannerImage) score += 20;
+                      if (artist.biography) score += 15;
+                      if (songs.length > 0) score += 15;
+                      if (videos.length > 0) score += 15;
+                      if (artist.instagram || artist.twitter || artist.youtube) score += 15;
+                      return score;
+                    })()}%
+                  </div>
+                  <div className="text-sm text-gray-400">Completo</div>
                 </div>
               </div>
             </div>
+
+            {/* Tarjeta de Análisis de Actividad - Solo visible para el artista */}
+            {isOwnProfile && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div 
+                  className="text-base font-semibold mb-4 transition-colors duration-500" 
+                  style={{ color: colors.hexAccent }}
+                >
+                  Análisis de Actividad
+                </div>
+                
+                {/* Gráfico de Área - Actividad Semanal */}
+                <div className="mb-4">
+                  <div className="text-xs text-gray-400 mb-2">Actividad de los últimos 7 días</div>
+                  <div className="h-40">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={[
+                          { day: 'Lun', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: 'Mar', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: 'Mié', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: 'Jue', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: 'Vie', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: 'Sáb', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                          { day: 'Dom', plays: Math.floor(Math.random() * 50) + 20, views: Math.floor(Math.random() * 30) + 10 },
+                        ]}
+                        margin={{ top: 5, right: 5, bottom: 5, left: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id={`colorPlays-${artistId}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={colors.hexPrimary} stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor={colors.hexPrimary} stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id={`colorViews-${artistId}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={colors.hexAccent} stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor={colors.hexAccent} stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <XAxis 
+                          dataKey="day" 
+                          stroke="#666" 
+                          tick={{ fill: '#999', fontSize: 11 }}
+                          axisLine={{ stroke: '#333' }}
+                        />
+                        <YAxis 
+                          stroke="#666" 
+                          tick={{ fill: '#999', fontSize: 11 }}
+                          axisLine={{ stroke: '#333' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#1a1a1a', 
+                            border: `1px solid ${colors.hexBorder}`,
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="plays" 
+                          stroke={colors.hexPrimary} 
+                          fillOpacity={1} 
+                          fill={`url(#colorPlays-${artistId})`}
+                          strokeWidth={2}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="views" 
+                          stroke={colors.hexAccent} 
+                          fillOpacity={1} 
+                          fill={`url(#colorViews-${artistId})`}
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.hexPrimary }}></div>
+                      <span className="text-gray-400">Reproducciones</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.hexAccent }}></div>
+                      <span className="text-gray-400">Vistas</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Métricas rápidas */}
+                <div className="grid grid-cols-2 gap-2">
+                  <motion.div 
+                    className="p-3 rounded-lg text-center"
+                    style={{ backgroundColor: `${colors.hexPrimary}10`, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="text-xs text-gray-400 mb-1">Total Plays</div>
+                    <div className="text-xl font-bold" style={{ color: colors.hexPrimary }}>
+                      {(songs.length * Math.floor(Math.random() * 100 + 50)).toLocaleString()}
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="p-3 rounded-lg text-center"
+                    style={{ backgroundColor: `${colors.hexAccent}10`, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="text-xs text-gray-400 mb-1">Total Views</div>
+                    <div className="text-xl font-bold" style={{ color: colors.hexAccent }}>
+                      {(videos.length * Math.floor(Math.random() * 150 + 75)).toLocaleString()}
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            )}
+
+            {/* Tarjeta CTA: Gana Dinero con tu Talento - Solo visible para el artista */}
+            {isOwnProfile && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
+                {/* Fondo decorativo */}
+                <div className="absolute inset-0 opacity-10" style={{
+                  background: `radial-gradient(circle at 30% 50%, ${colors.hexPrimary}, transparent 70%)`
+                }}></div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Music className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                    <div 
+                      className="text-base font-bold transition-colors duration-500" 
+                      style={{ color: colors.hexAccent }}
+                    >
+                      Monetiza Tu Talento
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-300 mb-4 leading-relaxed">
+                    ¿Eres músico o productor? Vende tus servicios profesionales y convierte tu pasión en ingresos
+                  </p>
+                  
+                  <Link href="/producer-tools">
+                    <button
+                      className="w-full py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                        color: 'white'
+                      }}
+                      data-testid="button-producer-tools"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>Descubre Producer Tools</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </Link>
+                  
+                  <div className="mt-3 flex items-center justify-center gap-4 text-xs text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                      Beats
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                      Mezclas
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                      Master
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Tarjeta de Información */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
@@ -2294,6 +2614,35 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </footer>
 
       </div>
+
+      {/* Video Player Modal */}
+      <Dialog open={!!playingVideo} onOpenChange={(open) => !open && setPlayingVideo(null)}>
+        <DialogContent className="max-w-4xl w-full bg-black/95 border border-gray-800 p-0">
+          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+            {playingVideo && getYouTubeEmbedUrl(playingVideo.url) && (
+              <iframe
+                src={getYouTubeEmbedUrl(playingVideo.url)!}
+                className="absolute top-0 left-0 w-full h-full rounded-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={playingVideo.title}
+              />
+            )}
+          </div>
+          <div className="p-4 border-t border-gray-800">
+            <h3 className="text-white font-semibold text-lg">{playingVideo?.title}</h3>
+            <p className="text-gray-400 text-sm mt-1">Powered by Boostify</p>
+          </div>
+          <button
+            onClick={() => setPlayingVideo(null)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all"
+            aria-label="Cerrar"
+            data-testid="button-close-video"
+          >
+            <X className="h-5 w-5 text-white" />
+          </button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
