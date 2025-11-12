@@ -26,6 +26,7 @@ const PUBLIC_ROUTES = [
   '/guides',
   '/tools',
   '/blog',
+  '/artist',
 ];
 
 /**

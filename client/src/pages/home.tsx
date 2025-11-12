@@ -1790,37 +1790,6 @@ export default function HomePage() {
       </section>
 
       <Footer />
-      
-      {/* Fixed CTA Button for non-authenticated users */}
-      {!user && (
-        <div className="fixed top-4 right-4 z-50">
-          <Button
-            onClick={() => {
-              authService.signInWithGoogle()
-                .then(() => {
-                  toast({
-                    title: "¡Bienvenido a Boostify! 🎉",
-                    description: "Tu cuenta ha sido creada exitosamente.",
-                  });
-                  setLocation("/dashboard");
-                })
-                .catch((error) => {
-                  console.error('Error signing in:', error);
-                  toast({
-                    title: "Error",
-                    description: "No se pudo iniciar sesión. Intenta de nuevo.",
-                    variant: "destructive"
-                  });
-                });
-            }}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-2xl shadow-orange-500/50 gap-2 px-6 py-6 text-base font-bold rounded-full hover:scale-105 transition-all duration-300"
-            data-testid="button-create-card-cta"
-          >
-            <Sparkles className="h-5 w-5" />
-            Create Your Card for Free
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
