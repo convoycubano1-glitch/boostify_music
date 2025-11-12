@@ -1484,7 +1484,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       Crea tu perfil de artista profesional gratis y llega a más fans
                     </p>
                   </div>
-                  <Link href="/">
+                  <Link href="/profile">
                     <Button
                       className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg gap-2 px-6 py-6 text-base font-bold rounded-full hover:scale-105 transition-all duration-300"
                       data-testid="button-cta-middle"
@@ -2639,7 +2639,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     {t('profile.cta.description')}
                   </p>
                 </div>
-                <Link href="/">
+                <Link href="/profile">
                   <Button
                     className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-2xl shadow-orange-500/50 gap-2 px-8 py-7 text-lg font-bold rounded-full hover:scale-105 transition-all duration-300"
                     data-testid="button-cta-bottom"
