@@ -22,7 +22,9 @@ import {
   Plus,
   X,
   GripVertical,
-  Layout
+  Layout,
+  Sparkles,
+  ArrowRight
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -1037,7 +1039,17 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       
       {/* Hero Header */}
       <header className="relative h-72 md:h-96 lg:h-[450px] w-full mb-6 md:mb-8 overflow-hidden">
-        {(artist as any).loopVideoUrl ? (
+        {(artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i) || artist.bannerImage?.includes('video')) ? (
+          <video
+            src={artist.bannerImage}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
+            style={{ objectPosition: `center ${(artist as any).bannerPosition || '50'}%` }}
+          />
+        ) : (artist as any).loopVideoUrl ? (
           <video
             src={(artist as any).loopVideoUrl}
             autoPlay
@@ -1267,6 +1279,30 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
               </div>
             </div>
+
+            {/* CTA for non-authenticated visitors - Between bio and music */}
+            {!isOwnProfile && !user && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div className="text-center py-8">
+                  <div className="mb-4">
+                    <Sparkles className="h-12 w-12 mx-auto mb-3" style={{ color: colors.hexAccent }} />
+                    <h3 className="text-2xl font-bold text-white mb-2">¿Eres músico?</h3>
+                    <p className="text-gray-400">
+                      Crea tu perfil de artista profesional gratis y llega a más fans
+                    </p>
+                  </div>
+                  <Link href="/">
+                    <Button
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg gap-2 px-6 py-6 text-base font-bold rounded-full hover:scale-105 transition-all duration-300"
+                      data-testid="button-cta-middle"
+                    >
+                      <Sparkles className="h-5 w-5" />
+                      Crear Mi Perfil Gratis
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
 
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="profile-sections" isDropDisabled={!isEditingLayout}>
@@ -1879,6 +1915,37 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
           </section>
         </main>
+
+        {/* CTA for non-authenticated visitors - Bottom of page */}
+        {!isOwnProfile && !user && (
+          <div className="mt-8">
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <div className="text-center py-10">
+                <div className="mb-6">
+                  <Music2 className="h-16 w-16 mx-auto mb-4" style={{ color: colors.hexAccent }} />
+                  <h3 className="text-3xl font-bold text-white mb-3">Impulsa tu carrera musical</h3>
+                  <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Únete a miles de artistas que ya están usando Boostify para gestionar su música, 
+                    conectar con fans y hacer crecer su audiencia
+                  </p>
+                </div>
+                <Link href="/">
+                  <Button
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-2xl shadow-orange-500/50 gap-2 px-8 py-7 text-lg font-bold rounded-full hover:scale-105 transition-all duration-300"
+                    data-testid="button-cta-bottom"
+                  >
+                    <Sparkles className="h-6 w-6" />
+                    Crear Mi Perfil Gratis
+                    <ArrowRight className="h-6 w-6" />
+                  </Button>
+                </Link>
+                <p className="text-gray-500 text-sm mt-4">
+                  Sin tarjeta de crédito • Configuración en 2 minutos
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <footer className="mt-12 pt-6 border-t" style={{ borderColor: colors.hexBorder }}>

@@ -354,15 +354,15 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
     }
   };
 
-  // Subir imagen de banner directamente
+  // Subir imagen o video de banner directamente
   const handleUploadBannerImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
       toast({
         title: "Archivo inválido",
-        description: "Por favor selecciona una imagen (JPG, PNG, etc.).",
+        description: "Por favor selecciona una imagen (JPG, PNG, etc.) o un video (MP4, MOV, etc.).",
         variant: "destructive",
       });
       return;
@@ -376,15 +376,16 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
       const downloadURL = await getDownloadURL(storageRef);
       
       handleChange("bannerImage", downloadURL);
+      const fileType = file.type.startsWith('image/') ? 'imagen' : 'video';
       toast({
-        title: "Imagen de banner cargada",
-        description: "Tu imagen de banner ha sido subida exitosamente.",
+        title: `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} de banner cargada`,
+        description: `Tu ${fileType} de banner ha sido subida exitosamente.`,
       });
     } catch (error) {
-      console.error("Error uploading banner image:", error);
+      console.error("Error uploading banner media:", error);
       toast({
         title: "Error",
-        description: "No se pudo cargar la imagen de banner.",
+        description: "No se pudo cargar el archivo de banner.",
         variant: "destructive",
       });
     } finally {
@@ -823,12 +824,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
           {/* Imagen de Banner con botón de generar y subir */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="bannerImage">Imagen de Banner (Hero)</Label>
+              <Label htmlFor="bannerImage">Imagen o Video de Banner (Hero)</Label>
               <div className="flex gap-2">
                 <input
                   ref={bannerImageInputRef}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/heic"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,video/mp4,video/quicktime,video/x-msvideo,video/webm"
                   onChange={handleUploadBannerImage}
                   className="hidden"
                 />
@@ -876,16 +877,28 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
               id="bannerImage"
               value={formData.bannerImage}
               onChange={(e) => handleChange("bannerImage", e.target.value)}
-              placeholder="URL de imagen o usa los botones para subir/generar"
+              placeholder="URL de imagen/video o usa los botones para subir/generar"
             />
             {formData.bannerImage && (
               <div className="space-y-3">
-                <img 
-                  src={formData.bannerImage} 
-                  alt="Preview" 
-                  className="w-full h-32 object-cover rounded-lg"
-                  style={{ objectPosition: `center ${formData.bannerPosition || '50'}%` }}
-                />
+                {formData.bannerImage.match(/\.(mp4|mov|avi|webm)$/i) || formData.bannerImage.includes('video') ? (
+                  <video 
+                    src={formData.bannerImage} 
+                    className="w-full h-32 object-cover rounded-lg"
+                    style={{ objectPosition: `center ${formData.bannerPosition || '50'}%` }}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img 
+                    src={formData.bannerImage} 
+                    alt="Preview" 
+                    className="w-full h-32 object-cover rounded-lg"
+                    style={{ objectPosition: `center ${formData.bannerPosition || '50'}%` }}
+                  />
+                )}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label className="text-sm">Ajustar Posición del Banner</Label>

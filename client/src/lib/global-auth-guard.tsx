@@ -14,7 +14,6 @@ interface GlobalAuthGuardProps {
 const PUBLIC_ROUTES = [
   '/',
   '/auth',
-  '/auth-page',
   '/login',
   '/register',
   '/pricing',
@@ -134,7 +133,7 @@ export function GlobalAuthGuard({ children }: GlobalAuthGuardProps) {
             
             <div className="flex flex-col gap-3">
               <Button 
-                onClick={() => window.location.href = '/auth-page'}
+                onClick={() => window.location.href = '/auth'}
                 className="w-full"
                 data-testid="button-login"
               >
