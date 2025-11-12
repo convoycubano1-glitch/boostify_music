@@ -1573,7 +1573,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
               </div>
                         );
-                      } else if (sectionId === 'merchandise' && products.length > 0) {
+                      } else if (sectionId === 'merchandise' && (products.length > 0 || isOwnProfile)) {
                         sectionElement = (
             <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               {isEditingLayout && (
