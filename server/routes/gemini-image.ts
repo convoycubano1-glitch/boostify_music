@@ -145,8 +145,7 @@ router.post('/generate-single-with-multiple-faces', async (req: Request, res: Re
     const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
     const result = await generateImageWithMultipleFaceReferences(
       prompt,
-      referenceImagesBase64,
-      seed
+      referenceImagesBase64
     );
 
     // Si Gemini tuvo éxito, retornar
