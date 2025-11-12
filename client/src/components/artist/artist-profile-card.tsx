@@ -1856,20 +1856,34 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   <Music className="h-5 w-5" />
                   Spotify
                 </div>
-                <div className="rounded-lg overflow-hidden w-full">
+                <div className="rounded-lg overflow-hidden w-full relative bg-black/20">
                   <iframe
-                    style={{ borderRadius: '12px', minHeight: '380px' }}
+                    style={{ borderRadius: '12px', minHeight: '380px', border: 'none' }}
                     src={getSpotifyEmbedUrl(artist.spotify) || ''}
                     width="100%"
                     height="380"
                     frameBorder="0"
                     allowFullScreen
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                     loading="lazy"
                     title="Spotify Artist Profile"
                     className="w-full"
                     data-testid="spotify-iframe"
                   />
+                  {/* Fallback link para dispositivos que bloqueen el iframe */}
+                  <div className="absolute bottom-3 right-3 z-10">
+                    <a
+                      href={artist.spotify}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold shadow-lg hover:opacity-90 transition-opacity"
+                      style={{ backgroundColor: '#1DB954', color: 'white' }}
+                    >
+                      <Music className="h-4 w-4" />
+                      Abrir en Spotify
+                    </a>
+                  </div>
                 </div>
               </div>
             )}
