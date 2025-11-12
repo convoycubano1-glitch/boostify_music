@@ -23,6 +23,10 @@ export default function AuthPage() {
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [email, setEmail] = useState("");
   
+  // Obtener el parámetro returnTo de la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const returnTo = urlParams.get('returnTo') || '/dashboard';
+  
   // Log de diagnóstico para iOS
   useEffect(() => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -214,7 +218,7 @@ export default function AuthPage() {
   };
 
   if (user) {
-    return <Redirect to="/dashboard" />;
+    return <Redirect to={returnTo} />;
   }
 
   return (
