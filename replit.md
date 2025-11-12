@@ -7,25 +7,43 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 🚀 Corrección de Deployment en Producción (LATEST)
+### 🚀 Corrección Completa de Deployment Cloud Run (LATEST)
 **Fecha**: 12 de Noviembre, 2024
-**Objetivo**: Corregir errores de deployment para publicación exitosa
+**Objetivo**: Solucionar todos los problemas de deployment para Cloud Run en producción
 
 **Problemas resueltos**:
-1. ✅ **Eliminado NODE_ENV forzado**: Removida línea que forzaba modo development
-2. ✅ **Corregida ruta de archivos estáticos**: Servidor ahora busca en `dist/client` (donde realmente están los archivos compilados)
-3. ✅ **Build process verificado**: Los archivos se generan correctamente en `dist/client/`
+1. ✅ **Detección automática de deployment**: 
+   - Servidor detecta `REPL_DEPLOYMENT` env var automáticamente
+   - Modo development local / production en deployment
+   - Sin necesidad de configurar NODE_ENV manualmente
 
-**Pasos para deployment exitoso**:
-1. Ir a "Deployments" en Replit
-2. En "Deployment Secrets", agregar:
-   - **KEY**: `NODE_ENV`
-   - **VALUE**: `production`
-3. Redeploy la aplicación
-4. El servidor detectará automáticamente el modo producción y servirá archivos estáticos correctamente
+2. ✅ **Sesiones stateless para Cloud Run**:
+   - Reemplazado `express-session` con `cookie-session`
+   - Eliminado MemoryStore que causaba crash loops
+   - Todas las sesiones ahora almacenadas en cookies encriptadas
+   - Compatible con múltiples instancias de Cloud Run
+
+3. ✅ **Rutas de archivos estáticos corregidas**:
+   - Build genera correctamente `dist/client/`
+   - Servidor sirve desde la ruta correcta en producción
+   - Archivos estáticos accesibles sin errores 404
+
+**Configuración de deployment**:
+1. El servidor detecta automáticamente el entorno
+2. En deployment, se activa modo production automáticamente
+3. Sesiones funcionan sin servidor stateful
+4. Compatible con arquitectura serverless de Cloud Run
 
 **Archivos modificados**:
-- `server/index.ts`: Removida línea forzada de NODE_ENV y corregidas rutas de dist
+- `server/index.ts`: Detección automática de REPL_DEPLOYMENT
+- `server/auth.ts`: Migrado a cookie-session para stateless sessions
+- `build-for-deploy.js`: Verificado que genera dist/client correctamente
+
+**Variables de entorno necesarias** (configurar en Replit Secrets):
+- `SESSION_SECRET`: Clave secreta para encriptar cookies de sesión
+- `OPENAI_API_KEY`: API key de OpenAI
+- `FAL_API_KEY`: API key de Fal.ai
+- Firebase credentials: Configurados en FIREBASE_CONFIG
 
 ### 🛍️ Generación de Productos con IA + Branding Boostify
 **Fecha**: 11 de Noviembre, 2024
