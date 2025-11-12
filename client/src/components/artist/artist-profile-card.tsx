@@ -475,13 +475,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   
   // Estados para drag-and-drop del layout
   const [isEditingLayout, setIsEditingLayout] = useState(false);
-  const [sectionOrder, setSectionOrder] = useState<string[]>(['songs', 'videos', 'merchandise']);
+  const [leftSections, setLeftSections] = useState<string[]>(['songs', 'videos', 'merchandise']);
   
   // Cargar orden guardado al montar
   useEffect(() => {
-    const savedOrder = localStorage.getItem(`profile-layout-${artistId}`);
-    if (savedOrder) {
-      setSectionOrder(JSON.parse(savedOrder));
+    const savedLayout = localStorage.getItem(`profile-layout-${artistId}`);
+    if (savedLayout) {
+      setLeftSections(JSON.parse(savedLayout));
     }
   }, [artistId]);
   
@@ -489,11 +489,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     
-    const items = Array.from(sectionOrder);
+    const items = Array.from(leftSections);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
     
-    setSectionOrder(items);
+    setLeftSections(items);
     localStorage.setItem(`profile-layout-${artistId}`, JSON.stringify(items));
     
     toast({
@@ -847,6 +847,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     instagram: userProfile?.instagram || "",
     twitter: userProfile?.twitter || "",
     youtube: userProfile?.youtube || "",
+    spotify: userProfile?.spotify || "",
     website: userProfile?.website || ""
   };
 
@@ -1138,30 +1139,32 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
       <div className="max-w-6xl mx-auto p-4 md:p-8 pt-0 pb-20 md:pb-8">
         
-        {/* Selector de Paleta */}
-        <div 
-          className="mb-6 p-4 rounded-xl bg-gray-900/80 backdrop-blur-sm flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-500"
-          style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
-        >
-          <label htmlFor="theme-selector" className="text-sm font-medium text-white whitespace-nowrap">
-            Personaliza tu Estilo:
-          </label>
-          <div className="flex-1 w-full max-w-sm">
-            <select
-              id="theme-selector"
-              value={selectedTheme}
-              onChange={(e) => setSelectedTheme(e.target.value as keyof typeof colorPalettes)}
-              className="block w-full py-2 px-3 text-sm rounded-full border bg-black text-white focus:ring-4 appearance-none cursor-pointer transition-colors duration-500"
-              style={{ borderColor: colors.hexBorder }}
-            >
-              {Object.keys(colorPalettes).map(themeName => (
-                <option key={themeName} value={themeName}>
-                  {themeName}
-                </option>
-              ))}
-            </select>
+        {/* Selector de Paleta - Solo visible para el dueño del perfil */}
+        {isOwnProfile && (
+          <div 
+            className="mb-6 p-4 rounded-xl bg-gray-900/80 backdrop-blur-sm flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-500"
+            style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
+          >
+            <label htmlFor="theme-selector" className="text-sm font-medium text-white whitespace-nowrap">
+              Personaliza tu Estilo:
+            </label>
+            <div className="flex-1 w-full max-w-sm">
+              <select
+                id="theme-selector"
+                value={selectedTheme}
+                onChange={(e) => setSelectedTheme(e.target.value as keyof typeof colorPalettes)}
+                className="block w-full py-2 px-3 text-sm rounded-full border bg-black text-white focus:ring-4 appearance-none cursor-pointer transition-colors duration-500"
+                style={{ borderColor: colors.hexBorder }}
+              >
+                {Object.keys(colorPalettes).map(themeName => (
+                  <option key={themeName} value={themeName}>
+                    {themeName}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Layout */}
         <main className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6">
@@ -1269,7 +1272,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               <Droppable droppableId="profile-sections" isDropDisabled={!isEditingLayout}>
                 {(provided) => (
                   <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-6">
-                    {sectionOrder.map((sectionId, index) => {
+                    {leftSections.map((sectionId: string, index: number) => {
                       let sectionElement = null;
                       
                       if (sectionId === 'songs' && (songs.length > 0 || isOwnProfile)) {
@@ -1786,7 +1789,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             )}
 
             {/* Spotify Player Embed */}
-            {artist.spotify && getSpotifyEmbedUrl(artist.spotify) && (
+            {(artist as any).spotify && getSpotifyEmbedUrl((artist as any).spotify) && (
               <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div 
                   className="text-base font-semibold mb-3 transition-colors duration-500 flex items-center gap-2" 
@@ -1798,7 +1801,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 <div className="rounded-lg overflow-hidden">
                   <iframe
                     style={{ borderRadius: '12px' }}
-                    src={getSpotifyEmbedUrl(artist.spotify) || ''}
+                    src={getSpotifyEmbedUrl((artist as any).spotify) || ''}
                     width="100%"
                     height="380"
                     frameBorder="0"
