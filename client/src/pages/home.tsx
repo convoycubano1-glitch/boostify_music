@@ -19,7 +19,6 @@ import { Footer } from "../components/layout/footer";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect, useRef } from "react";
-import { EarlyAccessModal } from "../components/early-access/early-access-modal";
 import { PricingPlans } from "../components/subscription/pricing-plans";
 import { SiYoutube, SiInstagram, SiTiktok, SiSpotify, SiX, SiFacebook, SiSoundcloud, SiApplemusic, SiLinkedin, SiDiscord, SiTwitch } from "react-icons/si";
 // Comentando los siguientes imports temporalmente ya que no son esenciales para la página inicial
@@ -306,24 +305,6 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0);
   const [progress, setProgress] = useState(0);
-  // Don't show modal to authenticated users or if previously dismissed
-  const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const dismissed = localStorage.getItem('earlyAccessModalDismissed');
-    return !dismissed;
-  });
-
-  // Hide modal when user logs in
-  useEffect(() => {
-    if (user) {
-      setShowEarlyAccessModal(false);
-    }
-  }, [user]);
-
-  const handleCloseModal = () => {
-    setShowEarlyAccessModal(false);
-    localStorage.setItem('earlyAccessModalDismissed', 'true');
-  };
   const statsRef = useRef<HTMLDivElement>(null);
   const statsControls = useAnimation();
   const introVideoRef = useRef<HTMLVideoElement>(null);
@@ -1810,11 +1791,36 @@ export default function HomePage() {
 
       <Footer />
       
-      {/* Early Access Modal */}
-      <EarlyAccessModal 
-        open={showEarlyAccessModal} 
-        onClose={handleCloseModal} 
-      />
+      {/* Fixed CTA Button for non-authenticated users */}
+      {!user && (
+        <div className="fixed top-4 right-4 z-50">
+          <Button
+            onClick={() => {
+              authService.signInWithGoogle()
+                .then(() => {
+                  toast({
+                    title: "¡Bienvenido a Boostify! 🎉",
+                    description: "Tu cuenta ha sido creada exitosamente.",
+                  });
+                  setLocation("/dashboard");
+                })
+                .catch((error) => {
+                  console.error('Error signing in:', error);
+                  toast({
+                    title: "Error",
+                    description: "No se pudo iniciar sesión. Intenta de nuevo.",
+                    variant: "destructive"
+                  });
+                });
+            }}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-2xl shadow-orange-500/50 gap-2 px-6 py-6 text-base font-bold rounded-full hover:scale-105 transition-all duration-300"
+            data-testid="button-create-card-cta"
+          >
+            <Sparkles className="h-5 w-5" />
+            Create Your Card for Free
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
