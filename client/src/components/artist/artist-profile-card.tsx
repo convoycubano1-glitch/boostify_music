@@ -599,6 +599,17 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   
   const isOwnProfile = user?.uid === artistId;
   const colors = colorPalettes[selectedTheme];
+  
+  // Debug log para ver por qué no se muestra el CTA
+  useEffect(() => {
+    console.log('🔍 CTA Debug:', { 
+      user: !!user, 
+      userId: user?.uid,
+      artistId, 
+      isOwnProfile, 
+      shouldShowCTA: !isOwnProfile && !user 
+    });
+  }, [user, artistId, isOwnProfile]);
 
   // Helper function to extract Spotify Artist ID from URL
   const getSpotifyEmbedUrl = (spotifyUrl: string): string | null => {
