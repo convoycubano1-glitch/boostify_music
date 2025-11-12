@@ -510,7 +510,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
   // Helper function to extract Spotify Artist ID from URL
   const getSpotifyEmbedUrl = (spotifyUrl: string): string | null => {
-    if (!spotifyUrl) return null;
+    if (!spotifyUrl) {
+      console.log('🎵 Spotify URL is empty');
+      return null;
+    }
     
     // Match patterns like:
     // https://open.spotify.com/artist/3TVXtAsR1Inumwj472S9r4
@@ -518,9 +521,12 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     const artistMatch = spotifyUrl.match(/artist\/([a-zA-Z0-9]+)/);
     
     if (artistMatch && artistMatch[1]) {
-      return `https://open.spotify.com/embed/artist/${artistMatch[1]}?utm_source=generator`;
+      const embedUrl = `https://open.spotify.com/embed/artist/${artistMatch[1]}?utm_source=generator`;
+      console.log('🎵 Spotify embed URL generated:', embedUrl);
+      return embedUrl;
     }
     
+    console.log('🎵 Spotify URL did not match pattern:', spotifyUrl);
     return null;
   };
 
