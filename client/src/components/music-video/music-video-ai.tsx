@@ -705,7 +705,7 @@ export function MusicVideoAI() {
       // Procesar clips de performance
       const projectId = currentProjectId ? parseInt(currentProjectId) : Date.now();
       const userId = user?.uid || 'anonymous';
-      const safeArtistImageUrl = artistImageUrl || '';
+      const safeArtistImageUrl = artistImageUrl && typeof artistImageUrl === 'string' ? artistImageUrl : '';
       
       const results = await processPerformanceClips(
         projectId,
@@ -1104,7 +1104,7 @@ export function MusicVideoAI() {
           id: director.id,
           name: director.name,
           specialty: director.specialty,
-          style: director.visual_style || template.director.style,
+          style: director.visual_style?.description || template.director.style,
           experience: director.experience || 'Professional',
           rating: director.rating
         }
@@ -2519,14 +2519,23 @@ ${transcription}`;
    * Guardar proyecto en PostgreSQL
    */
   const handleSaveProject = async () => {
+    console.log('🔍 [SAVE] Verificando autenticación:', { 
+      user: user ? 'exists' : 'null', 
+      uid: user?.uid || 'undefined',
+      email: user?.email || 'undefined'
+    });
+    
     if (!user?.uid) {
+      console.error('❌ [SAVE] Usuario no autenticado');
       toast({
-        title: "Authentication required",
-        description: "Please login to save your project",
+        title: "Autenticación requerida",
+        description: "Por favor inicia sesión para guardar tu proyecto. Verifica que estés logueado en Firebase.",
         variant: "destructive"
       });
       return;
     }
+    
+    console.log('✅ [SAVE] Usuario autenticado:', user.uid);
 
     if (!projectName.trim()) {
       toast({

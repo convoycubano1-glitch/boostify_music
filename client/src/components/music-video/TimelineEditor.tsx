@@ -321,6 +321,51 @@ export function TimelineEditor({
     }
   }, [currentTime, timeToPixels, autoScroll]);
 
+  // ===== Playback Loop at 24fps =====
+  useEffect(() => {
+    if (!isPlaying) {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      return;
+    }
+    
+    const FPS = 24;
+    const frameTime = 1000 / FPS; // ~41.67ms per frame
+    let lastTime = performance.now();
+    
+    const loop = (currentTimestamp: number) => {
+      if (!isPlaying) return;
+      
+      const deltaTime = currentTimestamp - lastTime;
+      
+      if (deltaTime >= frameTime) {
+        const newTime = currentTime + (deltaTime / 1000);
+        
+        if (newTime >= duration) {
+          onPause?.();
+          onTimeUpdate?.(duration);
+        } else {
+          onTimeUpdate?.(newTime);
+        }
+        
+        lastTime = currentTimestamp;
+      }
+      
+      rafIdRef.current = requestAnimationFrame(loop);
+    };
+    
+    rafIdRef.current = requestAnimationFrame(loop);
+    
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    };
+  }, [isPlaying, currentTime, duration, onTimeUpdate, onPause]);
+
   // ===== Video Preview Sync =====
   useEffect(() => {
     const video = videoRef.current;
