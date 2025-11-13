@@ -1119,7 +1119,8 @@ export function TimelineEditor({
                           className={cn(
                             "absolute h-20 rounded cursor-pointer transition-all overflow-hidden",
                             isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-gray-900" : "",
-                            clip.locked ? "opacity-50 cursor-not-allowed" : ""
+                            clip.locked ? "opacity-50 cursor-not-allowed" : "",
+                            clip.metadata?.hasLipSync ? "ring-1 ring-purple-500" : ""
                           )}
                           style={{
                             left: `${clipLeft}px`,
@@ -1139,8 +1140,19 @@ export function TimelineEditor({
                         >
                           {/* Clip content */}
                           <div className="p-2 h-full flex flex-col justify-between overflow-hidden">
-                            <div className="text-xs font-semibold truncate text-white drop-shadow-lg">
-                              {clip.title}
+                            <div className="flex items-center gap-1">
+                              <div className="text-xs font-semibold truncate text-white drop-shadow-lg">
+                                {clip.title}
+                              </div>
+                              {clip.metadata?.hasLipSync && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-[8px] px-1 py-0 h-4 bg-purple-500/80 text-white border-purple-400"
+                                  title="Clip con sincronización labial"
+                                >
+                                  🎤 SYNC
+                                </Badge>
+                              )}
                             </div>
                             {clip.imagePrompt && (
                               <div className="text-[10px] text-white/90 truncate drop-shadow">

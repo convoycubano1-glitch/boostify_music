@@ -703,12 +703,16 @@ export function MusicVideoAI() {
       }
       
       // Procesar clips de performance
+      const projectId = currentProjectId ? parseInt(currentProjectId) : Date.now();
+      const userId = user?.uid || 'anonymous';
+      const safeArtistImageUrl = artistImageUrl || '';
+      
       const results = await processPerformanceClips(
-        currentProject?.id || 1, // Usar ID del proyecto actual o default
+        projectId,
         buffer,
         performanceClips,
-        artistImageUrl,
-        user?.uid || 'anonymous',
+        safeArtistImageUrl,
+        userId,
         projectName || 'untitled',
         (current, total, message) => {
           console.log(`🎤 [LIP-SYNC Progress] ${current}/${total}: ${message}`);
@@ -732,12 +736,12 @@ export function MusicVideoAI() {
               ...item,
               videoUrl: segment.lipsyncVideoUrl,
               url: segment.lipsyncVideoUrl,
-              thumbnail: artistImageUrl, // Mantener thumbnail
+              thumbnail: safeArtistImageUrl,
               metadata: {
                 ...item.metadata,
                 hasLipSync: true,
                 lipsyncVideoUrl: segment.lipsyncVideoUrl,
-                performanceSegmentId: segment.id
+                performanceSegmentId: segment.sceneId
               }
             };
           }
