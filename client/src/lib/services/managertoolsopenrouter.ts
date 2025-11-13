@@ -5,14 +5,28 @@ import { env } from "../../env";
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
     try {
-      console.log('Making request to OpenRouter with prompt:', prompt);
+      console.log('📄 Making request to Gemini API with prompt:', prompt);
       
-      // Use window.fetch explicitly
-      const response = await window.fetch('/api/manager/generate-content', {
+      // Map old types to new Gemini types
+      const typeMapping: Record<string, string> = {
+        'technical': 'technical-rider',
+        'requirements': 'requirements',
+        'budget': 'budget',
+        'logistics': 'logistics',
+        'hiring': 'hiring',
+        'calendar': 'calendar',
+        'ai': 'ai-assistant'
+      };
+
+      const geminiType = typeMapping[type] || 'requirements';
+
+      // Use window.fetch explicitly to call Gemini endpoint
+      const response = await window.fetch('/api/manager/documents/generate-text', {
         method: 'POST',
         body: JSON.stringify({
-          prompt,
-          type
+          type: geminiType,
+          requirements: prompt,
+          metadata: {} // Empty metadata for backward compatibility
         }),
         headers: {
           'Content-Type': 'application/json'
@@ -26,7 +40,7 @@ export const managerToolsService = {
       }
 
       const data = await response.json();
-      console.log('Response received from server');
+      console.log('✅ Response received from Gemini');
       
       if (!data.content) {
         console.error('Invalid response format from server');

@@ -20,7 +20,7 @@ export interface DocumentMetadata {
 export interface ManagerDocument {
   id: string;
   userId: string;
-  type: 'technical-rider' | 'lighting-setup' | 'stage-plot' | 'hospitality' | 'contract';
+  type: 'technical-rider' | 'lighting-setup' | 'stage-plot' | 'hospitality' | 'contract' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'calendar' | 'ai-assistant';
   title: string;
   content: string;
   metadata?: DocumentMetadata;
@@ -41,7 +41,7 @@ class ManagerDocumentsService {
    */
   async generateDocument(
     userId: string,
-    type: 'technical-rider' | 'lighting-setup' | 'stage-plot' | 'hospitality' | 'contract',
+    type: 'technical-rider' | 'lighting-setup' | 'stage-plot' | 'hospitality' | 'contract' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'calendar' | 'ai-assistant',
     requirements: string,
     metadata: DocumentMetadata,
     includeImages: boolean = false
@@ -276,7 +276,13 @@ class ManagerDocumentsService {
       'lighting-setup': 'Lighting Setup',
       'stage-plot': 'Stage Plot',
       'hospitality': 'Hospitality Rider',
-      'contract': 'Performance Contract'
+      'contract': 'Performance Contract',
+      'requirements': 'Requirements List',
+      'budget': 'Budget Plan',
+      'logistics': 'Logistics Plan',
+      'hiring': 'Hiring Document',
+      'calendar': 'Event Calendar',
+      'ai-assistant': 'AI Consultation'
     };
 
     const typeName = typeNames[type] || 'Document';
