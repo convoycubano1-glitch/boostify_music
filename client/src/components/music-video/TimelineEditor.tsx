@@ -55,6 +55,7 @@ export interface TimelineClip {
   description?: string;
   waveform?: number[];
   imagePrompt?: string;
+  prompt?: string;
   shotType?: string;
   visible?: boolean;
   locked?: boolean;
@@ -72,6 +73,8 @@ export interface TimelineClip {
     movementIntensity?: number;
     faceSwapApplied?: boolean;
     musicianIntegrated?: boolean;
+    musicianData?: any;
+    cameraAngle?: string;
     sourceIndex?: number;
     isGeneratedImage?: boolean;
     lipsync?: {

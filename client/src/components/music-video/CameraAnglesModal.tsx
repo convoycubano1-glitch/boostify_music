@@ -6,8 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 
 interface TimelineClip {
   id: number;
-  prompt: string;
-  imageUrl: string;
+  prompt?: string;
+  imageUrl?: string;
   [key: string]: any;
 }
 
@@ -40,7 +40,15 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
   }, [open, clip]);
 
   const generateVariations = async () => {
-    if (!clip) return;
+    if (!clip || !clip.prompt) {
+      toast({
+        title: "Error",
+        description: "Cannot generate camera angles without a prompt.",
+        variant: "destructive",
+      });
+      onClose();
+      return;
+    }
 
     setIsGenerating(true);
     setVariations([]);
@@ -127,7 +135,7 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
           </DialogTitle>
         </DialogHeader>
 
-        {clip && (
+        {clip && clip.prompt && (
           <div className="mb-4">
             <p className="text-sm text-muted-foreground">
               Current Scene: <span className="font-medium text-foreground">{clip.prompt.substring(0, 100)}...</span>
