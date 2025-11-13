@@ -1246,8 +1246,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const handleGenerateConcepts = useCallback(async (transcriptionText: string, director: DirectorProfile) => {
     setIsGeneratingConcepts(true);
     setShowProgress(true);
-    setCurrentProgressStage("concepts");
-    setProgressMessage("Generando 3 propuestas creativas...");
+    setCurrentProgressStage("concepts"); // Usar "concepts" para mostrar la etapa correcta
+    setProgressMessage("Generando 3 propuestas creativas con portadas personalizadas...");
     
     try {
       const audioDurationInSeconds = audioBuffer ? audioBuffer.duration : 180;
