@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, ChevronRight, Check, Film, Music, Palette, MapPin, Shirt, Clock, Eye } from "lucide-react";
-import { motion } from "framer-motion";
+import { Sparkles, ChevronRight, Check, Film, Music, Palette, MapPin, Shirt, Clock, Eye, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -60,27 +60,76 @@ export function ConceptSelectionModal({
                   onClick={() => setSelectedConcept(concept)}
                   data-testid={`concept-${index}`}
                 >
-                  {/* Cover Image */}
-                  {concept.coverImage && (
-                    <div className="relative w-full aspect-square mb-4 rounded-lg overflow-hidden group">
-                      <img 
-                        src={concept.coverImage} 
-                        alt={concept.title}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col justify-end p-4">
-                        <p className="text-white font-bold text-lg md:text-xl mb-1">{concept.artistName || 'Artist Name'}</p>
-                        <p className="text-white/90 text-sm md:text-base">{concept.songTitle || 'Song Title'}</p>
-                      </div>
-                      {selectedConcept === concept && (
-                        <div className="absolute top-2 right-2">
-                          <div className="bg-orange-500 text-white rounded-full p-2 shadow-lg">
-                            <Check className="h-5 w-5" />
+                  {/* Cover Image - Hollywood Poster */}
+                  <div className="relative w-full aspect-[2/3] mb-4 rounded-lg overflow-hidden group bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-700">
+                    <AnimatePresence mode="wait">
+                      {concept.isGenerating ? (
+                        // Loading state - Progressive loading
+                        <motion.div
+                          key="loading"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black"
+                        >
+                          <Loader2 className="h-12 w-12 text-orange-500 animate-spin mb-4" />
+                          <p className="text-white/70 text-sm font-medium">Generando poster Hollywood...</p>
+                          <p className="text-white/50 text-xs mt-1">#{index + 1} de 3</p>
+                        </motion.div>
+                      ) : concept.error ? (
+                        // Error state
+                        <motion.div
+                          key="error"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-red-900/30 to-black p-4 text-center"
+                        >
+                          <Film className="h-12 w-12 text-red-500 mb-3 opacity-50" />
+                          <p className="text-white/70 text-sm font-medium">Error generando poster</p>
+                          <p className="text-white/50 text-xs mt-1">El concepto aún está disponible</p>
+                        </motion.div>
+                      ) : concept.coverImage ? (
+                        // Loaded state - Show poster
+                        <motion.div
+                          key="loaded"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="relative w-full h-full"
+                        >
+                          <img 
+                            src={concept.coverImage} 
+                            alt={concept.title}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <p className="text-white font-bold text-lg md:text-xl mb-1 drop-shadow-lg">{concept.artistName || 'Artist Name'}</p>
+                            <p className="text-white/90 text-sm md:text-base drop-shadow-md">{concept.songTitle || 'Song Title'}</p>
                           </div>
-                        </div>
+                          {selectedConcept === concept && (
+                            <div className="absolute top-2 right-2">
+                              <div className="bg-orange-500 text-white rounded-full p-2 shadow-lg">
+                                <Check className="h-5 w-5" />
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      ) : (
+                        // Placeholder state
+                        <motion.div
+                          key="placeholder"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 p-4"
+                        >
+                          <Film className="h-12 w-12 text-gray-600 mb-3" />
+                          <p className="text-gray-500 text-sm text-center">Concepto #{index + 1}</p>
+                        </motion.div>
                       )}
-                    </div>
-                  )}
+                    </AnimatePresence>
+                  </div>
 
                   {/* Header */}
                   <div className="flex items-center justify-between mb-4">

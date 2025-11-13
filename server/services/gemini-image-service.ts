@@ -558,6 +558,62 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
 }
 
 /**
+ * Genera un poster cinematográfico estilo Hollywood con el rostro del artista
+ * CRITICAL: Este poster debe motivar al artista mostrándolo como estrella de su propia película
+ */
+export async function generateHollywoodStylePoster(
+  conceptTitle: string,
+  conceptDescription: string,
+  artistReferenceImages: string[],
+  directorName: string
+): Promise<ImageGenerationResult> {
+  try {
+    logger.log(`🎬 Generando poster Hollywood para concepto: "${conceptTitle}"...`);
+
+    // Crear prompt para poster cinematográfico profesional
+    const posterPrompt = `Create a professional Hollywood movie poster with these specifications:
+
+MOVIE TITLE: "${conceptTitle}"
+DIRECTOR: ${directorName}
+CONCEPT: ${conceptDescription}
+
+CRITICAL REQUIREMENTS:
+- This is a MOVIE POSTER, not just a photo
+- Include bold, cinematic title text at the top or center
+- Add "Directed by ${directorName}" credit text
+- Feature the artist as the main character/star (use reference photos for their face)
+- Place the character in the story context (not just standing)
+- Dramatic cinematic lighting and composition
+- Professional color grading (teal and orange, or moody tones)
+- Add subtle film grain and depth
+- Include atmospheric background that tells the story
+- Text overlays should look like real movie posters (bold, stylized fonts)
+
+STYLE: Premium Hollywood movie poster, theatrical release quality, motivational and epic
+FORMAT: Vertical poster (2:3 aspect ratio), theatrical one-sheet style
+MOOD: Inspiring, cinematic, professional - make the artist feel like a STAR
+
+Generate a poster that would hang in a movie theater - professional, polished, with perfect typography and layout.`;
+
+    const result = await generateImageWithMultipleFaceReferences(posterPrompt, artistReferenceImages);
+    
+    if (result.success) {
+      logger.log(`✅ Poster Hollywood generado exitosamente para "${conceptTitle}"`);
+    } else {
+      logger.error(`❌ Error generando poster para "${conceptTitle}":`, result.error);
+    }
+
+    return result;
+  } catch (error: any) {
+    logger.error('Error generando poster Hollywood:', error);
+    return {
+      success: false,
+      error: error.message || 'Error desconocido al generar poster'
+    };
+  }
+}
+
+/**
  * Genera múltiples imágenes en lote con MÚLTIPLES referencias faciales
  * Ideal para crear videos musicales con consistencia facial usando hasta 3 fotos del artista
  * USA SEMILLA CONSISTENTE PARA COHERENCIA VISUAL (color, tono, iluminación)

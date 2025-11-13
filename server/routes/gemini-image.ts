@@ -9,6 +9,7 @@ import {
   generateBatchImagesWithMultipleFaceReferences,
   generateImageWithMultipleFaceReferences,
   editImageWithGemini,
+  generateHollywoodStylePoster,
   type CinematicScene 
 } from '../services/gemini-image-service';
 
@@ -494,6 +495,59 @@ CRITICAL REQUIREMENTS:
     return res.status(500).json({
       success: false,
       error: error.message || 'Error interno al generar Master Character'
+    });
+  }
+});
+
+/**
+ * Genera poster cinematográfico estilo Hollywood para un concepto
+ */
+router.post('/generate-hollywood-poster', async (req: Request, res: Response) => {
+  try {
+    const { conceptTitle, conceptDescription, artistReferenceImages, directorName } = req.body;
+
+    if (!conceptTitle || !conceptDescription) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren conceptTitle y conceptDescription'
+      });
+    }
+
+    if (!artistReferenceImages || !Array.isArray(artistReferenceImages) || artistReferenceImages.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren imágenes de referencia del artista'
+      });
+    }
+
+    console.log(`🎬 Generando poster Hollywood: "${conceptTitle}"`);
+
+    const result = await generateHollywoodStylePoster(
+      conceptTitle,
+      conceptDescription,
+      artistReferenceImages,
+      directorName || 'Director'
+    );
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error generando poster'
+      });
+    }
+
+    return res.json({
+      success: true,
+      imageUrl: result.imageUrl,
+      imageBase64: result.imageBase64,
+      provider: result.provider
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error en /generate-hollywood-poster:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno al generar poster'
     });
   }
 });
