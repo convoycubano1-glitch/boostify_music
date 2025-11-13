@@ -8,16 +8,28 @@ import { DirectorsList } from "../components/music-video/directors-list";
 import { MusicVideoAI } from "../components/music-video/music-video-ai";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import type { DirectorProfile } from "../data/directors";
 
 export default function MusicVideoCreator() {
   const [activeTab, setActiveTab] = useState<'directors' | 'ai' | 'editor'>('directors');
+  const [selectedDirector, setSelectedDirector] = useState<DirectorProfile | null>(null);
+
+  const handleDirectorSelected = (director: DirectorProfile) => {
+    setSelectedDirector(director);
+    setActiveTab('ai');
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 flex flex-col">
         <HeroSection />
-        <ContentSection activeTab={activeTab} setActiveTab={setActiveTab} />
+        <ContentSection 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab}
+          selectedDirector={selectedDirector}
+          onDirectorSelected={handleDirectorSelected}
+        />
       </main>
     </div>
   );
@@ -101,9 +113,11 @@ const featuresData = [
 interface ContentSectionProps {
   activeTab: 'directors' | 'ai' | 'editor';
   setActiveTab: (tab: 'directors' | 'ai' | 'editor') => void;
+  selectedDirector: DirectorProfile | null;
+  onDirectorSelected: (director: DirectorProfile) => void;
 }
 
-const ContentSection = ({ activeTab, setActiveTab }: ContentSectionProps) => (
+const ContentSection = ({ activeTab, setActiveTab, selectedDirector, onDirectorSelected }: ContentSectionProps) => (
   <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12 flex-1">
     <div className="flex flex-col items-center mb-4 sm:mb-8 text-center">
       <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-4">Choose Your Creation Path</h2>
@@ -145,7 +159,11 @@ const ContentSection = ({ activeTab, setActiveTab }: ContentSectionProps) => (
     <div className="grid grid-cols-1 gap-4 sm:gap-6 max-w-[1200px] mx-auto">
       {/* Main content area - Only showing content for active tab */}
       <div className="w-full">
-        {activeTab === 'directors' ? <DirectorsList /> : <MusicVideoAI />}
+        {activeTab === 'directors' ? (
+          <DirectorsList onDirectorSelected={onDirectorSelected} />
+        ) : (
+          <MusicVideoAI preSelectedDirector={selectedDirector} />
+        )}
       </div>
     </div>
   </div>
