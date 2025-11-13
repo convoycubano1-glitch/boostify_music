@@ -485,19 +485,13 @@ export function ProjectManager({
             title: "Video Ready!",
             description: "Your music video has been rendered successfully",
           });
+          setShowRenderModal(false);
         }}
         clips={clips}
         audioUrl={audioUrl}
         audioDuration={audioDuration}
         projectId={currentProjectId}
         projectName={projectName}
-        onComplete={(videoUrl) => {
-          toast({
-            title: "Video renderizado exitosamente",
-            description: "Tu video final está listo",
-          });
-          setShowRenderModal(false);
-        }}
       />
     </>
   );
