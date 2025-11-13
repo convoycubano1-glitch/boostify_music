@@ -56,7 +56,7 @@ async function generateTextWithFallback(params: any): Promise<any> {
 }
 
 export interface DocumentGenerationOptions {
-  type: 'technical-rider' | 'lighting-setup' | 'stage-plot' | 'hospitality' | 'contract';
+  type: 'technical-rider' | 'lighting-setup' | 'stage-plot' | 'hospitality' | 'contract' | 'requirements' | 'budget' | 'logistics' | 'hiring' | 'calendar' | 'ai-assistant';
   requirements: string;
   format?: 'detailed' | 'concise' | 'technical';
 }
@@ -249,7 +249,261 @@ Include:
    - Recording rights
    - Promotional obligations
 
-Format as a professional performance contract with clear legal language.`
+Format as a professional performance contract with clear legal language.`,
+
+      'requirements': `You are a professional tour manager creating a comprehensive requirements list. Generate a detailed requirements document based on:
+
+${options.requirements}
+
+Include:
+1. TECHNICAL REQUIREMENTS
+   - Audio equipment needs
+   - Lighting specifications
+   - Stage requirements
+   - Power requirements
+
+2. LOGISTICAL REQUIREMENTS
+   - Transportation needs
+   - Accommodation details
+   - Load-in/out schedule
+   - Crew requirements
+
+3. PERSONNEL REQUIREMENTS
+   - Team members needed
+   - Roles and responsibilities
+   - Qualifications required
+
+4. HOSPITALITY REQUIREMENTS
+   - Catering needs
+   - Dressing room setup
+   - Green room amenities
+
+5. PRODUCTION REQUIREMENTS
+   - Rehearsal needs
+   - Soundcheck timing
+   - Video/photo requirements
+
+6. SPECIAL REQUIREMENTS
+   - Security needs
+   - Access requirements
+   - Special requests
+
+Format as a professional requirements document with clear, itemized lists.`,
+
+      'budget': `You are a professional production accountant creating a detailed budget breakdown. Generate a comprehensive budget document based on:
+
+${options.requirements}
+
+Include:
+1. PRE-PRODUCTION COSTS
+   - Planning and preparation
+   - Location scouting
+   - Permits and insurance
+   - Staff pre-production time
+
+2. PRODUCTION COSTS
+   - Personnel (crew, talent, specialists)
+   - Equipment rental
+   - Venue/location fees
+   - Catering and hospitality
+   - Transportation
+   - Accommodation
+
+3. POST-PRODUCTION COSTS
+   - Editing and mixing
+   - Graphics and effects
+   - Distribution costs
+   - Marketing materials
+
+4. CONTINGENCY
+   - Unexpected expenses (10-15%)
+   - Weather delays
+   - Equipment failure backup
+
+5. REVENUE PROJECTIONS (if applicable)
+   - Ticket sales
+   - Merchandise
+   - Sponsorships
+   - Streaming/licensing
+
+6. BUDGET SUMMARY
+   - Total estimated costs
+   - Cost per category
+   - Profit/loss projection
+
+Format as a professional budget with clear line items, subtotals, and grand total.`,
+
+      'logistics': `You are a professional tour logistics coordinator creating a detailed logistics plan. Generate a comprehensive logistics document based on:
+
+${options.requirements}
+
+Include:
+1. TRANSPORTATION
+   - Travel routes and schedules
+   - Vehicle requirements
+   - Equipment transport
+   - Crew transportation
+
+2. ACCOMMODATION
+   - Hotel bookings
+   - Room assignments
+   - Check-in/out times
+   - Special requests
+
+3. EQUIPMENT HANDLING
+   - Load-in schedule
+   - Load-out schedule
+   - Storage requirements
+   - Equipment security
+
+4. TIMELINE
+   - Detailed day-of schedule
+   - Setup timeline
+   - Performance schedule
+   - Breakdown timeline
+
+5. CONTACT INFORMATION
+   - Venue contacts
+   - Transportation providers
+   - Emergency contacts
+   - Team communication
+
+6. CONTINGENCY PLANS
+   - Backup transportation
+   - Alternative routes
+   - Weather delays
+   - Emergency procedures
+
+Format as a professional logistics plan with clear timelines and responsibilities.`,
+
+      'hiring': `You are a professional talent recruiter creating detailed job descriptions. Generate comprehensive hiring documentation based on:
+
+${options.requirements}
+
+Include:
+1. POSITION OVERVIEW
+   - Job title
+   - Department/team
+   - Reports to
+   - Employment type
+
+2. RESPONSIBILITIES
+   - Primary duties
+   - Day-to-day tasks
+   - Project involvement
+   - Team collaboration
+
+3. QUALIFICATIONS
+   - Required education
+   - Required experience
+   - Technical skills
+   - Soft skills
+
+4. PREFERRED QUALIFICATIONS
+   - Additional certifications
+   - Industry experience
+   - Portfolio requirements
+   - References
+
+5. COMPENSATION & BENEFITS
+   - Salary range
+   - Benefits package
+   - Tour per diems (if applicable)
+   - Travel opportunities
+
+6. APPLICATION PROCESS
+   - How to apply
+   - Required materials
+   - Interview process
+   - Timeline
+
+Format as professional job descriptions with clear requirements and expectations.`,
+
+      'calendar': `You are a professional event coordinator creating a detailed schedule. Generate a comprehensive calendar/schedule document based on:
+
+${options.requirements}
+
+Include:
+1. TIMELINE OVERVIEW
+   - Project start and end dates
+   - Major milestones
+   - Key deadlines
+   - Phase breakdown
+
+2. DETAILED SCHEDULE
+   - Daily/weekly activities
+   - Time allocations
+   - Responsible parties
+   - Dependencies
+
+3. REHEARSAL SCHEDULE (if applicable)
+   - Rehearsal dates and times
+   - Location
+   - Objectives for each session
+   - Equipment needs
+
+4. PRODUCTION SCHEDULE
+   - Setup timeline
+   - Performance/event times
+   - Breakdown timeline
+   - Travel time buffers
+
+5. IMPORTANT DATES
+   - Payment deadlines
+   - Contract submissions
+   - Marketing milestones
+   - Technical rehearsals
+
+6. REMINDERS & NOTES
+   - Critical checkpoints
+   - Advance preparation needed
+   - Backup dates
+   - Weather considerations
+
+Format as a professional schedule with clear dates, times, and responsibilities.`,
+
+      'ai-assistant': `You are an expert AI consultant providing professional insights and recommendations. Analyze this request and provide detailed guidance:
+
+${options.requirements}
+
+Include:
+1. SITUATION ANALYSIS
+   - Current state assessment
+   - Key challenges identified
+   - Opportunities available
+   - Industry context
+
+2. RECOMMENDATIONS
+   - Specific actionable steps
+   - Priority ranking
+   - Timeline for implementation
+   - Resource requirements
+
+3. BEST PRACTICES
+   - Industry standards
+   - Proven strategies
+   - Common pitfalls to avoid
+   - Success metrics
+
+4. IMPLEMENTATION PLAN
+   - Step-by-step approach
+   - Tools and resources needed
+   - Team requirements
+   - Budget considerations
+
+5. RISK MITIGATION
+   - Potential challenges
+   - Backup strategies
+   - Contingency planning
+   - Quality control measures
+
+6. NEXT STEPS
+   - Immediate actions
+   - Short-term goals
+   - Long-term objectives
+   - Follow-up recommendations
+
+Format as professional AI-powered consulting advice with clear, actionable insights.`
     };
 
     const prompt = prompts[options.type] || prompts['technical-rider'];
