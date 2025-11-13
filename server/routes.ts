@@ -61,6 +61,7 @@ import aiAssistantRouter from './routes/ai-assistant'; // Import the AI assistan
 import geminiAgentsRouter from './routes/gemini-agents'; // Import the Gemini agents router
 import contractsRouter from './routes/contracts'; // Import the contracts router with Gemini AI
 import falApiRouter from './routes/fal-api'; // Import the FAL AI router for secure backend processing
+import creditsRouter from './routes/credits'; // Import the credits and payments router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -245,6 +246,7 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/ai', aiAssistantRouter);
   app.use('/api/fal', falApiRouter); // FAL AI backend routes (MuseTalk lip-sync, etc.)
   app.use('/api/gemini-agents', geminiAgentsRouter);
+  app.use(creditsRouter); // Credits and payment routes
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, y Gemini agents registradas');
   
