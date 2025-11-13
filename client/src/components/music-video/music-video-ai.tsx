@@ -322,6 +322,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   }, [showLoadProjectDialog, user, toast]);
 
   // Pre-seleccionar director cuando viene desde DirectorsList
+  // IMPORTANTE: NO cerramos el onboarding, solo pre-seleccionamos el director
+  // El usuario debe pasar por todos los pasos (música, imágenes, director)
   useEffect(() => {
     if (preSelectedDirector) {
       console.log('🎬 [DIRECTOR PRE-SELECTED]', preSelectedDirector.name);
@@ -337,18 +339,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         imageUrl: undefined
       };
       
+      // Solo guardamos el director en el estado
+      // El onboarding se abre normalmente y el usuario pasa por todos los pasos
       setVideoStyle(prev => ({
         ...prev,
         selectedDirector: directorForState
       }));
-
-      // Cerrar onboarding y abrir selección de director (donde ya estará pre-seleccionado)
-      setShowOnboarding(false);
-      setShowDirectorSelection(true);
       
       toast({
-        title: `Director seleccionado: ${preSelectedDirector.name}`,
-        description: "Puedes continuar con el flujo de creación",
+        title: `Director ${preSelectedDirector.name} pre-seleccionado`,
+        description: "Comienza subiendo tu música e imágenes",
       });
     }
   }, [preSelectedDirector, toast]);
@@ -4581,6 +4581,7 @@ ${transcription}`;
       <DirectorSelectionModal
         open={showDirectorSelection}
         onSelect={handleDirectorSelection as any}
+        preSelectedDirector={videoStyle.selectedDirector}
       />
 
       {/* Modal de Selección de Concepto */}

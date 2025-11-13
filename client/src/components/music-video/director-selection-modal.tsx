@@ -7,9 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { DIRECTORS } from "@/data/directors";
 
 interface Director {
   id: string;
@@ -24,6 +23,7 @@ interface Director {
 interface DirectorSelectionModalProps {
   open: boolean;
   onSelect: (director: Director, style: string) => void;
+  preSelectedDirector?: Director | null;
 }
 
 const VISUAL_STYLES = [
@@ -35,38 +35,49 @@ const VISUAL_STYLES = [
   { id: "natural", name: "Natural", description: "Organic, authentic, and documentary-style", icon: "🌿" }
 ];
 
-export function DirectorSelectionModal({ open, onSelect }: DirectorSelectionModalProps) {
+export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: DirectorSelectionModalProps) {
   const { toast } = useToast();
-  const [selectedDirector, setSelectedDirector] = useState<Director | null>(null);
+  const [selectedDirector, setSelectedDirector] = useState<Director | null>(preSelectedDirector || null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [directors, setDirectors] = useState<Director[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
+  // Cargar directores desde JSON
   useEffect(() => {
-    const fetchDirectors = async () => {
+    if (open) {
       try {
-        const querySnapshot = await getDocs(collection(db, "directors"));
-        const directorsData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Director[];
-        setDirectors(directorsData);
+        // Convertir DirectorProfile[] a Director[] para compatibilidad
+        const directorsFromJSON = DIRECTORS.map(directorProfile => ({
+          id: directorProfile.id,
+          name: directorProfile.name,
+          specialty: directorProfile.specialty,
+          experience: directorProfile.experience,
+          style: directorProfile.visual_style.description,
+          rating: directorProfile.rating,
+          // Generar imagen de avatar profesional basada en el nombre
+          imageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(directorProfile.name)}&backgroundColor=f59e0b,ea580c&radius=50`
+        }));
+        
+        setDirectors(directorsFromJSON);
+        console.log(`✅ DirectorSelectionModal: Cargados ${directorsFromJSON.length} directores desde JSON`);
       } catch (error) {
-        console.error("Error loading directors:", error);
+        console.error("Error loading directors from JSON:", error);
         toast({
           title: "Error",
-          description: "Failed to load directors. Using fallback data.",
+          description: "Failed to load directors.",
           variant: "destructive",
         });
-      } finally {
-        setLoading(false);
       }
-    };
-
-    if (open) {
-      fetchDirectors();
     }
   }, [open, toast]);
+
+  // Pre-seleccionar director si viene desde DirectorsList
+  useEffect(() => {
+    if (preSelectedDirector && open) {
+      setSelectedDirector(preSelectedDirector);
+      console.log(`✅ Director pre-seleccionado en modal: ${preSelectedDirector.name}`);
+    }
+  }, [preSelectedDirector, open]);
 
   const handleContinue = () => {
     if (selectedDirector && selectedStyle) {
