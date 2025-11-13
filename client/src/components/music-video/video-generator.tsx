@@ -157,26 +157,31 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
   };
 
   return (
-    <Card className="border border-blue-200 bg-blue-50/50">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold flex items-center">
-          <Video className="h-5 w-5 mr-2 text-blue-600" />
-          AI Video Generation
+    <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg">
+      <CardHeader className="pb-4 space-y-1">
+        <CardTitle className="text-xl font-bold flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Video className="h-6 w-6 text-primary" />
+          </div>
+          Generación de Video AI
         </CardTitle>
-        <CardDescription>
-          Transform your scenes into smooth, high-quality videos
+        <CardDescription className="text-base">
+          Transforma tus escenas en videos de alta calidad con movimiento fluido
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="model-select">Video Model</Label>
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="model-select" className="text-sm font-semibold">Modelo de Video</Label>
+            <Film className="h-4 w-4 text-muted-foreground" />
+          </div>
           <RadioGroup 
             value={settings.model} 
             onValueChange={(value) => setSettings({...settings, model: value})}
-            className="grid grid-cols-1 md:grid-cols-3 gap-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
           >
             {videoModels.map((model) => (
-              <div key={model.id}>
+              <div key={model.id} className="relative">
                 <RadioGroupItem
                   value={model.id}
                   id={`model-${model.id}`}
@@ -184,24 +189,28 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
                 />
                 <Label
                   htmlFor={`model-${model.id}`}
-                  className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 cursor-pointer"
+                  className="flex flex-col gap-2 rounded-lg border-2 border-muted bg-background/50 backdrop-blur p-4 hover:bg-accent/50 hover:border-primary/50 transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:shadow-md cursor-pointer group"
+                  data-testid={`model-option-${model.id}`}
                 >
-                  <span className="font-medium">{model.name}</span>
-                  <span className="text-xs text-muted-foreground">{model.description}</span>
+                  <div className="flex items-start justify-between">
+                    <span className="font-semibold text-sm">{model.name}</span>
+                    <Check className="h-4 w-4 text-primary opacity-0 group-data-[state=checked]:opacity-100 transition-opacity" />
+                  </div>
+                  <span className="text-xs text-muted-foreground leading-relaxed">{model.description}</span>
                 </Label>
               </div>
             ))}
           </RadioGroup>
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="quality">Video Quality</Label>
+        <div className="space-y-3">
+          <Label htmlFor="quality" className="text-sm font-semibold">Calidad de Video</Label>
           <RadioGroup 
             value={settings.quality} 
             onValueChange={(value: 'standard' | 'premium') => setSettings({...settings, quality: value})}
-            className="flex flex-col sm:flex-row gap-3"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
           >
-            <div>
+            <div className="relative">
               <RadioGroupItem
                 value="standard"
                 id="quality-standard"
@@ -209,13 +218,14 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
               />
               <Label
                 htmlFor="quality-standard"
-                className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 cursor-pointer"
+                className="flex flex-col gap-2 rounded-lg border-2 border-muted bg-background/50 backdrop-blur p-4 hover:bg-accent/50 hover:border-primary/50 transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:shadow-md cursor-pointer"
+                data-testid="quality-standard"
               >
-                <span className="font-medium">Standard</span>
-                <span className="text-xs text-muted-foreground">Medium quality (720p)</span>
+                <span className="font-semibold">Standard</span>
+                <span className="text-xs text-muted-foreground">Calidad media (720p) - Más rápido</span>
               </Label>
             </div>
-            <div>
+            <div className="relative">
               <RadioGroupItem
                 value="premium"
                 id="quality-premium"
@@ -223,19 +233,23 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
               />
               <Label
                 htmlFor="quality-premium"
-                className="flex flex-col gap-1 rounded-md border-2 border-muted bg-transparent p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 cursor-pointer"
+                className="flex flex-col gap-2 rounded-lg border-2 border-muted bg-background/50 backdrop-blur p-4 hover:bg-accent/50 hover:border-primary/50 transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:shadow-md cursor-pointer"
+                data-testid="quality-premium"
               >
-                <span className="font-medium">Premium</span>
-                <span className="text-xs text-muted-foreground">High quality (1080p)</span>
+                <span className="font-semibold">Premium ✨</span>
+                <span className="text-xs text-muted-foreground">Alta calidad (1080p) - Mejor resultado</span>
               </Label>
             </div>
           </RadioGroup>
         </div>
         
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="duration">Duration (seconds)</Label>
-            <span className="text-sm text-muted-foreground">{settings.duration}s</span>
+        <div className="space-y-3 bg-muted/30 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="duration" className="text-sm font-semibold">Duración</Label>
+            <div className="flex items-center gap-2">
+              <Clock3 className="h-4 w-4 text-primary" />
+              <span className="text-base font-bold text-primary">{settings.duration}s</span>
+            </div>
           </div>
           <Slider 
             id="duration"
@@ -244,8 +258,10 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
             step={5}
             value={[settings.duration]} 
             onValueChange={(values) => setSettings({...settings, duration: values[0]})}
+            className="cursor-pointer"
+            data-testid="duration-slider"
           />
-          <div className="grid grid-cols-3 text-xs text-muted-foreground">
+          <div className="grid grid-cols-3 text-xs font-medium text-muted-foreground/80">
             <span>5s</span>
             <span className="text-center">15s</span>
             <span className="text-right">30s</span>
@@ -253,88 +269,98 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
         </div>
         
         {settings.model === 't2v-01' && (
-          <div className="space-y-2 mt-2">
-            <Label htmlFor="prompt">Video Description</Label>
+          <div className="space-y-3">
+            <Label htmlFor="prompt" className="text-sm font-semibold">Descripción del Video</Label>
             <Textarea 
               id="prompt" 
-              placeholder="Describe in detail what you want to see in the video..."
+              placeholder="Describe con detalle qué quieres ver en el video..."
               value={settings.prompt}
               onChange={(e) => setSettings({...settings, prompt: e.target.value})}
-              className="min-h-[80px]"
+              className="min-h-[100px] resize-none"
+              data-testid="video-prompt"
             />
-            <p className="text-xs text-muted-foreground">
-              Include details about atmosphere, colors, actions, and desired visual elements.
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Incluye detalles sobre atmósfera, colores, acciones y elementos visuales deseados.
             </p>
           </div>
         )}
         
-        <div className="space-y-2">
-          <Label htmlFor="camera-movement">Camera Movement</Label>
+        <div className="space-y-3">
+          <Label htmlFor="camera-movement" className="text-sm font-semibold">Movimiento de Cámara</Label>
           <Select 
             value={settings.cameraMovement} 
             onValueChange={(value) => setSettings({...settings, cameraMovement: value})}
           >
-            <SelectTrigger id="camera-movement">
-              <SelectValue placeholder="Select movement" />
+            <SelectTrigger id="camera-movement" className="w-full" data-testid="camera-movement-select">
+              <SelectValue placeholder="Selecciona movimiento" />
             </SelectTrigger>
             <SelectContent>
               {cameraMovements.map((movement) => (
-                <SelectItem key={movement} value={movement}>{movement}</SelectItem>
+                <SelectItem key={movement} value={movement} data-testid={`camera-${movement}`}>
+                  {movement}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         
-        <div className="pt-2">
+        <div className="pt-4">
           <Button 
             onClick={handleGenerate} 
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
             disabled={isLoading}
+            data-testid="generate-video-button"
           >
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Video...
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Generando Video...
               </>
             ) : (
               <>
-                <Wand2 className="mr-2 h-4 w-4" />
-                Generate Video
+                <Wand2 className="mr-2 h-5 w-5" />
+                Generar Video
               </>
             )}
           </Button>
         </div>
         
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-          <div className="border rounded-md p-3 bg-blue-100/50">
-            <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+          <div className="border-2 border-primary/20 rounded-lg p-3 bg-primary/5 backdrop-blur">
+            <div className="flex items-center gap-2 font-semibold text-primary mb-2">
               <Film className="h-4 w-4" />
-              <span>Scenes</span>
+              <span>Escenas</span>
             </div>
-            <p className="text-muted-foreground"><span className="font-medium">{scenesCount}</span> scenes processed</p>
+            <p className="text-muted-foreground">
+              <span className="font-bold text-lg text-foreground">{scenesCount}</span> procesadas
+            </p>
           </div>
           
-          <div className="border rounded-md p-3 bg-blue-100/50">
-            <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
+          <div className="border-2 border-primary/20 rounded-lg p-3 bg-primary/5 backdrop-blur">
+            <div className="flex items-center gap-2 font-semibold text-primary mb-2">
               <Clock3 className="h-4 w-4" />
-              <span>Estimated Time</span>
+              <span>Tiempo Est.</span>
             </div>
-            <p className="text-muted-foreground">~{estimatedTime()} minutos</p>
+            <p className="text-muted-foreground">
+              <span className="font-bold text-lg text-foreground">~{estimatedTime()}</span> min
+            </p>
           </div>
           
-          <div className="border rounded-md p-3 bg-blue-100/50">
-            <div className="flex items-center gap-2 font-medium text-blue-700 mb-1">
+          <div className="border-2 border-primary/20 rounded-lg p-3 bg-primary/5 backdrop-blur">
+            <div className="flex items-center gap-2 font-semibold text-primary mb-2">
               <Info className="h-4 w-4" />
-              <span>API</span>
+              <span>Proveedor</span>
             </div>
-            <p className="text-muted-foreground">PiAPI/Hailuo</p>
+            <p className="text-muted-foreground font-semibold text-foreground">PiAPI/Hailuo</p>
           </div>
         </div>
         
-        <div className="bg-blue-100 p-3 rounded-md text-sm">
-          <p className="flex items-start gap-2">
-            <Check className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <span>La generación del video puede tardar varios minutos dependiendo de la duración y calidad seleccionadas. Se te notificará cuando esté listo.</span>
+        <div className="bg-primary/10 border-2 border-primary/20 p-4 rounded-lg text-sm">
+          <p className="flex items-start gap-2 text-foreground/90">
+            <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <span className="leading-relaxed">
+              La generación puede tardar <strong>2-10 minutos</strong> según duración y calidad. Te notificaremos cuando esté listo.
+            </span>
           </p>
         </div>
       </CardContent>
