@@ -7,8 +7,7 @@ import { useToast } from "../../hooks/use-toast";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
 import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
-import { db } from "../../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { aiAgentsFirestore } from "../../lib/services/ai-agents-firestore";
 import { Button } from "../ui/button";
 
 interface Step {
@@ -91,32 +90,23 @@ export function ComposerAgent() {
     if (!user) return;
 
     try {
-      const compositionsRef = collection(db, 'compositions');
-      await addDoc(compositionsRef, {
-        userId: user.uid,
-        lyrics: data.lyrics,
-        musicUrl: data.musicUrl || null,
-        genre: data.params.genre,
-        mood: data.params.mood,
-        theme: data.params.theme,
-        language: data.params.language,
-        structure: data.params.structure,
-        tempo: data.params.tempo,
-        timestamp: serverTimestamp(),
-        agentType: 'composer'
-      });
+      // Save lyrics using centralized service
+      await aiAgentsFirestore.saveComposerLyrics(
+        user.uid,
+        data.lyrics,
+        {
+          genre: data.params.genre,
+          mood: data.params.mood,
+          theme: data.params.theme,
+          language: data.params.language,
+          structure: data.params.structure
+        }
+      );
 
-      toast({
-        title: "Saved Successfully",
-        description: "Your composition has been saved to your library.",
-      });
+      console.log('✅ Composer lyrics saved to Firestore with Gemini integration');
     } catch (error) {
       console.error('Error saving to Firestore:', error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save composition. Please try again.",
-        variant: "destructive"
-      });
+      // Don't throw - allow the music generation to continue even if save fails
     }
   };
 

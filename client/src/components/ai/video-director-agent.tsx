@@ -3,10 +3,9 @@ import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
 import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
+import { aiAgentsFirestore } from "../../lib/services/ai-agents-firestore";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
-import { db } from "../../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 import { Button } from "../ui/button";
@@ -79,28 +78,20 @@ export function VideoDirectorAgent() {
     if (!user) return;
 
     try {
-      const scriptsRef = collection(db, 'videoScripts');
-      await addDoc(scriptsRef, {
-        userId: user.uid,
-        script: data.script,
-        lyrics: data.params.lyrics,
-        visualStyle: data.params.style,
-        mood: data.params.mood,
-        timestamp: serverTimestamp(),
-        agentType: 'videoDirector'
-      });
+      await aiAgentsFirestore.saveVideoScript(
+        user.uid,
+        data.script,
+        {
+          lyrics: data.params.lyrics,
+          style: data.params.style,
+          mood: data.params.mood
+        }
+      );
 
-      toast({
-        title: "Saved Successfully",
-        description: "Your video script has been saved to your library.",
-      });
+      console.log('✅ Video script saved to Firestore with Gemini integration');
     } catch (error) {
       console.error('Error saving to Firestore:', error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save script. Please try again.",
-        variant: "destructive"
-      });
+      // Don't throw - continue even if save fails
     }
   };
 

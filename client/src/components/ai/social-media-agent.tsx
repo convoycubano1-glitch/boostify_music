@@ -4,10 +4,9 @@ import { Share2, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
+import { aiAgentsFirestore } from "../../lib/services/ai-agents-firestore";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
-import { db } from "../../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "../ui/button";
 
 export function SocialMediaAgent() {
@@ -29,27 +28,20 @@ export function SocialMediaAgent() {
     if (!user) return;
 
     try {
-      const contentRef = collection(db, 'socialMediaContent');
-      await addDoc(contentRef, {
-        userId: user.uid,
-        content: data.content,
-        platforms: data.params.platforms,
-        frequency: data.params.frequency,
-        timestamp: serverTimestamp(),
-        agentType: 'socialMedia'
-      });
+      await aiAgentsFirestore.saveSocialMediaContent(
+        user.uid,
+        data.content,
+        {
+          platform: data.params.platforms,
+          contentType: "calendar",
+          tone: data.params.frequency
+        }
+      );
 
-      toast({
-        title: "Saved Successfully",
-        description: "Your social media content has been saved to your library.",
-      });
+      console.log('✅ Social media content saved to Firestore with Gemini integration');
     } catch (error) {
       console.error('Error saving to Firestore:', error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save content. Please try again.",
-        variant: "destructive"
-      });
+      // Don't throw - continue even if save fails
     }
   };
 

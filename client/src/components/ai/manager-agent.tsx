@@ -5,10 +5,9 @@ import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
 import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
+import { aiAgentsFirestore } from "../../lib/services/ai-agents-firestore";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
-import { db } from "../../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "../ui/button";
 
 interface Step {
@@ -58,27 +57,20 @@ export function ManagerAgent() {
     if (!user) return;
 
     try {
-      const adviceRef = collection(db, 'careerAdvice');
-      await addDoc(adviceRef, {
-        userId: user.uid,
-        advice: data.advice,
-        metricsType: data.params.metrics,
-        timeframe: data.params.timeframe,
-        timestamp: serverTimestamp(),
-        agentType: 'manager'
-      });
+      await aiAgentsFirestore.saveCareerAdvice(
+        user.uid,
+        data.advice,
+        {
+          currentStage: `${data.params.metrics} metrics analysis`,
+          timeline: data.params.timeframe,
+          goals: "Performance optimization and career growth"
+        }
+      );
 
-      toast({
-        title: "Saved Successfully",
-        description: "Your career advice has been saved to your library.",
-      });
+      console.log('✅ Career advice saved to Firestore with Gemini integration');
     } catch (error) {
       console.error('Error saving to Firestore:', error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save advice. Please try again.",
-        variant: "destructive"
-      });
+      // Don't throw - continue even if save fails
     }
   };
 

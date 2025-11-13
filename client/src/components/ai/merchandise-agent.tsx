@@ -4,10 +4,9 @@ import { ShoppingBag, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
+import { aiAgentsFirestore } from "../../lib/services/ai-agents-firestore";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
-import { db } from "../../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "../ui/button";
 
 export function MerchandiseAgent() {
@@ -29,27 +28,19 @@ export function MerchandiseAgent() {
     if (!user) return;
 
     try {
-      const ideasRef = collection(db, 'merchandiseIdeas');
-      await addDoc(ideasRef, {
-        userId: user.uid,
-        ideas: data.ideas,
-        productType: data.params.productType,
-        style: data.params.style,
-        timestamp: serverTimestamp(),
-        agentType: 'merchandise'
-      });
+      await aiAgentsFirestore.saveMerchandiseIdeas(
+        user.uid,
+        data.ideas,
+        {
+          artistStyle: data.params.style,
+          targetMarket: data.params.productType
+        }
+      );
 
-      toast({
-        title: "Saved Successfully",
-        description: "Your merchandise ideas have been saved to your library.",
-      });
+      console.log('✅ Merchandise ideas saved to Firestore with Gemini integration');
     } catch (error) {
       console.error('Error saving to Firestore:', error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save ideas. Please try again.",
-        variant: "destructive"
-      });
+      // Don't throw - continue even if save fails
     }
   };
 

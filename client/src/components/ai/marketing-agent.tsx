@@ -5,10 +5,9 @@ import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
 import { geminiAgentsService } from "../../lib/api/gemini-agents-service";
+import { aiAgentsFirestore } from "../../lib/services/ai-agents-firestore";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
-import { db } from "../../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "../ui/button";
 
 interface Step {
@@ -58,28 +57,21 @@ export function MarketingAgent() {
     if (!user) return;
 
     try {
-      const strategiesRef = collection(db, 'marketingStrategies');
-      await addDoc(strategiesRef, {
-        userId: user.uid,
-        strategy: data.strategy,
-        targetAudience: data.params.target,
-        budget: data.params.budget,
-        platform: data.params.platform,
-        timestamp: serverTimestamp(),
-        agentType: 'marketing'
-      });
+      await aiAgentsFirestore.saveMarketingStrategy(
+        user.uid,
+        data.strategy,
+        {
+          targetAudience: data.params.target,
+          budget: `$${data.params.budget}`,
+          platforms: [data.params.platform],
+          goals: "Music promotion and audience growth"
+        }
+      );
 
-      toast({
-        title: "Saved Successfully",
-        description: "Your marketing strategy has been saved to your library.",
-      });
+      console.log('✅ Marketing strategy saved to Firestore with Gemini integration');
     } catch (error) {
       console.error('Error saving to Firestore:', error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save strategy. Please try again.",
-        variant: "destructive"
-      });
+      // Don't throw - continue even if save fails
     }
   };
 
