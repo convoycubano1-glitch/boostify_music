@@ -4,11 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check, Sparkles, CreditCard, Lock } from 'lucide-react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import type { Stripe } from '@stripe/stripe-js';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
+// Load Stripe dynamically to prevent initialization errors
+const getStripe = async (): Promise<Stripe | null> => {
+  try {
+    const { loadStripe } = await import('@stripe/stripe-js');
+    const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+    
+    if (!stripeKey) {
+      console.warn('Stripe public key not configured');
+      return null;
+    }
+    
+    return await loadStripe(stripeKey);
+  } catch (error) {
+    console.error('Error loading Stripe:', error);
+    return null;
+  }
+};
 
 interface PaymentGateModalProps {
   isOpen: boolean;
@@ -108,11 +124,17 @@ export function PaymentGateModal({
 }: PaymentGateModalProps) {
   const [clientSecret, setClientSecret] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isOpen && userEmail) {
-      createPaymentIntent();
+    if (isOpen) {
+      // Load Stripe when modal opens
+      setStripePromise(getStripe());
+      
+      if (userEmail) {
+        createPaymentIntent();
+      }
     }
   }, [isOpen, userEmail]);
 

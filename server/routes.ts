@@ -64,6 +64,7 @@ import geminiAgentsRouter from './routes/gemini-agents'; // Import the Gemini ag
 import contractsRouter from './routes/contracts'; // Import the contracts router with Gemini AI
 import falApiRouter from './routes/fal-api'; // Import the FAL AI router for secure backend processing
 import creditsRouter from './routes/credits'; // Import the credits and payments router
+import faceAnalysisRouter from './routes/face-analysis'; // Import the face analysis router
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -211,6 +212,9 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Registrar el router para Gemini Image Generation (Nano Banana)
   app.use('/api/gemini-image', geminiImageRouter);
+  
+  // Registrar el router para Face Analysis con Gemini Vision
+  app.use('/api/gemini', faceAnalysisRouter);
   
   // Registrar el router para Artist Profile Generation (Gemini)
   app.use('/api/artist-profile', artistProfileRouter);
