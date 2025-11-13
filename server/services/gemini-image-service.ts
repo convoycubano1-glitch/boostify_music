@@ -85,6 +85,117 @@ export interface ImageGenerationResult {
 }
 
 /**
+ * Edita una imagen existente usando Gemini con instrucciones específicas
+ * @param imageUrl - URL o base64 de la imagen original
+ * @param editInstructions - Instrucciones de cómo editar la imagen
+ * @param originalPrompt - Prompt original (opcional)
+ * @returns Nueva imagen editada en formato base64
+ */
+export async function editImageWithGemini(
+  imageUrl: string,
+  editInstructions: string,
+  originalPrompt?: string
+): Promise<ImageGenerationResult> {
+  try {
+    if (geminiClients.length === 0) {
+      throw new Error('No hay API keys de Gemini configuradas');
+    }
+
+    logger.log('Editando imagen con Gemini:', editInstructions.substring(0, 100) + '...');
+
+    // Convertir la imagen a base64 si es una URL
+    let imageBase64 = imageUrl;
+    let mimeType = 'image/png';
+
+    if (imageUrl.startsWith('http')) {
+      // Descargar la imagen
+      const axios = await import('axios');
+      const response = await axios.default.get(imageUrl, { 
+        responseType: 'arraybuffer',
+        timeout: 30000
+      });
+      imageBase64 = Buffer.from(response.data).toString('base64');
+      mimeType = response.headers['content-type'] || 'image/png';
+    } else if (imageUrl.startsWith('data:')) {
+      // Extraer base64 de data URL
+      const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (matches) {
+        mimeType = matches[1];
+        imageBase64 = matches[2];
+      }
+    }
+
+    // Construir el prompt de edición
+    const editPrompt = `
+I have an image that needs to be edited with the following modifications:
+
+${editInstructions}
+
+${originalPrompt ? `Original concept: ${originalPrompt}` : ''}
+
+Please create a new version of this image with these edits applied. Maintain the overall composition and style, but apply the requested changes.
+    `.trim();
+
+    // Usar Gemini con imagen de referencia para edición
+    const response = await generateContentWithFallback({
+      model: "gemini-2.5-flash-image",
+      contents: [
+        { 
+          role: "user", 
+          parts: [
+            { text: editPrompt },
+            {
+              inlineData: {
+                data: imageBase64,
+                mimeType: mimeType
+              }
+            }
+          ] 
+        }
+      ],
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+      },
+    });
+
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error('No se recibieron candidatos de la API');
+    }
+
+    const content = candidates[0].content;
+    if (!content || !content.parts) {
+      throw new Error('Contenido vacío en la respuesta');
+    }
+
+    // Buscar la parte de imagen en la respuesta
+    for (const part of content.parts) {
+      if (part.text) {
+        logger.log('Texto de respuesta:', part.text);
+      } else if (part.inlineData && part.inlineData.data) {
+        const newImageBase64 = part.inlineData.data;
+        logger.log('Imagen editada exitosamente');
+        
+        return {
+          success: true,
+          imageBase64: newImageBase64,
+          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${newImageBase64}`,
+          provider: 'gemini'
+        };
+      }
+    }
+
+    throw new Error('No se encontró imagen en la respuesta');
+  } catch (error: any) {
+    logger.error('Error editando imagen con Gemini:', error);
+    return {
+      success: false,
+      error: error.message || 'Error desconocido al editar imagen'
+    };
+  }
+}
+
+/**
  * Genera una imagen usando Gemini 2.5 Flash Image
  * @param prompt - Descripción detallada de la escena
  * @returns Imagen en formato base64

@@ -8,10 +8,58 @@ import {
   generateBatchImages,
   generateBatchImagesWithMultipleFaceReferences,
   generateImageWithMultipleFaceReferences,
+  editImageWithGemini,
   type CinematicScene 
 } from '../services/gemini-image-service';
 
 const router = Router();
+
+/**
+ * Edita una imagen existente con instrucciones específicas
+ */
+router.post('/edit-image', async (req: Request, res: Response) => {
+  try {
+    const { imageUrl, editInstructions, originalPrompt } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere una imagen (imageUrl)'
+      });
+    }
+    
+    if (!editInstructions) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren instrucciones de edición (editInstructions)'
+      });
+    }
+    
+    console.log(`✏️ Editando imagen con instrucciones: ${editInstructions.substring(0, 100)}...`);
+    
+    const result = await editImageWithGemini(imageUrl, editInstructions, originalPrompt);
+    
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error al editar imagen'
+      });
+    }
+    
+    return res.json({
+      success: true,
+      imageUrl: result.imageUrl,
+      imageBase64: result.imageBase64,
+      prompt: editInstructions
+    });
+  } catch (error: any) {
+    console.error('Error en /edit-image:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno al editar imagen'
+    });
+  }
+});
 
 /**
  * Genera una imagen simple desde un prompt
