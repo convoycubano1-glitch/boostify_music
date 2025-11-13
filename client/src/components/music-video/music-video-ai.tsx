@@ -60,7 +60,7 @@ import { PaymentSection } from "./payment-section";
 import { MyGeneratedVideos } from "./my-generated-videos";
 import { generateMusicVideoPrompts } from "../../lib/api/music-video-generator";
 import { FAL_VIDEO_MODELS, generateVideoWithFAL, generateMultipleVideos } from "../../lib/api/fal-video-service";
-import DynamicProgressTracker from "./dynamic-progress-tracker";
+import EnhancedProgressModal from "./enhanced-progress-modal";
 import { CreativeOnboardingModal } from "./creative-onboarding-modal";
 import { DirectorSelectionModal } from "./director-selection-modal";
 import { ConceptSelectionModal } from "./concept-selection-modal";
@@ -4754,32 +4754,17 @@ ${transcription}`;
         </DialogContent>
       </Dialog>
       
-      {/* Overlay de progreso dinámico - Adaptado perfectamente a cada dispositivo */}
+      {/* Overlay de progreso mejorado con diseño atractivo */}
       <AnimatePresence>
         {showProgress && (
-          <motion.div
-            className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 md:p-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              <DynamicProgressTracker
-                currentStage={currentProgressStage}
-                progress={progressPercentage}
-                customMessage={progressMessage}
-                onComplete={() => {
-                  setShowProgress(false);
-                }}
-              />
-            </motion.div>
-          </motion.div>
+          <EnhancedProgressModal
+            currentStage={currentProgressStage}
+            progress={progressPercentage}
+            customMessage={progressMessage}
+            onComplete={() => {
+              setShowProgress(false);
+            }}
+          />
         )}
       </AnimatePresence>
 

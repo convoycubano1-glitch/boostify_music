@@ -52,19 +52,34 @@ const STAGES: ProgressStage[] = [
     estimatedTime: "30-45 segundos"
   },
   {
-    id: "script",
+    id: "concepts",
     title: "Generando Conceptos Creativos",
-    description: "Creando 3 propuestas visuales únicas para tu video",
+    description: "Creando 3 propuestas visuales únicas con portadas de álbum",
     tips: [
       "Analizando el mensaje emocional de la letra",
-      "Generando paletas de colores cinematográficas",
-      "Diseñando narrativa visual coherente",
-      "Creando portadas de álbum personalizadas"
+      "Generando 3 conceptos visuales únicos",
+      "Creando paletas de colores cinematográficas",
+      "Generando portadas de álbum personalizadas con tu rostro"
     ],
-    icon: <FileText className="h-6 w-6" />,
+    icon: <Lightbulb className="h-6 w-6" />,
     color: "text-purple-500",
     gradient: "from-purple-500 via-pink-500 to-purple-600",
     estimatedTime: "45-60 segundos"
+  },
+  {
+    id: "script",
+    title: "Generando Guión Cinematográfico",
+    description: "Creando el guión completo del video basado en el concepto elegido",
+    tips: [
+      "Desarrollando narrativa visual detallada",
+      "Sincronizando escenas con la música",
+      "Diseñando transiciones cinematográficas",
+      "Preparando prompts para cada escena"
+    ],
+    icon: <FileText className="h-6 w-6" />,
+    color: "text-indigo-500",
+    gradient: "from-indigo-500 via-purple-500 to-indigo-600",
+    estimatedTime: "40-50 segundos"
   },
   {
     id: "timeline-prep",
