@@ -79,6 +79,9 @@ import {
   getPerformanceSegments
 } from "../../lib/services/performance-segment-service";
 import { PaymentGateModal } from "./payment-gate-modal";
+import { CharacterGenerationModal } from "./character-generation-modal";
+import { analyzeFacialFeatures } from "../../lib/api/face-analyzer";
+import { generateMasterCharacter } from "../../lib/api/master-character-generator";
 
 // Fal.ai configuration
 fal.config({
@@ -1304,6 +1307,12 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         setIsTranscribing(false);
         setProgressPercentage(0);
         
+        // Generar master character si hay imágenes de referencia
+        if (artistReferenceImages.length > 0) {
+          console.log('🎭 Generando Master Character antes de conceptos...');
+          await handleGenerateMasterCharacter();
+        }
+        
         // Generar conceptos automáticamente
         console.log('🎨 Generando 3 conceptos creativos...');
         await handleGenerateConcepts(transcriptionText, director);
@@ -1323,10 +1332,92 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         setShowDirectorSelection(true);
       }
     } else if (transcription) {
-      // Si ya hay transcripción, generar conceptos directamente
+      // Si ya hay transcripción, generar master character y conceptos
+      if (artistReferenceImages.length > 0) {
+        console.log('🎭 Generando Master Character antes de conceptos...');
+        await handleGenerateMasterCharacter();
+      }
       await handleGenerateConcepts(transcription, director);
     }
-  }, [transcription, selectedFile, toast]);
+  }, [transcription, selectedFile, toast, artistReferenceImages, handleGenerateMasterCharacter]);
+
+  // Handler para generar master character
+  const handleGenerateMasterCharacter = useCallback(async () => {
+    if (artistReferenceImages.length === 0) {
+      console.log('⚠️ No hay imágenes de referencia, saltando generación de master character');
+      return null;
+    }
+
+    console.log('🎭 Iniciando generación de Master Character...');
+    setIsGeneratingCharacter(true);
+    setShowCharacterGeneration(true);
+    setCharacterGenerationProgress(0);
+    setCharacterGenerationStage("Analizando rasgos faciales...");
+
+    try {
+      // Paso 1: Analizar características faciales (0-20%)
+      setCharacterGenerationProgress(5);
+      const facialAnalysis = await analyzeFacialFeatures(artistReferenceImages);
+      console.log('✅ Análisis facial completado:', facialAnalysis);
+      setCharacterGenerationProgress(20);
+
+      // Paso 2: Optimizar prompt (20-30%)
+      setCharacterGenerationStage("Optimizando prompt de generación...");
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setCharacterGenerationProgress(30);
+
+      // Paso 3: Generar master character (30-95%)
+      setCharacterGenerationStage("Generando personaje profesional...");
+      setCharacterGenerationProgress(35);
+
+      const masterChar = await generateMasterCharacter(
+        facialAnalysis,
+        artistReferenceImages,
+        (progress) => {
+          // Mapear progreso de 0-100 a 35-95%
+          const mappedProgress = 35 + (progress * 0.6);
+          setCharacterGenerationProgress(mappedProgress);
+        }
+      );
+
+      console.log('✅ Master Character generado:', masterChar.imageUrl);
+      setCharacterGenerationProgress(95);
+
+      // Paso 4: Finalizar (95-100%)
+      setCharacterGenerationStage("Finalizando...");
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setCharacterGenerationProgress(100);
+
+      // Guardar master character en estado
+      setMasterCharacter(masterChar);
+
+      // Esperar un momento para mostrar el resultado
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      setIsGeneratingCharacter(false);
+      setShowCharacterGeneration(false);
+
+      toast({
+        title: "Personaje Generado",
+        description: "Tu master character está listo para el video",
+      });
+
+      return masterChar;
+
+    } catch (error) {
+      console.error('❌ Error generando master character:', error);
+      setIsGeneratingCharacter(false);
+      setShowCharacterGeneration(false);
+
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error generando personaje",
+        variant: "destructive",
+      });
+
+      return null;
+    }
+  }, [artistReferenceImages, toast]);
 
   // Handler para generar conceptos
   const handleGenerateConcepts = useCallback(async (transcriptionText: string, director: DirectorProfile) => {
@@ -4693,6 +4784,14 @@ ${transcription}`;
         concepts={conceptProposals}
         directorName={videoStyle.selectedDirector?.name || "El Director"}
         onSelect={handleConceptSelection}
+      />
+
+      {/* Modal de Generación de Master Character */}
+      <CharacterGenerationModal
+        open={showCharacterGeneration}
+        stage={characterGenerationStage}
+        progress={characterGenerationProgress}
+        characterImage={masterCharacter?.imageUrl}
       />
 
       {/* Modal de Templates Rápidos */}
