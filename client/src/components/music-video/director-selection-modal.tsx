@@ -48,7 +48,7 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
     experience: d.experience || "Professional Director",
     style: d.visual_style?.description || "Cinematic",
     rating: d.rating,
-    imageUrl: d.firestore_image_url || undefined
+    imageUrl: undefined // Las imágenes se cargarán desde Firestore si es necesario
   }));
 
   // Pre-seleccionar director si viene desde DirectorsList
