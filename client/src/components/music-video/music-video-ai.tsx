@@ -2241,7 +2241,7 @@ ${transcription}`;
       return;
     }
 
-    const imageUrl = item.imageUrl || item.generatedImage || item.url;
+    const imageUrl = item.imageUrl || item.generatedImage || item.thumbnail;
     if (!imageUrl) {
       toast({
         title: "Error",
@@ -2263,11 +2263,10 @@ ${transcription}`;
       // Use FAL AI to generate video from image
       const videoPrompt = item.imagePrompt || item.title || 'Dynamic camera movement';
       
-      const response = await generateVideoWithFAL({
+      const response = await generateVideoWithFAL(selectedFalModel, {
         imageUrl: imageUrl,
         prompt: videoPrompt,
-        duration: item.duration || 3,
-        modelId: selectedFalModel
+        duration: item.duration || 3
       });
 
       if (response && response.videoUrl) {

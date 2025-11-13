@@ -948,12 +948,12 @@ export function TimelineEditor({
                           
                           {/* Action buttons for images */}
                           {(clip.imageUrl || clip.metadata?.isGeneratedImage) && (
-                            <div className="absolute top-1 right-1 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
+                            <div className="absolute top-1 right-1 flex gap-1 opacity-80 hover:opacity-100 transition-opacity">
                               {onRegenerateImage && (
                                 <Button
                                   size="icon"
                                   variant="secondary"
-                                  className="h-6 w-6 bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
+                                  className="h-7 w-7 bg-purple-600 hover:bg-purple-700 text-white shadow-lg border border-white/20"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onRegenerateImage(clip.id);
@@ -961,14 +961,14 @@ export function TimelineEditor({
                                   title="Regenerar Imagen"
                                   data-testid={`button-regenerate-${clip.id}`}
                                 >
-                                  <RefreshCw className="h-3 w-3" />
+                                  <RefreshCw className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                               {onGenerateVideo && (
                                 <Button
                                   size="icon"
                                   variant="secondary"
-                                  className="h-6 w-6 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                                  className="h-7 w-7 bg-blue-600 hover:bg-blue-700 text-white shadow-lg border border-white/20"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onGenerateVideo(clip.id);
@@ -976,7 +976,7 @@ export function TimelineEditor({
                                   title="Generar Video"
                                   data-testid={`button-generate-video-${clip.id}`}
                                 >
-                                  <Video className="h-3 w-3" />
+                                  <Video className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                             </div>
