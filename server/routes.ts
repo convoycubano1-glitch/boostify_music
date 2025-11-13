@@ -53,6 +53,7 @@ import minimaxVideoRouter from './routes/minimax-video'; // Import the MiniMax v
 import musiciansRouter from './routes/musicians'; // Import the musicians router
 import musicVideoProjectsRouter from './routes/music-video-projects'; // Import the music video projects router
 import profileRouter from './routes/profile'; // Import the profile router
+import performanceSegmentsRouter from './routes/performance-segments'; // Import the performance segments router
 import songsRouter from './routes/songs'; // Import the songs router
 import merchRouter from './routes/merch'; // Import the merchandise router
 import aiAssistantRouter from './routes/ai-assistant'; // Import the AI assistant router
@@ -227,6 +228,11 @@ export function registerRoutes(app: Express): HttpServer {
   console.log('📢 Registrando router de proyectos de music video en /api/music-video-projects');
   app.use('/api/music-video-projects', musicVideoProjectsRouter);
   console.log('✅ Router de proyectos de music video registrado');
+  
+  // Registrar el router para performance segments (lip-sync automation)
+  console.log('📢 Registrando router de performance segments en /api/performance-segments');
+  app.use('/api/performance-segments', performanceSegmentsRouter);
+  console.log('✅ Router de performance segments registrado');
   
   // Registrar rutas de perfil de artista, canciones y merchandise
   console.log('📢 Registrando rutas de perfil de artista');

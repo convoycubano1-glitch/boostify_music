@@ -480,6 +480,24 @@ export const userAchievementsRelations = relations(userAchievements, ({ one }) =
   })
 }));
 
+export const performanceSegments = pgTable("performance_segments", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  sceneId: integer("scene_id").notNull(),
+  startTime: decimal("start_time", { precision: 10, scale: 3 }).notNull(),
+  endTime: decimal("end_time", { precision: 10, scale: 3 }).notNull(),
+  duration: decimal("duration", { precision: 10, scale: 3 }).notNull(),
+  lyrics: text("lyrics"),
+  shotType: text("shot_type"),
+  audioSegmentUrl: text("audio_segment_url"),
+  artistImageUrl: text("artist_image_url"),
+  lipsyncVideoUrl: text("lipsync_video_url"),
+  status: text("status", { enum: ["pending", "processing", "completed", "failed"] }).default("pending").notNull(),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const artistMediaRelations = relations(artistMedia, ({ one }) => ({
   user: one(users, {
     fields: [artistMedia.userId],
@@ -561,6 +579,10 @@ export const insertMusicianSchema = createInsertSchema(musicians)
     rating: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
   });
 export const selectMusicianSchema = createSelectSchema(musicians);
+
+export const insertPerformanceSegmentSchema = createInsertSchema(performanceSegments)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export const selectPerformanceSegmentSchema = createSelectSchema(performanceSegments);
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
