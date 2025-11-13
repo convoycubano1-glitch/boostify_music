@@ -71,8 +71,8 @@ export function ProjectManager({
   };
 
   // Delete project from PostgreSQL
-  const handleDeleteProject = async (projectId: string) => {
-    setIsDeleting(projectId);
+  const handleDeleteProject = async (projectId: number) => {
+    setIsDeleting(projectId.toString());
     try {
       await musicVideoProjectServicePostgres.deleteProject(projectId);
       toast({
@@ -94,7 +94,7 @@ export function ProjectManager({
 
   // Load project (calls parent handler with projectId)
   const handleLoadProject = (project: MusicVideoProjectPostgres) => {
-    onLoadProject(project.id);
+    onLoadProject(project.id.toString());
     setIsLoadDialogOpen(false);
   };
 
@@ -325,10 +325,10 @@ export function ProjectManager({
                             e.stopPropagation();
                             handleDeleteProject(project.id);
                           }}
-                          disabled={isDeleting === project.id}
+                          disabled={isDeleting === project.id.toString()}
                           data-testid={`button-delete-${project.id}`}
                         >
-                          {isDeleting === project.id ? (
+                          {isDeleting === project.id.toString() ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4 text-destructive" />
