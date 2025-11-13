@@ -390,6 +390,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [isSaving, setIsSaving] = useState(false);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>(undefined);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioDuration = audioBuffer?.duration;
   const [transcriptionWithTimestamps, setTranscriptionWithTimestamps] = useState<{
     segments: Array<{
       start: number;
@@ -6419,6 +6420,9 @@ ${transcription}`;
                       isSaving={isSavingProject}
                       currentProjectId={currentProjectId}
                       hasImages={timelineItems.some(item => item.generatedImage || item.firebaseUrl)}
+                      clips={timelineItems as any}
+                      audioUrl={audioUrl}
+                      audioDuration={audioDuration}
                     />
                   </div>
                 )}
