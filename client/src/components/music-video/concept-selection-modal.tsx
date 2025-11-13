@@ -36,10 +36,10 @@ export function ConceptSelectionModal({
         <DialogHeader className="pb-2 px-4 sm:px-6 pt-4 sm:pt-6 shrink-0">
           <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-center flex items-center justify-center gap-2 sm:gap-3">
             <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-orange-500" />
-            <span className="line-clamp-1">{directorName} te propone 3 conceptos</span>
+            <span className="line-clamp-1">{directorName} presents 3 concepts</span>
           </DialogTitle>
           <p className="text-center text-xs sm:text-sm md:text-base text-muted-foreground mt-1 sm:mt-2">
-            Selecciona el concepto que mejor capture la esencia de tu música
+            Select the concept that best captures your music's essence
           </p>
         </DialogHeader>
 
@@ -97,7 +97,7 @@ export function ConceptSelectionModal({
                     
                     {selectedConcept === concept && (
                       <Badge className="bg-orange-500 text-white">
-                        ✓ Seleccionado
+                        ✓ Selected
                       </Badge>
                     )}
                   </div>
@@ -125,7 +125,7 @@ export function ConceptSelectionModal({
                     <div className="mb-3 p-3 bg-muted/30 rounded-lg border border-muted">
                       <div className="flex items-center gap-2 mb-2">
                         <Eye className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Tema Visual</span>
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Visual Theme</span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {concept.visual_theme}
@@ -138,7 +138,7 @@ export function ConceptSelectionModal({
                     <div className="mb-3 p-3 bg-muted/30 rounded-lg border border-muted">
                       <div className="flex items-center gap-2 mb-2">
                         <Music className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Progresión Emocional</span>
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Emotional Progression</span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">
                         {concept.mood_progression}
@@ -151,7 +151,7 @@ export function ConceptSelectionModal({
                     <div className="mb-3 p-3 bg-muted/30 rounded-lg border border-muted">
                       <div className="flex items-center gap-2 mb-2">
                         <Shirt className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Vestuario</span>
+                        <span className="text-xs font-bold uppercase tracking-wide text-foreground">Wardrobe</span>
                       </div>
                       <p className="text-xs text-muted-foreground mb-1">
                         {concept.main_wardrobe.outfit_description}
@@ -258,7 +258,7 @@ export function ConceptSelectionModal({
               data-testid="button-continue-concept"
             >
               <Sparkles className="h-5 w-5" />
-              {selectedConcept ? 'Generar Video Musical' : 'Selecciona un Concepto'}
+              {selectedConcept ? 'Generate Music Video' : 'Select a Concept'}
               <ChevronRight className="h-5 w-5" />
             </Button>
           </div>
@@ -270,7 +270,7 @@ export function ConceptSelectionModal({
                 <div className="space-y-1">
                   <p className="text-green-500 flex items-center gap-2 font-semibold">
                     <Check className="h-4 w-4" />
-                    Concepto seleccionado
+                    Concept selected
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {selectedConcept.title}
@@ -279,10 +279,10 @@ export function ConceptSelectionModal({
               ) : (
                 <div className="space-y-1">
                   <p className="font-medium text-foreground">
-                    Selecciona un concepto
+                    Select a concept
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Elige la propuesta que mejor se adapte a tu visión
+                    Choose the proposal that best fits your vision
                   </p>
                 </div>
               )}
@@ -296,7 +296,7 @@ export function ConceptSelectionModal({
               data-testid="button-continue-concept"
             >
               <Sparkles className="h-5 w-5" />
-              Generar Video Musical
+              Generate Music Video
               <ChevronRight className="h-5 w-5" />
             </Button>
           </div>

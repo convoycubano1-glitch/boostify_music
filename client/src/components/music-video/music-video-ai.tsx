@@ -1093,15 +1093,25 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   };
 
   // Función para manejar el resultado del onboarding
-  const handleOnboardingComplete = useCallback(async (audioFile: File, referenceImages: string[], artistName: string) => {
-    console.log('🎉 Onboarding completado:', {
+  const handleOnboardingComplete = useCallback(async (
+    audioFile: File, 
+    referenceImages: string[], 
+    artistName: string,
+    songName: string,
+    aspectRatio: string,
+    videoStyle: string
+  ) => {
+    console.log('🎉 Onboarding completed:', {
       audio: audioFile.name,
       imagesCount: referenceImages.length,
-      artistName: artistName
+      artistName,
+      songName,
+      aspectRatio,
+      videoStyle
     });
     
-    // Establecer el nombre del artista, las imágenes de referencia y el archivo de audio
-    setProjectName(artistName);
+    // Set artist name, song name, reference images, and audio file
+    setProjectName(`${artistName} - ${songName}`);
     setArtistReferenceImages(referenceImages);
     setSelectedFile(audioFile);
     

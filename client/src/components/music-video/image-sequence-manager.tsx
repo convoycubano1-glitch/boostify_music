@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
+import { Separator } from "../../components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "../../components/ui/sheet";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -13,10 +21,20 @@ import {
   Layers,
   Music,
   AlertCircle,
-  Play
+  Play,
+  Sparkles,
+  Settings2
 } from "lucide-react";
 import { ShotType, CameraMovementPattern } from "../../lib/professional-editor-types";
 import { GSAPVideoPreview } from "./gsap-video-preview";
+import { BlurEffect, BrightnessEffect, OpacityEffect, ShadowEffect, ShadowValue } from "../effects";
+
+export interface ImageEffects {
+  blur?: number;
+  brightness?: number;
+  opacity?: number;
+  shadow?: ShadowValue;
+}
 
 // Tipo para cada elemento de imagen en la secuencia
 interface ImageSequenceItem {
@@ -26,6 +44,7 @@ interface ImageSequenceItem {
   duration: number; // duración en segundos
   transitionType?: string;
   transitionDuration?: number;
+  effects?: ImageEffects;
   metadata?: {
     movementApplied?: boolean;
     movementPattern?: CameraMovementPattern;
@@ -64,6 +83,18 @@ export function ImageSequenceManager({
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(-1);
   const [reordering, setReordering] = useState(false);
   const [showGSAPPreview, setShowGSAPPreview] = useState(false);
+  const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Función para cambiar el tipo de plano de una imagen
   const changeShotType = (index: number, shotType: ShotType) => {
@@ -102,6 +133,29 @@ export function ImageSequenceManager({
       }
     };
     onUpdate(updatedImages);
+  };
+
+  // Función para actualizar efectos de una imagen
+  const updateEffect = (index: number, effectType: keyof ImageEffects, value: any) => {
+    const updatedImages = [...images];
+    updatedImages[index] = {
+      ...updatedImages[index],
+      effects: {
+        ...updatedImages[index].effects,
+        [effectType]: value
+      }
+    };
+    onUpdate(updatedImages);
+  };
+
+  // Función para verificar si una imagen tiene efectos aplicados
+  const hasEffects = (image: ImageSequenceItem): boolean => {
+    return !!(
+      image.effects?.blur ||
+      image.effects?.brightness !== undefined ||
+      image.effects?.opacity !== undefined ||
+      image.effects?.shadow
+    );
   };
   
   // Función para remover una imagen de la secuencia
@@ -147,20 +201,184 @@ export function ImageSequenceManager({
       default: return null;
     }
   };
+
+  // Renderizar contenido del panel de edición (compartido entre móvil y desktop)
+  const renderEditPanel = (index: number) => {
+    const image = images[index];
+    const buttonSize = isMobile ? "default" : "sm";
+    const buttonHeight = isMobile ? "h-10" : "h-6";
+
+    return (
+      <div className={`p-${isMobile ? '4' : '3'} space-y-${isMobile ? '4' : '3'}`}>
+        <h3 className={`font-medium ${isMobile ? 'text-base' : 'text-sm'}`}>
+          Ajustes de imagen #{index + 1}
+        </h3>
+        
+        <div className="space-y-2">
+          <label className={`${isMobile ? 'text-sm' : 'text-xs'} text-muted-foreground`}>
+            Tipo de plano
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant={image.shotType === "close-up" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => changeShotType(index, "close-up")}
+              data-testid="button-shot-closeup"
+            >
+              Primer plano
+            </Button>
+            <Button 
+              variant={image.shotType === "medium" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => changeShotType(index, "medium")}
+              data-testid="button-shot-medium"
+            >
+              Medio
+            </Button>
+            <Button 
+              variant={image.shotType === "wide" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => changeShotType(index, "wide")}
+              data-testid="button-shot-wide"
+            >
+              General
+            </Button>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <label className={`${isMobile ? 'text-sm' : 'text-xs'} text-muted-foreground`}>
+            Transición
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant={image.transitionType === "crossfade" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => changeTransitionType(index, "crossfade")}
+              data-testid="button-transition-crossfade"
+            >
+              <Layers className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} mr-1`} />
+              Fundido
+            </Button>
+            <Button 
+              variant={image.transitionType === "slide" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => changeTransitionType(index, "slide")}
+              data-testid="button-transition-slide"
+            >
+              <MoveHorizontal className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} mr-1`} />
+              Deslizar
+            </Button>
+            <Button 
+              variant={image.transitionType === "zoom" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => changeTransitionType(index, "zoom")}
+              data-testid="button-transition-zoom"
+            >
+              <ZoomIn className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} mr-1`} />
+              Zoom
+            </Button>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <label className={`${isMobile ? 'text-sm' : 'text-xs'} text-muted-foreground`}>
+            Movimiento de cámara
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant={image.metadata?.movementPattern === "pan-left" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => applyMovement(index, "pan-left")}
+              data-testid="button-movement-pan-left"
+            >
+              Pan Izq
+            </Button>
+            <Button 
+              variant={image.metadata?.movementPattern === "pan-right" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => applyMovement(index, "pan-right")}
+              data-testid="button-movement-pan-right"
+            >
+              Pan Der
+            </Button>
+            <Button 
+              variant={image.metadata?.movementPattern === "zoom-in" ? "default" : "outline"} 
+              size={buttonSize}
+              className={`${isMobile ? 'text-sm' : 'text-xs'} ${buttonHeight}`}
+              onClick={() => applyMovement(index, "zoom-in")}
+              data-testid="button-movement-zoom-in"
+            >
+              Zoom In
+            </Button>
+          </div>
+        </div>
+
+        <Separator className="my-3" />
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'} text-purple-500`} />
+            <label className={`${isMobile ? 'text-sm' : 'text-xs'} text-muted-foreground font-semibold`}>
+              Efectos Visuales
+            </label>
+          </div>
+          
+          <BlurEffect
+            value={image.effects?.blur || 0}
+            onChange={(value) => updateEffect(index, 'blur', value)}
+          />
+          
+          <BrightnessEffect
+            value={image.effects?.brightness || 100}
+            onChange={(value) => updateEffect(index, 'brightness', value)}
+          />
+          
+          <OpacityEffect
+            value={image.effects?.opacity || 100}
+            onChange={(value) => updateEffect(index, 'opacity', value)}
+          />
+          
+          <ShadowEffect
+            value={image.effects?.shadow || { x: 0, y: 0, blur: 0, color: '#000000' }}
+            onChange={(value) => updateEffect(index, 'shadow', value)}
+          />
+        </div>
+      </div>
+    );
+  };
   
   // Renderizar la miniatura de una imagen con sus controles
   const renderThumbnail = (image: ImageSequenceItem, index: number) => {
     const isSelected = selectedImageIndex === index;
     
+    const handleThumbnailClick = () => {
+      if (isMobile) {
+        setSelectedImageIndex(index);
+        setIsMobileSheetOpen(true);
+      } else {
+        setSelectedImageIndex(isSelected ? -1 : index);
+      }
+    };
+    
     return (
       <div 
         key={image.id}
         className={`
-          relative group border-2 rounded-md overflow-hidden cursor-pointer transition-all
+          relative group border-2 rounded-md overflow-hidden cursor-pointer transition-all flex-shrink-0
           ${isSelected ? 'ring-2 ring-primary scale-105 z-10' : 'hover:scale-105'}
           ${getShotTypeColor(image.shotType)}
         `}
-        onClick={() => setSelectedImageIndex(isSelected ? -1 : index)}
+        onClick={handleThumbnailClick}
+        data-testid={`thumbnail-${index}`}
       >
         <div className="relative aspect-video w-32 sm:w-40 bg-muted">
           {/* Imagen principal */}
@@ -185,6 +403,11 @@ export function ImageSequenceManager({
           
           {/* Indicadores de propiedades */}
           <div className="absolute top-1 right-1 flex gap-1">
+            {hasEffects(image) && (
+              <div className="bg-purple-500 rounded-full p-0.5" title="Efectos visuales aplicados">
+                <Sparkles className="w-3 h-3 text-white" />
+              </div>
+            )}
             {image.metadata?.movementApplied && (
               <div className="bg-orange-500 rounded-full p-0.5" title={`Movimiento: ${image.metadata.movementPattern}`}>
                 <MoveHorizontal className="w-3 h-3 text-white" />
@@ -200,6 +423,22 @@ export function ImageSequenceManager({
           {/* Controles solo visibles cuando está seleccionada o hover */}
           {(isSelected || true) && (
             <div className="absolute -bottom-10 group-hover:bottom-0 left-0 right-0 bg-black/80 p-1 flex justify-center gap-1 transition-all">
+              {isMobile && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 text-white hover:text-cyan-400"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImageIndex(index);
+                    setIsMobileSheetOpen(true);
+                  }}
+                  data-testid={`button-edit-${index}`}
+                >
+                  <Settings2 className="w-3 h-3" />
+                </Button>
+              )}
+              
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -208,6 +447,7 @@ export function ImageSequenceManager({
                   e.stopPropagation();
                   removeImage(index);
                 }}
+                data-testid={`button-delete-${index}`}
               >
                 <Trash2 className="w-3 h-3" />
               </Button>
@@ -221,6 +461,7 @@ export function ImageSequenceManager({
                   moveImage(index, index - 1);
                 }}
                 disabled={index === 0}
+                data-testid={`button-move-left-${index}`}
               >
                 <ChevronLeft className="w-3 h-3" />
               </Button>
@@ -234,6 +475,7 @@ export function ImageSequenceManager({
                   moveImage(index, index + 1);
                 }}
                 disabled={index === images.length - 1}
+                data-testid={`button-move-right-${index}`}
               >
                 <ChevronRight className="w-3 h-3" />
               </Button>
@@ -241,105 +483,10 @@ export function ImageSequenceManager({
           )}
         </div>
         
-        {/* Panel de edición extendido cuando está seleccionada */}
-        {isSelected && (
-          <div className="absolute left-full top-0 ml-2 w-48 bg-card border rounded-md shadow-lg z-20">
-            <div className="p-2 space-y-2">
-              <h3 className="font-medium text-sm">Ajustes de imagen</h3>
-              
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Tipo de plano</label>
-                <div className="flex flex-wrap gap-1">
-                  <Button 
-                    variant={image.shotType === "close-up" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => changeShotType(index, "close-up")}
-                  >
-                    Primer plano
-                  </Button>
-                  <Button 
-                    variant={image.shotType === "medium" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => changeShotType(index, "medium")}
-                  >
-                    Medio
-                  </Button>
-                  <Button 
-                    variant={image.shotType === "wide" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => changeShotType(index, "wide")}
-                  >
-                    General
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Transición</label>
-                <div className="flex flex-wrap gap-1">
-                  <Button 
-                    variant={image.transitionType === "crossfade" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => changeTransitionType(index, "crossfade")}
-                  >
-                    <Layers className="w-3 h-3 mr-1" />
-                    Fundido
-                  </Button>
-                  <Button 
-                    variant={image.transitionType === "slide" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => changeTransitionType(index, "slide")}
-                  >
-                    <MoveHorizontal className="w-3 h-3 mr-1" />
-                    Deslizar
-                  </Button>
-                  <Button 
-                    variant={image.transitionType === "zoom" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => changeTransitionType(index, "zoom")}
-                  >
-                    <ZoomIn className="w-3 h-3 mr-1" />
-                    Zoom
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Movimiento</label>
-                <div className="flex flex-wrap gap-1">
-                  <Button 
-                    variant={image.metadata?.movementPattern === "pan-left" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => applyMovement(index, "pan-left")}
-                  >
-                    Pan Izq
-                  </Button>
-                  <Button 
-                    variant={image.metadata?.movementPattern === "pan-right" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => applyMovement(index, "pan-right")}
-                  >
-                    Pan Der
-                  </Button>
-                  <Button 
-                    variant={image.metadata?.movementPattern === "zoom-in" ? "default" : "outline"} 
-                    size="sm" 
-                    className="text-xs py-0 h-6"
-                    onClick={() => applyMovement(index, "zoom-in")}
-                  >
-                    Zoom In
-                  </Button>
-                </div>
-              </div>
-            </div>
+        {/* Panel de edición lateral en desktop */}
+        {!isMobile && isSelected && (
+          <div className="absolute left-full top-0 ml-2 w-80 bg-card border rounded-md shadow-lg z-20 max-h-[600px] overflow-y-auto">
+            {renderEditPanel(index)}
           </div>
         )}
       </div>
@@ -394,8 +541,8 @@ export function ImageSequenceManager({
             <p className="text-xs mt-1">Genera o agrega imágenes para crear una secuencia para tu video musical.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto pb-2">
-            <div className="flex gap-2 min-w-min">
+          <div className="overflow-x-auto pb-2 -mx-2 px-2 touch-pan-x">
+            <div className="flex gap-3 min-w-min">
               {images.map((image, index) => renderThumbnail(image, index))}
             </div>
           </div>
@@ -447,11 +594,31 @@ export function ImageSequenceManager({
             transitionType: img.transitionType,
             transitionDuration: img.transitionDuration,
             cameraMovement: img.metadata?.movementPattern as any,
-            shotType: img.shotType
+            shotType: img.shotType,
+            effects: img.effects
           }))}
           onClose={() => setShowGSAPPreview(false)}
         />
       </div>
+    )}
+
+    {/* Sheet móvil para edición de imagen */}
+    {isMobile && selectedImageIndex >= 0 && (
+      <Sheet open={isMobileSheetOpen} onOpenChange={setIsMobileSheetOpen}>
+        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5" />
+              Editar Imagen #{selectedImageIndex + 1}
+            </SheetTitle>
+            <SheetDescription>
+              Ajusta el tipo de plano, transiciones, movimientos y efectos visuales
+            </SheetDescription>
+          </SheetHeader>
+          
+          {renderEditPanel(selectedImageIndex)}
+        </SheetContent>
+      </Sheet>
     )}
   </>
   );

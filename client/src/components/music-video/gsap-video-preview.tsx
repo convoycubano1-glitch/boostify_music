@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { gsapTransitionsService, type GSAPSceneConfig, type GSAPTransitionType } from '../../lib/services/gsap-transitions';
 import { cn } from '../../lib/utils';
+import { ImageEffects } from './image-sequence-manager';
 
 interface GSAPVideoPreviewProps {
   scenes: Array<{
@@ -24,6 +25,7 @@ interface GSAPVideoPreviewProps {
     transitionDuration?: number;
     cameraMovement?: 'pan-left' | 'pan-right' | 'zoom-in' | 'zoom-out' | 'static';
     shotType?: string;
+    effects?: ImageEffects;
   }>;
   onClose?: () => void;
   className?: string;
@@ -62,7 +64,8 @@ export function GSAPVideoPreview({ scenes, onClose, className }: GSAPVideoPrevie
       ease: 'power2.inOut'
     },
     cameraMovement: scene.cameraMovement || 'static',
-    movementIntensity: 0.1
+    movementIntensity: 0.1,
+    effects: scene.effects
   }));
 
   // Inicializar timeline GSAP

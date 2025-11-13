@@ -21,12 +21,25 @@ export interface GSAPTransitionConfig {
   delay?: number;
 }
 
+export interface ImageEffects {
+  blur?: number;
+  brightness?: number;
+  opacity?: number;
+  shadow?: {
+    x: number;
+    y: number;
+    blur: number;
+    color: string;
+  };
+}
+
 export interface GSAPSceneConfig {
   imageUrl: string;
   duration: number;
   transition?: GSAPTransitionConfig;
   cameraMovement?: 'pan-left' | 'pan-right' | 'zoom-in' | 'zoom-out' | 'static';
   movementIntensity?: number;
+  effects?: ImageEffects;
 }
 
 /**
@@ -36,6 +49,38 @@ export interface GSAPSceneConfig {
 export class GSAPTransitionsService {
   private timeline: gsap.core.Timeline | null = null;
   private currentContainer: HTMLElement | null = null;
+
+  /**
+   * Aplica efectos CSS a un elemento basado en la configuración de efectos
+   */
+  private applyVisualEffects(element: HTMLElement, effects?: ImageEffects): void {
+    if (!effects) return;
+
+    const filters: string[] = [];
+    
+    if (effects.blur !== undefined && effects.blur > 0) {
+      filters.push(`blur(${effects.blur}px)`);
+    }
+    
+    if (effects.brightness !== undefined) {
+      filters.push(`brightness(${effects.brightness}%)`);
+    }
+    
+    if (filters.length > 0) {
+      element.style.filter = filters.join(' ');
+    }
+    
+    if (effects.opacity !== undefined) {
+      element.style.opacity = String(effects.opacity / 100);
+    }
+    
+    if (effects.shadow) {
+      const { x, y, blur, color } = effects.shadow;
+      if (x !== 0 || y !== 0 || blur !== 0) {
+        element.style.boxShadow = `${x}px ${y}px ${blur}px ${color}`;
+      }
+    }
+  }
 
   /**
    * Crea una timeline GSAP con todas las escenas y transiciones
@@ -73,6 +118,9 @@ export class GSAPTransitionsService {
       imageElement.style.backgroundPosition = 'center';
       imageElement.style.opacity = '0';
       imageElement.setAttribute('data-scene-index', String(index));
+      
+      // Aplicar efectos visuales si están configurados
+      this.applyVisualEffects(imageElement, scene.effects);
       
       container.appendChild(imageElement);
 

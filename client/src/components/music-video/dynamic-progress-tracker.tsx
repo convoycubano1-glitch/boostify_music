@@ -31,65 +31,65 @@ interface DynamicProgressTrackerProps {
 const STAGES: ProgressStage[] = [
   {
     id: "transcription",
-    title: "Transcribiendo Audio",
-    description: "La IA está identificando las palabras y su timing exacto",
+    title: "Transcribing Audio",
+    description: "AI is identifying words and their exact timing",
     tips: [
-      "Analizando frecuencias de audio para detectar palabras",
-      "Identificando pausas y ritmo de la canción",
-      "Sincronizando letras con timestamps precisos",
-      "Detectando emociones en la voz del artista"
+      "Analyzing audio frequencies to detect words",
+      "Identifying pauses and song rhythm",
+      "Synchronizing lyrics with precise timestamps",
+      "Detecting emotions in the artist's voice"
     ],
     icon: <Music2 className="h-5 w-5" />,
     color: "from-blue-500 to-cyan-500"
   },
   {
     id: "script",
-    title: "Generando Guión Creativo",
-    description: "Analizando la narrativa de la letra para crear escenas cinematográficas",
+    title: "Generating Creative Script",
+    description: "Analyzing the narrative of the lyrics to create cinematic scenes",
     tips: [
-      "Identificando temas principales de la letra",
-      "Creando arcos narrativos coherentes",
-      "Seleccionando el mejor estilo visual para cada escena",
-      "Diseñando transiciones cinematográficas fluidas"
+      "Identifying main themes from the lyrics",
+      "Creating coherent narrative arcs",
+      "Selecting the best visual style for each scene",
+      "Designing smooth cinematic transitions"
     ],
     icon: <FileText className="h-5 w-5" />,
     color: "from-purple-500 to-pink-500"
   },
   {
     id: "timeline-prep",
-    title: "Preparando Timeline",
-    description: "Organizando todas las escenas en la línea de tiempo",
+    title: "Preparing Timeline",
+    description: "Organizing all scenes on the timeline",
     tips: [
-      "Sincronizando escenas con el audio",
-      "Calculando duración óptima de cada escena",
-      "Preparando estructura de timeline",
-      "Validando coherencia narrativa completa"
+      "Synchronizing scenes with audio",
+      "Calculating optimal duration for each scene",
+      "Preparing timeline structure",
+      "Validating complete narrative coherence"
     ],
     icon: <Film className="h-5 w-5" />,
     color: "from-green-500 to-emerald-500"
   },
   {
     id: "images",
-    title: "Generando Imágenes con IA",
-    description: "Creando visuales únicos basados en tu estilo seleccionado",
+    title: "Generating AI Images",
+    description: "Creating unique visuals based on your selected style",
     tips: [
-      "Generando arte conceptual para cada escena",
-      "Aplicando tu paleta de colores personalizada",
-      "Ajustando composición y encuadre cinematográfico",
-      "Refinando detalles para máxima calidad visual"
+      "Generating concept art for each scene",
+      "Applying your personalized color palette",
+      "Adjusting composition and cinematic framing",
+      "Refining details for maximum visual quality"
     ],
     icon: <ImageIcon className="h-5 w-5" />,
     color: "from-orange-500 to-red-500"
   },
   {
     id: "video",
-    title: "Generando Video Final",
-    description: "Renderizando tu video musical con el modelo de IA seleccionado",
+    title: "Generating Final Video",
+    description: "Rendering your music video with the selected AI model",
     tips: [
-      "Aplicando efectos de movimiento cinematográfico",
-      "Renderizando con tu modelo de IA preferido",
-      "Optimizando calidad y fluidez del video",
-      "Preparando el video para descarga y compartir"
+      "Applying cinematic motion effects",
+      "Rendering with your preferred AI model",
+      "Optimizing video quality and smoothness",
+      "Preparing the video for download and sharing"
     ],
     icon: <Sparkles className="h-5 w-5" />,
     color: "from-yellow-500 to-orange-500"
@@ -108,7 +108,7 @@ export default function DynamicProgressTracker({
   const stage = STAGES.find(s => s.id === currentStage) || STAGES[0];
   const stageIndex = STAGES.findIndex(s => s.id === currentStage);
 
-  // Animar el progreso suavemente
+  // Animate progress smoothly
   useEffect(() => {
     const timer = setTimeout(() => {
       setDisplayProgress(progress);
@@ -116,7 +116,7 @@ export default function DynamicProgressTracker({
     return () => clearTimeout(timer);
   }, [progress]);
 
-  // Rotar tips cada 3 segundos
+  // Rotate tips every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTipIndex((prev) => (prev + 1) % stage.tips.length);
@@ -124,7 +124,7 @@ export default function DynamicProgressTracker({
     return () => clearInterval(interval);
   }, [stage.tips.length]);
 
-  // Completar cuando llegue a 100%
+  // Complete when reaching 100%
   useEffect(() => {
     if (progress >= 100) {
       const timer = setTimeout(() => {
@@ -141,7 +141,7 @@ export default function DynamicProgressTracker({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Cabecera con título animado - Responsive */}
+      {/* Animated header - Responsive */}
       <motion.div
         className="text-center space-y-2 sm:space-y-3"
         initial={{ y: -20, opacity: 0 }}
@@ -172,10 +172,10 @@ export default function DynamicProgressTracker({
         </p>
       </motion.div>
 
-      {/* Barra de progreso mejorada - Responsive */}
+      {/* Enhanced progress bar - Responsive */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs sm:text-sm">
-          <span className="text-muted-foreground">Progreso</span>
+          <span className="text-muted-foreground">Progress</span>
           <motion.span 
             className={`font-bold bg-clip-text text-transparent bg-gradient-to-r ${stage.color} text-base sm:text-lg`}
             key={displayProgress}
@@ -214,7 +214,7 @@ export default function DynamicProgressTracker({
         </div>
       </div>
 
-      {/* Tips rotativos con animación - Responsive */}
+      {/* Rotating tips with animation - Responsive */}
       <motion.div
         className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 rounded-lg p-3 sm:p-4 border border-orange-200/50 dark:border-orange-800/50"
         initial={{ opacity: 0, y: 10 }}
@@ -235,7 +235,7 @@ export default function DynamicProgressTracker({
           </motion.div>
           <div className="flex-1 min-h-[40px] sm:min-h-[48px]">
             <p className="text-xs sm:text-sm font-medium text-orange-900 dark:text-orange-100 mb-1">
-              💡 Lo que está pasando ahora:
+              💡 What's happening now:
             </p>
             <AnimatePresence mode="wait">
               <motion.p
@@ -253,14 +253,14 @@ export default function DynamicProgressTracker({
         </div>
       </motion.div>
 
-      {/* Indicador simple de progreso de etapa - Responsive */}
+      {/* Simple stage progress indicator - Responsive */}
       <div className="flex items-center justify-center gap-2">
         <motion.div
           className="text-center text-xs sm:text-sm text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          Etapa {stageIndex + 1} de {STAGES.length}
+          Stage {stageIndex + 1} of {STAGES.length}
         </motion.div>
       </div>
     </motion.div>

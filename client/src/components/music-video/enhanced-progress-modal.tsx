@@ -38,93 +38,93 @@ interface EnhancedProgressModalProps {
 const STAGES: ProgressStage[] = [
   {
     id: "transcription",
-    title: "Transcribiendo Audio",
-    description: "La IA está identificando las palabras y su timing exacto",
+    title: "Transcribing Audio",
+    description: "AI is identifying words and their exact timing",
     tips: [
-      "Analizando frecuencias de audio para detectar palabras",
-      "Identificando pausas y ritmo de la canción",
-      "Sincronizando letras con timestamps precisos",
-      "Detectando emociones en la voz del artista"
+      "Analyzing audio frequencies to detect words",
+      "Identifying pauses and song rhythm",
+      "Synchronizing lyrics with precise timestamps",
+      "Detecting emotions in the artist's voice"
     ],
     icon: <Music2 className="h-6 w-6" />,
     color: "text-blue-500",
     gradient: "from-blue-500 via-cyan-500 to-blue-600",
-    estimatedTime: "30-45 segundos"
+    estimatedTime: "30-45 seconds"
   },
   {
     id: "concepts",
-    title: "Generando Conceptos Creativos",
-    description: "Creando 3 propuestas visuales únicas con portadas de álbum",
+    title: "Generating Creative Concepts",
+    description: "Creating 3 unique visual proposals with album covers",
     tips: [
-      "Analizando el mensaje emocional de la letra",
-      "Generando 3 conceptos visuales únicos",
-      "Creando paletas de colores cinematográficas",
-      "Generando portadas de álbum personalizadas con tu rostro"
+      "Analyzing the emotional message of the lyrics",
+      "Generating 3 unique visual concepts",
+      "Creating cinematic color palettes",
+      "Generating personalized album covers with your face"
     ],
     icon: <Lightbulb className="h-6 w-6" />,
     color: "text-purple-500",
     gradient: "from-purple-500 via-pink-500 to-purple-600",
-    estimatedTime: "45-60 segundos"
+    estimatedTime: "45-60 seconds"
   },
   {
     id: "script",
-    title: "Generando Guión Cinematográfico",
-    description: "Creando el guión completo del video basado en el concepto elegido",
+    title: "Generating Cinematic Script",
+    description: "Creating the complete video script based on the chosen concept",
     tips: [
-      "Desarrollando narrativa visual detallada",
-      "Sincronizando escenas con la música",
-      "Diseñando transiciones cinematográficas",
-      "Preparando prompts para cada escena"
+      "Developing detailed visual narrative",
+      "Synchronizing scenes with music",
+      "Designing cinematic transitions",
+      "Preparing prompts for each scene"
     ],
     icon: <FileText className="h-6 w-6" />,
     color: "text-indigo-500",
     gradient: "from-indigo-500 via-purple-500 to-indigo-600",
-    estimatedTime: "40-50 segundos"
+    estimatedTime: "40-50 seconds"
   },
   {
     id: "timeline-prep",
-    title: "Preparando Timeline",
-    description: "Organizando todas las escenas en la línea de tiempo",
+    title: "Preparing Timeline",
+    description: "Organizing all scenes on the timeline",
     tips: [
-      "Sincronizando escenas con el audio",
-      "Calculando duración óptima de cada escena",
-      "Preparando estructura de timeline",
-      "Validando coherencia narrativa completa"
+      "Synchronizing scenes with audio",
+      "Calculating optimal duration for each scene",
+      "Preparing timeline structure",
+      "Validating complete narrative coherence"
     ],
     icon: <Film className="h-6 w-6" />,
     color: "text-green-500",
     gradient: "from-green-500 via-emerald-500 to-green-600",
-    estimatedTime: "10-15 segundos"
+    estimatedTime: "10-15 seconds"
   },
   {
     id: "images",
-    title: "Generando Imágenes con IA",
-    description: "Creando visuales únicos basados en tu estilo seleccionado",
+    title: "Generating AI Images",
+    description: "Creating unique visuals based on your selected style",
     tips: [
-      "Generando arte conceptual para cada escena",
-      "Aplicando tu paleta de colores personalizada",
-      "Ajustando composición y encuadre cinematográfico",
-      "Refinando detalles para máxima calidad visual"
+      "Generating concept art for each scene",
+      "Applying your personalized color palette",
+      "Adjusting composition and cinematic framing",
+      "Refining details for maximum visual quality"
     ],
     icon: <ImageIcon className="h-6 w-6" />,
     color: "text-orange-500",
     gradient: "from-orange-500 via-red-500 to-orange-600",
-    estimatedTime: "2-3 minutos"
+    estimatedTime: "2-3 minutes"
   },
   {
     id: "video",
-    title: "Generando Video Final",
-    description: "Renderizando tu video musical con el modelo de IA seleccionado",
+    title: "Generating Final Video",
+    description: "Rendering your music video with the selected AI model",
     tips: [
-      "Aplicando efectos de movimiento cinematográfico",
-      "Renderizando con tu modelo de IA preferido",
-      "Optimizando calidad y fluidez del video",
-      "Preparando el video para descarga y compartir"
+      "Applying cinematic motion effects",
+      "Rendering with your preferred AI model",
+      "Optimizing video quality and smoothness",
+      "Preparing the video for download and sharing"
     ],
     icon: <Sparkles className="h-6 w-6" />,
     color: "text-yellow-500",
     gradient: "from-yellow-500 via-orange-500 to-yellow-600",
-    estimatedTime: "3-5 minutos"
+    estimatedTime: "3-5 minutes"
   }
 ];
 
@@ -242,12 +242,12 @@ export default function EnhancedProgressModal({
             </div>
           </motion.div>
 
-          {/* Barra de progreso mejorada con glassmorphism */}
+          {/* Enhanced progress bar with glassmorphism */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Loader2 className={`h-4 w-4 animate-spin ${stage.color}`} />
-                <span className="text-sm font-medium text-muted-foreground">Progreso</span>
+                <span className="text-sm font-medium text-muted-foreground">Progress</span>
               </div>
               <motion.div
                 className="flex items-center gap-3"
@@ -261,7 +261,7 @@ export default function EnhancedProgressModal({
               </motion.div>
             </div>
 
-            {/* Barra de progreso con efectos */}
+            {/* Progress bar with effects */}
             <div className="relative h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
               <motion.div
                 className={`absolute inset-y-0 left-0 bg-gradient-to-r ${stage.gradient} rounded-full shadow-lg`}
@@ -269,7 +269,7 @@ export default function EnhancedProgressModal({
                 animate={{ width: `${displayProgress}%` }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                {/* Efecto de brillo animado */}
+                {/* Animated shine effect */}
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
                   animate={{ x: ['-100%', '200%'] }}
@@ -281,7 +281,7 @@ export default function EnhancedProgressModal({
                 />
               </motion.div>
 
-              {/* Indicador de posición */}
+              {/* Position indicator */}
               {displayProgress > 2 && displayProgress < 100 && (
                 <motion.div
                   className="absolute top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-white shadow-lg border-4"
@@ -311,20 +311,20 @@ export default function EnhancedProgressModal({
               )}
             </div>
 
-            {/* Tiempo estimado */}
+            {/* Estimated time */}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5" />
-                <span>Tiempo estimado: {estimatedTimeRemaining || stage.estimatedTime}</span>
+                <span>Estimated time: {estimatedTimeRemaining || stage.estimatedTime}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Zap className="h-3.5 w-3.5 text-orange-500" />
-                <span>Etapa {stageIndex + 1} de {STAGES.length}</span>
+                <span>Stage {stageIndex + 1} of {STAGES.length}</span>
               </div>
             </div>
           </div>
 
-          {/* Tips rotativos con mejor diseño */}
+          {/* Rotating tips with improved design */}
           <motion.div
             className="bg-gradient-to-br from-orange-50 via-yellow-50 to-orange-50 dark:from-orange-950/30 dark:via-yellow-950/30 dark:to-orange-950/30 rounded-xl p-5 border-2 border-orange-200/50 dark:border-orange-800/50 shadow-lg"
             initial={{ opacity: 0, y: 10 }}
@@ -347,7 +347,7 @@ export default function EnhancedProgressModal({
               <div className="flex-1 min-h-[60px]">
                 <p className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-2 flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
-                  Lo que está pasando ahora:
+                  What's happening now:
                 </p>
                 <AnimatePresence mode="wait">
                   <motion.p
@@ -365,7 +365,7 @@ export default function EnhancedProgressModal({
             </div>
           </motion.div>
 
-          {/* Indicador de pasos */}
+          {/* Step indicator */}
           <div className="flex items-center justify-center gap-2 pt-2">
             {STAGES.map((s, index) => (
               <motion.div

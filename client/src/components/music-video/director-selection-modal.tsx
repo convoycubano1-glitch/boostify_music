@@ -40,7 +40,7 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
   const [selectedDirector, setSelectedDirector] = useState<Director | null>(preSelectedDirector || null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>("cinematic");
   
-  // Usar directores directamente de JSON (ya incluyen toda la información)
+  // Use directors directly from JSON (already include all information)
   const directors = DIRECTORS.map(d => ({
     id: d.id,
     name: d.name,
@@ -48,14 +48,14 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
     experience: d.experience || "Professional Director",
     style: d.visual_style?.description || "Cinematic",
     rating: d.rating,
-    imageUrl: undefined // Las imágenes se cargarán desde Firestore si es necesario
+    imageUrl: undefined // Images will be loaded from Firestore if needed
   }));
 
-  // Pre-seleccionar director si viene desde DirectorsList
+  // Pre-select director if coming from DirectorsList
   useEffect(() => {
     if (preSelectedDirector && open) {
       setSelectedDirector(preSelectedDirector);
-      console.log(`✅ Director pre-seleccionado en modal: ${preSelectedDirector.name}`);
+      console.log(`✅ Director pre-selected in modal: ${preSelectedDirector.name}`);
     }
   }, [preSelectedDirector, open]);
 
@@ -72,11 +72,11 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
         <DialogHeader className="pb-4">
           <DialogTitle className="text-2xl md:text-3xl font-bold text-center flex items-center justify-center gap-3">
             <Film className="h-7 w-7 md:h-8 md:w-8 text-orange-500" />
-            Selecciona tu Director y Estilo Visual
+            Select Your Director and Visual Style
           </DialogTitle>
         </DialogHeader>
 
-        {/* Mensaje de director pre-seleccionado */}
+        {/* Pre-selected director message */}
         {selectedDirector && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -88,7 +88,7 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
                 <Check className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground">Tu director seleccionado es</p>
+                <p className="text-sm font-medium text-muted-foreground">Your selected director is</p>
                 <p className="text-lg font-bold text-orange-500">{selectedDirector.name}</p>
                 <p className="text-sm text-muted-foreground">{selectedDirector.specialty}</p>
               </div>
@@ -101,12 +101,12 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
         )}
 
         <div className="space-y-6">
-          {/* Directores */}
+          {/* Directors */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg md:text-xl font-semibold">Directores Disponibles</h3>
+              <h3 className="text-lg md:text-xl font-semibold">Available Directors</h3>
               <Badge variant={selectedDirector ? "default" : "outline"} className="bg-orange-500">
-                {selectedDirector ? "✓ Seleccionado" : "Selecciona uno"}
+                {selectedDirector ? "✓ Selected" : "Select one"}
               </Badge>
             </div>
 
@@ -181,12 +181,12 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
             </div>
           </div>
 
-          {/* Estilos Visuales */}
+          {/* Visual Styles */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg md:text-xl font-semibold">Estilo Visual</h3>
+              <h3 className="text-lg md:text-xl font-semibold">Visual Style</h3>
               <Badge variant={selectedStyle ? "default" : "outline"} className="bg-orange-500">
-                {selectedStyle ? "✓ Seleccionado" : "Selecciona uno"}
+                {selectedStyle ? "✓ Selected" : "Select one"}
               </Badge>
             </div>
 
@@ -236,11 +236,11 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
             {selectedDirector && selectedStyle ? (
               <span className="text-green-500 flex items-center gap-2 font-semibold">
                 <Check className="h-4 w-4" />
-                Listo para continuar con {selectedDirector.name}
+                Ready to continue with {selectedDirector.name}
               </span>
             ) : (
               <span>
-                Selecciona un director y un estilo para continuar
+                Select a director and style to continue
               </span>
             )}
           </div>
@@ -252,7 +252,7 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
             className="bg-orange-500 hover:bg-orange-600 text-white gap-2 w-full sm:w-auto"
             data-testid="button-continue-director"
           >
-            Continuar
+            Continue
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
