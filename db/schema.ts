@@ -143,7 +143,7 @@ export const contracts = pgTable("contracts", {
   metadata: json("metadata")
 });
 
-export const audioDemos = pgTable("audio_demos", {
+export const audioDemos: ReturnType<typeof pgTable> = pgTable("audio_demos", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   musicianId: text("musician_id").notNull(),
@@ -190,7 +190,7 @@ export const musicians = pgTable("musicians", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
-export const bookings = pgTable("bookings", {
+export const bookings: ReturnType<typeof pgTable> = pgTable("bookings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   musicianId: integer("musician_id").references(() => musicians.id).notNull(),
@@ -822,7 +822,7 @@ export const posts = pgTable("social_posts", {
 });
 
 // Tabla de comentarios
-export const comments = pgTable("social_comments", {
+export const comments: ReturnType<typeof pgTable> = pgTable("social_comments", {
   id: integer("id").primaryKey().notNull(),
   postId: integer("postId").notNull().references(() => posts.id, { onDelete: "cascade" }),
   userId: integer("userId").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
