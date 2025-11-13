@@ -25,6 +25,7 @@ import ArtistGeneratorPage from "./pages/artist-generator";
 import BlogPage from "./pages/blog";
 import BoostifyInternationalPage from "./pages/boostify-international";
 import BoostifyTVPage from "./pages/boostify-tv";
+import BoostifyExplicitPage from "./pages/boostify-explicit";
 import ContactsPage from "./pages/contacts";
 import ContractsPage from "./pages/contracts";
 import CookiesPage from "./pages/cookies";
@@ -206,6 +207,7 @@ const Router = () => {
   const WrappedContractsPage = withPageWrapper(ContractsPage);
   const WrappedBoostifyInternationalPage = withPageWrapper(BoostifyInternationalPage);
   const WrappedBoostifyTVPage = withPageWrapper(BoostifyTVPage);
+  const WrappedBoostifyExplicitPage = withPageWrapper(BoostifyExplicitPage);
   const WrappedPRPage = withPageWrapper(PRPage);
   const WrappedNewsPage = withPageWrapper(NewsPage);
   const WrappedEventsPage = withPageWrapper(EventsPage);
@@ -294,6 +296,7 @@ const Router = () => {
         {getRouteComponent("/profile/:id", WrappedProfilePage, null)}
         {getRouteComponent("/artist/:slug", WrappedArtistProfilePage, null)}
         {getRouteComponent("/pricing", WrappedPricingPage, null)}
+        {getRouteComponent("/boostify-explicit", WrappedBoostifyExplicitPage, null)}
         
         {/* Rutas de ejemplo básicas - requieren autenticación pero no suscripción */}
         {getRouteComponent("/dashboard", WrappedDashboardPage, 'free')}

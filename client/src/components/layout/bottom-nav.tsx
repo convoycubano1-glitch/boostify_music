@@ -3,7 +3,7 @@ import { cn } from "../../lib/utils";
 import {
   Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart2,
   MessageSquare, ShoppingBag, PhoneCall, Users, Layers, BarChart, Settings, BookOpen,
-  Headphones, FileText, Rss, Send, Shield, Upload
+  Headphones, FileText, Rss, Send, Shield, Upload, Zap
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigationVisibility } from "../../hooks/use-navigation-visibility";
@@ -95,6 +95,12 @@ export function BottomNav() {
       icon: Bot,
       href: "/ai-agents",
       plan: "premium" // Requiere suscripción premium
+    },
+    {
+      title: "Explicit",
+      icon: Zap,
+      href: "/boostify-explicit",
+      plan: "free" // Public page
     },
     {
       title: "My Profile",
