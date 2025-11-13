@@ -2102,6 +2102,210 @@ ${transcription}`;
   };
 
   /**
+   * Regenerate image for a specific clip following the script
+   */
+  const handleRegenerateImageFromTimeline = async (clipId: number) => {
+    const item = timelineItems.find(item => item.id === clipId);
+    if (!item) {
+      toast({
+        title: "Error",
+        description: "Scene not found in timeline",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!scriptContent) {
+      toast({
+        title: "Error",
+        description: "You need a script first to regenerate the image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Extract scene number from item id
+      const sceneMatch = item.id.toString().match(/(\d+)$/);
+      if (!sceneMatch) {
+        throw new Error("Could not identify scene number");
+      }
+      
+      const sceneNumber = parseInt(sceneMatch[1]);
+      
+      // Get scene data from script
+      const parsedScript = JSON.parse(scriptContent);
+      const scenes = parsedScript.scenes || parsedScript;
+      const scene = scenes[sceneNumber - 1];
+      
+      if (!scene) {
+        throw new Error("Scene not found in script");
+      }
+
+      toast({
+        title: "Regenerating image",
+        description: `Generating new image for scene ${sceneNumber}...`,
+      });
+
+      // Build prompt from scene
+      const prompt = `${scene.scene}. ${scene.camera}, ${scene.lighting}, ${scene.style}`;
+      
+      const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
+      const endpoint = hasReferenceImages 
+        ? '/api/gemini-image/generate-single-with-multiple-faces'
+        : '/api/gemini-image/generate-batch';
+
+      const requestBody = hasReferenceImages
+        ? { 
+            prompt: prompt,
+            sceneId: sceneNumber,
+            referenceImagesBase64: artistReferenceImages,
+            seed: seed + sceneNumber
+          }
+        : { scenes: [scene] };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.imageUrl) {
+        // Upload to Firebase Storage
+        let permanentImageUrl = data.imageUrl;
+        if (user?.uid) {
+          try {
+            permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
+          } catch (uploadError) {
+            console.warn('Error uploading to Firebase, using temporary URL:', uploadError);
+          }
+        }
+
+        // Update timeline
+        setTimelineItems(prevItems => 
+          prevItems.map(timelineItem =>
+            timelineItem.id === item.id
+              ? {
+                  ...timelineItem,
+                  imageUrl: permanentImageUrl,
+                  thumbnail: permanentImageUrl,
+                  url: permanentImageUrl,
+                  generatedImage: permanentImageUrl,
+                  metadata: {
+                    ...timelineItem.metadata,
+                    isGeneratedImage: true,
+                    imageGeneratedAt: new Date().toISOString(),
+                  }
+                }
+              : timelineItem
+          )
+        );
+
+        toast({
+          title: "Image regenerated!",
+          description: `Scene ${sceneNumber} has been successfully regenerated`,
+        });
+      } else {
+        throw new Error(data.error || 'Failed to generate image');
+      }
+    } catch (error) {
+      console.error("Error regenerating image:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error regenerating image",
+        variant: "destructive",
+      });
+    }
+  };
+
+  /**
+   * Generate video from a specific clip image
+   */
+  const handleGenerateVideoFromTimeline = async (clipId: number) => {
+    const item = timelineItems.find(item => item.id === clipId);
+    if (!item) {
+      toast({
+        title: "Error",
+        description: "Scene not found in timeline",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const imageUrl = item.imageUrl || item.generatedImage || item.url;
+    if (!imageUrl) {
+      toast({
+        title: "Error",
+        description: "This scene has no image to convert to video",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const sceneMatch = item.id.toString().match(/(\d+)$/);
+      const sceneNumber = sceneMatch ? parseInt(sceneMatch[1]) : 0;
+
+      toast({
+        title: "Generating video",
+        description: `Converting scene ${sceneNumber} image to video...`,
+      });
+
+      // Use FAL AI to generate video from image
+      const videoPrompt = item.imagePrompt || item.title || 'Dynamic camera movement';
+      
+      const response = await generateVideoWithFAL({
+        imageUrl: imageUrl,
+        prompt: videoPrompt,
+        duration: item.duration || 3,
+        modelId: selectedFalModel
+      });
+
+      if (response && response.videoUrl) {
+        // Update timeline with video
+        setTimelineItems(prevItems =>
+          prevItems.map(timelineItem =>
+            timelineItem.id === item.id
+              ? {
+                  ...timelineItem,
+                  videoUrl: response.videoUrl,
+                  metadata: {
+                    ...timelineItem.metadata,
+                    videoGenerated: true,
+                    videoGeneratedAt: new Date().toISOString(),
+                  }
+                }
+              : timelineItem
+          )
+        );
+
+        toast({
+          title: "Video generated!",
+          description: `Scene ${sceneNumber} has been successfully converted to video`,
+        });
+      } else {
+        throw new Error('Failed to generate video');
+      }
+    } catch (error) {
+      console.error("Error generating video:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error generating video",
+        variant: "destructive",
+      });
+    }
+  };
+
+  /**
    * Guardar proyecto en PostgreSQL
    */
   const handleSaveProject = async () => {
@@ -5859,12 +6063,8 @@ ${transcription}`;
                       onPause={() => setIsPlaying(false)}
                       isPlaying={isPlaying}
                       onSceneSelect={setSelectedSceneId}
-                      onRegenerateImage={(clipId) => {
-                        const item = timelineItems.find(item => item.id === clipId);
-                        if (item) {
-                          regenerateImage(item);
-                        }
-                      }}
+                      onRegenerateImage={handleRegenerateImageFromTimeline}
+                      onGenerateVideo={handleGenerateVideoFromTimeline}
                     />
                   </div>
 
