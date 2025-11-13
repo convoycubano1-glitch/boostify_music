@@ -3,7 +3,7 @@
  * Usa Gemini Vision para análisis preciso de características faciales
  */
 
-interface FaceAnalysis {
+export interface FaceAnalysis {
   // Estructura facial
   faceShape: string; // oval, round, square, heart, diamond, rectangular
   jawline: string; // strong, soft, angular, rounded, defined

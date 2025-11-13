@@ -40,15 +40,11 @@ export async function generateMasterCharacter(
     
     const result = await fluxService.generateImage({
       prompt: characterPrompt,
-      model: FluxModel.FLUX_PRO_1_1,
+      model: FluxModel.FLUX1_DEV_ADVANCED,
       width: 1024,
       height: 1024,
-      numInferenceSteps: 50, // Alta calidad
-      guidanceScale: 7.5,
-      seed: Math.floor(Math.random() * 1000000),
-      enableSafetyChecker: true,
-      outputFormat: 'jpeg',
-      outputQuality: 95
+      steps: 50, // Alta calidad
+      guidance_scale: 7.5
     });
     
     onProgress?.('Finalizando...', 95);
@@ -58,7 +54,7 @@ export async function generateMasterCharacter(
     }
     
     const masterCharacter: MasterCharacter = {
-      imageUrl: result.images[0].url,
+      imageUrl: result.images[0], // images es string[] directamente
       analysis,
       prompt: characterPrompt,
       timestamp: new Date()
@@ -100,16 +96,15 @@ Maintain the exact same person with all their facial features, just adapt to the
 
     const result = await fluxService.generateImage({
       prompt: variantPrompt,
-      model: FluxModel.FLUX_PRO_1_1,
+      model: FluxModel.FLUX1_DEV_ADVANCED,
       width: 1024,
       height: 1024,
-      numInferenceSteps: 40,
-      guidanceScale: 7.5,
-      seed: Math.floor(Math.random() * 1000000)
+      steps: 40,
+      guidance_scale: 7.5
     });
     
     if (result.images && result.images.length > 0) {
-      variants.push(result.images[0].url);
+      variants.push(result.images[0]); // images es string[] directamente
     }
   }
   

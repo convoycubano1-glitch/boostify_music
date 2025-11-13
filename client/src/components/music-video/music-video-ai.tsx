@@ -80,7 +80,7 @@ import {
 } from "../../lib/services/performance-segment-service";
 import { PaymentGateModal } from "./payment-gate-modal";
 import { CharacterGenerationModal } from "./character-generation-modal";
-import { analyzeFacialFeatures } from "../../lib/api/face-analyzer";
+import { analyzeFaceFeatures } from "../../lib/api/face-analyzer";
 import { generateMasterCharacter } from "../../lib/api/master-character-generator";
 
 // Fal.ai configuration
@@ -747,15 +747,27 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         description: `Generando ${performanceClips.length} videos con sincronización labial...`,
       });
       
-      // Obtener la primera imagen generada como imagen del artista
-      const artistImageClip = timelineItems.find(item => item.imageUrl || item.generatedImage);
-      const artistImageUrl = artistImageClip?.imageUrl || artistImageClip?.generatedImage || null;
+      // Usar master character si está disponible, sino usar la primera imagen generada
+      let artistImageUrl = masterCharacter?.imageUrl || null;
+      
+      if (!artistImageUrl) {
+        // Fallback: usar la primera imagen del timeline que tenga master character o imagen generada
+        const artistImageClip = timelineItems.find(item => 
+          item.metadata?.masterCharacterUrl || item.imageUrl || item.generatedImage
+        );
+        artistImageUrl = artistImageClip?.metadata?.masterCharacterUrl || 
+                        artistImageClip?.imageUrl || 
+                        artistImageClip?.generatedImage || 
+                        null;
+      }
       
       if (!artistImageUrl) {
         console.warn('⚠️ [LIP-SYNC] No hay imagen del artista disponible');
         setIsProcessingLipSync(false);
         return;
       }
+      
+      console.log(`🎭 [LIP-SYNC] Usando imagen: ${masterCharacter ? 'Master Character' : 'Timeline image'}`);
       
       // Procesar clips de performance
       const projectId = currentProjectId ? parseInt(currentProjectId) : Date.now();
@@ -970,11 +982,25 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           // Construir el prompt desde el objeto scene
           const prompt = `${scene.scene}. ${scene.camera}, ${scene.lighting}, ${scene.style}`;
           
-          const requestBody = hasReferenceImages
+          // Detectar si es escena de performance (canto/singing)
+          const isPerformanceScene = scene.scene?.toLowerCase().includes('singing') || 
+                                     scene.scene?.toLowerCase().includes('performing') ||
+                                     scene.scene?.toLowerCase().includes('vocalist') ||
+                                     scene.description?.toLowerCase().includes('singing');
+          
+          // Usar master character si está disponible y es escena de performance
+          const usesMasterCharacter = masterCharacter && isPerformanceScene;
+          const referenceToUse = usesMasterCharacter 
+            ? [masterCharacter.imageUrl] 
+            : (hasReferenceImages ? artistReferenceImages : undefined);
+          
+          console.log(`🎭 [SCENE ${sceneIndex}] Performance: ${isPerformanceScene}, Using Master Character: ${usesMasterCharacter}`);
+          
+          const requestBody = (usesMasterCharacter || hasReferenceImages)
             ? { 
                 prompt: prompt,
                 sceneId: sceneIndex,
-                referenceImagesBase64: artistReferenceImages,
+                referenceImagesBase64: referenceToUse,
                 seed: seed + sceneIndex
               }
             : { scenes: [scene] };
@@ -1052,6 +1078,9 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
                     metadata: {
                       ...item.metadata,
                       isGeneratedImage: true,
+                      isPerformanceScene: isPerformanceScene,
+                      usesMasterCharacter: usesMasterCharacter,
+                      masterCharacterUrl: usesMasterCharacter ? masterCharacter.imageUrl : undefined,
                       imageGeneratedAt: new Date().toISOString(),
                       scene_id: sceneIndex,
                       shot_type: item.shotType || item.metadata?.shot_type,
@@ -1355,28 +1384,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     setCharacterGenerationStage("Analizando rasgos faciales...");
 
     try {
-      // Paso 1: Analizar características faciales (0-20%)
-      setCharacterGenerationProgress(5);
-      const facialAnalysis = await analyzeFacialFeatures(artistReferenceImages);
-      console.log('✅ Análisis facial completado:', facialAnalysis);
-      setCharacterGenerationProgress(20);
-
-      // Paso 2: Optimizar prompt (20-30%)
-      setCharacterGenerationStage("Optimizando prompt de generación...");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setCharacterGenerationProgress(30);
-
-      // Paso 3: Generar master character (30-95%)
-      setCharacterGenerationStage("Generando personaje profesional...");
-      setCharacterGenerationProgress(35);
-
+      // Generar master character con progreso en tiempo real
+      const directorStyle = videoStyle.selectedDirector?.style || "Cinematic professional style";
+      
       const masterChar = await generateMasterCharacter(
-        facialAnalysis,
         artistReferenceImages,
-        (progress) => {
-          // Mapear progreso de 0-100 a 35-95%
-          const mappedProgress = 35 + (progress * 0.6);
-          setCharacterGenerationProgress(mappedProgress);
+        directorStyle,
+        (stage, progress) => {
+          setCharacterGenerationStage(stage);
+          setCharacterGenerationProgress(progress);
         }
       );
 
@@ -1429,10 +1445,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     try {
       const audioDurationInSeconds = audioBuffer ? audioBuffer.duration : 180;
       
+      // Usar master character si está disponible, sino usar imágenes de referencia
+      const characterReference = masterCharacter?.imageUrl 
+        ? [masterCharacter.imageUrl] 
+        : (artistReferenceImages.length > 0 ? artistReferenceImages : undefined);
+      
       const concepts = await generateThreeConceptProposals(
         transcriptionText,
         director.name,
-        artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
+        characterReference,
         audioDurationInSeconds
       );
       
@@ -1455,7 +1476,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                 prompt: coverPrompt,
-                referenceImages: artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
+                referenceImages: characterReference, // Usar master character o referencias
                 seed: seed + index + 1000
               })
             });
