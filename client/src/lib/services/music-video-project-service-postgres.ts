@@ -181,6 +181,44 @@ class MusicVideoProjectServicePostgres {
   }
 
   /**
+   * Rename a project
+   */
+  async renameProject(
+    projectId: number,
+    newName: string,
+    userEmail: string
+  ): Promise<{ success: boolean; project: MusicVideoProjectPostgres }> {
+    try {
+      console.log('✏️ Renombrando proyecto:', projectId, 'a:', newName);
+      
+      const response = await fetch(`${this.baseUrl}/rename`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: projectId.toString(),
+          newName,
+          userEmail,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Proyecto renombrado exitosamente');
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Error renombrando proyecto:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Auto-save project (debounced)
    */
   private autoSaveTimers: Map<string, NodeJS.Timeout> = new Map();
