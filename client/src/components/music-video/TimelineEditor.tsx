@@ -1077,10 +1077,12 @@ export function TimelineEditor({
           <div 
             className={cn(
               "relative min-h-full",
-              tool === 'hand' ? 'cursor-grab' : tool === 'razor' ? 'cursor-crosshair' : 'cursor-default'
+              tool === 'hand' ? 'cursor-grab' : tool === 'razor' ? 'cursor-crosshair' : 'cursor-default',
+              isPanning ? 'cursor-grabbing' : ''
             )}
             style={{ width: `${timeToPixels(duration)}px`, minWidth: '100%' }}
             onClick={handleTimelineClick}
+            onMouseDown={handleTimelineMouseDown}
           >
             {/* Time rulers */}
             <div className="sticky top-0 h-12 bg-gray-800 border-b border-gray-700 z-20">
