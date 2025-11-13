@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
-import { DollarSign, Download, Loader2, ChevronRight, Eye, Upload, Calculator } from "lucide-react";
+import { DollarSign, Download, Loader2, ChevronRight, Eye, Upload, Calculator, Edit, Trash2 } from "lucide-react";
 import { managerToolsService } from "../../lib/services/managertoolsopenrouter";
 import { useToast } from "../../hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "../ui/dialog";
@@ -26,6 +26,9 @@ export function BudgetSection() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<BudgetDocument | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editContent, setEditContent] = useState("");
 
   const { data: budgetDocuments = [], isLoading } = useQuery({
     queryKey: ['budgets', user?.uid],
@@ -82,6 +85,49 @@ export function BudgetSection() {
     }
   });
 
+  const deleteDocumentMutation = useMutation({
+    mutationFn: async (docId: string) => {
+      await managerToolsService.deleteDocument(docId, 'budget');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.uid] });
+      toast({
+        title: "Success",
+        description: "Document deleted successfully"
+      });
+      setSelectedDocument(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete document",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateDocumentMutation = useMutation({
+    mutationFn: async ({ docId, content }: { docId: string; content: string }) => {
+      await managerToolsService.updateDocument(docId, 'budget', { content });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.uid] });
+      toast({
+        title: "Success",
+        description: "Document updated successfully"
+      });
+      setIsEditMode(false);
+      setSelectedDocument(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update document",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handlePreviewBudget = async () => {
     if (!details.trim()) {
       toast({
@@ -133,6 +179,31 @@ export function BudgetSection() {
         description: "Failed to download budget document",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleViewDocument = (doc: BudgetDocument) => {
+    setSelectedDocument(doc);
+    setEditContent(doc.content);
+    setIsEditMode(false);
+  };
+
+  const handleEditDocument = () => {
+    if (!selectedDocument) return;
+    setIsEditMode(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedDocument) return;
+    await updateDocumentMutation.mutateAsync({
+      docId: selectedDocument.id,
+      content: editContent
+    });
+  };
+
+  const handleDeleteDocument = async (docId: string) => {
+    if (confirm('Are you sure you want to delete this document?')) {
+      await deleteDocumentMutation.mutateAsync(docId);
     }
   };
 
@@ -268,15 +339,32 @@ export function BudgetSection() {
                   <div className="mt-2 mb-4">
                     <p className="text-sm line-clamp-3">{doc.content}</p>
                   </div>
-                  <div className="flex">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDocument(doc)}
+                      className="flex-1"
+                      data-testid={`button-view-${doc.id}`}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDownload(doc)}
-                      className="flex-1"
+                      data-testid={`button-download-${doc.id}`}
                     >
-                      <Download className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Download</span>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteDocument(doc.id)}
+                      data-testid={`button-delete-${doc.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
                 </div>
@@ -368,6 +456,85 @@ export function BudgetSection() {
                   ) : (
                     "Save Budget Plan"
                   )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View/Edit Document Dialog */}
+      <Dialog open={!!selectedDocument} onOpenChange={(open) => !open && setSelectedDocument(null)}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isEditMode ? 'Edit Budget Plan' : 'Budget Plan'}</DialogTitle>
+            <DialogDescription>
+              {selectedDocument && new Date(selectedDocument.createdAt.toDate()).toLocaleDateString()}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isEditMode ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-content">Content</Label>
+                <Textarea
+                  id="edit-content"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="min-h-[400px] font-mono text-sm"
+                  data-testid="textarea-edit-content"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="whitespace-pre-line p-4 rounded bg-muted/30 font-mono text-sm max-h-[400px] overflow-y-auto">
+              {selectedDocument?.content}
+            </div>
+          )}
+          
+          <DialogFooter className="flex gap-2 sm:space-x-0">
+            {isEditMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditMode(false)}
+                  data-testid="button-cancel-edit"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={updateDocumentMutation.isPending}
+                  className="bg-orange-500 hover:bg-orange-600"
+                  data-testid="button-save-edit"
+                >
+                  {updateDocumentMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleEditDocument}
+                  data-testid="button-edit-document"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => selectedDocument && handleDownload(selectedDocument)}
+                  data-testid="button-download-document"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
                 </Button>
               </>
             )}
