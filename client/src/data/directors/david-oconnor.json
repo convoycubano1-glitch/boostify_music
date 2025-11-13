@@ -1,0 +1,103 @@
+{
+  "id": "david-oconnor",
+  "name": "David O'Connor",
+  "bio": "Hard-hitting director with 20+ years specializing in high-energy performance videos for rock and metal artists. Known for raw, intense cinematography with practical effects that capture the aggressive power of heavy music.",
+  "specialty": "Rock & Metal",
+  "experience": "20+ years specializing in high-energy performance videos",
+  "rating": 4.6,
+  
+  "visual_style": {
+    "description": "Raw, intense cinematography with practical effects, aggressive camera work, industrial aesthetics, high-contrast visuals",
+    "signature_techniques": [
+      "Aggressive handheld camera shake",
+      "Strobe lighting synchronized to drums",
+      "Fire and pyrotechnics",
+      "Extreme close-ups of instruments",
+      "Whip pans and crash zooms",
+      "Live concert energy capture"
+    ],
+    "color_palette": {
+      "primary_colors": ["Deep blacks", "Blood reds", "Industrial grays"],
+      "accent_colors": ["Fire orange", "Electric white", "Toxic green"],
+      "mood": "Aggressive, raw, powerful, unapologetic"
+    },
+    "influences": ["Dave Grohl concert films", "Headbangers Ball era", "Rob Zombie"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["14mm ultra-wide", "24mm", "Fisheye for distortion"],
+    "favorite_shot_types": ["ECU", "LOW", "DUTCH", "WS from pit"],
+    "favorite_movements": ["aggressive handheld", "whip pan", "crash zoom", "crane"],
+    "shot_composition": "Chaotic energy, intentionally broken rules, extreme angles, subjects dominating frame",
+    "aspect_ratio": "16:9 or 1.85:1 for traditional rock aesthetic",
+    "camera_notes": "Embraces chaos and movement, uses distortion as creative tool, low angles for power"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["Stage spotlights", "Strobes", "Fire/pyrotechnics", "Harsh backlights"],
+    "color_temperature": "Mixed - cool industrial (5600K) with warm fire elements (2000K)",
+    "key_techniques": [
+      "Strobe lights on drum hits",
+      "Silhouette backlit shots",
+      "Fire as practical light source",
+      "Harsh sidelighting for drama"
+    ],
+    "mood_lighting": "High contrast, deep shadows, dramatic highlights, lots of smoke and haze"
+  },
+  
+  "editing_style": {
+    "pace": "Extremely fast-paced, synchronized to double bass drums and guitar riffs",
+    "transitions": ["Hard cuts", "Whip cuts", "Flash frames", "Crash zooms"],
+    "average_shot_length": "0.5-2 seconds (very rapid)",
+    "rhythm_approach": "Cuts locked to kick drums, cymbals, and guitar chugs"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Performance-focused with raw energy, minimal narrative, pure visceral experience",
+    "preferred_themes": ["Rebellion and resistance", "Power and intensity", "Chaos and destruction", "Raw emotion"],
+    "performance_vs_broll_ratio": "85% performance / 15% B-roll",
+    "symbolism_level": "Low - direct visual aggression and power"
+  },
+  
+  "post_production": {
+    "color_grading_style": "High contrast, crushed blacks, blown highlights, desaturated with red punch",
+    "vfx_approach": "Practical effects heavily favored - real fire, sparks, smoke",
+    "preferred_effects": [
+      "Film grain and grit texture",
+      "Strobe/flash effects",
+      "Speed ramps on breakdowns",
+      "Chromatic aberration for intensity"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Chaos Reigns",
+      "artist": "Metal Legends",
+      "year": 2018,
+      "key_techniques": ["Pyrotechnics", "Strobe lighting", "Aggressive handheld"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Industrial and warehouse environments",
+      "Aggressive camera movements and low angles",
+      "High-energy performance shots",
+      "Fire, smoke, and practical effects",
+      "Extreme close-ups of instruments and vocals"
+    ],
+    "avoid": [
+      "Soft lighting or pastel colors",
+      "Slow contemplative pacing",
+      "Clean polished aesthetics",
+      "Narrative storytelling"
+    ],
+    "emphasis": [
+      "Raw power and intensity",
+      "Aggressive energy",
+      "Visceral impact",
+      "Unapologetic attitude"
+    ]
+  }
+}

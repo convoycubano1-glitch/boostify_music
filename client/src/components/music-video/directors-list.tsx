@@ -82,21 +82,45 @@ export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
   useEffect(() => {
     const fetchDirectors = async () => {
       try {
-        // Cargar directores directamente desde los archivos JSON
-        // Esto asegura que los IDs coincidan con los datos completos
-        const directorsFromJSON = DIRECTORS.map(directorProfile => ({
-          id: directorProfile.id,
-          name: directorProfile.name,
-          specialty: directorProfile.specialty,
-          experience: directorProfile.experience,
-          style: directorProfile.visual_style.description,
-          rating: directorProfile.rating,
-          // Generar imagen de avatar profesional basada en el nombre
-          imageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(directorProfile.name)}&backgroundColor=f59e0b,ea580c&radius=50`
-        }));
+        // Cargar directores desde Firestore para obtener las imágenes
+        const directorsSnapshot = await getDocs(collection(db, "directors"));
+        const directorsFromFirestore = directorsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Director[];
+
+        // Combinar con datos JSON para información completa
+        // Solo incluir directores que tienen datos completos en JSON
+        const directorsWithFullData = directorsFromFirestore
+          .map(firestoreDirector => {
+            // Buscar el director correspondiente en JSON usando el nombre
+            // Normalizar nombres para comparación (quitar apóstrofes, espacios extra, etc.)
+            const normalizeName = (name: string) => 
+              name.toLowerCase().replace(/['\s-]/g, '');
+            
+            const jsonDirector = DIRECTORS.find(d => 
+              normalizeName(d.name) === normalizeName(firestoreDirector.name || '')
+            );
+
+            if (!jsonDirector) {
+              console.warn(`⚠️ Director "${firestoreDirector.name}" en Firestore pero sin datos JSON completos`);
+              return null;
+            }
+
+            return {
+              id: jsonDirector.id,
+              name: firestoreDirector.name,
+              specialty: firestoreDirector.specialty,
+              experience: firestoreDirector.experience,
+              style: firestoreDirector.style,
+              rating: firestoreDirector.rating,
+              imageUrl: firestoreDirector.imageUrl || undefined
+            };
+          })
+          .filter((director): director is Director => director !== null);
         
-        setDirectors(directorsFromJSON);
-        console.log(`✅ Cargados ${directorsFromJSON.length} directores desde JSON`);
+        setDirectors(directorsWithFullData);
+        console.log(`✅ Cargados ${directorsWithFullData.length} directores con detalles completos`);
       } catch (error) {
         console.error("Error loading directors:", error);
         toast({
@@ -145,13 +169,20 @@ export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
 
   // Handler para ver detalles del director
   const handleViewDetails = (director: Director) => {
-    // Buscar el director completo en los datos JSON por ID
-    const fullDirector = getDirectorById(director.id);
+    // Buscar el director completo en los datos JSON por nombre normalizado
+    const normalizeName = (name: string) => 
+      name.toLowerCase().replace(/['\s-]/g, '');
+    
+    const fullDirector = DIRECTORS.find(d => 
+      normalizeName(d.name) === normalizeName(director.name)
+    );
     
     if (fullDirector) {
       setSelectedDirectorForDetails(fullDirector);
       setShowDetailsModal(true);
+      console.log(`✅ Detalles del director cargados:`, fullDirector.name);
     } else {
+      console.error(`❌ Director no encontrado en JSON:`, director.name);
       toast({
         title: "Información no disponible",
         description: "No se encontraron los detalles completos para este director",

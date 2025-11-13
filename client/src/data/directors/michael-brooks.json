@@ -1,0 +1,104 @@
+{
+  "id": "michael-brooks",
+  "name": "Michael Brooks",
+  "bio": "Veteran director with 25+ years capturing authentic storytelling in country and folk music videos. Known for his natural cinematography with emotional depth and connection to rural American landscapes.",
+  "specialty": "Country & Folk",
+  "experience": "25+ years capturing authentic storytelling",
+  "rating": 4.7,
+  
+  "visual_style": {
+    "description": "Natural cinematography with emotional depth, authentic rural storytelling, golden-hour aesthetics, heartland Americana",
+    "signature_techniques": [
+      "Wide landscape establishing shots",
+      "Natural light outdoor sequences",
+      "Handheld intimate close-ups",
+      "Slow tracking shots through nature",
+      "Drone flyovers of farmland",
+      "Sunset silhouette shots"
+    ],
+    "color_palette": {
+      "primary_colors": ["Warm golden tones", "Earth browns", "Sky blues"],
+      "accent_colors": ["Sunset orange", "Harvest gold", "Forest green"],
+      "mood": "Warm, nostalgic, authentic, down-to-earth"
+    },
+    "influences": ["Terrence Malick", "Kelly Reichardt", "Gordon Parks"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["24mm", "35mm", "50mm", "85mm portrait"],
+    "favorite_shot_types": ["WS", "LS", "MS", "CU"],
+    "favorite_movements": ["slow dolly", "handheld", "static", "drone"],
+    "shot_composition": "Natural rule of thirds, horizon lines, breathing space, foreground elements",
+    "aspect_ratio": "2.39:1 anamorphic for cinematic landscapes",
+    "camera_notes": "Prefers natural framing, uses wide shots for context, intimate close-ups for emotion"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["Golden hour sunlight", "Natural window light", "Firelight", "Practical lanterns"],
+    "color_temperature": "Warm 2700K-3200K for cozy authentic feel",
+    "key_techniques": [
+      "Golden hour as primary light source",
+      "Backlit subjects with sun flare",
+      "Natural bounce from earth and sky",
+      "Firelight and candlelight practicals"
+    ],
+    "mood_lighting": "Warm, natural, soft shadows, embracing organic imperfections"
+  },
+  
+  "editing_style": {
+    "pace": "Slow and contemplative, letting moments breathe",
+    "transitions": ["Dissolves", "Fade to black", "Match cuts", "L-cuts for audio"],
+    "average_shot_length": "6-10 seconds (long holds)",
+    "rhythm_approach": "Emotional pacing, cuts on lyrical moments and story beats"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Character-driven narratives about family, home, loss, and resilience",
+    "preferred_themes": ["Homecoming", "Family legacy", "Hard work and perseverance", "Lost love", "Small-town life"],
+    "performance_vs_broll_ratio": "30% performance / 70% narrative B-roll",
+    "symbolism_level": "Medium - uses nature, seasons, and objects as emotional metaphors"
+  },
+  
+  "post_production": {
+    "color_grading_style": "Film-like warmth, golden hour glow, organic skin tones, natural contrast",
+    "vfx_approach": "Minimal to none - purely authentic practical filmmaking",
+    "preferred_effects": [
+      "Film grain for texture",
+      "Natural lens flares from sun",
+      "Gentle vignettes",
+      "Organic color transitions"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Fields of Home",
+      "artist": "Country Music Legends",
+      "year": 2015,
+      "key_techniques": ["Golden hour cinematography", "Wide landscape shots", "Emotional close-ups"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Rural and natural environments (fields, farms, forests, rivers)",
+      "Golden hour lighting with warm sun flares",
+      "Authentic emotional moments",
+      "Wide landscape shots showing connection to land",
+      "Intimate close-ups for vulnerability"
+    ],
+    "avoid": [
+      "Urban environments",
+      "Artificial lighting",
+      "Fast-paced editing",
+      "Heavy VFX or digital effects",
+      "Overly stylized visuals"
+    ],
+    "emphasis": [
+      "Authenticity and genuine emotion",
+      "Connection to nature and heritage",
+      "Timeless storytelling",
+      "Warmth and humanity"
+    ]
+  }
+}

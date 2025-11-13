@@ -1,0 +1,103 @@
+{
+  "id": "alex-thompson",
+  "name": "Alex Thompson",
+  "bio": "Creative director with 12+ years specializing in artistic music videos for indie pop and alternative artists. Known for experimental visuals with vintage aesthetics that blend analog warmth with modern techniques.",
+  "specialty": "Indie Pop & Alternative",
+  "experience": "12+ years specializing in artistic music videos",
+  "rating": 4.6,
+  
+  "visual_style": {
+    "description": "Experimental visuals with vintage aesthetics, analog textures, artistic color treatments, lo-fi charm",
+    "signature_techniques": [
+      "16mm film grain overlays",
+      "Double exposure composites",
+      "Practical light painting",
+      "Stop-motion animation sequences",
+      "Vintage camera lens distortions",
+      "Mixed media collage elements"
+    ],
+    "color_palette": {
+      "primary_colors": ["Faded pastels", "Vintage rose", "Sage green"],
+      "accent_colors": ["Mustard yellow", "Dusty blue", "Burnt sienna"],
+      "mood": "Nostalgic, whimsical, artistic, introspective"
+    },
+    "influences": ["Wes Anderson", "Sofia Coppola", "Annie Clark (St. Vincent)"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["50mm vintage", "35mm", "Vintage anamorphic"],
+    "favorite_shot_types": ["MS", "CU", "SYMMETRICAL", "POV"],
+    "favorite_movements": ["static", "slow zoom", "lateral tracking", "dolly"],
+    "shot_composition": "Centered symmetrical framing, pastel color blocking, quirky off-center moments",
+    "aspect_ratio": "4:3 for vintage feel or 16:9 standard",
+    "camera_notes": "Loves vintage lenses for character, embraces imperfections and chromatic aberration"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["Soft diffused daylight", "Practical vintage lamps", "Colored gels (pastel)", "String lights"],
+    "color_temperature": "Mixed warm (2700K-3200K) with pastel gel accents",
+    "key_techniques": [
+      "Soft book lighting for even coverage",
+      "Pastel colored gels for dreamlike feel",
+      "Practical vintage fixtures in frame",
+      "Natural window light with sheer curtains"
+    ],
+    "mood_lighting": "Soft, dreamlike, pastel-tinted, gentle shadows, vintage warmth"
+  },
+  
+  "editing_style": {
+    "pace": "Medium tempo with artistic flourishes and unexpected transitions",
+    "transitions": ["Whip pans", "Zoom transitions", "Dissolves", "Creative wipes"],
+    "average_shot_length": "3-6 seconds (moderate)",
+    "rhythm_approach": "Cuts match emotional arc and lyrical moments, artistic rather than strictly rhythmic"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Whimsical narratives with artistic flair, quirky character moments, visual storytelling",
+    "preferred_themes": ["Self-discovery", "Quirky romance", "Artistic expression", "Childhood nostalgia"],
+    "performance_vs_broll_ratio": "45% performance / 55% artistic narrative",
+    "symbolism_level": "High - uses color, props, and visual motifs as storytelling devices"
+  },
+  
+  "post_production": {
+    "color_grading_style": "Vintage film emulation, pastel color correction, faded blacks, warm highlights",
+    "vfx_approach": "Practical and in-camera effects preferred, minimal digital VFX, handcrafted aesthetic",
+    "preferred_effects": [
+      "16mm/Super 8 film grain",
+      "Light leaks and lens flares",
+      "Vintage color fading",
+      "Subtle vignettes"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Daydream Believer",
+      "artist": "Indie Pop Artists",
+      "year": 2020,
+      "key_techniques": ["Vintage aesthetics", "Pastel color grading", "Stop-motion elements"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Whimsical indoor sets with pastel color schemes",
+      "Vintage and analog aesthetic with film grain",
+      "Soft dreamlike lighting with gentle shadows",
+      "Artistic props and set design details",
+      "Quirky character moments and expressions"
+    ],
+    "avoid": [
+      "Harsh modern lighting",
+      "Aggressive fast-paced editing",
+      "Digital clean aesthetics",
+      "Dark or moody tones"
+    ],
+    "emphasis": [
+      "Artistic creativity and uniqueness",
+      "Nostalgic warmth",
+      "Whimsical storytelling",
+      "Handcrafted authentic feel"
+    ]
+  }
+}

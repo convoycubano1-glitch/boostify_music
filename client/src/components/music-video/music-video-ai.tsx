@@ -1090,13 +1090,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   };
 
   // Función para manejar el resultado del onboarding
-  const handleOnboardingComplete = useCallback(async (audioFile: File, referenceImages: string[]) => {
+  const handleOnboardingComplete = useCallback(async (audioFile: File, referenceImages: string[], artistName: string) => {
     console.log('🎉 Onboarding completado:', {
       audio: audioFile.name,
-      imagesCount: referenceImages.length
+      imagesCount: referenceImages.length,
+      artistName: artistName
     });
     
-    // Establecer las imágenes de referencia y el archivo de audio
+    // Establecer el nombre del artista, las imágenes de referencia y el archivo de audio
+    setProjectName(artistName);
     setArtistReferenceImages(referenceImages);
     setSelectedFile(audioFile);
     
@@ -1259,15 +1261,17 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           try {
             console.log(`🎨 Generando portada ${index + 1}/3 para concepto ${index + 1}`);
             
-            // Crear prompt para portada de álbum
+            // Crear prompt para portada de álbum con referencia del artista
             const conceptData = concept as any;
-            const coverPrompt = `Professional music album cover art. Artist: ${projectName || 'Artist Name'}. Song: ${selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title'}. Visual style: ${conceptData.visual_theme || conceptData.description || 'Modern cinematic'}. ${conceptData.color_palette?.primary_colors ? `Color palette: ${conceptData.color_palette.primary_colors.join(', ')}` : ''}. Minimalist, professional, high-quality design.`;
+            const songTitle = selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title';
+            const coverPrompt = `Professional music album cover art. Artist: ${projectName || 'Artist Name'}. Song title displayed: "${songTitle}". Visual style: ${conceptData.visual_theme || conceptData.description || 'Modern cinematic'}. ${conceptData.color_palette?.primary_colors ? `Color palette: ${conceptData.color_palette.primary_colors.join(', ')}` : ''}. Feature the artist prominently in the cover with their likeness. Minimalist, professional, high-quality design with the artist name "${projectName || 'Artist Name'}" and song title "${songTitle}" as text overlay.`;
             
             const response = await fetch('/api/gemini-image/generate-simple', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                 prompt: coverPrompt,
+                referenceImages: artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
                 seed: seed + index + 1000
               })
             });

@@ -1,0 +1,103 @@
+{
+  "id": "james-wilson",
+  "name": "James Wilson",
+  "bio": "Masterful director with 15+ years crafting emotional visual narratives for R&B and soul artists. Known for intimate storytelling with sophisticated cinematography that captures vulnerability and romance.",
+  "specialty": "R&B & Soul",
+  "experience": "15+ years crafting emotional visual narratives",
+  "rating": 4.7,
+  
+  "visual_style": {
+    "description": "Intimate storytelling with sophisticated cinematography, romantic aesthetics, emotional depth, luxurious textures",
+    "signature_techniques": [
+      "Shallow depth of field for intimacy",
+      "Slow sensual camera movements",
+      "Reflections in mirrors and water",
+      "Silhouette shots against windows",
+      "Close-ups of hands and subtle gestures",
+      "Long takes with emotional performances"
+    ],
+    "color_palette": {
+      "primary_colors": ["Deep burgundy", "Midnight blue", "Champagne gold"],
+      "accent_colors": ["Rose pink", "Smoky purple", "Ivory white"],
+      "mood": "Romantic, intimate, sophisticated, emotional"
+    },
+    "influences": ["Hype Williams (R&B era)", "X (Julien Christian Lutz)", "Melina Matsoukas"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["50mm f/1.2", "85mm f/1.4", "35mm f/1.4"],
+    "favorite_shot_types": ["CU", "ECU", "MS", "OTS"],
+    "favorite_movements": ["slow dolly", "slider", "gimbal glide", "static"],
+    "shot_composition": "Shallow focus, subjects centered or rule of thirds, negative space for emotion",
+    "aspect_ratio": "2.39:1 anamorphic for cinematic romance",
+    "camera_notes": "Prioritizes emotional connection through focus, loves bokeh backgrounds, smooth movements"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["Soft key with minimal fill", "Window light", "Candlelight", "Practical lamps"],
+    "color_temperature": "Warm 2700K-3200K for romantic mood",
+    "key_techniques": [
+      "Rembrandt lighting for drama",
+      "Backlit silhouettes for mystery",
+      "Soft diffused key for beauty",
+      "Candlelight and dim practicals"
+    ],
+    "mood_lighting": "Soft, intimate, warm glows, embracing shadows, luxurious ambiance"
+  },
+  
+  "editing_style": {
+    "pace": "Slow and sensual, allowing emotional moments to breathe",
+    "transitions": ["Dissolves", "L-cuts for emotional continuity", "Fade to black", "Match cuts"],
+    "average_shot_length": "5-8 seconds (long emotional holds)",
+    "rhythm_approach": "Cuts match emotional beats and lyrical phrasing, not strict rhythm"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Character-driven romantic narratives exploring love, heartbreak, and intimacy",
+    "preferred_themes": ["Romantic relationships", "Heartbreak and healing", "Intimacy and vulnerability", "Luxury and aspiration"],
+    "performance_vs_broll_ratio": "40% performance / 60% narrative B-roll",
+    "symbolism_level": "High - uses visual metaphors for emotion: rain, reflections, empty spaces"
+  },
+  
+  "post_production": {
+    "color_grading_style": "Warm rich tones, lifted blacks for sophistication, smooth skin tones, subtle teal shadows",
+    "vfx_approach": "Minimal VFX, focuses on in-camera beauty and natural aesthetics",
+    "preferred_effects": [
+      "Subtle film grain for texture",
+      "Soft glow filters on highlights",
+      "Natural lens flares from practicals",
+      "Gentle vignettes for intimacy"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Midnight Love",
+      "artist": "R&B Legends",
+      "year": 2019,
+      "key_techniques": ["Shallow depth of field", "Candlelight cinematography", "Intimate close-ups"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Intimate indoor environments (bedrooms, luxury apartments, dimly lit spaces)",
+      "Shallow depth of field focusing on emotional details",
+      "Warm romantic lighting with soft shadows",
+      "Close-ups of hands, eyes, subtle gestures",
+      "Sophisticated luxury aesthetics"
+    ],
+    "avoid": [
+      "Harsh lighting or cold tones",
+      "Fast-paced energetic cutting",
+      "Outdoor bright daylight scenes",
+      "Overly saturated colors"
+    ],
+    "emphasis": [
+      "Emotional vulnerability and intimacy",
+      "Romantic connection",
+      "Sophisticated luxury",
+      "Sensual beauty"
+    ]
+  }
+}

@@ -42,33 +42,60 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
   const [directors, setDirectors] = useState<Director[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Cargar directores desde JSON
+  // Cargar directores desde Firestore para obtener las imágenes
   useEffect(() => {
-    if (open) {
+    const fetchDirectors = async () => {
+      if (!open) return;
+      
       try {
-        // Convertir DirectorProfile[] a Director[] para compatibilidad
-        const directorsFromJSON = DIRECTORS.map(directorProfile => ({
-          id: directorProfile.id,
-          name: directorProfile.name,
-          specialty: directorProfile.specialty,
-          experience: directorProfile.experience,
-          style: directorProfile.visual_style.description,
-          rating: directorProfile.rating,
-          // Generar imagen de avatar profesional basada en el nombre
-          imageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(directorProfile.name)}&backgroundColor=f59e0b,ea580c&radius=50`
-        }));
+        const directorsSnapshot = await getDocs(collection(db, "directors"));
+        const directorsFromFirestore = directorsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Director[];
+
+        // Combinar con datos JSON para información completa
+        // Solo incluir directores que tienen datos completos en JSON
+        const directorsWithFullData = directorsFromFirestore
+          .map(firestoreDirector => {
+            // Normalizar nombres para comparación (quitar apóstrofes, espacios extra, etc.)
+            const normalizeName = (name: string) => 
+              name.toLowerCase().replace(/['\s-]/g, '');
+            
+            const jsonDirector = DIRECTORS.find(d => 
+              normalizeName(d.name) === normalizeName(firestoreDirector.name || '')
+            );
+
+            if (!jsonDirector) {
+              console.warn(`⚠️ Director "${firestoreDirector.name}" sin datos JSON completos`);
+              return null;
+            }
+
+            return {
+              id: jsonDirector.id,
+              name: firestoreDirector.name,
+              specialty: firestoreDirector.specialty,
+              experience: firestoreDirector.experience,
+              style: firestoreDirector.style,
+              rating: firestoreDirector.rating,
+              imageUrl: firestoreDirector.imageUrl || undefined
+            };
+          })
+          .filter((director): director is Director => director !== null);
         
-        setDirectors(directorsFromJSON);
-        console.log(`✅ DirectorSelectionModal: Cargados ${directorsFromJSON.length} directores desde JSON`);
+        setDirectors(directorsWithFullData);
+        console.log(`✅ DirectorSelectionModal: ${directorsWithFullData.length} directores con detalles completos`);
       } catch (error) {
-        console.error("Error loading directors from JSON:", error);
+        console.error("Error loading directors from Firestore:", error);
         toast({
           title: "Error",
           description: "Failed to load directors.",
           variant: "destructive",
         });
       }
-    }
+    };
+
+    fetchDirectors();
   }, [open, toast]);
 
   // Pre-seleccionar director si viene desde DirectorsList

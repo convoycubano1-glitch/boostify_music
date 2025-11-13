@@ -1,15 +1,26 @@
 import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Music, Camera, Sparkles, X, Check, Image as ImageIcon, Video, Zap } from "lucide-react";
+import { Upload, Music, Camera, Sparkles, X, Check, Image as ImageIcon, Video, Zap, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Example photos paths - generated with Gemini 2.5 Flash Image (Nano Banana)
+const examplePhotos = {
+  frontal: "/src/assets/example_photos/frontal.png",
+  profile: "/src/assets/example_photos/profile.png",
+  smiling: "/src/assets/example_photos/smiling.png",
+  threeQuarter: "/src/assets/example_photos/three-quarter.png",
+  fullBody: "/src/assets/example_photos/full-body.png"
+};
+
 interface CreativeOnboardingModalProps {
   open: boolean;
-  onComplete: (audioFile: File, referenceImages: string[]) => void;
+  onComplete: (audioFile: File, referenceImages: string[], artistName: string) => void;
 }
 
 export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboardingModalProps) {
@@ -17,6 +28,7 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedAudioFile, setSelectedAudioFile] = useState<File | null>(null);
+  const [artistName, setArtistName] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,6 +139,14 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
 
   const handleContinue = () => {
     if (step === 1) {
+      if (!artistName.trim()) {
+        toast({
+          title: "Nombre requerido",
+          description: "Ingresa el nombre del artista para continuar",
+          variant: "destructive",
+        });
+        return;
+      }
       if (selectedImages.length < 3) {
         toast({
           title: "Fotos insuficientes",
@@ -145,7 +165,7 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
         });
         return;
       }
-      onComplete(selectedAudioFile, selectedImages);
+      onComplete(selectedAudioFile, selectedImages, artistName);
     }
   };
 
@@ -239,6 +259,30 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
                   </Card>
                 </div>
 
+                {/* Artist Name Input */}
+                <Card className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-purple-500/20">
+                  <CardContent className="p-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="artist-name" className="text-base font-semibold flex items-center gap-2">
+                        <User className="h-5 w-5 text-purple-500" />
+                        Nombre del Artista
+                      </Label>
+                      <Input
+                        id="artist-name"
+                        type="text"
+                        placeholder="Ej: Bad Bunny, Karol G, Taylor Swift..."
+                        value={artistName}
+                        onChange={(e) => setArtistName(e.target.value)}
+                        className="text-lg"
+                        data-testid="input-artist-name"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Este nombre aparecerá en las portadas generadas por la IA
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Ejemplos visuales con placeholders */}
                 <Card className="bg-muted/50 border-dashed">
                   <CardContent className="p-6">
@@ -248,18 +292,19 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
                     </h4>
                     <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
                       {[
-                        { label: "Frontal", seed: "frontal-portrait" },
-                        { label: "Perfil", seed: "side-profile" },
-                        { label: "Sonriendo", seed: "smiling-portrait" },
-                        { label: "Ángulo 3/4", seed: "three-quarter" },
-                        { label: "Expresivo", seed: "expressive" }
+                        { label: "Frontal", src: examplePhotos.frontal },
+                        { label: "Perfil", src: examplePhotos.profile },
+                        { label: "Sonriendo", src: examplePhotos.smiling },
+                        { label: "Ángulo 3/4", src: examplePhotos.threeQuarter },
+                        { label: "Cuerpo Entero", src: examplePhotos.fullBody }
                       ].map((example, i) => (
                         <div key={i} className="relative group">
                           <div className="aspect-square rounded-lg overflow-hidden border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-pink-500/10">
                             <img
-                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${example.seed}&backgroundColor=gradient&radius=0`}
+                              src={example.src}
                               alt={example.label}
                               className="w-full h-full object-cover"
+                              loading="lazy"
                             />
                           </div>
                           <p className="text-xs text-center mt-2 text-muted-foreground font-medium">
@@ -344,7 +389,7 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
                   </p>
                   <Button
                     onClick={handleContinue}
-                    disabled={selectedImages.length < 3}
+                    disabled={selectedImages.length < 3 || !artistName.trim()}
                     className="bg-orange-500 hover:bg-orange-600"
                     data-testid="button-continue-step1"
                   >

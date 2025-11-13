@@ -1,0 +1,103 @@
+{
+  "id": "elena-rodriguez",
+  "name": "Elena Rodriguez",
+  "bio": "Award-winning director with major label collaborations, specializing in Latin music and reggaeton visuals. Known for vibrant aesthetics with dynamic camera movements that capture the heat and passion of Latin culture.",
+  "specialty": "Latin Music & Reggaeton",
+  "experience": "Award-winning director with major label collaborations",
+  "rating": 4.9,
+  
+  "visual_style": {
+    "description": "Vibrant aesthetics with dynamic camera movements, tropical colors, sensual choreography, cultural celebration",
+    "signature_techniques": [
+      "Rotating 360-degree camera rigs around dancers",
+      "Slow-motion hair flips and dance moves",
+      "Overhead shots of choreography",
+      "Close-ups of body movement details",
+      "Steadicam flowing through parties",
+      "Beach and tropical location shoots"
+    ],
+    "color_palette": {
+      "primary_colors": ["Vibrant reds", "Tropical turquoise", "Sunset orange"],
+      "accent_colors": ["Hot pink", "Lime green", "Golden yellow"],
+      "mood": "Energetic, passionate, celebratory, sensual"
+    },
+    "influences": ["Director X", "Colin Tilley", "Joseph Kahn"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["24mm", "35mm", "50mm for close-ups"],
+    "favorite_shot_types": ["MS", "MCU", "OVERHEAD", "LOW tracking"],
+    "favorite_movements": ["steadicam", "gimbal", "crane", "rotating rig"],
+    "shot_composition": "Dynamic asymmetry, subjects in motion, foreground/background layers",
+    "aspect_ratio": "16:9 or 2.39:1 for premium luxury feel",
+    "camera_notes": "Constantly moving camera, fluid motions following dancers, circling subjects"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["Colored gels (red, pink, blue)", "Natural sunlight", "Neon practical lights", "Backlit haze"],
+    "color_temperature": "Warm 3200K-4000K mixed with cool blue accents",
+    "key_techniques": [
+      "Rim lighting on dancers",
+      "Colored gel spotlights",
+      "Natural golden hour for beach scenes",
+      "LED strip lights as practicals"
+    ],
+    "mood_lighting": "Vibrant, saturated, warm with pops of cool contrast, lots of haze for depth"
+  },
+  
+  "editing_style": {
+    "pace": "Fast-paced with rhythm synchronization to reggaeton beat",
+    "transitions": ["Beat-matched cuts", "Whip pans", "Speed ramps", "Slide transitions"],
+    "average_shot_length": "2-4 seconds (fast but not frantic)",
+    "rhythm_approach": "Cuts locked to dembow rhythm, emphasizing bass drops and snare hits"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Party atmosphere with sensual performance, cultural celebration, beach/club lifestyle",
+    "preferred_themes": ["Romance and passion", "Party celebration", "Cultural pride", "Sensual confidence"],
+    "performance_vs_broll_ratio": "50% performance / 50% lifestyle B-roll",
+    "symbolism_level": "Medium - uses dance, tropical imagery, and cultural symbols"
+  },
+  
+  "post_production": {
+    "color_grading_style": "Vibrant saturation, warm skin tones, teal and orange contrast, lifted blacks",
+    "vfx_approach": "Light VFX for enhancement - motion graphics, color pops, subtle effects",
+    "preferred_effects": [
+      "Saturated color grading",
+      "Slow-motion speed ramps",
+      "Light leaks and lens flares",
+      "Subtle motion graphics overlays"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Caliente Nights",
+      "artist": "Reggaeton Stars",
+      "year": 2021,
+      "key_techniques": ["360-degree camera rig", "Vibrant color grading", "Dynamic choreography"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Tropical and beach environments, nightclub settings",
+      "Dynamic camera movements following dancers",
+      "Vibrant red, orange, and turquoise color palette",
+      "Sensual close-ups and dance choreography",
+      "Party atmosphere with cultural authenticity"
+    ],
+    "avoid": [
+      "Cold or muted colors",
+      "Static locked-off shots",
+      "Serious dramatic tones",
+      "Minimal movement or energy"
+    ],
+    "emphasis": [
+      "Celebration and joy",
+      "Sensual confidence",
+      "Cultural pride and authenticity",
+      "High-energy party vibes"
+    ]
+  }
+}

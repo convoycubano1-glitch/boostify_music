@@ -1,0 +1,104 @@
+{
+  "id": "nina-patel",
+  "name": "Nina Patel",
+  "bio": "Pioneering director in AI-enhanced music video production, specializing in electronic and dance music visuals. Known for futuristic visuals with immersive digital elements that push the boundaries of technology and creativity.",
+  "specialty": "Electronic & Dance",
+  "experience": "Pioneer in AI-enhanced music video production",
+  "rating": 4.8,
+  
+  "visual_style": {
+    "description": "Futuristic visuals with immersive digital elements, neon cyberpunk aesthetics, abstract patterns, technological integration",
+    "signature_techniques": [
+      "LED wall reactive visuals",
+      "Holographic projection effects",
+      "Digital particle systems",
+      "Strobe and laser light shows",
+      "Mirror and prism reflections",
+      "High-speed camera for liquid and light"
+    ],
+    "color_palette": {
+      "primary_colors": ["Neon cyan", "Electric purple", "Digital pink"],
+      "accent_colors": ["Laser green", "Ultraviolet", "Chrome silver"],
+      "mood": "Futuristic, energetic, hypnotic, technological"
+    },
+    "influences": ["Daft Punk visuals", "Tron aesthetic", "Blade Runner cinematography"]
+  },
+  
+  "camera_preferences": {
+    "favorite_lenses": ["14mm ultra-wide", "24mm", "Macro for abstract details"],
+    "favorite_shot_types": ["ECU of abstract elements", "WIDE environmental", "POV immersive"],
+    "favorite_movements": ["gimbal", "drone", "slider", "rotating turntable"],
+    "shot_composition": "Symmetrical futuristic framing, centered subjects, geometric patterns, abstract compositions",
+    "aspect_ratio": "16:9 or 1:1 for social media formats",
+    "camera_notes": "Embraces digital perfection, loves reflections and symmetry, uses technology as creative tool"
+  },
+  
+  "lighting_style": {
+    "preferred_lighting": ["LED strips and panels", "Neon tube lights", "Lasers", "UV blacklight"],
+    "color_temperature": "Cool 5600K-8000K with vibrant colored LED accents",
+    "key_techniques": [
+      "RGB LED color cycling",
+      "Strobe lights synced to BPM",
+      "Blacklight UV reactive elements",
+      "Laser beam patterns"
+    ],
+    "mood_lighting": "High contrast neon colors, deep blacks, futuristic glow, technological ambiance"
+  },
+  
+  "editing_style": {
+    "pace": "Extremely fast-paced synchronized to electronic beats and drops",
+    "transitions": ["Flash cuts", "Glitch transitions", "Digital wipes", "Beat-synced strobes"],
+    "average_shot_length": "0.5-2 seconds (rapid fire on drops)",
+    "rhythm_approach": "Locked to BPM, emphasizing build-ups and drops, rhythmic perfection"
+  },
+  
+  "storytelling": {
+    "narrative_approach": "Abstract visual journey through digital landscapes, immersive sensory experience",
+    "preferred_themes": ["Digital transcendence", "Future technology", "Synthetic beauty", "Sensory immersion"],
+    "performance_vs_broll_ratio": "20% performance / 80% abstract visuals",
+    "symbolism_level": "High - uses technology, geometry, and abstract patterns as visual language"
+  },
+  
+  "post_production": {
+    "color_grading_style": "High saturation neon colors, crushed blacks, vibrant highlights, cyberpunk aesthetic",
+    "vfx_approach": "Heavy digital VFX integration - particles, holograms, digital environments",
+    "preferred_effects": [
+      "Digital glitch effects",
+      "Particle systems and simulations",
+      "Holographic overlays",
+      "Chromatic aberration",
+      "Motion graphics integration"
+    ]
+  },
+  
+  "iconic_videos": [
+    {
+      "title": "Digital Dreams",
+      "artist": "Electronic Music Producers",
+      "year": 2022,
+      "key_techniques": ["LED reactive visuals", "Holographic effects", "Neon cyberpunk aesthetic"]
+    }
+  ],
+  
+  "ai_generation_notes": {
+    "key_priorities": [
+      "Futuristic and technological environments (LED studios, digital landscapes)",
+      "Neon cyan, purple, and pink color palette",
+      "Abstract geometric patterns and shapes",
+      "Fast-paced synchronized to electronic beats",
+      "Digital VFX and holographic elements"
+    ],
+    "avoid": [
+      "Natural organic environments",
+      "Warm earthy tones",
+      "Slow contemplative pacing",
+      "Traditional narrative storytelling"
+    ],
+    "emphasis": [
+      "Technological innovation",
+      "Immersive sensory experience",
+      "Futuristic aesthetics",
+      "Digital perfection and precision"
+    ]
+  }
+}
