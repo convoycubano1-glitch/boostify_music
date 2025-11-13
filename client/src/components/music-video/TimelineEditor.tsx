@@ -34,6 +34,7 @@ import { Separator } from '../../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Progress } from '../../components/ui/progress';
 import { ensureCompatibleClip } from '../timeline/TimelineClipUnified';
+import { EffectsPanel, ClipEffects } from '../timeline-effects/effects-panel';
 
 // ===== Type Definitions =====
 
@@ -76,6 +77,27 @@ export interface TimelineClip {
       videoUrl?: string;
       progress?: number;
       timestamp?: string;
+    };
+    effects?: {
+      blur?: number;
+      brightness?: number;
+      opacity?: number;
+      flip?: { horizontal: boolean; vertical: boolean };
+      radius?: number;
+      shadow?: {
+        x: number;
+        y: number;
+        blur: number;
+        color: string;
+      };
+      transform?: {
+        scale: number;
+        x: number;
+        y: number;
+        rotation: number;
+      };
+      playbackRate?: number;
+      volume?: number;
     };
   };
 }
@@ -180,10 +202,12 @@ export function TimelineEditor({
   const [zoom, setZoom] = useState(1);
   const [tool, setTool] = useState<ToolMode>('select');
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
+  const [showEffectsPanel, setShowEffectsPanel] = useState(false);
   
   // Notify parent when selection changes
   useEffect(() => {
     onSceneSelect?.(selectedClip);
+    setShowEffectsPanel(selectedClip !== null);
   }, [selectedClip, onSceneSelect]);
   const [showWaveform, setShowWaveform] = useState<boolean>(true);
   const [previewZoom, setPreviewZoom] = useState(1);
@@ -305,6 +329,25 @@ export function TimelineEditor({
       variant: "default",
     });
   }, [history, clips, selectedClip, onClipUpdate, toast]);
+
+  // ===== Effects Handler =====
+  const handleEffectsChange = useCallback((clipId: number, effects: ClipEffects) => {
+    if (!onClipUpdate) return;
+    
+    pushHistory();
+    onClipUpdate(clipId, {
+      metadata: {
+        ...clips.find(c => c.id === clipId)?.metadata,
+        effects
+      }
+    });
+    
+    toast({
+      title: "Effects Updated",
+      description: "Clip effects have been updated",
+      variant: "default",
+    });
+  }, [onClipUpdate, clips, pushHistory, toast]);
 
   // ===== Auto-scroll Effect =====
   useEffect(() => {
@@ -1071,6 +1114,17 @@ export function TimelineEditor({
 
       {/* Main timeline area */}
       <div className="flex flex-1 overflow-hidden">
+        {/* Effects Panel - Responsive Side/Bottom Panel */}
+        {showEffectsPanel && selectedClip !== null && (
+          <div className="order-last w-full lg:w-80 lg:min-w-80 border-l border-gray-700 bg-gray-800 overflow-y-auto">
+            <EffectsPanel
+              clip={clips.find(c => c.id === selectedClip)!}
+              onChange={handleEffectsChange}
+              className="h-full"
+            />
+          </div>
+        )}
+        
         {/* Layer panel - Responsive */}
         <div className="w-32 min-w-32 md:w-40 md:min-w-40 border-r border-gray-700 bg-gray-800 overflow-hidden">
           <div className="bg-gray-900 p-2 border-b border-gray-700 text-xs font-semibold flex items-center justify-between">
@@ -1165,7 +1219,7 @@ export function TimelineEditor({
                             "absolute h-20 rounded cursor-pointer transition-all overflow-hidden",
                             isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-gray-900" : "",
                             clip.locked ? "opacity-50 cursor-not-allowed" : "",
-                            clip.metadata?.hasLipSync ? "ring-1 ring-purple-500" : ""
+                            clip.metadata?.lipsync?.applied ? "ring-1 ring-purple-500" : ""
                           )}
                           style={{
                             left: `${clipLeft}px`,
@@ -1189,7 +1243,7 @@ export function TimelineEditor({
                               <div className="text-xs font-semibold truncate text-white drop-shadow-lg">
                                 {clip.title}
                               </div>
-                              {clip.metadata?.hasLipSync && (
+                              {clip.metadata?.lipsync?.applied && (
                                 <Badge 
                                   variant="outline" 
                                   className="text-[8px] px-1 py-0 h-4 bg-purple-500/80 text-white border-purple-400"
