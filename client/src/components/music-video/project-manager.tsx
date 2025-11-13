@@ -4,7 +4,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Save, FolderOpen, Trash2, Loader2, Download, Calendar, Edit3, ExternalLink } from "lucide-react";
+import { Save, FolderOpen, Trash2, Loader2, Download, Calendar, Edit3, ExternalLink, Pencil } from "lucide-react";
 import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
 import { musicVideoProjectServicePostgres, type MusicVideoProjectPostgres } from "../../lib/services/music-video-project-service-postgres";
 import { useToast } from "../../hooks/use-toast";
@@ -46,6 +46,9 @@ export function ProjectManager({
   const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isRenaming, setIsRenaming] = useState<string | null>(null);
+  const [renameDialogProject, setRenameDialogProject] = useState<MusicVideoProjectPostgres | null>(null);
+  const [newProjectName, setNewProjectName] = useState("");
 
   // Load user projects from PostgreSQL
   const loadProjects = async () => {
@@ -99,6 +102,56 @@ export function ProjectManager({
   const openLoadDialog = () => {
     setIsLoadDialogOpen(true);
     loadProjects();
+  };
+
+  // Open rename dialog
+  const handleOpenRenameDialog = (project: MusicVideoProjectPostgres) => {
+    setRenameDialogProject(project);
+    setNewProjectName(project.projectName);
+  };
+
+  // Rename project
+  const handleRenameProject = async () => {
+    if (!renameDialogProject || !newProjectName.trim()) return;
+
+    setIsRenaming(renameDialogProject.id.toString());
+    try {
+      await musicVideoProjectServicePostgres.renameProject(
+        renameDialogProject.id,
+        newProjectName,
+        userId
+      );
+      toast({
+        title: "Project renamed",
+        description: `Project renamed to "${newProjectName}"`,
+      });
+      
+      // Update project in list
+      setProjects(prev => 
+        prev.map(p => 
+          p.id === renameDialogProject.id 
+            ? { ...p, projectName: newProjectName } 
+            : p
+        )
+      );
+      
+      // If renaming current project, update the name
+      if (currentProjectId && renameDialogProject.id.toString() === currentProjectId) {
+        onProjectNameChange(newProjectName);
+      }
+      
+      setRenameDialogProject(null);
+      setNewProjectName("");
+    } catch (error: any) {
+      console.error('Error renaming project:', error);
+      toast({
+        title: "Error renaming project",
+        description: error.message || "Could not rename the project",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRenaming(null);
+    }
   };
 
   // Open in Professional Editor
@@ -259,6 +312,17 @@ export function ProjectManager({
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
+                            handleOpenRenameDialog(project);
+                          }}
+                          data-testid={`button-rename-${project.id}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleDeleteProject(project.id);
                           }}
                           disabled={isDeleting === project.id}
@@ -281,6 +345,66 @@ export function ProjectManager({
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsLoadDialogOpen(false)}>
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Project Dialog */}
+      <Dialog open={renameDialogProject !== null} onOpenChange={(open) => !open && setRenameDialogProject(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+            <DialogDescription>
+              Enter a new name for "{renameDialogProject?.projectName}"
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rename-input">New Project Name</Label>
+              <Input
+                id="rename-input"
+                placeholder="Enter new name"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRenameProject();
+                  }
+                }}
+                data-testid="input-rename-project"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setRenameDialogProject(null);
+                setNewProjectName("");
+              }}
+              data-testid="button-cancel-rename"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRenameProject}
+              disabled={!newProjectName.trim() || isRenaming !== null}
+              data-testid="button-confirm-rename"
+            >
+              {isRenaming ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Renaming...
+                </>
+              ) : (
+                <>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Rename
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
