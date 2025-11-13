@@ -993,40 +993,86 @@ export function TimelineEditor({
     return labels[tool];
   }, [tool]);
 
-  // ===== Keyboard Shortcuts =====
+  // ===== Keyboard Shortcuts (Professional Video Editor Style) =====
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if typing in input
       if ((e.target as HTMLElement).tagName.toLowerCase() === 'input') return;
       
+      // Playback Controls
       if (e.code === 'Space') {
         e.preventDefault();
         isPlaying ? onPause() : onPlay();
-      } else if (e.key.toLowerCase() === 'v') {
+      } else if (e.key.toLowerCase() === 'j') {
+        // J: Rewind (professional editor standard)
+        e.preventDefault();
+        onTimeUpdate(Math.max(0, currentTime - 1));
+      } else if (e.key.toLowerCase() === 'k') {
+        // K: Pause (professional editor standard)
+        e.preventDefault();
+        onPause();
+      } else if (e.key.toLowerCase() === 'l') {
+        // L: Forward (professional editor standard)
+        e.preventDefault();
+        onTimeUpdate(Math.min(duration, currentTime + 1));
+      }
+      
+      // Tool Selection
+      else if (e.key.toLowerCase() === 'v') {
         setTool('select');
       } else if (e.key.toLowerCase() === 'c') {
         setTool('razor');
-      } else if (e.key.toLowerCase() === 't') {
-        setTool('trim');
       } else if (e.key.toLowerCase() === 'h') {
         setTool('hand');
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+      }
+      
+      // Editing Tools
+      else if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        handleSplitAtPlayhead();
+      } else if (e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        handleAddMarker();
+      } else if (e.key === 'Delete') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          handleDeleteLeft();
+        } else if (e.ctrlKey || e.metaKey) {
+          handleDeleteRight();
+        } else if (selectedClip !== null) {
+          pushHistory();
+          handleClipUpdate(selectedClip, { visible: false });
+        }
+      }
+      
+      // History Controls
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         handleUndo();
       } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
         e.preventDefault();
         handleRedo();
-      } else if (e.shiftKey && (e.key === '+' || e.key === '=')) {
+      }
+      
+      // Zoom Controls
+      else if (e.key === '+' || e.key === '=') {
         e.preventDefault();
-        setZoom(z => Math.min(10, z * 1.4));
-      } else if (e.shiftKey && (e.key === '-' || e.key === '_')) {
+        setZoom(z => Math.min(4, z + 0.25));
+      } else if (e.key === '-' || e.key === '_') {
         e.preventDefault();
-        setZoom(z => Math.max(0.1, z / 1.4));
-      } else if (e.shiftKey && e.key === '0') {
+        setZoom(z => Math.max(0.25, z - 0.25));
+      } else if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         setZoom(1);
-      } else if (e.key === 'Delete' && selectedClip !== null) {
-        pushHistory();
-        // Delete selected clip - implement deletion logic
+      }
+      
+      // Arrow Key Navigation
+      else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        onTimeUpdate(Math.max(0, currentTime - 0.1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        onTimeUpdate(Math.min(duration, currentTime + 0.1));
       }
     };
     
@@ -1034,7 +1080,11 @@ export function TimelineEditor({
     return () => {
       containerRef.current?.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isPlaying, onPlay, onPause, handleUndo, handleRedo, selectedClip, pushHistory]);
+  }, [
+    isPlaying, onPlay, onPause, currentTime, duration, onTimeUpdate,
+    handleUndo, handleRedo, handleSplitAtPlayhead, handleAddMarker,
+    handleDeleteLeft, handleDeleteRight, selectedClip, pushHistory, handleClipUpdate
+  ]);
 
   // ===== Timeline Click Handler =====
   const handleTimelineClick = useCallback((e: React.MouseEvent) => {
@@ -1109,6 +1159,31 @@ export function TimelineEditor({
       </div>
     );
   }, [currentTime, isPlaying, timeToPixels]);
+
+  // ===== Render User Markers =====
+  const renderUserMarkers = useCallback(() => {
+    return markers.map(marker => (
+      <div
+        key={marker.id}
+        className="absolute top-0 h-full z-20 cursor-pointer group"
+        style={{ left: `${timeToPixels(marker.time)}px` }}
+        onClick={() => onTimeUpdate(marker.time)}
+      >
+        <div className="absolute -left-1 top-0 w-0.5 h-full opacity-70 group-hover:opacity-100 transition-opacity"
+             style={{ backgroundColor: marker.color }} />
+        <div className="absolute -left-3 -top-2">
+          <Flag 
+            className="w-6 h-6 drop-shadow-md group-hover:scale-110 transition-transform"
+            style={{ color: marker.color, fill: marker.color }}
+          />
+        </div>
+        <div className="absolute -left-10 top-6 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          {marker.label}
+          <div className="text-[10px] text-gray-400">{formatTime(marker.time)}</div>
+        </div>
+      </div>
+    ));
+  }, [markers, timeToPixels, onTimeUpdate]);
 
   // ===== Format Time Utility =====
   const formatTime = (time: number) => {
@@ -1287,91 +1362,187 @@ export function TimelineEditor({
         </div>
       )}
 
-      {/* Toolbar - Responsive */}
-      <div className="flex items-center justify-between p-2 border-b border-gray-700 flex-wrap gap-1 md:gap-2">
-        <div className="flex items-center space-x-1 md:space-x-2">
-          {/* Playback controls */}
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            onClick={() => onTimeUpdate(Math.max(0, currentTime - 1))}
-            title="Rewind 1s"
-            className="h-8 w-8 md:h-10 md:w-10"
-          >
-            <SkipBack className="h-3 w-3 md:h-4 md:w-4" />
-          </Button>
+      {/* Toolbar - Reorganized into logical blocks like CapCut */}
+      <div className="flex items-center justify-between p-2 border-b border-gray-700 flex-wrap gap-1 md:gap-2 bg-gray-900">
+        <div className="flex items-center gap-1">
+          {/* BLOCK 1: Playback Controls */}
+          <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={() => onTimeUpdate(Math.max(0, currentTime - 1))}
+              title="Rewind 1s"
+              className="h-7 w-7 md:h-9 md:w-9"
+              data-testid="button-rewind"
+            >
+              <SkipBack className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant="default" 
+              onClick={isPlaying ? onPause : onPlay}
+              title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+              data-testid="button-playback-toggle"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              {isPlaying ? <Pause className="h-3 w-3 md:h-4 md:w-4" /> : <Play className="h-3 w-3 md:h-4 md:w-4" />}
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={() => onTimeUpdate(Math.min(duration, currentTime + 1))}
+              title="Forward 1s"
+              className="h-7 w-7 md:h-9 md:w-9"
+              data-testid="button-forward"
+            >
+              <SkipForward className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+          </div>
           
-          <Button 
-            size="icon" 
-            variant="default" 
-            onClick={isPlaying ? onPause : onPlay}
-            title={isPlaying ? "Pause" : "Play"}
-            data-testid="button-playback-toggle"
-            className="h-8 w-8 md:h-10 md:w-10"
-          >
-            {isPlaying ? <Pause className="h-3 w-3 md:h-4 md:w-4" /> : <Play className="h-3 w-3 md:h-4 md:w-4" />}
-          </Button>
+          <Separator orientation="vertical" className="h-6 md:h-8" />
           
-          <Button 
-            size="icon" 
-            variant="ghost" 
-            onClick={() => onTimeUpdate(Math.min(duration, currentTime + 1))}
-            title="Forward 1s"
-            className="h-8 w-8 md:h-10 md:w-10"
-          >
-            <SkipForward className="h-3 w-3 md:h-4 md:w-4" />
-          </Button>
+          {/* BLOCK 2: Tool Selection */}
+          <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
+            <Button 
+              size="icon" 
+              variant={tool === 'select' ? 'default' : 'ghost'}
+              onClick={() => setTool('select')}
+              title="Select Tool (V)"
+              data-testid="button-tool-select"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <Move className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant={tool === 'razor' ? 'default' : 'ghost'}
+              onClick={() => setTool('razor')}
+              title="Razor Tool (C)"
+              data-testid="button-tool-razor"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <Scissors className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant={tool === 'hand' ? 'default' : 'ghost'}
+              onClick={() => setTool('hand')}
+              title="Hand Tool (H)"
+              data-testid="button-tool-hand"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <Hand className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+          </div>
           
-          <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2" />
+          <Separator orientation="vertical" className="h-6 md:h-8" />
           
-          {/* Tool modes - Responsive */}
-          <Button 
-            size="sm" 
-            variant={tool === 'select' ? 'default' : 'ghost'}
-            onClick={() => setTool('select')}
-            title="Select Tool (V)"
-            data-testid="button-tool-select"
-            className="px-2 md:px-3 h-7 md:h-9"
-          >
-            <Move className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-            <span className="hidden md:inline ml-1">Select</span>
-          </Button>
+          {/* BLOCK 3: Advanced Editing Tools */}
+          <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={handleSplitAtPlayhead}
+              title="Split at Playhead (S)"
+              data-testid="button-split-playhead"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <Split className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={handleDeleteLeft}
+              title="Delete Left (Shift+Del)"
+              data-testid="button-delete-left"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={handleDeleteRight}
+              title="Delete Right (Ctrl+Del)"
+              data-testid="button-delete-right"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={handleAddMarker}
+              title="Add Marker (M)"
+              data-testid="button-add-marker"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <Flag className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+          </div>
           
-          <Button 
-            size="sm" 
-            variant={tool === 'razor' ? 'default' : 'ghost'}
-            onClick={() => setTool('razor')}
-            title="Razor Tool (C)"
-            data-testid="button-tool-razor"
-            className="px-2 md:px-3 h-7 md:h-9"
-          >
-            <Scissors className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-            <span className="hidden md:inline ml-1">Razor</span>
-          </Button>
+          <Separator orientation="vertical" className="h-6 md:h-8" />
           
-          <Button 
-            size="sm" 
-            variant={tool === 'trim' ? 'default' : 'ghost'}
-            onClick={() => setTool('trim')}
-            title="Trim Tool (T)"
-            data-testid="button-tool-trim"
-            className="px-2 md:px-3 h-7 md:h-9"
-          >
-            <Maximize2 className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-            <span className="hidden md:inline ml-1">Trim</span>
-          </Button>
+          {/* BLOCK 4: Zoom Controls */}
+          <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={() => setZoom(z => Math.max(0.25, z - 0.25))}
+              title="Zoom Out (-)"
+              data-testid="button-zoom-out"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <ZoomOut className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={() => setZoom(z => Math.min(4, z + 0.25))}
+              title="Zoom In (+)"
+              data-testid="button-zoom-in"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <ZoomIn className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+          </div>
           
-          <Button 
-            size="sm" 
-            variant={tool === 'hand' ? 'default' : 'ghost'}
-            onClick={() => setTool('hand')}
-            title="Hand Tool (H)"
-            data-testid="button-tool-hand"
-            className="px-2 md:px-3 h-7 md:h-9"
-          >
-            <Hand className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
-            <span className="hidden md:inline ml-1">Hand</span>
-          </Button>
+          <Separator orientation="vertical" className="h-6 md:h-8" />
+          
+          {/* BLOCK 5: History Controls */}
+          <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={handleUndo}
+              disabled={history.past.length === 0}
+              title="Undo (Ctrl+Z)"
+              data-testid="button-undo"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <Undo className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={handleRedo}
+              disabled={history.future.length === 0}
+              title="Redo (Ctrl+Shift+Z)"
+              data-testid="button-redo"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <Redo className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+          </div>
         </div>
         
         <div className="flex items-center space-x-1 md:space-x-2">
@@ -1795,6 +1966,30 @@ export function TimelineEditor({
                 ))}
             </div>
             
+            {/* User Markers */}
+            {renderUserMarkers()}
+            
+            {/* Snap Line (visual guide during drag) */}
+            {snapLine !== null && (
+              <div 
+                className="absolute top-0 h-full border-l-2 border-yellow-400 z-25 pointer-events-none opacity-70"
+                style={{ left: `${timeToPixels(snapLine)}px` }}
+              />
+            )}
+            
+            {/* Ghost Clip (preview during drag) */}
+            {ghostClip && (
+              <div
+                className="absolute h-12 bg-white/10 border-2 border-white/30 rounded z-15 pointer-events-none"
+                style={{
+                  left: `${timeToPixels(ghostClip.position)}px`,
+                  width: `${timeToPixels(clips.find(c => c.id === ghostClip.id)?.duration || 1)}px`,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                }}
+              />
+            )}
+            
             {/* Playhead */}
             {renderPlayhead()}
           </div>
@@ -1814,11 +2009,17 @@ export function TimelineEditor({
           <span className="flex items-center gap-1 md:hidden">Zoom: <strong>{zoom.toFixed(1)}x</strong></span>
         </div>
         <div className="flex items-center gap-2 text-gray-400 overflow-x-auto">
-          <span className="whitespace-nowrap hidden md:inline">
-            Shortcuts: <strong className="text-gray-300">V</strong>=Select, <strong className="text-gray-300">C</strong>=Razor, <strong className="text-gray-300">T</strong>=Trim, <strong className="text-gray-300">H</strong>=Hand, <strong className="text-gray-300">Space</strong>=Play/Pause
+          <span className="whitespace-nowrap hidden lg:inline">
+            Tools: <strong className="text-gray-300">V</strong>=Select, <strong className="text-gray-300">C</strong>=Razor, <strong className="text-gray-300">H</strong>=Hand | 
+            Edit: <strong className="text-gray-300">S</strong>=Split, <strong className="text-gray-300">M</strong>=Marker | 
+            Play: <strong className="text-gray-300">Space</strong>, <strong className="text-gray-300">J/K/L</strong> | 
+            History: <strong className="text-gray-300">Ctrl+Z/Y</strong>
+          </span>
+          <span className="whitespace-nowrap hidden md:inline lg:hidden">
+            <strong className="text-gray-300">V/C/H</strong>=Tools, <strong className="text-gray-300">S</strong>=Split, <strong className="text-gray-300">M</strong>=Marker, <strong className="text-gray-300">Space</strong>=Play
           </span>
           <span className="whitespace-nowrap md:hidden">
-            <strong className="text-gray-300">Space</strong>=Play
+            <strong className="text-gray-300">Space</strong>=Play, <strong className="text-gray-300">S</strong>=Split
           </span>
         </div>
       </div>
