@@ -546,12 +546,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       setProgressPercentage(0);
       console.log('📊 [EXEC SCRIPT] Estados actualizados: showProgress=true, isGeneratingScript=true, stage=script');
       
+      // Progreso realista para generación de script
+      const startTime = Date.now();
+      const estimatedDuration = 45000; // ~45 segundos
+      
       const progressInterval = setInterval(() => {
-        setProgressPercentage(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 12;
-        });
-      }, 600);
+        const elapsed = Date.now() - startTime;
+        const estimatedProgress = Math.min(88, (elapsed / estimatedDuration) * 100);
+        setProgressPercentage(estimatedProgress);
+      }, 250);
       
       // 🎬 OBTENER PERFIL COMPLETO DEL DIRECTOR desde JSON
       let directorProfile: DirectorProfile | undefined = undefined;
@@ -1191,12 +1194,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       setCurrentProgressStage("transcription");
       setProgressPercentage(0);
       
+      // Progreso realista basado en el tamaño del archivo
+      const startTime = Date.now();
+      const fileSizeMB = selectedFile.size / 1024 / 1024;
+      const estimatedDuration = fileSizeMB * 10 * 1000; // ~10 seg por MB
+      
       const progressInterval = setInterval(() => {
-        setProgressPercentage(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 15;
-        });
-      }, 500);
+        const elapsed = Date.now() - startTime;
+        const estimatedProgress = Math.min(92, (elapsed / estimatedDuration) * 100);
+        setProgressPercentage(estimatedProgress);
+      }, 200);
       
       try {
         const transcriptionText = await transcribeAudio(selectedFile);
@@ -1451,13 +1458,17 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           setCurrentProgressStage("transcription");
           setProgressPercentage(0);
           
-          // Simular progreso mientras transcribe
+          // Progreso realista basado en el tamaño del archivo
+          const startTime = Date.now();
+          const fileSizeMB = file.size / 1024 / 1024;
+          // Estimar tiempo: ~8-12 segundos por MB de audio
+          const estimatedDuration = fileSizeMB * 10 * 1000;
+          
           const progressInterval = setInterval(() => {
-            setProgressPercentage(prev => {
-              if (prev >= 90) return prev;
-              return prev + Math.random() * 15;
-            });
-          }, 500);
+            const elapsed = Date.now() - startTime;
+            const estimatedProgress = Math.min(92, (elapsed / estimatedDuration) * 100);
+            setProgressPercentage(estimatedProgress);
+          }, 200);
           
           try {
             console.log('📤 Sending file to server for transcription...');
@@ -1594,13 +1605,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     setCurrentProgressStage("script");
     setProgressPercentage(0);
     
-    // Simular progreso mientras genera el script
+    // Progreso realista para generación de script completo
+    const startTime = Date.now();
+    const estimatedDuration = 60000; // ~60 segundos para script completo
+    
     const progressInterval = setInterval(() => {
-      setProgressPercentage(prev => {
-        if (prev >= 90) return prev;
-        return prev + Math.random() * 12;
-      });
-    }, 600);
+      const elapsed = Date.now() - startTime;
+      const estimatedProgress = Math.min(85, (elapsed / estimatedDuration) * 100);
+      setProgressPercentage(estimatedProgress);
+    }, 300);
     
     try {
       // Call API to generate the script
