@@ -1,9 +1,8 @@
 /**
  * Master Character Generator
- * Genera una imagen de alta calidad del artista usando análisis facial + Flux
+ * Genera una imagen de alta calidad del artista usando análisis facial + Nano Banana (Gemini)
  */
 
-import fluxService, { FluxModel } from './flux/flux-service';
 import { analyzeFaceFeatures, generateMasterCharacterPrompt, type FaceAnalysis } from './face-analyzer';
 
 export interface MasterCharacter {
@@ -14,7 +13,7 @@ export interface MasterCharacter {
 }
 
 /**
- * Genera el Master Character del artista
+ * Genera el Master Character del artista usando Nano Banana (Gemini 2.5 Flash Image)
  * Este character se usará en todas las generaciones del video
  */
 export async function generateMasterCharacter(
@@ -23,7 +22,7 @@ export async function generateMasterCharacter(
   onProgress?: (stage: string, progress: number) => void
 ): Promise<MasterCharacter> {
   try {
-    console.log('🎭 Iniciando generación de Master Character...');
+    console.log('🎭 Iniciando generación de Master Character con Nano Banana...');
     
     // Paso 1: Analizar características faciales (20%)
     onProgress?.('Analizando rasgos faciales con IA...', 20);
@@ -35,33 +34,43 @@ export async function generateMasterCharacter(
     const characterPrompt = generateMasterCharacterPrompt(analysis, directorStyle);
     console.log('📝 Prompt generado:', characterPrompt.substring(0, 100) + '...');
     
-    // Paso 3: Generar imagen con Flux Pro (40% - 90%)
-    onProgress?.('Generando imagen de alta calidad con Flux Pro...', 40);
+    // Paso 3: Generar imagen con Nano Banana (40% - 90%)
+    onProgress?.('Generando personaje consistente con Nano Banana...', 40);
     
-    const result = await fluxService.generateImage({
-      prompt: characterPrompt,
-      model: FluxModel.FLUX1_DEV_ADVANCED,
-      width: 1024,
-      height: 1024,
-      steps: 50, // Alta calidad
-      guidance_scale: 7.5
+    const response = await fetch('/api/gemini-image/generate-master-character', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        referenceImagesBase64: artistPhotos,
+        prompt: characterPrompt,
+        directorStyle: directorStyle
+      }),
     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Error generando Master Character');
+    }
+
+    const data = await response.json();
     
     onProgress?.('Finalizando...', 95);
     
-    if (!result.images || result.images.length === 0) {
+    if (!data.success || !data.imageUrl) {
       throw new Error('No se generó ninguna imagen');
     }
     
     const masterCharacter: MasterCharacter = {
-      imageUrl: result.images[0], // images es string[] directamente
+      imageUrl: data.imageUrl,
       analysis,
       prompt: characterPrompt,
       timestamp: new Date()
     };
     
     onProgress?.('Master Character generado exitosamente', 100);
-    console.log('✅ Master Character generado:', masterCharacter.imageUrl);
+    console.log('✅ Master Character generado con Nano Banana:', masterCharacter.imageUrl.substring(0, 100) + '...');
     
     return masterCharacter;
     
@@ -72,12 +81,13 @@ export async function generateMasterCharacter(
 }
 
 /**
- * Genera variantes del master character para diferentes contextos
+ * Genera variantes del master character para diferentes contextos usando Nano Banana
  * (opcional, para uso futuro)
  */
 export async function generateCharacterVariants(
   masterCharacter: MasterCharacter,
   contexts: string[],
+  artistPhotos: string[],
   onProgress?: (stage: string, progress: number) => void
 ): Promise<string[]> {
   const variants: string[] = [];
@@ -94,17 +104,26 @@ Context: ${context}
 
 Maintain the exact same person with all their facial features, just adapt to the new context.`;
 
-    const result = await fluxService.generateImage({
-      prompt: variantPrompt,
-      model: FluxModel.FLUX1_DEV_ADVANCED,
-      width: 1024,
-      height: 1024,
-      steps: 40,
-      guidance_scale: 7.5
-    });
-    
-    if (result.images && result.images.length > 0) {
-      variants.push(result.images[0]); // images es string[] directamente
+    try {
+      const response = await fetch('/api/gemini-image/generate-simple', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: variantPrompt,
+          referenceImages: artistPhotos
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.imageUrl) {
+          variants.push(data.imageUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Error generando variante:', error);
     }
   }
   
