@@ -17,9 +17,10 @@ import {
   Cpu,
   Image as ImageIcon
 } from "lucide-react";
-import heroImage from "@assets/generated_images/AI_influencer_hero_image_0af5142f.png";
-import marketplaceImage from "@assets/generated_images/Marketplace_visualization_concept_77d2bbde.png";
-import aiProcessImage from "@assets/generated_images/AI_generation_process_visual_35b62c25.png";
+
+const heroImage = "/images/AI_influencer_hero_image_0af5142f.png";
+const marketplaceImage = "/images/Marketplace_visualization_concept_77d2bbde.png";
+const aiProcessImage = "/images/AI_generation_process_visual_35b62c25.png";
 
 export default function BoostifyExplicitPage() {
   return (
