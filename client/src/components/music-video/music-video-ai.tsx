@@ -73,6 +73,11 @@ import { getDirectorByName, getDirectorById, type DirectorProfile } from "../../
 import { uploadImageFromUrl } from "../../lib/firebase-storage";
 import { QuickStartTemplates, type QuickStartTemplate } from "./quick-start-templates";
 import { SmartSuggestionsPanel } from "./smart-suggestions-panel";
+import { 
+  detectPerformanceClips, 
+  processPerformanceClips,
+  getPerformanceSegments
+} from "../../lib/services/performance-segment-service";
 
 // Fal.ai configuration
 fal.config({
@@ -413,6 +418,11 @@ export function MusicVideoAI() {
   const [selectedConcept, setSelectedConcept] = useState<any | null>(null);
   const [isGeneratingConcepts, setIsGeneratingConcepts] = useState(false);
   
+  // Lip-sync and performance segments states
+  const [isProcessingLipSync, setIsProcessingLipSync] = useState(false);
+  const [lipSyncProgress, setLipSyncProgress] = useState({ current: 0, total: 0, message: '' });
+  const [performanceSegments, setPerformanceSegments] = useState<Map<number, any>>(new Map());
+  
   // Estados para templates rápidos
   const [showQuickStartTemplates, setShowQuickStartTemplates] = useState(false);
   
@@ -648,6 +658,117 @@ export function MusicVideoAI() {
     }
   };
 
+  // Función auxiliar para procesar lip-sync automáticamente en clips de performance
+  const executePerformanceLipSync = async (script: string, buffer: AudioBuffer) => {
+    console.log('🎤 [LIP-SYNC] Iniciando procesamiento de lip-sync');
+    
+    try {
+      setIsProcessingLipSync(true);
+      setCurrentProgressStage("lip-sync");
+      setProgressPercentage(0);
+      setShowProgress(true);
+      
+      const parsedScript = JSON.parse(script);
+      let scenes = [];
+      if (parsedScript.scenes && Array.isArray(parsedScript.scenes)) {
+        scenes = parsedScript.scenes;
+      } else if (Array.isArray(parsedScript)) {
+        scenes = parsedScript;
+      }
+      
+      // Detectar clips de performance
+      const performanceClips = detectPerformanceClips({ scenes });
+      
+      console.log(`🎤 [LIP-SYNC] Detectados ${performanceClips.length} clips de performance`);
+      
+      if (performanceClips.length === 0) {
+        console.log('ℹ️ [LIP-SYNC] No hay clips de performance, omitiendo lip-sync');
+        setIsProcessingLipSync(false);
+        return;
+      }
+      
+      toast({
+        title: "🎤 Procesando Lip-Sync",
+        description: `Generando ${performanceClips.length} videos con sincronización labial...`,
+      });
+      
+      // Obtener la primera imagen generada como imagen del artista
+      const artistImageClip = timelineItems.find(item => item.imageUrl || item.generatedImage);
+      const artistImageUrl = artistImageClip?.imageUrl || artistImageClip?.generatedImage || null;
+      
+      if (!artistImageUrl) {
+        console.warn('⚠️ [LIP-SYNC] No hay imagen del artista disponible');
+        setIsProcessingLipSync(false);
+        return;
+      }
+      
+      // Procesar clips de performance
+      const results = await processPerformanceClips(
+        currentProject?.id || 1, // Usar ID del proyecto actual o default
+        buffer,
+        performanceClips,
+        artistImageUrl,
+        user?.uid || 'anonymous',
+        projectName || 'untitled',
+        (current, total, message) => {
+          console.log(`🎤 [LIP-SYNC Progress] ${current}/${total}: ${message}`);
+          setLipSyncProgress({ current, total, message });
+          const progress = (current / total) * 100;
+          setProgressPercentage(Math.round(progress));
+        }
+      );
+      
+      console.log(`✅ [LIP-SYNC] Procesados ${results.size} segmentos de performance`);
+      
+      // Actualizar timeline con videos generados
+      setTimelineItems(prevItems => {
+        return prevItems.map(item => {
+          const sceneId = parseInt(item.id.toString().match(/(\d+)$/)?.[1] || '0');
+          const segment = results.get(sceneId);
+          
+          if (segment && segment.lipsyncVideoUrl) {
+            console.log(`🎥 [LIP-SYNC] Actualizando clip ${sceneId} con video lip-sync`);
+            return {
+              ...item,
+              videoUrl: segment.lipsyncVideoUrl,
+              url: segment.lipsyncVideoUrl,
+              thumbnail: artistImageUrl, // Mantener thumbnail
+              metadata: {
+                ...item.metadata,
+                hasLipSync: true,
+                lipsyncVideoUrl: segment.lipsyncVideoUrl,
+                performanceSegmentId: segment.id
+              }
+            };
+          }
+          
+          return item;
+        });
+      });
+      
+      setPerformanceSegments(results);
+      setProgressPercentage(100);
+      
+      toast({
+        title: "✅ Lip-Sync Completado",
+        description: `${results.size} videos generados con sincronización labial perfecta`,
+      });
+      
+      setIsProcessingLipSync(false);
+      setShowProgress(false);
+      
+    } catch (error) {
+      console.error('❌ [LIP-SYNC] Error:', error);
+      toast({
+        title: "Error en Lip-Sync",
+        description: error instanceof Error ? error.message : "Error procesando lip-sync",
+        variant: "destructive",
+      });
+      setIsProcessingLipSync(false);
+      setShowProgress(false);
+    }
+  };
+
   // Función auxiliar para generar imágenes automáticamente
   const executeImageGeneration = async (script?: string) => {
     console.log('🔵 [IMG] Función executeImageGeneration iniciada');
@@ -871,6 +992,12 @@ export function MusicVideoAI() {
 
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 🎤 PROCESAMIENTO AUTOMÁTICO DE LIP-SYNC para clips de performance
+      if (audioBuffer && user?.uid && generatedCount > 0) {
+        console.log('🎤 [LIP-SYNC] Detectando clips de performance para lip-sync...');
+        await executePerformanceLipSync(scriptToUse, audioBuffer);
+      }
       
       // Mostrar mensaje de éxito
       toast({
