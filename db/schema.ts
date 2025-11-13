@@ -515,6 +515,51 @@ export const performanceSegments = pgTable("performance_segments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+export const userCredits = pgTable("user_credits", {
+  id: serial("id").primaryKey(),
+  userEmail: text("user_email").notNull().unique(),
+  credits: integer("credits").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const creditTransactions = pgTable("credit_transactions", {
+  id: serial("id").primaryKey(),
+  userEmail: text("user_email").notNull(),
+  amount: integer("amount").notNull(),
+  type: text("type", { enum: ["purchase", "deduction", "refund", "bonus"] }).notNull(),
+  description: text("description").notNull(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+  relatedProjectId: integer("related_project_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const musicVideoProjects = pgTable("music_video_projects", {
+  id: serial("id").primaryKey(),
+  userEmail: text("user_email").notNull(),
+  projectName: text("project_name").notNull(),
+  artistName: text("artist_name").notNull(),
+  songName: text("song_name").notNull(),
+  audioUrl: text("audio_url").notNull(),
+  artistReferenceImages: text("artist_reference_images").array().notNull(),
+  selectedDirector: json("selected_director").notNull(),
+  selectedConcept: json("selected_concept").notNull(),
+  aspectRatio: text("aspect_ratio").notNull(),
+  videoStyle: text("video_style").notNull(),
+  scenes: json("scenes").notNull(),
+  generatedImagesCount: integer("generated_images_count").default(0).notNull(),
+  totalImagesTarget: integer("total_images_target").default(40).notNull(),
+  status: text("status", { 
+    enum: ["demo_generation", "demo_completed", "payment_pending", "full_generation", "completed", "failed"] 
+  }).default("demo_generation").notNull(),
+  finalVideoUrl: text("final_video_url"),
+  isPaid: boolean("is_paid").default(false).notNull(),
+  creditsUsed: integer("credits_used").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const artistMediaRelations = relations(artistMedia, ({ one }) => ({
   user: one(users, {
     fields: [artistMedia.userId],
@@ -562,6 +607,21 @@ export const selectManagerContactSchema = createSelectSchema(managerContacts);
 export const insertManagerScheduleSchema = createInsertSchema(managerSchedule);
 export const selectManagerScheduleSchema = createSelectSchema(managerSchedule);
 export const insertManagerNoteSchema = createInsertSchema(managerNotes);
+
+export const insertUserCreditSchema = createInsertSchema(userCredits).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectUserCreditSchema = createSelectSchema(userCredits);
+export type InsertUserCredit = z.infer<typeof insertUserCreditSchema>;
+export type SelectUserCredit = typeof userCredits.$inferSelect;
+
+export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).omit({ id: true, createdAt: true });
+export const selectCreditTransactionSchema = createSelectSchema(creditTransactions);
+export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
+export type SelectCreditTransaction = typeof creditTransactions.$inferSelect;
+
+export const insertMusicVideoProjectSchema = createInsertSchema(musicVideoProjects).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectMusicVideoProjectSchema = createSelectSchema(musicVideoProjects);
+export type InsertMusicVideoProject = z.infer<typeof insertMusicVideoProjectSchema>;
+export type SelectMusicVideoProject = typeof musicVideoProjects.$inferSelect;
 export const selectManagerNoteSchema = createSelectSchema(managerNotes);
 
 export const insertCourseInstructorSchema = createInsertSchema(courseInstructors);
