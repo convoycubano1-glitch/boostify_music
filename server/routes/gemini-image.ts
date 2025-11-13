@@ -7,6 +7,7 @@ import {
   generateImageFromCinematicScene,
   generateBatchImages,
   generateBatchImagesWithMultipleFaceReferences,
+  generateImageWithMultipleFaceReferences,
   type CinematicScene 
 } from '../services/gemini-image-service';
 
@@ -371,6 +372,80 @@ router.post('/generate-batch-with-multiple-faces', async (req: Request, res: Res
     return res.status(500).json({
       success: false,
       error: error.message || 'Error interno al generar imágenes con múltiples rostros'
+    });
+  }
+});
+
+/**
+ * Genera Master Character con Nano Banana
+ * Combina análisis facial + generación de personaje consistente
+ */
+router.post('/generate-master-character', async (req: Request, res: Response) => {
+  try {
+    const { referenceImagesBase64, prompt, directorStyle } = req.body;
+
+    if (!referenceImagesBase64 || !Array.isArray(referenceImagesBase64) || referenceImagesBase64.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren imágenes de referencia'
+      });
+    }
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere un prompt para el Master Character'
+      });
+    }
+
+    console.log(`🎭 Generando Master Character con Nano Banana`);
+    console.log(`📸 Referencias: ${referenceImagesBase64.length}`);
+    console.log(`🎬 Estilo: ${directorStyle || 'default'}`);
+    console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
+
+    // Construir prompt optimizado para Master Character
+    const masterPrompt = `PROFESSIONAL MASTER CHARACTER PORTRAIT:
+
+${prompt}
+
+Style: ${directorStyle || 'cinematic'}
+
+CRITICAL REQUIREMENTS:
+- High-quality professional portrait
+- Perfect facial consistency from reference images
+- Maintain exact identity, features, and skin tone
+- Cinematic lighting and composition
+- Production-ready quality
+- 8K resolution clarity`;
+
+    // Generar con Nano Banana (gemini-2.5-flash-image) usando múltiples referencias
+    const result = await generateImageWithMultipleFaceReferences(
+      masterPrompt,
+      referenceImagesBase64
+    );
+
+    if (!result.success) {
+      console.error('❌ Error generando Master Character:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error generando Master Character'
+      });
+    }
+
+    console.log('✅ Master Character generado exitosamente con Nano Banana');
+
+    return res.json({
+      success: true,
+      imageUrl: result.imageUrl,
+      imageBase64: result.imageBase64,
+      provider: 'gemini-nano-banana'
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error en /generate-master-character:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno al generar Master Character'
     });
   }
 });
