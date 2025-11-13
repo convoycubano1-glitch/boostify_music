@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
-import { Truck, Download, Loader2, ChevronRight, Eye, Upload, CalendarDays, MapPin } from "lucide-react";
+import { Truck, Download, Loader2, ChevronRight, Eye, Upload, CalendarDays, MapPin, Edit, Trash2 } from "lucide-react";
 import { managerToolsService } from "../../lib/services/managertoolsopenrouter";
 import { useToast } from "../../hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "../ui/dialog";
@@ -27,6 +27,9 @@ export function LogisticsSection() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<LogisticsDocument | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editContent, setEditContent] = useState("");
 
   const { data: logisticsDocuments = [], isLoading } = useQuery({
     queryKey: ['logistics', user?.uid],
@@ -83,6 +86,49 @@ export function LogisticsSection() {
     }
   });
 
+  const deleteDocumentMutation = useMutation({
+    mutationFn: async (docId: string) => {
+      await managerToolsService.deleteDocument(docId, 'logistics');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistics', user?.uid] });
+      toast({
+        title: "Success",
+        description: "Document deleted successfully"
+      });
+      setSelectedDocument(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete document",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateDocumentMutation = useMutation({
+    mutationFn: async ({ docId, content }: { docId: string; content: string }) => {
+      await managerToolsService.updateDocument(docId, 'logistics', { content });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistics', user?.uid] });
+      toast({
+        title: "Success",
+        description: "Document updated successfully"
+      });
+      setIsEditMode(false);
+      setSelectedDocument(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update document",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handlePreviewLogistics = async () => {
     if (!details.trim()) {
       toast({
@@ -127,6 +173,31 @@ export function LogisticsSection() {
         description: "Failed to download logistics plan",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleViewDocument = (doc: LogisticsDocument) => {
+    setSelectedDocument(doc);
+    setEditContent(doc.content);
+    setIsEditMode(false);
+  };
+
+  const handleEditDocument = () => {
+    if (!selectedDocument) return;
+    setIsEditMode(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedDocument) return;
+    await updateDocumentMutation.mutateAsync({
+      docId: selectedDocument.id,
+      content: editContent
+    });
+  };
+
+  const handleDeleteDocument = async (docId: string) => {
+    if (confirm('Are you sure you want to delete this document?')) {
+      await deleteDocumentMutation.mutateAsync(docId);
     }
   };
 
@@ -262,7 +333,16 @@ export function LogisticsSection() {
                   <div className="mt-2 mb-4">
                     <p className="text-sm line-clamp-3">{doc.content}</p>
                   </div>
-                  <div className="flex">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDocument(doc)}
+                      className="flex-1"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">View</span>
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -271,6 +351,15 @@ export function LogisticsSection() {
                     >
                       <Download className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Download</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteDocument(doc.id)}
+                      className="flex-1"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Delete</span>
                     </Button>
                   </div>
                 </div>
@@ -362,6 +451,84 @@ export function LogisticsSection() {
                   ) : (
                     "Save Logistics Plan"
                   )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View/Edit Dialog */}
+      <Dialog open={!!selectedDocument} onOpenChange={() => setSelectedDocument(null)}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditMode ? "Edit Logistics Plan" : "View Logistics Plan"}
+            </DialogTitle>
+            <DialogDescription>
+              {isEditMode 
+                ? "Make changes to your logistics plan below"
+                : "Review your logistics plan details"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedDocument && (
+              <div className="space-y-2">
+                <Label>Content</Label>
+                {isEditMode ? (
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="min-h-[400px] font-mono text-sm"
+                  />
+                ) : (
+                  <div className="p-4 rounded-lg bg-muted/50 whitespace-pre-line max-h-[400px] overflow-y-auto">
+                    {selectedDocument.content}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2">
+            {isEditMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditMode(false)}
+                  disabled={updateDocumentMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={updateDocumentMutation.isPending}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  {updateDocumentMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedDocument(null)}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={handleEditDocument}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
                 </Button>
               </>
             )}

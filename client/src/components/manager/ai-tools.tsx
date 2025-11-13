@@ -1,5 +1,5 @@
 import { Card } from "../ui/card";
-import { Brain, Wand2, Calculator, ChartBar, ArrowRight, Loader2, MessageSquare, Download, Sparkles } from "lucide-react";
+import { Brain, Wand2, Calculator, ChartBar, ArrowRight, Loader2, MessageSquare, Download, Sparkles, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { Textarea } from "../ui/textarea";
@@ -8,6 +8,8 @@ import { useToast } from "../../hooks/use-toast";
 import { managerToolsService } from "../../lib/services/managertoolsopenrouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VisuallyHidden } from "../ui/visually-hidden";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog";
+import { Label } from "../ui/label";
 
 interface AIResponse {
   id: string;
@@ -23,9 +25,12 @@ export function AIToolsSection() {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedResponse, setSelectedResponse] = useState<AIResponse | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<AIResponse | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editContent, setEditContent] = useState("");
 
   const { data: aiResponses = [], isLoading } = useQuery({
-    queryKey: ['ai-responses', user?.uid],
+    queryKey: ['ai_tools', user?.uid],
     queryFn: async () => {
       if (!user?.uid) return [];
       const data = await managerToolsService.getFromFirestore(user.uid, 'ai');
@@ -52,7 +57,7 @@ export function AIToolsSection() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ai-responses', user?.uid] });
+      queryClient.invalidateQueries({ queryKey: ['ai_tools', user?.uid] });
       toast({
         title: "Success",
         description: "AI response generated successfully"
@@ -63,6 +68,49 @@ export function AIToolsSection() {
       toast({
         title: "Error",
         description: error.message || "Failed to generate response",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: async (docId: string) => {
+      await managerToolsService.deleteDocument(docId, 'ai');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai_tools', user?.uid] });
+      toast({
+        title: "Success",
+        description: "Document deleted successfully"
+      });
+      setSelectedDocument(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete document",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateDocumentMutation = useMutation({
+    mutationFn: async ({ docId, content }: { docId: string; content: string }) => {
+      await managerToolsService.updateDocument(docId, 'ai', { content });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai_tools', user?.uid] });
+      toast({
+        title: "Success",
+        description: "Document updated successfully"
+      });
+      setIsEditMode(false);
+      setSelectedDocument(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update document",
         variant: "destructive"
       });
     }
@@ -120,6 +168,31 @@ export function AIToolsSection() {
     setTimeout(() => {
       handleGenerate();
     }, 100);
+  };
+
+  const handleViewDocument = (doc: AIResponse) => {
+    setSelectedDocument(doc);
+    setEditContent(doc.content);
+    setIsEditMode(false);
+  };
+
+  const handleEditDocument = () => {
+    if (!selectedDocument) return;
+    setIsEditMode(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedDocument) return;
+    await updateDocumentMutation.mutateAsync({
+      docId: selectedDocument.id,
+      content: editContent
+    });
+  };
+
+  const handleDeleteDocument = async (docId: string) => {
+    if (confirm('Are you sure you want to delete this document?')) {
+      await deleteDocumentMutation.mutateAsync(docId);
+    }
   };
 
   return (
@@ -218,18 +291,37 @@ export function AIToolsSection() {
                       {new Date(response.createdAt.toDate()).toLocaleDateString()}
                     </p>
                   </div>
+                </div>
+                <div className="mt-2 mb-4">
+                  <p className="text-sm line-clamp-3">{response.content}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleViewDocument(response)}
+                    className="flex-1"
+                    data-testid={`button-view-${response.id}`}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDownload(response)}
-                    className="hover:bg-orange-500/10"
+                    data-testid={`button-download-${response.id}`}
                   >
                     <Download className="h-4 w-4" />
-                    <VisuallyHidden>Download Response</VisuallyHidden>
                   </Button>
-                </div>
-                <div className="mt-2">
-                  <p className="text-sm line-clamp-3">{response.content}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteDocument(response.id)}
+                    data-testid={`button-delete-${response.id}`}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
                 </div>
               </div>
             ))
@@ -240,6 +332,85 @@ export function AIToolsSection() {
           )}
         </div>
       </Card>
+
+      {/* View/Edit Document Dialog */}
+      <Dialog open={!!selectedDocument} onOpenChange={(open) => !open && setSelectedDocument(null)}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isEditMode ? 'Edit AI Response' : 'AI Response'}</DialogTitle>
+            <DialogDescription>
+              {selectedDocument && new Date(selectedDocument.createdAt.toDate()).toLocaleDateString()}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isEditMode ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-content">Content</Label>
+                <Textarea
+                  id="edit-content"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="min-h-[400px] font-mono text-sm"
+                  data-testid="textarea-edit-content"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="whitespace-pre-line p-4 rounded bg-muted/30 font-mono text-sm max-h-[400px] overflow-y-auto">
+              {selectedDocument?.content}
+            </div>
+          )}
+          
+          <DialogFooter className="flex gap-2 sm:space-x-0">
+            {isEditMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditMode(false)}
+                  data-testid="button-cancel-edit"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={updateDocumentMutation.isPending}
+                  className="bg-orange-500 hover:bg-orange-600"
+                  data-testid="button-save-edit"
+                >
+                  {updateDocumentMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleEditDocument}
+                  data-testid="button-edit-document"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => selectedDocument && handleDownload(selectedDocument)}
+                  data-testid="button-download-document"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
