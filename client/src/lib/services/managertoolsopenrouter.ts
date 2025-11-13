@@ -1,5 +1,5 @@
 import { db } from "../firebase";
-import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { env } from "../../env";
 
 export const managerToolsService = {
@@ -203,6 +203,85 @@ export const managerToolsService = {
       });
     } catch (error) {
       console.error(`Error generating ${type} content:`, error);
+      throw error;
+    }
+  },
+
+  async deleteDocument(docId: string, type: string) {
+    try {
+      // Use the specific collection based on the type
+      let collectionName = '';
+      switch (type) {
+        case 'technical':
+          collectionName = 'technical_rider';
+          break;
+        case 'requirements':
+          collectionName = 'requirements';
+          break;
+        case 'budget':
+          collectionName = 'budget';
+          break;
+        case 'logistics':
+          collectionName = 'logistics';
+          break;
+        case 'hiring':
+          collectionName = 'hiring';
+          break;
+        case 'calendar':
+          collectionName = 'calendar';
+          break;
+        case 'ai':
+          collectionName = 'ai_tools';
+          break;
+        default:
+          collectionName = 'manager_tools';
+      }
+
+      await deleteDoc(doc(db, collectionName, docId));
+      console.log(`Document ${docId} deleted from ${collectionName}`);
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      throw error;
+    }
+  },
+
+  async updateDocument(docId: string, type: string, updates: { content?: string }) {
+    try {
+      // Use the specific collection based on the type
+      let collectionName = '';
+      switch (type) {
+        case 'technical':
+          collectionName = 'technical_rider';
+          break;
+        case 'requirements':
+          collectionName = 'requirements';
+          break;
+        case 'budget':
+          collectionName = 'budget';
+          break;
+        case 'logistics':
+          collectionName = 'logistics';
+          break;
+        case 'hiring':
+          collectionName = 'hiring';
+          break;
+        case 'calendar':
+          collectionName = 'calendar';
+          break;
+        case 'ai':
+          collectionName = 'ai_tools';
+          break;
+        default:
+          collectionName = 'manager_tools';
+      }
+
+      await updateDoc(doc(db, collectionName, docId), {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      console.log(`Document ${docId} updated in ${collectionName}`);
+    } catch (error) {
+      console.error('Error updating document:', error);
       throw error;
     }
   }

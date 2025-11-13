@@ -35,7 +35,7 @@ import { LogisticsSection } from "../components/manager/logistics";
 import { HiringSection } from "../components/manager/hiring";
 import { AIToolsSection } from "../components/manager/ai-tools";
 import { CalendarSection } from "../components/manager/calendar";
-import concertVideo from "@assets/freepik__a-vibrant-concert-scene-unfolds-as-the-camera-perf__42521_1763008134538.mp4";
+import concertVideo from "../assets/concert-video.mp4";
 
 export default function ManagerToolsPage() {
   const [selectedTab, setSelectedTab] = useState("technical");

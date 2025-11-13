@@ -21,7 +21,7 @@ router.post('/generate-text', async (req, res) => {
       });
     }
 
-    const validTypes = ['technical-rider', 'lighting-setup', 'stage-plot', 'hospitality', 'contract'];
+    const validTypes = ['technical-rider', 'lighting-setup', 'stage-plot', 'hospitality', 'contract', 'requirements', 'budget', 'logistics', 'hiring', 'calendar', 'ai-assistant'];
     if (!validTypes.includes(type)) {
       return res.status(400).json({ 
         error: `Tipo inválido. Debe ser uno de: ${validTypes.join(', ')}` 
