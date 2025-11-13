@@ -35,6 +35,7 @@ import { Label } from '../../components/ui/label';
 import { Separator } from '../../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Progress } from '../../components/ui/progress';
+import { Dialog, DialogContent } from '../../components/ui/dialog';
 import { ensureCompatibleClip } from '../timeline/TimelineClipUnified';
 import { EffectsPanel, ClipEffects } from '../timeline-effects/effects-panel';
 import { MusicianModal } from './MusicianModal';
@@ -1719,7 +1720,7 @@ export function TimelineEditor({
       {/* Main timeline area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Effects Panel - Responsive Side/Bottom Panel */}
-        {showEffectsPanel && selectedClip !== null && (
+        {showEffectsPanel && selectedClip !== null && !isMobile && (
           <div className="order-last w-full lg:w-80 lg:min-w-80 border-l border-gray-700 bg-gray-800 overflow-y-auto">
             <EffectsPanel
               clip={clips.find(c => c.id === selectedClip)!}
@@ -2136,6 +2137,24 @@ export function TimelineEditor({
           originalPrompt={imageEditorModalClip.imagePrompt}
           onImageEdited={handleImageEdited}
         />
+      )}
+
+      {/* Mobile Effects Panel - Drawer Style */}
+      {isMobile && showEffectsPanel && selectedClip !== null && (
+        <Dialog open={showEffectsPanel} onOpenChange={() => {
+          setShowEffectsPanel(false);
+          setSelectedClip(null);
+        }}>
+          <DialogContent className="max-w-[95vw] w-full h-[80vh] max-h-[80vh] p-0">
+            <div className="h-full overflow-y-auto">
+              <EffectsPanel
+                clip={clips.find(c => c.id === selectedClip)!}
+                onChange={handleEffectsChange}
+                className="h-full"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
