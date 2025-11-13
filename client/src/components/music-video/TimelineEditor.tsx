@@ -203,7 +203,18 @@ export function TimelineEditor({
   const [tool, setTool] = useState<ToolMode>('select');
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
   const [showEffectsPanel, setShowEffectsPanel] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Notify parent when selection changes
   useEffect(() => {
     onSceneSelect?.(selectedClip);
@@ -257,6 +268,13 @@ export function TimelineEditor({
   }, [snapCandidates, zoom]);
 
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  // Haptic feedback helper for mobile
+  const triggerHaptic = useCallback((pattern: number | number[] = 10) => {
+    if (isMobile && 'vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  }, [isMobile]);
 
   // ===== History Management =====
   const pushHistory = useCallback(() => {
@@ -477,6 +495,7 @@ export function TimelineEditor({
     e.preventDefault(); // Prevenir selección de texto
     
     setSelectedClip(clipId);
+    triggerHaptic(10); // Haptic feedback on selection
     
     const clip = clips.find(c => c.id === clipId);
     if (!clip || clip.locked) return;
@@ -504,6 +523,7 @@ export function TimelineEditor({
         if (clickTime >= clip.start + margin && clickTime <= clip.start + clip.duration - margin) {
           pushHistory();
           onSplitClip(clipId, clickTime);
+          triggerHaptic([10, 20, 10]); // Double haptic for split action
           
           toast({
             title: "✂️ Clip dividido",
@@ -550,14 +570,25 @@ export function TimelineEditor({
       setDragStartX(e.clientX);
       setClipStartPosition(clip.start);
       document.body.style.cursor = 'ew-resize';
+      triggerHaptic(5); // Light haptic for trim
     }
-  }, [tool, clips, pixelsToTime, pushHistory, onSplitClip, toast, timelineRef]);
+  }, [tool, clips, pixelsToTime, pushHistory, onSplitClip, toast, timelineRef, triggerHaptic]);
 
-  // Mouse move handler for drag/resize
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!draggingClip && !resizingSide) return;
+  // Mouse/Touch move handler for drag/resize
+  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!draggingClip && !resizingSide && !isPanning) return;
     
-    const deltaX = e.clientX - dragStartX;
+    const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
+    if (clientX === undefined) return;
+    
+    // Handle panning if active
+    if (isPanning && timelineRef.current) {
+      const deltaX = clientX - panStartX;
+      timelineRef.current.scrollLeft = panStartScrollLeft - deltaX;
+      return;
+    }
+    
+    const deltaX = clientX - dragStartX;
     const deltaTime = pixelsToTime(deltaX);
     
     const clip = clips.find(c => c.id === (draggingClip || selectedClip));
@@ -595,70 +626,89 @@ export function TimelineEditor({
         handleClipUpdate(clip.id, { duration: newDuration });
       }
     }
-  }, [draggingClip, resizingSide, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, snapTo, duration, handleClipUpdate]);
+  }, [draggingClip, resizingSide, isPanning, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, snapTo, duration, handleClipUpdate, panStartX, panStartScrollLeft]);
 
   const handleMouseUp = useCallback(() => {
+    if (draggingClip || resizingSide) {
+      triggerHaptic(5); // Light haptic on release
+    }
     setDraggingClip(null);
     setResizingSide(null);
     setIsPanning(false);
     document.body.style.cursor = '';
-  }, []);
+  }, [draggingClip, resizingSide, triggerHaptic]);
 
-  // Hand tool panning handlers
-  const handleTimelineMouseDown = useCallback((e: React.MouseEvent) => {
+  // Hand tool panning handlers (Mouse + Touch)
+  const handleTimelineMouseDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (tool !== 'hand') return;
     
     e.preventDefault();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    
     setIsPanning(true);
-    setPanStartX(e.clientX);
+    setPanStartX(clientX);
     setPanStartScrollLeft(timelineRef.current?.scrollLeft || 0);
     document.body.style.cursor = 'grabbing';
-  }, [tool]);
+    triggerHaptic(5); // Light haptic for pan start
+  }, [tool, triggerHaptic]);
 
-  const handlePanMove = useCallback((e: MouseEvent) => {
-    if (!isPanning || !timelineRef.current) return;
-    
-    const deltaX = e.clientX - panStartX;
-    timelineRef.current.scrollLeft = panStartScrollLeft - deltaX;
-  }, [isPanning, panStartX, panStartScrollLeft]);
-
-  // Setup/cleanup mouse event listeners
+  // Setup/cleanup mouse and touch event listeners
   useEffect(() => {
-    if (draggingClip || resizingSide) {
+    if (draggingClip || resizingSide || isPanning) {
+      // Add both mouse and touch event listeners
       document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('touchmove', handleMouseMove as any, { passive: false });
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchend', handleMouseUp);
+      document.addEventListener('touchcancel', handleMouseUp);
+      
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('touchmove', handleMouseMove as any);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchend', handleMouseUp);
+        document.removeEventListener('touchcancel', handleMouseUp);
       };
     }
-  }, [draggingClip, resizingSide, handleMouseMove, handleMouseUp]);
-
-  // Hand tool panning listeners
-  useEffect(() => {
-    if (isPanning) {
-      document.addEventListener('mousemove', handlePanMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handlePanMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isPanning, handlePanMove, handleMouseUp]);
+  }, [draggingClip, resizingSide, isPanning, handleMouseMove, handleMouseUp]);
 
   // ===== Touch Support for Mobile =====
-  const handleTouchStart = useCallback((e: React.TouchEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
+  const handleClipTouchStart = useCallback((e: React.TouchEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
     if (tool === 'hand' || e.touches.length !== 1) return;
     
+    e.preventDefault(); // Prevent default touch behavior
     const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousedown', {
+    
+    // Convert touch event to mouse event format for handleClipMouseDown
+    const mouseEvent = {
       clientX: touch.clientX,
       clientY: touch.clientY,
-      bubbles: true
-    }) as unknown as React.MouseEvent;
+      stopPropagation: () => e.stopPropagation(),
+      preventDefault: () => e.preventDefault(),
+    } as React.MouseEvent;
     
     handleClipMouseDown(mouseEvent, clipId, handle);
   }, [tool, handleClipMouseDown]);
+
+  // Get cursor style based on current tool and state
+  const getClipCursor = useCallback(() => {
+    if (tool === 'hand') return '';
+    if (tool === 'razor') return 'crosshair';
+    if (tool === 'trim') return 'ew-resize';
+    if (tool === 'select') return draggingClip ? 'grabbing' : 'grab';
+    return 'default';
+  }, [tool, draggingClip]);
+
+  // Get tool display name with keyboard shortcut
+  const getToolLabel = useCallback(() => {
+    const labels: Record<ToolMode, string> = {
+      'select': 'Select (V)',
+      'razor': 'Razor (C)',
+      'trim': 'Trim (T)',
+      'hand': 'Hand (H)'
+    };
+    return labels[tool];
+  }, [tool]);
 
   // ===== Keyboard Shortcuts =====
   useEffect(() => {
@@ -1179,9 +1229,14 @@ export function TimelineEditor({
               tool === 'hand' ? 'cursor-grab' : tool === 'razor' ? 'cursor-crosshair' : 'cursor-default',
               isPanning ? 'cursor-grabbing' : ''
             )}
-            style={{ width: `${timeToPixels(duration)}px`, minWidth: '100%' }}
+            style={{ 
+              width: `${timeToPixels(duration)}px`, 
+              minWidth: '100%',
+              touchAction: tool === 'hand' ? 'none' : 'auto' // Prevent default gestures for hand tool
+            }}
             onClick={handleTimelineClick}
             onMouseDown={handleTimelineMouseDown}
+            onTouchStart={handleTimelineMouseDown}
           >
             {/* Time rulers */}
             <div className="sticky top-0 h-12 bg-gray-800 border-b border-gray-700 z-20">
@@ -1216,9 +1271,9 @@ export function TimelineEditor({
                         <div
                           key={clip.id}
                           className={cn(
-                            "absolute h-20 rounded cursor-pointer transition-all overflow-hidden",
+                            "absolute h-20 rounded transition-all overflow-hidden",
                             isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-gray-900" : "",
-                            clip.locked ? "opacity-50 cursor-not-allowed" : "",
+                            clip.locked ? "opacity-50 cursor-not-allowed" : ""  ,
                             clip.metadata?.lipsync?.applied ? "ring-1 ring-purple-500" : ""
                           )}
                           style={{
@@ -1231,10 +1286,12 @@ export function TimelineEditor({
                               : undefined,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat'
+                            backgroundRepeat: 'no-repeat',
+                            cursor: clip.locked ? 'not-allowed' : getClipCursor(),
+                            touchAction: tool === 'hand' ? 'none' : 'auto'
                           }}
                           onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'body')}
-                          onTouchStart={(e) => handleTouchStart(e, clip.id, 'body')}
+                          onTouchStart={(e) => handleClipTouchStart(e, clip.id, 'body')}
                           data-testid={`clip-${clip.id}`}
                         >
                           {/* Clip content */}
@@ -1299,18 +1356,32 @@ export function TimelineEditor({
                             </div>
                           )}
                           
-                          {/* Resize handles */}
+                          {/* Resize handles - Larger on mobile for better touch */}
                           {!clip.locked && tool === 'trim' && (
                             <>
                               <div
-                                className="absolute left-0 top-0 bottom-0 w-2 bg-white/30 cursor-ew-resize hover:bg-white/50"
+                                className={cn(
+                                  "absolute left-0 top-0 bottom-0 bg-white/30 cursor-ew-resize hover:bg-white/50 active:bg-white/60",
+                                  isMobile ? "w-11" : "w-2" // 44px touch target on mobile
+                                )}
+                                style={{ 
+                                  touchAction: 'none',
+                                  minWidth: isMobile ? '44px' : undefined 
+                                }}
                                 onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'start')}
-                                onTouchStart={(e) => handleTouchStart(e, clip.id, 'start')}
+                                onTouchStart={(e) => handleClipTouchStart(e, clip.id, 'start')}
                               />
                               <div
-                                className="absolute right-0 top-0 bottom-0 w-2 bg-white/30 cursor-ew-resize hover:bg-white/50"
+                                className={cn(
+                                  "absolute right-0 top-0 bottom-0 bg-white/30 cursor-ew-resize hover:bg-white/50 active:bg-white/60",
+                                  isMobile ? "w-11" : "w-2" // 44px touch target on mobile
+                                )}
+                                style={{ 
+                                  touchAction: 'none',
+                                  minWidth: isMobile ? '44px' : undefined 
+                                }}
                                 onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'end')}
-                                onTouchStart={(e) => handleTouchStart(e, clip.id, 'end')}
+                                onTouchStart={(e) => handleClipTouchStart(e, clip.id, 'end')}
                               />
                             </>
                           )}
@@ -1330,7 +1401,9 @@ export function TimelineEditor({
       {/* Footer info - Responsive */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-2 border-t border-gray-700 text-[10px] md:text-xs bg-gray-800 gap-2">
         <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-          <span className="flex items-center gap-1">Tool: <strong className="text-primary">{tool}</strong></span>
+          <span className="flex items-center gap-1">
+            Tool: <strong className="text-primary">{getToolLabel()}</strong>
+          </span>
           <span className="flex items-center gap-1">Clips: <strong>{clips.length}</strong></span>
           {selectedClip && (
             <span className="flex items-center gap-1">Selected: <strong className="text-primary">Clip #{selectedClip}</strong></span>
@@ -1338,7 +1411,12 @@ export function TimelineEditor({
           <span className="flex items-center gap-1 md:hidden">Zoom: <strong>{zoom.toFixed(1)}x</strong></span>
         </div>
         <div className="flex items-center gap-2 text-gray-400 overflow-x-auto">
-          <span className="whitespace-nowrap">Shortcuts: <strong className="text-gray-300">V</strong>=Select, <strong className="text-gray-300">C</strong>=Razor, <strong className="text-gray-300">T</strong>=Trim, <strong className="text-gray-300">H</strong>=Hand, <strong className="text-gray-300">Space</strong>=Play/Pause</span>
+          <span className="whitespace-nowrap hidden md:inline">
+            Shortcuts: <strong className="text-gray-300">V</strong>=Select, <strong className="text-gray-300">C</strong>=Razor, <strong className="text-gray-300">T</strong>=Trim, <strong className="text-gray-300">H</strong>=Hand, <strong className="text-gray-300">Space</strong>=Play/Pause
+          </span>
+          <span className="whitespace-nowrap md:hidden">
+            <strong className="text-gray-300">Space</strong>=Play
+          </span>
         </div>
       </div>
     </div>
