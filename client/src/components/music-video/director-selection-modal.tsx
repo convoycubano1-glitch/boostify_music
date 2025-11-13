@@ -38,65 +38,18 @@ const VISUAL_STYLES = [
 export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: DirectorSelectionModalProps) {
   const { toast } = useToast();
   const [selectedDirector, setSelectedDirector] = useState<Director | null>(preSelectedDirector || null);
-  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
-  const [directors, setDirectors] = useState<Director[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Cargar directores desde Firestore para obtener las imágenes
-  useEffect(() => {
-    const fetchDirectors = async () => {
-      if (!open) return;
-      
-      try {
-        const directorsSnapshot = await getDocs(collection(db, "directors"));
-        const directorsFromFirestore = directorsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Director[];
-
-        // Combinar con datos JSON para información completa
-        // Solo incluir directores que tienen datos completos en JSON
-        const directorsWithFullData = directorsFromFirestore
-          .map(firestoreDirector => {
-            // Normalizar nombres para comparación (quitar apóstrofes, espacios extra, etc.)
-            const normalizeName = (name: string) => 
-              name.toLowerCase().replace(/['\s-]/g, '');
-            
-            const jsonDirector = DIRECTORS.find(d => 
-              normalizeName(d.name) === normalizeName(firestoreDirector.name || '')
-            );
-
-            if (!jsonDirector) {
-              console.warn(`⚠️ Director "${firestoreDirector.name}" sin datos JSON completos`);
-              return null;
-            }
-
-            return {
-              id: jsonDirector.id,
-              name: firestoreDirector.name,
-              specialty: firestoreDirector.specialty,
-              experience: firestoreDirector.experience,
-              style: firestoreDirector.style,
-              rating: firestoreDirector.rating,
-              imageUrl: firestoreDirector.imageUrl || undefined
-            };
-          })
-          .filter((director): director is Director => director !== null);
-        
-        setDirectors(directorsWithFullData);
-        console.log(`✅ DirectorSelectionModal: ${directorsWithFullData.length} directores con detalles completos`);
-      } catch (error) {
-        console.error("Error loading directors from Firestore:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load directors.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchDirectors();
-  }, [open, toast]);
+  const [selectedStyle, setSelectedStyle] = useState<string | null>("cinematic");
+  
+  // Usar directores directamente de JSON (ya incluyen toda la información)
+  const directors = DIRECTORS.map(d => ({
+    id: d.id,
+    name: d.name,
+    specialty: d.specialty,
+    experience: d.experience || "Professional Director",
+    style: d.visual_style?.description || "Cinematic",
+    rating: d.rating,
+    imageUrl: d.firestore_image_url || undefined
+  }));
 
   // Pre-seleccionar director si viene desde DirectorsList
   useEffect(() => {
@@ -112,17 +65,6 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
     }
   };
 
-  if (loading) {
-    return (
-      <Dialog open={open} modal={true}>
-        <DialogContent className="max-w-5xl max-h-[85vh]">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={open} modal={true}>
@@ -133,6 +75,30 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
             Selecciona tu Director y Estilo Visual
           </DialogTitle>
         </DialogHeader>
+
+        {/* Mensaje de director pre-seleccionado */}
+        {selectedDirector && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-orange-500/20 to-pink-500/20 border border-orange-500/30 rounded-lg p-4 mb-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-orange-500 rounded-full p-2">
+                <Check className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Tu director seleccionado es</p>
+                <p className="text-lg font-bold text-orange-500">{selectedDirector.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedDirector.specialty}</p>
+              </div>
+              <Badge className="bg-orange-500">
+                <Star className="h-4 w-4 mr-1" />
+                {selectedDirector.rating}
+              </Badge>
+            </div>
+          </motion.div>
+        )}
 
         <div className="space-y-6">
           {/* Directores */}
