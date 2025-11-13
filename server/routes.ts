@@ -59,6 +59,7 @@ import merchRouter from './routes/merch'; // Import the merchandise router
 import aiAssistantRouter from './routes/ai-assistant'; // Import the AI assistant router
 import geminiAgentsRouter from './routes/gemini-agents'; // Import the Gemini agents router
 import contractsRouter from './routes/contracts'; // Import the contracts router with Gemini AI
+import falApiRouter from './routes/fal-api'; // Import the FAL AI router for secure backend processing
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -240,9 +241,10 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/songs', songsRouter);
   app.use('/api/merch', merchRouter);
   app.use('/api/ai', aiAssistantRouter);
+  app.use('/api/fal', falApiRouter); // FAL AI backend routes (MuseTalk lip-sync, etc.)
   app.use('/api/gemini-agents', geminiAgentsRouter);
   app.use('/api/contracts', contractsRouter);
-  console.log('✅ Rutas de perfil, songs, merch, AI assistant, Gemini agents y contratos registradas');
+  console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents y contratos registradas');
   
   // ☑️ Rutas de Kling API ahora están separadas en su propio router
   // Véase server/routes/kling-api.ts para la implementación
