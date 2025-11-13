@@ -139,6 +139,8 @@ interface TimelineEditorProps {
   projectName?: string;
   onProjectNameChange?: (name: string) => void;
   isSavingProject?: boolean;
+  lastSavedAt?: Date | null;
+  hasUnsavedChanges?: boolean;
 }
 
 // ===== Constants =====
@@ -168,7 +170,9 @@ export function TimelineEditor({
   onLoadProject,
   projectName = '',
   onProjectNameChange,
-  isSavingProject = false
+  isSavingProject = false,
+  lastSavedAt = null,
+  hasUnsavedChanges = false
 }: TimelineEditorProps) {
   const { toast } = useToast();
 
@@ -828,6 +832,31 @@ export function TimelineEditor({
                 <Save className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
                 <span className="hidden sm:inline ml-1">{isSavingProject ? 'Saving...' : 'Save'}</span>
               </Button>
+              
+              {/* Indicador de guardado */}
+              {lastSavedAt && (
+                <div className="hidden md:flex items-center gap-1 px-2 text-[10px] text-muted-foreground">
+                  {hasUnsavedChanges ? (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                      <span>No guardado</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span>
+                        {(() => {
+                          const now = new Date();
+                          const diff = Math.floor((now.getTime() - lastSavedAt.getTime()) / 1000);
+                          if (diff < 60) return 'Guardado ahora';
+                          if (diff < 3600) return `Guardado hace ${Math.floor(diff / 60)}m`;
+                          return `Guardado hace ${Math.floor(diff / 3600)}h`;
+                        })()}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
               
               {onLoadProject && (
                 <Button

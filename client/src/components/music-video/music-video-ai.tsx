@@ -6213,6 +6213,8 @@ ${transcription}`;
                       projectName={projectName}
                       onProjectNameChange={setProjectName}
                       isSavingProject={isSavingProject}
+                      lastSavedAt={lastSavedAt}
+                      hasUnsavedChanges={hasUnsavedChanges}
                     />
                   </div>
 
