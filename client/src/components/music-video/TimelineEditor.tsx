@@ -2123,6 +2123,20 @@ export function TimelineEditor({
         clip={cameraAnglesModalClip}
         onSelectAngle={handleCameraAngleSelected}
       />
+
+      {/* Image Editor Modal */}
+      {imageEditorModalClip && (
+        <ImageEditorModal
+          open={showImageEditorModal}
+          onClose={() => {
+            setShowImageEditorModal(false);
+            setImageEditorModalClip(null);
+          }}
+          imageUrl={imageEditorModalClip.imageUrl}
+          originalPrompt={imageEditorModalClip.imagePrompt}
+          onImageEdited={handleImageEdited}
+        />
+      )}
     </div>
   );
 }
