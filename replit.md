@@ -7,6 +7,42 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
+### 🎬 Botones de Regenerar Imagen y Generar Video en Timeline (LATEST)
+**Fecha**: 13 de Noviembre, 2024
+**Objetivo**: Agregar controles individuales sobre cada imagen en el timeline
+
+**Funcionalidades implementadas**:
+1. ✅ **Botón "Regenerar Imagen"** (morado):
+   - Aparece sobre cada imagen en el timeline
+   - Regenera la imagen siguiendo el script original
+   - Usa Gemini 2.5 Flash Image (Nano Banana) con referencias faciales si las hay
+   - Guarda automáticamente en Firebase Storage para persistencia
+   - Actualiza el timeline en tiempo real
+
+2. ✅ **Botón "Generar Video"** (azul):
+   - Convierte la imagen específica en video usando FAL AI
+   - Usa el prompt original de la escena para el movimiento
+   - Respeta la duración de la escena del timeline
+   - Actualiza el timeline con la URL del video generado
+
+3. ✅ **Mejoras de UX**:
+   - Botones semi-transparentes (80% opacidad) siempre visibles
+   - Funciona en dispositivos táctiles (no solo hover)
+   - Iconos claros: RefreshCw (regenerar) y Video (generar video)
+   - Bordes blancos para mejor contraste sobre las imágenes
+
+**Flujo de trabajo**:
+1. Usuario completa el flujo automático: Concepto → Script → Timeline → Imágenes
+2. Usuario ve botones sobre cada imagen en el timeline
+3. **Regenerar**: Clic en botón morado → imagen se regenera siguiendo el script → se actualiza en timeline
+4. **Generar Video**: Clic en botón azul → imagen se convierte en video → URL se guarda en timeline
+
+**Archivos modificados**:
+- `client/src/components/music-video/TimelineEditor.tsx`: Botones en cada clip
+- `client/src/components/music-video/music-video-ai.tsx`: Funciones handleRegenerateImageFromTimeline y handleGenerateVideoFromTimeline
+
+## Recent Changes (November 2024)
+
 ### 🚀 Corrección Completa de Deployment Cloud Run (LATEST)
 **Fecha**: 12 de Noviembre, 2024
 **Objetivo**: Solucionar todos los problemas de deployment para Cloud Run en producción
