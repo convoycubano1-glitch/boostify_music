@@ -539,23 +539,67 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   id: serial("id").primaryKey(),
   userEmail: text("user_email").notNull(),
   projectName: text("project_name").notNull(),
-  artistName: text("artist_name").notNull(),
-  songName: text("song_name").notNull(),
-  audioUrl: text("audio_url").notNull(),
-  artistReferenceImages: text("artist_reference_images").array().notNull(),
-  selectedDirector: json("selected_director").notNull(),
-  selectedConcept: json("selected_concept").notNull(),
-  aspectRatio: text("aspect_ratio").notNull(),
-  videoStyle: text("video_style").notNull(),
-  scenes: json("scenes").notNull(),
-  generatedImagesCount: integer("generated_images_count").default(0).notNull(),
-  totalImagesTarget: integer("total_images_target").default(40).notNull(),
+  
+  // Audio data
+  audioUrl: text("audio_url"),
+  audioDuration: decimal("audio_duration", { precision: 10, scale: 2 }),
+  transcription: text("transcription"),
+  
+  // Script data
+  scriptContent: text("script_content"),
+  
+  // Timeline data (JSON con todos los items del timeline)
+  timelineItems: json("timeline_items").$type<any[]>().default([]),
+  scenes: json("scenes").$type<any[]>().default([]),
+  
+  // Style & Director data
+  selectedDirector: json("selected_director"),
+  selectedConcept: json("selected_concept"),
+  videoStyle: json("video_style"),
+  
+  // Reference images & artist info
+  artistReferenceImages: json("artist_reference_images").$type<string[]>().default([]),
+  artistName: text("artist_name"),
+  songName: text("song_name"),
+  
+  // Editing style
+  selectedEditingStyle: json("selected_editing_style"),
+  
+  // Video format
+  aspectRatio: text("aspect_ratio"),
+  
+  // Project status
   status: text("status", { 
-    enum: ["demo_generation", "demo_completed", "payment_pending", "full_generation", "completed", "failed"] 
-  }).default("demo_generation").notNull(),
+    enum: ["draft", "generating_script", "generating_images", "generating_videos", "demo_generation", "demo_completed", "payment_pending", "full_generation", "completed", "failed"] 
+  }).default("draft").notNull(),
+  
+  // Progress tracking
+  progress: json("progress").$type<{
+    scriptGenerated: boolean;
+    imagesGenerated: number;
+    totalImages: number;
+    videosGenerated: number;
+    totalVideos: number;
+  }>().default({
+    scriptGenerated: false,
+    imagesGenerated: 0,
+    totalImages: 0,
+    videosGenerated: 0,
+    totalVideos: 0
+  }),
+  generatedImagesCount: integer("generated_images_count").default(0),
+  totalImagesTarget: integer("total_images_target").default(40),
+  
+  // Output
   finalVideoUrl: text("final_video_url"),
+  
+  // Payment
   isPaid: boolean("is_paid").default(false).notNull(),
   creditsUsed: integer("credits_used").default(0).notNull(),
+  
+  // Metadata
+  tags: json("tags").$type<string[]>().default([]),
+  lastModified: timestamp("last_modified").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -819,81 +863,3 @@ export const insertGeneratedVideoSchema = createInsertSchema(generatedVideos);
 export const selectGeneratedVideoSchema = createSelectSchema(generatedVideos);
 export type GeneratedVideo = typeof generatedVideos.$inferSelect;
 export type NewGeneratedVideo = typeof generatedVideos.$inferInsert;
-
-export const musicVideoProjects = pgTable("music_video_projects", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id").notNull(),
-  projectName: text("project_name").notNull(),
-  
-  // Audio data
-  audioUrl: text("audio_url"),
-  audioDuration: decimal("audio_duration", { precision: 10, scale: 2 }),
-  transcription: text("transcription"),
-  
-  // Script data
-  scriptContent: text("script_content"),
-  
-  // Timeline data (JSON con todos los items del timeline)
-  timelineItems: json("timeline_items").$type<any[]>().notNull().default([]),
-  
-  // Style & Director data
-  selectedDirector: json("selected_director").$type<{
-    id: string;
-    name: string;
-    specialty: string;
-    style: string;
-    experience: string;
-  }>(),
-  videoStyle: json("video_style").$type<{
-    cameraFormat: string;
-    mood: string;
-    characterStyle: string;
-    colorPalette: string;
-    visualIntensity: number;
-    narrativeIntensity: number;
-    selectedDirector: any;
-  }>(),
-  
-  // Reference images
-  artistReferenceImages: json("artist_reference_images").$type<string[]>().default([]),
-  
-  // Editing style
-  selectedEditingStyle: json("selected_editing_style").$type<{
-    id: string;
-    name: string;
-    description: string;
-    duration: { min: number; max: number };
-  }>(),
-  
-  // Project status
-  status: text("status", { 
-    enum: ["draft", "generating_script", "generating_images", "generating_videos", "completed"] 
-  }).default("draft").notNull(),
-  
-  // Progress tracking
-  progress: json("progress").$type<{
-    scriptGenerated: boolean;
-    imagesGenerated: number;
-    totalImages: number;
-    videosGenerated: number;
-    totalVideos: number;
-  }>().default({
-    scriptGenerated: false,
-    imagesGenerated: 0,
-    totalImages: 0,
-    videosGenerated: 0,
-    totalVideos: 0
-  }),
-  
-  // Metadata
-  lastModified: timestamp("last_modified").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  
-  // Tags for organization
-  tags: json("tags").$type<string[]>().default([]),
-});
-
-export const insertMusicVideoProjectSchema = createInsertSchema(musicVideoProjects);
-export const selectMusicVideoProjectSchema = createSelectSchema(musicVideoProjects);
-export type MusicVideoProject = typeof musicVideoProjects.$inferSelect;
-export type NewMusicVideoProject = typeof musicVideoProjects.$inferInsert;

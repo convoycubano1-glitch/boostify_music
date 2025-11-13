@@ -1434,12 +1434,12 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     setSelectedConcept(concept);
     
     // Guardar concepto en la base de datos
-    if (user?.uid) {
+    if (user?.email) {
       try {
         console.log('💾 Guardando concepto seleccionado en base de datos...');
         
         const projectData = {
-          userId: user.uid,
+          userEmail: user.email!,
           projectName: projectName || `Video ${Date.now()}`,
           audioUrl: selectedFile?.name || '',
           audioDuration: audioBuffer?.duration,
@@ -2658,17 +2658,17 @@ ${transcription}`;
       email: user?.email || 'undefined'
     });
     
-    if (!user?.uid) {
-      console.error('❌ [SAVE] Usuario no autenticado');
+    if (!user?.email) {
+      console.error('❌ [SAVE] Usuario no autenticado o sin email');
       toast({
         title: "Autenticación requerida",
-        description: "Por favor inicia sesión para guardar tu proyecto. Verifica que estés logueado en Firebase.",
+        description: "Por favor inicia sesión para guardar tu proyecto.",
         variant: "destructive"
       });
       return;
     }
     
-    console.log('✅ [SAVE] Usuario autenticado:', user.uid);
+    console.log('✅ [SAVE] Usuario autenticado:', user.email);
 
     if (!projectName.trim()) {
       toast({
@@ -2685,7 +2685,7 @@ ${transcription}`;
       const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
       
       const result = await musicVideoProjectServicePostgres.saveProject({
-        userId: user.uid,
+        userEmail: user.email,
         projectName,
         audioUrl: audioUrl || undefined,
         audioDuration: audioBuffer?.duration,
@@ -2809,7 +2809,7 @@ ${transcription}`;
       const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
       
       const result = await musicVideoProjectServicePostgres.saveProject({
-        userId: user.uid,
+        userEmail: user.email,
         projectName,
         audioUrl: audioUrl || undefined,
         audioDuration: audioBuffer?.duration,
@@ -4552,7 +4552,7 @@ ${transcription}`;
 
   // Auto-save project cuando cambien datos importantes
   useEffect(() => {
-    if (!user?.uid || !projectName.trim() || timelineItems.length === 0) {
+    if (!user?.email || !projectName.trim() || timelineItems.length === 0) {
       return; // No auto-guardar si no hay usuario, nombre de proyecto o timeline items
     }
 
@@ -4560,7 +4560,7 @@ ${transcription}`;
     const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
 
     musicVideoProjectServicePostgres.autoSave({
-      userId: user.uid,
+      userEmail: user.email,
       projectName,
       audioUrl: audioUrl || undefined,
       audioDuration: audioBuffer?.duration,

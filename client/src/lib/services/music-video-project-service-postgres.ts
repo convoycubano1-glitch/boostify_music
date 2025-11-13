@@ -4,8 +4,8 @@ import type { TimelineItem } from '../../components/timeline/TimelineClipUnified
  * Interface for Music Video Project (PostgreSQL version)
  */
 export interface MusicVideoProjectPostgres {
-  id: string;
-  userId: string;
+  id: number;
+  userEmail: string;
   projectName: string;
   audioUrl?: string;
   audioDuration?: number;
@@ -60,7 +60,7 @@ class MusicVideoProjectServicePostgres {
    * Save a project to PostgreSQL
    */
   async saveProject(projectData: {
-    userId: string;
+    userEmail: string;
     projectName: string;
     audioUrl?: string;
     audioDuration?: number;
@@ -111,11 +111,11 @@ class MusicVideoProjectServicePostgres {
   /**
    * Get all projects for a user
    */
-  async getUserProjects(userId: string): Promise<MusicVideoProjectPostgres[]> {
+  async getUserProjects(userEmail: string): Promise<MusicVideoProjectPostgres[]> {
     try {
-      console.log('📋 Cargando proyectos para userId:', userId);
+      console.log('📋 Cargando proyectos para userEmail:', userEmail);
       
-      const response = await fetch(`${this.baseUrl}/list/${userId}`);
+      const response = await fetch(`${this.baseUrl}/list/${userEmail}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -134,7 +134,7 @@ class MusicVideoProjectServicePostgres {
   /**
    * Load a specific project
    */
-  async getProject(projectId: string): Promise<MusicVideoProjectPostgres | null> {
+  async getProject(projectId: number): Promise<MusicVideoProjectPostgres | null> {
     try {
       console.log('📂 Cargando proyecto:', projectId);
       
@@ -161,7 +161,7 @@ class MusicVideoProjectServicePostgres {
   /**
    * Delete a project
    */
-  async deleteProject(projectId: string): Promise<void> {
+  async deleteProject(projectId: number): Promise<void> {
     try {
       console.log('🗑️ Eliminando proyecto:', projectId);
       
@@ -189,7 +189,7 @@ class MusicVideoProjectServicePostgres {
     projectData: Parameters<typeof this.saveProject>[0],
     delay = 5000
   ): void {
-    const key = `${projectData.userId}-${projectData.projectName}`;
+    const key = `${projectData.userEmail}-${projectData.projectName}`;
     
     // Clear existing timer
     if (this.autoSaveTimers.has(key)) {

@@ -7,18 +7,18 @@ import { z } from 'zod';
 const router = Router();
 
 const saveProjectSchema = z.object({
-  userId: z.string(),
+  userEmail: z.string().email(),
   projectName: z.string().min(1),
   audioUrl: z.string().optional(),
   audioDuration: z.number().optional(),
   transcription: z.string().optional(),
   scriptContent: z.string().optional(),
-  timelineItems: z.array(z.any()),
+  timelineItems: z.array(z.any()).default([]),
   selectedDirector: z.any().optional(),
   videoStyle: z.any().optional(),
   artistReferenceImages: z.array(z.string()).default([]),
   selectedEditingStyle: z.any().optional(),
-  status: z.enum(["draft", "generating_script", "generating_images", "generating_videos", "completed"]).default("draft"),
+  status: z.enum(["draft", "generating_script", "generating_images", "generating_videos", "demo_generation", "demo_completed", "payment_pending", "full_generation", "completed", "failed"]).default("draft"),
   progress: z.object({
     scriptGenerated: z.boolean(),
     imagesGenerated: z.number(),
@@ -35,17 +35,23 @@ router.post('/save', async (req, res) => {
     
     const validatedData = saveProjectSchema.parse(req.body);
     console.log('✅ [SAVE PROJECT] Datos validados:', {
-      userId: validatedData.userId,
+      userEmail: validatedData.userEmail,
       projectName: validatedData.projectName,
-      timelineItemsCount: validatedData.timelineItems.length
+      timelineItemsCount: validatedData.timelineItems?.length || 0
     });
+    
+    // Convert audioDuration number to string for decimal field
+    const dbData: any = {
+      ...validatedData,
+      audioDuration: validatedData.audioDuration !== undefined ? String(validatedData.audioDuration) : undefined
+    };
     
     const existingProject = await db
       .select()
       .from(musicVideoProjects)
       .where(
         and(
-          eq(musicVideoProjects.userId, validatedData.userId),
+          eq(musicVideoProjects.userEmail, validatedData.userEmail),
           eq(musicVideoProjects.projectName, validatedData.projectName)
         )
       )
@@ -57,7 +63,7 @@ router.post('/save', async (req, res) => {
       const [updated] = await db
         .update(musicVideoProjects)
         .set({
-          ...validatedData,
+          ...dbData,
           lastModified: new Date()
         })
         .where(eq(musicVideoProjects.id, existingProject[0].id))
@@ -70,7 +76,7 @@ router.post('/save', async (req, res) => {
       
       const [newProject] = await db
         .insert(musicVideoProjects)
-        .values(validatedData)
+        .values(dbData)
         .returning();
       
       console.log('✅ [SAVE PROJECT] Nuevo proyecto creado:', newProject.id);
@@ -85,15 +91,15 @@ router.post('/save', async (req, res) => {
   }
 });
 
-router.get('/list/:userId', async (req, res) => {
+router.get('/list/:userEmail', async (req, res) => {
   try {
-    const { userId } = req.params;
-    console.log('📋 [LIST PROJECTS] Listando proyectos para userId:', userId);
+    const { userEmail } = req.params;
+    console.log('📋 [LIST PROJECTS] Listando proyectos para userEmail:', userEmail);
     
     const projects = await db
       .select()
       .from(musicVideoProjects)
-      .where(eq(musicVideoProjects.userId, userId))
+      .where(eq(musicVideoProjects.userEmail, userEmail))
       .orderBy(desc(musicVideoProjects.lastModified));
     
     console.log(`✅ [LIST PROJECTS] Encontrados ${projects.length} proyectos`);
