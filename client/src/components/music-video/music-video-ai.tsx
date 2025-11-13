@@ -283,6 +283,8 @@ export function MusicVideoAI() {
   const [transcription, setTranscription] = useState<string>("");
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<number | null>(null);
+  const [showLoadProjectDialog, setShowLoadProjectDialog] = useState(false);
+  const [savedProjects, setSavedProjects] = useState<any[]>([]);
   
   // DEBUG: Monitor timeline changes
   useEffect(() => {
@@ -377,8 +379,6 @@ export function MusicVideoAI() {
   const [projectName, setProjectName] = useState<string>("Untitled Project");
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
   const [isSavingProject, setIsSavingProject] = useState(false);
-  const [showLoadProjectDialog, setShowLoadProjectDialog] = useState(false);
-  const [savedProjects, setSavedProjects] = useState<any[]>([]);
 
   // Estados para generación de videos
   const [selectedVideoModel, setSelectedVideoModel] = useState<string>(FAL_VIDEO_MODELS.KLING_2_1_PRO_I2V.id);

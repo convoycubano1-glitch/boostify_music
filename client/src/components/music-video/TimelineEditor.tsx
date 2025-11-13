@@ -143,9 +143,9 @@ interface TimelineEditorProps {
 
 // ===== Constants =====
 const PIXELS_PER_SECOND_BASE = 100;
-const SNAP_TOLERANCE = 0.08; // 80ms snap tolerance
+const SNAP_TOLERANCE = 0.05; // 50ms snap tolerance for precision
 const HISTORY_LIMIT = 50;
-const MAX_CLIP_DURATION = 5; // Maximum clip duration in seconds
+const MAX_CLIP_DURATION = 6; // Maximum clip duration in seconds (matching 3-6s range)
 
 // ===== Main Component =====
 export function TimelineEditor({
@@ -384,10 +384,23 @@ export function TimelineEditor({
     if (!clip || clip.locked) return;
     
     if (tool === 'razor') {
-      // Split clip at click position
-      if (onSplitClip) {
-        pushHistory();
-        onSplitClip(clipId, currentTime);
+      // Split clip at EXACT click position (not playhead)
+      if (onSplitClip && timelineRef.current) {
+        const rect = timelineRef.current.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left + (timelineRef.current.scrollLeft || 0);
+        const clickTime = pixelsToTime(offsetX);
+        
+        // Only split if click is within clip boundaries
+        if (clickTime >= clip.start && clickTime <= clip.start + clip.duration) {
+          pushHistory();
+          onSplitClip(clipId, clickTime);
+          
+          toast({
+            title: "Clip Split",
+            description: `Split at ${formatTime(clickTime)}`,
+            variant: "default",
+          });
+        }
       }
       return;
     }
@@ -403,7 +416,7 @@ export function TimelineEditor({
       setDragStartX(e.clientX);
       setClipStartPosition(clip.start);
     }
-  }, [tool, clips, currentTime, pushHistory, onSplitClip]);
+  }, [tool, clips, pixelsToTime, pushHistory, onSplitClip, toast]);
 
   // Mouse move handler for drag/resize
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -502,6 +515,15 @@ export function TimelineEditor({
       } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
         e.preventDefault();
         handleRedo();
+      } else if (e.shiftKey && (e.key === '+' || e.key === '=')) {
+        e.preventDefault();
+        setZoom(z => Math.min(10, z * 1.4));
+      } else if (e.shiftKey && (e.key === '-' || e.key === '_')) {
+        e.preventDefault();
+        setZoom(z => Math.max(0.1, z / 1.4));
+      } else if (e.shiftKey && e.key === '0') {
+        e.preventDefault();
+        setZoom(1);
       } else if (e.key === 'Delete' && selectedClip !== null) {
         pushHistory();
         // Delete selected clip - implement deletion logic
@@ -692,17 +714,18 @@ export function TimelineEditor({
         </div>
       )}
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between p-2 border-b border-gray-700 flex-wrap gap-2">
-        <div className="flex items-center space-x-2">
+      {/* Toolbar - Responsive */}
+      <div className="flex items-center justify-between p-2 border-b border-gray-700 flex-wrap gap-1 md:gap-2">
+        <div className="flex items-center space-x-1 md:space-x-2">
           {/* Playback controls */}
           <Button 
             size="icon" 
             variant="ghost" 
             onClick={() => onTimeUpdate(Math.max(0, currentTime - 1))}
             title="Rewind 1s"
+            className="h-8 w-8 md:h-10 md:w-10"
           >
-            <SkipBack className="h-4 w-4" />
+            <SkipBack className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           
           <Button 
@@ -711,8 +734,9 @@ export function TimelineEditor({
             onClick={isPlaying ? onPause : onPlay}
             title={isPlaying ? "Pause" : "Play"}
             data-testid="button-playback-toggle"
+            className="h-8 w-8 md:h-10 md:w-10"
           >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {isPlaying ? <Pause className="h-3 w-3 md:h-4 md:w-4" /> : <Play className="h-3 w-3 md:h-4 md:w-4" />}
           </Button>
           
           <Button 
@@ -720,22 +744,24 @@ export function TimelineEditor({
             variant="ghost" 
             onClick={() => onTimeUpdate(Math.min(duration, currentTime + 1))}
             title="Forward 1s"
+            className="h-8 w-8 md:h-10 md:w-10"
           >
-            <SkipForward className="h-4 w-4" />
+            <SkipForward className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           
-          <Separator orientation="vertical" className="h-8 mx-2" />
+          <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2" />
           
-          {/* Tool modes */}
+          {/* Tool modes - Responsive */}
           <Button 
             size="sm" 
             variant={tool === 'select' ? 'default' : 'ghost'}
             onClick={() => setTool('select')}
             title="Select Tool (V)"
             data-testid="button-tool-select"
+            className="px-2 md:px-3 h-7 md:h-9"
           >
-            <Move className="h-4 w-4 mr-1" />
-            Select
+            <Move className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+            <span className="hidden md:inline ml-1">Select</span>
           </Button>
           
           <Button 
@@ -744,9 +770,10 @@ export function TimelineEditor({
             onClick={() => setTool('razor')}
             title="Razor Tool (C)"
             data-testid="button-tool-razor"
+            className="px-2 md:px-3 h-7 md:h-9"
           >
-            <Scissors className="h-4 w-4 mr-1" />
-            Razor
+            <Scissors className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+            <span className="hidden md:inline ml-1">Razor</span>
           </Button>
           
           <Button 
@@ -755,9 +782,10 @@ export function TimelineEditor({
             onClick={() => setTool('trim')}
             title="Trim Tool (T)"
             data-testid="button-tool-trim"
+            className="px-2 md:px-3 h-7 md:h-9"
           >
-            <Maximize2 className="h-4 w-4 mr-1" />
-            Trim
+            <Maximize2 className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+            <span className="hidden md:inline ml-1">Trim</span>
           </Button>
           
           <Button 
@@ -766,14 +794,15 @@ export function TimelineEditor({
             onClick={() => setTool('hand')}
             title="Hand Tool (H)"
             data-testid="button-tool-hand"
+            className="px-2 md:px-3 h-7 md:h-9"
           >
-            <Hand className="h-4 w-4 mr-1" />
-            Hand
+            <Hand className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+            <span className="hidden md:inline ml-1">Hand</span>
           </Button>
         </div>
         
-        <div className="flex items-center space-x-2">
-          {/* Project save/load controls */}
+        <div className="flex items-center space-x-1 md:space-x-2">
+          {/* Project save/load controls - Responsive */}
           {onSaveProject && (
             <>
               {onProjectNameChange && (
@@ -782,7 +811,7 @@ export function TimelineEditor({
                   placeholder="Project name..."
                   value={projectName}
                   onChange={(e) => onProjectNameChange(e.target.value)}
-                  className="w-32 h-8 text-xs"
+                  className="w-24 md:w-32 h-7 md:h-8 text-[10px] md:text-xs"
                   data-testid="input-project-name"
                 />
               )}
@@ -794,9 +823,10 @@ export function TimelineEditor({
                 disabled={isSavingProject || !projectName.trim()}
                 title="Save Project (Ctrl+S)"
                 data-testid="button-save-project"
+                className="px-2 md:px-3 h-7 md:h-9 text-xs"
               >
-                <Save className="h-4 w-4 mr-1" />
-                {isSavingProject ? 'Saving...' : 'Save'}
+                <Save className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                <span className="hidden sm:inline ml-1">{isSavingProject ? 'Saving...' : 'Save'}</span>
               </Button>
               
               {onLoadProject && (
@@ -806,42 +836,57 @@ export function TimelineEditor({
                   onClick={onLoadProject}
                   title="Load Project"
                   data-testid="button-load-project"
+                  className="px-2 md:px-3 h-7 md:h-9 text-xs"
                 >
-                  <FolderOpen className="h-4 w-4 mr-1" />
-                  Load
+                  <FolderOpen className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                  <span className="hidden sm:inline ml-1">Load</span>
                 </Button>
               )}
               
-              <Separator orientation="vertical" className="h-8 mx-2" />
+              <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2" />
             </>
           )}
           
-          {/* Zoom controls */}
+          {/* Zoom controls - Enhanced and Responsive */}
           <Button 
             size="icon" 
             variant="ghost" 
-            onClick={() => setZoom(Math.max(0.1, zoom / 1.5))}
-            title="Zoom Out"
+            onClick={() => setZoom(Math.max(0.1, zoom / 1.4))}
+            title="Zoom Out (Shift + -)"
+            data-testid="button-zoom-out"
+            className="h-7 w-7 md:h-9 md:w-9"
           >
-            <ZoomOut className="h-4 w-4" />
+            <ZoomOut className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           
           <Button 
             size="icon" 
             variant="ghost" 
-            onClick={() => setZoom(Math.min(10, zoom * 1.5))}
-            title="Zoom In"
+            onClick={() => setZoom(Math.min(10, zoom * 1.4))}
+            title="Zoom In (Shift + +)"
+            data-testid="button-zoom-in"
+            className="h-7 w-7 md:h-9 md:w-9"
           >
-            <ZoomIn className="h-4 w-4" />
+            <ZoomIn className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           
-          <Badge variant="outline" className="text-xs">
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={() => setZoom(1)}
+            title="Reset Zoom (Shift + 0)"
+            className="text-[10px] md:text-xs px-1 md:px-2 h-7 md:h-9 hidden sm:flex"
+          >
+            Reset
+          </Button>
+          
+          <Badge variant="outline" className="text-[10px] md:text-xs font-mono px-1 md:px-2">
             {zoom.toFixed(1)}x
           </Badge>
           
-          <Separator orientation="vertical" className="h-8 mx-2" />
+          <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2" />
           
-          {/* Undo/Redo */}
+          {/* Undo/Redo - Responsive */}
           <Button 
             size="icon" 
             variant="ghost" 
@@ -849,8 +894,9 @@ export function TimelineEditor({
             disabled={history.past.length === 0}
             title="Undo (Ctrl+Z)"
             data-testid="button-undo"
+            className="h-7 w-7 md:h-9 md:w-9"
           >
-            <Undo className="h-4 w-4" />
+            <Undo className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           
           <Button 
@@ -860,14 +906,15 @@ export function TimelineEditor({
             disabled={history.future.length === 0}
             title="Redo (Ctrl+Y)"
             data-testid="button-redo"
+            className="h-7 w-7 md:h-9 md:w-9"
           >
-            <Redo className="h-4 w-4" />
+            <Redo className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           
-          <Separator orientation="vertical" className="h-8 mx-2" />
+          <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2 hidden lg:block" />
           
-          {/* Time display */}
-          <div className="text-sm font-medium bg-gray-800 px-2 py-1 rounded" data-testid="text-timecode">
+          {/* Time display - Responsive */}
+          <div className="text-[10px] md:text-sm font-medium bg-gray-800 px-1 md:px-2 py-0.5 md:py-1 rounded font-mono hidden md:flex" data-testid="text-timecode">
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
@@ -875,8 +922,8 @@ export function TimelineEditor({
 
       {/* Main timeline area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Layer panel */}
-        <div className="w-40 min-w-40 border-r border-gray-700 bg-gray-800 overflow-hidden">
+        {/* Layer panel - Responsive */}
+        <div className="w-32 min-w-32 md:w-40 md:min-w-40 border-r border-gray-700 bg-gray-800 overflow-hidden">
           <div className="bg-gray-900 p-2 border-b border-gray-700 text-xs font-semibold flex items-center justify-between">
             <span>Layers</span>
             <Badge variant="outline" className="text-[9px] bg-gray-800">
@@ -1063,17 +1110,18 @@ export function TimelineEditor({
         </div>
       </div>
       
-      {/* Footer info */}
-      <div className="flex items-center justify-between p-2 border-t border-gray-700 text-xs bg-gray-800">
-        <div className="flex items-center gap-4">
-          <span>Tool: <strong>{tool}</strong></span>
-          <span>Clips: <strong>{clips.length}</strong></span>
+      {/* Footer info - Responsive */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-2 border-t border-gray-700 text-[10px] md:text-xs bg-gray-800 gap-2">
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+          <span className="flex items-center gap-1">Tool: <strong className="text-primary">{tool}</strong></span>
+          <span className="flex items-center gap-1">Clips: <strong>{clips.length}</strong></span>
           {selectedClip && (
-            <span>Selected: <strong>Clip #{selectedClip}</strong></span>
+            <span className="flex items-center gap-1">Selected: <strong className="text-primary">Clip #{selectedClip}</strong></span>
           )}
+          <span className="flex items-center gap-1 md:hidden">Zoom: <strong>{zoom.toFixed(1)}x</strong></span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-gray-400">Shortcuts: V=Select, C=Razor, T=Trim, H=Hand, Space=Play/Pause</span>
+        <div className="flex items-center gap-2 text-gray-400 overflow-x-auto">
+          <span className="whitespace-nowrap">Shortcuts: <strong className="text-gray-300">V</strong>=Select, <strong className="text-gray-300">C</strong>=Razor, <strong className="text-gray-300">T</strong>=Trim, <strong className="text-gray-300">H</strong>=Hand, <strong className="text-gray-300">Space</strong>=Play/Pause</span>
         </div>
       </div>
     </div>

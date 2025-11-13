@@ -7,39 +7,44 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 🎬 Botones de Regenerar Imagen y Generar Video en Timeline (LATEST)
+### 🎬 Timeline con Timings Perfectos + Guardar/Cargar Proyectos (LATEST)
 **Fecha**: 13 de Noviembre, 2024
-**Objetivo**: Agregar controles individuales sobre cada imagen en el timeline
+**Objetivo**: Sincronización perfecta con música y gestión de proyectos
 
 **Funcionalidades implementadas**:
-1. ✅ **Botón "Regenerar Imagen"** (morado):
-   - Aparece sobre cada imagen en el timeline
-   - Regenera la imagen siguiendo el script original
-   - Usa Gemini 2.5 Flash Image (Nano Banana) con referencias faciales si las hay
-   - Guarda automáticamente en Firebase Storage para persistencia
-   - Actualiza el timeline en tiempo real
+1. ✅ **Timings Perfectos del Script**:
+   - El timeline respeta exactamente los `start_time` y `duration` del JSON del script
+   - Función `adjustSceneDurations` ajusta las duraciones para encajar perfectamente en la duración total
+   - Cada escena se posiciona exactamente donde debe estar según la música
+   - Console logs muestran los timings exactos: `🎬 Creating clip X: start=Xs, duration=Xs`
 
-2. ✅ **Botón "Generar Video"** (azul):
-   - Convierte la imagen específica en video usando FAL AI
-   - Usa el prompt original de la escena para el movimiento
-   - Respeta la duración de la escena del timeline
-   - Actualiza el timeline con la URL del video generado
+2. ✅ **Guardar/Cargar Proyectos en Timeline**:
+   - **Input de nombre de proyecto** en el toolbar del timeline
+   - **Botón "Save"** (icono Save) para guardar el proyecto actual
+   - **Botón "Load"** (icono FolderOpen) para abrir diálogo de proyectos guardados
+   - **Diálogo de carga** muestra lista de todos los proyectos del usuario con:
+     - Nombre del proyecto
+     - Status (completed, generating_images, draft)
+     - Progreso de imágenes y videos
+     - Fecha de última actualización
+   - Los proyectos guardados mantienen todos los timings exactos del timeline
 
-3. ✅ **Mejoras de UX**:
-   - Botones semi-transparentes (80% opacidad) siempre visibles
-   - Funciona en dispositivos táctiles (no solo hover)
-   - Iconos claros: RefreshCw (regenerar) y Video (generar video)
-   - Bordes blancos para mejor contraste sobre las imágenes
+3. ✅ **Botones de Regenerar Imagen y Generar Video**:
+   - **Botón "Regenerar Imagen"** (morado) sobre cada imagen
+   - **Botón "Generar Video"** (azul) sobre cada imagen
+   - Botones semi-transparentes siempre visibles para dispositivos táctiles
 
 **Flujo de trabajo**:
-1. Usuario completa el flujo automático: Concepto → Script → Timeline → Imágenes
-2. Usuario ve botones sobre cada imagen en el timeline
-3. **Regenerar**: Clic en botón morado → imagen se regenera siguiendo el script → se actualiza en timeline
-4. **Generar Video**: Clic en botón azul → imagen se convierte en video → URL se guarda en timeline
+1. Usuario crea proyecto: Concepto → Script → Timeline → Imágenes
+2. Timings del timeline se sincronizan perfectamente con la música
+3. Usuario puede guardar el proyecto con nombre personalizado
+4. Usuario puede cargar proyectos previos desde el timeline
+5. Usuario puede regenerar imágenes o generar videos de escenas específicas
 
 **Archivos modificados**:
-- `client/src/components/music-video/TimelineEditor.tsx`: Botones en cada clip
-- `client/src/components/music-video/music-video-ai.tsx`: Funciones handleRegenerateImageFromTimeline y handleGenerateVideoFromTimeline
+- `client/src/components/music-video/TimelineEditor.tsx`: UI de guardar/cargar proyectos
+- `client/src/components/music-video/music-video-ai.tsx`: Props y diálogo de carga de proyectos
+- `client/src/lib/api/music-video-generator.ts`: Función adjustSceneDurations para timings perfectos
 
 ## Recent Changes (November 2024)
 
