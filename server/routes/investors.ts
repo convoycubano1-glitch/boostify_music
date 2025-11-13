@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import { db } from '../db';
 import { investors } from '../db/schema';
 import { insertInvestorSchema } from '../../db/schema';
@@ -9,16 +9,27 @@ import axios from 'axios';
 
 const router = Router();
 
+// Extend Express Request type
+interface AuthRequest extends Request {
+  isAuthenticated(): boolean;
+  user: {
+    id: number;
+    uid: string;
+    email?: string | null;
+    role: string;
+  };
+}
+
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
+  apiVersion: '2025-02-24.acacia',
 });
 
 // Make.com webhook URL
 const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/hfnbfse1q9gtm71xeamn5p5tj48fyv8x';
 
 // Route to register a new investor
-router.post('/register', async (req, res) => {
+router.post('/register', async (req: AuthRequest, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: 'Authentication required' });
   }
@@ -91,7 +102,7 @@ router.post('/register', async (req, res) => {
  * GET /api/investors/me
  * Get current investor data
  */
-router.get('/me', async (req, res) => {
+router.get('/me', async (req: AuthRequest, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
   }
@@ -134,7 +145,7 @@ router.get('/me', async (req, res) => {
  * POST /api/investors/investment/create-checkout
  * Create Stripe checkout session for investment
  */
-router.post('/investment/create-checkout', async (req, res) => {
+router.post('/investment/create-checkout', async (req: AuthRequest, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
   }
