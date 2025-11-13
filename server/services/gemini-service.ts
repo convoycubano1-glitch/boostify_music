@@ -1,6 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+// Using Replit's AI Integrations service for Gemini (blueprint:javascript_gemini_ai_integrations)
+// This provides Gemini-compatible API access without requiring your own API key
+// Charges are billed to your Replit credits
+const ai = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  },
+});
 
 export interface GeminiGenerationOptions {
   model?: string;
@@ -15,9 +24,9 @@ export const geminiService = {
     options: GeminiGenerationOptions = {}
   ): Promise<string> {
     const {
-      model = "gemini-2.0-flash-exp",
+      model = "gemini-2.5-flash", // Using Replit AI Integrations supported model
       temperature = 0.9,
-      maxTokens = 2048,
+      maxTokens = 8192, // Increased token limit for better responses
       systemInstruction
     } = options;
 

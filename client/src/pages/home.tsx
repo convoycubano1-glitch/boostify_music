@@ -701,7 +701,7 @@ export default function HomePage() {
                 { icon: SiInstagram, route: "/instagram-boost", color: "text-pink-500" },
                 { icon: Video, route: "/music-video-creator", color: "text-purple-500" },
                 { icon: SiSpotify, route: "/spotify", color: "text-green-500" },
-                { icon: BarChart2, route: "/analytics-dashboard", color: "text-blue-400" },
+                { icon: BarChart2, route: "/admin", color: "text-blue-400" },
               ].map((tool, index, array) => {
                 const angleInDegrees = index * (360 / array.length);
                 const angleRad = (angleInDegrees - 90) * Math.PI / 180;

@@ -79,10 +79,10 @@ export function BottomNav() {
       plan: "basic" // Requiere suscripción básica
     },
     {
-      title: "Stats",
+      title: "Admin",
       icon: BarChart2,
-      href: "/analytics-dashboard",
-      plan: "pro" // Requiere suscripción pro
+      href: "/admin",
+      plan: "free" // Admin accessible to everyone
     },
     {
       title: "Distribution",

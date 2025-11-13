@@ -113,6 +113,7 @@ export function setupAuth(app: Express) {
       '/gemini-image/generate-batch-with-multiple-faces', // Ruta para generar imágenes con Gemini
       '/early-access/signup', // Ruta pública para registro de acceso temprano
       '/artist-profile/create-checkout-session', // Ruta pública para checkout de productos de artistas (guest checkout)
+      '/investors/stats',     // Ruta pública para estadísticas de inversores
     ];
     
     // Patrones de rutas públicas que se verifican con startsWith

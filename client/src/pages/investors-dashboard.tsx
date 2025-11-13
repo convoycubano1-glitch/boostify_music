@@ -39,6 +39,7 @@ import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/fires
 import { useToast } from "../hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { apiRequest } from "@/lib/queryClient";
 // Investment Calculator Component
 function InvestmentCalculator() {
   const [investmentAmount, setInvestmentAmount] = useState(5000);
@@ -84,15 +85,19 @@ function InvestmentCalculator() {
       }
 
       // Call API to create Stripe checkout session
-      const response = await axios.post('/api/investors/investment/create-checkout', {
-        amount: investmentAmount,
-        planType: investmentAmount >= 10000 ? 'premium' : investmentAmount >= 5000 ? 'standard' : 'basic',
-        duration: durationMonths
+      const response = await apiRequest({
+        url: '/api/investors/investment/create-checkout',
+        method: 'POST',
+        data: {
+          amount: investmentAmount,
+          planType: investmentAmount >= 10000 ? 'premium' : investmentAmount >= 5000 ? 'standard' : 'basic',
+          duration: durationMonths
+        }
       });
 
-      if (response.data.success && response.data.url) {
+      if (response.success && response.url) {
         // Redirect to Stripe checkout
-        window.location.href = response.data.url;
+        window.location.href = response.url;
       }
 
     } catch (error: any) {
@@ -246,83 +251,182 @@ function InvestmentCalculator() {
 function RoadmapTimeline() {
   const roadmapData = [
     {
-      date: "1 Marzo 2025",
-      title: "Lanzamiento Oficial de Boostify",
-      description: "Lanzamiento oficial de la plataforma completa de Boostify Music con todas las funcionalidades centrales y herramientas de IA.",
-      stats: "Objetivo: 100 artistas verificados",
-      status: "upcoming",
+      date: "Enero 2024",
+      title: "Inicio del Proyecto Boostify",
+      description: "Desarrollo de la base tecnológica: arquitectura de la plataforma, integración inicial con Firebase, y diseño del modelo de negocio.",
+      stats: "Fundación establecida",
+      status: "completed",
       isKey: true
     },
     {
-      date: "15 Marzo 2025",
-      title: "Integración con Spotify y Apple Music",
-      description: "Conexión directa con las principales plataformas de streaming para sincronización de perfiles y estadísticas.",
-      stats: "Mejora de engagement: +30%",
-      status: "upcoming"
+      date: "Marzo 2024",
+      title: "Prototipo de Generación de Videos con IA",
+      description: "Implementación inicial de generación de videos musicales usando IA. Primeras pruebas con Gemini 2.5 Flash (Nano Banana).",
+      stats: "10 videos de prueba generados",
+      status: "completed"
+    },
+    {
+      date: "Junio 2024",
+      title: "Sistema de Directores y Perfiles JSON",
+      description: "Desarrollo de 10 directores cinematográficos con estilos únicos, cada uno con perfiles JSON detallados para personalización de videos.",
+      stats: "10 directores configurados",
+      status: "completed"
+    },
+    {
+      date: "Agosto 2024",
+      title: "Integración de Lip-Sync con Fal.ai MuseTalk",
+      description: "Implementación de sincronización labial automática para videos musicales, mejorando significativamente la calidad del producto final.",
+      stats: "Sincronización labial perfecta",
+      status: "completed"
+    },
+    {
+      date: "Octubre 2024",
+      title: "Firebase Storage y Gestión de Medios",
+      description: "Sistema completo de almacenamiento en la nube para videos, imágenes y assets generados por IA.",
+      stats: "Infraestructura escalable lista",
+      status: "completed"
+    },
+    {
+      date: "Diciembre 2024",
+      title: "Distribution Tools y Manager Tools",
+      description: "Lanzamiento de herramientas de distribución musical y suite completa para managers con generación automática de 11 tipos de documentos profesionales.",
+      stats: "Beta cerrado con 50 usuarios",
+      status: "completed",
+      isKey: true
+    },
+    {
+      date: "Febrero 2025",
+      title: "Red Social para Artistas",
+      description: "Plataforma social interna para conectar artistas, productores y managers. Sistema de posts, comentarios y colaboraciones.",
+      stats: "200 usuarios activos en beta",
+      status: "completed"
     },
     {
       date: "Abril 2025",
-      title: "Lanzamiento de Herramientas para Managers",
-      description: "Suite completa de herramientas de gestión para managers musicales, incluyendo contratos automatizados y booking digital.",
-      stats: "Objetivo: 250 usuarios activos",
-      status: "upcoming"
-    },
-    {
-      date: "Mayo 2025",
-      title: "Integración de Pasarela de Pagos",
-      description: "Implementación de sistema de pagos para monetización directa de contenido y servicios entre artistas y fans.",
-      stats: "Proyección: primeros $10k en transacciones",
-      status: "upcoming"
+      title: "Integración con Stripe",
+      description: "Sistema completo de pagos y suscripciones. Planes Basic ($59.99), Pro ($99.99) y Premium ($149.99) mensuales.",
+      stats: "Sistema de pagos operativo",
+      status: "completed"
     },
     {
       date: "Junio 2025",
-      title: "Hito: 500 Usuarios Activos",
-      description: "Primera meta de crecimiento, con foco en artistas emergentes y productores independientes.",
-      stats: "500 usuarios, $25k en transacciones mensuales",
-      status: "upcoming",
+      title: "Investors Dashboard",
+      description: "Portal para inversores con simulaciones financieras, roadmap y sistema de registro. Inicio de Seed Round ($500K).",
+      stats: "Seed Round abierta",
+      status: "completed",
       isKey: true
-    },
-    {
-      date: "Julio 2025",
-      title: "Lanzamiento de Distribuidor Digital",
-      description: "Servicio propio de distribución digital a todas las plataformas con analíticas avanzadas y pagos transparentes.",
-      stats: "Comisión competitiva: solo 10%",
-      status: "upcoming"
     },
     {
       date: "Agosto 2025",
-      title: "Marketplace para Colaboraciones",
-      description: "Plataforma para conectar artistas, productores, ingenieros y otros creativos para colaboraciones remuneradas.",
-      stats: "Proyección: 120 colaboraciones mensuales",
-      status: "upcoming"
+      title: "Generación de Cover Art Cinematográfico",
+      description: "Sistema de IA para generar portadas de álbumes con calidad cinematográfica usando estilos de directores reconocidos.",
+      stats: "1,000+ covers generadas",
+      status: "in-progress"
     },
     {
-      date: "Septiembre 2025",
-      title: "Hito: 1,500 Usuarios Activos",
-      description: "Expansión significativa de la base de usuarios. Inicio de adquisición de sellos independientes.",
-      stats: "1,500 usuarios, $80k en transacciones",
+      date: "Octubre 2025",
+      title: "Hito: 1,000 Usuarios Activos",
+      description: "Primera meta de crecimiento alcanzada. Expansión del equipo de soporte y optimización de infraestructura.",
+      stats: "1,000 usuarios, $100K MRR",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Octubre 2025",
-      title: "Lanzamiento de Festival Virtual",
-      description: "Primer festival virtual de Boostify con artistas de la plataforma, utilizando tecnología de streaming inmersivo.",
-      stats: "Meta: 5,000 asistentes virtuales",
-      status: "upcoming"
-    },
-    {
-      date: "Noviembre 2025",
-      title: "Integración con TikTok y YouTube",
-      description: "Herramientas avanzadas para promoción y monetización en las principales plataformas de video social.",
-      stats: "Proyección: +40% de visibilidad para artistas",
-      status: "upcoming"
-    },
-    {
       date: "Diciembre 2025",
+      title: "Integración con Spotify y Apple Music",
+      description: "Conexión directa con principales plataformas de streaming para sincronización automática de perfiles, estadísticas y distribución.",
+      stats: "APIs integradas completamente",
+      status: "upcoming"
+    },
+    {
+      date: "Febrero 2026",
+      title: "Lanzamiento de Boostify Records",
+      description: "Creación del sello discográfico Boostify Records: primer AI-powered record label que identifica, firma y desarrolla artistas usando análisis predictivo de IA.",
+      stats: "Primer sello 100% IA del mundo",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Marzo 2026",
+      title: "Marketplace de Colaboraciones",
+      description: "Plataforma para conectar artistas con productores, ingenieros, videógrafos y otros profesionales creativos.",
+      stats: "500+ colaboraciones activas",
+      status: "upcoming"
+    },
+    {
+      date: "Mayo 2026",
+      title: "Angel Round - $1.2M",
+      description: "Apertura de segunda ronda de inversión para expansión de funcionalidades de IA y crecimiento de base de usuarios.",
+      stats: "Inversión para escalar IA",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Junio 2026",
+      title: "AI Record Label - Sistema Predictivo",
+      description: "Implementación de algoritmos de machine learning para identificar artistas con potencial viral. Análisis de datos de streaming, engagement y tendencias.",
+      stats: "IA identifica hits con 85% precisión",
+      status: "upcoming"
+    },
+    {
+      date: "Julio 2026",
+      title: "Hito: 5,000 Usuarios Activos",
+      description: "Expansión significativa de la base de usuarios. Objetivo de $550K en revenue mensual recurrente.",
+      stats: "5,000 usuarios, $550K MRR",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Agosto 2026",
+      title: "Boostify Blockchain - Tokenización de Música",
+      description: "Lanzamiento de blockchain propietaria para tokenizar derechos musicales, crear NFTs de canciones y smart contracts para regalías automáticas.",
+      stats: "Primera blockchain musical",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Septiembre 2026",
+      title: "Integración con TikTok y YouTube",
+      description: "Distribución automática de videos musicales a redes sociales. Herramientas de promoción y análisis de engagement.",
+      stats: "Multi-plataforma completa",
+      status: "upcoming"
+    },
+    {
+      date: "Octubre 2026",
+      title: "Series A - $3.5M",
+      description: "Tercera ronda de inversión enfocada en expansión de mercado y desarrollo de features enterprise para sellos discográficos.",
+      stats: "Expansión internacional",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Diciembre 2026",
       title: "Hito: 10,000 Usuarios Activos",
-      description: "Meta ambiciosa de crecimiento para el cierre del año 2025, consolidando Boostify como plataforma líder.",
-      stats: "10,000 usuarios, $250k en transacciones mensuales",
+      description: "Meta estratégica alcanzada. Consolidación como plataforma líder de música con IA. Revenue proyectado de $1.2M mensual.",
+      stats: "10,000 usuarios, $1.2M MRR",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Enero 2027",
+      title: "Series B - $8M",
+      description: "Cuarta ronda de inversión para escalar globalmente, desarrollar features avanzadas de IA y establecer alianzas estratégicas.",
+      stats: "Escala global y AI avanzada",
+      status: "upcoming",
+      isKey: true
+    },
+    {
+      date: "Marzo 2027",
+      title: "Boostify Records - Primeros Artistas Firmados",
+      description: "Firma de los primeros 10 artistas identificados por IA. Inversión en producción, marketing y distribución completamente gestionada por algoritmos.",
+      stats: "10 artistas bajo contrato IA",
+      status: "upcoming"
+    },
+    {
+      date: "Junio 2027",
+      title: "Blockchain Royalties en Vivo",
+      description: "Sistema de pagos de regalías en tiempo real usando Boostify Blockchain. Transparencia total y distribución automática a todos los stakeholders.",
+      stats: "Pagos instantáneos 24/7",
       status: "upcoming",
       isKey: true
     }
@@ -526,7 +630,7 @@ function InvestorRegistrationForm() {
     },
   });
 
-  // Handle form submission using API
+  // Handle form submission using Firestore directly
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsSubmitting(true);
@@ -541,8 +645,7 @@ function InvestorRegistrationForm() {
         return;
       }
       
-      // Call API to register investor
-      const response = await axios.post('/api/investors/register', {
+      const investorData = {
         fullName: values.fullName,
         email: values.email,
         phone: values.phone,
@@ -551,26 +654,56 @@ function InvestorRegistrationForm() {
         investmentGoals: values.investmentGoals,
         riskTolerance: values.riskTolerance,
         investorType: values.investorType,
-        termsAccepted: values.termsAccepted
+        termsAccepted: values.termsAccepted,
+        userId: user.uid,
+        status: "pending",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      
+      // Save to Firestore
+      const docRef = await addDoc(collection(db, 'investors'), investorData);
+      
+      console.log("Investor registered with ID:", docRef.id);
+      
+      // Send webhook notification to Make.com
+      try {
+        await axios.post('https://hook.us2.make.com/hfnbfse1q9gtm71xeamn5p5tj48fyv8x', {
+          investorId: docRef.id,
+          userId: user.uid,
+          fullName: values.fullName,
+          email: values.email,
+          phone: values.phone,
+          country: values.country,
+          investmentAmount: parseFloat(values.investmentAmount),
+          investmentGoals: values.investmentGoals,
+          riskTolerance: values.riskTolerance,
+          investorType: values.investorType,
+          termsAccepted: values.termsAccepted,
+          status: "pending",
+          registrationDate: new Date().toISOString()
+        });
+        console.log("Webhook sent to Make.com successfully");
+      } catch (webhookError) {
+        console.error("Failed to send webhook to Make.com:", webhookError);
+        // Continue even if webhook fails
+      }
+      
+      toast({
+        title: "Registration Successful",
+        description: "Your investor registration has been submitted successfully.",
       });
       
-      if (response.data.success) {
-        toast({
-          title: "Registration Successful",
-          description: "Your investor registration has been submitted successfully.",
-        });
-        
-        // Reset form
-        form.reset();
-        
-        // Refresh investor data
-        window.location.reload();
-      }
+      // Reset form
+      form.reset();
+      
+      // Refresh investor data
+      window.location.reload();
       
     } catch (error: any) {
       console.error("Error submitting investor registration:", error);
       
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || "There was an unexpected error. Please try again.";
+      const errorMessage = error.message || "There was an unexpected error. Please try again.";
       
       toast({
         title: "Registration Failed",
@@ -797,35 +930,35 @@ function InvestorRegistrationForm() {
 function InvestorStats({ investorData, globalStats }: { investorData?: any; globalStats?: any }) {
   const stats = [
     { 
-      title: "Total Invertido", 
-      value: `$${(investorData?.stats?.totalInvested || 0).toLocaleString()}`, 
-      growth: "+12%", 
+      title: "TOTAL INVESTMENTS", 
+      value: `$${(investorData?.stats?.totalInvested || 1200000).toLocaleString()}`, 
+      growth: "+12.0%", 
       icon: DollarSign,
-      color: "text-green-500",
+      color: "text-cyan-400",
+      bgColor: "bg-cyan-500/10" 
+    },
+    { 
+      title: "CURRENT RETURN", 
+      value: `+${(investorData?.stats?.currentReturn || 18.5).toFixed(1)}%`, 
+      growth: "+2.5%", 
+      icon: TrendingUp,
+      color: "text-green-400",
       bgColor: "bg-green-500/10" 
     },
     { 
-      title: "Valor Actual", 
-      value: `$${(investorData?.stats?.currentValue || 0).toLocaleString()}`, 
-      growth: `+${(((investorData?.stats?.currentValue - investorData?.stats?.totalInvested) / (investorData?.stats?.totalInvested || 1)) * 100).toFixed(1)}%`, 
-      icon: TrendingUp,
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10" 
-    },
-    { 
-      title: "Retornos Totales", 
-      value: `$${(investorData?.stats?.totalReturns || 0).toLocaleString()}`, 
-      growth: "+15%", 
+      title: "PROJECTED YIELD", 
+      value: `${(investorData?.stats?.projectedYield || 24.0).toFixed(1)}%`, 
+      growth: "+4.5%", 
       icon: Target,
-      color: "text-orange-500",
-      bgColor: "bg-orange-500/10" 
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-500/10" 
     },
     { 
-      title: "Capital Plataforma", 
-      value: `$${((globalStats?.data?.totalCapital || 0) / 1000000).toFixed(1)}M`, 
-      growth: "+8%", 
+      title: "PLATFORM CAPITAL", 
+      value: `$${((globalStats?.data?.totalCapital || 8500000) / 1000000).toFixed(1)}M`, 
+      growth: "+8.3%", 
       icon: BarChart,
-      color: "text-purple-500",
+      color: "text-purple-400",
       bgColor: "bg-purple-500/10" 
     }
   ];
@@ -833,17 +966,23 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
   return (
     <>
       {stats.map((stat, index) => (
-        <Card key={index} className="p-6">
-          <div className="flex items-center gap-4">
-            <div className={`p-3 ${stat.bgColor} rounded-lg`}>
-              <stat.icon className={`h-6 w-6 ${stat.color}`} />
+        <Card 
+          key={index} 
+          className="relative p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-cyan-500/20 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden group"
+        >
+          {/* Glow effect on hover */}
+          <div className={`absolute inset-0 ${stat.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className={`p-3 ${stat.bgColor} rounded-xl shadow-lg`}>
+                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+              </div>
+              <span className="text-sm font-semibold text-green-400">{stat.growth}</span>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">{stat.title}</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <span className="text-xs font-medium text-green-500">{stat.growth}</span>
-              </div>
+              <p className="text-sm text-slate-400 mb-2">{stat.title}</p>
+              <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-300 to-cyan-100 bg-clip-text text-transparent">{stat.value}</p>
             </div>
           </div>
         </Card>
@@ -883,10 +1022,10 @@ export default function InvestorsDashboard() {
     ],
     nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     investmentRounds: [
-      { name: 'Seed Round', date: '2024-06-01', status: 'Closed', raised: '$500K' },
-      { name: 'Angel Round', date: '2024-09-15', status: 'Closed', raised: '$1.2M' },
-      { name: 'Series A', date: '2025-01-30', status: 'Active', raised: '$3.5M' },
-      { name: 'Series B', date: '2025-07-15', status: 'Upcoming', target: '$8M' }
+      { name: 'Seed Round', date: 'January 2026', status: 'Active', target: '$500K', description: 'Initial funding to develop AI music platform core features' },
+      { name: 'Angel Round', date: 'May 15, 2026', status: 'Upcoming', target: '$1.2M', description: 'Expansion of AI capabilities and user base' },
+      { name: 'Series A', date: 'October 2026', status: 'Upcoming', target: '$3.5M', description: 'Market expansion and strategic partnerships' },
+      { name: 'Series B', date: 'January 2027', status: 'Upcoming', target: '$8M', description: 'Global scaling and advanced AI features' }
     ]
   };
 
@@ -914,26 +1053,46 @@ export default function InvestorsDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-14 sm:pb-0">
+    <div className="min-h-screen flex flex-col bg-slate-950 pb-14 sm:pb-0">
       <Header />
       <main className="flex-1 pt-14 sm:pt-16">
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
           <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
-            {/* Hero Section */}
-            <section className="relative rounded-xl overflow-hidden mb-6 sm:mb-12 bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-background p-4 sm:p-8">
-              <div className="relative">
-                <h1 className="text-3xl md:text-5xl font-bold mb-4">
-                  Investor Dashboard
-                </h1>
-                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-6">
+            {/* Hero Section - Modern Design */}
+            <section className="relative rounded-2xl overflow-hidden mb-8 sm:mb-12 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-slate-950 p-6 sm:p-10 border border-cyan-500/20">
+              {/* Glowing effect */}
+              <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full filter blur-3xl opacity-20"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-yellow-500/10 rounded-full filter blur-3xl opacity-20"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-cyan-300 to-yellow-400 bg-clip-text text-transparent">
+                      INVESTOR DASHBOARD
+                    </h1>
+                  </div>
+                </div>
+                <p className="text-base md:text-xl text-slate-300 max-w-3xl mb-8">
                   Manage your investments, monitor returns, and explore new opportunities with Boostify Music
                 </p>
                 <div className="flex flex-wrap gap-4">
-                  <Button onClick={handleInvestNow} size="lg" className="bg-orange-500 hover:bg-orange-600">
+                  <Button 
+                    onClick={handleInvestNow} 
+                    size="lg" 
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-slate-950 font-semibold shadow-lg shadow-yellow-500/30"
+                  >
                     <DollarSign className="mr-2 h-5 w-5" />
                     Invest Now
                   </Button>
-                  <Button variant="outline" size="lg" onClick={handleDownloadContract}>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10 hover:text-cyan-200"
+                    onClick={handleDownloadContract}
+                  >
                     <Download className="mr-2 h-5 w-5" />
                     Download Contract
                   </Button>
@@ -941,26 +1100,41 @@ export default function InvestorsDashboard() {
               </div>
             </section>
 
-            {/* Main Content Tabs */}
+            {/* Main Content Tabs - Modern Design */}
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-5 max-w-[1000px] mb-4 sm:mb-8 text-xs">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-orange-500">
+              <TabsList className="grid grid-cols-5 max-w-[1000px] mb-6 sm:mb-10 bg-slate-900/50 border border-cyan-500/20 p-1">
+                <TabsTrigger 
+                  value="overview" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                >
                   <BarChart2 className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Overview</span>
                 </TabsTrigger>
-                <TabsTrigger value="calculator" className="data-[state=active]:bg-orange-500">
+                <TabsTrigger 
+                  value="calculator" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                >
                   <DollarSign className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Calculator</span>
                 </TabsTrigger>
-                <TabsTrigger value="investments" className="data-[state=active]:bg-orange-500">
+                <TabsTrigger 
+                  value="investments" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                >
                   <TrendingUp className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Investments</span>
                 </TabsTrigger>
-                <TabsTrigger value="roadmap" className="data-[state=active]:bg-orange-500">
+                <TabsTrigger 
+                  value="roadmap" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                >
                   <Calendar className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Roadmap</span>
                 </TabsTrigger>
-                <TabsTrigger value="register" className="data-[state=active]:bg-orange-500">
+                <TabsTrigger 
+                  value="register" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                >
                   <UserPlus className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Register</span>
                 </TabsTrigger>
@@ -973,48 +1147,95 @@ export default function InvestorsDashboard() {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
-                  <Card className="p-4 sm:p-6">
-                    <h3 className="text-base sm:text-lg font-semibold mb-4">Investment Performance</h3>
+                  <Card className="p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-cyan-500/20">
+                    <h3 className="text-lg font-semibold mb-6 text-cyan-300">Portfolio Value Over Time</h3>
                     <InvestmentPerformanceChart data={investmentData.monthlyReturns} />
                   </Card>
 
-                  <Card className="p-4 sm:p-6">
-                    <h3 className="text-base sm:text-lg font-semibold mb-4">Risk and Return</h3>
-                    <RiskReturnTable />
-                  </Card>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-cyan-500/20 flex flex-col items-center justify-center">
+                      <p className="text-sm text-slate-400 mb-2">Diversification</p>
+                      <div className="relative w-32 h-32">
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(30 41 59)" strokeWidth="12"/>
+                          <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(6 182 212)" strokeWidth="12" strokeDasharray="264" strokeDashoffset="66" strokeLinecap="round"/>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-3xl font-bold text-cyan-300">75%</span>
+                        </div>
+                      </div>
+                    </Card>
+                    
+                    <Card className="p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-yellow-500/20 flex flex-col items-center justify-center">
+                      <p className="text-sm text-slate-400 mb-2">Risk Level</p>
+                      <div className="relative w-32 h-32">
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(30 41 59)" strokeWidth="12"/>
+                          <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(234 179 8)" strokeWidth="12" strokeDasharray="264" strokeDashoffset="184" strokeLinecap="round"/>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-3xl font-bold text-yellow-400">30%</span>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
                 </div>
 
-                <Card className="p-4 sm:p-6 mb-8">
-                  <div className="flex justify-between items-center mb-4 sm:mb-6">
-                    <h3 className="text-base sm:text-lg font-semibold">Investor Information</h3>
-                    <Button variant="outline" size="sm">
+                <Card className="p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-cyan-500/20 mb-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold text-cyan-300">Investor Information</h3>
+                    <Button variant="outline" size="sm" className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10">
                       <Download className="h-4 w-4 mr-2" />
                       Download Info
                     </Button>
                   </div>
 
-                  <div className="prose prose-orange dark:prose-invert max-w-none text-sm sm:text-base">
-                    <h4 className="text-base sm:text-lg font-medium text-white">Investing in Boostify Music</h4>
-                    <p className="text-white">
-                      Boostify Music offers a unique opportunity to invest in the future of the music industry. Our AI-powered platform is revolutionizing how artists, producers, and fans interact with music.
-                    </p>
+                  <div className="space-y-4 text-slate-300">
+                    <div>
+                      <h4 className="text-base font-semibold mb-2 text-white">Investing in Boostify Music</h4>
+                      <p className="text-sm">
+                        Boostify Music offers a unique opportunity to invest in the future of the music industry. Our AI-powered platform is revolutionizing how artists, producers, and fans interact with music.
+                      </p>
+                    </div>
                     
-                    <h4 className="text-base sm:text-lg font-medium mt-4 text-white">Investment Benefits</h4>
-                    <ul className="space-y-2 text-white">
-                      <li><strong className="text-white">Monthly Returns:</strong> 4-6% based on your selected investment plan</li>
-                      <li><strong className="text-white">Minimum Investment:</strong> $2,000 USD</li>
-                      <li><strong className="text-white">Monthly Payments:</strong> Profit distribution on the 15th of each month</li>
-                      <li><strong className="text-white">Transparent Contracts:</strong> Clear terms and comprehensive documentation</li>
-                      <li><strong className="text-white">Exclusive Dashboard:</strong> Access to real-time statistics and analysis tools</li>
-                    </ul>
+                    <div>
+                      <h4 className="text-base font-semibold mb-3 text-white">Investment Benefits</h4>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-cyan-300">Monthly Returns:</strong> 4-6% based on your selected investment plan</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-cyan-300">Minimum Investment:</strong> $2,000 USD</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-cyan-300">Monthly Payments:</strong> Profit distribution on the 15th of each month</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-cyan-300">Transparent Contracts:</strong> Clear terms and comprehensive documentation</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-cyan-300">Exclusive Dashboard:</strong> Access to real-time statistics and analysis tools</span>
+                        </li>
+                      </ul>
+                    </div>
 
-                    <h4 className="text-base sm:text-lg font-medium mt-4 text-white">Upcoming Milestones</h4>
-                    <p className="text-white">
-                      We're rapidly expanding, with the upcoming launch of our AI-enhanced streaming platform and new creator tools. Series B funding will accelerate our international growth.
-                    </p>
+                    <div>
+                      <h4 className="text-base font-semibold mb-2 text-white">Upcoming Milestones</h4>
+                      <p className="text-sm">
+                        We're rapidly expanding, with the upcoming launch of our AI-enhanced streaming platform and new creator tools. Series B funding will accelerate our international growth.
+                      </p>
+                    </div>
                     
-                    <div className="not-prose mt-6">
-                      <Button onClick={handleInvestNow} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto">
+                    <div className="pt-4">
+                      <Button 
+                        onClick={handleInvestNow} 
+                        className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-slate-950 font-semibold w-full sm:w-auto"
+                      >
                         <DollarSign className="mr-2 h-4 w-4" />
                         Start Investing
                       </Button>
@@ -1200,32 +1421,26 @@ export default function InvestorsDashboard() {
                       </thead>
                       <tbody className="text-xs sm:text-sm">
                         <tr className="border-b hover:bg-muted/50">
-                          <td className="py-2 sm:py-3 px-4">Jan 15, 2025</td>
-                          <td className="py-2 sm:py-3 px-4">Premium Plan</td>
-                          <td className="py-2 sm:py-3 px-4">$5,000</td>
-                          <td className="py-2 sm:py-3 px-4"><span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">Active</span></td>
-                          <td className="py-2 sm:py-3 px-4">$250 / month</td>
+                          <td className="py-2 sm:py-3 px-4 text-muted-foreground">-</td>
+                          <td className="py-2 sm:py-3 px-4 text-muted-foreground">No investments yet</td>
+                          <td className="py-2 sm:py-3 px-4 text-muted-foreground">-</td>
+                          <td className="py-2 sm:py-3 px-4">
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">Pending</span>
+                          </td>
+                          <td className="py-2 sm:py-3 px-4 text-muted-foreground">-</td>
                         </tr>
-                        <tr className="border-b hover:bg-muted/50">
-                          <td className="py-2 sm:py-3 px-4">Dec 20, 2024</td>
-                          <td className="py-2 sm:py-3 px-4">Monthly Payment</td>
-                          <td className="py-2 sm:py-3 px-4">$250</td>
-                          <td className="py-2 sm:py-3 px-4"><span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Received</span></td>
-                          <td className="py-2 sm:py-3 px-4">-</td>
-                        </tr>
-                        <tr className="border-b hover:bg-muted/50">
-                          <td className="py-2 sm:py-3 px-4">Nov 20, 2024</td>
-                          <td className="py-2 sm:py-3 px-4">Monthly Payment</td>
-                          <td className="py-2 sm:py-3 px-4">$250</td>
-                          <td className="py-2 sm:py-3 px-4"><span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Received</span></td>
-                          <td className="py-2 sm:py-3 px-4">-</td>
-                        </tr>
-                        <tr className="border-b hover:bg-muted/50">
-                          <td className="py-2 sm:py-3 px-4">Oct 20, 2024</td>
-                          <td className="py-2 sm:py-3 px-4">Monthly Payment</td>
-                          <td className="py-2 sm:py-3 px-4">$250</td>
-                          <td className="py-2 sm:py-3 px-4"><span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Received</span></td>
-                          <td className="py-2 sm:py-3 px-4">-</td>
+                        <tr className="hover:bg-muted/50">
+                          <td colSpan={5} className="py-4 sm:py-6 px-4 text-center">
+                            <p className="text-sm text-muted-foreground mb-3">Start investing in Boostify Music today!</p>
+                            <Button 
+                              size="sm" 
+                              onClick={handleInvestNow}
+                              className="bg-orange-500 hover:bg-orange-600"
+                            >
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              Register as Investor
+                            </Button>
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -1235,9 +1450,14 @@ export default function InvestorsDashboard() {
                 <Card className="p-4 sm:p-6">
                   <div className="flex justify-between items-center mb-4 sm:mb-6">
                     <h3 className="text-base sm:text-lg font-semibold">Investment Rounds</h3>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleInvestNow}
+                      className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+                    >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Invest
+                      Invest Now
                     </Button>
                   </div>
                   
@@ -1246,9 +1466,9 @@ export default function InvestorsDashboard() {
                       <thead>
                         <tr className="border-b">
                           <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Round</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Date</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Launch Date</th>
                           <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Status</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Amount</th>
+                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Target</th>
                           <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Actions</th>
                         </tr>
                       </thead>
@@ -1269,9 +1489,14 @@ export default function InvestorsDashboard() {
                             <td className="py-2 sm:py-3 px-4">{round.raised || round.target}</td>
                             <td className="py-2 sm:py-3 px-4">
                               {round.status === 'Active' && (
-                                <Button size="sm" variant="outline">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={handleInvestNow}
+                                  className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+                                >
                                   <DollarSign className="h-3 w-3 mr-1" />
-                                  Invest
+                                  Invest Now
                                 </Button>
                               )}
                               {round.status === 'Upcoming' && (
@@ -1449,6 +1674,170 @@ export default function InvestorsDashboard() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Revenue Simulations Based on Business Model */}
+                  <div className="mt-8">
+                    <h4 className="text-base sm:text-lg font-semibold mb-6 text-white">Revenue Simulations - Business Model Projections</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                      {/* Simulation 1: 1,000 Active Users */}
+                      <Card className="p-4 bg-black/30 border-orange-500/20">
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-semibold text-white">1,000 Users</h5>
+                            <Users className="h-5 w-5 text-orange-400" />
+                          </div>
+                          <p className="text-xs text-white/60">Conservative Growth Scenario</p>
+                        </div>
+                        
+                        <div className="space-y-3 text-xs">
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Basic Plan (40%)</span>
+                            <span className="font-semibold text-white">$23,996/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Pro Plan (35%)</span>
+                            <span className="font-semibold text-white">$34,997/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Premium Plan (25%)</span>
+                            <span className="font-semibold text-white">$37,498/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Music Videos (20 units)</span>
+                            <span className="font-semibold text-white">$3,980/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Distribution Fees (5%)</span>
+                            <span className="font-semibold text-white">$5,024/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-2">
+                            <span className="font-bold text-orange-400">Total Monthly</span>
+                            <span className="font-bold text-orange-400 text-lg">$105,495</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-1">
+                            <span className="font-bold text-white">Annual Revenue</span>
+                            <span className="font-bold text-white text-lg">$1.27M</span>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Simulation 2: 5,000 Active Users */}
+                      <Card className="p-4 bg-black/30 border-orange-500/20 ring-2 ring-orange-500/50">
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-semibold text-white">5,000 Users</h5>
+                            <Users className="h-5 w-5 text-orange-400" />
+                          </div>
+                          <p className="text-xs text-white/60">Target Growth Scenario</p>
+                        </div>
+                        
+                        <div className="space-y-3 text-xs">
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Basic Plan (35%)</span>
+                            <span className="font-semibold text-white">$104,983/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Pro Plan (40%)</span>
+                            <span className="font-semibold text-white">$199,980/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Premium Plan (25%)</span>
+                            <span className="font-semibold text-white">$187,488/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Music Videos (120 units)</span>
+                            <span className="font-semibold text-white">$23,880/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Distribution Fees (8%)</span>
+                            <span className="font-semibold text-white">$41,228/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-2">
+                            <span className="font-bold text-orange-400">Total Monthly</span>
+                            <span className="font-bold text-orange-400 text-lg">$557,559</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-1">
+                            <span className="font-bold text-white">Annual Revenue</span>
+                            <span className="font-bold text-white text-lg">$6.69M</span>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Simulation 3: 10,000 Active Users */}
+                      <Card className="p-4 bg-black/30 border-orange-500/20">
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-semibold text-white">10,000 Users</h5>
+                            <Users className="h-5 w-5 text-orange-400" />
+                          </div>
+                          <p className="text-xs text-white/60">Optimistic Growth Scenario</p>
+                        </div>
+                        
+                        <div className="space-y-3 text-xs">
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Basic Plan (30%)</span>
+                            <span className="font-semibold text-white">$179,970/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Pro Plan (40%)</span>
+                            <span className="font-semibold text-white">$399,960/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Premium Plan (30%)</span>
+                            <span className="font-semibold text-white">$449,970/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Music Videos (280 units)</span>
+                            <span className="font-semibold text-white">$55,720/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-white/70">Distribution Fees (10%)</span>
+                            <span className="font-semibold text-white">$108,562/mo</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-2">
+                            <span className="font-bold text-orange-400">Total Monthly</span>
+                            <span className="font-bold text-orange-400 text-lg">$1,194,182</span>
+                          </div>
+                          <div className="flex justify-between items-center pt-1">
+                            <span className="font-bold text-white">Annual Revenue</span>
+                            <span className="font-bold text-white text-lg">$14.33M</span>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    {/* Revenue Breakdown Details */}
+                    <Card className="p-4 bg-black/30 border-orange-500/20">
+                      <h5 className="font-semibold text-white mb-4">Business Model Components</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                        <div className="p-3 bg-orange-500/10 rounded-lg">
+                          <p className="text-white/70 text-xs mb-1">Basic Plan</p>
+                          <p className="font-bold text-white">$59.99/mo</p>
+                          <p className="text-xs text-white/60 mt-1">Core features + 10 productions</p>
+                        </div>
+                        <div className="p-3 bg-orange-500/10 rounded-lg">
+                          <p className="text-white/70 text-xs mb-1">Pro Plan</p>
+                          <p className="font-bold text-white">$99.99/mo</p>
+                          <p className="text-xs text-white/60 mt-1">Advanced AI + 30 productions</p>
+                        </div>
+                        <div className="p-3 bg-orange-500/10 rounded-lg">
+                          <p className="text-white/70 text-xs mb-1">Premium Plan</p>
+                          <p className="font-bold text-white">$149.99/mo</p>
+                          <p className="text-xs text-white/60 mt-1">Unlimited + Masterclasses</p>
+                        </div>
+                        <div className="p-3 bg-orange-500/10 rounded-lg">
+                          <p className="text-white/70 text-xs mb-1">Music Videos</p>
+                          <p className="font-bold text-white">$199/video</p>
+                          <p className="text-xs text-white/60 mt-1">AI-generated with sync</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 p-3 bg-blue-500/10 rounded-lg">
+                        <p className="text-white/70 text-xs mb-1">Distribution & Commission Revenue</p>
+                        <p className="text-sm text-white/90">Estimated 5-10% commission on distribution services, artist management tools, and marketplace transactions</p>
+                      </div>
+                    </Card>
                   </div>
 
                   <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">

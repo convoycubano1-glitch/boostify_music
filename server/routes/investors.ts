@@ -1,8 +1,6 @@
 import { Router, Request } from 'express';
-import { db } from '../db';
-import { investors } from '../db/schema';
-import { insertInvestorSchema } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { db } from '../firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import Stripe from 'stripe';
 import axios from 'axios';
@@ -28,6 +26,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 // Make.com webhook URL
 const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/hfnbfse1q9gtm71xeamn5p5tj48fyv8x';
 
+// Validation schema for investor registration
+const investorSchema = z.object({
+  fullName: z.string().min(2, { message: "Full name is required" }),
+  email: z.string().email({ message: "Valid email is required" }),
+  phone: z.string().min(1, { message: "Phone is required" }),
+  country: z.string().min(2, { message: "Country is required" }),
+  investmentAmount: z.number().min(1, { message: "Investment amount is required" }),
+  investorType: z.enum(["individual", "corporate", "institutional"]),
+  riskTolerance: z.enum(["low", "medium", "high"]),
+  investmentGoals: z.string().min(1, { message: "Investment goals are required" }),
+  termsAccepted: z.boolean().refine(val => val === true, {
+    message: "You must accept the terms and conditions"
+  })
+});
+
 // Route to register a new investor
 router.post('/register', async (req: AuthRequest, res) => {
   if (!req.isAuthenticated()) {
@@ -36,10 +49,7 @@ router.post('/register', async (req: AuthRequest, res) => {
   
   try {
     // Validate the request body
-    const validationResult = insertInvestorSchema.safeParse({
-      ...req.body,
-      userId: req.user.id
-    });
+    const validationResult = investorSchema.safeParse(req.body);
     
     if (!validationResult.success) {
       return res.status(400).json({ 
@@ -48,30 +58,35 @@ router.post('/register', async (req: AuthRequest, res) => {
       });
     }
     
-    // Insert into PostgreSQL database
-    const [newInvestor] = await db
-      .insert(investors)
-      .values(validationResult.data)
-      .returning();
+    const investorData = {
+      ...validationResult.data,
+      userId: req.user.uid,
+      status: "pending",
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp()
+    };
     
-    console.log("New investor registered with ID:", newInvestor.id);
+    // Save to Firestore
+    const docRef = await db.collection('investors').add(investorData);
+    
+    console.log("New investor registered with ID:", docRef.id);
     
     // Send data to Make.com webhook
     try {
       await axios.post(MAKE_WEBHOOK_URL, {
-        investorId: newInvestor.id,
-        userId: req.user.id,
-        fullName: newInvestor.fullName,
-        email: newInvestor.email,
-        phone: newInvestor.phone,
-        country: newInvestor.country,
-        investmentAmount: newInvestor.investmentAmount,
-        investmentGoals: newInvestor.investmentGoals,
-        riskTolerance: newInvestor.riskTolerance,
-        investorType: newInvestor.investorType,
-        termsAccepted: newInvestor.termsAccepted,
-        status: newInvestor.status,
-        registrationDate: newInvestor.createdAt
+        investorId: docRef.id,
+        userId: req.user.uid,
+        fullName: validationResult.data.fullName,
+        email: validationResult.data.email,
+        phone: validationResult.data.phone,
+        country: validationResult.data.country,
+        investmentAmount: validationResult.data.investmentAmount,
+        investmentGoals: validationResult.data.investmentGoals,
+        riskTolerance: validationResult.data.riskTolerance,
+        investorType: validationResult.data.investorType,
+        termsAccepted: validationResult.data.termsAccepted,
+        status: "pending",
+        registrationDate: new Date().toISOString()
       }, {
         headers: {
           'Content-Type': 'application/json'
@@ -86,7 +101,7 @@ router.post('/register', async (req: AuthRequest, res) => {
     return res.status(201).json({ 
       success: true, 
       message: 'Investor registration successful',
-      id: newInvestor.id
+      id: docRef.id
     });
     
   } catch (error: any) {
@@ -108,15 +123,14 @@ router.get('/me', async (req: AuthRequest, res) => {
   }
   
   try {
-    const userId = req.user.id;
+    const userId = req.user.uid;
 
-    const [investor] = await db
-      .select()
-      .from(investors)
-      .where(eq(investors.userId, userId))
-      .limit(1);
+    const investorSnapshot = await db.collection('investors')
+      .where('userId', '==', userId)
+      .limit(1)
+      .get();
 
-    if (!investor) {
+    if (investorSnapshot.empty) {
       return res.status(404).json({ 
         success: false, 
         message: 'Inversor no encontrado',
@@ -124,11 +138,38 @@ router.get('/me', async (req: AuthRequest, res) => {
       });
     }
 
+    const investorDoc = investorSnapshot.docs[0];
+    const investorData = investorDoc.data();
+
+    // Get investor's investments
+    const investmentsSnapshot = await db.collection('investments')
+      .where('investorId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const investments = investmentsSnapshot.docs.map((doc: any) => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Calculate stats
+    const totalInvested = investments.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
+    const totalReturns = investments.reduce((sum: number, inv: any) => sum + (inv.totalReturns || 0), 0);
+    const currentValue = totalInvested + totalReturns;
+
     return res.status(200).json({
       success: true,
       data: {
-        ...investor,
-        registered: true
+        id: investorDoc.id,
+        ...investorData,
+        registered: true,
+        stats: {
+          totalInvested,
+          totalReturns,
+          currentValue,
+          investmentCount: investments.length
+        },
+        investments
       }
     });
 
@@ -151,24 +192,25 @@ router.post('/investment/create-checkout', async (req: AuthRequest, res) => {
   }
   
   try {
-    const userId = req.user.id;
+    const userId = req.user.uid;
     const { amount, planType, duration } = req.body;
 
     // Validate investor is registered
-    const [investor] = await db
-      .select()
-      .from(investors)
-      .where(eq(investors.userId, userId))
-      .limit(1);
+    const investorSnapshot = await db.collection('investors')
+      .where('userId', '==', userId)
+      .limit(1)
+      .get();
 
-    if (!investor) {
+    if (investorSnapshot.empty) {
       return res.status(403).json({ 
         success: false, 
         message: 'Debes registrarte como inversor primero' 
       });
     }
 
-    if (investor.status !== 'approved' && investor.status !== 'pending') {
+    const investorData = investorSnapshot.docs[0].data();
+
+    if (investorData?.status !== 'approved' && investorData?.status !== 'pending') {
       return res.status(403).json({ 
         success: false, 
         message: 'Tu cuenta de inversor está pendiente de aprobación' 
@@ -208,8 +250,8 @@ router.post('/investment/create-checkout', async (req: AuthRequest, res) => {
       success_url: `${req.headers.origin || 'http://localhost:5000'}/investors-dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
       cancel_url: `${req.headers.origin || 'http://localhost:5000'}/investors-dashboard?canceled=true`,
       metadata: {
-        userId: userId.toString(),
-        investorId: investor.id.toString(),
+        userId,
+        investorId: userId,
         amount: amount.toString(),
         planType: planType || 'standard',
         duration: (duration || 12).toString(),
@@ -239,25 +281,32 @@ router.post('/investment/create-checkout', async (req: AuthRequest, res) => {
  */
 router.get('/stats', async (req, res) => {
   try {
-    const allInvestors = await db
-      .select()
-      .from(investors);
+    const investmentsSnapshot = await db.collection('investments')
+      .where('status', '==', 'active')
+      .get();
 
-    const totalInvestors = allInvestors.length;
-    const totalCapital = allInvestors.reduce((sum, inv) => {
-      const amount = typeof inv.investmentAmount === 'string' 
-        ? parseFloat(inv.investmentAmount) 
-        : Number(inv.investmentAmount);
-      return sum + (amount || 0);
+    const totalInvestments = investmentsSnapshot.size;
+    const totalCapital = investmentsSnapshot.docs.reduce((sum: number, doc: any) => {
+      const data = doc.data();
+      return sum + (data.amount || 0);
     }, 0);
+
+    const totalReturns = investmentsSnapshot.docs.reduce((sum: number, doc: any) => {
+      const data = doc.data();
+      return sum + (data.totalReturns || 0);
+    }, 0);
+
+    const investorsSnapshot = await db.collection('investors').get();
+    const totalInvestors = investorsSnapshot.size;
 
     return res.status(200).json({
       success: true,
       data: {
+        totalInvestments,
         totalInvestors,
         totalCapital,
-        pendingInvestors: allInvestors.filter(inv => inv.status === 'pending').length,
-        approvedInvestors: allInvestors.filter(inv => inv.status === 'approved').length
+        totalReturns,
+        currentValue: totalCapital + totalReturns
       }
     });
 

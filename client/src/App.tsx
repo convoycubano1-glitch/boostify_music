@@ -18,7 +18,6 @@ import AIAgentsPage from "./pages/ai-agents";
 import AIAdvisorsPage from "./pages/ai-advisors";
 import AIAdvisorsPageV2 from "./pages/ai-advisors-v2";
 import AnalyticsPage from "./pages/analytics";
-import AnalyticsDashboardPage from "./pages/analytics-dashboard";
 import ArtistDashboard from "./pages/artist-dashboard";
 import ArtistImageAdvisor from "./pages/artist-image-advisor";
 import ArtistImageAdvisorImproved from "./pages/artist-image-advisor-improved";
@@ -211,7 +210,6 @@ const Router = () => {
   const WrappedNewsPage = withPageWrapper(NewsPage);
   const WrappedEventsPage = withPageWrapper(EventsPage);
   const WrappedAnalyticsPage = withPageWrapper(AnalyticsPage);
-  const WrappedAnalyticsDashboardPage = withPageWrapper(AnalyticsDashboardPage);
   const WrappedGlobalPage = withPageWrapper(GlobalPage);
   const WrappedVideosPage = withPageWrapper(VideosPage);
   const WrappedBlogPage = withPageWrapper(BlogPage);
@@ -326,7 +324,6 @@ const Router = () => {
         
         {/* Rutas para suscripción PRO ($99.99) */}
         {getRouteComponent("/analytics", WrappedAnalyticsPage, 'pro')}
-        {getRouteComponent("/analytics-dashboard", WrappedAnalyticsDashboardPage, 'pro')}
         {getRouteComponent("/global", WrappedGlobalPage, 'pro')}
         {getRouteComponent("/promotion", WrappedPromotionPage, 'pro')}
         {getRouteComponent("/youtube-views", WrappedYoutubeViewsPage, 'pro')}

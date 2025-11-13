@@ -83,8 +83,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/analytics-dashboard" className="hover:text-orange-500 transition-colors">
-                  Analytics Dashboard
+                <Link href="/admin" className="hover:text-orange-500 transition-colors">
+                  Admin Dashboard
                 </Link>
               </li>
               <li>
