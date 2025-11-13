@@ -379,6 +379,11 @@ export function MusicVideoAI() {
   const [projectName, setProjectName] = useState<string>("Untitled Project");
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
   const [isSavingProject, setIsSavingProject] = useState(false);
+  
+  // Estados para auto-guardado y mejoras de flujo
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
 
   // Estados para generación de videos
   const [selectedVideoModel, setSelectedVideoModel] = useState<string>(FAL_VIDEO_MODELS.KLING_2_1_PRO_I2V.id);
@@ -2459,6 +2464,126 @@ ${transcription}`;
       });
     }
   };
+
+  /**
+   * Auto-guardado silencioso (sin toast)
+   */
+  const handleAutoSave = useCallback(async () => {
+    if (!user?.uid || !projectName.trim() || !hasUnsavedChanges || !autoSaveEnabled) {
+      return;
+    }
+
+    console.log('🔄 Auto-guardando proyecto...');
+    
+    try {
+      const imagesGenerated = timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length;
+      const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
+      
+      const result = await musicVideoProjectServicePostgres.saveProject({
+        userId: user.uid,
+        projectName,
+        audioUrl: audioUrl || undefined,
+        audioDuration: audioBuffer?.duration,
+        transcription: transcription || undefined,
+        scriptContent: scriptContent || undefined,
+        timelineItems,
+        selectedDirector: videoStyle.selectedDirector ? {
+          id: videoStyle.selectedDirector.id || '',
+          name: videoStyle.selectedDirector.name || '',
+          specialty: videoStyle.selectedDirector.specialty || '',
+          style: videoStyle.selectedDirector.style || '',
+          experience: videoStyle.selectedDirector.experience || ''
+        } : undefined,
+        videoStyle: {
+          cameraFormat: videoStyle.cameraFormat,
+          mood: videoStyle.mood,
+          characterStyle: videoStyle.characterStyle,
+          colorPalette: videoStyle.colorPalette,
+          visualIntensity: videoStyle.visualIntensity,
+          narrativeIntensity: videoStyle.narrativeIntensity,
+          selectedDirector: videoStyle.selectedDirector
+        },
+        artistReferenceImages,
+        selectedEditingStyle: {
+          id: selectedEditingStyle.id,
+          name: selectedEditingStyle.name,
+          description: selectedEditingStyle.description,
+          duration: selectedEditingStyle.duration
+        },
+        status: videosGenerated === timelineItems.length && timelineItems.length > 0 ? "completed" : 
+                imagesGenerated > 0 ? "generating_images" :
+                scriptContent ? "generating_script" : "draft",
+        progress: {
+          scriptGenerated: !!scriptContent,
+          imagesGenerated,
+          totalImages: timelineItems.length,
+          videosGenerated,
+          totalVideos: timelineItems.length
+        }
+      });
+
+      setCurrentProjectId(result.project.id);
+      setLastSavedAt(new Date());
+      setHasUnsavedChanges(false);
+      console.log('✅ Auto-guardado completado');
+    } catch (error) {
+      console.error('❌ Error en auto-guardado:', error);
+    }
+  }, [user, projectName, hasUnsavedChanges, autoSaveEnabled, timelineItems, audioUrl, audioBuffer, transcription, scriptContent, videoStyle, artistReferenceImages, selectedEditingStyle]);
+
+  /**
+   * Detectar cambios no guardados
+   */
+  useEffect(() => {
+    if (timelineItems.length > 0 || transcription || scriptContent) {
+      setHasUnsavedChanges(true);
+    }
+  }, [timelineItems, transcription, scriptContent]);
+
+  /**
+   * Auto-guardado cada 2 minutos
+   */
+  useEffect(() => {
+    if (!autoSaveEnabled) return;
+
+    const autoSaveInterval = setInterval(() => {
+      handleAutoSave();
+    }, 120000); // 2 minutos
+
+    return () => clearInterval(autoSaveInterval);
+  }, [handleAutoSave, autoSaveEnabled]);
+
+  /**
+   * Atajos de teclado globales
+   */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + S: Guardar
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveProject();
+      }
+      
+      // Ctrl/Cmd + O: Abrir proyecto
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        setShowLoadProjectDialog(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSaveProject]);
+
+  /**
+   * Actualizar estado de guardado cuando se guarda manualmente
+   */
+  useEffect(() => {
+    if (!isSavingProject && currentProjectId) {
+      setLastSavedAt(new Date());
+      setHasUnsavedChanges(false);
+    }
+  }, [isSavingProject, currentProjectId]);
 
   /**
    * Generar video individual para una escena
