@@ -279,7 +279,11 @@ interface Director {
   imageUrl?: string;
 }
 
-export function MusicVideoAI() {
+interface MusicVideoAIProps {
+  preSelectedDirector?: DirectorProfile | null;
+}
+
+export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -316,6 +320,39 @@ export function MusicVideoAI() {
         });
     }
   }, [showLoadProjectDialog, user, toast]);
+
+  // Pre-seleccionar director cuando viene desde DirectorsList
+  useEffect(() => {
+    if (preSelectedDirector) {
+      console.log('🎬 [DIRECTOR PRE-SELECTED]', preSelectedDirector.name);
+      
+      // Convertir DirectorProfile a Director para compatibilidad con el estado existente
+      const directorForState: Director = {
+        id: preSelectedDirector.id,
+        name: preSelectedDirector.name,
+        specialty: preSelectedDirector.specialty,
+        experience: preSelectedDirector.experience,
+        style: preSelectedDirector.visual_style.description,
+        rating: preSelectedDirector.rating,
+        imageUrl: undefined
+      };
+      
+      setVideoStyle(prev => ({
+        ...prev,
+        selectedDirector: directorForState
+      }));
+
+      // Cerrar onboarding y abrir selección de director (donde ya estará pre-seleccionado)
+      setShowOnboarding(false);
+      setShowDirectorSelection(true);
+      
+      toast({
+        title: `Director seleccionado: ${preSelectedDirector.name}`,
+        description: "Puedes continuar con el flujo de creación",
+      });
+    }
+  }, [preSelectedDirector, toast]);
+
   const [isExporting, setIsExporting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
