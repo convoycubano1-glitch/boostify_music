@@ -2,7 +2,8 @@ import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Music, Camera, Sparkles, X, Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Upload, Music, Camera, Sparkles, X, Check, Image as ImageIcon, Video, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -185,31 +186,95 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
                 exit={{ opacity: 0, x: 20 }}
                 className="space-y-6"
               >
-                <Card className="bg-orange-500/10 border-orange-500/30">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Camera className="h-6 w-6 text-orange-500 flex-shrink-0 mt-1" />
-                      <div>
-                        <h3 className="font-bold text-lg mb-2">Sube fotos del artista (mínimo 3)</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Estas fotos servirán como referencia para mantener la consistencia facial del artista en todo el video. 
-                          Mientras más fotos subas (hasta 5), mejores resultados obtendrás.
-                        </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-500" />
-                            Usa fotos claras del rostro del artista
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-500" />
-                            Diferentes ángulos y expresiones mejoran el resultado
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-500" />
-                            Buena iluminación es esencial
-                          </li>
-                        </ul>
+                {/* Header con ejemplos visuales */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card className="bg-gradient-to-br from-orange-500/20 to-pink-500/20 border-orange-500/30">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="bg-orange-500/20 p-3 rounded-lg">
+                          <Camera className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg mb-2">Fotos del Artista</h3>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Sube 3-5 fotos claras del rostro para entrenar a la IA
+                          </p>
+                          <div className="flex gap-2">
+                            <Badge className="bg-orange-500/20 text-orange-500 border-orange-500/30">
+                              Mínimo 3 fotos
+                            </Badge>
+                            <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
+                              Máx 5 fotos
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 border-blue-500/30">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="bg-blue-500/20 p-3 rounded-lg">
+                          <Sparkles className="h-6 w-6 text-blue-500" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg mb-2">Resultados IA</h3>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Generamos escenas únicas sincronizadas con tu música
+                          </p>
+                          <div className="flex gap-2">
+                            <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">
+                              <Video className="h-3 w-3 mr-1" />
+                              4K Quality
+                            </Badge>
+                            <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/30">
+                              <Zap className="h-3 w-3 mr-1" />
+                              Auto-sync
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Ejemplos visuales con placeholders */}
+                <Card className="bg-muted/50 border-dashed">
+                  <CardContent className="p-6">
+                    <h4 className="font-semibold mb-4 flex items-center gap-2">
+                      <ImageIcon className="h-5 w-5 text-orange-500" />
+                      Ejemplos de Fotos Ideales
+                    </h4>
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                      {[
+                        { label: "Frontal", seed: "frontal-portrait" },
+                        { label: "Perfil", seed: "side-profile" },
+                        { label: "Sonriendo", seed: "smiling-portrait" },
+                        { label: "Ángulo 3/4", seed: "three-quarter" },
+                        { label: "Expresivo", seed: "expressive" }
+                      ].map((example, i) => (
+                        <div key={i} className="relative group">
+                          <div className="aspect-square rounded-lg overflow-hidden border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-pink-500/10">
+                            <img
+                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${example.seed}&backgroundColor=gradient&radius=0`}
+                              alt={example.label}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <p className="text-xs text-center mt-2 text-muted-foreground font-medium">
+                            {example.label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <p className="text-sm text-green-600 dark:text-green-400 flex items-start gap-2">
+                        <Check className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <span>
+                          <strong>Pro tip:</strong> Fotos con buena iluminación y diferentes ángulos generan videos más realistas
+                        </span>
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -295,30 +360,93 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                <Card className="bg-orange-500/10 border-orange-500/30">
+                {/* Header del Step 2 */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="bg-purple-500/20 p-3 rounded-lg">
+                          <Music className="h-6 w-6 text-purple-500" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg mb-2">Tu Canción</h3>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            La IA analizará ritmo, letra y melodía para crear escenas perfectas
+                          </p>
+                          <div className="flex gap-2 flex-wrap">
+                            <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/30">
+                              MP3, WAV, M4A
+                            </Badge>
+                            <Badge className="bg-pink-500/20 text-pink-500 border-pink-500/30">
+                              Máx 50MB
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gradient-to-br from-green-500/20 to-teal-500/20 border-green-500/30">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="bg-green-500/20 p-3 rounded-lg">
+                          <Zap className="h-6 w-6 text-green-500" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg mb-2">Sincronización IA</h3>
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Detectamos beats, estrofas y coros automáticamente
+                          </p>
+                          <div className="flex gap-2 flex-wrap">
+                            <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
+                              <Check className="h-3 w-3 mr-1" />
+                              Auto-detect
+                            </Badge>
+                            <Badge className="bg-teal-500/20 text-teal-500 border-teal-500/30">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              Smart cuts
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Visualización del proceso */}
+                <Card className="bg-muted/50 border-dashed">
                   <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Music className="h-6 w-6 text-orange-500 flex-shrink-0 mt-1" />
-                      <div>
-                        <h3 className="font-bold text-lg mb-2">Sube tu canción</h3>
-                        <p className="text-muted-foreground mb-4">
-                          Esta será la base de tu video musical. Nuestra IA analizará la letra y el ritmo para crear escenas 
-                          perfectamente sincronizadas con tu música.
+                    <h4 className="font-semibold mb-4 flex items-center gap-2">
+                      <Video className="h-5 w-5 text-purple-500" />
+                      Cómo Funciona la IA
+                    </h4>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 bg-gradient-to-br from-purple-500/10 to-transparent rounded-lg border border-purple-500/20">
+                        <div className="w-12 h-12 mx-auto mb-3 bg-purple-500/20 rounded-full flex items-center justify-center">
+                          <Music className="h-6 w-6 text-purple-500" />
+                        </div>
+                        <h5 className="font-semibold mb-2">1. Análisis Musical</h5>
+                        <p className="text-xs text-muted-foreground">
+                          Detectamos BPM, tonalidad y estructura de la canción
                         </p>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          <li className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-500" />
-                            Formatos: MP3, WAV, M4A
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-500" />
-                            Tamaño máximo: 50MB
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <Check className="h-4 w-4 text-green-500" />
-                            Audio de alta calidad recomendado
-                          </li>
-                        </ul>
+                      </div>
+                      <div className="text-center p-4 bg-gradient-to-br from-orange-500/10 to-transparent rounded-lg border border-orange-500/20">
+                        <div className="w-12 h-12 mx-auto mb-3 bg-orange-500/20 rounded-full flex items-center justify-center">
+                          <Camera className="h-6 w-6 text-orange-500" />
+                        </div>
+                        <h5 className="font-semibold mb-2">2. Generación Visual</h5>
+                        <p className="text-xs text-muted-foreground">
+                          Creamos escenas únicas usando tus fotos de referencia
+                        </p>
+                      </div>
+                      <div className="text-center p-4 bg-gradient-to-br from-green-500/10 to-transparent rounded-lg border border-green-500/20">
+                        <div className="w-12 h-12 mx-auto mb-3 bg-green-500/20 rounded-full flex items-center justify-center">
+                          <Sparkles className="h-6 w-6 text-green-500" />
+                        </div>
+                        <h5 className="font-semibold mb-2">3. Sincronización</h5>
+                        <p className="text-xs text-muted-foreground">
+                          Combinamos audio y video con timing perfecto
+                        </p>
                       </div>
                     </div>
                   </CardContent>
