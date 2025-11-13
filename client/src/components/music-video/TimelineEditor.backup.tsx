@@ -19,9 +19,7 @@ import {
   ChevronLeft, ChevronRight, EyeOff, LockOpen, Unlock, 
   Image as ImageIcon, RefreshCw, Video, Wand2, Text, 
   Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
-  Maximize2, Save, FolderOpen, Guitar, Camera, Split,
-  Rewind, FastForward, Gauge, Flag, Copy, ArrowLeftRight,
-  FlipHorizontal, RotateCw, Zap, Square
+  Maximize2, Save, FolderOpen, Guitar, Camera
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -144,20 +142,8 @@ export interface BeatMap {
   beats: BeatData[];
 }
 
-export interface TimelineMarker {
-  id: string;
-  time: number;
-  label: string;
-  color: string;
-}
-
-export interface TransitionConfig {
-  type: 'fade' | 'dissolve' | 'slide' | 'wipe' | 'none';
-  duration: number;
-}
-
 type ToolMode = 'select' | 'razor' | 'trim' | 'hand';
-type HistoryState = { clips: TimelineClip[]; selectedIds: number[]; markers: TimelineMarker[] };
+type HistoryState = { clips: TimelineClip[]; selectedId: number | null };
 
 interface TimelineEditorProps {
   clips?: TimelineClip[];
@@ -221,17 +207,12 @@ export function TimelineEditor({
   const [zoom, setZoom] = useState(1);
   const [tool, setTool] = useState<ToolMode>('select');
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
-  const [selectedClips, setSelectedClips] = useState<Set<number>>(new Set());
-  const [markers, setMarkers] = useState<TimelineMarker[]>([]);
   const [showEffectsPanel, setShowEffectsPanel] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showMusicianModal, setShowMusicianModal] = useState(false);
   const [musicianModalClip, setMusicianModalClip] = useState<TimelineClip | null>(null);
   const [showCameraAnglesModal, setShowCameraAnglesModal] = useState(false);
   const [cameraAnglesModalClip, setCameraAnglesModalClip] = useState<TimelineClip | null>(null);
-  const [ghostClip, setGhostClip] = useState<{ id: number; position: number } | null>(null);
-  const [snapLine, setSnapLine] = useState<number | null>(null);
-  const [clipTransitions, setClipTransitions] = useState<Map<number, TransitionConfig>>(new Map());
   
   // Detect mobile viewport
   useEffect(() => {
@@ -308,14 +289,13 @@ export function TimelineEditor({
   const pushHistory = useCallback(() => {
     const snapshot: HistoryState = {
       clips: structuredClone?.(clips) ?? clips.map(c => ({ ...c })),
-      selectedIds: Array.from(selectedClips),
-      markers: structuredClone?.(markers) ?? [...markers]
+      selectedId: selectedClip
     };
     setHistory(prev => {
       const nextPast = [...prev.past, snapshot].slice(-HISTORY_LIMIT);
       return { past: nextPast, future: [] };
     });
-  }, [clips, selectedClips, markers]);
+  }, [clips, selectedClip]);
 
   const handleUndo = useCallback(() => {
     if (history.past.length === 0) return;
@@ -324,13 +304,11 @@ export function TimelineEditor({
     
     const currentState: HistoryState = {
       clips: structuredClone?.(clips) ?? clips.map(c => ({ ...c })),
-      selectedIds: Array.from(selectedClips),
-      markers: structuredClone?.(markers) ?? [...markers]
+      selectedId: selectedClip
     };
     
     setHistory({ past: newPast, future: [currentState, ...history.future] });
-    setSelectedClips(new Set(prev.selectedIds));
-    setMarkers(prev.markers);
+    setSelectedClip(prev.selectedId);
     
     // Update clips
     prev.clips.forEach(clip => {
@@ -347,7 +325,7 @@ export function TimelineEditor({
       description: "Reverted last change",
       variant: "default",
     });
-  }, [history, clips, selectedClips, markers, onClipUpdate, toast]);
+  }, [history, clips, selectedClip, onClipUpdate, toast]);
 
   const handleRedo = useCallback(() => {
     if (history.future.length === 0) return;
@@ -356,13 +334,11 @@ export function TimelineEditor({
     
     const currentState: HistoryState = {
       clips: structuredClone?.(clips) ?? clips.map(c => ({ ...c })),
-      selectedIds: Array.from(selectedClips),
-      markers: structuredClone?.(markers) ?? [...markers]
+      selectedId: selectedClip
     };
     
     setHistory({ past: [...history.past, currentState], future: newFuture });
-    setSelectedClips(new Set(next.selectedIds));
-    setMarkers(next.markers);
+    setSelectedClip(next.selectedId);
     
     // Update clips
     next.clips.forEach(clip => {
@@ -379,7 +355,7 @@ export function TimelineEditor({
       description: "Reapplied change",
       variant: "default",
     });
-  }, [history, clips, selectedClips, markers, onClipUpdate, toast]);
+  }, [history, clips, selectedClip, onClipUpdate, toast]);
 
   // ===== Effects Handler =====
   const handleEffectsChange = useCallback((clipId: number, effects: ClipEffects) => {
@@ -559,217 +535,6 @@ export function TimelineEditor({
       });
     }
   }, [cameraAnglesModalClip, handleClipUpdate]);
-
-  // ===== Advanced Timeline Tools =====
-  
-  // Split clip at playhead position
-  const handleSplitAtPlayhead = useCallback(() => {
-    const clipsAtPlayhead = clips.filter(clip => 
-      currentTime > clip.start && currentTime < clip.start + clip.duration
-    );
-    
-    if (clipsAtPlayhead.length === 0) {
-      toast({
-        title: "No clips to split",
-        description: "Move playhead over a clip to split",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    pushHistory();
-    clipsAtPlayhead.forEach(clip => {
-      if (onSplitClip) {
-        onSplitClip(clip.id, currentTime);
-      }
-    });
-    
-    toast({
-      title: "Clips split",
-      description: `Split ${clipsAtPlayhead.length} clip(s) at playhead`,
-    });
-  }, [clips, currentTime, onSplitClip, pushHistory, toast]);
-
-  // Delete all clips left of playhead
-  const handleDeleteLeft = useCallback(() => {
-    const clipsToDelete = clips.filter(clip => clip.start + clip.duration <= currentTime);
-    
-    if (clipsToDelete.length === 0) {
-      toast({
-        title: "No clips to delete",
-        description: "No clips found before playhead",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    pushHistory();
-    clipsToDelete.forEach(clip => {
-      handleClipUpdate(clip.id, { visible: false });
-    });
-    
-    toast({
-      title: "Deleted left",
-      description: `Removed ${clipsToDelete.length} clip(s)`,
-    });
-  }, [clips, currentTime, handleClipUpdate, pushHistory, toast]);
-
-  // Delete all clips right of playhead
-  const handleDeleteRight = useCallback(() => {
-    const clipsToDelete = clips.filter(clip => clip.start >= currentTime);
-    
-    if (clipsToDelete.length === 0) {
-      toast({
-        title: "No clips to delete",
-        description: "No clips found after playhead",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    pushHistory();
-    clipsToDelete.forEach(clip => {
-      handleClipUpdate(clip.id, { visible: false });
-    });
-    
-    toast({
-      title: "Deleted right",
-      description: `Removed ${clipsToDelete.length} clip(s)`,
-    });
-  }, [clips, currentTime, handleClipUpdate, pushHistory, toast]);
-
-  // Add marker at playhead
-  const handleAddMarker = useCallback(() => {
-    const newMarker: TimelineMarker = {
-      id: `marker-${Date.now()}`,
-      time: currentTime,
-      label: `Marker ${markers.length + 1}`,
-      color: '#f97316',
-    };
-    
-    pushHistory();
-    setMarkers(prev => [...prev, newMarker]);
-    
-    toast({
-      title: "Marker added",
-      description: `Added at ${formatTime(currentTime)}`,
-    });
-  }, [currentTime, markers.length, pushHistory, toast]);
-
-  // Handle multi-select with Shift/Ctrl
-  const handleMultiSelect = useCallback((clipId: number, e: React.MouseEvent) => {
-    if (e.shiftKey) {
-      // Shift: range select
-      if (selectedClip !== null) {
-        const startIdx = clips.findIndex(c => c.id === selectedClip);
-        const endIdx = clips.findIndex(c => c.id === clipId);
-        const [min, max] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
-        const rangeIds = clips.slice(min, max + 1).map(c => c.id);
-        setSelectedClips(new Set(rangeIds));
-      } else {
-        setSelectedClips(new Set([clipId]));
-      }
-    } else if (e.ctrlKey || e.metaKey) {
-      // Ctrl/Cmd: toggle selection
-      setSelectedClips(prev => {
-        const next = new Set(prev);
-        if (next.has(clipId)) {
-          next.delete(clipId);
-        } else {
-          next.add(clipId);
-        }
-        return next;
-      });
-    } else {
-      // Normal click: single select
-      setSelectedClip(clipId);
-      setSelectedClips(new Set([clipId]));
-    }
-  }, [clips, selectedClip]);
-
-  // Ripple delete: delete clip and close gap
-  const handleRippleDelete = useCallback((clipId: number) => {
-    const clip = clips.find(c => c.id === clipId);
-    if (!clip) return;
-    
-    pushHistory();
-    
-    // Delete the clip
-    handleClipUpdate(clipId, { visible: false });
-    
-    // Move all clips after this one to the left
-    const clipsToShift = clips.filter(c => 
-      c.layer === clip.layer && c.start > clip.start
-    );
-    
-    clipsToShift.forEach(c => {
-      handleClipUpdate(c.id, { start: c.start - clip.duration });
-    });
-    
-    toast({
-      title: "Ripple delete",
-      description: `Deleted clip and closed gap`,
-    });
-  }, [clips, handleClipUpdate, pushHistory, toast]);
-
-  // Change playback speed of clip
-  const handleSpeedChange = useCallback((clipId: number, speed: number) => {
-    const clip = clips.find(c => c.id === clipId);
-    if (!clip) return;
-    
-    pushHistory();
-    handleClipUpdate(clipId, {
-      duration: clip.duration * (1 / speed),
-      metadata: {
-        ...clip.metadata,
-        effects: {
-          ...clip.metadata?.effects,
-          playbackRate: speed,
-        },
-      },
-    });
-    
-    toast({
-      title: "Speed changed",
-      description: `Set to ${speed}x speed`,
-    });
-  }, [clips, handleClipUpdate, pushHistory, toast]);
-
-  // Freeze frame at current position
-  const handleFreezeFrame = useCallback((clipId: number) => {
-    const clip = clips.find(c => c.id === clipId);
-    if (!clip) return;
-    
-    toast({
-      title: "Freeze frame",
-      description: "Feature coming soon",
-      variant: "default",
-    });
-  }, [clips, toast]);
-
-  // Reverse clip playback
-  const handleReverseClip = useCallback((clipId: number) => {
-    const clip = clips.find(c => c.id === clipId);
-    if (!clip) return;
-    
-    pushHistory();
-    const isReversed = clip.metadata?.effects?.playbackRate === -1;
-    
-    handleClipUpdate(clipId, {
-      metadata: {
-        ...clip.metadata,
-        effects: {
-          ...clip.metadata?.effects,
-          playbackRate: isReversed ? 1 : -1,
-        },
-      },
-    });
-    
-    toast({
-      title: isReversed ? "Normal playback" : "Reversed",
-      description: isReversed ? "Clip playing forward" : "Clip playing backward",
-    });
-  }, [clips, handleClipUpdate, pushHistory, toast]);
 
   const handleClipMouseDown = useCallback((e: React.MouseEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
     if (tool === 'hand') return;
