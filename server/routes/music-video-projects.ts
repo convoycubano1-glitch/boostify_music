@@ -122,7 +122,7 @@ router.get('/load/:projectId', async (req, res) => {
     const [project] = await db
       .select()
       .from(musicVideoProjects)
-      .where(eq(musicVideoProjects.id, projectId))
+      .where(eq(musicVideoProjects.id, parseInt(projectId)))
       .limit(1);
     
     if (!project) {
@@ -151,7 +151,7 @@ router.delete('/delete/:projectId', async (req, res) => {
     
     await db
       .delete(musicVideoProjects)
-      .where(eq(musicVideoProjects.id, projectId));
+      .where(eq(musicVideoProjects.id, parseInt(projectId)));
     
     logger.log('✅ [DELETE PROJECT] Proyecto eliminado exitosamente');
     res.json({ success: true });
