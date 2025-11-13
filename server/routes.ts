@@ -25,6 +25,7 @@ import OpenAI from "openai";
 import { insertBookingSchema } from "./db/schema";
 import translationRouter from './routes/translation';
 import managerRouter from './routes/manager';
+import managerDocumentsRouter from './routes/manager-documents';
 import artistRouter from './routes/artist';
 import artistGeneratorRouter from './routes/artist-generator'; // Added import
 import subscriptionRoutesRouter from './routes/subscription-routes'; // Nuevas rutas específicas por nivel de suscripción
@@ -167,6 +168,7 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/proxy/piapi/video-upscale', videoUpscaleRouter);
 
   app.use('/api/manager', managerRouter);
+  app.use('/api/manager/documents', managerDocumentsRouter);
   app.use('/api/artist', artistRouter);
 
   // Configurar las rutas que NO requieren autenticación primero
