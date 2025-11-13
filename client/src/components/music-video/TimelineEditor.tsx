@@ -196,6 +196,11 @@ export function TimelineEditor({
   const [dragStartX, setDragStartX] = useState<number>(0);
   const [clipStartPosition, setClipStartPosition] = useState<number>(0);
   
+  // Hand tool panning state
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStartX, setPanStartX] = useState(0);
+  const [panStartScrollLeft, setPanStartScrollLeft] = useState(0);
+  
   // History for undo/redo
   const [history, setHistory] = useState<{ past: HistoryState[]; future: HistoryState[] }>({ 
     past: [], 
@@ -381,6 +386,7 @@ export function TimelineEditor({
     if (tool === 'hand') return;
     
     e.stopPropagation();
+    e.preventDefault(); // Prevenir selección de texto
     
     setSelectedClip(clipId);
     
@@ -391,36 +397,73 @@ export function TimelineEditor({
       // Split clip at EXACT click position (not playhead)
       if (onSplitClip && timelineRef.current) {
         const rect = timelineRef.current.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left + (timelineRef.current.scrollLeft || 0);
+        const scrollLeft = timelineRef.current.scrollLeft || 0;
+        const offsetX = e.clientX - rect.left + scrollLeft;
         const clickTime = pixelsToTime(offsetX);
         
-        // Only split if click is within clip boundaries
-        if (clickTime >= clip.start && clickTime <= clip.start + clip.duration) {
+        console.log('🔪 Razor Tool:', {
+          clientX: e.clientX,
+          rectLeft: rect.left,
+          scrollLeft,
+          offsetX,
+          clickTime,
+          clipStart: clip.start,
+          clipEnd: clip.start + clip.duration
+        });
+        
+        // Only split if click is within clip boundaries (with small margin)
+        const margin = 0.05; // 50ms margin
+        if (clickTime >= clip.start + margin && clickTime <= clip.start + clip.duration - margin) {
           pushHistory();
           onSplitClip(clipId, clickTime);
           
           toast({
-            title: "Clip Split",
-            description: `Split at ${formatTime(clickTime)}`,
+            title: "✂️ Clip dividido",
+            description: `Cortado en ${formatTime(clickTime)}`,
             variant: "default",
+          });
+        } else {
+          toast({
+            title: "⚠️ No se puede cortar aquí",
+            description: "Haz clic dentro del clip para dividirlo",
+            variant: "destructive",
           });
         }
       }
       return;
     }
     
+    // Select tool: Solo permite mover el cuerpo del clip
     if (tool === 'select' && handle === 'body') {
       pushHistory();
       setDraggingClip(clipId);
       setDragStartX(e.clientX);
       setClipStartPosition(clip.start);
-    } else if (tool === 'trim' && (handle === 'start' || handle === 'end')) {
+      document.body.style.cursor = 'grabbing';
+    } 
+    // Trim tool: Permite redimensionar desde cualquier handle (start, end, o body como fallback)
+    else if (tool === 'trim') {
       pushHistory();
-      setResizingSide(handle);
+      if (handle === 'start' || handle === 'end') {
+        setResizingSide(handle);
+      } else {
+        // Si hacen clic en el body con trim tool, detectar qué lado está más cerca
+        const rect = timelineRef.current?.getBoundingClientRect();
+        if (rect) {
+          const scrollLeft = timelineRef.current?.scrollLeft || 0;
+          const offsetX = e.clientX - rect.left + scrollLeft;
+          const clickTime = pixelsToTime(offsetX);
+          const clipMidpoint = clip.start + (clip.duration / 2);
+          
+          // Si está más cerca del inicio, redimensionar desde el inicio
+          setResizingSide(clickTime < clipMidpoint ? 'start' : 'end');
+        }
+      }
       setDragStartX(e.clientX);
       setClipStartPosition(clip.start);
+      document.body.style.cursor = 'ew-resize';
     }
-  }, [tool, clips, pixelsToTime, pushHistory, onSplitClip, toast]);
+  }, [tool, clips, pixelsToTime, pushHistory, onSplitClip, toast, timelineRef]);
 
   // Mouse move handler for drag/resize
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -469,7 +512,27 @@ export function TimelineEditor({
   const handleMouseUp = useCallback(() => {
     setDraggingClip(null);
     setResizingSide(null);
+    setIsPanning(false);
+    document.body.style.cursor = '';
   }, []);
+
+  // Hand tool panning handlers
+  const handleTimelineMouseDown = useCallback((e: React.MouseEvent) => {
+    if (tool !== 'hand') return;
+    
+    e.preventDefault();
+    setIsPanning(true);
+    setPanStartX(e.clientX);
+    setPanStartScrollLeft(timelineRef.current?.scrollLeft || 0);
+    document.body.style.cursor = 'grabbing';
+  }, [tool]);
+
+  const handlePanMove = useCallback((e: MouseEvent) => {
+    if (!isPanning || !timelineRef.current) return;
+    
+    const deltaX = e.clientX - panStartX;
+    timelineRef.current.scrollLeft = panStartScrollLeft - deltaX;
+  }, [isPanning, panStartX, panStartScrollLeft]);
 
   // Setup/cleanup mouse event listeners
   useEffect(() => {
@@ -482,6 +545,18 @@ export function TimelineEditor({
       };
     }
   }, [draggingClip, resizingSide, handleMouseMove, handleMouseUp]);
+
+  // Hand tool panning listeners
+  useEffect(() => {
+    if (isPanning) {
+      document.addEventListener('mousemove', handlePanMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handlePanMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isPanning, handlePanMove, handleMouseUp]);
 
   // ===== Touch Support for Mobile =====
   const handleTouchStart = useCallback((e: React.TouchEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {

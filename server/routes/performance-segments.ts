@@ -106,7 +106,7 @@ router.post('/batch', async (req: Request, res: Response) => {
         shotType: seg.shotType,
         audioSegmentUrl: seg.audioSegmentUrl,
         artistImageUrl: seg.artistImageUrl,
-        status: 'pending'
+        status: 'pending' as const
       })))
       .returning();
     
