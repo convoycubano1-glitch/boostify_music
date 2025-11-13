@@ -21,7 +21,7 @@ import {
   Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
   Maximize2, Save, FolderOpen, Guitar, Camera, Split,
   Rewind, FastForward, Gauge, Flag, Copy, ArrowLeftRight,
-  FlipHorizontal, RotateCw, Zap, Square
+  FlipHorizontal, RotateCw, Zap, Square, Pencil
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -39,6 +39,7 @@ import { ensureCompatibleClip } from '../timeline/TimelineClipUnified';
 import { EffectsPanel, ClipEffects } from '../timeline-effects/effects-panel';
 import { MusicianModal } from './MusicianModal';
 import CameraAnglesModal from './CameraAnglesModal';
+import { ImageEditorModal } from './ImageEditorModal';
 
 // ===== Type Definitions =====
 
@@ -229,6 +230,8 @@ export function TimelineEditor({
   const [musicianModalClip, setMusicianModalClip] = useState<TimelineClip | null>(null);
   const [showCameraAnglesModal, setShowCameraAnglesModal] = useState(false);
   const [cameraAnglesModalClip, setCameraAnglesModalClip] = useState<TimelineClip | null>(null);
+  const [showImageEditorModal, setShowImageEditorModal] = useState(false);
+  const [imageEditorModalClip, setImageEditorModalClip] = useState<TimelineClip | null>(null);
   const [ghostClip, setGhostClip] = useState<{ id: number; position: number } | null>(null);
   const [snapLine, setSnapLine] = useState<number | null>(null);
   const [clipTransitions, setClipTransitions] = useState<Map<number, TransitionConfig>>(new Map());
@@ -546,6 +549,30 @@ export function TimelineEditor({
     setCameraAnglesModalClip(clip);
     setShowCameraAnglesModal(true);
   }, []);
+
+  const handleEditImage = useCallback((clip: TimelineClip) => {
+    setImageEditorModalClip(clip);
+    setShowImageEditorModal(true);
+  }, []);
+
+  const handleImageEdited = useCallback((newImageUrl: string, newPrompt: string) => {
+    if (imageEditorModalClip) {
+      handleClipUpdate(imageEditorModalClip.id, {
+        imageUrl: newImageUrl,
+        imagePrompt: newPrompt,
+        metadata: {
+          ...imageEditorModalClip.metadata,
+          isGeneratedImage: true
+        }
+      });
+      toast({
+        title: "Image edited successfully",
+        description: "Your image has been updated with Nano Banana AI",
+      });
+    }
+    setShowImageEditorModal(false);
+    setImageEditorModalClip(null);
+  }, [imageEditorModalClip, handleClipUpdate, toast]);
 
   const handleCameraAngleSelected = useCallback((imageUrl: string, angleName: string) => {
     if (cameraAnglesModalClip) {
@@ -1899,6 +1926,19 @@ export function TimelineEditor({
                           {/* Action buttons for images */}
                           {(clip.imageUrl || clip.metadata?.isGeneratedImage) && (
                             <div className="absolute top-1 right-1 flex gap-1 opacity-80 hover:opacity-100 transition-opacity">
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-7 w-7 bg-orange-600 hover:bg-orange-700 text-white shadow-lg border border-white/20"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditImage(clip);
+                                }}
+                                title="Edit Image with Nano Banana AI"
+                                data-testid={`button-edit-image-${clip.id}`}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
                               <Button
                                 size="icon"
                                 variant="secondary"
