@@ -78,6 +78,7 @@ import {
   processPerformanceClips,
   getPerformanceSegments
 } from "../../lib/services/performance-segment-service";
+import { PaymentGateModal } from "./payment-gate-modal";
 
 // Fal.ai configuration
 fal.config({
@@ -467,6 +468,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [selectedClipIds, setSelectedClipIds] = useState<number[]>([]);
   const [isBatchRegenerating, setIsBatchRegenerating] = useState(false);
 
+  // Payment gate states
+  const [showPaymentGate, setShowPaymentGate] = useState(false);
+  const [isGeneratingRemaining, setIsGeneratingRemaining] = useState(false);
+
   // Función para generar 3 propuestas de concepto
   const generateConceptProposals = async () => {
     if (!transcription) {
@@ -813,14 +818,60 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     }
   };
 
+  // Helper function to save project state to PostgreSQL
+  const saveProjectState = async () => {
+    if (!user?.email) {
+      console.warn('⚠️ No user email, cannot save project');
+      return null;
+    }
+
+    try {
+      const projectData = {
+        userEmail: user.email,
+        projectName: projectName || 'Untitled Project',
+        script: scriptContent,
+        timelineItems: JSON.stringify(timelineItems),
+        audioUrl,
+        artistReferenceImages: JSON.stringify(artistReferenceImages),
+        status: 'partial',
+        metadata: JSON.stringify({
+          director: videoStyle.selectedDirector?.name,
+          concept: selectedConcept,
+          seed,
+        })
+      };
+
+      const response = await fetch('/api/projects/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projectData),
+      });
+
+      if (!response.ok) throw new Error('Failed to save project');
+
+      const savedProject = await response.json();
+      setCurrentProjectId(savedProject.id.toString());
+      console.log('✅ Project saved:', savedProject.id);
+      return savedProject;
+    } catch (error) {
+      console.error('❌ Error saving project:', error);
+      toast({
+        title: "Warning",
+        description: "Could not save project state",
+        variant: "default",
+      });
+      return null;
+    }
+  };
+
   // Función auxiliar para generar imágenes automáticamente
-  const executeImageGeneration = async (script?: string) => {
-    console.log('🔵 [IMG] Función executeImageGeneration iniciada');
+  const executeImageGeneration = async (script?: string, startFrom: number = 1) => {
+    console.log(`🔵 [IMG] Función executeImageGeneration iniciada (startFrom: ${startFrom})`);
     
     try {
       console.log('🎨 [IMG] Generando imágenes con IA...');
       setIsGeneratingImages(true);
-      setShowProgress(true);  // ACTIVAR MODAL
+      setShowProgress(true);
       setCurrentProgressStage("images");
       setProgressPercentage(0);
       console.log('📊 [IMG] Estados actualizados: showProgress=true, isGeneratingImages=true, stage=images');
@@ -866,15 +917,25 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         };
       });
 
+      // Check if user is admin
+      const isAdmin = user?.email === 'convoycubano@gmail.com';
+      const totalScenes = geminiScenes.length;
+      
+      // Determine how many images to generate
+      const imagesToGenerate = isAdmin ? totalScenes : (startFrom === 1 ? Math.min(10, totalScenes) : totalScenes);
+      const endAt = startFrom === 1 && !isAdmin ? Math.min(10, totalScenes) : totalScenes;
+      
+      console.log(`📸 [IMG] Generation settings: isAdmin=${isAdmin}, startFrom=${startFrom}, endAt=${endAt}, total=${totalScenes}`);
+      
       // Decidir qué endpoint usar basado en si hay imágenes de referencia
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
       
-      console.log(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${geminiScenes.length}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
+      console.log(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${totalScenes}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
       
       // Inicializar el estado de progreso del modal
       setGenerationProgress({
-        current: 0,
-        total: geminiScenes.length,
+        current: startFrom - 1,
+        total: totalScenes,
         percentage: 0,
         currentPrompt: 'Iniciando generación...',
         generatedImages: [],
@@ -887,10 +948,9 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         : '/api/gemini-image/generate-batch';
       
       let generatedCount = 0;
-      const totalScenes = geminiScenes.length;
       
-      // Generar una imagen a la vez
-      for (let i = 0; i < geminiScenes.length; i++) {
+      // Generar imágenes desde startFrom hasta endAt
+      for (let i = startFrom - 1; i < endAt; i++) {
         const scene = geminiScenes[i];
         const sceneIndex = i + 1;
         
@@ -920,12 +980,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             console.error(`❌ [IMG ${sceneIndex}] Error:`, errorData.error);
-            continue; // Continuar con la siguiente imagen
+            continue;
           }
 
           const data = await response.json();
           
-          // Verificar que la respuesta tenga éxito Y que imageUrl sea una string válida (HTTP o data URI)
           const isValidImageUrl = data.imageUrl && 
                                   typeof data.imageUrl === 'string' && 
                                   (data.imageUrl.startsWith('http') || data.imageUrl.startsWith('data:image/'));
@@ -933,7 +992,6 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           if (data.success && isValidImageUrl) {
             generatedCount++;
             console.log(`✅ [IMG ${sceneIndex}/${totalScenes}] Imagen generada exitosamente`);
-            console.log(`📸 URL tipo: ${data.imageUrl.substring(0, 30)}...`);
             
             // 💾 GUARDAR EN FIREBASE STORAGE para persistencia
             let permanentImageUrl = data.imageUrl;
@@ -944,18 +1002,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
                 console.log(`✅ [FIREBASE ${sceneIndex}] Imagen guardada permanentemente`);
               } catch (uploadError) {
                 console.warn(`⚠️ [FIREBASE ${sceneIndex}] Error subiendo a Firebase, usando URL temporal:`, uploadError);
-                // Continuar con la URL temporal si falla Firebase
               }
-            } else {
-              console.warn(`⚠️ [FIREBASE ${sceneIndex}] No user ID - usando URL temporal`);
             }
             
-            // Actualizar el progreso del modal INMEDIATAMENTE para mostrar la imagen
+            // Actualizar el progreso del modal
             setGenerationProgress(prev => ({
               ...prev,
-              current: generatedCount,
+              current: sceneIndex,
               total: totalScenes,
-              percentage: Math.round((generatedCount / totalScenes) * 100),
+              percentage: Math.round((sceneIndex / totalScenes) * 100),
               currentPrompt: scene.scene || 'Generating...',
               generatedImages: [
                 ...prev.generatedImages,
@@ -965,30 +1020,19 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
                   prompt: scene.scene || `Scene ${sceneIndex}`
                 }
               ],
-              status: `Generando imagen ${generatedCount} de ${totalScenes}...`
+              status: `Generando imagen ${sceneIndex} de ${totalScenes}...`
             }));
             
-            // Actualizar el timeline INMEDIATAMENTE con esta imagen
+            // Actualizar el timeline
             setTimelineItems(prevItems => {
-              console.log(`🔍 [MATCH] Buscando timeline item para escena ${sceneIndex}`);
-              console.log(`📋 [MATCH] Timeline items actuales:`, prevItems.map(i => i.id));
-              
               return prevItems.map(item => {
-                // Buscar el item que corresponde a esta escena
-                // Extraer el número de escena del ID, manejando formatos como:
-                // "scene-1", "scene-scene-1", etc.
                 const sceneNumberMatch = item.id.toString().match(/(\d+)$/);
-                if (!sceneNumberMatch) {
-                  console.log(`⚠️ [MATCH] Item ${item.id} no tiene número al final`);
-                  return item;
-                }
+                if (!sceneNumberMatch) return item;
                 
                 const itemSceneNumber = parseInt(sceneNumberMatch[1]);
-                console.log(`🔢 [MATCH] Item ${item.id} -> número ${itemSceneNumber}, buscando ${sceneIndex}`);
                 
                 if (itemSceneNumber === sceneIndex) {
-                  console.log(`🖼️ [IMG ${sceneIndex}] ✅ Actualizando timeline item ${item.id} en TIEMPO REAL`);
-                  console.log(`📸 [IMG ${sceneIndex}] URL: ${permanentImageUrl.substring(0, 50)}...`);
+                  console.log(`🖼️ [IMG ${sceneIndex}] ✅ Actualizando timeline item ${item.id}`);
                   return {
                     ...item,
                     imageUrl: permanentImageUrl,
@@ -1011,34 +1055,44 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             });
             
             // Actualizar progreso general
-            const progress = 30 + ((generatedCount / totalScenes) * 60);
+            const progress = 30 + ((sceneIndex / totalScenes) * 60);
             setProgressPercentage(Math.round(progress));
             
-          } else {
-            console.warn(`⚠️ [IMG ${sceneIndex}] No se generó imagen:`, data.error || 'Unknown error');
           }
           
         } catch (error) {
           console.error(`❌ [IMG ${sceneIndex}] Error en generación:`, error);
           continue;
         }
+        
+        // Check if we've hit the 10-image limit for non-admin users
+        if (!isAdmin && sceneIndex === 10 && startFrom === 1) {
+          console.log('🎯 [PAYMENT GATE] Reached 10 images, showing payment gate');
+          
+          // Save project state
+          await saveProjectState();
+          
+          // Close progress modal and show payment gate
+          setShowProgress(false);
+          setIsGeneratingImages(false);
+          setShowPaymentGate(true);
+          
+          toast({
+            title: "Demo Complete!",
+            description: "10 preview images generated. Pay to continue with the remaining 30 images.",
+          });
+          
+          return; // Stop generation here
+        }
       }
       
-      console.log(`✅ [IMG] Generación completada: ${generatedCount}/${totalScenes} imágenes generadas`);
-      
-      if (generatedCount < totalScenes) {
-        toast({
-          title: "⚠️ Generación Parcial",
-          description: `Se generaron ${generatedCount}/${totalScenes} imágenes correctamente.`,
-          variant: "default",
-        });
-      }
+      console.log(`✅ [IMG] Generación completada: ${generatedCount} imágenes generadas`);
 
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // 🎤 PROCESAMIENTO AUTOMÁTICO DE LIP-SYNC para clips de performance
-      if (audioBuffer && user?.uid && generatedCount > 0) {
+      // Only process lip-sync if we've completed all images
+      if (audioBuffer && user?.uid && generatedCount > 0 && endAt === totalScenes) {
         console.log('🎤 [LIP-SYNC] Detectando clips de performance para lip-sync...');
         await executePerformanceLipSync(scriptToUse, audioBuffer);
       }
@@ -1046,11 +1100,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       // Mostrar mensaje de éxito
       toast({
         title: "¡Proceso Completado!",
-        description: `${generatedCount} imágenes generadas exitosamente`,
+        description: `${generatedCount + startFrom - 1} imágenes generadas exitosamente`,
       });
 
       console.log('✅ [IMG] Imágenes generadas exitosamente');
-      console.log('🎉 [FLUJO AUTOMÁTICO] COMPLETADO - Todas las fases ejecutadas');
       
       setCurrentStep(5);
       setIsGeneratingImages(false);
@@ -1067,14 +1120,13 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         status: ''
       });
       
-      // 📍 SCROLL AUTOMÁTICO AL TIMELINE - Centrado en pantalla
+      // 📍 SCROLL AUTOMÁTICO AL TIMELINE
       setTimeout(() => {
         timelineRef.current?.scrollIntoView({ 
           behavior: 'smooth', 
           block: 'center',
           inline: 'nearest'
         });
-        console.log('📍 Scroll automático al timeline ejecutado (centrado)');
       }, 500);
       
     } catch (error) {
@@ -1085,11 +1137,28 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         variant: "destructive",
       });
       setIsGeneratingImages(false);
-      // El modal se cierra aquí porque este es el ÚLTIMO paso del flujo
-      // Si falla, necesitamos cerrar el modal
       setShowProgress(false);
       setProgressPercentage(0);
     }
+  };
+
+  // Handle payment success - continue generation from image 11
+  const handlePaymentSuccess = async () => {
+    console.log('💳 [PAYMENT] Payment successful, resuming generation from image 11');
+    
+    // Close payment gate modal
+    setShowPaymentGate(false);
+    setIsGeneratingRemaining(true);
+    
+    toast({
+      title: "Payment Successful!",
+      description: "Continuing with images 11-40...",
+    });
+    
+    // Resume generation from image 11
+    await executeImageGeneration(scriptContent, 11);
+    
+    setIsGeneratingRemaining(false);
   };
 
   // Función para manejar el resultado del onboarding
@@ -4624,6 +4693,15 @@ ${transcription}`;
         open={showQuickStartTemplates}
         onClose={() => setShowQuickStartTemplates(false)}
         onSelectTemplate={handleTemplateSelection}
+      />
+
+      {/* Payment Gate Modal */}
+      <PaymentGateModal
+        open={showPaymentGate}
+        onClose={() => setShowPaymentGate(false)}
+        onPaymentSuccess={handlePaymentSuccess}
+        userEmail={user?.email || ''}
+        amount={199}
       />
 
       {/* Modal de Progreso de Generación de Imágenes */}

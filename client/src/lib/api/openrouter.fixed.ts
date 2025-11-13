@@ -1227,7 +1227,7 @@ export async function generateMusicVideoScript(
     if (!apiKey) {
       console.error("OpenRouter API key missing - using fallback script generation");
       const calculatedScenes = Math.ceil((audioDuration || 40) / 4);
-      const maxScenes = 10; // Máximo 10 escenas para pruebas
+      const maxScenes = 40; // Generate 40 scenes for full video
       return generarGuionFallback(lyrics, Math.min(calculatedScenes, maxScenes), audioDuration);
     }
     
@@ -1246,7 +1246,7 @@ export async function generateMusicVideoScript(
     
     // Calcular número de escenas basado en duración promedio del estilo
     const calculatedScenes = audioDuration ? Math.ceil(audioDuration / avgDuration) : 12;
-    const maxScenes = 10; // Máximo 10 escenas para pruebas
+    const maxScenes = 40; // Generate 40 scenes for full video
     const targetSceneCount = Math.min(calculatedScenes, maxScenes);
     
     console.log(`🎬 Estilo de edición: ${editingStyle?.name || 'Phrase-based'}`);
