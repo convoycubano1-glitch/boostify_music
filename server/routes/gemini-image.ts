@@ -14,10 +14,11 @@ const router = Router();
 
 /**
  * Genera una imagen simple desde un prompt
+ * Opcionalmente acepta imágenes de referencia para mantener identidad facial
  */
 router.post('/generate-simple', async (req: Request, res: Response) => {
   try {
-    const { prompt } = req.body;
+    const { prompt, referenceImages, seed } = req.body;
     
     if (!prompt) {
       return res.status(400).json({
@@ -26,6 +27,15 @@ router.post('/generate-simple', async (req: Request, res: Response) => {
       });
     }
     
+    // Si hay imágenes de referencia, usar la función con múltiples referencias
+    if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
+      console.log(`🎨 Generando imagen simple con ${referenceImages.length} referencias faciales`);
+      const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
+      const result = await generateImageWithMultipleFaceReferences(prompt, referenceImages);
+      return res.json(result);
+    }
+    
+    // Sin referencias, usar generación simple
     const result = await generateCinematicImage(prompt);
     
     return res.json(result);
