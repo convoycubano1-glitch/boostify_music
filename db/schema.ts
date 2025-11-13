@@ -604,6 +604,32 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+export const musicianClips = pgTable("musician_clips", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => musicVideoProjects.id),
+  timelineItemId: text("timeline_item_id").notNull(),
+  
+  musicianType: text("musician_type", { 
+    enum: ["guitar", "piano", "bass", "drums", "vocals", "saxophone", "trumpet", "violin", "other"] 
+  }).notNull(),
+  
+  characterDescription: text("character_description"),
+  faceReferenceUrl: text("face_reference_url"),
+  
+  generatedImageUrl: text("generated_image_url"),
+  nanoBananaVideoUrl: text("nano_banana_video_url"),
+  
+  scriptContext: text("script_context"),
+  cutTimestamp: decimal("cut_timestamp", { precision: 10, scale: 2 }),
+  
+  status: text("status", { 
+    enum: ["pending", "generating", "completed", "failed"] 
+  }).default("pending").notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const artistMediaRelations = relations(artistMedia, ({ one }) => ({
   user: one(users, {
     fields: [artistMedia.userId],
@@ -622,6 +648,13 @@ export const merchandiseRelations = relations(merchandise, ({ one }) => ({
   user: one(users, {
     fields: [merchandise.userId],
     references: [users.id],
+  }),
+}));
+
+export const musicianClipsRelations = relations(musicianClips, ({ one }) => ({
+  project: one(musicVideoProjects, {
+    fields: [musicianClips.projectId],
+    references: [musicVideoProjects.id],
   }),
 }));
 
@@ -709,6 +742,12 @@ export const selectMusicianSchema = createSelectSchema(musicians);
 export const insertPerformanceSegmentSchema = createInsertSchema(performanceSegments)
   .omit({ id: true, createdAt: true, updatedAt: true });
 export const selectPerformanceSegmentSchema = createSelectSchema(performanceSegments);
+
+export const insertMusicianClipSchema = createInsertSchema(musicianClips)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export const selectMusicianClipSchema = createSelectSchema(musicianClips);
+export type InsertMusicianClip = z.infer<typeof insertMusicianClipSchema>;
+export type SelectMusicianClip = typeof musicianClips.$inferSelect;
 
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
