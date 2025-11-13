@@ -456,6 +456,13 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [selectedConcept, setSelectedConcept] = useState<any | null>(null);
   const [isGeneratingConcepts, setIsGeneratingConcepts] = useState(false);
   
+  // Estados para Master Character Generation
+  const [masterCharacter, setMasterCharacter] = useState<any | null>(null);
+  const [isGeneratingCharacter, setIsGeneratingCharacter] = useState(false);
+  const [characterGenerationProgress, setCharacterGenerationProgress] = useState(0);
+  const [characterGenerationStage, setCharacterGenerationStage] = useState("");
+  const [showCharacterGeneration, setShowCharacterGeneration] = useState(false);
+  
   // Lip-sync and performance segments states
   const [isProcessingLipSync, setIsProcessingLipSync] = useState(false);
   const [lipSyncProgress, setLipSyncProgress] = useState({ current: 0, total: 0, message: '' });
