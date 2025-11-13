@@ -4,6 +4,7 @@ import { musicianClips, musicVideoProjects } from '../../db/schema';
 import { insertMusicianClipSchema, type InsertMusicianClip } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { GoogleGenerativeAI } from '@google/genai';
+import { generateCinematicImage } from '../services/gemini-image-service';
 
 const router = Router();
 
@@ -63,28 +64,34 @@ router.post('/api/musician-clips/generate-image', async (req, res) => {
       return res.status(400).json({ error: 'Description is required' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-
-    let finalPrompt = description;
+    console.log('🎸 Generating musician image with Gemini...');
+    console.log('📝 Description:', description);
+    
+    let finalPrompt = `${description}\n\nPhotorealistic, cinematic quality, professional lighting, 8K resolution.`;
     
     if (faceReferenceUrl) {
-      finalPrompt += `\n\nIMPORTANT: Use the facial features from the reference image for the musician's face.`;
+      console.log('👤 Using face reference for musician generation');
+      const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
+      const result = await generateImageWithMultipleFaceReferences(finalPrompt, [faceReferenceUrl]);
+      
+      if (!result.success || !result.imageUrl) {
+        throw new Error(result.error || 'Failed to generate image with face reference');
+      }
+      
+      return res.json({
+        imageUrl: result.imageUrl,
+        success: true,
+      });
     }
 
-    const result = await model.generateContent([
-      finalPrompt,
-      {
-        inlineData: {
-          mimeType: 'image/jpeg',
-          data: ''
-        }
-      }
-    ]);
-
-    const imageUrl = result.response.text();
+    const result = await generateCinematicImage(finalPrompt);
+    
+    if (!result.success || !result.imageUrl) {
+      throw new Error(result.error || 'Failed to generate image');
+    }
 
     res.json({
-      imageUrl,
+      imageUrl: result.imageUrl,
       success: true,
     });
   } catch (error: any) {
