@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { musicianClips, musicVideoProjects } from '../../db/schema';
-import { insertMusicianClipSchema, type InsertMusicianClip } from '../../db/schema';
+import { musicianClips, musicVideoProjects } from '../db/schema';
+import { insertMusicianClipSchema, type InsertMusicianClip } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { GoogleGenAI } from '@google/genai';
 import { generateCinematicImage } from '../services/gemini-image-service';
@@ -9,7 +9,7 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY || '' });
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 router.post('/api/musician-clips/generate-description', async (req, res) => {
   try {

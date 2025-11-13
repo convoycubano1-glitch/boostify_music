@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Music, Guitar, Piano, Mic, Drum, Upload, Sparkles, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 
 const INSTRUMENTS = [
   { id: "guitar", name: "Guitar", icon: Guitar, emoji: "🎸" },
@@ -57,8 +56,9 @@ export function MusicianModal({
 
   const generateDescriptionMutation = useMutation({
     mutationFn: async (instrument: string) => {
-      const response = await apiRequest("/api/musician-clips/generate-description", {
+      const response = await fetch("/api/musician-clips/generate-description", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           instrument,
           scriptContext,
@@ -67,7 +67,11 @@ export function MusicianModal({
           concept,
         }),
       });
-      return response;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate description");
+      }
+      return response.json();
     },
     onSuccess: (data) => {
       setGeneratedDescription(data.description);
@@ -93,14 +97,19 @@ export function MusicianModal({
       description: string;
       faceRef?: string;
     }) => {
-      const response = await apiRequest("/api/musician-clips/generate-image", {
+      const response = await fetch("/api/musician-clips/generate-image", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           description,
           faceReferenceUrl: faceRef,
         }),
       });
-      return response;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate image");
+      }
+      return response.json();
     },
     onSuccess: (data) => {
       setGeneratedImageUrl(data.imageUrl);
@@ -120,11 +129,16 @@ export function MusicianModal({
 
   const saveMusicianMutation = useMutation({
     mutationFn: async (musicianData: any) => {
-      const response = await apiRequest("/api/musician-clips/save", {
+      const response = await fetch("/api/musician-clips/save", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(musicianData),
       });
-      return response;
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save musician");
+      }
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
