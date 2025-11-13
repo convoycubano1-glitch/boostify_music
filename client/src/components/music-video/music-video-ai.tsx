@@ -1292,6 +1292,71 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     }
   }, [toast]);
 
+  // Handler para generar master character
+  const handleGenerateMasterCharacter = useCallback(async () => {
+    if (artistReferenceImages.length === 0) {
+      console.log('⚠️ No hay imágenes de referencia, saltando generación de master character');
+      return null;
+    }
+
+    console.log('🎭 Iniciando generación de Master Character...');
+    setIsGeneratingCharacter(true);
+    setShowCharacterGeneration(true);
+    setCharacterGenerationProgress(0);
+    setCharacterGenerationStage("Analizando rasgos faciales...");
+
+    try {
+      // Generar master character con progreso en tiempo real
+      const directorStyle = videoStyle.selectedDirector?.style || "Cinematic professional style";
+      
+      const masterChar = await generateMasterCharacter(
+        artistReferenceImages,
+        directorStyle,
+        (stage, progress) => {
+          setCharacterGenerationStage(stage);
+          setCharacterGenerationProgress(progress);
+        }
+      );
+
+      console.log('✅ Master Character generado:', masterChar.imageUrl);
+      setCharacterGenerationProgress(95);
+
+      // Paso 4: Finalizar (95-100%)
+      setCharacterGenerationStage("Finalizando...");
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setCharacterGenerationProgress(100);
+
+      // Guardar master character en estado
+      setMasterCharacter(masterChar);
+
+      // Esperar un momento para mostrar el resultado
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      setIsGeneratingCharacter(false);
+      setShowCharacterGeneration(false);
+
+      toast({
+        title: "Personaje Generado",
+        description: "Tu master character está listo para el video",
+      });
+
+      return masterChar;
+
+    } catch (error) {
+      console.error('❌ Error generando master character:', error);
+      setIsGeneratingCharacter(false);
+      setShowCharacterGeneration(false);
+
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error generando personaje",
+        variant: "destructive",
+      });
+
+      return null;
+    }
+  }, [artistReferenceImages, videoStyle.selectedDirector?.style, toast]);
+
   const handleDirectorSelection = useCallback(async (director: DirectorProfile, style: string) => {
     console.log('🎬 Director seleccionado:', director.name, '| Estilo:', style);
     
@@ -1370,71 +1435,6 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       await handleGenerateConcepts(transcription, director);
     }
   }, [transcription, selectedFile, toast, artistReferenceImages, handleGenerateMasterCharacter]);
-
-  // Handler para generar master character
-  const handleGenerateMasterCharacter = useCallback(async () => {
-    if (artistReferenceImages.length === 0) {
-      console.log('⚠️ No hay imágenes de referencia, saltando generación de master character');
-      return null;
-    }
-
-    console.log('🎭 Iniciando generación de Master Character...');
-    setIsGeneratingCharacter(true);
-    setShowCharacterGeneration(true);
-    setCharacterGenerationProgress(0);
-    setCharacterGenerationStage("Analizando rasgos faciales...");
-
-    try {
-      // Generar master character con progreso en tiempo real
-      const directorStyle = videoStyle.selectedDirector?.style || "Cinematic professional style";
-      
-      const masterChar = await generateMasterCharacter(
-        artistReferenceImages,
-        directorStyle,
-        (stage, progress) => {
-          setCharacterGenerationStage(stage);
-          setCharacterGenerationProgress(progress);
-        }
-      );
-
-      console.log('✅ Master Character generado:', masterChar.imageUrl);
-      setCharacterGenerationProgress(95);
-
-      // Paso 4: Finalizar (95-100%)
-      setCharacterGenerationStage("Finalizando...");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setCharacterGenerationProgress(100);
-
-      // Guardar master character en estado
-      setMasterCharacter(masterChar);
-
-      // Esperar un momento para mostrar el resultado
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      setIsGeneratingCharacter(false);
-      setShowCharacterGeneration(false);
-
-      toast({
-        title: "Personaje Generado",
-        description: "Tu master character está listo para el video",
-      });
-
-      return masterChar;
-
-    } catch (error) {
-      console.error('❌ Error generando master character:', error);
-      setIsGeneratingCharacter(false);
-      setShowCharacterGeneration(false);
-
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error generando personaje",
-        variant: "destructive",
-      });
-
-      return null;
-    }
-  }, [artistReferenceImages, toast]);
 
   // Handler para generar conceptos
   const handleGenerateConcepts = useCallback(async (transcriptionText: string, director: DirectorProfile) => {
@@ -2805,7 +2805,7 @@ ${transcription}`;
       const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
       
       const result = await musicVideoProjectServicePostgres.saveProject({
-        userEmail: user.email,
+        userEmail: user.email || '',
         projectName,
         audioUrl: audioUrl || undefined,
         audioDuration: audioBuffer?.duration,
@@ -2847,7 +2847,7 @@ ${transcription}`;
         }
       });
 
-      setCurrentProjectId(result.project.id);
+      setCurrentProjectId(String(result.project.id));
       toast({
         title: "Project saved",
         description: `"${projectName}" has been ${result.isNew ? 'created' : 'updated'} successfully`
@@ -2871,7 +2871,7 @@ ${transcription}`;
     if (!user?.uid) return;
     
     try {
-      const project = await musicVideoProjectServicePostgres.getProject(projectId);
+      const project = await musicVideoProjectServicePostgres.getProject(Number(projectId));
       if (!project) {
         toast({
           title: "Error",
@@ -2882,7 +2882,7 @@ ${transcription}`;
       }
 
       setProjectName(project.projectName);
-      setCurrentProjectId(project.id);
+      setCurrentProjectId(String(project.id));
       setAudioUrl(project.audioUrl || null);
       setTranscription(project.transcription || "");
       setScriptContent(project.scriptContent || "");
@@ -2929,7 +2929,7 @@ ${transcription}`;
       const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
       
       const result = await musicVideoProjectServicePostgres.saveProject({
-        userEmail: user.email,
+        userEmail: user.email || '',
         projectName,
         audioUrl: audioUrl || undefined,
         audioDuration: audioBuffer?.duration,
@@ -2971,7 +2971,7 @@ ${transcription}`;
         }
       });
 
-      setCurrentProjectId(result.project.id);
+      setCurrentProjectId(String(result.project.id));
       setLastSavedAt(new Date());
       setHasUnsavedChanges(false);
       console.log('✅ Auto-guardado completado');
@@ -4825,11 +4825,10 @@ ${transcription}`;
 
       {/* Payment Gate Modal */}
       <PaymentGateModal
-        open={showPaymentGate}
+        isOpen={showPaymentGate}
         onClose={() => setShowPaymentGate(false)}
         onPaymentSuccess={handlePaymentSuccess}
         userEmail={user?.email || ''}
-        amount={199}
       />
 
       {/* Modal de Progreso de Generación de Imágenes */}

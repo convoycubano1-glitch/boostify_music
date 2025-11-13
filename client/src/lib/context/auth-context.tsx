@@ -26,25 +26,13 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Simular autenticación para propósitos de demo
-  useEffect(() => {
-    // Simular carga de usuario
-    const timer = setTimeout(() => {
-      // Usuario de prueba - administrador
-      setUser({
-        uid: "admin123",
-        email: "convoycubano@gmail.com",
-        displayName: "Admin User",
-        photoURL: null,
-      });
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
+  const [user, setUser] = useState<User | null>({
+    uid: "admin123",
+    email: "convoycubano@gmail.com",
+    displayName: "Admin User",
+    photoURL: null,
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   // En una implementación real, estas funciones se comunicarían con el servidor
   const signIn = async (email: string, password: string) => {
