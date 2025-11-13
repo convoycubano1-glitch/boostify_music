@@ -19,7 +19,7 @@ import {
   ChevronLeft, ChevronRight, EyeOff, LockOpen, Unlock, 
   Image as ImageIcon, RefreshCw, Video, Wand2, Text, 
   Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
-  Maximize2, Save, FolderOpen
+  Maximize2, Save, FolderOpen, Guitar
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { Progress } from '../../components/ui/progress';
 import { ensureCompatibleClip } from '../timeline/TimelineClipUnified';
 import { EffectsPanel, ClipEffects } from '../timeline-effects/effects-panel';
+import { MusicianModal } from './MusicianModal';
 
 // ===== Type Definitions =====
 
@@ -204,6 +205,8 @@ export function TimelineEditor({
   const [selectedClip, setSelectedClip] = useState<number | null>(null);
   const [showEffectsPanel, setShowEffectsPanel] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showMusicianModal, setShowMusicianModal] = useState(false);
+  const [musicianModalClip, setMusicianModalClip] = useState<TimelineClip | null>(null);
   
   // Detect mobile viewport
   useEffect(() => {
@@ -487,6 +490,27 @@ export function TimelineEditor({
       onClipUpdate(id, updates);
     }
   }, [onClipUpdate]);
+
+  const handleAddMusician = useCallback((clip: TimelineClip) => {
+    setMusicianModalClip(clip);
+    setShowMusicianModal(true);
+  }, []);
+
+  const handleMusicianCreated = useCallback((musicianData: any) => {
+    if (musicianModalClip) {
+      handleClipUpdate(musicianModalClip.id, {
+        metadata: {
+          ...musicianModalClip.metadata,
+          musicianIntegrated: true,
+          musicianData,
+        },
+      });
+      toast({
+        title: "Musician Added",
+        description: `${musicianData.musicianType} added to timeline`,
+      });
+    }
+  }, [musicianModalClip, handleClipUpdate, toast]);
 
   const handleClipMouseDown = useCallback((e: React.MouseEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
     if (tool === 'hand') return;
@@ -1394,6 +1418,15 @@ export function TimelineEditor({
                                   ✨ FX
                                 </Badge>
                               )}
+                              {clip.metadata?.musicianIntegrated && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-[8px] px-1 py-0 h-4 bg-green-500/80 text-white border-green-400"
+                                  title="Clip with musician character"
+                                >
+                                  🎸 MUSICIAN
+                                </Badge>
+                              )}
                             </div>
                             {clip.imagePrompt && (
                               <div className="text-[10px] text-white/90 truncate drop-shadow">
@@ -1408,6 +1441,19 @@ export function TimelineEditor({
                           {/* Action buttons for images */}
                           {(clip.imageUrl || clip.metadata?.isGeneratedImage) && (
                             <div className="absolute top-1 right-1 flex gap-1 opacity-80 hover:opacity-100 transition-opacity">
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white shadow-lg border border-white/20"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddMusician(clip);
+                                }}
+                                title="Add Musician"
+                                data-testid={`button-add-musician-${clip.id}`}
+                              >
+                                <Guitar className="h-3.5 w-3.5" />
+                              </Button>
                               {onRegenerateImage && (
                                 <Button
                                   size="icon"
@@ -1504,6 +1550,26 @@ export function TimelineEditor({
           </span>
         </div>
       </div>
+
+      {/* Musician Modal */}
+      {musicianModalClip && (
+        <MusicianModal
+          open={showMusicianModal}
+          onClose={() => {
+            setShowMusicianModal(false);
+            setMusicianModalClip(null);
+          }}
+          timelineItem={{
+            id: musicianModalClip.id.toString(),
+            timestamp: musicianModalClip.start,
+            imageUrl: musicianModalClip.imageUrl,
+          }}
+          scriptContext="" 
+          director={undefined}
+          concept={undefined}
+          onMusicianCreated={handleMusicianCreated}
+        />
+      )}
     </div>
   );
 }
