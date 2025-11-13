@@ -1,24 +1,23 @@
 /**
- * API Routes para Manager Tools
- * Generación de documentos profesionales con Gemini + Nano Banana
+ * API Routes para Manager Tools - Solo generación de contenido con Gemini
+ * El almacenamiento en Firestore se maneja desde el cliente
  */
 import express from 'express';
-import { managerDocumentsService } from '../services/manager-documents-service';
-import { generateDocumentPreview } from '../services/gemini-text-service';
+import { generateProfessionalDocument } from '../services/gemini-text-service';
 
 const router = express.Router();
 
 /**
- * POST /api/manager/documents/generate
- * Genera un documento completo con texto e imágenes
+ * POST /api/manager/documents/generate-text
+ * Genera solo el texto del documento con Gemini
  */
-router.post('/generate', async (req, res) => {
+router.post('/generate-text', async (req, res) => {
   try {
-    const { userId, type, requirements, includeImages = false } = req.body;
+    const { type, requirements, metadata } = req.body;
 
-    if (!userId || !type || !requirements) {
+    if (!type || !requirements) {
       return res.status(400).json({ 
-        error: 'userId, type y requirements son requeridos' 
+        error: 'type y requirements son requeridos' 
       });
     }
 
@@ -29,185 +28,128 @@ router.post('/generate', async (req, res) => {
       });
     }
 
-    console.log(`📄 Generando documento tipo ${type} para usuario ${userId}`);
+    console.log(`📄 Generando texto con Gemini para tipo: ${type}`);
 
-    const document = await managerDocumentsService.generateDocument(
-      userId,
+    // Construir requirements completos con metadata
+    let fullRequirements = requirements;
+    
+    if (metadata) {
+      fullRequirements = `
+ARTIST/EVENT INFORMATION:
+- Artist/Band Name: ${metadata.artistName || 'N/A'}
+${metadata.eventName ? `- Event Name: ${metadata.eventName}` : ''}
+${metadata.eventDate ? `- Event Date: ${metadata.eventDate}` : ''}
+${metadata.venueName ? `- Venue: ${metadata.venueName}` : ''}
+${metadata.venueCity ? `- City: ${metadata.venueCity}` : ''}
+${metadata.venueCapacity ? `- Venue Capacity: ${metadata.venueCapacity}` : ''}
+${metadata.contactName ? `- Contact Person: ${metadata.contactName}` : ''}
+${metadata.contactEmail ? `- Contact Email: ${metadata.contactEmail}` : ''}
+${metadata.contactPhone ? `- Contact Phone: ${metadata.contactPhone}` : ''}
+
+TECHNICAL REQUIREMENTS:
+${requirements}
+
+Please generate a professional document that includes all the above information in the appropriate sections.
+`;
+    }
+
+    const content = await generateProfessionalDocument({
       type,
-      requirements,
-      includeImages
-    );
+      requirements: fullRequirements,
+      format: 'detailed'
+    });
 
     res.json({ 
       success: true, 
-      document 
+      content 
     });
   } catch (error: any) {
-    console.error('Error en /generate:', error);
+    console.error('Error en /generate-text:', error);
     res.status(500).json({ 
-      error: error.message || 'Error generando documento' 
+      error: error.message || 'Error generando texto' 
     });
   }
 });
 
 /**
- * POST /api/manager/documents/preview
- * Genera un preview del documento sin guardarlo
+ * POST /api/manager/documents/image-prompts
+ * Retorna los prompts para generar imágenes según el tipo de documento
  */
-router.post('/preview', async (req, res) => {
+router.post('/image-prompts', async (req, res) => {
   try {
     const { type, requirements } = req.body;
 
-    if (!type || !requirements) {
+    if (!type) {
       return res.status(400).json({ 
-        error: 'type y requirements son requeridos' 
+        error: 'type es requerido' 
       });
     }
 
-    const preview = await generateDocumentPreview({
-      type,
-      requirements,
-      format: 'concise'
-    });
+    const prompts = getImagePromptsForDocumentType(type, requirements || '');
 
     res.json({ 
       success: true, 
-      preview 
+      prompts 
     });
   } catch (error: any) {
-    console.error('Error en /preview:', error);
+    console.error('Error en /image-prompts:', error);
     res.status(500).json({ 
-      error: error.message || 'Error generando preview' 
+      error: error.message || 'Error obteniendo prompts' 
     });
   }
 });
 
 /**
- * GET /api/manager/documents/:userId
- * Obtiene todos los documentos de un usuario
+ * Genera prompts de imágenes según el tipo de documento
  */
-router.get('/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { type } = req.query;
+function getImagePromptsForDocumentType(
+  type: string,
+  requirements: string
+): { prompt: string; type: string }[] {
+  const prompts: { prompt: string; type: string }[] = [];
 
-    const documents = await managerDocumentsService.getDocuments(
-      userId,
-      type as string | undefined
-    );
-
-    res.json({ 
-      success: true, 
-      documents 
-    });
-  } catch (error: any) {
-    console.error('Error obteniendo documentos:', error);
-    res.status(500).json({ 
-      error: error.message || 'Error obteniendo documentos' 
-    });
-  }
-});
-
-/**
- * GET /api/manager/documents/document/:id
- * Obtiene un documento específico
- */
-router.get('/document/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const document = await managerDocumentsService.getDocument(id);
-
-    if (!document) {
-      return res.status(404).json({ 
-        error: 'Documento no encontrado' 
+  switch (type) {
+    case 'lighting-setup':
+      prompts.push({
+        type: 'lighting-diagram',
+        prompt: `Professional lighting setup technical diagram for a live concert. Technical illustration showing: stage layout with truss positions, lighting fixtures (LED moving heads, PAR cans, spotlights), DMX control lines, power distribution. Clean technical drawing style, isometric view, labeled components, professional stage lighting design blueprint. White background, clear annotations, industry-standard symbols.`
       });
-    }
+      prompts.push({
+        type: 'lighting-render',
+        prompt: `Professional 3D render of a concert stage lighting setup. Multiple LED stage lights, moving head fixtures, colorful spotlights illuminating an empty stage. Professional concert lighting atmosphere, dramatic lighting effects, haze/fog effects, vibrant colors (blue, purple, orange), realistic lighting simulation. High-quality render, professional concert venue.`
+      });
+      break;
 
-    res.json({ 
-      success: true, 
-      document 
-    });
-  } catch (error: any) {
-    console.error('Error obteniendo documento:', error);
-    res.status(500).json({ 
-      error: error.message || 'Error obteniendo documento' 
-    });
+    case 'technical-rider':
+      prompts.push({
+        type: 'stage-plot',
+        prompt: `Professional stage plot technical diagram for a live band. Top-down view showing: stage dimensions, instrument positions (drums, keyboards, guitar amps), monitor wedge placements, microphone positions, audio snake location. Clean technical drawing style, labeled positions, measurements indicated, professional stage manager's plot. White background, clear annotations.`
+      });
+      break;
+
+    case 'stage-plot':
+      prompts.push({
+        type: 'stage-layout',
+        prompt: `Professional stage layout blueprint. Top-down technical view showing detailed stage plot: band member positions, instrument placements, monitor positions, cable runs, power distribution. Clean CAD-style technical drawing, measurements and annotations, professional touring production standard. White background, crisp lines.`
+      });
+      prompts.push({
+        type: 'stage-3d',
+        prompt: `Professional 3D visualization of a concert stage setup. Isometric view showing complete stage layout: drum kit, keyboard setup, guitar amplifiers, microphone stands, monitor wedges, lighting truss overhead. Professional production render, clean and organized stage, realistic equipment, professional concert production quality.`
+      });
+      break;
+
+    case 'hospitality':
+      prompts.push({
+        type: 'dressing-room',
+        prompt: `Professional artist dressing room setup. Comfortable modern dressing room with: sofa seating, makeup station with mirror and lighting, clothing rack, mini refrigerator, coffee station, fruit and snack table. Clean, well-lit, professional touring hospitality standard. Warm lighting, organized and welcoming atmosphere.`
+      });
+      break;
+
+    default:
+      break;
   }
-});
 
-/**
- * PATCH /api/manager/documents/:id
- * Actualiza un documento existente
- */
-router.patch('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, content, images } = req.body;
-
-    const updates: any = {};
-    if (title !== undefined) updates.title = title;
-    if (content !== undefined) updates.content = content;
-    if (images !== undefined) updates.images = images;
-
-    const document = await managerDocumentsService.updateDocument(id, updates);
-
-    res.json({ 
-      success: true, 
-      document 
-    });
-  } catch (error: any) {
-    console.error('Error actualizando documento:', error);
-    res.status(500).json({ 
-      error: error.message || 'Error actualizando documento' 
-    });
-  }
-});
-
-/**
- * DELETE /api/manager/documents/:id
- * Elimina un documento
- */
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    await managerDocumentsService.deleteDocument(id);
-
-    res.json({ 
-      success: true, 
-      message: 'Documento eliminado exitosamente' 
-    });
-  } catch (error: any) {
-    console.error('Error eliminando documento:', error);
-    res.status(500).json({ 
-      error: error.message || 'Error eliminando documento' 
-    });
-  }
-});
-
-/**
- * POST /api/manager/documents/:id/regenerate-images
- * Regenera las imágenes de un documento
- */
-router.post('/:id/regenerate-images', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    console.log(`🎨 Regenerando imágenes para documento ${id}`);
-
-    const document = await managerDocumentsService.regenerateImages(id);
-
-    res.json({ 
-      success: true, 
-      document 
-    });
-  } catch (error: any) {
-    console.error('Error regenerando imágenes:', error);
-    res.status(500).json({ 
-      error: error.message || 'Error regenerando imágenes' 
-    });
-  }
-});
+  return prompts;
+}
 
 export default router;

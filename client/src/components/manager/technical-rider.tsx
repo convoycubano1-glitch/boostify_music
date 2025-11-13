@@ -9,33 +9,18 @@ import { Textarea } from "../ui/textarea";
 import { Input } from "../ui/input";
 import { useAuth } from "../../hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "../../lib/queryClient";
+import { managerDocumentsService, ManagerDocument, DocumentMetadata } from "../../lib/services/manager-documents-service";
 import { MdMusicNote, MdOutlineAudiotrack, MdLightbulb } from "react-icons/md";
 import { FiDownload, FiFilePlus } from "react-icons/fi";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Switch } from "../ui/switch";
-
-interface ManagerDocument {
-  id: string;
-  userId: string;
-  type: string;
-  title: string;
-  content: string;
-  images?: {
-    url: string;
-    prompt: string;
-    type: string;
-  }[];
-  createdAt: { _seconds: number };
-  updatedAt: { _seconds: number };
-}
 
 export function TechnicalRiderSection() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [requirements, setRequirements] = useState("");
-  const [documentType, setDocumentType] = useState<'technical-rider' | 'lighting-setup' | 'stage-plot'>('technical-rider');
+  const [documentType, setDocumentType] = useState<'technical-rider' | 'lighting-setup' | 'stage-plot' | 'hospitality' | 'contract'>('technical-rider');
   const [includeImages, setIncludeImages] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<ManagerDocument | null>(null);
@@ -43,29 +28,56 @@ export function TechnicalRiderSection() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+  
+  // Metadata fields
+  const [artistName, setArtistName] = useState("");
+  const [eventName, setEventName] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [venueName, setVenueName] = useState("");
+  const [venueCity, setVenueCity] = useState("");
+  const [venueCapacity, setVenueCapacity] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
 
   const { data: documents = [], isLoading } = useQuery<ManagerDocument[]>({
-    queryKey: ['/api/manager/documents', user?.uid],
+    queryKey: ['manager-documents', user?.uid],
+    queryFn: async () => {
+      if (!user?.uid) return [];
+      return await managerDocumentsService.getDocuments(user.uid);
+    },
     enabled: !!user?.uid
   });
 
   const generateDocumentMutation = useMutation({
-    mutationFn: async (data: { userId: string; type: string; requirements: string; includeImages: boolean }) => {
-      const response = await apiRequest('/api/manager/documents/generate', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-      return response.document;
+    mutationFn: async (data: { userId: string; type: 'technical-rider' | 'lighting-setup' | 'stage-plot' | 'hospitality' | 'contract'; requirements: string; metadata: DocumentMetadata; includeImages: boolean }) => {
+      return await managerDocumentsService.generateDocument(
+        data.userId,
+        data.type,
+        data.requirements,
+        data.metadata,
+        data.includeImages
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/manager/documents', user?.uid] });
+      queryClient.invalidateQueries({ queryKey: ['manager-documents', user?.uid] });
       toast({
         title: "Success",
-        description: "Document generated successfully"
+        description: "Document generated successfully with Gemini" + (includeImages ? " + Nano Banana" : "")
       });
       setIsDialogOpen(false);
       setRequirements("");
       setIncludeImages(false);
+      // Reset metadata fields
+      setArtistName("");
+      setEventName("");
+      setEventDate("");
+      setVenueName("");
+      setVenueCity("");
+      setVenueCapacity("");
+      setContactName("");
+      setContactEmail("");
+      setContactPhone("");
     },
     onError: (error: any) => {
       toast({
@@ -78,14 +90,13 @@ export function TechnicalRiderSection() {
 
   const updateDocumentMutation = useMutation({
     mutationFn: async (data: { id: string; title: string; content: string }) => {
-      const response = await apiRequest(`/api/manager/documents/${data.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ title: data.title, content: data.content })
+      await managerDocumentsService.updateDocument(data.id, {
+        title: data.title,
+        content: data.content
       });
-      return response.document;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/manager/documents', user?.uid] });
+      queryClient.invalidateQueries({ queryKey: ['manager-documents', user?.uid] });
       toast({
         title: "Success",
         description: "Document updated successfully"
@@ -104,12 +115,10 @@ export function TechnicalRiderSection() {
 
   const deleteDocumentMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest(`/api/manager/documents/${id}`, {
-        method: 'DELETE'
-      });
+      await managerDocumentsService.deleteDocument(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/manager/documents', user?.uid] });
+      queryClient.invalidateQueries({ queryKey: ['manager-documents', user?.uid] });
       toast({
         title: "Success",
         description: "Document deleted successfully"
@@ -126,14 +135,11 @@ export function TechnicalRiderSection() {
   });
 
   const regenerateImagesMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest(`/api/manager/documents/${id}/regenerate-images`, {
-        method: 'POST'
-      });
-      return response.document;
+    mutationFn: async ({ id, document }: { id: string; document: ManagerDocument }) => {
+      await managerDocumentsService.regenerateImages(id, document);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/manager/documents', user?.uid] });
+      queryClient.invalidateQueries({ queryKey: ['manager-documents', user?.uid] });
       toast({
         title: "Success",
         description: "Images regenerated successfully"
@@ -158,6 +164,15 @@ export function TechnicalRiderSection() {
       return;
     }
 
+    if (!artistName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter the artist/band name",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!user?.uid) {
       toast({
         title: "Error",
@@ -167,10 +182,23 @@ export function TechnicalRiderSection() {
       return;
     }
 
+    const metadata: DocumentMetadata = {
+      artistName: artistName.trim(),
+      eventName: eventName.trim() || undefined,
+      eventDate: eventDate.trim() || undefined,
+      venueName: venueName.trim() || undefined,
+      venueCity: venueCity.trim() || undefined,
+      venueCapacity: venueCapacity.trim() || undefined,
+      contactName: contactName.trim() || undefined,
+      contactEmail: contactEmail.trim() || undefined,
+      contactPhone: contactPhone.trim() || undefined
+    };
+
     await generateDocumentMutation.mutateAsync({
       userId: user.uid,
       type: documentType,
       requirements,
+      metadata,
       includeImages
     });
   };
@@ -191,15 +219,15 @@ export function TechnicalRiderSection() {
     }
   };
 
-  const handleDownload = (document: ManagerDocument) => {
-    const blob = new Blob([document.content], { type: 'text/plain' });
+  const handleDownload = (doc: ManagerDocument) => {
+    const blob = new Blob([doc.content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = window.document.createElement('a');
     link.href = url;
-    link.download = `${document.title.replace(/\s+/g, '-').toLowerCase()}.txt`;
-    document.body.appendChild(link);
+    link.download = `${doc.title.replace(/\s+/g, '-').toLowerCase()}.txt`;
+    window.document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    window.document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
     toast({
@@ -208,15 +236,17 @@ export function TechnicalRiderSection() {
     });
   };
 
-  const handleViewDocument = (document: ManagerDocument) => {
-    setSelectedDocument(document);
-    setEditTitle(document.title);
-    setEditContent(document.content);
+  const handleViewDocument = (doc: ManagerDocument) => {
+    setSelectedDocument(doc);
+    setEditTitle(doc.title);
+    setEditContent(doc.content);
     setIsEditMode(false);
   };
 
   const handleRegenerateImages = (id: string) => {
-    regenerateImagesMutation.mutate(id);
+    if (selectedDocument) {
+      regenerateImagesMutation.mutate({ id, document: selectedDocument });
+    }
   };
 
   return (
@@ -366,7 +396,7 @@ export function TechnicalRiderSection() {
                       <div className="flex-1">
                         <p className="font-medium" data-testid={`text-document-title-${doc.id}`}>{doc.title}</p>
                         <p className="text-sm text-muted-foreground" data-testid={`text-document-date-${doc.id}`}>
-                          {new Date(doc.createdAt._seconds * 1000).toLocaleDateString()}
+                          {doc.createdAt?.toDate ? doc.createdAt.toDate().toLocaleDateString() : 'Recent'}
                         </p>
                       </div>
                       {doc.images && doc.images.length > 0 && (
@@ -435,7 +465,7 @@ export function TechnicalRiderSection() {
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Document' : selectedDocument?.title}</DialogTitle>
             <DialogDescription>
-              {selectedDocument && new Date(selectedDocument.createdAt._seconds * 1000).toLocaleDateString()}
+              {selectedDocument && (selectedDocument.createdAt?.toDate ? selectedDocument.createdAt.toDate().toLocaleDateString() : 'Recent')}
             </DialogDescription>
           </DialogHeader>
           
@@ -560,14 +590,15 @@ export function TechnicalRiderSection() {
 
       {/* Create Document Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Generate Professional Document</DialogTitle>
             <DialogDescription>
-              Enter your requirements to generate a professional document powered by Gemini AI
+              Enter artist, event, and technical details to generate a professional document with Gemini AI
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
+            {/* Document Type */}
             <div className="space-y-2">
               <Label htmlFor="document-type">Document Type</Label>
               <select
@@ -584,20 +615,152 @@ export function TechnicalRiderSection() {
                 <option value="contract">Performance Contract</option>
               </select>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="requirements">Requirements</Label>
-              <Textarea
-                id="requirements"
-                placeholder="Describe your specific requirements in detail..."
-                value={requirements}
-                onChange={(e) => setRequirements(e.target.value)}
-                className="min-h-[200px]"
-                data-testid="textarea-requirements"
-              />
+
+            {/* Artist/Band Information */}
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="text-sm font-semibold text-orange-500">Artist/Band Information</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <Label htmlFor="artist-name">
+                    Artist/Band Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="artist-name"
+                    placeholder="e.g., The Rolling Stones"
+                    value={artistName}
+                    onChange={(e) => setArtistName(e.target.value)}
+                    data-testid="input-artist-name"
+                  />
+                </div>
+                
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <Label htmlFor="event-name">Event Name (optional)</Label>
+                  <Input
+                    id="event-name"
+                    placeholder="e.g., Summer Music Festival 2025"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    data-testid="input-event-name"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="event-date">Event Date (optional)</Label>
+                <Input
+                  id="event-date"
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  data-testid="input-event-date"
+                />
+              </div>
             </div>
-            
-            <div className="flex items-center space-x-2">
+
+            {/* Venue Information */}
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="text-sm font-semibold text-orange-500">Venue Information</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <Label htmlFor="venue-name">Venue Name (optional)</Label>
+                  <Input
+                    id="venue-name"
+                    placeholder="e.g., Madison Square Garden"
+                    value={venueName}
+                    onChange={(e) => setVenueName(e.target.value)}
+                    data-testid="input-venue-name"
+                  />
+                </div>
+                
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <Label htmlFor="venue-city">City (optional)</Label>
+                  <Input
+                    id="venue-city"
+                    placeholder="e.g., New York, NY"
+                    value={venueCity}
+                    onChange={(e) => setVenueCity(e.target.value)}
+                    data-testid="input-venue-city"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="venue-capacity">Venue Capacity (optional)</Label>
+                <Input
+                  id="venue-capacity"
+                  placeholder="e.g., 20,000 or 500-1000"
+                  value={venueCapacity}
+                  onChange={(e) => setVenueCapacity(e.target.value)}
+                  data-testid="input-venue-capacity"
+                />
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="text-sm font-semibold text-orange-500">Contact Information</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="contact-name">Contact Person (optional)</Label>
+                <Input
+                  id="contact-name"
+                  placeholder="e.g., John Smith"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  data-testid="input-contact-name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contact-email">Email (optional)</Label>
+                  <Input
+                    id="contact-email"
+                    type="email"
+                    placeholder="e.g., contact@example.com"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    data-testid="input-contact-email"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="contact-phone">Phone (optional)</Label>
+                  <Input
+                    id="contact-phone"
+                    type="tel"
+                    placeholder="e.g., +1 (555) 123-4567"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    data-testid="input-contact-phone"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Technical Requirements */}
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="text-sm font-semibold text-orange-500">Technical Requirements</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="requirements">
+                  Detailed Requirements <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="requirements"
+                  placeholder="Describe your specific technical requirements in detail... (e.g., audio equipment, lighting needs, stage specifications, backline, hospitality needs, etc.)"
+                  value={requirements}
+                  onChange={(e) => setRequirements(e.target.value)}
+                  className="min-h-[150px]"
+                  data-testid="textarea-requirements"
+                />
+              </div>
+            </div>
+
+            {/* Options */}
+            <div className="flex items-center space-x-2 border-t pt-4">
               <Switch
                 id="include-images"
                 checked={includeImages}
@@ -610,7 +773,7 @@ export function TechnicalRiderSection() {
             </div>
             
             {includeImages && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground pl-6">
                 ⚡ Professional images will be generated showing lighting setups, stage layouts, or equipment diagrams based on your document type.
               </p>
             )}
@@ -618,7 +781,7 @@ export function TechnicalRiderSection() {
           <DialogFooter>
             <Button
               onClick={handleGenerateDocument}
-              disabled={generateDocumentMutation.isPending || !requirements.trim()}
+              disabled={generateDocumentMutation.isPending || !requirements.trim() || !artistName.trim()}
               className="w-full bg-orange-500 hover:bg-orange-600"
               data-testid="button-generate-document"
             >
@@ -630,7 +793,7 @@ export function TechnicalRiderSection() {
               ) : (
                 <>
                   <FileText className="mr-2 h-4 w-4" />
-                  Generate Document
+                  Generate Professional Document
                 </>
               )}
             </Button>
