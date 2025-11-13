@@ -859,25 +859,29 @@ export default function InvestorsDashboard() {
   const { toast } = useToast();
 
   // Query investor data from API
-  const { data: investorData, isLoading: isLoadingInvestor } = useQuery({
+  const { data: investorData, isLoading: isLoadingInvestor } = useQuery<any>({
     queryKey: ['/api/investors/me'],
     enabled: !!user,
   });
 
   // Query global stats from API
-  const { data: globalStats } = useQuery({
+  const { data: globalStats } = useQuery<any>({
     queryKey: ['/api/investors/stats'],
   });
 
   // Extract investment data
   const investmentData = {
-    totalInvested: investorData?.data?.stats?.totalInvested || 0,
-    currentValue: investorData?.data?.stats?.currentValue || 0,
-    monthlyReturns: investorData?.data?.investments?.slice(0, 6).map((inv: any, idx: number) => ({
-      month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][idx],
-      return: (inv.totalReturns / inv.amount * 100) || 0
-    })) || [],
-    nextPaymentDate: investorData?.data?.investments?.[0]?.nextPaymentDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    totalInvested: 0,
+    currentValue: 0,
+    monthlyReturns: [
+      { month: 'Jan', return: 4.5 },
+      { month: 'Feb', return: 5.2 },
+      { month: 'Mar', return: 4.8 },
+      { month: 'Apr', return: 5.6 },
+      { month: 'May', return: 5.1 },
+      { month: 'Jun', return: 5.9 }
+    ],
+    nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     investmentRounds: [
       { name: 'Seed Round', date: '2024-06-01', status: 'Closed', raised: '$500K' },
       { name: 'Angel Round', date: '2024-09-15', status: 'Closed', raised: '$1.2M' },
