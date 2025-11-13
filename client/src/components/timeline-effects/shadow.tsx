@@ -1,6 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState } from "react";
+import ColorPicker from "@/components/color-picker";
 
 export interface BoxShadow {
   x: number;
@@ -33,21 +35,30 @@ function Shadow({
           Color
         </div>
         <div className="relative w-32">
-          <div className="relative">
-            <div
-              style={{ backgroundColor: localValue.color }}
-              className="absolute left-0.5 top-0.5 h-7 w-7 flex-none cursor-pointer rounded-md border border-border"
-            />
-            <Input
-              className="h-8 pl-10"
-              value={localValue.color}
-              onChange={(e) => {
-                const newValue = { ...localValue, color: e.target.value };
-                setLocalValue(newValue);
-                onChange(newValue);
-              }}
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <div className="flex h-8 items-center gap-2 rounded-md border border-input bg-background px-2 cursor-pointer hover:bg-accent">
+                <div
+                  style={{ backgroundColor: localValue.color }}
+                  className="h-5 w-5 rounded border border-border"
+                />
+                <span className="text-xs font-mono">{localValue.color}</span>
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-3" align="start">
+              <ColorPicker
+                value={localValue.color}
+                onChange={(color) => {
+                  const newValue = { ...localValue, color };
+                  setLocalValue(newValue);
+                  onChange(newValue);
+                }}
+                solid={true}
+                gradient={false}
+                format="hex"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
