@@ -19,7 +19,7 @@ import {
   ChevronLeft, ChevronRight, EyeOff, LockOpen, Unlock, 
   Image as ImageIcon, RefreshCw, Video, Wand2, Text, 
   Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
-  Maximize2
+  Maximize2, Save, FolderOpen
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -134,6 +134,11 @@ interface TimelineEditorProps {
   onSplitClip?: (clipId: number, splitTime: number) => void;
   beatsData?: BeatMap;
   videoUrl?: string; // Optional: for video preview
+  onSaveProject?: () => void;
+  onLoadProject?: () => void;
+  projectName?: string;
+  onProjectNameChange?: (name: string) => void;
+  isSavingProject?: boolean;
 }
 
 // ===== Constants =====
@@ -158,7 +163,12 @@ export function TimelineEditor({
   onGenerateVideo,
   onSplitClip,
   beatsData,
-  videoUrl
+  videoUrl,
+  onSaveProject,
+  onLoadProject,
+  projectName = '',
+  onProjectNameChange,
+  isSavingProject = false
 }: TimelineEditorProps) {
   const { toast } = useToast();
 
@@ -763,6 +773,49 @@ export function TimelineEditor({
         </div>
         
         <div className="flex items-center space-x-2">
+          {/* Project save/load controls */}
+          {onSaveProject && (
+            <>
+              {onProjectNameChange && (
+                <Input
+                  type="text"
+                  placeholder="Project name..."
+                  value={projectName}
+                  onChange={(e) => onProjectNameChange(e.target.value)}
+                  className="w-32 h-8 text-xs"
+                  data-testid="input-project-name"
+                />
+              )}
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onSaveProject}
+                disabled={isSavingProject || !projectName.trim()}
+                title="Save Project (Ctrl+S)"
+                data-testid="button-save-project"
+              >
+                <Save className="h-4 w-4 mr-1" />
+                {isSavingProject ? 'Saving...' : 'Save'}
+              </Button>
+              
+              {onLoadProject && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onLoadProject}
+                  title="Load Project"
+                  data-testid="button-load-project"
+                >
+                  <FolderOpen className="h-4 w-4 mr-1" />
+                  Load
+                </Button>
+              )}
+              
+              <Separator orientation="vertical" className="h-8 mx-2" />
+            </>
+          )}
+          
           {/* Zoom controls */}
           <Button 
             size="icon" 

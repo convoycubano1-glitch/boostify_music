@@ -291,6 +291,22 @@ export function MusicVideoAI() {
       console.log('🔍 [TIMELINE STATE] Timeline items:', timelineItems);
     }
   }, [timelineItems]);
+  
+  // Load saved projects when dialog opens
+  useEffect(() => {
+    if (showLoadProjectDialog && user?.uid) {
+      musicVideoProjectServicePostgres.getUserProjects(user.uid)
+        .then(projects => setSavedProjects(projects))
+        .catch(error => {
+          console.error('Error loading projects:', error);
+          toast({
+            title: "Error",
+            description: "Could not load projects",
+            variant: "destructive"
+          });
+        });
+    }
+  }, [showLoadProjectDialog, user, toast]);
   const [isExporting, setIsExporting] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -361,6 +377,8 @@ export function MusicVideoAI() {
   const [projectName, setProjectName] = useState<string>("Untitled Project");
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
   const [isSavingProject, setIsSavingProject] = useState(false);
+  const [showLoadProjectDialog, setShowLoadProjectDialog] = useState(false);
+  const [savedProjects, setSavedProjects] = useState<any[]>([]);
 
   // Estados para generación de videos
   const [selectedVideoModel, setSelectedVideoModel] = useState<string>(FAL_VIDEO_MODELS.KLING_2_1_PRO_I2V.id);
@@ -6064,6 +6082,11 @@ ${transcription}`;
                       onSceneSelect={setSelectedSceneId}
                       onRegenerateImage={handleRegenerateImageFromTimeline}
                       onGenerateVideo={handleGenerateVideoFromTimeline}
+                      onSaveProject={handleSaveProject}
+                      onLoadProject={() => setShowLoadProjectDialog(true)}
+                      projectName={projectName}
+                      onProjectNameChange={setProjectName}
+                      isSavingProject={isSavingProject}
                     />
                   </div>
 
@@ -6081,6 +6104,58 @@ ${transcription}`;
         </Card>
         </motion.div>
       </motion.div>
+      
+      {/* Load Project Dialog */}
+      <Dialog open={showLoadProjectDialog} onOpenChange={setShowLoadProjectDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold">Load Project</h2>
+              <p className="text-sm text-muted-foreground">Select a project to load</p>
+            </div>
+            
+            {savedProjects.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No saved projects found</p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {savedProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                    onClick={async () => {
+                      await handleLoadProject(project.id);
+                      setShowLoadProjectDialog(false);
+                    }}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-lg">{project.projectName}</h3>
+                      <Badge variant={
+                        project.status === 'completed' ? 'default' :
+                        project.status === 'generating_images' ? 'secondary' :
+                        'outline'
+                      }>
+                        {project.status}
+                      </Badge>
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {project.progress && (
+                        <p>
+                          Images: {project.progress.imagesGenerated || 0}/{project.progress.totalImages || 0} • 
+                          Videos: {project.progress.videosGenerated || 0}/{project.progress.totalVideos || 0}
+                        </p>
+                      )}
+                      <p>Last updated: {new Date(project.updatedAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
