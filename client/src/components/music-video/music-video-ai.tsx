@@ -1261,10 +1261,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           try {
             console.log(`🎨 Generando portada ${index + 1}/3 para concepto ${index + 1}`);
             
-            // Crear prompt para portada de álbum con referencia del artista
+            // Crear prompt para portada de álbum con referencia del artista y títulos cinematográficos
             const conceptData = concept as any;
             const songTitle = selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title';
-            const coverPrompt = `Professional music album cover art. Artist: ${projectName || 'Artist Name'}. Song title displayed: "${songTitle}". Visual style: ${conceptData.visual_theme || conceptData.description || 'Modern cinematic'}. ${conceptData.color_palette?.primary_colors ? `Color palette: ${conceptData.color_palette.primary_colors.join(', ')}` : ''}. Feature the artist prominently in the cover with their likeness. Minimalist, professional, high-quality design with the artist name "${projectName || 'Artist Name'}" and song title "${songTitle}" as text overlay.`;
+            const coverPrompt = `Professional cinematic album cover art. Feature the artist prominently with their exact likeness and facial features. Visual style: ${conceptData.visual_theme || conceptData.description || 'Modern cinematic'}. ${conceptData.color_palette?.primary_colors ? `Color palette: ${conceptData.color_palette.primary_colors.join(', ')}. ` : ''}Cinematic title design: Display "${songTitle.toUpperCase()}" in bold, dramatic movie poster typography at the top or center. Display artist name "${projectName || 'Artist Name'}" in elegant, professional font below the title. Use cinematic text effects like glowing edges, metallic finish, or subtle shadows. The text should be integrated naturally into the composition with professional kerning and layout. High-quality, dramatic lighting, 4K resolution, professional album cover design.`;
             
             const response = await fetch('/api/gemini-image/generate-simple', {
               method: 'POST',
