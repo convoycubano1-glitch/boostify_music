@@ -130,6 +130,7 @@ interface TimelineEditorProps {
   isPlaying: boolean;
   onSceneSelect?: (clipId: number | null) => void;
   onRegenerateImage?: (clipId: number) => void;
+  onGenerateVideo?: (clipId: number) => void;
   onSplitClip?: (clipId: number, splitTime: number) => void;
   beatsData?: BeatMap;
   videoUrl?: string; // Optional: for video preview
@@ -154,6 +155,7 @@ export function TimelineEditor({
   isPlaying,
   onSceneSelect,
   onRegenerateImage,
+  onGenerateVideo,
   onSplitClip,
   beatsData,
   videoUrl
@@ -943,6 +945,42 @@ export function TimelineEditor({
                               {formatTime(clip.duration)}
                             </div>
                           </div>
+                          
+                          {/* Action buttons for images */}
+                          {(clip.imageUrl || clip.metadata?.isGeneratedImage) && (
+                            <div className="absolute top-1 right-1 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
+                              {onRegenerateImage && (
+                                <Button
+                                  size="icon"
+                                  variant="secondary"
+                                  className="h-6 w-6 bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRegenerateImage(clip.id);
+                                  }}
+                                  title="Regenerar Imagen"
+                                  data-testid={`button-regenerate-${clip.id}`}
+                                >
+                                  <RefreshCw className="h-3 w-3" />
+                                </Button>
+                              )}
+                              {onGenerateVideo && (
+                                <Button
+                                  size="icon"
+                                  variant="secondary"
+                                  className="h-6 w-6 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onGenerateVideo(clip.id);
+                                  }}
+                                  title="Generar Video"
+                                  data-testid={`button-generate-video-${clip.id}`}
+                                >
+                                  <Video className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          )}
                           
                           {/* Resize handles */}
                           {!clip.locked && tool === 'trim' && (
