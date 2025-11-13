@@ -12,9 +12,11 @@ import {
   ZoomIn,
   Layers,
   Music,
-  AlertCircle
+  AlertCircle,
+  Play
 } from "lucide-react";
 import { ShotType, CameraMovementPattern } from "../../lib/professional-editor-types";
+import { GSAPVideoPreview } from "./gsap-video-preview";
 
 // Tipo para cada elemento de imagen en la secuencia
 interface ImageSequenceItem {
@@ -61,6 +63,7 @@ export function ImageSequenceManager({
 }: ImageSequenceManagerProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(-1);
   const [reordering, setReordering] = useState(false);
+  const [showGSAPPreview, setShowGSAPPreview] = useState(false);
   
   // Función para cambiar el tipo de plano de una imagen
   const changeShotType = (index: number, shotType: ShotType) => {
@@ -344,6 +347,7 @@ export function ImageSequenceManager({
   };
 
   return (
+    <>
     <Card className={`border shadow-sm ${className}`}>
       <CardHeader className="py-3">
         <CardTitle className="text-lg flex items-center justify-between">
@@ -406,17 +410,49 @@ export function ImageSequenceManager({
               : "Agrega imágenes para comenzar"}
           </div>
           
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => onAddToTimeline?.(images)}
-            disabled={images.length === 0}
-            className="h-8"
-          >
-            Agregar a Timeline
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGSAPPreview(!showGSAPPreview)}
+              disabled={images.length === 0}
+              className="h-8 gap-2"
+              data-testid="button-gsap-preview"
+            >
+              <Play className="w-4 h-4" />
+              {showGSAPPreview ? 'Ocultar' : 'Preview'} GSAP
+            </Button>
+            
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onAddToTimeline?.(images)}
+              disabled={images.length === 0}
+              className="h-8"
+            >
+              Agregar a Timeline
+            </Button>
+          </div>
         </CardFooter>
       )}
     </Card>
+    
+    {/* GSAP Preview Component */}
+    {showGSAPPreview && images.length > 0 && (
+      <div className="mt-4">
+        <GSAPVideoPreview
+          scenes={images.map(img => ({
+            imageUrl: img.url,
+            duration: img.duration,
+            transitionType: img.transitionType,
+            transitionDuration: img.transitionDuration,
+            cameraMovement: img.metadata?.movementPattern as any,
+            shotType: img.shotType
+          }))}
+          onClose={() => setShowGSAPPreview(false)}
+        />
+      </div>
+    )}
+  </>
   );
 }
