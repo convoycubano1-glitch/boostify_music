@@ -183,16 +183,17 @@ export function TechnicalRiderSection() {
     }
 
     const metadata: DocumentMetadata = {
-      artistName: artistName.trim(),
-      eventName: eventName.trim() || undefined,
-      eventDate: eventDate.trim() || undefined,
-      venueName: venueName.trim() || undefined,
-      venueCity: venueCity.trim() || undefined,
-      venueCapacity: venueCapacity.trim() || undefined,
-      contactName: contactName.trim() || undefined,
-      contactEmail: contactEmail.trim() || undefined,
-      contactPhone: contactPhone.trim() || undefined
+      artistName: artistName.trim()
     };
+    
+    if (eventName.trim()) metadata.eventName = eventName.trim();
+    if (eventDate.trim()) metadata.eventDate = eventDate.trim();
+    if (venueName.trim()) metadata.venueName = venueName.trim();
+    if (venueCity.trim()) metadata.venueCity = venueCity.trim();
+    if (venueCapacity.trim()) metadata.venueCapacity = venueCapacity.trim();
+    if (contactName.trim()) metadata.contactName = contactName.trim();
+    if (contactEmail.trim()) metadata.contactEmail = contactEmail.trim();
+    if (contactPhone.trim()) metadata.contactPhone = contactPhone.trim();
 
     await generateDocumentMutation.mutateAsync({
       userId: user.uid,

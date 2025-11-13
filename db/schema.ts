@@ -223,6 +223,23 @@ export const events = pgTable("events", {
   metadata: json("metadata")
 });
 
+export const investors = pgTable("investors", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  country: text("country").notNull(),
+  investmentAmount: decimal("investment_amount", { precision: 10, scale: 2 }).notNull(),
+  investmentGoals: text("investment_goals").notNull(),
+  riskTolerance: text("risk_tolerance", { enum: ["low", "medium", "high"] }).notNull(),
+  investorType: text("investor_type", { enum: ["individual", "corporate", "institutional"] }).notNull(),
+  termsAccepted: boolean("terms_accepted").default(false).notNull(),
+  status: text("status", { enum: ["pending", "approved", "rejected"] }).default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const managerTasks = pgTable("manager_tasks", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -533,6 +550,11 @@ export const insertAnalyticsHistorySchema = createInsertSchema(analyticsHistory)
 export const selectAnalyticsHistorySchema = createSelectSchema(analyticsHistory);
 export const insertEventSchema = createInsertSchema(events);
 export const selectEventSchema = createSelectSchema(events);
+export const insertInvestorSchema = createInsertSchema(investors)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export const selectInvestorSchema = createSelectSchema(investors);
+export type InsertInvestor = z.infer<typeof insertInvestorSchema>;
+export type SelectInvestor = typeof investors.$inferSelect;
 export const insertManagerTaskSchema = createInsertSchema(managerTasks);
 export const selectManagerTaskSchema = createSelectSchema(managerTasks);
 export const insertManagerContactSchema = createInsertSchema(managerContacts);
