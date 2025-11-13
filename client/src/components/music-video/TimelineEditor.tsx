@@ -860,6 +860,79 @@ export function TimelineEditor({
     return colors[layer % colors.length];
   };
 
+  // ===== Apply Visual Effects to Clip =====
+  const getClipEffectStyles = (clip: TimelineClip): React.CSSProperties => {
+    const effects = clip.metadata?.effects;
+    if (!effects) return {};
+
+    const styles: React.CSSProperties = {};
+    const filters: string[] = [];
+    const transforms: string[] = [];
+
+    // Filter effects
+    if (effects.blur && effects.blur > 0) {
+      filters.push(`blur(${effects.blur / 10}px)`);
+    }
+    if (effects.brightness !== undefined && effects.brightness !== 50) {
+      const brightnessPercent = (effects.brightness / 50) * 100;
+      filters.push(`brightness(${brightnessPercent}%)`);
+    }
+
+    // Opacity
+    if (effects.opacity !== undefined && effects.opacity !== 100) {
+      styles.opacity = effects.opacity / 100;
+    }
+
+    // Flip transform
+    if (effects.flip) {
+      const scaleX = effects.flip.horizontal ? -1 : 1;
+      const scaleY = effects.flip.vertical ? -1 : 1;
+      if (scaleX !== 1 || scaleY !== 1) {
+        transforms.push(`scale(${scaleX}, ${scaleY})`);
+      }
+    }
+
+    // Custom transform (scale, position, rotation)
+    if (effects.transform) {
+      const t = effects.transform;
+      if (t.scale !== undefined && t.scale !== 1) {
+        transforms.push(`scale(${t.scale})`);
+      }
+      if (t.x !== undefined && t.x !== 0) {
+        transforms.push(`translateX(${t.x}px)`);
+      }
+      if (t.y !== undefined && t.y !== 0) {
+        transforms.push(`translateY(${t.y}px)`);
+      }
+      if (t.rotation !== undefined && t.rotation !== 0) {
+        transforms.push(`rotate(${t.rotation}deg)`);
+      }
+    }
+
+    // Border radius
+    if (effects.radius && effects.radius > 0) {
+      styles.borderRadius = `${effects.radius}px`;
+    }
+
+    // Box shadow
+    if (effects.shadow) {
+      const s = effects.shadow;
+      styles.boxShadow = `${s.x}px ${s.y}px ${s.blur}px ${s.color}`;
+    }
+
+    // Apply combined filter
+    if (filters.length > 0) {
+      styles.filter = filters.join(' ');
+    }
+
+    // Apply combined transform
+    if (transforms.length > 0) {
+      styles.transform = transforms.join(' ');
+    }
+
+    return styles;
+  };
+
   const getLayerName = (layerId: number) => {
     const names: Record<number, string> = {
       0: 'Audio',
@@ -1267,6 +1340,8 @@ export function TimelineEditor({
                       const isSelected = clip.id === selectedClip;
                       const layerColor = getLayerColor(clip.layer);
                       
+                      const effectStyles = getClipEffectStyles(clip);
+                      
                       return (
                         <div
                           key={clip.id}
@@ -1288,7 +1363,8 @@ export function TimelineEditor({
                             backgroundPosition: 'center',
                             backgroundRepeat: 'no-repeat',
                             cursor: clip.locked ? 'not-allowed' : getClipCursor(),
-                            touchAction: tool === 'hand' ? 'none' : 'auto'
+                            touchAction: tool === 'hand' ? 'none' : 'auto',
+                            ...effectStyles
                           }}
                           onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'body')}
                           onTouchStart={(e) => handleClipTouchStart(e, clip.id, 'body')}
@@ -1307,6 +1383,15 @@ export function TimelineEditor({
                                   title="Clip con sincronización labial"
                                 >
                                   🎤 SYNC
+                                </Badge>
+                              )}
+                              {clip.metadata?.effects && Object.keys(clip.metadata.effects).length > 0 && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-[8px] px-1 py-0 h-4 bg-orange-500/80 text-white border-orange-400"
+                                  title="Clip con efectos visuales aplicados"
+                                >
+                                  ✨ FX
                                 </Badge>
                               )}
                             </div>
