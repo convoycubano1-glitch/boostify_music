@@ -51,7 +51,7 @@ export async function generateMusicVideoPrompts(
     const scriptResponse = await generateMusicVideoScript(
       transcription,
       targetSceneCount,
-      directorInfo,
+      directorInfo as any, // Type compatibility: simple object to DirectorProfile
       targetDuration,
       editingStyle
     );

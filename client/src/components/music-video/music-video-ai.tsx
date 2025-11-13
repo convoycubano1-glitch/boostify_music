@@ -74,7 +74,7 @@ import { uploadImageFromUrl } from "../../lib/firebase-storage";
 
 // Fal.ai configuration
 fal.config({
-  credentials: import.meta.env.VITE_FAL_API_KEY,
+  credentials: (import.meta as any).env.VITE_FAL_API_KEY,
 });
 
 // Transcribe audio using backend API (secure)
@@ -1028,10 +1028,11 @@ export function MusicVideoAI() {
       const conceptsWithCovers = await Promise.all(
         concepts.map(async (concept, index) => {
           try {
-            console.log(`🎨 Generando portada ${index + 1}/3 para: ${concept.title}`);
+            console.log(`🎨 Generando portada ${index + 1}/3 para concepto ${index + 1}`);
             
             // Crear prompt para portada de álbum
-            const coverPrompt = `Professional music album cover art. Title: "${concept.title}". Artist: ${projectName || 'Artist Name'}. Song: ${selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title'}. Visual style: ${concept.visual_theme || concept.description}. ${concept.color_palette?.primary_colors ? `Color palette: ${concept.color_palette.primary_colors.join(', ')}` : ''}. Minimalist, professional, high-quality design.`;
+            const conceptData = concept as any;
+            const coverPrompt = `Professional music album cover art. Artist: ${projectName || 'Artist Name'}. Song: ${selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title'}. Visual style: ${conceptData.visual_theme || conceptData.description || 'Modern cinematic'}. ${conceptData.color_palette?.primary_colors ? `Color palette: ${conceptData.color_palette.primary_colors.join(', ')}` : ''}. Minimalist, professional, high-quality design.`;
             
             const response = await fetch('/api/gemini-image/generate-simple', {
               method: 'POST',
@@ -2282,9 +2283,9 @@ ${transcription}`;
       const videoPrompt = item.imagePrompt || item.title || 'Dynamic camera movement';
       
       const response = await generateVideoWithFAL(selectedFalModel, {
-        imageUrl: imageUrl,
+        imageUrl: imageUrl as string,
         prompt: videoPrompt,
-        duration: item.duration || 3
+        duration: String(Math.floor(item.duration || 3)) as "5" | "10"
       });
 
       if (response && response.videoUrl) {
@@ -4124,7 +4125,7 @@ ${transcription}`;
       {/* Modal de Selección de Director y Estilo */}
       <DirectorSelectionModal
         open={showDirectorSelection}
-        onSelect={handleDirectorSelection}
+        onSelect={handleDirectorSelection as any}
       />
 
       {/* Modal de Selección de Concepto */}
