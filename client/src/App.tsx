@@ -1,8 +1,9 @@
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { lazy, Suspense, ReactNode, useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "./components/ui/toaster";
+import { PageLoader } from "./components/ui/page-loader";
 import { ProtectedRoute } from "./lib/protected-route";
 import { SubscriptionProtectedRoute } from "./lib/subscription-protected-route";
 import { AuthProvider } from "./hooks/use-auth";
@@ -12,97 +13,99 @@ import { SubscriptionPlan } from "./lib/api/subscription-service";
 import { ViteHMRErrorHandler } from "./components/improved-websocket-context";
 import { EditorProvider } from "./lib/context/editor-context";
 import { GlobalAuthGuard } from "./lib/global-auth-guard";
-import NotFound from "./pages/not-found";
-import AdminPage from "./pages/admin";
-import AIAgentsPage from "./pages/ai-agents";
-import AIAdvisorsPage from "./pages/ai-advisors";
-import AIAdvisorsPageV2 from "./pages/ai-advisors-v2";
-import AnalyticsPage from "./pages/analytics";
-import ArtistDashboard from "./pages/artist-dashboard";
-import ArtistImageAdvisor from "./pages/artist-image-advisor";
-import ArtistImageAdvisorImproved from "./pages/artist-image-advisor-improved";
-import ArtistGeneratorPage from "./pages/artist-generator";
-import BlogPage from "./pages/blog";
-import BoostifyInternationalPage from "./pages/boostify-international";
-import BoostifyTVPage from "./pages/boostify-tv";
-import BoostifyExplicitPage from "./pages/boostify-explicit";
-import ContactsPage from "./pages/contacts";
-import ContractsPage from "./pages/contracts";
-import CookiesPage from "./pages/cookies";
-import DashboardPage from "./pages/dashboard";
-import EcosystemPage from "./pages/ecosystem";
-import EventsPage from "./pages/events";
-import FaceSwapPage from "./pages/face-swap";
-import GlobalPage from "./pages/global";
-import HomePage from "./pages/home";
-import ImageGeneratorPage from "./pages/image-generator";
-import ImageGeneratorSimplePage from "./pages/image-generator-simple";
-import InstagramBoostPage from "./pages/instagram-boost";
-import KlingToolsPage from "./pages/kling-tools";
-import KlingStorePage from "./pages/kling-store";
-import KlingTestPage from "./pages/kling-test";
-import ManagerToolsPage from "./pages/manager-tools";
-import MerchandisePage from "./pages/merchandise";
-import MessagesPage from "./pages/messages";
-import MusicVideoCreator from "./pages/music-video-creator";
-import MusicVideoWorkflowPage from "./pages/music-video-workflow-page";
-import MusicVideoWorkflowEnhancedPage from "./pages/music-video-workflow-enhanced";
-import MusicGeneratorPage from "./pages/music-generator";
-import NewsPage from "./pages/news";
-import PRPage from "./pages/pr";
-import PrivacyPage from "./pages/privacy";
-import ProducerToolsPage from "./pages/producer-tools";
-import PromotionPage from "./pages/promotion";
-import RecordLabelServices from "./pages/record-label-services";
-import SettingsPage from "./pages/settings";
-import SpotifyPage from "./pages/spotify";
-import StorePage from "./pages/store";
-import TermsPage from "./pages/terms";
-import TryOnPage from "./pages/try-on-page";
-import VideosPage from "./pages/videos";
-import VideoGenerationTestPage from "./pages/video-generation-test";
-import CameraMovementsTestPage from "./pages/camera-movements-test";
-import YoutubeViewsPage from "./pages/youtube-views";
-import RealTimeTranslator from "./pages/real-time-translator";
-import EducationPage from "./pages/education";
-import AchievementsPage from "./pages/achievements-page";
-import CourseDetailPage from "./pages/course-detail";
-import SmartCardsPage from "./pages/smart-cards";
-import InvestorsDashboard from "./pages/investors-dashboard";
-import SocialNetworkPage from "./pages/social-network";
-import FirestoreSocialPage from "./pages/firestore-social";
 import { BottomNav } from "./components/layout/bottom-nav";
-import ProfilePage from "./pages/profile";
-import ArtistProfilePage from "./pages/artist-profile";
-import DiagnosticsPage from "./pages/diagnostics";
 import { BoostifyRadio } from "./components/radio/boostify-radio";
 import { CustomerServiceAgent } from "./components/agents/customer-service-agent";
-import AffiliatesPage from "./pages/affiliates";
-import InitProductsPage from "./pages/init-products";
-import MusicMasteringPage from "./pages/music-mastering";
-import VirtualRecordLabelPage from "./pages/virtual-record-label";
-import TestProgressPage from "./pages/test-progress";
+
+import NotFound from "./pages/not-found";
+import HomePage from "./pages/home";
 import AuthPage from "./pages/auth-page";
-import PluginsPage from "./pages/plugins";
-import PricingPage from "./pages/pricing";
-import AccountPage from "./pages/account";
-import SubscriptionSuccessPage from "./pages/subscription-success";
-import SubscriptionCancelledPage from "./pages/subscription-cancelled";
-import MusicVideoSuccess from "./pages/music-video-success";
-import MusicVideoCancelled from "./pages/music-video-cancelled";
-import SubscriptionExamplePage from "./pages/subscription-example";
-import ProfessionalEditorPage from "./pages/professional-editor";
-import LayerFilterDemoPage from "./pages/layer-filter-demo";
-import AnimatedWorkflowPage from "./pages/animated-workflow";
-import TokenizationPage from "./pages/tokenization";
-import ResourcesPage from "./pages/resources";
-import TipsPage from "./pages/tips";
-import GuidesPage from "./pages/guides";
-import ToolsPage from "./pages/tools";
-import FeaturesPage from "./pages/features";
-import AIVideoCreationPage from "./pages/ai-video-creation";
-import TimelineDemoPage from "./pages/timeline-demo";
-import DebugFirebasePage from "./pages/debug-firebase";
+import DashboardPage from "./pages/dashboard";
+import ProfilePage from "./pages/profile";
+
+const AdminPage = lazy(() => import("./pages/admin"));
+const AIAgentsPage = lazy(() => import("./pages/ai-agents"));
+const AIAdvisorsPage = lazy(() => import("./pages/ai-advisors"));
+const AIAdvisorsPageV2 = lazy(() => import("./pages/ai-advisors-v2"));
+const AnalyticsPage = lazy(() => import("./pages/analytics"));
+const ArtistDashboard = lazy(() => import("./pages/artist-dashboard"));
+const ArtistImageAdvisor = lazy(() => import("./pages/artist-image-advisor"));
+const ArtistImageAdvisorImproved = lazy(() => import("./pages/artist-image-advisor-improved"));
+const ArtistGeneratorPage = lazy(() => import("./pages/artist-generator"));
+const BlogPage = lazy(() => import("./pages/blog"));
+const BoostifyInternationalPage = lazy(() => import("./pages/boostify-international"));
+const BoostifyTVPage = lazy(() => import("./pages/boostify-tv"));
+const BoostifyExplicitPage = lazy(() => import("./pages/boostify-explicit"));
+const ContactsPage = lazy(() => import("./pages/contacts"));
+const ContractsPage = lazy(() => import("./pages/contracts"));
+const CookiesPage = lazy(() => import("./pages/cookies"));
+const EcosystemPage = lazy(() => import("./pages/ecosystem"));
+const EventsPage = lazy(() => import("./pages/events"));
+const FaceSwapPage = lazy(() => import("./pages/face-swap"));
+const GlobalPage = lazy(() => import("./pages/global"));
+const ImageGeneratorPage = lazy(() => import("./pages/image-generator"));
+const ImageGeneratorSimplePage = lazy(() => import("./pages/image-generator-simple"));
+const InstagramBoostPage = lazy(() => import("./pages/instagram-boost"));
+const KlingToolsPage = lazy(() => import("./pages/kling-tools"));
+const KlingStorePage = lazy(() => import("./pages/kling-store"));
+const KlingTestPage = lazy(() => import("./pages/kling-test"));
+const ManagerToolsPage = lazy(() => import("./pages/manager-tools"));
+const MerchandisePage = lazy(() => import("./pages/merchandise"));
+const MessagesPage = lazy(() => import("./pages/messages"));
+const MusicVideoCreator = lazy(() => import("./pages/music-video-creator"));
+const MusicVideoWorkflowPage = lazy(() => import("./pages/music-video-workflow-page"));
+const MusicVideoWorkflowEnhancedPage = lazy(() => import("./pages/music-video-workflow-enhanced"));
+const MusicGeneratorPage = lazy(() => import("./pages/music-generator"));
+const NewsPage = lazy(() => import("./pages/news"));
+const PRPage = lazy(() => import("./pages/pr"));
+const PrivacyPage = lazy(() => import("./pages/privacy"));
+const ProducerToolsPage = lazy(() => import("./pages/producer-tools"));
+const PromotionPage = lazy(() => import("./pages/promotion"));
+const RecordLabelServices = lazy(() => import("./pages/record-label-services"));
+const SettingsPage = lazy(() => import("./pages/settings"));
+const SpotifyPage = lazy(() => import("./pages/spotify"));
+const StorePage = lazy(() => import("./pages/store"));
+const TermsPage = lazy(() => import("./pages/terms"));
+const TryOnPage = lazy(() => import("./pages/try-on-page"));
+const VideosPage = lazy(() => import("./pages/videos"));
+const VideoGenerationTestPage = lazy(() => import("./pages/video-generation-test"));
+const CameraMovementsTestPage = lazy(() => import("./pages/camera-movements-test"));
+const YoutubeViewsPage = lazy(() => import("./pages/youtube-views"));
+const RealTimeTranslator = lazy(() => import("./pages/real-time-translator"));
+const EducationPage = lazy(() => import("./pages/education"));
+const AchievementsPage = lazy(() => import("./pages/achievements-page"));
+const CourseDetailPage = lazy(() => import("./pages/course-detail"));
+const SmartCardsPage = lazy(() => import("./pages/smart-cards"));
+const InvestorsDashboard = lazy(() => import("./pages/investors-dashboard"));
+const SocialNetworkPage = lazy(() => import("./pages/social-network"));
+const FirestoreSocialPage = lazy(() => import("./pages/firestore-social"));
+const ArtistProfilePage = lazy(() => import("./pages/artist-profile"));
+const DiagnosticsPage = lazy(() => import("./pages/diagnostics"));
+const AffiliatesPage = lazy(() => import("./pages/affiliates"));
+const InitProductsPage = lazy(() => import("./pages/init-products"));
+const MusicMasteringPage = lazy(() => import("./pages/music-mastering"));
+const VirtualRecordLabelPage = lazy(() => import("./pages/virtual-record-label"));
+const TestProgressPage = lazy(() => import("./pages/test-progress"));
+const PluginsPage = lazy(() => import("./pages/plugins"));
+const PricingPage = lazy(() => import("./pages/pricing"));
+const AccountPage = lazy(() => import("./pages/account"));
+const SubscriptionSuccessPage = lazy(() => import("./pages/subscription-success"));
+const SubscriptionCancelledPage = lazy(() => import("./pages/subscription-cancelled"));
+const MusicVideoSuccess = lazy(() => import("./pages/music-video-success"));
+const MusicVideoCancelled = lazy(() => import("./pages/music-video-cancelled"));
+const SubscriptionExamplePage = lazy(() => import("./pages/subscription-example"));
+const ProfessionalEditorPage = lazy(() => import("./pages/professional-editor"));
+const LayerFilterDemoPage = lazy(() => import("./pages/layer-filter-demo"));
+const AnimatedWorkflowPage = lazy(() => import("./pages/animated-workflow"));
+const TokenizationPage = lazy(() => import("./pages/tokenization"));
+const ResourcesPage = lazy(() => import("./pages/resources"));
+const TipsPage = lazy(() => import("./pages/tips"));
+const GuidesPage = lazy(() => import("./pages/guides"));
+const ToolsPage = lazy(() => import("./pages/tools"));
+const FeaturesPage = lazy(() => import("./pages/features"));
+const AIVideoCreationPage = lazy(() => import("./pages/ai-video-creation"));
+const TimelineDemoPage = lazy(() => import("./pages/timeline-demo"));
+const DebugFirebasePage = lazy(() => import("./pages/debug-firebase"));
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -285,117 +288,119 @@ const Router = () => {
 
   return (
     <>
-      <Switch>
-        {/* Rutas públicas - accesibles sin autenticación */}
-        {getRouteComponent("/", WrappedHomePage, null)}
-        {getRouteComponent("/auth", WrappedAuthPage, null)}
-        {getRouteComponent("/diagnostics", WrappedDiagnosticsPage, null)}
-        {getRouteComponent("/terms", WrappedTermsPage, null)}
-        {getRouteComponent("/privacy", WrappedPrivacyPage, null)}
-        {getRouteComponent("/cookies", WrappedCookiesPage, null)}
-        {getRouteComponent("/profile/:id", WrappedProfilePage, null)}
-        {getRouteComponent("/artist/:slug", WrappedArtistProfilePage, null)}
-        {getRouteComponent("/pricing", WrappedPricingPage, null)}
-        {getRouteComponent("/boostify-explicit", WrappedBoostifyExplicitPage, null)}
-        
-        {/* Rutas de ejemplo básicas - requieren autenticación pero no suscripción */}
-        {getRouteComponent("/dashboard", WrappedDashboardPage, 'free')}
-        {getRouteComponent("/profile", WrappedProfilePage, 'free')}
-        {getRouteComponent("/settings", WrappedSettingsPage, 'free')}
-        {getRouteComponent("/messages", WrappedMessagesPage, 'free')}
-        {getRouteComponent("/account", WrappedAccountPage, 'free')}
-        {getRouteComponent("/subscription/success", WrappedSubscriptionSuccessPage, 'free')}
-        {getRouteComponent("/subscription/cancelled", WrappedSubscriptionCancelledPage, 'free')}
-        {getRouteComponent("/subscription/example", WrappedSubscriptionExamplePage, 'free')}
-        {getRouteComponent("/music-video-success", WrappedMusicVideoSuccess, 'free')}
-        {getRouteComponent("/music-video-cancelled", WrappedMusicVideoCancelled, 'free')}
-        
-        {/* Rutas para suscripción BASIC ($59.99) */}
-        {getRouteComponent("/artist-dashboard", WrappedArtistDashboard, 'basic')}
-        {getRouteComponent("/spotify", WrappedSpotifyPage, 'basic')}
-        {getRouteComponent("/contracts", WrappedContractsPage, 'basic')}
-        {getRouteComponent("/pr", WrappedPRPage, 'basic')}
-        {getRouteComponent("/news", WrappedNewsPage, 'basic')}
-        {getRouteComponent("/events", WrappedEventsPage, 'basic')}
-        {getRouteComponent("/videos", WrappedVideosPage, 'basic')}
-        {getRouteComponent("/blog", WrappedBlogPage, 'basic')}
-        {getRouteComponent("/store", WrappedStorePage, 'free')}
-        {getRouteComponent("/education", WrappedEducationPage, 'basic')}
-        {getRouteComponent("/course/:id", WrappedCourseDetailPage, 'basic')}
-        {getRouteComponent("/social-network", WrappedSocialNetworkPage, 'basic')}
-        {getRouteComponent("/firestore-social", WrappedFirestoreSocialPage, 'basic')}
-        
-        {/* Rutas para suscripción PRO ($99.99) */}
-        {getRouteComponent("/analytics", WrappedAnalyticsPage, 'pro')}
-        {getRouteComponent("/global", WrappedGlobalPage, 'pro')}
-        {getRouteComponent("/promotion", WrappedPromotionPage, 'pro')}
-        {getRouteComponent("/youtube-views", WrappedYoutubeViewsPage, 'pro')}
-        {getRouteComponent("/instagram-boost", WrappedInstagramBoostPage, 'pro')}
-        {getRouteComponent("/contacts", WrappedContactsPage, 'pro')}
-        {getRouteComponent("/manager-tools", WrappedManagerToolsPage, 'pro')}
-        {getRouteComponent("/producer-tools", WrappedProducerToolsPage, 'pro')}
-        {getRouteComponent("/music-generator", WrappedMusicGeneratorPage, 'pro')}
-        {getRouteComponent("/artist-image-advisor", WrappedArtistImageAdvisor, 'pro')}
-        {getRouteComponent("/merchandise", WrappedMerchandisePage, 'pro')}
-        {getRouteComponent("/translator", WrappedRealTimeTranslator, 'pro')}
-        {getRouteComponent("/achievements", WrappedAchievementsPage, 'pro')}
-        {getRouteComponent("/smart-cards", WrappedSmartCardsPage, 'pro')}
-        {getRouteComponent("/image-generator", WrappedImageGeneratorPage, 'pro')}
-        
-        {/* Rutas para suscripción PREMIUM ($149.99) */}
-        {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, 'free')}
-        {getRouteComponent("/music-video-workflow", WrappedMusicVideoWorkflowPage, 'free')}
-        {getRouteComponent("/music-video-flow", WrappedMusicVideoWorkflowEnhancedPage, 'free')}
-        {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
-        {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
-        {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
-        {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
-        {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
-        {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
-        {getRouteComponent("/affiliates", WrappedAffiliatesPage, 'free')}
-        {getRouteComponent("/init-products", WrappedInitProductsPage, 'free')}
-        {getRouteComponent("/boostify-international", WrappedBoostifyInternationalPage, 'premium')}
-        
-        {/* Rutas administrativas especiales */}
-        {getRouteComponent("/admin", WrappedAdminPage, 'free')} {/* Admin tiene acceso con verificación especial */}
-        
-        {/* Rutas que requieren autenticación con plan 'free' mínimo */}
-        {getRouteComponent("/boostify-tv", WrappedBoostifyTVPage, 'free')}
-        {getRouteComponent("/artist-image-advisor-improved", WrappedArtistImageAdvisorImproved, 'free')}
-        {getRouteComponent("/image-generator-simple", WrappedImageGeneratorSimplePage, 'free')}
-        {getRouteComponent("/face-swap", WrappedFaceSwapPage, 'free')}
-        {getRouteComponent("/kling-tools", WrappedKlingToolsPage, 'free')}
-        {getRouteComponent("/kling-store", WrappedKlingStorePage, 'free')}
-        {getRouteComponent("/kling-test", WrappedKlingTestPage, 'free')}
-        {getRouteComponent("/video-generation-test", WrappedVideoGenerationTestPage, 'free')}
-        {getRouteComponent("/camera-movements-test", WrappedCameraMovementsTestPage, 'free')}
-        {getRouteComponent("/music-mastering", WrappedMusicMasteringPage, 'free')}
-        {getRouteComponent("/vrl", WrappedVirtualRecordLabelPage, 'free')}
-        {getRouteComponent("/virtual-record-label", WrappedVirtualRecordLabelPage, 'free')}
-        {getRouteComponent("/test-progress", WrappedTestProgressPage, 'free')}
-        {getRouteComponent("/plugins", WrappedPluginsPage, 'free')}
-        {getRouteComponent("/try-on", WrappedTryOnPage, 'free')}
-        {getRouteComponent("/try-on-page", WrappedTryOnPage, 'free')}
-        {getRouteComponent("/professional-editor", WrappedProfessionalEditorPage, 'free')}
-        {getRouteComponent("/layer-filter-demo", WrappedLayerFilterDemoPage, 'free')}
-        {getRouteComponent("/animated-workflow", WrappedAnimatedWorkflowPage, 'free')}
-        {getRouteComponent("/tokenization", WrappedTokenizationPage, 'free')}
-        {getRouteComponent("/resources", WrappedResourcesPage, null)}
-        {getRouteComponent("/tips", WrappedTipsPage, null)}
-        {getRouteComponent("/guides", WrappedGuidesPage, null)}
-        {getRouteComponent("/tools", WrappedToolsPage, null)}
-        {getRouteComponent("/features", WrappedFeaturesPage, null)}
-        {getRouteComponent("/tools/royalty-calculator", WrappedToolsPage, 'free')}
-        {getRouteComponent("/tools/press-kit", WrappedToolsPage, 'free')}
-        {getRouteComponent("/tools/release-planner", WrappedToolsPage, 'free')}
-        {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, 'free')}
-        {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, 'free')}
-        {getRouteComponent("/timeline-demo", WrappedTimelineDemoPage, 'free')}
-        {getRouteComponent("/debug-firebase", WrappedDebugFirebasePage, null)}
-        
-        {/* Página de error 404 */}
-        <Route component={WrappedNotFound} />
-      </Switch>
+      <Suspense fallback={<PageLoader />}>
+        <Switch>
+          {/* Rutas públicas - accesibles sin autenticación */}
+          {getRouteComponent("/", WrappedHomePage, null)}
+          {getRouteComponent("/auth", WrappedAuthPage, null)}
+          {getRouteComponent("/diagnostics", WrappedDiagnosticsPage, null)}
+          {getRouteComponent("/terms", WrappedTermsPage, null)}
+          {getRouteComponent("/privacy", WrappedPrivacyPage, null)}
+          {getRouteComponent("/cookies", WrappedCookiesPage, null)}
+          {getRouteComponent("/profile/:id", WrappedProfilePage, null)}
+          {getRouteComponent("/artist/:slug", WrappedArtistProfilePage, null)}
+          {getRouteComponent("/pricing", WrappedPricingPage, null)}
+          {getRouteComponent("/boostify-explicit", WrappedBoostifyExplicitPage, null)}
+          
+          {/* Rutas de ejemplo básicas - requieren autenticación pero no suscripción */}
+          {getRouteComponent("/dashboard", WrappedDashboardPage, 'free')}
+          {getRouteComponent("/profile", WrappedProfilePage, 'free')}
+          {getRouteComponent("/settings", WrappedSettingsPage, 'free')}
+          {getRouteComponent("/messages", WrappedMessagesPage, 'free')}
+          {getRouteComponent("/account", WrappedAccountPage, 'free')}
+          {getRouteComponent("/subscription/success", WrappedSubscriptionSuccessPage, 'free')}
+          {getRouteComponent("/subscription/cancelled", WrappedSubscriptionCancelledPage, 'free')}
+          {getRouteComponent("/subscription/example", WrappedSubscriptionExamplePage, 'free')}
+          {getRouteComponent("/music-video-success", WrappedMusicVideoSuccess, 'free')}
+          {getRouteComponent("/music-video-cancelled", WrappedMusicVideoCancelled, 'free')}
+          
+          {/* Rutas para suscripción BASIC ($59.99) */}
+          {getRouteComponent("/artist-dashboard", WrappedArtistDashboard, 'basic')}
+          {getRouteComponent("/spotify", WrappedSpotifyPage, 'basic')}
+          {getRouteComponent("/contracts", WrappedContractsPage, 'basic')}
+          {getRouteComponent("/pr", WrappedPRPage, 'basic')}
+          {getRouteComponent("/news", WrappedNewsPage, 'basic')}
+          {getRouteComponent("/events", WrappedEventsPage, 'basic')}
+          {getRouteComponent("/videos", WrappedVideosPage, 'basic')}
+          {getRouteComponent("/blog", WrappedBlogPage, 'basic')}
+          {getRouteComponent("/store", WrappedStorePage, 'free')}
+          {getRouteComponent("/education", WrappedEducationPage, 'basic')}
+          {getRouteComponent("/course/:id", WrappedCourseDetailPage, 'basic')}
+          {getRouteComponent("/social-network", WrappedSocialNetworkPage, 'basic')}
+          {getRouteComponent("/firestore-social", WrappedFirestoreSocialPage, 'basic')}
+          
+          {/* Rutas para suscripción PRO ($99.99) */}
+          {getRouteComponent("/analytics", WrappedAnalyticsPage, 'pro')}
+          {getRouteComponent("/global", WrappedGlobalPage, 'pro')}
+          {getRouteComponent("/promotion", WrappedPromotionPage, 'pro')}
+          {getRouteComponent("/youtube-views", WrappedYoutubeViewsPage, 'pro')}
+          {getRouteComponent("/instagram-boost", WrappedInstagramBoostPage, 'pro')}
+          {getRouteComponent("/contacts", WrappedContactsPage, 'pro')}
+          {getRouteComponent("/manager-tools", WrappedManagerToolsPage, 'pro')}
+          {getRouteComponent("/producer-tools", WrappedProducerToolsPage, 'pro')}
+          {getRouteComponent("/music-generator", WrappedMusicGeneratorPage, 'pro')}
+          {getRouteComponent("/artist-image-advisor", WrappedArtistImageAdvisor, 'pro')}
+          {getRouteComponent("/merchandise", WrappedMerchandisePage, 'pro')}
+          {getRouteComponent("/translator", WrappedRealTimeTranslator, 'pro')}
+          {getRouteComponent("/achievements", WrappedAchievementsPage, 'pro')}
+          {getRouteComponent("/smart-cards", WrappedSmartCardsPage, 'pro')}
+          {getRouteComponent("/image-generator", WrappedImageGeneratorPage, 'pro')}
+          
+          {/* Rutas para suscripción PREMIUM ($149.99) */}
+          {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, 'free')}
+          {getRouteComponent("/music-video-workflow", WrappedMusicVideoWorkflowPage, 'free')}
+          {getRouteComponent("/music-video-flow", WrappedMusicVideoWorkflowEnhancedPage, 'free')}
+          {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
+          {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
+          {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
+          {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
+          {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
+          {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
+          {getRouteComponent("/affiliates", WrappedAffiliatesPage, 'free')}
+          {getRouteComponent("/init-products", WrappedInitProductsPage, 'free')}
+          {getRouteComponent("/boostify-international", WrappedBoostifyInternationalPage, 'premium')}
+          
+          {/* Rutas administrativas especiales */}
+          {getRouteComponent("/admin", WrappedAdminPage, 'free')} {/* Admin tiene acceso con verificación especial */}
+          
+          {/* Rutas que requieren autenticación con plan 'free' mínimo */}
+          {getRouteComponent("/boostify-tv", WrappedBoostifyTVPage, 'free')}
+          {getRouteComponent("/artist-image-advisor-improved", WrappedArtistImageAdvisorImproved, 'free')}
+          {getRouteComponent("/image-generator-simple", WrappedImageGeneratorSimplePage, 'free')}
+          {getRouteComponent("/face-swap", WrappedFaceSwapPage, 'free')}
+          {getRouteComponent("/kling-tools", WrappedKlingToolsPage, 'free')}
+          {getRouteComponent("/kling-store", WrappedKlingStorePage, 'free')}
+          {getRouteComponent("/kling-test", WrappedKlingTestPage, 'free')}
+          {getRouteComponent("/video-generation-test", WrappedVideoGenerationTestPage, 'free')}
+          {getRouteComponent("/camera-movements-test", WrappedCameraMovementsTestPage, 'free')}
+          {getRouteComponent("/music-mastering", WrappedMusicMasteringPage, 'free')}
+          {getRouteComponent("/vrl", WrappedVirtualRecordLabelPage, 'free')}
+          {getRouteComponent("/virtual-record-label", WrappedVirtualRecordLabelPage, 'free')}
+          {getRouteComponent("/test-progress", WrappedTestProgressPage, 'free')}
+          {getRouteComponent("/plugins", WrappedPluginsPage, 'free')}
+          {getRouteComponent("/try-on", WrappedTryOnPage, 'free')}
+          {getRouteComponent("/try-on-page", WrappedTryOnPage, 'free')}
+          {getRouteComponent("/professional-editor", WrappedProfessionalEditorPage, 'free')}
+          {getRouteComponent("/layer-filter-demo", WrappedLayerFilterDemoPage, 'free')}
+          {getRouteComponent("/animated-workflow", WrappedAnimatedWorkflowPage, 'free')}
+          {getRouteComponent("/tokenization", WrappedTokenizationPage, 'free')}
+          {getRouteComponent("/resources", WrappedResourcesPage, null)}
+          {getRouteComponent("/tips", WrappedTipsPage, null)}
+          {getRouteComponent("/guides", WrappedGuidesPage, null)}
+          {getRouteComponent("/tools", WrappedToolsPage, null)}
+          {getRouteComponent("/features", WrappedFeaturesPage, null)}
+          {getRouteComponent("/tools/royalty-calculator", WrappedToolsPage, 'free')}
+          {getRouteComponent("/tools/press-kit", WrappedToolsPage, 'free')}
+          {getRouteComponent("/tools/release-planner", WrappedToolsPage, 'free')}
+          {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, 'free')}
+          {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, 'free')}
+          {getRouteComponent("/timeline-demo", WrappedTimelineDemoPage, 'free')}
+          {getRouteComponent("/debug-firebase", WrappedDebugFirebasePage, null)}
+          
+          {/* Página de error 404 */}
+          <Route component={WrappedNotFound} />
+        </Switch>
+      </Suspense>
       <BottomNav />
       {showRadio && <BoostifyRadio onClose={() => setShowRadio(false)} />}
       {/* CustomerServiceAgent - Temporarily disabled */}
