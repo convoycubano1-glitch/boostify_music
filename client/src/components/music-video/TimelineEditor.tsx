@@ -1779,10 +1779,38 @@ export function TimelineEditor({
             
             {/* Clips by layer */}
             <div className="relative" style={{ minHeight: '300px' }}>
-              {Object.keys(clipsByLayer)
-                .map(Number)
-                .sort((a, b) => a - b)
-                .map((layerId, index) => (
+              {clips.length === 0 ? (
+                /* Empty State - Helpful message when no clips */
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center space-y-4 p-8 max-w-md">
+                    <div className="flex justify-center">
+                      <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center">
+                        <Video className="w-10 h-10 text-gray-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-300 mb-2">
+                        No clips in timeline
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Start creating your music video by generating scenes with AI or importing media files.
+                      </p>
+                      <div className="text-xs text-gray-600 space-y-2 text-left bg-gray-800/50 rounded-lg p-4">
+                        <p className="font-semibold text-gray-400">Quick Tips:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                          <li>Generate a script using AI to create timeline clips</li>
+                          <li>Import audio and sync it with your scenes</li>
+                          <li>Use the toolbar tools once you have clips</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                Object.keys(clipsByLayer)
+                  .map(Number)
+                  .sort((a, b) => a - b)
+                  .map((layerId, index) => (
                   <div 
                     key={layerId}
                     className="relative h-24 border-b border-gray-700"
@@ -1963,7 +1991,8 @@ export function TimelineEditor({
                       );
                     })}
                   </div>
-                ))}
+                ))
+              )}
             </div>
             
             {/* User Markers */}
