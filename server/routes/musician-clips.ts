@@ -3,12 +3,12 @@ import { db } from '../db';
 import { musicianClips, musicVideoProjects } from '../../db/schema';
 import { insertMusicianClipSchema, type InsertMusicianClip } from '../../db/schema';
 import { eq, and } from 'drizzle-orm';
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { generateCinematicImage } from '../services/gemini-image-service';
 
 const router = Router();
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || '');
+const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY || '' });
 
 router.post('/api/musician-clips/generate-description', async (req, res) => {
   try {
@@ -17,8 +17,6 @@ router.post('/api/musician-clips/generate-description', async (req, res) => {
     if (!instrument || !scriptContext) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = `You are creating a musician character for a music video.
 
@@ -42,8 +40,16 @@ Include:
 Keep it consistent with the video's overall aesthetic and make it cinematic.
 Format as a single, detailed paragraph optimized for Gemini image generation.`;
 
-    const result = await model.generateContent(prompt);
-    const description = result.response.text();
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.0-flash-exp',
+      contents: prompt,
+    });
+    
+    const description = result.text?.trim() || '';
+    
+    if (!description) {
+      throw new Error('No description generated from AI');
+    }
 
     res.json({
       description,
