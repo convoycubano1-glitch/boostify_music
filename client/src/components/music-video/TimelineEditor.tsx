@@ -19,7 +19,7 @@ import {
   ChevronLeft, ChevronRight, EyeOff, LockOpen, Unlock, 
   Image as ImageIcon, RefreshCw, Video, Wand2, Text, 
   Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
-  Maximize2, Save, FolderOpen, Guitar
+  Maximize2, Save, FolderOpen, Guitar, Camera
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -36,6 +36,7 @@ import { Progress } from '../../components/ui/progress';
 import { ensureCompatibleClip } from '../timeline/TimelineClipUnified';
 import { EffectsPanel, ClipEffects } from '../timeline-effects/effects-panel';
 import { MusicianModal } from './MusicianModal';
+import CameraAnglesModal from './CameraAnglesModal';
 
 // ===== Type Definitions =====
 
@@ -207,6 +208,8 @@ export function TimelineEditor({
   const [isMobile, setIsMobile] = useState(false);
   const [showMusicianModal, setShowMusicianModal] = useState(false);
   const [musicianModalClip, setMusicianModalClip] = useState<TimelineClip | null>(null);
+  const [showCameraAnglesModal, setShowCameraAnglesModal] = useState(false);
+  const [cameraAnglesModalClip, setCameraAnglesModalClip] = useState<TimelineClip | null>(null);
   
   // Detect mobile viewport
   useEffect(() => {
@@ -511,6 +514,24 @@ export function TimelineEditor({
       });
     }
   }, [musicianModalClip, handleClipUpdate, toast]);
+
+  const handleOpenCameraAngles = useCallback((clip: TimelineClip) => {
+    setCameraAnglesModalClip(clip);
+    setShowCameraAnglesModal(true);
+  }, []);
+
+  const handleCameraAngleSelected = useCallback((imageUrl: string, angleName: string) => {
+    if (cameraAnglesModalClip) {
+      handleClipUpdate(cameraAnglesModalClip.id, {
+        imageUrl,
+        thumbnail: imageUrl,
+        metadata: {
+          ...cameraAnglesModalClip.metadata,
+          cameraAngle: angleName,
+        },
+      });
+    }
+  }, [cameraAnglesModalClip, handleClipUpdate]);
 
   const handleClipMouseDown = useCallback((e: React.MouseEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
     if (tool === 'hand') return;
@@ -1454,6 +1475,19 @@ export function TimelineEditor({
                               >
                                 <Guitar className="h-3.5 w-3.5" />
                               </Button>
+                              <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-7 w-7 bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg border border-white/20"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenCameraAngles(clip);
+                                }}
+                                title="Camera Angles"
+                                data-testid={`button-camera-angles-${clip.id}`}
+                              >
+                                <Camera className="h-3.5 w-3.5" />
+                              </Button>
                               {onRegenerateImage && (
                                 <Button
                                   size="icon"
@@ -1570,6 +1604,17 @@ export function TimelineEditor({
           onMusicianCreated={handleMusicianCreated}
         />
       )}
+
+      {/* Camera Angles Modal */}
+      <CameraAnglesModal
+        open={showCameraAnglesModal}
+        onClose={() => {
+          setShowCameraAnglesModal(false);
+          setCameraAnglesModalClip(null);
+        }}
+        clip={cameraAnglesModalClip}
+        onSelectAngle={handleCameraAngleSelected}
+      />
     </div>
   );
 }
