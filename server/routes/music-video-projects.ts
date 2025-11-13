@@ -164,4 +164,76 @@ router.delete('/delete/:projectId', async (req, res) => {
   }
 });
 
+const renameProjectSchema = z.object({
+  projectId: z.string(),
+  newName: z.string().min(1, "Project name cannot be empty"),
+  userEmail: z.string().email()
+});
+
+router.post('/rename', async (req, res) => {
+  try {
+    const validatedData = renameProjectSchema.parse(req.body);
+    logger.log('✏️ [RENAME PROJECT] Renombrando proyecto:', validatedData.projectId);
+    
+    // Verificar que el proyecto existe y pertenece al usuario
+    const [existingProject] = await db
+      .select()
+      .from(musicVideoProjects)
+      .where(
+        and(
+          eq(musicVideoProjects.id, parseInt(validatedData.projectId)),
+          eq(musicVideoProjects.userEmail, validatedData.userEmail)
+        )
+      )
+      .limit(1);
+    
+    if (!existingProject) {
+      logger.log('❌ [RENAME PROJECT] Proyecto no encontrado o no pertenece al usuario');
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Proyecto no encontrado' 
+      });
+    }
+    
+    // Verificar que no exista otro proyecto con el mismo nombre
+    const [duplicateProject] = await db
+      .select()
+      .from(musicVideoProjects)
+      .where(
+        and(
+          eq(musicVideoProjects.userEmail, validatedData.userEmail),
+          eq(musicVideoProjects.projectName, validatedData.newName)
+        )
+      )
+      .limit(1);
+    
+    if (duplicateProject && duplicateProject.id !== parseInt(validatedData.projectId)) {
+      logger.log('❌ [RENAME PROJECT] Ya existe un proyecto con ese nombre');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Ya existe un proyecto con ese nombre' 
+      });
+    }
+    
+    // Actualizar el nombre del proyecto
+    const [updatedProject] = await db
+      .update(musicVideoProjects)
+      .set({
+        projectName: validatedData.newName,
+        lastModified: new Date()
+      })
+      .where(eq(musicVideoProjects.id, parseInt(validatedData.projectId)))
+      .returning();
+    
+    logger.log('✅ [RENAME PROJECT] Proyecto renombrado exitosamente');
+    res.json({ success: true, project: updatedProject });
+  } catch (error) {
+    logger.error('❌ [RENAME PROJECT] Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error desconocido' 
+    });
+  }
+});
+
 export default router;
