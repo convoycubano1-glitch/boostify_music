@@ -91,16 +91,16 @@ export function ImageGalleryGenerator({
     }
 
     setIsGenerating(true);
-    setGenerationStatus("Generando 6 imágenes profesionales con IA... (esto puede tardar 1-2 minutos)");
+    setGenerationStatus("Generando 6 imágenes profesionales con IA... (esto puede tardar 2-3 minutos)");
     
     try {
       // NO subir a Firebase Storage - enviar directamente en base64
       console.log('🎨 Iniciando generación de galería con imágenes en base64...');
       console.log('📸 Número de imágenes de referencia:', referenceImages.length);
       
-      // Crear AbortController con timeout de 5 minutos (300 segundos)
+      // Crear AbortController con timeout de 10 minutos (600 segundos)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 300000);
+      const timeoutId = setTimeout(() => controller.abort(), 600000);
       
       try {
         const response = await fetch('/api/image-gallery/create-and-generate', {
@@ -357,7 +357,7 @@ export function ImageGalleryGenerator({
                 <div className="flex-1">
                   <p className="text-sm font-medium text-blue-400">{generationStatus}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Por favor espera, este proceso puede tardar 1-2 minutos...
+                    Por favor espera, este proceso puede tardar 2-3 minutos...
                   </p>
                 </div>
               </div>
@@ -385,7 +385,7 @@ export function ImageGalleryGenerator({
 
           {!isGenerating && (
             <p className="text-xs text-muted-foreground text-center">
-              La generación puede tardar 1-2 minutos. Las imágenes mantendrán la identidad facial del artista.
+              La generación puede tardar 2-3 minutos. Las imágenes mantendrán la identidad facial del artista.
             </p>
           )}
         </div>

@@ -28,7 +28,17 @@ import {
   Sparkles,
   ArrowRight,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Instagram,
+  Scale,
+  Headphones,
+  GraduationCap,
+  Briefcase,
+  Eye,
+  Megaphone,
+  Crown,
+  Zap,
+  Film
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -1433,6 +1443,10 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             setGalleriesRefreshKey(prev => prev + 1);
                             refetchProfile();
                           }}
+                          onGalleryCreated={() => {
+                            console.log('🎨 onGalleryCreated callback - Refrescando galerías...');
+                            setGalleriesRefreshKey(prev => prev + 1);
+                          }}
                         />
                         <Button
                           size="sm"
@@ -2573,6 +2587,322 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               artistId={artistId} 
               isOwner={isOwnProfile}
             />
+
+            {/* Premium Tools Section - Only visible when logged in */}
+            {isOwnProfile && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div className="flex items-center justify-between mb-6">
+                  <div 
+                    className="text-lg font-bold transition-colors duration-500 flex items-center gap-2" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    <Zap className="h-6 w-6" />
+                    Premium Tools
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30">
+                    <Crown className="h-3.5 w-3.5 text-yellow-500" />
+                    <span className="text-xs font-bold text-yellow-500">PRO</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Community Manager */}
+                  <Link href="/instagram-boost">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <Instagram className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            My Community Manager
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            Boost your Instagram presence with AI-powered engagement
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Lawyer */}
+                  <Link href="/contracts">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <Scale className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            My Lawyer
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            Generate and manage music contracts with AI legal assistance
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Music Producer */}
+                  <Link href="/producer-tools">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <Headphones className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            My Music Producer
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            Professional production tools and AI music generation
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Education */}
+                  <Link href="/education">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <GraduationCap className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            Education
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            Master your craft with courses and tutorials
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Manager */}
+                  <Link href="/manager-tools">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <Briefcase className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            My Manager
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            Manage bookings, schedules, and career opportunities
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Image Supervisor */}
+                  <Link href="/ai-advisors">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <Eye className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            My Image Supervisor
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            AI-powered brand and visual identity management
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* PR */}
+                  <Link href="/pr">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <Megaphone className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            My PR
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            Press releases, media outreach, and publicity campaigns
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Video Director */}
+                  <Link href="/music-video-creator">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <Film className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            My Video Director
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            Create professional music videos with AI-powered direction
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+
+                {/* Premium Footer */}
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: colors.hexBorder }}>
+                  <p className="text-xs text-center text-gray-500">
+                    All tools require an active premium subscription
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Upcoming Shows */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>

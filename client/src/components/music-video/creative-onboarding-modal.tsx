@@ -9,13 +9,20 @@ import { Upload, Music, Camera, Sparkles, X, Check, Image as ImageIcon, Video, Z
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Example photos - imported as Vite assets for production compatibility
+import frontalImg from "../../assets/example_photos/frontal.png";
+import profileImg from "../../assets/example_photos/profile.png";
+import smilingImg from "../../assets/example_photos/smiling.png";
+import threeQuarterImg from "../../assets/example_photos/three-quarter.png";
+import fullBodyImg from "../../assets/example_photos/full-body.png";
+
 // Example photos paths - generated with Gemini 2.5 Flash Image (Nano Banana)
 const examplePhotos = {
-  frontal: "/src/assets/example_photos/frontal.png",
-  profile: "/src/assets/example_photos/profile.png",
-  smiling: "/src/assets/example_photos/smiling.png",
-  threeQuarter: "/src/assets/example_photos/three-quarter.png",
-  fullBody: "/src/assets/example_photos/full-body.png"
+  frontal: frontalImg,
+  profile: profileImg,
+  smiling: smilingImg,
+  threeQuarter: threeQuarterImg,
+  fullBody: fullBodyImg
 };
 
 interface CreativeOnboardingModalProps {

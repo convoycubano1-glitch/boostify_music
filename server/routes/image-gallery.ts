@@ -59,43 +59,78 @@ router.post('/create-and-generate', async (req: Request, res: Response) => {
     const generatedImages: GeneratedImage[] = [];
     let successCount = 0;
 
-    // Generar las 6 imágenes secuencialmente
-    for (let i = 0; i < imagePrompts.length; i++) {
-      console.log(`📷 Generando imagen ${i + 1}/6...`);
+    // Generar las 6 imágenes en paralelo (en grupos de 3 para evitar rate limiting)
+    const batchSize = 3;
+    for (let batchStart = 0; batchStart < imagePrompts.length; batchStart += batchSize) {
+      const batchEnd = Math.min(batchStart + batchSize, imagePrompts.length);
+      const batchPromises = [];
       
-      // Intentar con Gemini primero
-      let result = await generateImageWithMultipleFaceReferences(
-        imagePrompts[i],
-        referenceImages
-      );
+      for (let i = batchStart; i < batchEnd; i++) {
+        console.log(`📷 Iniciando generación de imagen ${i + 1}/6...`);
+        
+        batchPromises.push(
+          (async () => {
+            try {
+              // Intentar con Gemini primero
+              let result = await generateImageWithMultipleFaceReferences(
+                imagePrompts[i],
+                referenceImages
+              );
 
-      // Si Gemini falla, usar FAL AI como fallback
-      if (!result.success && (result as any).quotaError) {
-        console.log(`⚠️ Gemini quota exceeded para imagen ${i + 1}, usando FAL AI...`);
-        result = await generateImageWithFAL(imagePrompts[i], referenceImages, Date.now() + i);
+              // Si Gemini falla, usar FAL AI como fallback
+              if (!result.success && (result as any).quotaError) {
+                console.log(`⚠️ Gemini quota exceeded para imagen ${i + 1}, usando FAL AI...`);
+                result = await generateImageWithFAL(imagePrompts[i], referenceImages, Date.now() + i);
+              }
+
+              if (result.success && result.imageUrl) {
+                console.log(`✅ Imagen ${i + 1} generada exitosamente`);
+                return {
+                  index: i,
+                  image: {
+                    id: `img-${Date.now()}-${i}`,
+                    url: result.imageUrl,
+                    prompt: imagePrompts[i],
+                    createdAt: new Date().toISOString(),
+                    isVideo: false
+                  }
+                };
+              } else {
+                console.error(`❌ Error generando imagen ${i + 1}:`, result.error);
+                return null;
+              }
+            } catch (error: any) {
+              console.error(`❌ Excepción generando imagen ${i + 1}:`, error);
+              return null;
+            }
+          })()
+        );
       }
-
-      if (result.success && result.imageUrl) {
-        // Retornar las imágenes como data URLs
-        // El frontend se encargará de subirlas a Firebase Storage
-        generatedImages.push({
-          id: `img-${Date.now()}-${i}`,
-          url: result.imageUrl, // Data URL (base64)
-          prompt: imagePrompts[i],
-          createdAt: new Date().toISOString(),
-          isVideo: false
-        });
-        successCount++;
-        console.log(`✅ Imagen ${i + 1} generada exitosamente`);
-      } else {
-        console.error(`❌ Error generando imagen ${i + 1}:`, result.error);
+      
+      // Esperar a que termine el batch actual
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Agregar imágenes exitosas al array
+      for (const result of batchResults) {
+        if (result && result.image) {
+          generatedImages.push(result.image);
+          successCount++;
+        }
       }
-
-      // Delay para evitar rate limiting
-      if (i < imagePrompts.length - 1) {
+      
+      // Delay entre batches (excepto después del último)
+      if (batchEnd < imagePrompts.length) {
+        console.log(`⏸️ Pausa de 2 segundos antes del siguiente batch...`);
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
+    
+    // Ordenar las imágenes por su índice original
+    generatedImages.sort((a, b) => {
+      const indexA = parseInt(a.id.split('-').pop() || '0');
+      const indexB = parseInt(b.id.split('-').pop() || '0');
+      return indexA - indexB;
+    });
 
     // Crear objeto de galería (será guardado en Firestore por el cliente)
     const gallery = {

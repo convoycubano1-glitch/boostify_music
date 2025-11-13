@@ -3,7 +3,7 @@ import { cn } from "../../lib/utils";
 import {
   Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart2,
   MessageSquare, ShoppingBag, PhoneCall, Users, Layers, BarChart, Settings, BookOpen,
-  Headphones, FileText, Rss, Send, Shield
+  Headphones, FileText, Rss, Send, Shield, Upload
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigationVisibility } from "../../hooks/use-navigation-visibility";
@@ -33,7 +33,7 @@ export function BottomNav() {
     { title: "Affiliates", icon: Users, href: "/affiliates", plan: "basic" },
     { title: "Investors", icon: Layers, href: "/investors-dashboard", plan: "premium" }, // Corregido al nivel 'premium' según App.tsx
     { title: "Dashboard", icon: BarChart, href: "/dashboard", plan: "free" },
-    { title: "Artist Dashboard", icon: BarChart2, href: "/artist-dashboard", plan: "basic" },
+    { title: "Distribution Tools", icon: BarChart2, href: "/artist-dashboard", plan: "basic" },
     { title: "Manager Tools", icon: Settings, href: "/manager-tools", plan: "pro" }, // Corregido al nivel 'pro' según App.tsx
     { title: "Producer Tools", icon: Music2, href: "/producer-tools", plan: "pro" },
     { title: "Music Videos", icon: Video, href: "/music-video-creator", plan: "premium" },
@@ -85,8 +85,8 @@ export function BottomNav() {
       plan: "pro" // Requiere suscripción pro
     },
     {
-      title: "Artist",
-      icon: Mic,
+      title: "Distribution",
+      icon: Upload,
       href: "/artist-dashboard",
       plan: "basic" // Requiere suscripción básica
     },

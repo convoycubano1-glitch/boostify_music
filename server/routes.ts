@@ -243,8 +243,8 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/ai', aiAssistantRouter);
   app.use('/api/fal', falApiRouter); // FAL AI backend routes (MuseTalk lip-sync, etc.)
   app.use('/api/gemini-agents', geminiAgentsRouter);
-  app.use('/api/contracts', contractsRouter);
-  console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents y contratos registradas');
+  // Contracts router moved after setupAuth() to ensure Passport is initialized
+  console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, y Gemini agents registradas');
   
   // ☑️ Rutas de Kling API ahora están separadas en su propio router
   // Véase server/routes/kling-api.ts para la implementación
@@ -506,6 +506,11 @@ export function registerRoutes(app: Express): HttpServer {
   // Registrar rutas protegidas por control de acceso por suscripción
   // Servicios que requieren autenticación - después de definir todas las rutas públicas
   setupAuth(app);
+  
+  // Register contracts router AFTER setupAuth() to ensure Passport is initialized
+  app.use('/api/contracts', contractsRouter);
+  console.log('✅ Router de contratos registrado (después de setupAuth)');
+  
   setupSpotifyRoutes(app);
   setupInstagramRoutes(app);
   setupVideosRoutes(app);

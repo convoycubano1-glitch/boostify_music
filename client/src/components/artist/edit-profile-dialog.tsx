@@ -49,9 +49,10 @@ interface EditProfileDialogProps {
     spotify: string;
   };
   onUpdate: () => void;
+  onGalleryCreated?: () => void;
 }
 
-export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfileDialogProps) {
+export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCreated }: EditProfileDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingBiography, setIsGeneratingBiography] = useState(false);
@@ -1456,7 +1457,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate }: EditProfi
               <ImageGalleryGenerator
                 artistId={artistId}
                 artistName={currentData.displayName}
-                onGalleryCreated={onUpdate}
+                onGalleryCreated={() => {
+                  onUpdate();
+                  if (onGalleryCreated) {
+                    onGalleryCreated();
+                  }
+                }}
               />
             </div>
           </div>
