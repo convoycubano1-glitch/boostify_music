@@ -4,7 +4,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Save, FolderOpen, Trash2, Loader2, Download, Calendar, Edit3, ExternalLink, Pencil } from "lucide-react";
+import { Save, FolderOpen, Trash2, Loader2, Download, Calendar, Edit3, ExternalLink, Pencil, Film } from "lucide-react";
 import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
 import { musicVideoProjectServicePostgres, type MusicVideoProjectPostgres } from "../../lib/services/music-video-project-service-postgres";
 import { useToast } from "../../hooks/use-toast";
@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
+import { VideoRenderingModal } from "./VideoRenderingModal";
+import type { TimelineClip } from "./TimelineEditor";
 
 interface ProjectManagerProps {
   userId: string;
@@ -27,7 +29,10 @@ interface ProjectManagerProps {
   onLoadProject: (projectId: string) => void;
   isSaving: boolean;
   currentProjectId?: string;
-  hasImages?: boolean; // Nuevo: para mostrar el botón del editor profesional
+  hasImages?: boolean;
+  clips?: TimelineClip[];
+  audioUrl?: string;
+  audioDuration?: number;
 }
 
 export function ProjectManager({
@@ -38,7 +43,10 @@ export function ProjectManager({
   onLoadProject,
   isSaving,
   currentProjectId,
-  hasImages = false
+  hasImages = false,
+  clips = [],
+  audioUrl,
+  audioDuration
 }: ProjectManagerProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -49,6 +57,7 @@ export function ProjectManager({
   const [isRenaming, setIsRenaming] = useState<string | null>(null);
   const [renameDialogProject, setRenameDialogProject] = useState<MusicVideoProjectPostgres | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
+  const [showRenderModal, setShowRenderModal] = useState(false);
 
   // Load user projects from PostgreSQL
   const loadProjects = async () => {
@@ -234,8 +243,21 @@ export function ProjectManager({
           </Button>
         )}
 
+        {/* Render Final Video - Solo se muestra si hay clips */}
+        {clips.length > 0 && (
+          <Button
+            onClick={() => setShowRenderModal(true)}
+            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+            data-testid="button-render-video"
+          >
+            <Film className="mr-2 h-4 w-4" />
+            Render Final Video
+          </Button>
+        )}
+
         <p className="text-xs text-muted-foreground">
-          💾 {currentProjectId ? 'Project saved!' : 'Save your project to access the Professional Editor'}
+          💾 {currentProjectId ? 'Project saved!' : 'Save your project first'} 
+          {clips.length > 0 && ' | 🎬 Ready to render'}
         </p>
       </Card>
 
@@ -409,6 +431,24 @@ export function ProjectManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Video Rendering Modal */}
+      <VideoRenderingModal
+        open={showRenderModal}
+        onClose={() => setShowRenderModal(false)}
+        clips={clips}
+        audioUrl={audioUrl}
+        audioDuration={audioDuration}
+        projectId={currentProjectId}
+        projectName={projectName}
+        onComplete={(videoUrl) => {
+          toast({
+            title: "Video renderizado exitosamente",
+            description: "Tu video final está listo",
+          });
+          setShowRenderModal(false);
+        }}
+      />
     </>
   );
 }

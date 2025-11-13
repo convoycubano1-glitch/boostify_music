@@ -65,6 +65,7 @@ import contractsRouter from './routes/contracts'; // Import the contracts router
 import falApiRouter from './routes/fal-api'; // Import the FAL AI router for secure backend processing
 import creditsRouter from './routes/credits'; // Import the credits and payments router
 import faceAnalysisRouter from './routes/face-analysis'; // Import the face analysis router
+import videoRenderingRouter from './routes/video-rendering'; // Import the video rendering router with Shotstack
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -237,6 +238,7 @@ export function registerRoutes(app: Express): HttpServer {
   // Registrar el router para proyectos de music video (guardado/carga)
   console.log('📢 Registrando router de proyectos de music video en /api/music-video-projects');
   app.use('/api/music-video-projects', musicVideoProjectsRouter);
+  app.use('/api/video-rendering', videoRenderingRouter);
   console.log('✅ Router de proyectos de music video registrado');
   
   // Registrar el router para musician clips (timeline musicians)
