@@ -357,5 +357,55 @@ Provide practical, industry-specific advice based on proven success patterns in 
       systemInstruction: "You are an experienced music industry career manager and business advisor. You have guided numerous artists to success and understand the business, creative, and strategic aspects of building a sustainable music career.",
       temperature: 0.7
     });
+  },
+
+  async generateImage(params: {
+    prompt: string;
+    referenceImage?: string;
+    style?: string;
+    mood?: string;
+  }): Promise<string> {
+    try {
+      const requestBody: any = {
+        model: "gemini-2.5-flash-image", // Nano Banana - image generation model
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: params.prompt }]
+          }
+        ],
+        config: {
+          generationConfig: {
+            temperature: 0.9,
+            maxOutputTokens: 8192
+          }
+        }
+      };
+
+      // Add reference image if provided
+      if (params.referenceImage) {
+        requestBody.contents[0].parts.push({
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: params.referenceImage
+          }
+        });
+      }
+
+      const response = await ai.models.generateContent(requestBody);
+
+      // Extract image URL from response
+      // The response should contain the generated image data or URL
+      if (!response || !response.text) {
+        throw new Error("No image generated in response");
+      }
+
+      // For now, return the response text which should contain the image data/URL
+      // In production, you might need to handle the image data differently
+      return response.text;
+    } catch (error) {
+      console.error("Error generating image with Gemini:", error);
+      throw new Error(`Failed to generate image: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 };

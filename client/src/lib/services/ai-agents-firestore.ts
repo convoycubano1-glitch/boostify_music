@@ -9,6 +9,7 @@ export const AGENT_FIRESTORE_COLLECTIONS = {
   socialMedia: 'ai_social_media_results',
   merchandise: 'ai_merchandise_results',
   manager: 'ai_manager_results',
+  photographer: 'ai_photographer_results',
 } as const;
 
 // Base interface for all agent results
@@ -64,13 +65,22 @@ export interface ManagerResult extends BaseAgentResult {
   goals?: string;
 }
 
+export interface PhotographerResult extends BaseAgentResult {
+  agentType: 'photographer';
+  resultType: 'cover_art' | 'promotional' | 'artistic';
+  style?: string;
+  mood?: string;
+  colorScheme?: string;
+}
+
 export type AgentResult = 
   | ComposerResult 
   | VideoDirectorResult 
   | MarketingResult 
   | SocialMediaResult 
   | MerchandiseResult 
-  | ManagerResult;
+  | ManagerResult
+  | PhotographerResult;
 
 class AIAgentsFirestoreService {
   /**

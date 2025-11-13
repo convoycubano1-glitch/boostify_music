@@ -49,6 +49,13 @@ const careerAdviceSchema = z.object({
   timeline: z.string().optional()
 });
 
+const imageGenerationSchema = z.object({
+  prompt: z.string(),
+  referenceImage: z.string().optional(),
+  style: z.string().optional(),
+  mood: z.string().optional()
+});
+
 // Generate music lyrics
 router.post('/composer/lyrics', async (req, res) => {
   try {
@@ -203,6 +210,27 @@ router.post('/generate', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to generate text',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Generate image using Gemini 2.5 Flash Image (Nano Banana)
+router.post('/photographer/generate-image', async (req, res) => {
+  try {
+    const params = imageGenerationSchema.parse(req.body);
+    const imageUrl = await geminiService.generateImage(params);
+    
+    res.json({
+      success: true,
+      imageUrl,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error generating image:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate image',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
   }

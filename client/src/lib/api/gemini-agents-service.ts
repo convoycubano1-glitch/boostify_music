@@ -44,6 +44,13 @@ export interface CareerAdviceParams {
   timeline?: string;
 }
 
+export interface ImageGenerationParams {
+  prompt: string;
+  referenceImage?: string; // Base64 encoded image
+  style?: string;
+  mood?: string;
+}
+
 class GeminiAgentsService {
   private baseUrl = '/api/gemini-agents';
 
@@ -122,6 +129,14 @@ class GeminiAgentsService {
       { prompt, systemInstruction, temperature }
     );
     return result.text;
+  }
+
+  async generateImage(params: ImageGenerationParams): Promise<string> {
+    const result = await this.request<{ success: boolean; imageUrl: string }>(
+      '/photographer/generate-image',
+      params
+    );
+    return result.imageUrl;
   }
 }
 

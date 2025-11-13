@@ -11,6 +11,7 @@ import {
   ShoppingBag, 
   Users, 
   Briefcase,
+  Camera,
   Search,
   HelpCircle,
   ChevronRight,
@@ -33,6 +34,7 @@ import { MarketingAgent } from "../components/ai/marketing-agent";
 import { SocialMediaAgent } from "../components/ai/social-media-agent";
 import { MerchandiseAgent } from "../components/ai/merchandise-agent";
 import { ManagerAgent } from "../components/ai/manager-agent";
+import { PhotographerAgent } from "../components/ai/photographer-agent";
 import { AIDataManager } from "../components/ai/ai-data-manager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Button } from "../components/ui/button";
@@ -111,6 +113,28 @@ const agentInfo = [
       "Better align visuals with your music"
     ],
     recommendedWith: ["composer", "social-media"]
+  },
+  {
+    id: "photographer",
+    name: "AI Photographer",
+    description: "Generate professional album covers and promotional images",
+    icon: Camera,
+    color: "from-cyan-500 to-blue-600",
+    category: "visual",
+    component: PhotographerAgent,
+    trending: true,
+    useCases: [
+      "Create stunning album/single cover art",
+      "Generate promotional images with different styles",
+      "Use reference images to inspire AI-generated photos"
+    ],
+    quickTip: "Upload reference images for better style matching",
+    benefits: [
+      "Professional studio-quality images",
+      "Multiple artistic styles available",
+      "Save time and costs on photoshoots"
+    ],
+    recommendedWith: ["composer", "video-director"]
   },
   {
     id: "marketing",
