@@ -33,6 +33,10 @@ interface ProjectManagerProps {
   clips?: TimelineClip[];
   audioUrl?: string;
   audioDuration?: number;
+  hasUserPaid?: boolean;
+  onShowPaymentGate?: () => void;
+  videoGenerationsCount?: number;
+  onVideoRenderComplete?: (videoUrl: string) => void;
 }
 
 export function ProjectManager({
@@ -46,7 +50,11 @@ export function ProjectManager({
   hasImages = false,
   clips = [],
   audioUrl,
-  audioDuration
+  audioDuration,
+  hasUserPaid = false,
+  onShowPaymentGate,
+  videoGenerationsCount = 0,
+  onVideoRenderComplete
 }: ProjectManagerProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -246,12 +254,44 @@ export function ProjectManager({
         {/* Render Final Video - Solo se muestra si hay clips */}
         {clips.length > 0 && (
           <Button
-            onClick={() => setShowRenderModal(true)}
+            onClick={() => {
+              // Check payment gate before rendering
+              const maxFreeGenerations = 1;
+              const maxPaidGenerations = 3;
+              
+              if (!hasUserPaid && videoGenerationsCount >= maxFreeGenerations) {
+                // Show payment gate - user needs to pay
+                if (onShowPaymentGate) {
+                  onShowPaymentGate();
+                } else {
+                  toast({
+                    title: "Payment Required",
+                    description: "You've used your free video generation. Upgrade to continue.",
+                    variant: "destructive",
+                  });
+                }
+              } else if (hasUserPaid && videoGenerationsCount >= maxPaidGenerations) {
+                // User has paid but exceeded limit
+                toast({
+                  title: "Generation Limit Reached",
+                  description: `You've used all ${maxPaidGenerations} video generations. Your video looks great!`,
+                  variant: "destructive",
+                });
+              } else {
+                // Allow rendering
+                setShowRenderModal(true);
+              }
+            }}
             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             data-testid="button-render-video"
           >
             <Film className="mr-2 h-4 w-4" />
             Render Final Video
+            {!hasUserPaid && videoGenerationsCount >= 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {videoGenerationsCount}/{hasUserPaid ? 3 : 1}
+              </Badge>
+            )}
           </Button>
         )}
 
@@ -436,6 +476,16 @@ export function ProjectManager({
       <VideoRenderingModal
         open={showRenderModal}
         onClose={() => setShowRenderModal(false)}
+        onComplete={(videoUrl) => {
+          // Increment video generation count when completed
+          if (onVideoRenderComplete) {
+            onVideoRenderComplete(videoUrl);
+          }
+          toast({
+            title: "Video Ready!",
+            description: "Your music video has been rendered successfully",
+          });
+        }}
         clips={clips}
         audioUrl={audioUrl}
         audioDuration={audioDuration}

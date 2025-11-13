@@ -482,6 +482,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   // Payment gate states
   const [showPaymentGate, setShowPaymentGate] = useState(false);
   const [isGeneratingRemaining, setIsGeneratingRemaining] = useState(false);
+  const [hasUserPaid, setHasUserPaid] = useState(false);
+  const [videoGenerationsCount, setVideoGenerationsCount] = useState(0);
 
   // Función para generar 3 propuestas de concepto
   const generateConceptProposals = async () => {
@@ -1105,25 +1107,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           continue;
         }
         
-        // Check if we've hit the 10-image limit for non-admin users
-        if (!isAdmin && sceneIndex === 10 && startFrom === 1) {
-          console.log('🎯 [PAYMENT GATE] Reached 10 images, showing payment gate');
-          
-          // Save project state
-          await saveProjectState();
-          
-          // Close progress modal and show payment gate
-          setShowProgress(false);
-          setIsGeneratingImages(false);
-          setShowPaymentGate(true);
-          
-          toast({
-            title: "Demo Complete!",
-            description: "10 preview images generated. Pay to continue with the remaining 30 images.",
-          });
-          
-          return; // Stop generation here
-        }
+        // No payment gate during image generation - let users generate all images
+        // Payment gate will be shown when they want to render the final video
       }
       
       console.log(`✅ [IMG] Generación completada: ${generatedCount} imágenes generadas`);
@@ -1184,21 +1169,18 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Handle payment success - continue generation from image 11
   const handlePaymentSuccess = async () => {
-    console.log('💳 [PAYMENT] Payment successful, resuming generation from image 11');
+    console.log('💳 [PAYMENT] Payment successful');
+    
+    // Mark user as paid
+    setHasUserPaid(true);
     
     // Close payment gate modal
     setShowPaymentGate(false);
-    setIsGeneratingRemaining(true);
     
     toast({
       title: "Payment Successful!",
-      description: "Continuing with images 11-40...",
+      description: "You can now generate up to 3 final videos.",
     });
-    
-    // Resume generation from image 11
-    await executeImageGeneration(scriptContent, 11);
-    
-    setIsGeneratingRemaining(false);
   };
 
   // Función para manejar el resultado del onboarding
@@ -6449,6 +6431,13 @@ ${transcription}`;
                       clips={timelineItems as any}
                       audioUrl={audioUrl}
                       audioDuration={audioDuration}
+                      hasUserPaid={hasUserPaid}
+                      onShowPaymentGate={() => setShowPaymentGate(true)}
+                      videoGenerationsCount={videoGenerationsCount}
+                      onVideoRenderComplete={(videoUrl) => {
+                        console.log('✅ Video rendered:', videoUrl);
+                        setVideoGenerationsCount(prev => prev + 1);
+                      }}
                     />
                   </div>
                 )}
