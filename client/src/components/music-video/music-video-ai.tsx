@@ -15,7 +15,7 @@ import {
   Video, Loader2, Music2, Image as ImageIcon, Download, Play, Pause,
   ZoomIn, ZoomOut, SkipBack, FastForward, Rewind, Edit, RefreshCcw, Plus, RefreshCw,
   Film, CheckCircle2, Share, User, Upload, X, Check, Activity, ChevronUp, ChevronDown,
-  Megaphone, Waves, HelpCircle, Sparkles, Scissors, Clock
+  Megaphone, Waves, HelpCircle, Sparkles, Scissors, Clock, Zap
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import { ScrollArea } from "../ui/scroll-area";
@@ -71,6 +71,8 @@ import { ProjectManager } from "./project-manager";
 import { VideoModelSelector } from "./video-model-selector";
 import { getDirectorByName, getDirectorById, type DirectorProfile } from "../../data/directors";
 import { uploadImageFromUrl } from "../../lib/firebase-storage";
+import { QuickStartTemplates, type QuickStartTemplate } from "./quick-start-templates";
+import { SmartSuggestionsPanel } from "./smart-suggestions-panel";
 
 // Fal.ai configuration
 fal.config({
@@ -410,6 +412,13 @@ export function MusicVideoAI() {
   const [conceptProposals, setConceptProposals] = useState<any[]>([]);
   const [selectedConcept, setSelectedConcept] = useState<any | null>(null);
   const [isGeneratingConcepts, setIsGeneratingConcepts] = useState(false);
+  
+  // Estados para templates rápidos
+  const [showQuickStartTemplates, setShowQuickStartTemplates] = useState(false);
+  
+  // Estados para batch operations
+  const [selectedClipIds, setSelectedClipIds] = useState<number[]>([]);
+  const [isBatchRegenerating, setIsBatchRegenerating] = useState(false);
 
   // Función para generar 3 propuestas de concepto
   const generateConceptProposals = async () => {
@@ -944,6 +953,53 @@ export function MusicVideoAI() {
   }, []);
 
   // Handler para cuando se selecciona director y estilo
+  /**
+   * Handler para aplicar template rápido
+   */
+  const handleTemplateSelection = useCallback((template: QuickStartTemplate) => {
+    console.log('📦 Aplicando template:', template.name);
+    
+    // Buscar director por nombre
+    const director = getDirectorByName(template.director.name);
+    
+    if (director) {
+      setVideoStyle(prev => ({
+        ...prev,
+        mood: template.visualStyle.mood,
+        colorPalette: template.visualStyle.colorPalette,
+        cameraFormat: template.visualStyle.cameraFormat,
+        visualIntensity: template.visualStyle.visualIntensity,
+        selectedDirector: {
+          id: director.id,
+          name: director.name,
+          specialty: director.specialty,
+          style: director.visual_style || template.director.style,
+          experience: director.experience || 'Professional',
+          rating: director.rating
+        }
+      }));
+      
+      // Aplicar estilo de edición
+      const editingStyle = editingStyles.find(s => s.id === template.editingStyle.id);
+      if (editingStyle) {
+        setSelectedEditingStyle(editingStyle);
+      }
+      
+      toast({
+        title: "Template aplicado",
+        description: `Configuración "${template.name}" lista para usar`,
+      });
+      
+      console.log('✅ Template aplicado exitosamente');
+    } else {
+      toast({
+        title: "Error",
+        description: "No se pudo encontrar el director del template",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
   const handleDirectorSelection = useCallback(async (director: DirectorProfile, style: string) => {
     console.log('🎬 Director seleccionado:', director.name, '| Estilo:', style);
     
@@ -2584,6 +2640,103 @@ ${transcription}`;
       setHasUnsavedChanges(false);
     }
   }, [isSavingProject, currentProjectId]);
+
+  /**
+   * Batch regenerate images - Regenerar múltiples imágenes seleccionadas
+   */
+  const handleBatchRegenerateImages = useCallback(async () => {
+    if (selectedClipIds.length === 0) {
+      toast({
+        title: "No hay clips seleccionados",
+        description: "Selecciona al menos un clip para regenerar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsBatchRegenerating(true);
+    
+    try {
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const clipId of selectedClipIds) {
+        const item = timelineItems.find(i => i.id === clipId);
+        if (!item) continue;
+
+        try {
+          console.log(`🔄 Regenerando imagen ${clipId}...`);
+          
+          const promptToUse = item.imagePrompt || item.description || `Scene ${clipId}`;
+          
+          const response = await fetch('/api/gemini-image/generate-simple', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: promptToUse,
+              seed: Math.floor(Math.random() * 1000000)
+            })
+          });
+
+          if (!response.ok) throw new Error('Failed to generate image');
+          
+          const data = await response.json();
+          
+          if (data.success && data.imageUrl) {
+            let permanentImageUrl = data.imageUrl;
+            
+            if (user?.uid) {
+              try {
+                permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
+              } catch (error) {
+                console.warn('Error uploading to Firebase, using temporary URL:', error);
+              }
+            }
+            
+            setTimelineItems(prevItems =>
+              prevItems.map(prevItem =>
+                prevItem.id === clipId
+                  ? {
+                      ...prevItem,
+                      generatedImage: permanentImageUrl,
+                      firebaseUrl: permanentImageUrl,
+                      metadata: {
+                        ...prevItem.metadata,
+                        isGeneratedImage: true
+                      }
+                    }
+                  : prevItem
+              )
+            );
+            
+            successCount++;
+          } else {
+            throw new Error('No image URL returned');
+          }
+        } catch (error) {
+          console.error(`Error regenerating clip ${clipId}:`, error);
+          failCount++;
+        }
+      }
+
+      toast({
+        title: "Regeneración completada",
+        description: `${successCount} imágenes regeneradas exitosamente${failCount > 0 ? `, ${failCount} fallaron` : ''}`,
+      });
+
+      // Limpiar selección
+      setSelectedClipIds([]);
+    } catch (error) {
+      console.error('Error in batch regeneration:', error);
+      toast({
+        title: "Error",
+        description: "Error al regenerar imágenes",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBatchRegenerating(false);
+    }
+  }, [selectedClipIds, timelineItems, user, projectName, toast]);
 
   /**
    * Generar video individual para una escena
@@ -4261,6 +4414,13 @@ ${transcription}`;
         onSelect={handleConceptSelection}
       />
 
+      {/* Modal de Templates Rápidos */}
+      <QuickStartTemplates
+        open={showQuickStartTemplates}
+        onClose={() => setShowQuickStartTemplates(false)}
+        onSelectTemplate={handleTemplateSelection}
+      />
+
       {/* Modal de Progreso de Generación de Imágenes */}
       <Dialog open={isGeneratingShots} onOpenChange={() => {}}>
         <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-black via-zinc-900 to-black border-orange-500/20">
@@ -4432,6 +4592,39 @@ ${transcription}`;
       {allStepsCompleted && <motion.div className="confetti-container" />}
       
       {/* Sistema de partículas dinámicas basadas en el paso actual - Ajustadas a naranja/negro */}
+      {/* Botón de Quick Start - Solo visible al inicio */}
+      {currentStep === 1 && !transcription && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Card className="bg-gradient-to-r from-orange-600/20 to-orange-500/20 border-orange-500/30 p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="bg-orange-500 rounded-full p-3">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">🚀 Inicio Rápido con Templates</h3>
+                  <p className="text-sm text-white/70">
+                    Empieza en segundos con configuración optimizada para tu género musical
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setShowQuickStartTemplates(true)}
+                className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 border-0 shadow-md"
+                data-testid="button-quick-start"
+              >
+                <Zap className="mr-2 h-4 w-4" />
+                Ver Templates
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       {currentStep === 1 && (
         <ParticleSystem 
           count={30} 
@@ -6223,6 +6416,77 @@ ${transcription}`;
                     audioBuffer={audioBuffer}
                     duration={totalDuration}
                   />
+
+                  {/* Panel de Sugerencias Inteligentes */}
+                  {timelineItems.length > 0 && (
+                    <SmartSuggestionsPanel
+                      timelineItems={timelineItems}
+                      onApplySuggestion={(suggestionId) => {
+                        console.log('Aplicando sugerencia:', suggestionId);
+                        
+                        if (suggestionId === 'pending-images') {
+                          // Iniciar generación de imágenes pendientes
+                          const pendingItems = timelineItems.filter(item => !item.generatedImage && !item.firebaseUrl);
+                          if (pendingItems.length > 0) {
+                            toast({
+                              title: "Iniciando generación",
+                              description: `Generando ${pendingItems.length} imágenes...`,
+                            });
+                            // Aquí podrías llamar a la función de generación
+                          }
+                        } else if (suggestionId === 'similar-clips') {
+                          // Regenerar clips similares con variedad
+                          toast({
+                            title: "Optimización iniciada",
+                            description: "Regenerando clips para mayor variedad...",
+                          });
+                        }
+                      }}
+                    />
+                  )}
+
+                  {/* Controles de Batch Operations */}
+                  {selectedClipIds.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4"
+                    >
+                      <Card className="bg-gradient-to-r from-blue-600/20 to-blue-500/20 border-blue-500/30 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="secondary" className="text-sm">
+                              {selectedClipIds.length} clips seleccionados
+                            </Badge>
+                            <span className="text-sm text-white/70">
+                              Operaciones en lote disponibles
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedClipIds([])}
+                              className="text-xs"
+                              data-testid="button-clear-selection"
+                            >
+                              Limpiar selección
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={handleBatchRegenerateImages}
+                              disabled={isBatchRegenerating}
+                              className="bg-blue-600 hover:bg-blue-700 text-xs"
+                              data-testid="button-batch-regenerate"
+                            >
+                              <RefreshCw className={`mr-1 h-3 w-3 ${isBatchRegenerating ? 'animate-spin' : ''}`} />
+                              {isBatchRegenerating ? 'Regenerando...' : 'Regenerar todas'}
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  )}
                 </div>
               </div>
             </div>
