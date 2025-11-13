@@ -493,6 +493,82 @@ export function TechnicalRiderSection() {
             </div>
           ) : (
             <>
+              {/* Metadata Section */}
+              {selectedDocument?.metadata && (
+                <div className="border rounded-lg p-4 bg-gradient-to-r from-orange-50/50 to-amber-50/50 dark:from-orange-950/20 dark:to-amber-950/20 space-y-3">
+                  <h3 className="font-semibold text-sm text-orange-600 dark:text-orange-400 mb-3">Document Information</h3>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    {selectedDocument.metadata.artistName && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Artist/Band:</span>{' '}
+                        <span className="font-semibold">{selectedDocument.metadata.artistName}</span>
+                      </div>
+                    )}
+                    
+                    {selectedDocument.metadata.eventName && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Event:</span>{' '}
+                        <span>{selectedDocument.metadata.eventName}</span>
+                      </div>
+                    )}
+                    
+                    {selectedDocument.metadata.eventDate && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Date:</span>{' '}
+                        <span>{new Date(selectedDocument.metadata.eventDate).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</span>
+                      </div>
+                    )}
+                    
+                    {selectedDocument.metadata.venueName && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Venue:</span>{' '}
+                        <span>{selectedDocument.metadata.venueName}</span>
+                      </div>
+                    )}
+                    
+                    {selectedDocument.metadata.venueCity && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Location:</span>{' '}
+                        <span>{selectedDocument.metadata.venueCity}</span>
+                      </div>
+                    )}
+                    
+                    {selectedDocument.metadata.venueCapacity && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Capacity:</span>{' '}
+                        <span>{selectedDocument.metadata.venueCapacity}</span>
+                      </div>
+                    )}
+                    
+                    {selectedDocument.metadata.contactName && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Contact:</span>{' '}
+                        <span>{selectedDocument.metadata.contactName}</span>
+                      </div>
+                    )}
+                    
+                    {selectedDocument.metadata.contactEmail && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Email:</span>{' '}
+                        <span className="text-blue-600 dark:text-blue-400">{selectedDocument.metadata.contactEmail}</span>
+                      </div>
+                    )}
+                    
+                    {selectedDocument.metadata.contactPhone && (
+                      <div>
+                        <span className="font-medium text-muted-foreground">Phone:</span>{' '}
+                        <span>{selectedDocument.metadata.contactPhone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="whitespace-pre-line p-4 rounded bg-muted/30 font-mono text-sm max-h-[400px] overflow-y-auto">
                 {selectedDocument?.content}
               </div>
