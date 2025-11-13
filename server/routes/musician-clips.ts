@@ -5,6 +5,7 @@ import { insertMusicianClipSchema, type InsertMusicianClip } from '../../db/sche
 import { eq, and } from 'drizzle-orm';
 import { GoogleGenAI } from '@google/genai';
 import { generateCinematicImage } from '../services/gemini-image-service';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -57,7 +58,7 @@ Format as a single, detailed paragraph optimized for Gemini image generation.`;
       timestamp,
     });
   } catch (error: any) {
-    console.error('Error generating musician description:', error);
+    logger.error('Error generating musician description:', error);
     res.status(500).json({ error: error.message || 'Failed to generate description' });
   }
 });
@@ -70,13 +71,13 @@ router.post('/api/musician-clips/generate-image', async (req, res) => {
       return res.status(400).json({ error: 'Description is required' });
     }
 
-    console.log('🎸 Generating musician image with Gemini...');
-    console.log('📝 Description:', description);
+    logger.log('🎸 Generating musician image with Gemini...');
+    logger.log('📝 Description:', description);
     
     let finalPrompt = `${description}\n\nPhotorealistic, cinematic quality, professional lighting, 8K resolution.`;
     
     if (faceReferenceUrl) {
-      console.log('👤 Using face reference for musician generation');
+      logger.log('👤 Using face reference for musician generation');
       const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
       const result = await generateImageWithMultipleFaceReferences(finalPrompt, [faceReferenceUrl]);
       
@@ -101,7 +102,7 @@ router.post('/api/musician-clips/generate-image', async (req, res) => {
       success: true,
     });
   } catch (error: any) {
-    console.error('Error generating musician image:', error);
+    logger.error('Error generating musician image:', error);
     res.status(500).json({ error: error.message || 'Failed to generate image' });
   }
 });
@@ -123,7 +124,7 @@ router.post('/api/musician-clips/save', async (req, res) => {
       musicianClip,
     });
   } catch (error: any) {
-    console.error('Error saving musician clip:', error);
+    logger.error('Error saving musician clip:', error);
     res.status(500).json({ error: error.message || 'Failed to save musician clip' });
   }
 });
@@ -139,7 +140,7 @@ router.get('/api/musician-clips/project/:projectId', async (req, res) => {
 
     res.json(clips);
   } catch (error: any) {
-    console.error('Error fetching musician clips:', error);
+    logger.error('Error fetching musician clips:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch musician clips' });
   }
 });
@@ -154,7 +155,7 @@ router.delete('/api/musician-clips/:id', async (req, res) => {
 
     res.json({ success: true });
   } catch (error: any) {
-    console.error('Error deleting musician clip:', error);
+    logger.error('Error deleting musician clip:', error);
     res.status(500).json({ error: error.message || 'Failed to delete musician clip' });
   }
 });

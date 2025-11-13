@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { generateCinematicImage } from '../services/gemini-image-service';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -45,8 +46,8 @@ router.post('/api/clips/generate-camera-angles', async (req, res) => {
       });
     }
 
-    console.log(`📷 Generating 4 camera angle variations for clip ${clipId}`);
-    console.log(`📝 Original prompt: ${originalPrompt.substring(0, 100)}...`);
+    logger.log(`📷 Generating 4 camera angle variations for clip ${clipId}`);
+    logger.log(`📝 Original prompt: ${originalPrompt.substring(0, 100)}...`);
 
     // Generate all 4 angles in parallel
     const generationPromises = CAMERA_ANGLES.map(async (angle) => {
@@ -61,12 +62,12 @@ CRITICAL INSTRUCTIONS:
 - Maintain consistency with the original concept
 - Use the camera angle to create visual variety while preserving the story`;
 
-        console.log(`📸 Generating ${angle.name} variation...`);
+        logger.log(`📸 Generating ${angle.name} variation...`);
         
         const result = await generateCinematicImage(enhancedPrompt);
 
         if (!result.success || !result.imageUrl) {
-          console.error(`❌ Failed to generate ${angle.name}:`, result.error);
+          logger.error(`❌ Failed to generate ${angle.name}:`, result.error);
           return {
             angle: angle.id,
             name: angle.name,
@@ -77,7 +78,7 @@ CRITICAL INSTRUCTIONS:
           };
         }
 
-        console.log(`✅ ${angle.name} generated successfully`);
+        logger.log(`✅ ${angle.name} generated successfully`);
         
         return {
           angle: angle.id,
@@ -88,7 +89,7 @@ CRITICAL INSTRUCTIONS:
           prompt: enhancedPrompt
         };
       } catch (error: any) {
-        console.error(`❌ Error generating ${angle.name}:`, error);
+        logger.error(`❌ Error generating ${angle.name}:`, error);
         return {
           angle: angle.id,
           name: angle.name,
@@ -103,7 +104,7 @@ CRITICAL INSTRUCTIONS:
     const variations = await Promise.all(generationPromises);
 
     const successCount = variations.filter(v => v.success).length;
-    console.log(`✅ Generated ${successCount}/4 camera angle variations`);
+    logger.log(`✅ Generated ${successCount}/4 camera angle variations`);
 
     res.json({
       success: true,
@@ -112,7 +113,7 @@ CRITICAL INSTRUCTIONS:
       clipId
     });
   } catch (error: any) {
-    console.error('Error generating camera angles:', error);
+    logger.error('Error generating camera angles:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message || 'Failed to generate camera angles' 

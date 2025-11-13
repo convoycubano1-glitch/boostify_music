@@ -4,6 +4,7 @@
  * Con sistema de fallback automático entre múltiples API keys
  */
 import { GoogleGenAI, Modality } from "@google/genai";
+import { logger } from '../utils/logger';
 
 // Configurar múltiples clientes de Gemini para fallback automático
 const apiKeys = [
@@ -25,7 +26,7 @@ async function generateContentWithFallback(params: any): Promise<any> {
   
   for (let i = 0; i < geminiClients.length; i++) {
     try {
-      console.log(`🔑 Intentando generación con API key ${i + 1}/${geminiClients.length}...`);
+      logger.log(`🔑 Intentando generación con API key ${i + 1}/${geminiClients.length}...`);
       const client = geminiClients[i];
       
       // Agregar timeout de 60 segundos para evitar colgarse indefinidamente
@@ -36,22 +37,22 @@ async function generateContentWithFallback(params: any): Promise<any> {
       const generationPromise = client.models.generateContent(params);
       
       const response = await Promise.race([generationPromise, timeoutPromise]);
-      console.log(`✅ Generación exitosa con API key ${i + 1}`);
+      logger.log(`✅ Generación exitosa con API key ${i + 1}`);
       return response;
     } catch (error: any) {
       lastError = error;
       
-      console.error(`❌ Error con API key ${i + 1}:`, error.message);
+      logger.error(`❌ Error con API key ${i + 1}:`, error.message);
       
       // Si es error 429 (quota exceeded), intentar con la siguiente key
       if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
-        console.warn(`⚠️ API key ${i + 1} sin cuota disponible, intentando con siguiente key...`);
+        logger.warn(`⚠️ API key ${i + 1} sin cuota disponible, intentando con siguiente key...`);
         continue;
       }
       
       // Si es timeout, intentar con la siguiente key
       if (error.message?.includes('timeout')) {
-        console.warn(`⏱️ API key ${i + 1} timeout, intentando con siguiente key...`);
+        logger.warn(`⏱️ API key ${i + 1} timeout, intentando con siguiente key...`);
         continue;
       }
       
@@ -61,7 +62,7 @@ async function generateContentWithFallback(params: any): Promise<any> {
   }
   
   // Si llegamos aquí, todas las keys fallaron
-  console.error('❌ Todas las API keys agotaron su cuota o fallaron');
+  logger.error('❌ Todas las API keys agotaron su cuota o fallaron');
   throw lastError || new Error('Todas las API keys de Gemini han fallado');
 }
 
@@ -96,7 +97,7 @@ export async function generateCinematicImage(
       throw new Error('No hay API keys de Gemini configuradas');
     }
 
-    console.log('Generando imagen con Gemini:', prompt.substring(0, 100) + '...');
+    logger.log('Generando imagen con Gemini:', prompt.substring(0, 100) + '...');
 
     // Usar el modelo de generación de imágenes con fallback automático
     const response = await generateContentWithFallback({
@@ -120,10 +121,10 @@ export async function generateCinematicImage(
     // Buscar la parte de imagen en la respuesta
     for (const part of content.parts) {
       if (part.text) {
-        console.log('Texto de respuesta:', part.text);
+        logger.log('Texto de respuesta:', part.text);
       } else if (part.inlineData && part.inlineData.data) {
         const imageBase64 = part.inlineData.data;
-        console.log('Imagen generada exitosamente');
+        logger.log('Imagen generada exitosamente');
         
         return {
           success: true,
@@ -136,7 +137,7 @@ export async function generateCinematicImage(
 
     throw new Error('No se encontró imagen en la respuesta');
   } catch (error: any) {
-    console.error('Error generando imagen con Gemini:', error);
+    logger.error('Error generando imagen con Gemini:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido al generar imagen'
@@ -181,7 +182,7 @@ export async function generateBatchImages(
   
   // Generar imágenes secuencialmente para evitar rate limits
   for (const scene of scenes) {
-    console.log(`Generando imagen ${scene.id}/${scenes.length}...`);
+    logger.log(`Generando imagen ${scene.id}/${scenes.length}...`);
     const result = await generateImageFromCinematicScene(scene);
     results.set(scene.id, result);
     
@@ -207,7 +208,7 @@ export async function generateImageWithFaceReference(
       throw new Error('GEMINI_API_KEY no está configurada');
     }
 
-    console.log('Generando imagen con referencia facial...');
+    logger.log('Generando imagen con referencia facial...');
 
     // Crear el prompt combinado para mantener la cara de la referencia
     const combinedPrompt = `${prompt}
@@ -249,10 +250,10 @@ IMPORTANT: Maintain the exact same face, facial features, and person from the re
     // Buscar la parte de imagen en la respuesta
     for (const part of content.parts) {
       if (part.text) {
-        console.log('Texto de respuesta:', part.text);
+        logger.log('Texto de respuesta:', part.text);
       } else if (part.inlineData && part.inlineData.data) {
         const imageBase64 = part.inlineData.data;
-        console.log('Imagen con rostro adaptado generada exitosamente');
+        logger.log('Imagen con rostro adaptado generada exitosamente');
         
         return {
           success: true,
@@ -265,7 +266,7 @@ IMPORTANT: Maintain the exact same face, facial features, and person from the re
 
     throw new Error('No se encontró imagen en la respuesta');
   } catch (error: any) {
-    console.error('Error generando imagen con referencia facial:', error);
+    logger.error('Error generando imagen con referencia facial:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido al generar imagen con rostro'
@@ -283,7 +284,7 @@ export async function generateBatchImagesWithFaceReference(
   const results = new Map<number, ImageGenerationResult>();
   
   for (const scene of scenes) {
-    console.log(`Generando imagen con rostro ${scene.id}/${scenes.length}...`);
+    logger.log(`Generando imagen con rostro ${scene.id}/${scenes.length}...`);
     
     // Construir prompt cinematográfico
     const cinematicPrompt = `
@@ -328,7 +329,7 @@ export async function generateImageWithMultipleFaceReferences(
       return await generateCinematicImage(prompt);
     }
 
-    console.log(`Generando imagen con ${referenceImagesBase64.length} referencias faciales...`);
+    logger.log(`Generando imagen con ${referenceImagesBase64.length} referencias faciales...`);
 
     // Crear el prompt mejorado para múltiples referencias
     const combinedPrompt = `${prompt}
@@ -342,11 +343,11 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
     for (let i = 0; i < Math.min(referenceImagesBase64.length, 3); i++) {
       let base64Data = referenceImagesBase64[i];
       
-      console.log(`🔍 Procesando imagen de referencia ${i + 1}...`);
+      logger.log(`🔍 Procesando imagen de referencia ${i + 1}...`);
       
       // Si es una URL, descargar la imagen y convertirla a base64
       if (base64Data.startsWith('http://') || base64Data.startsWith('https://')) {
-        console.log(`📥 Descargando imagen de referencia ${i + 1} desde URL...`);
+        logger.log(`📥 Descargando imagen de referencia ${i + 1} desde URL...`);
         try {
           const axios = (await import('axios')).default;
           const response = await axios.get(base64Data, { 
@@ -354,9 +355,9 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
             timeout: 10000 // 10 segundos timeout
           });
           base64Data = Buffer.from(response.data, 'binary').toString('base64');
-          console.log(`✅ Imagen ${i + 1} descargada y convertida a base64`);
+          logger.log(`✅ Imagen ${i + 1} descargada y convertida a base64`);
         } catch (downloadError: any) {
-          console.error(`❌ Error descargando imagen ${i + 1}:`, downloadError.message);
+          logger.error(`❌ Error descargando imagen ${i + 1}:`, downloadError.message);
           // Saltar esta imagen si falla la descarga
           continue;
         }
@@ -365,12 +366,12 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
         const parts = base64Data.split(',');
         if (parts.length === 2) {
           base64Data = parts[1];
-          console.log(`✅ Imagen ${i + 1} extraída de data URL`);
+          logger.log(`✅ Imagen ${i + 1} extraída de data URL`);
         } else {
-          console.warn(`⚠️ Data URL inválido para imagen ${i + 1}, usando tal cual`);
+          logger.warn(`⚠️ Data URL inválido para imagen ${i + 1}, usando tal cual`);
         }
       } else {
-        console.log(`✅ Imagen ${i + 1} ya está en base64 puro`);
+        logger.log(`✅ Imagen ${i + 1} ya está en base64 puro`);
       }
       
       parts.push({
@@ -411,10 +412,10 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
     // Buscar la parte de imagen en la respuesta
     for (const part of content.parts) {
       if (part.text) {
-        console.log('Texto de respuesta:', part.text);
+        logger.log('Texto de respuesta:', part.text);
       } else if (part.inlineData && part.inlineData.data) {
         const imageBase64 = part.inlineData.data;
-        console.log('Imagen con rostros adaptados generada exitosamente');
+        logger.log('Imagen con rostros adaptados generada exitosamente');
         
         return {
           success: true,
@@ -427,7 +428,7 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
 
     throw new Error('No se encontró imagen en la respuesta');
   } catch (error: any) {
-    console.error('Error generando imagen con múltiples referencias faciales:', error);
+    logger.error('Error generando imagen con múltiples referencias faciales:', error);
     
     // Detectar error de cuota excedida (429)
     if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
@@ -462,12 +463,12 @@ export async function generateBatchImagesWithMultipleFaceReferences(
   // Usar timestamp + random para unicidad, pero consistente dentro de la sesión
   const baseSeed = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
   
-  console.log(`🎨 Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
-  console.log(`📌 Fallback a FAL AI: ${useFallback ? 'ACTIVADO' : 'DESACTIVADO'}`);
-  console.log(`🌱 Semilla base para coherencia visual: ${baseSeed}`);
+  logger.log(`🎨 Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
+  logger.log(`📌 Fallback a FAL AI: ${useFallback ? 'ACTIVADO' : 'DESACTIVADO'}`);
+  logger.log(`🌱 Semilla base para coherencia visual: ${baseSeed}`);
   
   for (const scene of scenes) {
-    console.log(`🎬 Generando escena ${scene.id}/${scenes.length}...`);
+    logger.log(`🎬 Generando escena ${scene.id}/${scenes.length}...`);
     
     // Construir prompt cinematográfico detallado
     const cinematicPrompt = `
@@ -497,11 +498,11 @@ Create a high-quality, professional music video frame with cinematic composition
     
     // Si falla y el fallback está activado, intentar con FAL AI
     if (!result.success && useFallback && !quotaExceeded) {
-      console.log(`⚠️ Gemini falló para escena ${scene.id}, intentando con FAL AI...`);
+      logger.log(`⚠️ Gemini falló para escena ${scene.id}, intentando con FAL AI...`);
       result = await generateImageWithFAL(cinematicPrompt, referenceImagesBase64, sceneSeed);
       
       if (result.success) {
-        console.log(`✅ Escena ${scene.id} generada exitosamente con FAL AI (fallback)`);
+        logger.log(`✅ Escena ${scene.id} generada exitosamente con FAL AI (fallback)`);
       }
     }
     
@@ -509,7 +510,7 @@ Create a high-quality, professional music video frame with cinematic composition
     
     // Si se detecta error de cuota, detener la generación
     if ((result as any).quotaError) {
-      console.log(`⚠️ Cuota de API excedida después de generar ${results.size} imágenes. Deteniendo generación.`);
+      logger.log(`⚠️ Cuota de API excedida después de generar ${results.size} imágenes. Deteniendo generación.`);
       quotaExceeded = true;
       break;
     }
@@ -521,9 +522,9 @@ Create a high-quality, professional music video frame with cinematic composition
   }
   
   if (quotaExceeded) {
-    console.log(`⚠️ Generación detenida por límite de cuota: ${results.size}/${scenes.length} imágenes creadas`);
+    logger.log(`⚠️ Generación detenida por límite de cuota: ${results.size}/${scenes.length} imágenes creadas`);
   } else {
-    console.log(`✅ Generación completada: ${results.size} imágenes creadas`);
+    logger.log(`✅ Generación completada: ${results.size} imágenes creadas`);
   }
   
   return results;
@@ -558,7 +559,7 @@ export async function generateImageWithFAL(
     // El prompt debe enfocarse en la acción/escena, NO en describir la cara
     const enhancedPrompt = `${prompt}. Maintain exact facial features and identity, professional photography, cinematic lighting, 8k resolution.`;
     
-    console.log(`🎨 Generando con FAL AI FLUX Kontext Pro (${referenceImagesBase64.length} referencias, seed: ${seed || 'auto'})...`);
+    logger.log(`🎨 Generando con FAL AI FLUX Kontext Pro (${referenceImagesBase64.length} referencias, seed: ${seed || 'auto'})...`);
     
     // CRÍTICO: Decidir modelo según si hay referencias faciales
     let endpoint: string;
@@ -572,7 +573,7 @@ export async function generateImageWithFAL(
     // 🌱 CRÍTICO: Agregar semilla para coherencia visual
     if (seed !== undefined) {
       requestBody.seed = seed;
-      console.log(`🌱 Usando semilla ${seed} para coherencia visual (color, tono, estilo)`);
+      logger.log(`🌱 Usando semilla ${seed} para coherencia visual (color, tono, estilo)`);
     }
     
     // 👤 SI HAY REFERENCIAS FACIALES: Usar FLUX Kontext Pro (especializado en preservar rostros)
@@ -593,9 +594,9 @@ export async function generateImageWithFAL(
       requestBody.guidance_scale = 4.5; // 4.0-5.0 = máxima preservación facial
       requestBody.num_inference_steps = 35; // 35-40 = mejor detalle facial
       
-      console.log(`👤 FLUX Kontext Pro activado - PRESERVACIÓN FACIAL MÁXIMA`);
-      console.log(`✅ guidance_scale: 4.5 (alta preservación)`);
-      console.log(`✅ num_inference_steps: 35 (máxima calidad)`);
+      logger.log(`👤 FLUX Kontext Pro activado - PRESERVACIÓN FACIAL MÁXIMA`);
+      logger.log(`✅ guidance_scale: 4.5 (alta preservación)`);
+      logger.log(`✅ num_inference_steps: 35 (máxima calidad)`);
       
     } else {
       // SIN REFERENCIAS: Usar FLUX Pro v1.1 estándar
@@ -604,7 +605,7 @@ export async function generateImageWithFAL(
       requestBody.num_inference_steps = 28;
       requestBody.guidance_scale = 3.5;
       
-      console.log(`🎨 FLUX Pro v1.1 - Generación sin referencia facial`);
+      logger.log(`🎨 FLUX Pro v1.1 - Generación sin referencia facial`);
     }
     
     // Hacer request al endpoint apropiado
@@ -624,7 +625,7 @@ export async function generateImageWithFAL(
     if (response.data && response.data.images && response.data.images.length > 0) {
       const imageUrl = response.data.images[0].url;
       
-      console.log(`✅ Imagen generada con FAL AI Kontext Pro (rostro preservado)`);
+      logger.log(`✅ Imagen generada con FAL AI Kontext Pro (rostro preservado)`);
       
       return {
         success: true,
@@ -640,7 +641,7 @@ export async function generateImageWithFAL(
     };
     
   } catch (error: any) {
-    console.error('Error generando imagen con FAL AI:', error.response?.data || error.message);
+    logger.error('Error generando imagen con FAL AI:', error.response?.data || error.message);
     return {
       success: false,
       error: error.response?.data?.detail || error.message || 'Error al generar imagen con FAL AI'
