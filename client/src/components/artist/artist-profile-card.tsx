@@ -753,14 +753,34 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
         const videosData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
-          const videoId = data.url?.split('v=')?.[1] || data.url?.split('/')?.[3]?.split('?')?.[0];
-          console.log('📹 Video data:', { id: doc.id, title: data.title, url: data.url });
+          
+          // Solo extraer videoId si es una URL de YouTube
+          const isYouTubeUrl = data.url?.includes('youtube.com') || data.url?.includes('youtu.be');
+          let videoId = null;
+          let thumbnailUrl = data.thumbnailUrl;
+          
+          if (isYouTubeUrl) {
+            videoId = data.url?.split('v=')?.[1]?.split('&')[0] || data.url?.split('/')?.[3]?.split('?')?.[0];
+            // Solo generar thumbnail de YouTube si no hay uno ya guardado y si tenemos un videoId válido
+            if (!thumbnailUrl && videoId && videoId !== 'shorts') {
+              thumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+            }
+          }
+          
+          console.log('📹 Video data:', { 
+            id: doc.id, 
+            title: data.title, 
+            url: data.url,
+            isYouTube: isYouTubeUrl,
+            hasStoredThumbnail: !!data.thumbnailUrl
+          });
+          
           return {
             id: doc.id,
             title: data.title,
             url: data.url,
             userId: data.userId || artistId,
-            thumbnailUrl: data.thumbnailUrl || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : undefined),
+            thumbnailUrl: thumbnailUrl,
             createdAt: data.createdAt?.toDate(),
             views: Math.floor(Math.random() * 10000) + 1000,
             likes: Math.floor(Math.random() * 500) + 50,
