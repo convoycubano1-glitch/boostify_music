@@ -57,6 +57,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import QRCode from "react-qr-code";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, RadialBarChart, RadialBar } from "recharts";
@@ -86,6 +87,11 @@ interface Video {
   createdAt?: any;
   views?: number;
   likes?: number;
+  type?: 'youtube' | 'uploaded';
+  storagePath?: string;
+  downloadPassword?: string;
+  fileFormat?: string;
+  fileSize?: number;
 }
 
 interface Product {
@@ -576,6 +582,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const songFileInputRef = useRef<HTMLInputElement | null>(null);
   const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
+  
+  const [videoUploadType, setVideoUploadType] = useState<'youtube' | 'file'>('youtube');
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPassword, setVideoPassword] = useState('');
+  const videoFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [downloadVideoId, setDownloadVideoId] = useState<string | null>(null);
+  const [downloadPasswordInput, setDownloadPasswordInput] = useState('');
   
   // Estados para drag-and-drop del layout
   const [isEditingLayout, setIsEditingLayout] = useState(false);
@@ -1157,10 +1171,37 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   };
 
   const handleUploadVideo = async () => {
-    if (!newVideoTitle.trim() || !newVideoUrl.trim()) {
+    if (!newVideoTitle.trim()) {
       toast({
         title: "Error",
-        description: "Please provide a video title and URL.",
+        description: "Por favor proporciona un título para el video.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (videoUploadType === 'youtube' && !newVideoUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor proporciona una URL de YouTube.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (videoUploadType === 'file' && !videoFile) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona un archivo de video.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (videoUploadType === 'file' && !videoPassword.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor proporciona un password para proteger la descarga del video.",
         variant: "destructive",
       });
       return;
@@ -1168,28 +1209,55 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
     setIsUploadingVideo(true);
     try {
-      const newDocRef = doc(collection(db, "videos"));
-      await setDoc(newDocRef, {
-        title: newVideoTitle,
-        url: newVideoUrl,
-        userId: artistId,
-        createdAt: new Date(),
-      });
+      if (videoUploadType === 'youtube') {
+        const newDocRef = doc(collection(db, "videos"));
+        await setDoc(newDocRef, {
+          title: newVideoTitle,
+          url: newVideoUrl,
+          type: 'youtube',
+          userId: artistId,
+          createdAt: new Date(),
+        });
+      } else {
+        const fileExt = videoFile!.name.split('.').pop()?.toLowerCase() || 'mp4';
+        const storagePath = `videos/${artistId}/${Date.now()}_${videoFile!.name}`;
+        const storageRef = ref(storage, storagePath);
+        
+        await uploadBytes(storageRef, videoFile!);
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        const newDocRef = doc(collection(db, "videos"));
+        await setDoc(newDocRef, {
+          title: newVideoTitle,
+          url: downloadURL,
+          type: 'uploaded',
+          storagePath: storagePath,
+          downloadPassword: videoPassword,
+          fileFormat: fileExt,
+          fileSize: videoFile!.size,
+          userId: artistId,
+          createdAt: new Date(),
+        });
+      }
 
       toast({
-        title: "Video added!",
-        description: "Your video has been added successfully.",
+        title: "¡Video agregado!",
+        description: videoUploadType === 'youtube' 
+          ? "Tu video de YouTube ha sido agregado exitosamente." 
+          : "Tu video ha sido subido y está protegido con password.",
       });
 
       setNewVideoTitle('');
       setNewVideoUrl('');
+      setVideoFile(null);
+      setVideoPassword('');
       setShowUploadVideoDialog(false);
       refetchVideos();
     } catch (error) {
       console.error("Error uploading video:", error);
       toast({
-        title: "Upload failed",
-        description: "Could not add the video. Please try again.",
+        title: "Error al subir",
+        description: "No se pudo agregar el video. Por favor intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -1203,17 +1271,80 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     try {
       await deleteDoc(doc(db, "videos", video.id));
 
+      if (video.storagePath && video.type === 'uploaded') {
+        try {
+          const storageRef = ref(storage, video.storagePath);
+          await deleteObject(storageRef);
+        } catch (err) {
+          console.error("Error deleting file from storage:", err);
+        }
+      }
+
       toast({
-        title: "Video deleted",
-        description: "The video has been removed.",
+        title: "Video eliminado",
+        description: "El video ha sido removido.",
       });
 
       refetchVideos();
     } catch (error) {
       console.error("Error deleting video:", error);
       toast({
-        title: "Delete failed",
-        description: "Could not delete the video. Please try again.",
+        title: "Error al eliminar",
+        description: "No se pudo eliminar el video. Por favor intenta de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadVideo = async (video: Video) => {
+    if (!video.downloadPassword) {
+      toast({
+        title: "Error",
+        description: "Este video no tiene un password configurado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDownloadVideoId(video.id);
+    setShowDownloadDialog(true);
+  };
+
+  const handleConfirmDownload = async () => {
+    const video = videos.find(v => v.id === downloadVideoId);
+    if (!video) return;
+
+    if (downloadPasswordInput !== video.downloadPassword) {
+      toast({
+        title: "Password Incorrecto",
+        description: "El password ingresado no es correcto.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const link = document.createElement('a');
+      link.href = video.url;
+      link.download = `${video.title}.${video.fileFormat || 'mp4'}`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "¡Descarga iniciada!",
+        description: "El video se está descargando.",
+      });
+
+      setShowDownloadDialog(false);
+      setDownloadVideoId(null);
+      setDownloadPasswordInput('');
+    } catch (error) {
+      console.error("Error downloading video:", error);
+      toast({
+        title: "Error al descargar",
+        description: "No se pudo descargar el video. Por favor intenta de nuevo.",
         variant: "destructive",
       });
     }
@@ -1722,14 +1853,31 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           Agregar Video
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Agregar Nuevo Video</DialogTitle>
                           <DialogDescription>
-                            Agrega un video de YouTube u otra plataforma a tu perfil
+                            Agrega un video de YouTube o sube un archivo local
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
+                          <div className="space-y-3">
+                            <Label>Tipo de Video</Label>
+                            <RadioGroup 
+                              value={videoUploadType} 
+                              onValueChange={(value) => setVideoUploadType(value as 'youtube' | 'file')}
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="youtube" id="youtube" />
+                                <Label htmlFor="youtube" className="cursor-pointer">URL de YouTube</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="file" id="file" />
+                                <Label htmlFor="file" className="cursor-pointer">Subir Archivo (MP4, MPG, MOV, AVI)</Label>
+                              </div>
+                            </RadioGroup>
+                          </div>
+
                           <div className="space-y-2">
                             <Label htmlFor="video-title">Título del Video</Label>
                             <Input
@@ -1739,20 +1887,61 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                               placeholder="Mi Video Musical"
                             />
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="video-url">URL del Video</Label>
-                            <Input
-                              id="video-url"
-                              value={newVideoUrl}
-                              onChange={(e) => setNewVideoUrl(e.target.value)}
-                              placeholder="https://youtube.com/watch?v=..."
-                            />
-                          </div>
+
+                          {videoUploadType === 'youtube' ? (
+                            <div className="space-y-2">
+                              <Label htmlFor="video-url">URL del Video de YouTube</Label>
+                              <Input
+                                id="video-url"
+                                value={newVideoUrl}
+                                onChange={(e) => setNewVideoUrl(e.target.value)}
+                                placeholder="https://youtube.com/watch?v=..."
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="video-file">Archivo de Video</Label>
+                                <Input
+                                  id="video-file"
+                                  type="file"
+                                  accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo,.mp4,.mpg,.mov,.avi"
+                                  ref={videoFileInputRef}
+                                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                                />
+                                {videoFile && (
+                                  <p className="text-sm text-gray-400">
+                                    Archivo seleccionado: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                                  </p>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="video-password">Password de Descarga</Label>
+                                <Input
+                                  id="video-password"
+                                  type="password"
+                                  value={videoPassword}
+                                  onChange={(e) => setVideoPassword(e.target.value)}
+                                  placeholder="Ingresa un password para proteger la descarga"
+                                />
+                                <p className="text-xs text-gray-500">
+                                  Este password será requerido para descargar el video
+                                </p>
+                              </div>
+                            </>
+                          )}
                         </div>
                         <DialogFooter>
                           <Button
                             variant="outline"
-                            onClick={() => setShowUploadVideoDialog(false)}
+                            onClick={() => {
+                              setShowUploadVideoDialog(false);
+                              setNewVideoTitle('');
+                              setNewVideoUrl('');
+                              setVideoFile(null);
+                              setVideoPassword('');
+                              setVideoUploadType('youtube');
+                            }}
                             disabled={isUploadingVideo}
                           >
                             Cancelar
@@ -1762,7 +1951,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             disabled={isUploadingVideo}
                             style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
                           >
-                            {isUploadingVideo ? 'Agregando...' : 'Agregar Video'}
+                            {isUploadingVideo ? 'Subiendo...' : 'Agregar Video'}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -1807,41 +1996,62 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       </div>
                       <div className="p-3">
                         <h3 className="font-medium text-white text-sm">{video.title || 'Music Video'}</h3>
-                        <p className="text-xs text-gray-400 mt-1">Powered by Boostify</p>
-                        {isOwnProfile && (
-                          <div className="space-y-2 mt-2">
-                            {/* Botón promocional para YouTube Views */}
-                            <Link href="/youtube-views">
-                              <button
-                                className="w-full py-2 px-4 rounded-full text-xs font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
-                                style={{ 
-                                  background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
-                                  color: 'white'
-                                }}
-                                data-testid={`button-promote-video-${video.id}`}
-                              >
-                                <Sparkles className="h-3 w-3 inline mr-1" />
-                                Promocionar Video
-                              </button>
-                            </Link>
-                            
-                            {/* Botón de borrar */}
+                        <p className="text-xs text-gray-400 mt-1">
+                          {video.type === 'uploaded' ? 'Video Local' : 'Powered by Boostify'}
+                        </p>
+                        
+                        <div className="space-y-2 mt-2">
+                          {/* Botón de descarga - visible para todos si es video subido */}
+                          {video.type === 'uploaded' && video.downloadPassword && (
                             <button
-                              className="w-full py-2 px-4 rounded-full text-xs font-medium transition duration-300 hover:bg-red-600"
+                              className="w-full py-2 px-4 rounded-full text-xs font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
                               style={{ 
-                                backgroundColor: 'transparent',
-                                borderColor: '#EF4444',
-                                borderWidth: '1px',
-                                color: '#EF4444'
+                                background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                                color: 'white'
                               }}
-                              onClick={() => handleDeleteVideo(video)}
-                              data-testid={`button-delete-video-${video.id}`}
+                              onClick={() => handleDownloadVideo(video)}
+                              data-testid={`button-download-video-${video.id}`}
                             >
-                              <Trash2 className="h-3 w-3 inline mr-1" />
-                              Borrar Video
+                              <Upload className="h-3 w-3 inline mr-1" />
+                              Descargar Video
                             </button>
-                          </div>
-                        )}
+                          )}
+
+                          {isOwnProfile && (
+                            <>
+                              {/* Botón promocional para YouTube Views */}
+                              <Link href="/youtube-views">
+                                <button
+                                  className="w-full py-2 px-4 rounded-full text-xs font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                                  style={{ 
+                                    background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                                    color: 'white'
+                                  }}
+                                  data-testid={`button-promote-video-${video.id}`}
+                                >
+                                  <Sparkles className="h-3 w-3 inline mr-1" />
+                                  Promocionar Video
+                                </button>
+                              </Link>
+                              
+                              {/* Botón de borrar */}
+                              <button
+                                className="w-full py-2 px-4 rounded-full text-xs font-medium transition duration-300 hover:bg-red-600"
+                                style={{ 
+                                  backgroundColor: 'transparent',
+                                  borderColor: '#EF4444',
+                                  borderWidth: '1px',
+                                  color: '#EF4444'
+                                }}
+                                onClick={() => handleDeleteVideo(video)}
+                                data-testid={`button-delete-video-${video.id}`}
+                              >
+                                <Trash2 className="h-3 w-3 inline mr-1" />
+                                Borrar Video
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -3014,6 +3224,53 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </footer>
 
       </div>
+
+      {/* Download Password Dialog */}
+      <Dialog open={showDownloadDialog} onOpenChange={setShowDownloadDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Descargar Video</DialogTitle>
+            <DialogDescription>
+              Este video está protegido. Ingresa el password para descargarlo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="download-password">Password</Label>
+              <Input
+                id="download-password"
+                type="password"
+                value={downloadPasswordInput}
+                onChange={(e) => setDownloadPasswordInput(e.target.value)}
+                placeholder="Ingresa el password"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleConfirmDownload();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDownloadDialog(false);
+                setDownloadPasswordInput('');
+                setDownloadVideoId(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmDownload}
+              style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
+            >
+              Descargar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Video Player Modal */}
       <Dialog open={!!playingVideo} onOpenChange={(open) => !open && setPlayingVideo(null)}>
