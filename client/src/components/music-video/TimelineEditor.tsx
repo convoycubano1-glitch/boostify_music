@@ -1141,16 +1141,23 @@ export function TimelineEditor({
       markers.push(
         <div 
           key={`marker-${i}`}
-          className={cn(
-            "absolute",
-            isMajor ? "border-l border-gray-500 h-12" : 
-            isHalfSecond ? "border-l border-gray-700 h-8" : 
-            "border-l border-gray-800 h-4"
-          )}
+          className="absolute"
           style={{ left: `${position}px` }}
         >
+          {/* Tick mark */}
+          <div 
+            className={cn(
+              "border-l",
+              isMajor ? "border-gray-400 h-4" : 
+              isHalfSecond ? "border-gray-600 h-3" : 
+              "border-gray-700 h-2"
+            )}
+            style={{ width: '1px' }}
+          />
+          
+          {/* Time label for major ticks */}
           {isMajor && (
-            <div className="text-xs text-gray-400 font-medium ml-1">
+            <div className="absolute -top-5 -left-4 text-[11px] text-gray-300 font-mono font-medium whitespace-nowrap bg-gray-900/80 px-1 rounded">
               {formatTime(i)}
             </div>
           )}
@@ -1161,29 +1168,40 @@ export function TimelineEditor({
     return markers;
   }, [duration, zoom, timeToPixels]);
 
-  // ===== Render Playhead =====
+  // ===== Render Playhead (Professional CapCut Style) =====
   const renderPlayhead = useCallback(() => {
     return (
       <div 
-        className="absolute top-0 h-full border-l-2 border-primary z-30 pointer-events-none"
+        className="absolute top-0 h-full z-30 pointer-events-none"
         style={{ 
           left: `${timeToPixels(currentTime)}px`,
           transition: isPlaying ? 'none' : 'left 0.1s ease',
-          filter: "drop-shadow(0 0 3px rgba(255,255,255,0.3))"
         }}
       >
-        <div className="absolute -left-[18px] -top-2 flex flex-col items-center">
-          <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center shadow-lg">
-            {isPlaying ? 
-              <Pause className="h-4 w-4 text-white" /> : 
-              <Play className="h-4 w-4 text-white" />
-            }
-          </div>
-          <div className="text-[9px] font-bold bg-primary text-white px-2 py-0.5 rounded mt-1 whitespace-nowrap">
+        {/* Playhead Handle - Triangle Top */}
+        <div className="absolute -left-[6px] -top-[1px] flex flex-col items-center">
+          {/* Triangle */}
+          <div 
+            className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-orange-500"
+            style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}
+          />
+          {/* Time Display */}
+          <div className="text-[10px] font-mono font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap -mt-0.5">
             {formatTime(currentTime)}
           </div>
         </div>
-        <div className="absolute -left-1 bottom-0 w-2 h-4 bg-primary rounded-t-sm" />
+        
+        {/* Vertical Line */}
+        <div 
+          className="absolute top-0 w-0.5 h-full bg-orange-500"
+          style={{ 
+            left: '-1px',
+            boxShadow: '0 0 8px rgba(249, 115, 22, 0.6), 0 0 4px rgba(249, 115, 22, 0.4)'
+          }}
+        />
+        
+        {/* Bottom Handle */}
+        <div className="absolute -left-[4px] bottom-0 w-2 h-3 bg-orange-500 rounded-t shadow-md" />
       </div>
     );
   }, [currentTime, isPlaying, timeToPixels]);
@@ -1730,16 +1748,19 @@ export function TimelineEditor({
           </div>
         )}
         
-        {/* Layer panel - Responsive */}
-        <div className="w-32 min-w-32 md:w-40 md:min-w-40 border-r border-gray-700 bg-gray-800 overflow-hidden">
-          <div className="bg-gray-900 p-2 border-b border-gray-700 text-xs font-semibold flex items-center justify-between">
-            <span>Layers</span>
-            <Badge variant="outline" className="text-[9px] bg-gray-800">
+        {/* Layer panel - Enhanced Width */}
+        <div className="w-40 min-w-40 md:w-48 md:min-w-48 border-r-2 border-gray-700 bg-gradient-to-b from-gray-800 to-gray-850 overflow-hidden">
+          <div className="bg-gray-900 p-3 border-b-2 border-gray-700 text-sm font-semibold flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary" />
+              <span>Layers</span>
+            </div>
+            <Badge variant="outline" className="text-[10px] bg-gray-800 border-gray-600">
               {Object.keys(clipsByLayer).length}
             </Badge>
           </div>
           
-          <div className="space-y-1 p-1 max-h-full overflow-y-auto">
+          <div className="space-y-1.5 p-2 max-h-full overflow-y-auto">
             {Object.keys(clipsByLayer).length > 0 ? (
               Object.keys(clipsByLayer)
                 .map(Number)
@@ -1752,17 +1773,20 @@ export function TimelineEditor({
                   return (
                     <div
                       key={layerId}
-                      className="flex items-center justify-between p-2 rounded text-xs"
+                      className="flex items-center justify-between p-2.5 rounded-lg text-sm shadow-sm hover:shadow-md transition-all cursor-pointer border"
                       style={{ 
                         backgroundColor: layerColor.bg,
-                        color: layerColor.text
+                        color: layerColor.text,
+                        borderColor: `${layerColor.bg}40`
                       }}
                     >
-                      <div className="flex items-center">
-                        {layerIcon}
-                        <span className="font-medium">{layerName}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="text-base">
+                          {layerIcon}
+                        </div>
+                        <span className="font-semibold">{layerName}</span>
                       </div>
-                      <Badge variant="outline" className="text-[9px] ml-1">
+                      <Badge variant="outline" className="text-[10px] px-1.5 font-bold bg-black/20 border-white/20">
                         {clipsByLayer[layerId]?.length || 0}
                       </Badge>
                     </div>
