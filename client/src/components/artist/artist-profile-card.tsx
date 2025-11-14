@@ -44,7 +44,7 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query, where, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db, storage } from "../../firebase";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { useToast } from "../../hooks/use-toast";
 import {
   Dialog,
@@ -575,6 +575,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   
   const [isUploadingSong, setIsUploadingSong] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [showUploadSongDialog, setShowUploadSongDialog] = useState(false);
   const [showUploadVideoDialog, setShowUploadVideoDialog] = useState(false);
   const [newSongTitle, setNewSongTitle] = useState('');
@@ -754,33 +755,44 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const videosData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           
-          // Solo extraer videoId si es una URL de YouTube
+          // Determinar si es URL de YouTube
           const isYouTubeUrl = data.url?.includes('youtube.com') || data.url?.includes('youtu.be');
-          let videoId = null;
-          let thumbnailUrl = data.thumbnailUrl;
           
-          if (isYouTubeUrl) {
-            videoId = data.url?.split('v=')?.[1]?.split('&')[0] || data.url?.split('/')?.[3]?.split('?')?.[0];
-            // Solo generar thumbnail de YouTube si no hay uno ya guardado y si tenemos un videoId válido
-            if (!thumbnailUrl && videoId && videoId !== 'shorts') {
+          // Determinar el tipo real del video
+          let videoType = data.type;
+          if (!videoType) {
+            // Si no tiene type, inferirlo de la URL
+            videoType = isYouTubeUrl ? 'youtube' : 'uploaded';
+          }
+          
+          // Solo procesar thumbnails para videos de YouTube
+          let thumbnailUrl = data.thumbnailUrl;
+          if (videoType === 'youtube' && !thumbnailUrl) {
+            const videoId = data.url?.split('v=')?.[1]?.split('&')[0] || data.url?.split('/')?.[3]?.split('?')?.[0];
+            if (videoId && videoId !== 'shorts' && videoId !== 'v0') {
               thumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
             }
           }
           
-          console.log('📹 Video data:', { 
+          console.log('📹 Video loaded:', { 
             id: doc.id, 
             title: data.title, 
-            url: data.url,
-            isYouTube: isYouTubeUrl,
-            hasStoredThumbnail: !!data.thumbnailUrl
+            type: videoType,
+            isStoredType: !!data.type,
+            hasUrl: !!data.url,
+            hasThumbnail: !!thumbnailUrl
           });
           
           return {
             id: doc.id,
             title: data.title,
             url: data.url,
+            type: videoType,
             userId: data.userId || artistId,
             thumbnailUrl: thumbnailUrl,
+            storagePath: data.storagePath,
+            downloadPassword: data.downloadPassword,
+            fileFormat: data.fileFormat,
             createdAt: data.createdAt?.toDate(),
             views: Math.floor(Math.random() * 10000) + 1000,
             likes: Math.floor(Math.random() * 500) + 50,
@@ -1239,12 +1251,92 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           createdAt: new Date(),
         });
       } else {
+        // Generar thumbnail del video
+        const generateThumbnail = (file: File): Promise<string> => {
+          return new Promise((resolve, reject) => {
+            const video = document.createElement('video');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
+            
+            video.onloadedmetadata = () => {
+              // Ir al segundo 1 del video
+              video.currentTime = 1;
+            };
+            
+            video.onseeked = () => {
+              // Capturar el frame
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              // Convertir a blob y luego a data URL
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    resolve(reader.result as string);
+                  };
+                  reader.readAsDataURL(blob);
+                } else {
+                  reject(new Error('No se pudo generar el thumbnail'));
+                }
+              }, 'image/jpeg', 0.7);
+            };
+            
+            video.onerror = () => {
+              reject(new Error('Error al cargar el video'));
+            };
+            
+            video.src = URL.createObjectURL(file);
+          });
+        };
+
         const fileExt = videoFile!.name.split('.').pop()?.toLowerCase() || 'mp4';
         const storagePath = `videos/${artistId}/${Date.now()}_${videoFile!.name}`;
         const storageRef = ref(storage, storagePath);
         
-        await uploadBytes(storageRef, videoFile!);
-        const downloadURL = await getDownloadURL(storageRef);
+        // Subir el video con seguimiento de progreso
+        const uploadTask = uploadBytesResumable(storageRef, videoFile!);
+        
+        const downloadURL = await new Promise<string>((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              // Calcular progreso
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setUploadProgress(Math.round(progress));
+              console.log(`📊 Upload progress: ${progress}%`);
+            },
+            (error) => {
+              console.error('Error en la subida:', error);
+              reject(error);
+            },
+            async () => {
+              // Subida completada
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(url);
+            }
+          );
+        });
+        
+        // Generar y subir thumbnail
+        let thumbnailUrl = undefined;
+        try {
+          const thumbnailDataUrl = await generateThumbnail(videoFile!);
+          // Convertir data URL a blob
+          const thumbnailBlob = await fetch(thumbnailDataUrl).then(r => r.blob());
+          // Subir thumbnail
+          const thumbnailPath = `video_thumbnails/${artistId}/${Date.now()}_thumb.jpg`;
+          const thumbnailRef = ref(storage, thumbnailPath);
+          await uploadBytes(thumbnailRef, thumbnailBlob);
+          thumbnailUrl = await getDownloadURL(thumbnailRef);
+        } catch (err) {
+          console.warn('No se pudo generar thumbnail, continuando sin él:', err);
+        }
         
         const newDocRef = doc(collection(db, "videos"));
         await setDoc(newDocRef, {
@@ -1252,6 +1344,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           url: downloadURL,
           type: 'uploaded',
           storagePath: storagePath,
+          thumbnailUrl: thumbnailUrl,
           downloadPassword: videoPassword,
           fileFormat: fileExt,
           fileSize: videoFile!.size,
@@ -1271,6 +1364,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       setNewVideoUrl('');
       setVideoFile(null);
       setVideoPassword('');
+      setUploadProgress(0);
       setShowUploadVideoDialog(false);
       refetchVideos();
     } catch (error) {
@@ -1282,6 +1376,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       });
     } finally {
       setIsUploadingVideo(false);
+      setUploadProgress(0);
     }
   };
 
@@ -1950,6 +2045,30 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                               </div>
                             </>
                           )}
+
+                          {/* Barra de progreso */}
+                          {isUploadingVideo && uploadProgress > 0 && (
+                            <div className="space-y-2 pt-4">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-400">Subiendo video...</span>
+                                <span className="font-semibold" style={{ color: colors.hexPrimary }}>
+                                  {uploadProgress}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                                <div 
+                                  className="h-full rounded-full transition-all duration-300 ease-out"
+                                  style={{ 
+                                    width: `${uploadProgress}%`,
+                                    background: `linear-gradient(90deg, ${colors.hexPrimary}, ${colors.hexAccent})`
+                                  }}
+                                />
+                              </div>
+                              <p className="text-xs text-gray-500 text-center">
+                                Por favor espera, no cierres esta ventana
+                              </p>
+                            </div>
+                          )}
                         </div>
                         <DialogFooter>
                           <Button
@@ -1961,6 +2080,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                               setVideoFile(null);
                               setVideoPassword('');
                               setVideoUploadType('youtube');
+                              setUploadProgress(0);
                             }}
                             disabled={isUploadingVideo}
                           >
@@ -1971,7 +2091,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             disabled={isUploadingVideo}
                             style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
                           >
-                            {isUploadingVideo ? 'Subiendo...' : 'Agregar Video'}
+                            {isUploadingVideo ? `Subiendo... ${uploadProgress}%` : 'Agregar Video'}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -3294,9 +3414,25 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
       {/* Video Player Modal */}
       <Dialog open={!!playingVideo} onOpenChange={(open) => !open && setPlayingVideo(null)}>
-        <DialogContent className="max-w-4xl w-full bg-black/95 border border-gray-800 p-0">
+        <DialogContent className="max-w-4xl w-full bg-black/95 border border-gray-800 p-0" aria-describedby="video-player-description">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{playingVideo?.title || 'Reproduciendo Video'}</DialogTitle>
+            <DialogDescription id="video-player-description">
+              Reproductor de video para {playingVideo?.title || 'contenido multimedia'}
+            </DialogDescription>
+          </DialogHeader>
           <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-            {playingVideo && getYouTubeEmbedUrl(playingVideo.url) && (
+            {playingVideo && (() => {
+              console.log('🎬 Intentando reproducir video:', {
+                title: playingVideo.title,
+                type: playingVideo.type,
+                url: playingVideo.url,
+                hasUrl: !!playingVideo.url
+              });
+              return null;
+            })()}
+            
+            {playingVideo && playingVideo.type === 'youtube' && getYouTubeEmbedUrl(playingVideo.url) && (
               <iframe
                 src={getYouTubeEmbedUrl(playingVideo.url)!}
                 className="absolute top-0 left-0 w-full h-full rounded-lg"
@@ -3305,10 +3441,44 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 title={playingVideo.title}
               />
             )}
+            
+            {playingVideo && playingVideo.type === 'uploaded' && playingVideo.url && (
+              <video
+                src={playingVideo.url}
+                className="absolute top-0 left-0 w-full h-full rounded-lg object-contain"
+                controls
+                autoPlay
+                muted
+                playsInline
+                controlsList="nodownload"
+                style={{ backgroundColor: '#000' }}
+                onError={(e) => {
+                  console.error('❌ Error cargando video:', e);
+                  console.error('Video URL:', playingVideo.url);
+                }}
+                onLoadedData={() => {
+                  console.log('✅ Video cargado exitosamente');
+                }}
+              >
+                Tu navegador no soporta el elemento de video.
+              </video>
+            )}
+            
+            {playingVideo && !playingVideo.type && (
+              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-white bg-black">
+                <p className="text-center">
+                  Error: Tipo de video no definido
+                  <br />
+                  <span className="text-sm text-gray-400">Type: {playingVideo.type || 'undefined'}</span>
+                </p>
+              </div>
+            )}
           </div>
           <div className="p-4 border-t border-gray-800">
             <h3 className="text-white font-semibold text-lg">{playingVideo?.title}</h3>
-            <p className="text-gray-400 text-sm mt-1">Powered by Boostify</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {playingVideo?.type === 'uploaded' ? 'Video Local' : 'Powered by Boostify'}
+            </p>
           </div>
           <button
             onClick={() => setPlayingVideo(null)}
