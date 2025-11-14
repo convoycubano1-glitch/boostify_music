@@ -684,6 +684,53 @@ export function TimelineEditor({
     });
   }, [currentTime, markers.length, pushHistory, toast]);
 
+  // Frame navigation (24fps standard)
+  const FRAME_DURATION = 1 / 24; // ~0.0417 seconds per frame
+
+  const handlePreviousFrame = useCallback(() => {
+    const newTime = Math.max(0, currentTime - FRAME_DURATION);
+    onTimeUpdate(newTime);
+  }, [currentTime, onTimeUpdate]);
+
+  const handleNextFrame = useCallback(() => {
+    const newTime = Math.min(duration, currentTime + FRAME_DURATION);
+    onTimeUpdate(newTime);
+  }, [currentTime, duration, onTimeUpdate]);
+
+  // Clip navigation
+  const handlePreviousClip = useCallback(() => {
+    const sortedClips = [...clips]
+      .filter(c => c.visible !== false)
+      .sort((a, b) => a.start - b.start);
+    
+    // Find the clip whose start is just before current time
+    const previousClip = sortedClips
+      .reverse()
+      .find(clip => clip.start < currentTime - 0.01);
+    
+    if (previousClip) {
+      onTimeUpdate(previousClip.start);
+    } else {
+      onTimeUpdate(0);
+    }
+  }, [clips, currentTime, onTimeUpdate]);
+
+  const handleNextClip = useCallback(() => {
+    const sortedClips = [...clips]
+      .filter(c => c.visible !== false)
+      .sort((a, b) => a.start - b.start);
+    
+    // Find the first clip that starts after current time
+    const nextClip = sortedClips.find(clip => clip.start > currentTime + 0.01);
+    
+    if (nextClip) {
+      onTimeUpdate(nextClip.start);
+    } else if (sortedClips.length > 0) {
+      const lastClip = sortedClips[sortedClips.length - 1];
+      onTimeUpdate(lastClip.start + lastClip.duration);
+    }
+  }, [clips, currentTime, onTimeUpdate]);
+
   // Handle multi-select with Shift/Ctrl
   const handleMultiSelect = useCallback((clipId: number, e: React.MouseEvent) => {
     if (e.shiftKey) {
@@ -1097,10 +1144,22 @@ export function TimelineEditor({
       // Arrow Key Navigation
       else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        onTimeUpdate(Math.max(0, currentTime - 0.1));
+        if (e.shiftKey) {
+          // Shift+Left: Jump to previous clip
+          handlePreviousClip();
+        } else {
+          // Left: Previous frame
+          handlePreviousFrame();
+        }
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
-        onTimeUpdate(Math.min(duration, currentTime + 0.1));
+        if (e.shiftKey) {
+          // Shift+Right: Jump to next clip
+          handleNextClip();
+        } else {
+          // Right: Next frame
+          handleNextFrame();
+        }
       }
     };
     
@@ -1111,7 +1170,8 @@ export function TimelineEditor({
   }, [
     isPlaying, onPlay, onPause, currentTime, duration, onTimeUpdate,
     handleUndo, handleRedo, handleSplitAtPlayhead, handleAddMarker,
-    handleDeleteLeft, handleDeleteRight, selectedClip, pushHistory, handleClipUpdate
+    handleDeleteLeft, handleDeleteRight, selectedClip, pushHistory, handleClipUpdate,
+    handlePreviousFrame, handleNextFrame, handlePreviousClip, handleNextClip
   ]);
 
   // ===== Timeline Click Handler =====
@@ -1232,6 +1292,15 @@ export function TimelineEditor({
   }, [markers, timeToPixels, onTimeUpdate]);
 
   // ===== Format Time Utility =====
+  // Format time as professional timecode (HH:MM:SS:FF)
+  const formatTimecode = (time: number) => {
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = Math.floor(time % 60);
+    const frames = Math.floor((time % 1) * 24); // 24fps
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
+  };
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -1411,40 +1480,102 @@ export function TimelineEditor({
       {/* Toolbar - Reorganized into logical blocks like CapCut */}
       <div className="flex items-center justify-between p-2 border-b border-gray-700 flex-wrap gap-1 md:gap-2 bg-gray-900">
         <div className="flex items-center gap-1">
-          {/* BLOCK 1: Playback Controls */}
+          {/* BLOCK 1: Transport Controls - Professional Layout */}
           <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
+            {/* Jump to start */}
             <Button 
               size="icon" 
               variant="ghost" 
-              onClick={() => onTimeUpdate(Math.max(0, currentTime - 1))}
-              title="Rewind 1s"
-              className="h-7 w-7 md:h-9 md:w-9"
-              data-testid="button-rewind"
+              onClick={() => onTimeUpdate(0)}
+              title="Jump to Start"
+              className="h-7 w-7 md:h-8 md:w-8"
+              data-testid="button-jump-start"
+            >
+              <Rewind className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+
+            {/* Previous clip */}
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={handlePreviousClip}
+              title="Previous Clip (Shift+←)"
+              className="h-7 w-7 md:h-8 md:w-8"
+              data-testid="button-previous-clip"
             >
               <SkipBack className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
+
+            {/* Previous frame */}
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={handlePreviousFrame}
+              title="Previous Frame (←)"
+              className="h-7 w-7 md:h-8 md:w-8"
+              data-testid="button-previous-frame"
+            >
+              <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
             
+            {/* Play/Pause - larger and highlighted */}
             <Button 
               size="icon" 
               variant="default" 
               onClick={isPlaying ? onPause : onPlay}
               title={isPlaying ? "Pause (Space)" : "Play (Space)"}
               data-testid="button-playback-toggle"
-              className="h-7 w-7 md:h-9 md:w-9"
+              className="h-8 w-8 md:h-10 md:w-10 bg-orange-500 hover:bg-orange-600"
             >
-              {isPlaying ? <Pause className="h-3 w-3 md:h-4 md:w-4" /> : <Play className="h-3 w-3 md:h-4 md:w-4" />}
+              {isPlaying ? <Pause className="h-4 w-4 md:h-5 md:w-5" /> : <Play className="h-4 w-4 md:h-5 md:w-5" />}
             </Button>
-            
+
+            {/* Next frame */}
             <Button 
               size="icon" 
               variant="ghost" 
-              onClick={() => onTimeUpdate(Math.min(duration, currentTime + 1))}
-              title="Forward 1s"
-              className="h-7 w-7 md:h-9 md:w-9"
-              data-testid="button-forward"
+              onClick={handleNextFrame}
+              title="Next Frame (→)"
+              className="h-7 w-7 md:h-8 md:w-8"
+              data-testid="button-next-frame"
+            >
+              <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+
+            {/* Next clip */}
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={handleNextClip}
+              title="Next Clip (Shift+→)"
+              className="h-7 w-7 md:h-8 md:w-8"
+              data-testid="button-next-clip"
             >
               <SkipForward className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
+
+            {/* Jump to end */}
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={() => onTimeUpdate(duration)}
+              title="Jump to End"
+              className="h-7 w-7 md:h-8 md:w-8"
+              data-testid="button-jump-end"
+            >
+              <FastForward className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+          </div>
+
+          {/* Timecode Display */}
+          <div className="flex items-center gap-1 bg-gray-800/70 rounded-md px-2 md:px-3 h-7 md:h-8">
+            <span className="text-[10px] md:text-xs font-mono text-orange-400 font-semibold tracking-wider">
+              {formatTimecode(currentTime)}
+            </span>
+            <span className="text-[10px] md:text-xs text-gray-500">/</span>
+            <span className="text-[10px] md:text-xs font-mono text-gray-400">
+              {formatTimecode(duration)}
+            </span>
           </div>
           
           <Separator orientation="vertical" className="h-6 md:h-8" />
