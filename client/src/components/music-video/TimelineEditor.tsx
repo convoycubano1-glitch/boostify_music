@@ -21,7 +21,7 @@ import {
   Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
   Maximize2, Save, FolderOpen, Guitar, Camera, Split,
   Rewind, FastForward, Gauge, Flag, Copy, ArrowLeftRight,
-  FlipHorizontal, RotateCw, Zap, Square, Pencil, X, Magnet
+  FlipHorizontal, RotateCw, Zap, Square, Pencil, X, Magnet, Link2
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -257,6 +257,7 @@ export function TimelineEditor({
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [rippleEditEnabled, setRippleEditEnabled] = useState(false);
   
   // Drag/Resize state
   const [draggingClip, setDraggingClip] = useState<number | null>(null);
@@ -1076,9 +1077,23 @@ export function TimelineEditor({
       
       if (clip.start + newDuration <= duration) {
         handleClipUpdate(clip.id, { duration: newDuration });
+        
+        // RIPPLE EDIT: Mover clips siguientes si está activo
+        if (rippleEditEnabled) {
+          const deltaInDuration = newDuration - clip.duration;
+          const clipsToRipple = clips.filter(c => 
+            c.layer === clip.layer && 
+            c.id !== clip.id && 
+            c.start >= clip.start + clip.duration // Clips que empiezan después del fin del clip actual
+          );
+          
+          clipsToRipple.forEach(rippleClip => {
+            handleClipUpdate(rippleClip.id, { start: rippleClip.start + deltaInDuration });
+          });
+        }
       }
     }
-  }, [draggingClip, resizingSide, isPanning, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, snapTo, duration, handleClipUpdate, panStartX, panStartScrollLeft]);
+  }, [draggingClip, resizingSide, isPanning, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, snapTo, duration, handleClipUpdate, panStartX, panStartScrollLeft, rippleEditEnabled]);
 
   const handleMouseUp = useCallback(() => {
     if (draggingClip || resizingSide) {
@@ -1784,6 +1799,21 @@ export function TimelineEditor({
               )}
             >
               <Magnet className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+
+            {/* Ripple Edit Toggle */}
+            <Button 
+              size="icon" 
+              variant={rippleEditEnabled ? 'default' : 'ghost'}
+              onClick={() => setRippleEditEnabled(!rippleEditEnabled)}
+              title={rippleEditEnabled ? "Ripple Edit ON - Clips move automatically" : "Ripple Edit OFF"}
+              data-testid="button-toggle-ripple"
+              className={cn(
+                "h-7 w-7 md:h-9 md:w-9",
+                rippleEditEnabled && "bg-blue-500 hover:bg-blue-600"
+              )}
+            >
+              <Link2 className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </div>
         </div>
