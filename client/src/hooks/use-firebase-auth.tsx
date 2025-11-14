@@ -13,20 +13,34 @@ export function useFirebaseAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('🚀 [HOOK] useFirebaseAuth montado - CÓDIGO NUEVO CARGADO v2.0');
+    
     // Verificar si hay resultados pendientes de redirección de autenticación
     // Esto es necesario para manejar el flujo completo de autenticación con redirección
     const checkForRedirectResult = async () => {
       try {
+        console.log('🔍 [HOOK] Iniciando checkForRedirectResult()');
         const redirectUser = await authService.checkRedirectResult();
         if (redirectUser) {
-          console.log('Usuario autenticado mediante redirección:', redirectUser.email);
+          console.log('✅ [HOOK] Usuario autenticado mediante redirección:', redirectUser.email);
           toast({
             title: "¡Bienvenido!",
             description: `Has iniciado sesión como ${redirectUser.email}`,
           });
+          
+          // Navegar al dashboard después de autenticación exitosa
+          const redirectPath = localStorage.getItem('auth_redirect_path') || '/dashboard';
+          localStorage.removeItem('auth_redirect_path'); // Limpiar después de leer
+          
+          console.log('🔄 [HOOK] Navegando a:', redirectPath);
+          
+          // Usar setTimeout para dar tiempo a que Firebase persista el estado
+          setTimeout(() => {
+            window.location.href = redirectPath;
+          }, 300);
         }
       } catch (redirectError) {
-        console.error('Error al procesar resultado de redirección:', redirectError);
+        console.error('❌ [HOOK] Error al procesar resultado de redirección:', redirectError);
       }
     };
     

@@ -230,17 +230,14 @@ class AuthService {
         localStorage.removeItem('auth_redirect_timestamp');
         localStorage.removeItem('auth_device_info');
         
-        // Redirigir al path almacenado después de una autenticación exitosa
+        // NO REDIRIGIR AQUÍ - dejar que use-firebase-auth.tsx lo maneje
+        // El problema era que hacíamos double redirect (aquí + en el hook)
         const redirectPath = localStorage.getItem('auth_redirect_path') || '/dashboard';
-        localStorage.removeItem('auth_redirect_path');
+        console.log('✅ [MOBILE] Usuario autenticado, path destino:', redirectPath);
+        console.log('✅ [MOBILE] El hook use-firebase-auth.tsx manejará la navegación');
         
-        console.log('🔐 [MOBILE] Redirigiendo a:', redirectPath);
-        
-        if (typeof window !== 'undefined') {
-          // Delay pequeño para asegurar que el estado se guarde
-          await new Promise(resolve => setTimeout(resolve, 500));
-          window.location.href = redirectPath;
-        }
+        // NO borrar auth_redirect_path todavía - lo necesita el hook
+        // localStorage.removeItem('auth_redirect_path');
         
         return result.user;
       }

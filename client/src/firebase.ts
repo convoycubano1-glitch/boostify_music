@@ -65,11 +65,17 @@ try {
 
 // Initialize Firebase app
 const app = initializeApp(enhancedConfig);
+console.log('🔥 Firebase initialized - CÓDIGO NUEVO v2.0');
 
 // Initialize App Check with reCAPTCHA Enterprise
 // This protects your app from abuse by ensuring requests come from your app
+// TEMPORALMENTE DESHABILITADO: Necesita configuración en Firebase Console primero
+// TODO: Habilitar después de registrar la app en Firebase Console > App Check
 try {
-  // Solo inicializar App Check en producción o si no estamos en localhost
+  console.log('⚠️ [APP CHECK] DESHABILITADO TEMPORALMENTE - Ver MOBILE_AUTH_SETUP.md para configurar');
+  
+  // DESCOMENTAR DESPUÉS DE CONFIGURAR FIREBASE CONSOLE:
+  /*
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1';
   
@@ -82,6 +88,7 @@ try {
   } else {
     console.log('⚠️ [APP CHECK] Skipped in localhost (development mode)');
   }
+  */
 } catch (appCheckError) {
   // No fallar si App Check tiene problemas, solo loguear
   console.warn('⚠️ [APP CHECK] Failed to initialize:', appCheckError);
