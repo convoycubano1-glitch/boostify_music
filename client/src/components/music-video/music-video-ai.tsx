@@ -490,7 +490,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     if (!transcription) {
       toast({
         title: "Error",
-        description: "Necesitas transcribir el audio primero",
+        description: "You need to transcribe the audio first to analyze the lyrics",
         variant: "destructive",
       });
       return;
@@ -499,7 +499,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     if (!videoStyle.selectedDirector) {
       toast({
         title: "Error",
-        description: "Selecciona un director primero",
+        description: "Select a director first",
         variant: "destructive",
       });
       return;
@@ -509,19 +509,21 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     setShowProgress(true);
     setCurrentProgressStage("script");
     setProgressPercentage(0);
-    setProgressMessage("Generando 3 propuestas de concepto...");
+    setProgressMessage("🎬 Generating 3 creative proposals based on your song's lyrics...");
 
     try {
-      console.log("🎨 Generando 3 propuestas de concepto...");
+      console.log("🎨 [CONCEPTOS] Generando 3 propuestas CON contexto de letra...");
+      console.log("📝 [LYRICS] Transcripción disponible:", transcription.substring(0, 100) + '...');
       
       const audioDurationInSeconds = audioBuffer?.duration || undefined;
       
       const concepts = await generateThreeConceptProposals(
-        transcription,
+        transcription, // ✅ La transcripción YA está completa
         videoStyle.selectedDirector.name,
         artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
         audioDurationInSeconds
       );
+      console.log("✅ [CONCEPTOS] 3 propuestas generadas con contexto completo");
 
       setConceptProposals(concepts);
       setProgressPercentage(100);
@@ -1359,6 +1361,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       setShowProgress(true);
       setCurrentProgressStage("transcription");
       setProgressPercentage(0);
+      setProgressMessage("🎵 Step 1/2: Analyzing song lyrics to understand the context...");
       
       // Progreso realista basado en el tamaño del archivo
       const startTime = Date.now();
@@ -1376,22 +1379,24 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         console.log('✅ Transcripción completada, length:', transcriptionText.length, 'characters');
         clearInterval(progressInterval);
         setProgressPercentage(100);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 800));
         setTranscription(transcriptionText);
         setCurrentStep(1.5);
         
-        setShowProgress(false);
-        setIsTranscribing(false);
+        // ✅ TRANSCRIPCIÓN COMPLETADA - Ahora sí generar conceptos con contexto
+        setProgressMessage("✅ Lyrics analyzed! Now generating creative proposals...");
         setProgressPercentage(0);
         
         // Generar master character si hay imágenes de referencia
         if (artistReferenceImages.length > 0) {
           console.log('🎭 Generando Master Character antes de conceptos...');
+          setProgressMessage("🎭 Step 2/3: Creating your master character...");
           await handleGenerateMasterCharacter();
         }
         
-        // Generar conceptos automáticamente
-        console.log('🎨 Generando 3 conceptos creativos...');
+        // Generar conceptos automáticamente CON el contexto de la letra
+        console.log('🎨 Generando 3 conceptos creativos CON contexto de letra...');
+        setProgressMessage("🎬 Step 2/2: Generating 3 creative proposals based on your lyrics...");
         await handleGenerateConcepts(transcriptionText, director);
         
       } catch (err) {
@@ -1405,25 +1410,36 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         setIsTranscribing(false);
         setShowProgress(false);
         setProgressPercentage(0);
+        setProgressMessage("");
         // Volver al modal de selección
         setShowDirectorSelection(true);
       }
     } else if (transcription) {
-      // Si ya hay transcripción, generar master character y conceptos
+      // Si ya hay transcripción, generar master character y conceptos directamente
+      console.log('✅ [TRANSCRIPCIÓN] Ya existe, saltando directo a generación de conceptos');
+      setShowProgress(true);
+      setProgressMessage("✅ Lyrics already analyzed! Generating creative proposals...");
+      
       if (artistReferenceImages.length > 0) {
         console.log('🎭 Generando Master Character antes de conceptos...');
+        setProgressMessage("🎭 Creating your master character...");
         await handleGenerateMasterCharacter();
       }
+      
+      console.log('🎬 [CONCEPTOS] Generando con letra previamente transcrita');
       await handleGenerateConcepts(transcription, director);
     }
   }, [transcription, selectedFile, toast, artistReferenceImages, handleGenerateMasterCharacter]);
 
   // Handler para generar conceptos
   const handleGenerateConcepts = useCallback(async (transcriptionText: string, director: DirectorProfile) => {
+    console.log('🎬 [CONCEPTOS] Iniciando generación con contexto completo de letra');
+    console.log('📝 [LYRICS CONTEXT] Letra disponible:', transcriptionText.substring(0, 100) + '...');
+    
     setIsGeneratingConcepts(true);
     setShowProgress(true);
-    setCurrentProgressStage("concepts"); // Usar "concepts" para mostrar la etapa correcta
-    setProgressMessage("Generando 3 propuestas creativas con portadas personalizadas...");
+    setCurrentProgressStage("concepts");
+    setProgressMessage("🎬 Generating 3 creative proposals based on your song's story...");
     
     try {
       const audioDurationInSeconds = audioBuffer ? audioBuffer.duration : 180;
@@ -1433,12 +1449,14 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         ? [masterCharacter.imageUrl] 
         : (artistReferenceImages.length > 0 ? artistReferenceImages : undefined);
       
+      console.log('🤖 [AI] Llamando a generateThreeConceptProposals con letra completa...');
       const concepts = await generateThreeConceptProposals(
-        transcriptionText,
+        transcriptionText, // ✅ CRÍTICO: La letra YA está transcrita aquí
         director.name,
         characterReference,
         audioDurationInSeconds
       );
+      console.log('✅ [CONCEPTOS] 3 propuestas generadas con contexto de letra');
       
       console.log('✅ Conceptos generados:', concepts.length);
       
