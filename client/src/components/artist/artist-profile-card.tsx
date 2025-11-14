@@ -2524,6 +2524,13 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
             </div>
 
+            {/* Image Galleries */}
+            <ImageGalleryDisplay 
+              key={`galleries-${galleriesRefreshKey}`}
+              artistId={artistId} 
+              isOwner={isOwnProfile}
+            />
+
             {/* Tarjeta CTA: Monetiza Tu Talento - Visible para todos */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
               {/* Fondo decorativo */}
@@ -2790,13 +2797,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
               </div>
             )}
-
-            {/* Image Galleries */}
-            <ImageGalleryDisplay 
-              key={`galleries-${galleriesRefreshKey}`}
-              artistId={artistId} 
-              isOwner={isOwnProfile}
-            />
 
             {/* Premium Tools Section - Only visible when logged in */}
             {isOwnProfile && (
