@@ -22,19 +22,28 @@ export default function ArtistProfilePage() {
 
       try {
         setIsLoading(true);
-        console.log(`🔍 [PRODUCTION] Looking for artist with slug: ${slug}`);
-        console.log(`🔍 [PRODUCTION] Current URL:`, window.location.href);
-        console.log(`🔍 [PRODUCTION] Firebase configured:`, !!db);
+        console.log(`🔍 [MOBILE] Looking for artist with slug: ${slug}`);
+        console.log(`🔍 [MOBILE] User Agent:`, navigator.userAgent);
+        console.log(`🔍 [MOBILE] Window width:`, window.innerWidth);
         
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("slug", "==", slug));
-        const querySnapshot = await getDocs(q);
+        // Timeout para móviles (15 segundos)
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout')), 15000);
+        });
 
-        console.log(`🔍 [PRODUCTION] Query result: ${querySnapshot.size} users found`);
+        const queryPromise = (async () => {
+          const usersRef = collection(db, "users");
+          const q = query(usersRef, where("slug", "==", slug));
+          return await getDocs(q);
+        })();
+
+        const querySnapshot = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+        console.log(`🔍 [MOBILE] Query completed: ${querySnapshot.size} users found`);
 
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
-          console.log(`✅ [PRODUCTION] Artist found:`, {
+          console.log(`✅ [MOBILE] Artist found:`, {
             uid: userData.uid,
             name: userData.displayName || userData.name,
             slug: userData.slug
@@ -43,11 +52,16 @@ export default function ArtistProfilePage() {
           setArtistData(userData);
           setError(false);
         } else {
-          console.warn(`⚠️ [PRODUCTION] No artist found with slug: ${slug}`);
+          console.warn(`⚠️ [MOBILE] No artist found with slug: ${slug}`);
           setError(true);
         }
-      } catch (err) {
-        console.error("❌ [PRODUCTION] Error finding artist by slug:", err);
+      } catch (err: any) {
+        console.error("❌ [MOBILE] Error finding artist by slug:", err);
+        console.error("❌ [MOBILE] Error details:", {
+          message: err.message,
+          code: err.code,
+          stack: err.stack?.substring(0, 200)
+        });
         setError(true);
       } finally {
         setIsLoading(false);
