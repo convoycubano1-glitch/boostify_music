@@ -175,6 +175,15 @@ export function MusicianModal({
   };
 
   const handleGenerateImage = () => {
+    if (!selectedInstrument) {
+      toast({
+        title: "Missing Instrument",
+        description: "Please select an instrument first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!generatedDescription) {
       toast({
         title: "No Description",

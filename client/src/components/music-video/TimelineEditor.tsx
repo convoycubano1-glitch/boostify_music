@@ -40,7 +40,7 @@ import { ensureCompatibleClip } from '../timeline/TimelineClipUnified';
 import { EffectsPanel, ClipEffects } from '../timeline-effects/effects-panel';
 import { MusicianModal } from './MusicianModal';
 import CameraAnglesModal from './CameraAnglesModal';
-import { ImageEditorModal } from './ImageEditorModal';
+import { ImageEditorModal } from './ImageEditorModal.js';
 
 // ===== Type Definitions =====
 
@@ -2107,9 +2107,9 @@ export function TimelineEditor({
             timestamp: musicianModalClip.start,
             imageUrl: musicianModalClip.imageUrl,
           }}
-          scriptContext="" 
-          director={undefined}
-          concept={undefined}
+          scriptContext={musicianModalClip.prompt || musicianModalClip.description || "Music video performance scene"} 
+          director={{ name: "Modern", style: "Cinematic" }}
+          concept="Music Video Performance"
           onMusicianCreated={handleMusicianCreated}
         />
       )}
