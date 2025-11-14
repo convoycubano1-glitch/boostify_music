@@ -28,51 +28,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🚀 [AUTH PROVIDER] Inicializando - v3.0 MÓVIL FIX');
+    console.log('🚀 [AUTH PROVIDER] v5.0 - FIX MÓVIL SIN LOCALSTORAGE');
     
-    // PRIMERO: Verificar si hay un redirect result pendiente (para móviles)
-    const checkRedirectAuth = async () => {
-      try {
-        // Pequeño delay para asegurar que Firebase esté listo
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        console.log('🔍 [REDIRECT] Verificando resultado de redirección...');
-        const result = await getRedirectResult(auth);
-        
-        if (result && result.user) {
-          console.log('✅ [REDIRECT] Usuario autenticado exitosamente:', result.user.email);
-          
-          // Navegar al dashboard
-          const redirectPath = localStorage.getItem('auth_redirect_path') || '/dashboard';
-          localStorage.removeItem('auth_redirect_path');
-          
-          console.log('🔄 [REDIRECT] Navegando a:', redirectPath);
-          setTimeout(() => {
-            window.location.href = redirectPath;
-          }, 500);
-        } else {
-          console.log('ℹ️ [REDIRECT] No hay resultado de redirección pendiente');
-        }
-      } catch (error: any) {
-        console.error('❌ [REDIRECT] Error:', error);
-        if (error.code === 'auth/unauthorized-domain') {
-          console.error('❌ Dominio no autorizado:', window.location.hostname);
-        }
-      }
-    };
+    let hasRedirected = false;
     
-    // Ejecutar verificación de redirect
-    checkRedirectAuth();
-    
-    // SEGUNDO: Suscribirse a cambios de auth
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('🔐 [AUTH STATE] Estado cambió:', user ? user.email : 'No autenticado');
-      if (user) {
-        const { uid, email, displayName, photoURL } = user;
+    // Suscribirse a cambios de auth - ESTE ES EL MÉTODO PRINCIPAL
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('🔐 [AUTH STATE] Estado cambió:', firebaseUser ? firebaseUser.email : 'No autenticado');
+      
+      if (firebaseUser) {
+        const { uid, email, displayName, photoURL } = firebaseUser;
         setUser({ uid, email, displayName, photoURL });
+        
+        // SOLUCIÓN: Si estás autenticado Y estás en home ("/"), redirigir SIEMPRE al dashboard
+        // Esto funciona porque los usuarios autenticados no deberían estar en home
+        if (!hasRedirected && window.location.pathname === '/') {
+          console.log('✅ [MÓVIL] Usuario autenticado en home, redirigiendo a dashboard');
+          hasRedirected = true;
+          
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 300);
+        }
       } else {
         setUser(null);
       }
+      
       setLoading(false);
     });
 

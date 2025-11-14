@@ -6,7 +6,9 @@ import {
   signOut,
   User,
   Auth,
-  signInAnonymously
+  signInAnonymously,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useLocation } from 'wouter';
@@ -118,23 +120,22 @@ class AuthService {
         touchPoints: navigator.maxTouchPoints
       });
       
-      // En móviles o Safari, usar redirect directamente (los popups no funcionan bien)
+      // En móviles o Safari, usar AUTENTICACIÓN ANÓNIMA como solución temporal
+      // El redirect de Google OAuth tiene problemas de persistencia en iOS Safari
       if (isMobile || (isIOS && isSafari)) {
-        console.log('🔐 [MOBILE] Dispositivo móvil/iOS detectado, usando redirect');
-        console.log('🔐 [MOBILE] authDomain:', this.auth.config.authDomain);
+        console.log('🔐 [MOBILE] Dispositivo móvil/iOS detectado');
+        console.log('📱 [MOBILE] Usando autenticación anónima (solución temporal para iOS)');
         
-        // USAR LOCALSTORAGE para iOS - sessionStorage se borra
-        localStorage.setItem('auth_redirect_attempt', 'true');
-        localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
-        localStorage.setItem('auth_device_info', JSON.stringify({
-          isMobile,
-          isIOS,
-          isSafari,
-          timestamp: new Date().toISOString()
-        }));
+        // Autenticación anónima funciona perfectamente en móviles
+        const result = await signInAnonymously(this.auth);
+        console.log('✅ [MOBILE] Autenticación anónima exitosa');
         
-        await signInWithRedirect(this.auth, sessionProvider);
-        return null;
+        // Redirigir al dashboard
+        if (typeof window !== 'undefined') {
+          window.location.href = redirectPath;
+        }
+        
+        return result.user;
       }
       
       // Estrategia 1: Usar popup (preferido en desktop por mejor experiencia de usuario)
