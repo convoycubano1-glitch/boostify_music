@@ -82,6 +82,7 @@ import { PaymentGateModal } from "./payment-gate-modal";
 import { CharacterGenerationModal } from "./character-generation-modal";
 import { analyzeFaceFeatures } from "../../lib/api/face-analyzer";
 import { generateMasterCharacter } from "../../lib/api/master-character-generator";
+import { EnhancedScenesGallery } from "./EnhancedScenesGallery";
 
 // Fal.ai configuration
 fal.config({
@@ -6669,62 +6670,47 @@ ${transcription}`;
             <div className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-4">
-                  {/* Visor de Imágenes Generadas */}
-                  {timelineItems.some(item => item.imageUrl || item.thumbnail) && (
+                  {/* Enhanced Scenes Gallery */}
+                  {timelineItems.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-black/40 backdrop-blur-lg border border-white/10 rounded-lg p-4"
                     >
-                      <div className="flex items-center gap-2 mb-3">
-                        <ImageIcon className="h-5 w-5 text-purple-400" />
-                        <h3 className="text-sm font-semibold text-white">Escenas Generadas</h3>
-                        <Badge variant="secondary" className="ml-auto">
-                          {timelineItems.filter(item => item.imageUrl || item.thumbnail).length} / {timelineItems.length}
-                        </Badge>
-                      </div>
-                      
-                      <ScrollArea className="h-[200px]">
-                        <div className="grid grid-cols-3 gap-2">
-                          {timelineItems.map((item, index) => {
-                            const hasImage = item.imageUrl || item.thumbnail;
-                            return (
-                              <motion.div
-                                key={item.id}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="relative group cursor-pointer"
-                                whileHover={{ scale: 1.05 }}
-                              >
-                                <div className="aspect-video rounded overflow-hidden bg-black/60 border border-white/10">
-                                  {hasImage ? (
-                                    <img
-                                      src={item.imageUrl || item.thumbnail}
-                                      alt={item.title || `Scene ${index + 1}`}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <ImageIcon className="h-6 w-6 text-white/20" />
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
-                                  <p className="text-[10px] text-white/80 font-medium truncate">
-                                    {item.title || `Escena ${index + 1}`}
-                                  </p>
-                                </div>
-                                {hasImage && (
-                                  <div className="absolute top-1 right-1 bg-green-500 rounded-full p-0.5">
-                                    <CheckCircle2 className="h-3 w-3 text-white" />
-                                  </div>
-                                )}
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                      </ScrollArea>
+                      <EnhancedScenesGallery
+                        scenes={timelineItems}
+                        currentTime={currentTime}
+                        onSceneClick={(scene, index) => {
+                          // Navigate to scene in timeline
+                          if (scene.start_time !== undefined) {
+                            setCurrentTime(scene.start_time);
+                          }
+                        }}
+                        onRegenerateScene={(sceneId) => {
+                          // Use existing regenerate function
+                          const id = typeof sceneId === 'string' ? parseInt(sceneId) : sceneId;
+                          handleRegenerateImageFromTimeline(id);
+                        }}
+                        onEditScene={(scene) => {
+                          // Open scene editor or allow inline editing
+                          toast({
+                            title: "Edit Scene",
+                            description: "Scene editor will be available soon",
+                          });
+                        }}
+                        onDeleteScene={(sceneId) => {
+                          // Remove scene from timeline
+                          setTimelineItems(prev => prev.filter(item => item.id !== sceneId));
+                          toast({
+                            title: "Scene deleted",
+                            description: "Scene removed from timeline",
+                          });
+                        }}
+                        onReorderScenes={(reorderedScenes) => {
+                          // Update timeline with new order
+                          setTimelineItems(reorderedScenes);
+                        }}
+                        generatingScenes={new Set()}
+                      />
                     </motion.div>
                   )}
                   
