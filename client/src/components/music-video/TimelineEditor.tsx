@@ -256,6 +256,10 @@ export function TimelineEditor({
   const [previewZoom, setPreviewZoom] = useState(1);
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  
+  // Multi-selección con rectángulo
+  const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [selectionStartPoint, setSelectionStartPoint] = useState<{ x: number; y: number } | null>(null);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [rippleEditEnabled, setRippleEditEnabled] = useState(false);
   
@@ -1029,10 +1033,26 @@ export function TimelineEditor({
 
   // Mouse/Touch move handler for drag/resize
   const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!draggingClip && !resizingSide && !isPanning) return;
+    if (!draggingClip && !resizingSide && !isPanning && !selectionStartPoint) return;
     
     const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0]?.clientY : e.clientY;
     if (clientX === undefined) return;
+    
+    // Handle selection rectangle update
+    if (selectionStartPoint && timelineRef.current) {
+      const rect = timelineRef.current.getBoundingClientRect();
+      const currentX = clientX - rect.left;
+      const currentY = clientY !== undefined ? clientY - rect.top : selectionStartPoint.y;
+      
+      const x = Math.min(selectionStartPoint.x, currentX);
+      const y = Math.min(selectionStartPoint.y, currentY);
+      const width = Math.abs(currentX - selectionStartPoint.x);
+      const height = Math.abs(currentY - selectionStartPoint.y);
+      
+      setSelectionRect({ x, y, width, height });
+      return;
+    }
     
     // Handle panning if active
     if (isPanning && timelineRef.current) {
@@ -1093,35 +1113,92 @@ export function TimelineEditor({
         }
       }
     }
-  }, [draggingClip, resizingSide, isPanning, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, snapTo, duration, handleClipUpdate, panStartX, panStartScrollLeft, rippleEditEnabled]);
+  }, [draggingClip, resizingSide, isPanning, selectionStartPoint, dragStartX, clipStartPosition, selectedClip, clips, pixelsToTime, snapTo, duration, handleClipUpdate, panStartX, panStartScrollLeft, rippleEditEnabled]);
 
   const handleMouseUp = useCallback(() => {
     if (draggingClip || resizingSide) {
       triggerHaptic(5); // Light haptic on release
     }
+    
+    // Finalizar selección por rectángulo
+    if (selectionRect && selectionStartPoint && timelineRef.current) {
+      const rect = timelineRef.current.getBoundingClientRect();
+      const scrollLeft = timelineRef.current.scrollLeft || 0;
+      
+      // Convertir coordenadas del rectángulo a tiempo
+      const rectStartTime = pixelsToTime(selectionRect.x + scrollLeft);
+      const rectEndTime = pixelsToTime(selectionRect.x + selectionRect.width + scrollLeft);
+      
+      // Seleccionar todos los clips que intersecten con el rectángulo
+      const selectedIds = new Set<number>();
+      clips.forEach(clip => {
+        if (clip.visible === false) return;
+        
+        const clipStartX = timeToPixels(clip.start);
+        const clipEndX = timeToPixels(clip.start + clip.duration);
+        
+        // Verificar intersección horizontal
+        const intersectsHorizontally = 
+          clipStartX < selectionRect.x + selectionRect.width + scrollLeft &&
+          clipEndX > selectionRect.x + scrollLeft;
+        
+        if (intersectsHorizontally) {
+          selectedIds.add(clip.id);
+        }
+      });
+      
+      setSelectedClips(selectedIds);
+      if (selectedIds.size === 1) {
+        setSelectedClip([...selectedIds][0]);
+      } else if (selectedIds.size > 1) {
+        setSelectedClip([...selectedIds][0]); // Seleccionar el primero como principal
+      }
+      
+      setSelectionRect(null);
+      setSelectionStartPoint(null);
+    }
+    
     setDraggingClip(null);
     setResizingSide(null);
     setIsPanning(false);
     document.body.style.cursor = '';
-  }, [draggingClip, resizingSide, triggerHaptic]);
+  }, [draggingClip, resizingSide, triggerHaptic, selectionRect, selectionStartPoint, clips, pixelsToTime, timeToPixels]);
 
   // Hand tool panning handlers (Mouse + Touch)
   const handleTimelineMouseDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (tool !== 'hand') return;
+    // Hand tool panning
+    if (tool === 'hand') {
+      e.preventDefault();
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      
+      setIsPanning(true);
+      setPanStartX(clientX);
+      setPanStartScrollLeft(timelineRef.current?.scrollLeft || 0);
+      document.body.style.cursor = 'grabbing';
+      triggerHaptic(5); // Light haptic for pan start
+      return;
+    }
     
-    e.preventDefault();
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    
-    setIsPanning(true);
-    setPanStartX(clientX);
-    setPanStartScrollLeft(timelineRef.current?.scrollLeft || 0);
-    document.body.style.cursor = 'grabbing';
-    triggerHaptic(5); // Light haptic for pan start
+    // Rectángulo de selección (solo con Select tool y en área vacía)
+    if (tool === 'select' && (e.target as HTMLElement).classList.contains('timeline-background')) {
+      const rect = timelineRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      
+      setSelectionStartPoint({ x, y });
+      setSelectionRect({ x, y, width: 0, height: 0 });
+      document.body.style.cursor = 'crosshair';
+    }
   }, [tool, triggerHaptic]);
 
   // Setup/cleanup mouse and touch event listeners
   useEffect(() => {
-    if (draggingClip || resizingSide || isPanning) {
+    if (draggingClip || resizingSide || isPanning || selectionStartPoint) {
       // Add both mouse and touch event listeners
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('touchmove', handleMouseMove as any, { passive: false });
@@ -1137,7 +1214,7 @@ export function TimelineEditor({
         document.removeEventListener('touchcancel', handleMouseUp);
       };
     }
-  }, [draggingClip, resizingSide, isPanning, handleMouseMove, handleMouseUp]);
+  }, [draggingClip, resizingSide, isPanning, selectionStartPoint, handleMouseMove, handleMouseUp]);
 
   // ===== Touch Support for Mobile =====
   const handleClipTouchStart = useCallback((e: React.TouchEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
@@ -2148,7 +2225,7 @@ export function TimelineEditor({
         <div className="flex-1 overflow-auto" ref={timelineRef}>
           <div 
             className={cn(
-              "relative min-h-full",
+              "relative min-h-full timeline-background",
               tool === 'hand' ? 'cursor-grab' : tool === 'razor' ? 'cursor-crosshair' : 'cursor-default',
               isPanning ? 'cursor-grabbing' : ''
             )}
@@ -2436,6 +2513,19 @@ export function TimelineEditor({
               <div 
                 className="absolute top-0 h-full border-l-2 border-yellow-400 z-25 pointer-events-none opacity-70"
                 style={{ left: `${timeToPixels(snapLine)}px` }}
+              />
+            )}
+            
+            {/* Selection Rectangle - Multi-select with drag */}
+            {selectionRect && (
+              <div
+                className="absolute border-2 border-blue-400 bg-blue-400/10 z-30 pointer-events-none rounded"
+                style={{
+                  left: `${selectionRect.x}px`,
+                  top: `${selectionRect.y}px`,
+                  width: `${selectionRect.width}px`,
+                  height: `${selectionRect.height}px`
+                }}
               />
             )}
             
