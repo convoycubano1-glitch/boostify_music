@@ -1983,6 +1983,102 @@ export function TimelineEditor({
         </div>
       </div>
 
+      {/* Minimap Timeline - Vista general del proyecto */}
+      <div className="border-b border-gray-700 bg-gray-850 px-4 py-2">
+        <div className="flex items-center gap-2 mb-1">
+          <Maximize2 className="h-3 w-3 text-gray-400" />
+          <span className="text-[10px] text-gray-400 font-medium">MINIMAP</span>
+        </div>
+        <div 
+          className="relative h-12 bg-gray-900 rounded border border-gray-700 cursor-pointer overflow-hidden"
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickRatio = clickX / rect.width;
+            const newTime = clickRatio * duration;
+            onTimeUpdate(newTime);
+            
+            // Scroll timeline to show clicked position
+            if (timelineRef.current) {
+              const timelineScrollWidth = timelineRef.current.scrollWidth;
+              const timelineVisibleWidth = timelineRef.current.clientWidth;
+              const targetScroll = (clickRatio * timelineScrollWidth) - (timelineVisibleWidth / 2);
+              timelineRef.current.scrollLeft = Math.max(0, Math.min(targetScroll, timelineScrollWidth - timelineVisibleWidth));
+            }
+          }}
+        >
+          {/* Clips en miniatura */}
+          {clips.filter(c => c.visible !== false).map(clip => {
+            const left = (clip.start / duration) * 100;
+            const width = (clip.duration / duration) * 100;
+            const layerColors = {
+              0: 'bg-rose-600', // Audio
+              1: 'bg-blue-600', // Video
+              2: 'bg-green-600', // Text
+              3: 'bg-purple-600', // Effects
+              7: 'bg-orange-600', // AI Generated
+            };
+            const color = layerColors[clip.layer as keyof typeof layerColors] || 'bg-gray-600';
+            
+            return (
+              <div
+                key={clip.id}
+                className={cn(
+                  "absolute h-2 rounded-sm opacity-70",
+                  color
+                )}
+                style={{
+                  left: `${left}%`,
+                  width: `${width}%`,
+                  top: `${(clip.layer / 8) * 100}%`
+                }}
+                title={clip.title}
+              />
+            );
+          })}
+          
+          {/* Viewport indicator - Muestra qué parte del timeline estás viendo */}
+          {timelineRef.current && (() => {
+            const scrollLeft = timelineRef.current.scrollLeft;
+            const scrollWidth = timelineRef.current.scrollWidth;
+            const clientWidth = timelineRef.current.clientWidth;
+            
+            const viewportStart = (scrollLeft / scrollWidth) * 100;
+            const viewportWidth = (clientWidth / scrollWidth) * 100;
+            
+            return (
+              <div
+                className="absolute top-0 bottom-0 border-2 border-yellow-400 bg-yellow-400/10 pointer-events-none rounded"
+                style={{
+                  left: `${viewportStart}%`,
+                  width: `${viewportWidth}%`
+                }}
+              />
+            );
+          })()}
+          
+          {/* Playhead en minimap */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-orange-500 pointer-events-none"
+            style={{
+              left: `${(currentTime / duration) * 100}%`
+            }}
+          />
+          
+          {/* Marcadores en minimap */}
+          {markers.map(marker => (
+            <div
+              key={marker.id}
+              className="absolute top-0 bottom-0 w-px bg-blue-400/60 pointer-events-none"
+              style={{
+                left: `${(marker.time / duration) * 100}%`
+              }}
+              title={marker.name}
+            />
+          ))}
+        </div>
+      </div>
+
       {/* Main timeline area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Effects Panel - Responsive Side/Bottom Panel */}
