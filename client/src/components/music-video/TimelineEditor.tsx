@@ -982,7 +982,18 @@ export function TimelineEditor({
       return;
     }
     
-    // Select tool: Solo permite mover el cuerpo del clip
+    // MEJORA: Permitir resize en modo Select cuando se arrastra desde las manijas (estilo CapCut)
+    if (tool === 'select' && (handle === 'start' || handle === 'end')) {
+      pushHistory();
+      setResizingSide(handle);
+      setDragStartX(e.clientX);
+      setClipStartPosition(clip.start);
+      document.body.style.cursor = 'ew-resize';
+      triggerHaptic(5);
+      return;
+    }
+    
+    // Select tool: Mover el clip cuando se arrastra el cuerpo
     if (tool === 'select' && handle === 'body') {
       pushHistory();
       setDraggingClip(clipId);
@@ -1674,6 +1685,17 @@ export function TimelineEditor({
               className="h-7 w-7 md:h-9 md:w-9"
             >
               <Move className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant={tool === 'trim' ? 'default' : 'ghost'}
+              onClick={() => setTool('trim')}
+              title="Trim/Resize Tool (T) - Estirar clips"
+              data-testid="button-tool-trim"
+              className="h-7 w-7 md:h-9 md:w-9"
+            >
+              <ArrowLeftRight className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
             
             <Button 
