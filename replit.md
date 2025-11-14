@@ -7,7 +7,37 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 🔐 Restauración de Early Access Modal + Fix de Login en Dispositivos (LATEST)
+### ✂️ Mejora Timeline: Resize/Stretch de Clips Estilo CapCut (LATEST)
+**Fecha**: 14 de Noviembre, 2024
+**Objetivo**: Implementar funcionalidad de estirar/alargar clips como en CapCut
+
+**Mejoras implementadas**:
+1. ✅ **Botón Trim Tool agregado a la toolbar**:
+   - Nuevo botón con icono de flechas ↔️ (ArrowLeftRight)
+   - Atajo de teclado: Tecla `T`
+   - Ubicado entre Select y Razor tools
+
+2. ✅ **Resize mejorado en modo Select** (estilo CapCut):
+   - Ahora puedes estirar clips SIN cambiar a Trim tool
+   - Simplemente arrastra las manijas (handles) de los bordes
+   - Funciona exactamente como CapCut/Premiere Pro
+   - El cursor cambia a `↔` cuando estás sobre las manijas
+
+3. ✅ **Manijas visuales mejoradas**:
+   - Más anchas y visibles (11px en móvil, 3px en desktop)
+   - Color naranja cuando seleccionadas
+   - Indicador visual con línea blanca en el centro
+   - Feedback táctil en dispositivos móviles
+
+**Cómo usar**:
+- **Modo Select (V)**: Arrastra el centro para mover, arrastra los bordes para estirar
+- **Modo Trim (T)**: Todo el clip es redimensionable, detecta automáticamente qué borde estirar
+- **Funciona con snap**: El resize respeta los puntos de snap (beats, markers, grid)
+
+**Archivos modificados**:
+- `client/src/components/music-video/TimelineEditor.tsx` - Lógica de resize y toolbar
+
+### 🔐 Restauración de Early Access Modal + Fix de Login en Dispositivos
 **Fecha**: 14 de Noviembre, 2024
 **Objetivo**: Solucionar problemas de login en dispositivos y restaurar modal de Early Access
 
