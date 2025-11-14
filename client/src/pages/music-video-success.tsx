@@ -5,7 +5,7 @@ import { useToast } from "../hooks/use-toast";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 import { CheckCircle2, ArrowLeft, Video } from "lucide-react";
-import { useAuth } from "../lib/context/auth-context";
+import { useAuth } from "../hooks/use-auth";
 
 export default function MusicVideoSuccess() {
   const [, setLocation] = useLocation();

@@ -27,7 +27,7 @@ import * as fal from "@fal-ai/serverless-client";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
-import { useAuth } from "../../lib/context/auth-context";
+import { useAuth } from "../../hooks/use-auth";
 import { AnalyticsDashboard } from './analytics-dashboard';
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { VideoGenerator } from "./video-generator";
@@ -2787,8 +2787,8 @@ ${transcription}`;
       email: user?.email || 'undefined'
     });
     
-    if (!user?.email) {
-      console.error('❌ [SAVE] Usuario no autenticado o sin email');
+    if (!user) {
+      console.error('❌ [SAVE] Usuario no autenticado');
       toast({
         title: "Autenticación requerida",
         description: "Por favor inicia sesión para guardar tu proyecto.",
@@ -2796,6 +2796,8 @@ ${transcription}`;
       });
       return;
     }
+    
+    const userEmail = user.email || user.uid;
     
     console.log('✅ [SAVE] Usuario autenticado:', user.email);
 
@@ -2814,7 +2816,7 @@ ${transcription}`;
       const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
       
       const result = await musicVideoProjectServicePostgres.saveProject({
-        userEmail: user.email || '',
+        userEmail: userEmail,
         projectName,
         audioUrl: audioUrl || undefined,
         audioDuration: audioBuffer?.duration,
@@ -2927,18 +2929,20 @@ ${transcription}`;
    * Auto-guardado silencioso (sin toast)
    */
   const handleAutoSave = useCallback(async () => {
-    if (!user?.uid || !projectName.trim() || !hasUnsavedChanges || !autoSaveEnabled) {
+    if (!user || !projectName.trim() || !hasUnsavedChanges || !autoSaveEnabled) {
       return;
     }
 
     console.log('🔄 Auto-guardando proyecto...');
+    
+    const userEmail = user.email || user.uid;
     
     try {
       const imagesGenerated = timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length;
       const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
       
       const result = await musicVideoProjectServicePostgres.saveProject({
-        userEmail: user.email || '',
+        userEmail: userEmail,
         projectName,
         audioUrl: audioUrl || undefined,
         audioDuration: audioBuffer?.duration,
@@ -6429,7 +6433,7 @@ ${transcription}`;
                       currentProjectId={currentProjectId}
                       hasImages={timelineItems.some(item => item.generatedImage || item.firebaseUrl)}
                       clips={timelineItems as any}
-                      audioUrl={audioUrl}
+                      audioUrl={audioUrl || undefined}
                       audioDuration={audioDuration}
                       hasUserPaid={hasUserPaid}
                       onShowPaymentGate={() => setShowPaymentGate(true)}
