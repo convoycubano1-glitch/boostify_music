@@ -21,7 +21,7 @@ import {
   Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
   Maximize2, Save, FolderOpen, Guitar, Camera, Split,
   Rewind, FastForward, Gauge, Flag, Copy, ArrowLeftRight,
-  FlipHorizontal, RotateCw, Zap, Square, Pencil, X
+  FlipHorizontal, RotateCw, Zap, Square, Pencil, X, Magnet
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -256,6 +256,7 @@ export function TimelineEditor({
   const [previewZoom, setPreviewZoom] = useState(1);
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [snapEnabled, setSnapEnabled] = useState(true);
   
   // Drag/Resize state
   const [draggingClip, setDraggingClip] = useState<number | null>(null);
@@ -286,18 +287,55 @@ export function TimelineEditor({
   const timeToPixels = useCallback((time: number) => time * scaledPixelsPerSecond, [scaledPixelsPerSecond]);
   const pixelsToTime = useCallback((pixels: number) => pixels / scaledPixelsPerSecond, [scaledPixelsPerSecond]);
   
-  // Snap candidates from beat markers
+  // Enhanced snap candidates: beats, clips, playhead, markers, and grid
   const snapCandidates = useMemo(() => {
+    if (!snapEnabled) return [];
+    
+    const candidates: number[] = [];
+    
+    // Add beat markers
     const beats = beatsData?.beats?.map(b => b.time) ?? [];
-    return [...beats, 0, duration];
-  }, [beatsData, duration]);
+    candidates.push(...beats);
+    
+    // Add clip boundaries (start and end of all clips except the one being dragged)
+    clips
+      .filter(c => c.visible !== false && c.id !== draggingClip)
+      .forEach(clip => {
+        candidates.push(clip.start);
+        candidates.push(clip.start + clip.duration);
+      });
+    
+    // Add playhead position
+    candidates.push(currentTime);
+    
+    // Add user markers
+    markers.forEach(marker => {
+      candidates.push(marker.time);
+    });
+    
+    // Add timeline boundaries
+    candidates.push(0, duration);
+    
+    return candidates;
+  }, [snapEnabled, beatsData, clips, draggingClip, currentTime, markers, duration]);
 
   const snapTo = useCallback((t: number) => {
+    if (!snapEnabled) return t;
+    
     const step = zoom >= 1.4 ? 0.1 : zoom >= 0.8 ? 0.25 : 0.5;
     const grid = [...snapCandidates, Math.round(t / step) * step];
     const nearest = grid.reduce((a, b) => Math.abs(b - t) < Math.abs(a - t) ? b : a, t);
-    return Math.abs(nearest - t) <= SNAP_TOLERANCE ? nearest : t;
-  }, [snapCandidates, zoom]);
+    
+    // Visual feedback: show snap line when snapping
+    const isSnapping = Math.abs(nearest - t) <= SNAP_TOLERANCE;
+    if (isSnapping && nearest !== t) {
+      setSnapLine(nearest);
+    } else {
+      setSnapLine(null);
+    }
+    
+    return isSnapping ? nearest : t;
+  }, [snapEnabled, snapCandidates, zoom]);
 
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
@@ -1663,6 +1701,23 @@ export function TimelineEditor({
             >
               <Flag className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
+
+            <Separator orientation="vertical" className="h-5 mx-0.5" />
+
+            {/* Snap Toggle */}
+            <Button 
+              size="icon" 
+              variant={snapEnabled ? 'default' : 'ghost'}
+              onClick={() => setSnapEnabled(!snapEnabled)}
+              title={snapEnabled ? "Snap Enabled (clips, playhead, markers)" : "Snap Disabled"}
+              data-testid="button-toggle-snap"
+              className={cn(
+                "h-7 w-7 md:h-9 md:w-9",
+                snapEnabled && "bg-orange-500 hover:bg-orange-600"
+              )}
+            >
+              <Magnet className="h-3 w-3 md:h-4 md:w-4" />
+            </Button>
           </div>
         </div>
         
@@ -2205,8 +2260,8 @@ export function TimelineEditor({
           <span className="whitespace-nowrap hidden lg:inline">
             Tools: <strong className="text-gray-300">V</strong>=Select, <strong className="text-gray-300">C</strong>=Razor, <strong className="text-gray-300">H</strong>=Hand | 
             Edit: <strong className="text-gray-300">S</strong>=Split, <strong className="text-gray-300">M</strong>=Marker | 
-            Play: <strong className="text-gray-300">Space</strong>, <strong className="text-gray-300">J/K/L</strong> | 
-            History: <strong className="text-gray-300">Ctrl+Z/Y</strong>
+            Navigate: <strong className="text-gray-300">←→</strong>=Frame, <strong className="text-gray-300">Shift+←→</strong>=Clip | 
+            Play: <strong className="text-gray-300">Space</strong>, <strong className="text-gray-300">J/K/L</strong>
           </span>
           <span className="whitespace-nowrap hidden md:inline lg:hidden">
             <strong className="text-gray-300">V/C/H</strong>=Tools, <strong className="text-gray-300">S</strong>=Split, <strong className="text-gray-300">M</strong>=Marker, <strong className="text-gray-300">Space</strong>=Play
