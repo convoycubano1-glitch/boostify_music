@@ -21,6 +21,7 @@ import "react-circular-progressbar/dist/styles.css";
 import { useState, useEffect, useRef } from "react";
 import { PricingPlans } from "../components/subscription/pricing-plans";
 import { SiYoutube, SiInstagram, SiTiktok, SiSpotify, SiX, SiFacebook, SiSoundcloud, SiApplemusic, SiLinkedin, SiDiscord, SiTwitch } from "react-icons/si";
+import { EarlyAccessModal } from "../components/early-access/early-access-modal";
 // Comentando los siguientes imports temporalmente ya que no son esenciales para la página inicial
 // import { SuperAgent } from "../components/agents/super-agent";
 
@@ -305,6 +306,7 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(false);
   const statsRef = useRef<HTMLDivElement>(null);
   const statsControls = useAnimation();
   const introVideoRef = useRef<HTMLVideoElement>(null);
@@ -353,6 +355,17 @@ export default function HomePage() {
       observer.disconnect();
     };
   }, [statsControls]);
+
+  // Show Early Access Modal after 3 seconds for non-logged users
+  useEffect(() => {
+    if (!user) {
+      const timer = setTimeout(() => {
+        setShowEarlyAccessModal(true);
+      }, 3000); // Show after 3 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   // Ensure intro video plays automatically with IntersectionObserver
   useEffect(() => {
@@ -1790,6 +1803,12 @@ export default function HomePage() {
       </section>
 
       <Footer />
+
+      {/* Early Access Modal */}
+      <EarlyAccessModal 
+        open={showEarlyAccessModal} 
+        onClose={() => setShowEarlyAccessModal(false)} 
+      />
     </div>
   );
 }
