@@ -519,7 +519,7 @@ export function TimelineEditor({
     }
   }, [currentTime, isPlaying, videoUrl]);
 
-  // ===== Waveform Drawing =====
+  // ===== Professional Waveform Drawing (CapCut Style) =====
   useEffect(() => {
     const canvas = waveformRef.current;
     if (!canvas || !audioBuffer || !showWaveform) return;
@@ -528,27 +528,72 @@ export function TimelineEditor({
     if (!ctx) return;
 
     const width = timeToPixels(duration);
+    const height = 80;
     canvas.width = width;
-    canvas.height = 80;
+    canvas.height = height;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.4)';
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
 
-    const data = audioBuffer.getChannelData(0);
-    const step = Math.ceil(data.length / width);
-    const amp = canvas.height / 2;
+    // Draw stereo waveform (both channels if available)
+    const channelCount = audioBuffer.numberOfChannels;
+    const channelHeight = channelCount > 1 ? height / 2 : height;
+    
+    for (let channel = 0; channel < Math.min(channelCount, 2); channel++) {
+      const data = audioBuffer.getChannelData(channel);
+      const step = Math.ceil(data.length / width);
+      const yOffset = channel * channelHeight;
+      const amp = channelHeight / 2;
+      const centerY = yOffset + amp;
 
-    for (let i = 0; i < width; i++) {
-      let min = 1.0;
-      let max = -1.0;
+      // Draw waveform with gradient
+      const gradient = ctx.createLinearGradient(0, yOffset, 0, yOffset + channelHeight);
+      gradient.addColorStop(0, 'rgba(249, 115, 22, 0.3)');
+      gradient.addColorStop(0.5, 'rgba(249, 115, 22, 0.6)');
+      gradient.addColorStop(1, 'rgba(249, 115, 22, 0.3)');
       
-      for (let j = 0; j < step; j++) {
-        const datum = data[(i * step) + j] || 0;
-        if (datum < min) min = datum;
-        if (datum > max) max = datum;
+      ctx.fillStyle = gradient;
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.8)';
+      ctx.lineWidth = 1;
+
+      // Draw as path for smoother visualization
+      ctx.beginPath();
+      ctx.moveTo(0, centerY);
+
+      for (let i = 0; i < width; i++) {
+        let min = 1.0;
+        let max = -1.0;
+        
+        for (let j = 0; j < step; j++) {
+          const datum = data[(i * step) + j] || 0;
+          if (datum < min) min = datum;
+          if (datum > max) max = datum;
+        }
+        
+        const barHeight = (max - min) * amp;
+        const barY = centerY + (min * amp);
+        
+        // Draw filled bars
+        ctx.fillRect(i, barY, 1, Math.max(1, barHeight));
       }
-      
-      ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+
+      // Draw center line
+      ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(width, centerY);
+      ctx.stroke();
+
+      // Draw channel separator (if stereo)
+      if (channel === 0 && channelCount > 1) {
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, channelHeight);
+        ctx.lineTo(width, channelHeight);
+        ctx.stroke();
+      }
     }
   }, [audioBuffer, duration, zoom, showWaveform, timeToPixels]);
 
@@ -1855,6 +1900,27 @@ export function TimelineEditor({
           >
             <Redo className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
+
+          {/* Waveform Toggle */}
+          {audioBuffer && (
+            <>
+              <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2" />
+              
+              <Button 
+                size="icon" 
+                variant={showWaveform ? 'default' : 'ghost'}
+                onClick={() => setShowWaveform(!showWaveform)}
+                title={showWaveform ? "Hide Waveform" : "Show Waveform"}
+                data-testid="button-toggle-waveform"
+                className={cn(
+                  "h-7 w-7 md:h-9 md:w-9",
+                  showWaveform && "bg-orange-500 hover:bg-orange-600"
+                )}
+              >
+                <Music className="h-3 w-3 md:h-4 md:w-4" />
+              </Button>
+            </>
+          )}
           
           <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2 hidden lg:block" />
           
