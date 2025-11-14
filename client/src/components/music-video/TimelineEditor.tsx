@@ -1533,62 +1533,6 @@ export function TimelineEditor({
               <Flag className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </div>
-          
-          <Separator orientation="vertical" className="h-6 md:h-8" />
-          
-          {/* BLOCK 4: Zoom Controls */}
-          <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
-            <Button 
-              size="icon" 
-              variant="ghost"
-              onClick={() => setZoom(z => Math.max(0.25, z - 0.25))}
-              title="Zoom Out (-)"
-              data-testid="button-zoom-out"
-              className="h-7 w-7 md:h-9 md:w-9"
-            >
-              <ZoomOut className="h-3 w-3 md:h-4 md:w-4" />
-            </Button>
-            
-            <Button 
-              size="icon" 
-              variant="ghost"
-              onClick={() => setZoom(z => Math.min(4, z + 0.25))}
-              title="Zoom In (+)"
-              data-testid="button-zoom-in"
-              className="h-7 w-7 md:h-9 md:w-9"
-            >
-              <ZoomIn className="h-3 w-3 md:h-4 md:w-4" />
-            </Button>
-          </div>
-          
-          <Separator orientation="vertical" className="h-6 md:h-8" />
-          
-          {/* BLOCK 5: History Controls */}
-          <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
-            <Button 
-              size="icon" 
-              variant="ghost"
-              onClick={handleUndo}
-              disabled={history.past.length === 0}
-              title="Undo (Ctrl+Z)"
-              data-testid="button-undo"
-              className="h-7 w-7 md:h-9 md:w-9"
-            >
-              <Undo className="h-3 w-3 md:h-4 md:w-4" />
-            </Button>
-            
-            <Button 
-              size="icon" 
-              variant="ghost"
-              onClick={handleRedo}
-              disabled={history.future.length === 0}
-              title="Redo (Ctrl+Shift+Z)"
-              data-testid="button-redo"
-              className="h-7 w-7 md:h-9 md:w-9"
-            >
-              <Redo className="h-3 w-3 md:h-4 md:w-4" />
-            </Button>
-          </div>
         </div>
         
         <div className="flex items-center space-x-1 md:space-x-2">
@@ -1880,8 +1824,8 @@ export function TimelineEditor({
                         <div
                           key={clip.id}
                           className={cn(
-                            "absolute h-20 rounded transition-all overflow-hidden",
-                            isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-gray-900" : "",
+                            "absolute h-20 rounded-md transition-all overflow-visible group border-2",
+                            isSelected ? "ring-2 ring-orange-500 ring-offset-1 ring-offset-gray-900 border-orange-500" : "border-gray-600/50 hover:border-gray-400",
                             clip.locked ? "opacity-50 cursor-not-allowed" : ""  ,
                             clip.metadata?.lipsync?.applied ? "ring-1 ring-purple-500" : ""
                           )}
@@ -1898,6 +1842,7 @@ export function TimelineEditor({
                             backgroundRepeat: 'no-repeat',
                             cursor: clip.locked ? 'not-allowed' : getClipCursor(),
                             touchAction: tool === 'hand' ? 'none' : 'auto',
+                            boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
                             ...effectStyles
                           }}
                           onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'body')}
@@ -2023,33 +1968,56 @@ export function TimelineEditor({
                             </div>
                           )}
                           
-                          {/* Resize handles - Larger on mobile for better touch */}
-                          {!clip.locked && tool === 'trim' && (
+                          {/* Resize handles - Professional style, visible on hover/select */}
+                          {!clip.locked && (
                             <>
+                              {/* Left handle */}
                               <div
                                 className={cn(
-                                  "absolute left-0 top-0 bottom-0 bg-white/30 cursor-ew-resize hover:bg-white/50 active:bg-white/60",
-                                  isMobile ? "w-11" : "w-2" // 44px touch target on mobile
+                                  "absolute left-0 top-0 bottom-0 cursor-ew-resize transition-all",
+                                  isMobile ? "w-11" : "w-3",
+                                  tool === 'trim' || isSelected 
+                                    ? "bg-orange-500/70 hover:bg-orange-500" 
+                                    : "bg-transparent group-hover:bg-orange-500/40"
                                 )}
                                 style={{ 
                                   touchAction: 'none',
-                                  minWidth: isMobile ? '44px' : undefined 
+                                  minWidth: isMobile ? '44px' : undefined,
+                                  borderLeft: (tool === 'trim' || isSelected) ? '2px solid rgb(249, 115, 22)' : 'none'
                                 }}
                                 onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'start')}
                                 onTouchStart={(e) => handleClipTouchStart(e, clip.id, 'start')}
-                              />
+                              >
+                                {(tool === 'trim' || isSelected) && (
+                                  <div className="absolute inset-y-0 left-0 flex items-center justify-center w-full">
+                                    <div className="w-0.5 h-8 bg-white rounded-full opacity-80" />
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Right handle */}
                               <div
                                 className={cn(
-                                  "absolute right-0 top-0 bottom-0 bg-white/30 cursor-ew-resize hover:bg-white/50 active:bg-white/60",
-                                  isMobile ? "w-11" : "w-2" // 44px touch target on mobile
+                                  "absolute right-0 top-0 bottom-0 cursor-ew-resize transition-all",
+                                  isMobile ? "w-11" : "w-3",
+                                  tool === 'trim' || isSelected 
+                                    ? "bg-orange-500/70 hover:bg-orange-500" 
+                                    : "bg-transparent group-hover:bg-orange-500/40"
                                 )}
                                 style={{ 
                                   touchAction: 'none',
-                                  minWidth: isMobile ? '44px' : undefined 
+                                  minWidth: isMobile ? '44px' : undefined,
+                                  borderRight: (tool === 'trim' || isSelected) ? '2px solid rgb(249, 115, 22)' : 'none'
                                 }}
                                 onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'end')}
                                 onTouchStart={(e) => handleClipTouchStart(e, clip.id, 'end')}
-                              />
+                              >
+                                {(tool === 'trim' || isSelected) && (
+                                  <div className="absolute inset-y-0 right-0 flex items-center justify-center w-full">
+                                    <div className="w-0.5 h-8 bg-white rounded-full opacity-80" />
+                                  </div>
+                                )}
+                              </div>
                             </>
                           )}
                         </div>
