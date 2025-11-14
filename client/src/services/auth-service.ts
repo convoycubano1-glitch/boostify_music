@@ -6,9 +6,7 @@ import {
   signOut,
   User,
   Auth,
-  signInAnonymously,
-  setPersistence,
-  browserLocalPersistence
+  signInAnonymously
 } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useLocation } from 'wouter';
@@ -120,22 +118,23 @@ class AuthService {
         touchPoints: navigator.maxTouchPoints
       });
       
-      // En móviles o Safari, usar AUTENTICACIÓN ANÓNIMA como solución temporal
-      // El redirect de Google OAuth tiene problemas de persistencia en iOS Safari
+      // En móviles o Safari, usar redirect directamente (los popups no funcionan bien)
       if (isMobile || (isIOS && isSafari)) {
-        console.log('🔐 [MOBILE] Dispositivo móvil/iOS detectado');
-        console.log('📱 [MOBILE] Usando autenticación anónima (solución temporal para iOS)');
+        console.log('🔐 [MOBILE] Dispositivo móvil/iOS detectado, usando redirect');
+        console.log('🔐 [MOBILE] authDomain:', this.auth.config.authDomain);
         
-        // Autenticación anónima funciona perfectamente en móviles
-        const result = await signInAnonymously(this.auth);
-        console.log('✅ [MOBILE] Autenticación anónima exitosa');
+        // USAR LOCALSTORAGE para iOS - sessionStorage se borra
+        localStorage.setItem('auth_redirect_attempt', 'true');
+        localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
+        localStorage.setItem('auth_device_info', JSON.stringify({
+          isMobile,
+          isIOS,
+          isSafari,
+          timestamp: new Date().toISOString()
+        }));
         
-        // Redirigir al dashboard
-        if (typeof window !== 'undefined') {
-          window.location.href = redirectPath;
-        }
-        
-        return result.user;
+        await signInWithRedirect(this.auth, sessionProvider);
+        return null;
       }
       
       // Estrategia 1: Usar popup (preferido en desktop por mejor experiencia de usuario)
@@ -231,14 +230,17 @@ class AuthService {
         localStorage.removeItem('auth_redirect_timestamp');
         localStorage.removeItem('auth_device_info');
         
-        // NO REDIRIGIR AQUÍ - dejar que use-firebase-auth.tsx lo maneje
-        // El problema era que hacíamos double redirect (aquí + en el hook)
+        // Redirigir al path almacenado después de una autenticación exitosa
         const redirectPath = localStorage.getItem('auth_redirect_path') || '/dashboard';
-        console.log('✅ [MOBILE] Usuario autenticado, path destino:', redirectPath);
-        console.log('✅ [MOBILE] El hook use-firebase-auth.tsx manejará la navegación');
+        localStorage.removeItem('auth_redirect_path');
         
-        // NO borrar auth_redirect_path todavía - lo necesita el hook
-        // localStorage.removeItem('auth_redirect_path');
+        console.log('🔐 [MOBILE] Redirigiendo a:', redirectPath);
+        
+        if (typeof window !== 'undefined') {
+          // Delay pequeño para asegurar que el estado se guarde
+          await new Promise(resolve => setTimeout(resolve, 500));
+          window.location.href = redirectPath;
+        }
         
         return result.user;
       }

@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { onAuthStateChanged, signOut as firebaseSignOut, getRedirectResult } from 'firebase/auth';
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
 export interface User {
@@ -28,32 +28,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('🚀 [AUTH PROVIDER] v5.0 - FIX MÓVIL SIN LOCALSTORAGE');
-    
-    let hasRedirected = false;
-    
-    // Suscribirse a cambios de auth - ESTE ES EL MÉTODO PRINCIPAL
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('🔐 [AUTH STATE] Estado cambió:', firebaseUser ? firebaseUser.email : 'No autenticado');
-      
-      if (firebaseUser) {
-        const { uid, email, displayName, photoURL } = firebaseUser;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const { uid, email, displayName, photoURL } = user;
         setUser({ uid, email, displayName, photoURL });
-        
-        // SOLUCIÓN: Si estás autenticado Y estás en home ("/"), redirigir SIEMPRE al dashboard
-        // Esto funciona porque los usuarios autenticados no deberían estar en home
-        if (!hasRedirected && window.location.pathname === '/') {
-          console.log('✅ [MÓVIL] Usuario autenticado en home, redirigiendo a dashboard');
-          hasRedirected = true;
-          
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 300);
-        }
       } else {
         setUser(null);
       }
-      
       setLoading(false);
     });
 

@@ -63,30 +63,56 @@ try {
   enhancedConfig = defaultConfig;
 }
 
-// BYPASS DE APP CHECK PARA DESARROLLO
-// Firebase App Check está bloqueando las autenticaciones
-// Usar debug token para bypass completo
-if (typeof window !== 'undefined') {
-  (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  console.log('🔓 [APP CHECK] Debug token activado - Bypass completo');
-}
-
 // Initialize Firebase app
 const app = initializeApp(enhancedConfig);
-console.log('🔥 Firebase initialized - v7.0 APP CHECK BYPASS');
 
-// Initialize Auth
+// Initialize App Check with reCAPTCHA Enterprise
+// This protects your app from abuse by ensuring requests come from your app
+try {
+  // Solo inicializar App Check en producción o si no estamos en localhost
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1';
+  
+  if (!isLocalhost) {
+    const appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider('6LeloAssAAAAAG7GWlxW1QGReAw_2y-bYSVmmH3K'),
+      isTokenAutoRefreshEnabled: true
+    });
+    console.log('✅ [APP CHECK] Firebase App Check initialized with reCAPTCHA Enterprise');
+  } else {
+    console.log('⚠️ [APP CHECK] Skipped in localhost (development mode)');
+  }
+} catch (appCheckError) {
+  // No fallar si App Check tiene problemas, solo loguear
+  console.warn('⚠️ [APP CHECK] Failed to initialize:', appCheckError);
+}
+
 const auth = getAuth(app);
 
-// IMPORTANTE: Configurar persistencia INMEDIATAMENTE para iOS Safari
-// La persistencia DEBE estar lista antes del redirect de autenticación
-setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log('✅ [AUTH] Persistencia configurada: localStorage');
-  })
-  .catch((error) => {
-    console.error('❌ [AUTH] Error configurando persistencia:', error);
-  });
+// Configurar persistencia de Auth para iOS
+// iOS Safari puede tener problemas con persistencia, configuramos múltiples estrategias
+// Intentar configurar persistencia con fallback para iOS
+(async () => {
+  try {
+    // Intentar usar indexedDB primero (más robusto)
+    await setPersistence(auth, indexedDBLocalPersistence);
+    console.log('✅ [iOS] Auth persistence: indexedDB');
+  } catch (indexedDBError) {
+    try {
+      // Si falla indexedDB, usar localStorage
+      await setPersistence(auth, browserLocalPersistence);
+      console.log('✅ [iOS] Auth persistence: localStorage');
+    } catch (localStorageError) {
+      try {
+        // Último recurso: sessionStorage
+        await setPersistence(auth, browserSessionPersistence);
+        console.log('⚠️ [iOS] Auth persistence: sessionStorage (menos persistente)');
+      } catch (sessionError) {
+        console.warn('❌ [iOS] No se pudo configurar persistencia:', sessionError);
+      }
+    }
+  }
+})();
 
 // Initialize Firestore with more reliable settings to prevent "failed-precondition" errors
 // We're using a simplified configuration that's more stable across browsers and environments
