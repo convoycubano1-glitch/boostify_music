@@ -22,6 +22,7 @@ import {
   CACHE_SIZE_UNLIMITED
 } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 /**
  * Default Firebase configuration from environment variables
@@ -64,6 +65,28 @@ try {
 
 // Initialize Firebase app
 const app = initializeApp(enhancedConfig);
+
+// Initialize App Check with reCAPTCHA Enterprise
+// This protects your app from abuse by ensuring requests come from your app
+try {
+  // Solo inicializar App Check en producción o si no estamos en localhost
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1';
+  
+  if (!isLocalhost) {
+    const appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider('6LeloAssAAAAAG7GWlxW1QGReAw_2y-bYSVmmH3K'),
+      isTokenAutoRefreshEnabled: true
+    });
+    console.log('✅ [APP CHECK] Firebase App Check initialized with reCAPTCHA Enterprise');
+  } else {
+    console.log('⚠️ [APP CHECK] Skipped in localhost (development mode)');
+  }
+} catch (appCheckError) {
+  // No fallar si App Check tiene problemas, solo loguear
+  console.warn('⚠️ [APP CHECK] Failed to initialize:', appCheckError);
+}
+
 const auth = getAuth(app);
 
 // Configurar persistencia de Auth para iOS
