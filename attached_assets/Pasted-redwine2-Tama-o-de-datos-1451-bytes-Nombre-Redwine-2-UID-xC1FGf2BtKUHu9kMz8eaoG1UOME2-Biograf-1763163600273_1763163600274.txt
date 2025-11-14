@@ -1,0 +1,84 @@
+redwine2
+Tamaño de datos: 1451 bytes
+Nombre: Redwine 2
+UID: xC1FGf2BtKUHu9kMz8eaoG1UOME2
+Biografía: 53 caracteres
+Banner Image: Sí
+Profile Image: Sí
+PhotoURL: Sí
+Ver JSON completo
+{
+  "name": "Redwine 2",
+  "profileImage": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FxC1FGf2BtKUHu9kMz8eaoG1UOME2%2Fprofile_1762919842560_freepik__cara-de-el__11803.png?alt=media&token=c30a70f4-69a7-4815-8306-aff15ea902ac",
+  "biography": "redwine es un artista de blues fusion musica de cuba ",
+  "createdAt": {
+    "type": "firestore/timestamp/1.0",
+    "seconds": 1762919892,
+    "nanoseconds": 521000000
+  },
+  "twitter": "",
+  "instagram": "don_vincenzo_moretti",
+  "genre": "Soul Blues",
+  "loopVideoUrl": "",
+  "youtube": "",
+  "bannerPosition": "39",
+  "bannerImage": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FxC1FGf2BtKUHu9kMz8eaoG1UOME2%2Fbanner_1762919855535_freepik__-id-f3-durationsec-6-scenetype-plano-general-locat__11516.png?alt=media&token=e6b07855-42c1-4dd7-b269-4883a57d725d",
+  "spotify": "https://open.spotify.com/intl-es/artist/4UIU2Qqu9cZ7XmPZqMC4Te",
+  "referenceImage": "",
+  "location": "Miami , FL",
+  "uid": "xC1FGf2BtKUHu9kMz8eaoG1UOME2",
+  "slug": "redwine2",
+  "contactPhone": "+17865432478",
+  "contactEmail": "convoycubano@gmail.com",
+  "photoURL": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FxC1FGf2BtKUHu9kMz8eaoG1UOME2%2Fprofile_1762919842560_freepik__cara-de-el__11803.png?alt=media&token=c30a70f4-69a7-4815-8306-aff15ea902ac",
+  "displayName": "Redwine 2",
+  "updatedAt": {
+    "type": "firestore/timestamp/1.0",
+    "seconds": 1762980478,
+    "nanoseconds": 978000000
+  }
+}
+reychavezsolofranck
+Tamaño de datos: 2415 bytes
+Nombre: Rey Chavez & Solo Franck La melodia
+UID: BWTYGZZYcgT9WRyXAUAZm5PkpBA3
+Biografía: 675 caracteres
+Banner Image: Sí
+Profile Image: Sí
+PhotoURL: Sí
+Ver JSON completo
+{
+  "createdAt": {
+    "type": "firestore/timestamp/1.0",
+    "seconds": 1763156522,
+    "nanoseconds": 157000000
+  },
+  "bannerImage": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FBWTYGZZYcgT9WRyXAUAZm5PkpBA3%2Fbanner_1763156703683_kling_20251109_Image_to_Video_dancing_sl_2309_0.mp4?alt=media&token=38fcd94a-08d0-4281-a4ce-0f769cafbd76",
+  "biography": "Biografía del Video\n\n“Lo Que Me Mató de Ti” – Rey Chávez x Frank La Melodía**\n\n“Lo Que Me Mató de Ti” une a Rey Chávez y Frank La Melodía en un videoclip cargado de emoción, estilo y fuerza visual. Esta colaboración presenta a dos artistas con presencia única, conectando su energía en una producción moderna que mezcla romance, tensión y elegancia cinematográfica.\n\nEl video muestra una historia marcada por esos detalles que te impactan de alguien: una mirada, una actitud, una vibra que te atrapa sin explicación. Rey Chávez aporta su interpretación intensa y su estilo característico, mientras que Frank La Melodía complementa con su flow melódico y presencia artística.\n",
+  "referenceImage": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-references%2FBWTYGZZYcgT9WRyXAUAZm5PkpBA3%2F1763159128175_freepik__-id-10-escena-final-conjunto-frank-rey-chvez-descr__87841.png?alt=media&token=d4ad8932-f497-4519-8ef7-93eec98ce319",
+  "spotify": "https://open.spotify.com/intl-es/artist/3dBz3nTQRd7rQfzUOhBfpe",
+  "twitter": "",
+  "contactEmail": "",
+  "contactPhone": "",
+  "name": "Rey Chavez & Solo Franck La melodia",
+  "instagram": "",
+  "uid": "BWTYGZZYcgT9WRyXAUAZm5PkpBA3",
+  "bannerPosition": "50",
+  "displayName": "Rey Chavez & Solo Franck La melodia",
+  "genre": "Reggaeton ",
+  "photoURL": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FBWTYGZZYcgT9WRyXAUAZm5PkpBA3%2Fprofile_1763157141426_freepik__-id-10-escena-final-conjunto-frank-rey-chvez-descr__87841.png?alt=media&token=dd55e617-5520-44a5-b789-9f3ee2df3034",
+  "loopVideoUrl": "",
+  "updatedAt": {
+    "type": "firestore/timestamp/1.0",
+    "seconds": 1763159135,
+    "nanoseconds": 31000000
+  },
+  "slug": "reychavezsolofranck",
+  "location": "Miami Fl ",
+  "profileImage": "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-profiles%2FBWTYGZZYcgT9WRyXAUAZm5PkpBA3%2Fprofile_1763157141426_freepik__-id-10-escena-final-conjunto-frank-rey-chvez-descr__87841.png?alt=media&token=dd55e617-5520-44a5-b789-9f3ee2df3034",
+  "youtube": ""
+}
+Diferencias
+Diferencia de tamaño: 964 bytes
+Campos únicos en redwine2: Ninguno
+Campos únicos en reychavezsolofranck: Ninguno
