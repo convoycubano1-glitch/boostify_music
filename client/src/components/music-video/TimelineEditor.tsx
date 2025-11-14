@@ -21,7 +21,7 @@ import {
   Sparkles as SparklesIcon, Star, Hand, Scissors, Move, 
   Maximize2, Save, FolderOpen, Guitar, Camera, Split,
   Rewind, FastForward, Gauge, Flag, Copy, ArrowLeftRight,
-  FlipHorizontal, RotateCw, Zap, Square, Pencil
+  FlipHorizontal, RotateCw, Zap, Square, Pencil, X
 } from 'lucide-react';
 import { TimelineClip } from '../timeline/TimelineClip';
 import { ScrollArea } from '../../components/ui/scroll-area';
@@ -2141,12 +2141,29 @@ export function TimelineEditor({
 
       {/* Mobile Effects Panel - Drawer Style */}
       {isMobile && showEffectsPanel && selectedClip !== null && (
-        <Dialog open={showEffectsPanel} onOpenChange={() => {
-          setShowEffectsPanel(false);
-          setSelectedClip(null);
+        <Dialog open={showEffectsPanel} onOpenChange={(open) => {
+          if (!open) {
+            setShowEffectsPanel(false);
+            setSelectedClip(null);
+          }
         }}>
-          <DialogContent className="max-w-[95vw] w-full h-[80vh] max-h-[80vh] p-0">
-            <div className="h-full overflow-y-auto">
+          <DialogContent className="max-w-[95vw] w-full h-[80vh] max-h-[80vh] p-4">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b">
+              <h3 className="text-lg font-semibold">Effects Editor</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowEffectsPanel(false);
+                  setSelectedClip(null);
+                }}
+                className="h-8 w-8 p-0"
+                data-testid="button-close-effects-mobile"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="h-[calc(100%-3rem)] overflow-y-auto">
               <EffectsPanel
                 clip={clips.find(c => c.id === selectedClip)!}
                 onChange={handleEffectsChange}
