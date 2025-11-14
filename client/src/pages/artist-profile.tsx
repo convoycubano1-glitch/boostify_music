@@ -59,20 +59,32 @@ export default function ArtistProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <p className="text-white">Loading profile...</p>
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-white text-sm md:text-base">Cargando perfil...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !artistId) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">Artist Not Found</h1>
-          <p className="text-gray-400">
-            The profile you're looking for doesn't exist.
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <h1 className="text-xl md:text-2xl font-bold text-white mb-2">Artista No Encontrado</h1>
+          <p className="text-gray-400 text-sm md:text-base mb-4">
+            El perfil que buscas no existe o fue eliminado.
           </p>
+          <p className="text-gray-500 text-xs md:text-sm mb-6">
+            Slug buscado: {slug}
+          </p>
+          <a 
+            href="/" 
+            className="inline-block bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            Volver al Inicio
+          </a>
         </div>
       </div>
     );
@@ -126,8 +138,10 @@ export default function ArtistProfilePage() {
         siteName="Boostify Music"
         twitterUsername="@boostifymusic"
       />
-      <div className="min-h-screen bg-black pt-4">
-        <ArtistProfileCard artistId={artistId} />
+      <div className="min-h-screen bg-black pt-2 md:pt-4 pb-20 overflow-x-hidden">
+        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6">
+          <ArtistProfileCard artistId={artistId} />
+        </div>
       </div>
     </>
   );
