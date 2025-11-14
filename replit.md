@@ -7,7 +7,47 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 🎬 Timeline con Timings Perfectos + Guardar/Cargar Proyectos (LATEST)
+### ✅ Flujo Secuencial de Transcripción → Generación de Conceptos (LATEST)
+**Fecha**: 14 de Noviembre, 2024
+**Objetivo**: Asegurar que los conceptos se generen DESPUÉS de analizar la letra de la canción
+
+**Problema resuelto**:
+- El director ahora SIEMPRE genera las 3 propuestas de guiones DESPUÉS de completar la transcripción de la canción
+- Los conceptos tienen contexto completo de la letra antes de ser generados
+- Mensajes de progreso claros muestran la secuencia: "Analyzing lyrics..." → "Generating proposals..."
+
+**Cambios implementados**:
+1. ✅ **Loading states mejorados**:
+   - "🎵 Step 1/2: Analyzing song lyrics to understand the context..."
+   - "✅ Lyrics analyzed! Now generating creative proposals..."
+   - "🎬 Step 2/2: Generating 3 creative proposals based on your lyrics..."
+
+2. ✅ **Logs de debugging**:
+   - Console logs muestran cuando la transcripción está disponible
+   - Logs confirman que `generateThreeConceptProposals` recibe la letra completa
+   - Verificación del contexto: `[LYRICS CONTEXT] Letra disponible: ...`
+
+3. ✅ **Flujo garantizado**:
+   ```
+   Usuario selecciona director →
+   Transcribir canción PRIMERO (con progress bar) →
+   Generar master character (si hay fotos) →
+   Generar 3 conceptos CON contexto de letra →
+   Mostrar propuestas al usuario
+   ```
+
+**Archivos modificados**:
+- `client/src/components/music-video/music-video-ai.tsx`: 
+  - `handleDirectorSelection()`: Mensajes de progreso mejorados
+  - `handleGenerateConcepts()`: Logs de verificación de contexto
+  - `generateConceptProposals()`: Validación de transcripción disponible
+
+**Beneficio**:
+- 🎯 Propuestas 100% coherentes con la historia de la canción
+- 📝 Director tiene contexto completo antes de crear conceptos
+- 🔍 UX clara mostrando cada paso del proceso
+
+### 🎬 Timeline con Timings Perfectos + Guardar/Cargar Proyectos
 **Fecha**: 13 de Noviembre, 2024
 **Objetivo**: Sincronización perfecta con música y gestión de proyectos
 
