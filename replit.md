@@ -7,7 +7,46 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### ✅ Flujo Secuencial de Transcripción → Generación de Conceptos (LATEST)
+### 🔐 Restauración de Early Access Modal + Fix de Login en Dispositivos (LATEST)
+**Fecha**: 14 de Noviembre, 2024
+**Objetivo**: Solucionar problemas de login en dispositivos y restaurar modal de Early Access
+
+**Problemas identificados y solucionados**:
+1. ✅ **Error "Unable to verify that the app domain is authorized"**:
+   - Causa: Dominios de Replit no autorizados en Firebase Console
+   - Solución: Documentación completa de cómo agregar dominios autorizados
+   - Ubicación: Ver sección "Firebase Authentication Configuration" en este archivo
+
+2. ✅ **Modal de Early Access no aparecía**:
+   - Restaurado en homepage (`client/src/pages/home.tsx`)
+   - Aparece automáticamente después de 3 segundos
+   - Solo para usuarios NO logueados
+   - Permite registro rápido sin login completo
+
+3. ✅ **Login con Google funcionando**:
+   - Botón "Get Started" usa `authService.signInWithGoogle()`
+   - Incluye icono de Google para claridad
+   - Manejo automático de popup/redirect según dispositivo
+   - Móviles usan redirect (más confiable)
+   - Desktop usa popup (mejor UX)
+
+**Cambios técnicos**:
+- `client/src/pages/home.tsx`:
+  - Import de `EarlyAccessModal`
+  - Estado `showEarlyAccessModal`
+  - useEffect para mostrar modal después de 3s
+  - Componente `<EarlyAccessModal />` agregado al JSX
+
+**Configuración requerida** (Firebase Console):
+- Agregar dominios autorizados: `replit.app`, `replit.dev`, `boostify.replit.app`
+- Ver instrucciones detalladas en sección "Firebase Authentication Configuration"
+
+**Notas**:
+- El sistema YA tiene Google Sign-In implementado
+- El problema principal es de configuración (dominios), no de código
+- El modal de Early Access es para capturar leads rápidamente
+
+### ✅ Flujo Secuencial de Transcripción → Generación de Conceptos
 **Fecha**: 14 de Noviembre, 2024
 **Objetivo**: Asegurar que los conceptos se generen DESPUÉS de analizar la letra de la canción
 
@@ -389,6 +428,50 @@ Estas variables DEBEN estar configuradas en Replit Secrets para funcionar en pro
 - `FAL_API_KEY` - Para generación de imágenes (usado en frontend también como VITE_FAL_API_KEY)
 - `STRIPE_SECRET_KEY` - Para procesamiento de pagos
 - `DATABASE_URL` - PostgreSQL connection string (auto-configurado)
+
+### 🔐 Firebase Authentication Configuration (IMPORTANT!)
+
+#### Problema: "Unable to verify that the app domain is authorized"
+Este error ocurre cuando el dominio de tu aplicación NO está autorizado en Firebase Console.
+
+#### Solución - Configurar Dominios Autorizados:
+
+1. **Ir a Firebase Console**: https://console.firebase.google.com
+2. **Seleccionar tu proyecto**: Boostify (o el nombre de tu proyecto)
+3. **Navegar a Authentication**:
+   - En el menú lateral, click en "Authentication"
+   - Click en la pestaña "Settings"
+   - Scroll hasta "Authorized domains"
+
+4. **Agregar dominios de Replit**:
+   ```
+   replit.app
+   replit.dev
+   replit.co
+   [tu-username].repl.co
+   [tu-repl-name].[tu-username].repl.co
+   ```
+
+5. **Agregar dominios específicos de tu aplicación**:
+   - Click en "Add domain"
+   - Agregar uno por uno:
+     - `boostify.replit.app` (tu dominio de producción)
+     - `*.replit.dev` (para desarrollo)
+     - `localhost` (para desarrollo local)
+
+6. **Guardar cambios** y esperar 1-2 minutos para que se propaguen
+
+#### Verificar que funciona:
+- Abrir la app en el navegador
+- Click en "Get Started" o cualquier botón de login
+- El popup de Google debería aparecer sin errores
+- Si estás en móvil, usará redirect automáticamente
+
+#### Notas adicionales:
+- **El botón "Get Started" YA tiene Google Sign-In** con el icono de Google
+- **El modal de Early Access** ahora aparece automáticamente después de 3 segundos (solo para usuarios NO logueados)
+- **En móviles** (iOS/Android): El sistema usa `signInWithRedirect` automáticamente porque los popups no funcionan bien
+- **En desktop**: Usa `signInWithPopup` para mejor experiencia de usuario
 
 ### Frontend API Keys (Variables de entorno con prefijo VITE_)
 - `VITE_STRIPE_PUBLIC_KEY` - Clave pública de Stripe para el frontend
