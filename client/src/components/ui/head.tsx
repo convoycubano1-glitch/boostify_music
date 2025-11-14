@@ -19,13 +19,20 @@ export function Head({
   siteName = "Boostify Music",
   twitterUsername = "@boostifymusic"
 }: HeadProps) {
-  const defaultImage = "/assets/freepik__boostify_music_organe_abstract_icon.png";
+  const defaultImage = `${window.location.origin}/assets/freepik__boostify_music_organe_abstract_icon.png`;
   const finalImage = image || defaultImage;
-  const absoluteImageUrl = finalImage.startsWith('http') ? finalImage : `${window.location.origin}${finalImage}`;
+  
+  // Asegurar que la imagen sea una URL absoluta
+  let absoluteImageUrl = finalImage;
+  if (!finalImage.startsWith('http')) {
+    absoluteImageUrl = finalImage.startsWith('/') 
+      ? `${window.location.origin}${finalImage}` 
+      : `${window.location.origin}/${finalImage}`;
+  }
 
-  // Asegurar que la descripción no sea demasiado larga
-  const truncatedDescription = description.length > 200 
-    ? `${description.slice(0, 197)}...` 
+  // Asegurar que la descripción no sea demasiado larga (ideal 155-160 caracteres para SEO)
+  const truncatedDescription = description.length > 155 
+    ? `${description.slice(0, 152)}...` 
     : description;
 
   return (
@@ -42,6 +49,7 @@ export function Head({
       <meta property="og:title" content={title} />
       <meta property="og:description" content={truncatedDescription} />
       <meta property="og:image" content={absoluteImageUrl} />
+      <meta property="og:image:secure_url" content={absoluteImageUrl} />
       <meta property="og:url" content={url} />
       <meta property="og:site_name" content={siteName} />
 
@@ -56,7 +64,7 @@ export function Head({
       {/* Additional metadata for better sharing */}
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:image:alt" content={`${title} - Preview`} />
+      <meta property="og:image:alt" content={title} />
       <meta property="og:locale" content="es_ES" />
       <meta property="og:locale:alternate" content="en_US" />
       
@@ -64,11 +72,19 @@ export function Head({
       <meta property="og:image:type" content="image/jpeg" />
       
       {/* Additional Twitter optimizations */}
-      <meta name="twitter:image:alt" content={`${title} - Preview`} />
+      <meta name="twitter:image:alt" content={title} />
+      
+      {/* LinkedIn optimizations */}
+      <meta property="article:author" content={siteName} />
+      
+      {/* Additional SEO */}
+      <meta name="robots" content="index, follow" />
+      <meta name="googlebot" content="index, follow" />
       
       {/* Theme color for mobile browsers */}
       <meta name="theme-color" content="#ea580c" />
       <meta name="msapplication-TileColor" content="#ea580c" />
+      <meta name="msapplication-TileImage" content={absoluteImageUrl} />
     </Helmet>
   );
 }

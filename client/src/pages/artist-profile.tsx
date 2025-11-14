@@ -96,19 +96,24 @@ export default function ArtistProfilePage() {
   const genre = artistData?.genre || '';
   const location = artistData?.location || '';
 
-  // Título más llamativo y atractivo
-  const title = `🎵 ${artistName}${genre ? ` - ${genre}` : ''} | Boostify Music`;
+  // Título optimizado para SEO y redes sociales (sin emojis que pueden causar problemas)
+  const title = `${artistName}${genre ? ` - ${genre}` : ''} | Boostify Music`;
   
-  // Descripción mejorada con más contexto
+  // Descripción optimizada con más contexto y sin emojis problemáticos
   let description = '';
-  if (biography) {
-    description = `${biography.slice(0, 150)}${biography.length > 150 ? '...' : ''}`;
+  if (biography && biography.trim().length > 0) {
+    description = `${biography.slice(0, 140)}${biography.length > 140 ? '...' : ''}`;
   } else {
-    description = `Descubre la música de ${artistName}${genre ? `, artista de ${genre}` : ''}${location ? ` desde ${location}` : ''}. Escucha sus canciones, mira sus videos y conecta directamente en Boostify Music 🎶`;
+    const parts = [`Descubre la música de ${artistName}`];
+    if (genre) parts.push(`artista de ${genre}`);
+    if (location) parts.push(`desde ${location}`);
+    description = parts.join(', ') + '. Escucha sus canciones, mira sus videos y conecta directamente.';
   }
   
-  // Agregar call-to-action al final
-  description += ` | Únete ahora a Boostify Music ✨`;
+  // Agregar call-to-action al final (limitado para no exceder 200 caracteres)
+  if (description.length < 170) {
+    description += ' | Únete a Boostify Music';
+  }
 
   return (
     <>
