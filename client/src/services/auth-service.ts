@@ -95,18 +95,44 @@ class AuthService {
       
       // Generar un proveedor específico para esta sesión para evitar problemas de caché
       const sessionProvider = new GoogleAuthProvider();
-      sessionProvider.setCustomParameters({ prompt: 'select_account' });
       
-      // Detectar si estamos en un dispositivo móvil
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      // Configuración mejorada para móviles
+      sessionProvider.setCustomParameters({ 
+        prompt: 'select_account',
+        // Forzar UI responsive
+        display: 'popup'
+      });
       
-      // En móviles, usar redirect directamente (los popups no funcionan bien)
-      if (isMobile) {
-        console.log('🔐 [iOS] Dispositivo móvil detectado, usando redirect');
-        console.log('🔐 [iOS] Guardando flag en localStorage');
+      // Mejorar detección de móviles incluyendo tablets y navegadores específicos
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile Safari/i.test(navigator.userAgent) ||
+                       (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+      
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+      
+      console.log('🔐 [AUTH] Device detection:', {
+        isMobile,
+        isIOS,
+        isSafari,
+        userAgent: navigator.userAgent,
+        touchPoints: navigator.maxTouchPoints
+      });
+      
+      // En móviles o Safari, usar redirect directamente (los popups no funcionan bien)
+      if (isMobile || (isIOS && isSafari)) {
+        console.log('🔐 [MOBILE] Dispositivo móvil/iOS detectado, usando redirect');
+        console.log('🔐 [MOBILE] authDomain:', this.auth.config.authDomain);
+        
         // USAR LOCALSTORAGE para iOS - sessionStorage se borra
         localStorage.setItem('auth_redirect_attempt', 'true');
         localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
+        localStorage.setItem('auth_device_info', JSON.stringify({
+          isMobile,
+          isIOS,
+          isSafari,
+          timestamp: new Date().toISOString()
+        }));
+        
         await signInWithRedirect(this.auth, sessionProvider);
         return null;
       }
@@ -180,26 +206,39 @@ class AuthService {
    */
   async checkRedirectResult(): Promise<User | null> {
     try {
-      console.log('🔐 [iOS] Verificando resultado de redirección...');
+      console.log('🔐 [MOBILE] Verificando resultado de redirección...');
+      
+      // Recuperar info del dispositivo para debugging
+      const deviceInfo = localStorage.getItem('auth_device_info');
+      if (deviceInfo) {
+        console.log('🔐 [MOBILE] Device info:', JSON.parse(deviceInfo));
+      }
       
       // SIEMPRE verificar getRedirectResult en caso de que venimos de una redirección
       // No depender solo de flags porque iOS Safari puede borrar sessionStorage
+      console.log('🔐 [MOBILE] Llamando a getRedirectResult...');
       const result = await getRedirectResult(this.auth);
+      console.log('🔐 [MOBILE] getRedirectResult completed:', !!result);
       
       if (result && result.user) {
-        console.log('✅ [iOS] Redirección exitosa! Usuario autenticado:', result.user.email);
+        console.log('✅ [MOBILE] Redirección exitosa! Usuario autenticado:', result.user.email);
+        console.log('✅ [MOBILE] User UID:', result.user.uid);
+        console.log('✅ [MOBILE] Provider:', result.providerId);
         
         // Limpiar flags de localStorage
         localStorage.removeItem('auth_redirect_attempt');
         localStorage.removeItem('auth_redirect_timestamp');
+        localStorage.removeItem('auth_device_info');
         
         // Redirigir al path almacenado después de una autenticación exitosa
         const redirectPath = localStorage.getItem('auth_redirect_path') || '/dashboard';
         localStorage.removeItem('auth_redirect_path');
         
-        console.log('🔐 [iOS] Redirigiendo a:', redirectPath);
+        console.log('🔐 [MOBILE] Redirigiendo a:', redirectPath);
         
         if (typeof window !== 'undefined') {
+          // Delay pequeño para asegurar que el estado se guarde
+          await new Promise(resolve => setTimeout(resolve, 500));
           window.location.href = redirectPath;
         }
         
@@ -210,22 +249,36 @@ class AuthService {
       const redirectTimestamp = localStorage.getItem('auth_redirect_timestamp');
       if (redirectTimestamp) {
         const elapsed = Date.now() - parseInt(redirectTimestamp);
+        console.log('🔐 [MOBILE] Tiempo desde último intento:', Math.round(elapsed / 1000), 'segundos');
+        
         // Si pasaron más de 5 minutos, limpiar flags viejos
         if (elapsed > 5 * 60 * 1000) {
-          console.log('🧹 [iOS] Limpiando flags viejos de redirección');
+          console.log('🧹 [MOBILE] Limpiando flags viejos de redirección');
           localStorage.removeItem('auth_redirect_attempt');
           localStorage.removeItem('auth_redirect_timestamp');
+          localStorage.removeItem('auth_device_info');
         }
       }
       
-      console.log('🔐 [iOS] No hay resultado de redirección pendiente');
+      console.log('🔐 [MOBILE] No hay resultado de redirección pendiente');
       return null;
-    } catch (redirectError) {
-      console.error('❌ [iOS] Error al verificar resultado de redirección:', redirectError);
+    } catch (redirectError: any) {
+      console.error('❌ [MOBILE] Error al verificar resultado de redirección:', redirectError);
+      console.error('❌ [MOBILE] Error code:', redirectError?.code);
+      console.error('❌ [MOBILE] Error message:', redirectError?.message);
+      
+      // Log más detalles del error
+      if (redirectError?.code === 'auth/operation-not-allowed') {
+        console.error('❌ [MOBILE] Google Sign-In no está habilitado en Firebase Console');
+      } else if (redirectError?.code === 'auth/unauthorized-domain') {
+        console.error('❌ [MOBILE] Dominio no autorizado. Verifica "Authorized domains" en Firebase Console');
+        console.error('❌ [MOBILE] Dominio actual:', window.location.hostname);
+      }
       
       // Limpiar flags en caso de error
       localStorage.removeItem('auth_redirect_attempt');
       localStorage.removeItem('auth_redirect_timestamp');
+      localStorage.removeItem('auth_device_info');
       
       return null;
     }
