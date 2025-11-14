@@ -1,63 +1,74 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, orderBy, doc, setDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
+import { db, auth } from "../firebase";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { useToast } from "../hooks/use-toast";
-import { Copy, ExternalLink, User, Loader2, CheckCircle2 } from "lucide-react";
+import { Copy, ExternalLink, User, Loader2, CheckCircle2, Edit } from "lucide-react";
 import { Badge } from "../components/ui/badge";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface Artist {
   id: string;
-  firestoreId?: string;
+  uid: string;
   name: string;
   biography?: string;
-  music_genres?: string[];
-  hasProfile?: boolean;
+  genre?: string;
   slug?: string;
+  profileImage?: string;
+  bannerImage?: string;
+  spotify?: string;
+  instagram?: string;
 }
 
 export default function MyArtistsPage() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [creatingProfiles, setCreatingProfiles] = useState<Set<string>>(new Set());
+  const [currentUserUid, setCurrentUserUid] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadArtists();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUserUid(user.uid);
+        loadArtists(user.uid);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const loadArtists = async () => {
+  const loadArtists = async (userUid?: string) => {
     try {
       setIsLoading(true);
-      const artistsRef = collection(db, "generated_artists");
-      const q = query(artistsRef, orderBy("createdAt", "desc"));
+      const usersRef = collection(db, "users");
+      
+      let q;
+      if (userUid) {
+        q = query(usersRef, where("uid", "==", userUid), orderBy("createdAt", "desc"));
+      } else {
+        q = query(usersRef, orderBy("createdAt", "desc"));
+      }
+      
       const querySnapshot = await getDocs(q);
 
-      const loadedArtists: Artist[] = [];
-      
-      for (const docSnap of querySnapshot.docs) {
+      const loadedArtists: Artist[] = querySnapshot.docs.map((docSnap) => {
         const data = docSnap.data();
-        const artist: Artist = {
-          id: data.id || docSnap.id,
-          firestoreId: docSnap.id,
-          name: data.name || "Sin nombre",
+        return {
+          id: docSnap.id,
+          uid: data.uid || docSnap.id,
+          name: data.name || data.displayName || "Sin nombre",
           biography: data.biography,
-          music_genres: data.music_genres || [],
+          genre: data.genre,
+          slug: data.slug,
+          profileImage: data.profileImage,
+          bannerImage: data.bannerImage,
+          spotify: data.spotify,
+          instagram: data.instagram,
         };
-
-        // Verificar si ya tiene perfil en users
-        const slug = generateSlug(artist.name);
-        const usersRef = collection(db, "users");
-        const userQuery = query(usersRef);
-        const userSnapshot = await getDocs(userQuery);
-        
-        const hasProfile = userSnapshot.docs.some(doc => doc.data().slug === slug);
-        artist.hasProfile = hasProfile;
-        artist.slug = slug;
-
-        loadedArtists.push(artist);
-      }
+      });
 
       setArtists(loadedArtists);
     } catch (error) {
@@ -72,57 +83,8 @@ export default function MyArtistsPage() {
     }
   };
 
-  const generateSlug = (name: string): string => {
-    return name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "")
-      .trim();
-  };
-
-  const createPublicProfile = async (artist: Artist) => {
-    if (!artist.firestoreId) return;
-
-    setCreatingProfiles(prev => new Set(prev).add(artist.firestoreId!));
-
-    try {
-      const slug = generateSlug(artist.name);
-      
-      // Crear documento en users
-      const userDocRef = doc(db, "users", artist.firestoreId);
-      await setDoc(userDocRef, {
-        uid: artist.firestoreId,
-        displayName: artist.name,
-        name: artist.name,
-        slug: slug,
-        biography: artist.biography || "",
-        genre: artist.music_genres?.[0] || "",
-        createdAt: new Date(),
-        isGeneratedArtist: true,
-      });
-
-      toast({
-        title: "Perfil creado",
-        description: `Perfil público creado para ${artist.name}`,
-      });
-
-      // Recargar artistas
-      await loadArtists();
-    } catch (error) {
-      console.error("Error creating profile:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el perfil público",
-        variant: "destructive",
-      });
-    } finally {
-      setCreatingProfiles(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(artist.firestoreId!);
-        return newSet;
-      });
-    }
+  const editArtist = (slug: string) => {
+    window.location.href = `/artist/${slug}?edit=true`;
   };
 
   const copyLink = (slug: string) => {
@@ -139,8 +101,29 @@ export default function MyArtistsPage() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-orange-500 mx-auto mb-4" />
-          <p className="text-white">Cargando artistas...</p>
+          <p className="text-white">Cargando tus artistas...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!currentUserUid) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Card className="bg-gray-900 border-gray-800 max-w-md">
+          <CardContent className="p-8 text-center">
+            <User className="h-16 w-16 mx-auto mb-4 text-orange-500" />
+            <p className="text-white mb-4">
+              Debes iniciar sesión para ver tus artistas
+            </p>
+            <Button
+              onClick={() => window.location.href = '/login'}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              Iniciar Sesión
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -171,7 +154,7 @@ export default function MyArtistsPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {artists.map((artist) => (
               <Card
-                key={artist.firestoreId}
+                key={artist.id}
                 className="bg-gray-900 border-gray-800 hover:border-orange-500 transition-all"
               >
                 <CardHeader>
@@ -180,22 +163,21 @@ export default function MyArtistsPage() {
                       <CardTitle className="text-white text-lg mb-2">
                         {artist.name}
                       </CardTitle>
-                      {artist.music_genres && artist.music_genres.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {artist.music_genres.slice(0, 2).map((genre, idx) => (
-                            <Badge
-                              key={idx}
-                              variant="outline"
-                              className="text-xs border-orange-500 text-orange-500"
-                            >
-                              {genre}
-                            </Badge>
-                          ))}
-                        </div>
+                      {artist.genre && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs border-orange-500 text-orange-500"
+                        >
+                          {artist.genre}
+                        </Badge>
                       )}
                     </div>
-                    {artist.hasProfile && (
-                      <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    {artist.profileImage && (
+                      <img
+                        src={artist.profileImage}
+                        alt={artist.name}
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0 ml-2"
+                      />
                     )}
                   </div>
                 </CardHeader>
@@ -206,52 +188,47 @@ export default function MyArtistsPage() {
                     </p>
                   )}
 
-                  <div className="bg-gray-800 p-2 rounded text-xs font-mono text-gray-300">
-                    Slug: {artist.slug}
-                  </div>
-
-                  {artist.hasProfile ? (
-                    <div className="space-y-2">
-                      <Button
-                        onClick={() => copyLink(artist.slug!)}
-                        className="w-full bg-orange-500 hover:bg-orange-600"
-                        size="sm"
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copiar Enlace
-                      </Button>
-                      <Button
-                        onClick={() =>
-                          window.open(`/artist/${artist.slug}`, "_blank")
-                        }
-                        className="w-full bg-gray-700 hover:bg-gray-600"
-                        size="sm"
-                        variant="outline"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Ver Perfil
-                      </Button>
+                  {artist.slug && (
+                    <div className="bg-gray-800 p-2 rounded text-xs font-mono text-gray-300">
+                      Slug: {artist.slug}
                     </div>
-                  ) : (
-                    <Button
-                      onClick={() => createPublicProfile(artist)}
-                      disabled={creatingProfiles.has(artist.firestoreId!)}
-                      className="w-full bg-green-600 hover:bg-green-700"
-                      size="sm"
-                    >
-                      {creatingProfiles.has(artist.firestoreId!) ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Creando...
-                        </>
-                      ) : (
-                        <>
-                          <User className="h-4 w-4 mr-2" />
-                          Crear Perfil Público
-                        </>
-                      )}
-                    </Button>
                   )}
+
+                  <div className="space-y-2">
+                    {artist.slug && (
+                      <>
+                        <Button
+                          onClick={() => copyLink(artist.slug!)}
+                          className="w-full bg-orange-500 hover:bg-orange-600"
+                          size="sm"
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copiar Enlace
+                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            onClick={() =>
+                              window.open(`/artist/${artist.slug}`, "_blank")
+                            }
+                            className="bg-gray-700 hover:bg-gray-600"
+                            size="sm"
+                            variant="outline"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Ver
+                          </Button>
+                          <Button
+                            onClick={() => editArtist(artist.slug!)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                            size="sm"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
