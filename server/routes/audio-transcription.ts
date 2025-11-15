@@ -6,12 +6,26 @@ import path from 'path';
 
 const router = Router();
 
+// Middleware para verificar autenticación con Replit Auth
+const requireAuth = (req: Request, res: Response, next: Function) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    console.error('❌ Usuario no autenticado en ruta de transcripción');
+    return res.status(401).json({
+      success: false,
+      error: 'Autenticación requerida. Por favor inicia sesión.'
+    });
+  }
+  
+  console.log('✅ Usuario autenticado:', (req.user as any)?.id || 'unknown');
+  next();
+};
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY2
 });
 
-// Ruta de prueba para verificar la API key
-router.get('/test-connection', async (req: Request, res: Response) => {
+// Ruta de prueba para verificar la API key (con autenticación)
+router.get('/test-connection', requireAuth, async (req: Request, res: Response) => {
   try {
     console.log('🧪 Probando conexión con OpenAI...');
     console.log('📋 API Key presente:', !!process.env.OPENAI_API_KEY2);
@@ -36,13 +50,15 @@ router.get('/test-connection', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/transcribe', async (req: Request, res: Response) => {
+router.post('/transcribe', requireAuth, async (req: Request, res: Response) => {
   // Aumentar el timeout de esta ruta a 15 minutos para archivos grandes
   req.setTimeout(900000); // 15 minutos en milisegundos
   res.setTimeout(900000);
   
   try {
+    const userId = (req.user as any)?.id;
     console.log('🎤 Solicitud de transcripción recibida');
+    console.log('👤 Usuario:', userId);
     console.log('📋 OpenAI API Key2 configurada:', !!process.env.OPENAI_API_KEY2);
     
     if (!process.env.OPENAI_API_KEY2) {
@@ -88,11 +104,11 @@ router.post('/transcribe', async (req: Request, res: Response) => {
       });
     }
 
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    const maxSize = 100 * 1024 * 1024; // 100MB
     if (audioFile.size > maxSize) {
       return res.status(400).json({
         success: false,
-        error: 'El archivo de audio es demasiado grande. Máximo 50MB.'
+        error: 'El archivo de audio es demasiado grande. Máximo 100MB.'
       });
     }
 

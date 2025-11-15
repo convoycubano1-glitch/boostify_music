@@ -46,9 +46,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Increase JSON size limit to handle image data URLs (6 images x 2MB = 12MB + overhead)
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+// Increase JSON size limit to handle image data URLs and large audio files
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: false, limit: '100mb' }));
 
 // Gestión de errores para express.json
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -62,12 +62,12 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   next(err);
 });
 
-// Configure middleware for file processing
+// Configure middleware for file processing (100MB limit for audio files)
 app.use(fileUpload({
   useTempFiles: true,
   tempFileDir: '/tmp/',
   createParentPath: true,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
   abortOnLimit: true,
   debug: false
 }));
@@ -78,7 +78,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     console.error('Error al cargar archivo: tamaño excedido');
     return res.status(413).json({
       success: false,
-      error: 'El archivo es demasiado grande. El tamaño máximo permitido es 50MB.'
+      error: 'El archivo es demasiado grande. El tamaño máximo permitido es 100MB.'
     });
   }
   next(err);

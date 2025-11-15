@@ -105,7 +105,8 @@ async function transcribeAudio(file: File) {
       const response = await fetch('/api/audio/transcribe', {
         method: 'POST',
         body: formData,
-        signal: controller.signal
+        signal: controller.signal,
+        credentials: 'include' // Necesario para enviar cookies de sesión de Replit Auth
       });
       
       clearTimeout(timeoutId);

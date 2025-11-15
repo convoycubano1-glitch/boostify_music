@@ -8,6 +8,12 @@ import path from 'path';
 import fs from 'fs/promises';
 import { z } from 'zod';
 import { insertSongSchema, insertMerchandiseSchema } from '../../db/schema';
+import { 
+  ensureArtistProfile, 
+  saveSongToProfile, 
+  saveVideoToProfile,
+  updateProfileImages 
+} from '../services/artist-profile-auto';
 
 const router = Router();
 
@@ -242,6 +248,138 @@ router.post('/upload', authenticate, async (req: any, res: Response) => {
   } catch (error) {
     console.error('Error uploading files:', error);
     res.status(500).json({ message: 'Error uploading files' });
+  }
+});
+
+// POST /api/profile/ensure - Ensure user has a profile (auto-create if needed)
+router.post('/ensure', authenticate, async (req: Request, res: Response) => {
+  try {
+    const firebaseUid = req.user!.uid || req.user!.id;
+    const email = req.user!.email;
+    const displayName = (req.user as any)?.displayName || (req.user as any)?.name;
+    const { genre } = req.body;
+    
+    console.log('🔍 Verificando perfil para usuario:', firebaseUid);
+    
+    const result = await ensureArtistProfile({
+      firebaseUid,
+      email,
+      displayName,
+      genre
+    });
+    
+    res.json({
+      success: true,
+      profile: result,
+      message: result.isNew ? 'Perfil creado automáticamente' : 'Perfil existente'
+    });
+  } catch (error) {
+    console.error('Error ensuring profile:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error verificando perfil' 
+    });
+  }
+});
+
+// POST /api/profile/save-song - Save a song to user's profile
+router.post('/save-song', authenticate, async (req: Request, res: Response) => {
+  try {
+    const firebaseUid = req.user!.uid || req.user!.id;
+    const { title, audioUrl, lyrics, genre, duration, fileName, format } = req.body;
+    
+    // Ensure user has profile first (in PostgreSQL)
+    const profile = await ensureArtistProfile({ firebaseUid });
+    
+    // Save song to Firestore
+    const song = await saveSongToProfile({
+      artistId: firebaseUid, // Use Firebase UID for Firestore
+      title,
+      audioUrl,
+      lyrics,
+      genre,
+      duration,
+      fileName,
+      format
+    });
+    
+    res.json({
+      success: true,
+      song,
+      profileSlug: profile.slug,
+      message: 'Canción guardada exitosamente'
+    });
+  } catch (error) {
+    console.error('Error saving song:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error guardando canción' 
+    });
+  }
+});
+
+// POST /api/profile/save-video - Save a video to user's profile
+router.post('/save-video', authenticate, async (req: Request, res: Response) => {
+  try {
+    const firebaseUid = req.user!.uid || req.user!.id;
+    const { title, videoUrl, thumbnailUrl, songId, description, duration } = req.body;
+    
+    // Ensure user has profile first (in PostgreSQL)
+    const profile = await ensureArtistProfile({ firebaseUid });
+    
+    // Save video to Firestore
+    const video = await saveVideoToProfile({
+      artistId: firebaseUid, // Use Firebase UID for Firestore
+      title,
+      videoUrl,
+      thumbnailUrl,
+      songId,
+      description,
+      duration
+    });
+    
+    res.json({
+      success: true,
+      video,
+      profileSlug: profile.slug,
+      message: 'Video guardado exitosamente'
+    });
+  } catch (error) {
+    console.error('Error saving video:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error guardando video' 
+    });
+  }
+});
+
+// POST /api/profile/update-images - Update profile images automatically
+router.post('/update-images', authenticate, async (req: Request, res: Response) => {
+  try {
+    const firebaseUid = req.user!.uid || req.user!.id;
+    const { profileImageUrl, coverImageUrl, onlyIfEmpty = true } = req.body;
+    
+    // Ensure user has profile first
+    const profile = await ensureArtistProfile({ firebaseUid });
+    
+    const updated = await updateProfileImages({
+      userId: profile.userId,
+      profileImageUrl,
+      coverImageUrl,
+      onlyIfEmpty
+    });
+    
+    res.json({
+      success: true,
+      updated,
+      message: updated ? 'Imágenes actualizadas' : 'No se requirió actualización'
+    });
+  } catch (error) {
+    console.error('Error updating images:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error actualizando imágenes' 
+    });
   }
 });
 

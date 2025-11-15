@@ -253,7 +253,8 @@ export function MusicVideoWorkspaceComplete({
 
       const response = await fetch('/api/audio/transcribe', {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'include' // Necesario para enviar cookies de sesión de Replit Auth
       });
 
       const data = await response.json();
