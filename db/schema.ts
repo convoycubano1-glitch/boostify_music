@@ -1037,3 +1037,124 @@ export const insertGeneratedVideoSchema = createInsertSchema(generatedVideos);
 export const selectGeneratedVideoSchema = createSelectSchema(generatedVideos);
 export type GeneratedVideo = typeof generatedVideos.$inferSelect;
 export type NewGeneratedVideo = typeof generatedVideos.$inferInsert;
+
+// ============================================
+// TOKENIZATION SYSTEM (Web3/Blockchain)
+// ============================================
+
+export const tokenizedSongs = pgTable("tokenized_songs", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  songName: text("song_name").notNull(),
+  songUrl: text("song_url"),
+  tokenId: integer("token_id").notNull().unique(), // ID in the ERC-1155 smart contract
+  tokenSymbol: varchar("token_symbol", { length: 20 }).notNull(), // ej: "SONG-001"
+  totalSupply: integer("total_supply").notNull(), // Total tokens minted
+  availableSupply: integer("available_supply").notNull(), // Tokens still for sale
+  pricePerTokenUsd: decimal("price_per_token_usd", { precision: 10, scale: 2 }).notNull(),
+  pricePerTokenEth: decimal("price_per_token_eth", { precision: 18, scale: 8 }), // Cached ETH price
+  royaltyPercentageArtist: integer("royalty_percentage_artist").default(80).notNull(), // 80%
+  royaltyPercentagePlatform: integer("royalty_percentage_platform").default(20).notNull(), // 20%
+  contractAddress: varchar("contract_address", { length: 42 }).notNull(), // Ethereum address
+  metadataUri: text("metadata_uri"), // IPFS or server URL for token metadata
+  imageUrl: text("image_url"), // Cover art for the token
+  description: text("description"),
+  benefits: text("benefits").array(), // Benefits for token holders
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+}, (table) => [
+  index("idx_tokenized_songs_artist").on(table.artistId),
+  index("idx_tokenized_songs_token_id").on(table.tokenId),
+  index("idx_tokenized_songs_active").on(table.isActive)
+]);
+
+export const tokenPurchases = pgTable("token_purchases", {
+  id: serial("id").primaryKey(),
+  tokenizedSongId: integer("tokenized_song_id").notNull().references(() => tokenizedSongs.id, { onDelete: "cascade" }),
+  buyerWalletAddress: varchar("buyer_wallet_address", { length: 42 }).notNull(), // Ethereum address
+  buyerUserId: integer("buyer_user_id").references(() => users.id, { onDelete: "set null" }), // Optional if user is registered
+  amountTokens: integer("amount_tokens").notNull(),
+  pricePaidEth: decimal("price_paid_eth", { precision: 18, scale: 8 }).notNull(),
+  pricePaidUsd: decimal("price_paid_usd", { precision: 10, scale: 2 }),
+  artistEarningsEth: decimal("artist_earnings_eth", { precision: 18, scale: 8 }).notNull(),
+  platformEarningsEth: decimal("platform_earnings_eth", { precision: 18, scale: 8 }).notNull(),
+  transactionHash: varchar("transaction_hash", { length: 66 }).notNull().unique(), // 0x + 64 chars
+  blockNumber: integer("block_number"),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, confirmed, failed
+  createdAt: timestamp("created_at").defaultNow().notNull()
+}, (table) => [
+  index("idx_token_purchases_song").on(table.tokenizedSongId),
+  index("idx_token_purchases_buyer").on(table.buyerWalletAddress),
+  index("idx_token_purchases_tx").on(table.transactionHash),
+  index("idx_token_purchases_status").on(table.status)
+]);
+
+export const artistTokenEarnings = pgTable("artist_token_earnings", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenizedSongId: integer("tokenized_song_id").notNull().references(() => tokenizedSongs.id, { onDelete: "cascade" }),
+  purchaseId: integer("purchase_id").notNull().references(() => tokenPurchases.id, { onDelete: "cascade" }),
+  amountEth: decimal("amount_eth", { precision: 18, scale: 8 }).notNull(),
+  amountUsd: decimal("amount_usd", { precision: 10, scale: 2 }),
+  transactionHash: varchar("transaction_hash", { length: 66 }).notNull(),
+  withdrawnAt: timestamp("withdrawn_at"), // When artist withdrew to their wallet
+  withdrawTxHash: varchar("withdraw_tx_hash", { length: 66 }),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+}, (table) => [
+  index("idx_artist_earnings_artist").on(table.artistId),
+  index("idx_artist_earnings_song").on(table.tokenizedSongId),
+  index("idx_artist_earnings_withdrawn").on(table.withdrawnAt)
+]);
+
+// Relations for tokenization
+export const tokenizedSongsRelations = relations(tokenizedSongs, ({ one, many }) => ({
+  artist: one(users, {
+    fields: [tokenizedSongs.artistId],
+    references: [users.id],
+  }),
+  purchases: many(tokenPurchases),
+  earnings: many(artistTokenEarnings),
+}));
+
+export const tokenPurchasesRelations = relations(tokenPurchases, ({ one }) => ({
+  tokenizedSong: one(tokenizedSongs, {
+    fields: [tokenPurchases.tokenizedSongId],
+    references: [tokenizedSongs.id],
+  }),
+  buyer: one(users, {
+    fields: [tokenPurchases.buyerUserId],
+    references: [users.id],
+  }),
+}));
+
+export const artistTokenEarningsRelations = relations(artistTokenEarnings, ({ one }) => ({
+  artist: one(users, {
+    fields: [artistTokenEarnings.artistId],
+    references: [users.id],
+  }),
+  tokenizedSong: one(tokenizedSongs, {
+    fields: [artistTokenEarnings.tokenizedSongId],
+    references: [tokenizedSongs.id],
+  }),
+  purchase: one(tokenPurchases, {
+    fields: [artistTokenEarnings.purchaseId],
+    references: [tokenPurchases.id],
+  }),
+}));
+
+// Zod schemas for validation
+export const insertTokenizedSongSchema = createInsertSchema(tokenizedSongs);
+export const selectTokenizedSongSchema = createSelectSchema(tokenizedSongs);
+export const insertTokenPurchaseSchema = createInsertSchema(tokenPurchases);
+export const selectTokenPurchaseSchema = createSelectSchema(tokenPurchases);
+export const insertArtistTokenEarningsSchema = createInsertSchema(artistTokenEarnings);
+export const selectArtistTokenEarningsSchema = createSelectSchema(artistTokenEarnings);
+
+// TypeScript types
+export type TokenizedSong = typeof tokenizedSongs.$inferSelect;
+export type NewTokenizedSong = typeof tokenizedSongs.$inferInsert;
+export type TokenPurchase = typeof tokenPurchases.$inferSelect;
+export type NewTokenPurchase = typeof tokenPurchases.$inferInsert;
+export type ArtistTokenEarnings = typeof artistTokenEarnings.$inferSelect;
+export type NewArtistTokenEarnings = typeof artistTokenEarnings.$inferInsert;

@@ -12,7 +12,7 @@ run = ["sh", "-c", "node dist/server/index.js"]
 build = ["sh", "-c", "npm run build"]
 
 [agent]
-integrations = ["javascript_stripe:1.0.0", "javascript_gemini_ai_integrations:1.0.0"]
+integrations = ["javascript_stripe:1.0.0", "javascript_gemini_ai_integrations:1.0.0", "javascript_database:1.0.0"]
 
 [[ports]]
 localPort = 3000

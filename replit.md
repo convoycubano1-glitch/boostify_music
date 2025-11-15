@@ -7,7 +7,89 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 🔐 Critical Fix: Replit Auth Endpoint Routing + React Query 401 Handling (LATEST)
+### 💰 Sistema de Crowdfunding Completo (LATEST)
+**Fecha**: 15 de Noviembre, 2024
+**Objetivo**: Implementar sistema completo de crowdfunding para financiar proyectos musicales
+
+**Funcionalidades implementadas**:
+1. ✅ **Base de Datos PostgreSQL**:
+   - Tabla `crowdfunding_campaigns`: Campañas de crowdfunding por artista
+   - Tabla `crowdfunding_contributions`: Contribuciones de fans con metadata
+   - Tracking automático de monto total recaudado y número de contribuidores
+   - Configuración flexible: título, descripción, meta, fechas
+
+2. ✅ **Backend API (server/routes/crowdfunding.ts)**:
+   - `GET /api/crowdfunding/campaign/:artistSlug` - Obtener campaña activa de un artista
+   - `GET /api/crowdfunding/my-campaign` - Obtener campaña del usuario autenticado
+   - `POST /api/crowdfunding/campaign` - Crear/actualizar campaña
+   - `POST /api/crowdfunding/create-payment-intent` - Stripe payment intent
+   - `POST /api/crowdfunding/confirm-contribution` - Confirmar contribución y actualizar wallet
+   - `GET /api/crowdfunding/contributions/:campaignId` - Ver contribuciones recibidas
+
+3. ✅ **Botón Flotante en Perfil Público** (CrowdfundingButton):
+   - Aparece SOLO si el artista tiene campaña activa
+   - Posicionado flotante en esquina superior derecha
+   - Diseño atractivo con gradiente y animación de heartbeat
+   - Muestra progreso de la campaña (%)
+   - Modal con formulario de contribución integrado con Stripe
+
+4. ✅ **Panel de Control para Artistas** (CrowdfundingPanel):
+   - Activar/desactivar campaña con switch toggle
+   - Configurar título, descripción y meta de recaudación
+   - Visualización en tiempo real de:
+     - Total recaudado
+     - Ganancias del artista (70%)
+     - Número de contribuidores
+     - Barra de progreso visual
+   - Lista de contribuciones recientes con mensajes de fans
+   - Panel de earnings mostrando split 70/30 (artista/plataforma)
+
+5. ✅ **Integración con Stripe**:
+   - Payment intents para procesamiento seguro
+   - Split automático: 70% artista, 30% plataforma
+   - Las ganancias del artista se acreditan automáticamente al wallet
+   - Soporte para contribuciones anónimas
+   - Mensajes opcionales de los contributors
+
+**Características del sistema**:
+- 🔒 **Campaña desactivada por defecto**: Los artistas deben activarla manualmente
+- 💵 **Split de pagos**: 70% artista, 30% plataforma fee
+- 💳 **Stripe Integration**: Procesamiento de pagos seguro
+- 👤 **Contribuciones anónimas**: Opción de ocultar nombre del contributor
+- 💬 **Mensajes de fans**: Los contributors pueden dejar mensajes de apoyo
+- 📊 **Analytics en vivo**: Progreso, earnings, y estadísticas en tiempo real
+- 🎯 **Flexible**: Meta de recaudación configurable, sin límite de tiempo fijo
+
+**Archivos clave**:
+- `db/schema.ts` - Tablas crowdfunding_campaigns y crowdfunding_contributions
+- `server/routes/crowdfunding.ts` - API completa de crowdfunding
+- `client/src/components/crowdfunding/crowdfunding-button.tsx` - Botón flotante + modal
+- `client/src/components/crowdfunding/crowdfunding-panel.tsx` - Panel de control del artista
+- `client/src/pages/artist-profile.tsx` - Integración del botón en perfil público
+
+**Workflow del usuario**:
+1. Artista abre su perfil y accede al panel de crowdfunding
+2. Configura título, descripción y meta de recaudación
+3. Activa campaña con el toggle switch
+4. Aparece botón "Support My Music" en su perfil público
+5. Fans contribuyen con tarjeta de crédito a través de Stripe
+6. Artista recibe 70% en su wallet automáticamente
+7. Dashboard muestra progreso y lista de contribuciones
+
+**Ubicación del panel**:
+- El panel de crowdfunding está integrado en el perfil del artista
+- Aparece debajo de "Mis Ganancias" y antes de "Estadísticas del Perfil"
+- Solo visible para el dueño del perfil (no para visitantes)
+- Sección colapsable con header estilo gradiente y badge "70%"
+
+**Base de datos**:
+- ✅ Tablas creadas en PostgreSQL:
+  - `crowdfunding_campaigns` - Gestión de campañas
+  - `crowdfunding_contributions` - Registro de contribuciones
+- ✅ Índices optimizados para consultas rápidas
+- ✅ Relaciones con foreign keys y cascade deletes
+
+### 🔐 Critical Fix: Replit Auth Endpoint Routing + React Query 401 Handling
 **Fecha**: 15 de Noviembre, 2024
 **Problema**: La aplicación se quedaba atascada en "Verificando acceso..." con bucle infinito de errores 401.
 

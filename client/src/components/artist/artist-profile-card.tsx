@@ -63,6 +63,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautif
 import QRCode from "react-qr-code";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, RadialBarChart, RadialBar } from "recharts";
 import { CrowdfundingButton } from "../crowdfunding/crowdfunding-button";
+import { CrowdfundingPanel } from "../crowdfunding/crowdfunding-panel";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -631,6 +632,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [leftSections, setLeftSections] = useState<string[]>(['songs', 'videos', 'social-hub', 'merchandise']);
   const [isMerchandiseExpanded, setIsMerchandiseExpanded] = useState(true);
   const [isEarningsExpanded, setIsEarningsExpanded] = useState(true);
+  const [isCrowdfundingExpanded, setIsCrowdfundingExpanded] = useState(true);
   
   // Galleries refresh key
   const [galleriesRefreshKey, setGalleriesRefreshKey] = useState(0);
@@ -2669,6 +2671,78 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   style={{ overflow: "hidden" }}
                 >
                   {isEarningsExpanded && <EarningsChart userId={user.id} days={30} />}
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Crowdfunding Campaign Panel - Solo visible para el dueño del perfil */}
+            {isOwnProfile && user?.id && (
+              <motion.div 
+                className={cardStyles} 
+                style={{ 
+                  borderColor: colors.hexBorder, 
+                  borderWidth: '2px',
+                  background: `linear-gradient(135deg, ${colors.hexPrimary}10, ${colors.hexAccent}05)`
+                }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <div 
+                  className="flex justify-between items-center cursor-pointer group mb-4"
+                  onClick={() => setIsCrowdfundingExpanded(!isCrowdfundingExpanded)}
+                  data-testid="button-toggle-crowdfunding"
+                >
+                  <div 
+                    className="text-base sm:text-lg font-bold transition-all duration-300 flex items-center gap-2 group-hover:gap-3" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    <div 
+                      className="p-2 rounded-lg transition-all duration-300 group-hover:scale-110"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                        boxShadow: `0 4px 12px ${colors.hexAccent}40`
+                      }}
+                    >
+                      <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                    </div>
+                    <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                      Crowdfunding
+                    </span>
+                    <span 
+                      className="px-2 py-1 rounded-full text-xs font-bold"
+                      style={{ 
+                        background: `${colors.hexPrimary}20`,
+                        color: colors.hexAccent,
+                        border: `1px solid ${colors.hexAccent}40`
+                      }}
+                    >
+                      70%
+                    </span>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: isCrowdfundingExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ChevronDown 
+                      className="h-5 w-5 transition-colors duration-300" 
+                      style={{ color: colors.hexAccent }}
+                    />
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: isCrowdfundingExpanded ? "auto" : 0,
+                    opacity: isCrowdfundingExpanded ? 1 : 0
+                  }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {isCrowdfundingExpanded && <CrowdfundingPanel colors={colors} />}
                 </motion.div>
               </motion.div>
             )}
