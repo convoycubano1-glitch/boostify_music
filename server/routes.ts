@@ -70,6 +70,7 @@ import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
 import apiProxySecure from './routes/api-proxy-secure';
+import firebaseTokenRouter from './routes/firebase-token'; // Import Firebase token generator
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -162,6 +163,9 @@ export function registerRoutes(app: Express): HttpServer {
       timestamp: new Date().toISOString(),
     });
   });
+
+  // Register Firebase token generator (requires Replit Auth)
+  app.use(firebaseTokenRouter);
 
   // Register translation routes
   app.use('/api', translationRouter);

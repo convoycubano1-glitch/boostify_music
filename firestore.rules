@@ -1,0 +1,227 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Galerías de imágenes
+    match /image_galleries/{galleryId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Perfiles de usuario
+    match /userProfiles/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Usuarios/Artistas - colección principal
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Perfiles de artistas
+    match /artist_profiles/{profileId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Shows y eventos
+    match /shows/{showId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Productos/Merchandise
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Música de artistas
+    match /artist_music/{songId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // AI Agents - Video Director
+    match /Video_Director_AI/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // AI Agents - Music Composer
+    match /AI_Music_Composer/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // AI Agents - Strategic Marketing
+    match /Strategic_Marketing_AI/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // AI Agents - Social Media
+    match /Social_Media_AI/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // AI Agents - Merchandise Designer
+    match /Merchandise_Designer_AI/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // AI Agents - Manager
+    match /Manager_AI/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Cursos de educación
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Métricas de usuarios
+    match /users/{userId}/metrics/{metricId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Progreso de cursos
+    match /course_progress/{progressId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Videos
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Canciones
+    match /songs/{songId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Actividades
+    match /activities/{activityId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Estrategias
+    match /strategies/{strategyId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Inversores
+    match /investors/{investorId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Technical Rider
+    match /technical_rider/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Requirements
+    match /requirements/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Budget
+    match /budget/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Logistics
+    match /logistics/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Hiring
+    match /hiring/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Calendar
+    match /calendar/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // AI Tools
+    match /ai_tools/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Production Projects
+    match /production_projects/{projectId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Production Phases
+    match /production_phases/{phaseId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Production Tasks
+    match /production_tasks/{taskId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Production Notes
+    match /production_notes/{noteId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Version Control
+    match /version_control/{versionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Version Feedback
+    match /version_feedback/{feedbackId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Production Files
+    match /production_files/{fileId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Music Video Projects
+    match /musicVideoProjects/{projectId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Regla general para cualquier otra colección
+    match /{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

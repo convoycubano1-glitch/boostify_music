@@ -652,19 +652,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     setIsSaving(true);
 
     try {
-      // Convertir imágenes base64 a URLs de Storage si es necesario
-      let profileImageUrl = formData.profileImage || "";
-      let bannerImageUrl = formData.bannerImage || "";
-
-      if (profileImageUrl.startsWith('data:')) {
-        console.log('🔄 Convirtiendo imagen de perfil base64 a Storage...');
-        profileImageUrl = await uploadBase64ToStorage(profileImageUrl, `profile_${Date.now()}.png`);
-      }
-
-      if (bannerImageUrl.startsWith('data:')) {
-        console.log('🔄 Convirtiendo imagen de banner base64 a Storage...');
-        bannerImageUrl = await uploadBase64ToStorage(bannerImageUrl, `banner_${Date.now()}.png`);
-      }
+      // Las imágenes generadas por IA ya vienen como URLs públicas
+      // Las imágenes subidas se convierten a URLs de Storage
+      // Solo guardamos URLs, nunca base64
+      const profileImageUrl = formData.profileImage || "";
+      const bannerImageUrl = formData.bannerImage || "";
+      const referenceImageUrl = referenceImage || "";
 
       // Guardar directamente usando el artistId como document ID en Firestore
       const userDocRef = doc(db, "users", artistId);
@@ -688,7 +681,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         twitter: formData.twitter || "",
         youtube: formData.youtube || "",
         spotify: formData.spotify || "",
-        referenceImage: referenceImage || "",
+        referenceImage: referenceImageUrl,
         updatedAt: new Date(),
       };
 

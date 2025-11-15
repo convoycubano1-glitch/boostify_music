@@ -1,29 +1,44 @@
-import { initializeApp } from 'firebase-admin/app';
+import { initializeApp, cert, ServiceAccount } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 let app: any;
 let db: any;
 let auth: any;
 let storage: any;
 
-// Firebase Admin está deshabilitado en el servidor porque no tenemos credenciales de servicio de GCP
-// Todas las operaciones de Firestore se manejan desde el cliente
-// Las suscripciones usan Stripe como única fuente de verdad
-console.log("⚠️ Firebase Admin deshabilitado en el servidor (modo cliente solamente)");
-console.log("ℹ️ Firestore se usa solo desde el cliente frontend");
-console.log("ℹ️ Stripe maneja suscripciones sin dependencias de Firestore del servidor");
+try {
+  // Leer credenciales desde el secreto de Replit
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+  
+  if (!serviceAccountJson) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT secret not found');
+  }
 
-db = null;
-auth = null;
-storage = null;
-app = null;
+  const serviceAccount: ServiceAccount = JSON.parse(serviceAccountJson);
+
+  // Inicializar Firebase Admin SDK
+  app = initializeApp({
+    credential: cert(serviceAccount),
+    storageBucket: 'artist-boost.firebasestorage.app'
+  });
+
+  db = getFirestore(app);
+  auth = getAuth(app);
+  storage = getStorage(app);
+
+  console.log('✅ Firebase Admin SDK initialized successfully');
+  console.log('✅ Firestore, Auth, and Storage ready');
+} catch (error) {
+  console.error('❌ Error initializing Firebase Admin SDK:', error);
+  console.log('⚠️ Firebase Admin deshabilitado - usando modo cliente solamente');
+  
+  db = null;
+  auth = null;
+  storage = null;
+  app = null;
+}
 
 export { db, auth, storage, FieldValue };
 
