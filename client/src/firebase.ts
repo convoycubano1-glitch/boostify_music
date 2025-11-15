@@ -67,9 +67,14 @@ try {
 const app = initializeApp(enhancedConfig);
 
 // Initialize App Check with reCAPTCHA Enterprise
+// TEMPORALMENTE DESHABILITADO PARA DIAGNOSTICAR PROBLEMA EN MÓVIL
 // This protects your app from abuse by ensuring requests come from your app
 try {
-  // Solo inicializar App Check en producción o si no estamos en localhost
+  // App Check DESACTIVADO temporalmente para debugging móvil
+  console.log('⚠️ [APP CHECK] DESACTIVADO TEMPORALMENTE para diagnóstico móvil');
+  
+  // Descomentar para reactivar App Check:
+  /*
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1';
   
@@ -82,6 +87,7 @@ try {
   } else {
     console.log('⚠️ [APP CHECK] Skipped in localhost (development mode)');
   }
+  */
 } catch (appCheckError) {
   // No fallar si App Check tiene problemas, solo loguear
   console.warn('⚠️ [APP CHECK] Failed to initialize:', appCheckError);

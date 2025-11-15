@@ -85,6 +85,7 @@ const CompareArtistsPage = lazy(() => import("./pages/compare-artists"));
 const FixArtistBannerPage = lazy(() => import("./pages/fix-artist-banner"));
 const ArtistsListPage = lazy(() => import("./pages/artists-list"));
 const MobileDebugPage = lazy(() => import("./pages/mobile-debug"));
+const FirestoreTestPage = lazy(() => import("./pages/firestore-test"));
 const DiagnosticsPage = lazy(() => import("./pages/diagnostics"));
 const AffiliatesPage = lazy(() => import("./pages/affiliates"));
 const InitProductsPage = lazy(() => import("./pages/init-products"));
@@ -213,6 +214,7 @@ const Router = () => {
   const WrappedFixArtistBannerPage = withPageWrapper(FixArtistBannerPage);
   const WrappedArtistsListPage = withPageWrapper(ArtistsListPage);
   const WrappedMobileDebugPage = withPageWrapper(MobileDebugPage);
+  const WrappedFirestoreTestPage = withPageWrapper(FirestoreTestPage);
   const WrappedDashboardPage = withPageWrapper(DashboardPage);
   const WrappedAdminPage = withPageWrapper(AdminPage);
   const WrappedArtistDashboard = withPageWrapper(ArtistDashboard);
@@ -314,6 +316,7 @@ const Router = () => {
           {getRouteComponent("/fix-artist-banner", WrappedFixArtistBannerPage, null)}
           {getRouteComponent("/artists-list", WrappedArtistsListPage, null)}
           {getRouteComponent("/debug/:slug", WrappedMobileDebugPage, null)}
+          {getRouteComponent("/firestore-test", WrappedFirestoreTestPage, null)}
           {getRouteComponent("/pricing", WrappedPricingPage, null)}
           {getRouteComponent("/boostify-explicit", WrappedBoostifyExplicitPage, null)}
           
