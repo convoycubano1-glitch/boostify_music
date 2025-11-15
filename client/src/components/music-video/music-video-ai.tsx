@@ -1044,6 +1044,24 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
                 console.log(`📤 [FIREBASE ${sceneIndex}] Subiendo imagen a Firebase Storage...`);
                 permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
                 console.log(`✅ [FIREBASE ${sceneIndex}] Imagen guardada permanentemente`);
+                
+                // 🎨 AUTO-PERFIL: Actualizar imágenes de perfil con primera imagen de alta calidad
+                if (sceneIndex === 1 || sceneIndex === 2) {
+                  try {
+                    const imageData = sceneIndex === 1 
+                      ? { profileImageUrl: permanentImageUrl } // Primera imagen como foto de perfil
+                      : { coverImageUrl: permanentImageUrl }; // Segunda imagen como banner
+                    
+                    await updateProfileImages({
+                      ...imageData,
+                      onlyIfEmpty: true // Solo actualizar si el usuario no tiene imágenes
+                    });
+                    console.log(`✅ Imagen de perfil actualizada automáticamente (escena ${sceneIndex})`);
+                  } catch (profileImageError) {
+                    // No bloqueamos el flujo
+                    console.warn('⚠️ Error actualizando imagen de perfil (no crítico):', profileImageError);
+                  }
+                }
               } catch (uploadError) {
                 console.warn(`⚠️ [FIREBASE ${sceneIndex}] Error subiendo a Firebase, usando URL temporal:`, uploadError);
               }
