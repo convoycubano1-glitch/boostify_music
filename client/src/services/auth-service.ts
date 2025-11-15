@@ -109,19 +109,22 @@ class AuthService {
       
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+      const forceRedirect = localStorage.getItem('force_redirect_auth') === 'true';
       
       console.log('🔐 [AUTH] Device detection:', {
         isMobile,
         isIOS,
         isSafari,
+        forceRedirect,
         userAgent: navigator.userAgent,
         touchPoints: navigator.maxTouchPoints
       });
       
-      // En móviles o Safari, usar redirect directamente (los popups no funcionan bien)
-      if (isMobile || (isIOS && isSafari)) {
-        console.log('🔐 [MOBILE] Dispositivo móvil/iOS detectado, usando redirect');
-        console.log('🔐 [MOBILE] authDomain:', this.auth.config.authDomain);
+      // En móviles, Safari, o si el usuario forzó redirect, usar redirect directamente
+      if (isMobile || (isIOS && isSafari) || forceRedirect) {
+        const reason = forceRedirect ? 'Usuario forzó redirect (PC)' : 'Dispositivo móvil/iOS detectado';
+        console.log(`🔐 [AUTH] ${reason}, usando redirect`);
+        console.log('🔐 [AUTH] authDomain:', this.auth.config.authDomain);
         
         // USAR LOCALSTORAGE para iOS - sessionStorage se borra
         localStorage.setItem('auth_redirect_attempt', 'true');
@@ -130,6 +133,7 @@ class AuthService {
           isMobile,
           isIOS,
           isSafari,
+          forceRedirect,
           timestamp: new Date().toISOString()
         }));
         
@@ -152,8 +156,17 @@ class AuthService {
       } catch (popupError: any) {
         console.warn('AuthService: Error en autenticación con popup:', popupError);
         
-        // Si el error es que el usuario cerró el popup, no intentamos redirect
+        // Si el error es que el usuario cerró el popup, ofrecer redirect como opción
         if (popupError.code === 'auth/popup-closed-by-user') {
+          console.log('AuthService: Usuario cerró popup. Puede intentar con redirect.');
+          throw popupError;
+        }
+        
+        // Si el popup fue bloqueado, informar al usuario
+        if (popupError.code === 'auth/popup-blocked') {
+          console.error('AuthService: Popup bloqueado por el navegador');
+          // Agregar información útil al error
+          popupError.userMessage = 'El navegador bloqueó la ventana emergente. Habilita popups o usa el método alternativo.';
           throw popupError;
         }
         

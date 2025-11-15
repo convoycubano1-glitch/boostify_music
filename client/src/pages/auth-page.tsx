@@ -114,10 +114,16 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (useRedirect: boolean = false) => {
     if (isLoading) return; // Prevenir múltiples clics
     
     setIsLoading(true);
+    
+    // Si el usuario quiere usar redirect, forzar ese método
+    if (useRedirect) {
+      console.log('🔐 [PC] Usuario solicitó método redirect (más confiable)');
+      localStorage.setItem('force_redirect_auth', 'true');
+    }
     
     try {
       // Primero verificamos la conexión con Google
@@ -194,7 +200,7 @@ export default function AuthPage() {
         } else if (error.code === 'auth/popup-closed-by-user') {
           errorMessage = "Has cerrado la ventana de inicio de sesión antes de completar el proceso.";
         } else if (error.code === 'auth/popup-blocked') {
-          errorMessage = "Tu navegador ha bloqueado la ventana emergente. Asegúrate de permitir ventanas emergentes para este sitio.";
+          errorMessage = "Tu navegador bloqueó la ventana emergente. Haz clic en 'Método Alternativo' abajo para continuar.";
         }
         
         toast({
@@ -268,34 +274,45 @@ export default function AuthPage() {
           </span>
         </div>
 
-        <Button 
-          variant="outline" 
-          className="w-full gap-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white border-none hover:from-orange-600 hover:via-red-600 hover:to-orange-600 transition-all duration-300"
-          onClick={handleGoogleSignIn}
-          disabled={isLoading || isConnecting || (!canConnect && !isConnecting)}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              Conectando...
-            </>
-          ) : isConnecting ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              Verificando conexión...
-            </>
-          ) : !canConnect ? (
-            <>
-              <WifiOff className="w-5 h-5 mr-2" />
-              Reintentar conexión
-            </>
-          ) : (
-            <>
-              <SiGoogle className="w-5 h-5" />
-              Continuar con Google
-            </>
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button 
+            variant="outline" 
+            className="w-full gap-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white border-none hover:from-orange-600 hover:via-red-600 hover:to-orange-600 transition-all duration-300"
+            onClick={() => handleGoogleSignIn(false)}
+            disabled={isLoading || isConnecting || (!canConnect && !isConnecting)}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Conectando...
+              </>
+            ) : isConnecting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Verificando conexión...
+              </>
+            ) : !canConnect ? (
+              <>
+                <WifiOff className="w-5 h-5 mr-2" />
+                Reintentar conexión
+              </>
+            ) : (
+              <>
+                <SiGoogle className="w-5 h-5" />
+                Continuar con Google
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            variant="ghost"
+            className="w-full gap-2 text-gray-400 hover:text-white hover:bg-white/10 text-xs"
+            onClick={() => handleGoogleSignIn(true)}
+            disabled={isLoading || isConnecting || (!canConnect && !isConnecting)}
+          >
+            Método Alternativo (si el popup está bloqueado)
+          </Button>
+        </div>
 
         <div className="relative my-4 flex items-center">
           <div className="flex-grow border-t border-gray-600"></div>

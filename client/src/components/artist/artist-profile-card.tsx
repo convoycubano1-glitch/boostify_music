@@ -1083,7 +1083,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     twitter: userProfile?.twitter || "",
     youtube: userProfile?.youtube || "",
     spotify: userProfile?.spotify || "",
-    website: userProfile?.website || ""
+    website: userProfile?.website || "",
+    storeEnabled: userProfile?.storeEnabled !== false
   };
 
   // DEBUG: Log completo del perfil de usuario y spotify
@@ -1683,6 +1684,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             twitter: userProfile?.twitter || "",
                             youtube: userProfile?.youtube || "",
                             spotify: userProfile?.spotify || "",
+                            storeEnabled: (userProfile as any)?.storeEnabled !== false,
                           }}
                           onUpdate={() => {
                             setGalleriesRefreshKey(prev => prev + 1);
@@ -2322,7 +2324,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
             </div>
                         );
-                      } else if (sectionId === 'merchandise' && (products.length > 0 || isOwnProfile)) {
+                      } else if (sectionId === 'merchandise' && (products.length > 0 || isOwnProfile) && artist.storeEnabled !== false) {
                         sectionElement = (
             <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               {isEditingLayout && (
