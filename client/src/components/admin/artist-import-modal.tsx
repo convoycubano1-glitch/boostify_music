@@ -111,9 +111,10 @@ export function ArtistImportModal({ open, onOpenChange, onSuccess }: ImportModal
         data = base64;
       }
 
-      const response = await apiRequest('/api/admin/import-artists/validate', {
+      const response = await apiRequest({
+        url: '/api/admin/import-artists/validate',
         method: 'POST',
-        body: JSON.stringify({ data, fileType })
+        data: { data, fileType }
       });
 
       setValidationResult(response as ValidationResponse);
@@ -148,12 +149,13 @@ export function ArtistImportModal({ open, onOpenChange, onSuccess }: ImportModal
         .filter(r => r.valid)
         .map(r => r.data);
 
-      const response = await apiRequest('/api/admin/import-artists/import', {
+      const response = await apiRequest({
+        url: '/api/admin/import-artists/import',
         method: 'POST',
-        body: JSON.stringify({ 
+        data: { 
           artists: validArtists,
           skipDuplicates: true 
-        })
+        }
       });
 
       setStep('complete');

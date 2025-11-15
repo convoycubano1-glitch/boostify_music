@@ -68,6 +68,11 @@ export const users = pgTable("users", {
       note: string;
     }>;
   }>(),
+  // Virtual Record Label fields
+  firestoreId: text("firestore_id"),
+  isAIGenerated: boolean("is_ai_generated").default(false).notNull(),
+  generatedBy: integer("generated_by").references(() => users.id),
+  recordLabelId: text("record_label_id"),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
