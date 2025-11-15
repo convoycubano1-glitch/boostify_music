@@ -46,9 +46,16 @@ export function PrintfulCatalog() {
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [productToSync, setProductToSync] = useState<CatalogProduct | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [showPopularOnly, setShowPopularOnly] = useState(false);
 
   const { data: catalogData, isLoading } = useQuery({
     queryKey: ['/api/printful/catalog/products'],
+  });
+
+  const { data: popularData } = useQuery({
+    queryKey: ['/api/printful/catalog/popular'],
+    enabled: showPopularOnly,
   });
 
   const { data: variantsData, isLoading: loadingVariants } = useQuery({
@@ -56,32 +63,94 @@ export function PrintfulCatalog() {
     enabled: !!selectedProduct,
   });
 
-  const products: CatalogProduct[] = catalogData?.data || [];
+  let products: CatalogProduct[] = showPopularOnly 
+    ? (popularData?.data || [])
+    : (catalogData?.data || []);
   const variants: CatalogVariant[] = variantsData?.data || [];
 
-  const filteredProducts = products.filter(product =>
+  // Obtener categorías únicas
+  const allProducts: CatalogProduct[] = catalogData?.data || [];
+  const categories = Array.from(new Set(
+    allProducts.map((p: CatalogProduct) => p.type_name)
+  )).sort();
+
+  // Aplicar filtros
+  let filteredProducts = products.filter(product =>
     product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.type_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.brand.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (categoryFilter !== "all") {
+    filteredProducts = filteredProducts.filter(
+      product => product.type_name === categoryFilter
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar productos en el catálogo de Printful..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-            data-testid="input-search-catalog"
-          />
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar productos en el catálogo de Printful..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-catalog"
+            />
+          </div>
+          <Badge variant="outline" className="px-4 py-2">
+            <Package className="h-4 w-4 mr-2" />
+            {filteredProducts.length} productos
+          </Badge>
         </div>
-        <Badge variant="outline" className="px-4 py-2">
-          <Package className="h-4 w-4 mr-2" />
-          {filteredProducts.length} productos
-        </Badge>
+        
+        {/* Filtros adicionales */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button
+            variant={showPopularOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowPopularOnly(!showPopularOnly)}
+            className={showPopularOnly ? "bg-orange-500 hover:bg-orange-600" : ""}
+            data-testid="button-show-popular"
+          >
+            <Printer className="h-3 w-3 mr-1" />
+            Más Populares
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Categoría:</span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-3 py-1.5 text-sm border rounded-md bg-background"
+              data-testid="select-category"
+            >
+              <option value="all">Todas</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {(categoryFilter !== "all" || showPopularOnly) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setCategoryFilter("all");
+                setShowPopularOnly(false);
+              }}
+              data-testid="button-clear-filters"
+            >
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
