@@ -74,6 +74,7 @@ import firebaseTokenRouter from './routes/firebase-token'; // Import Firebase to
 import artistWalletRouter from './routes/artist-wallet'; // Import Artist Wallet for earnings and credits
 import printfulRouter from './routes/printful'; // Import Printful integration router
 import crowdfundingRouter from './routes/crowdfunding'; // Import Crowdfunding router
+import tokenizationRouter from './routes/tokenization'; // Import Tokenization (Web3/Blockchain) router
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
