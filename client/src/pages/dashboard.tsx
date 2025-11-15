@@ -41,6 +41,7 @@ import { motion } from 'framer-motion';
 import EcosystemDashboard from "../components/dashboard/ecosystem-dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Header } from "../components/layout/header";
+import { ensureFirebaseAuth } from "../lib/firebase-auth";
 
 
 export default function Dashboard() {
@@ -65,6 +66,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
+
+    // Authenticate with Firebase using Replit Auth session
+    ensureFirebaseAuth();
 
     // Initialize metrics with default values
     // TODO: Implement PostgreSQL metrics table

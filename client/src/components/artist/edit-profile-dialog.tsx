@@ -20,6 +20,7 @@ import { db, storage } from "../../firebase";
 import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { queryClient } from "../../lib/queryClient";
+import { ensureFirebaseAuth } from "../../lib/firebase-auth";
 
 interface Show {
   id: string;
@@ -87,7 +88,10 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   // Cargar shows al abrir el diálogo
   useEffect(() => {
     if (isOpen && artistId) {
-      loadShows();
+      // Ensure Firebase auth before loading data
+      ensureFirebaseAuth().then(() => {
+        loadShows();
+      });
     }
   }, [isOpen, artistId]);
 
