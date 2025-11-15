@@ -71,6 +71,7 @@ import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
 import apiProxySecure from './routes/api-proxy-secure';
 import firebaseTokenRouter from './routes/firebase-token'; // Import Firebase token generator
+import artistWalletRouter from './routes/artist-wallet'; // Import Artist Wallet for earnings and credits
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -265,6 +266,7 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/profile', profileRouter);
   app.use('/api/songs', songsRouter);
   app.use('/api/merch', merchRouter);
+  app.use('/api/artist-wallet', artistWalletRouter);
   app.use('/api/ai', aiAssistantRouter);
   app.use('/api/fal', falApiRouter); // FAL AI backend routes (MuseTalk lip-sync, etc.)
   app.use('/api/gemini-agents', geminiAgentsRouter);

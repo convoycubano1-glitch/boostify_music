@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "../components/layout/header";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -6,6 +6,11 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { useAuth } from "../hooks/use-auth";
+import { db } from "../firebase";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { Skeleton } from "../components/ui/skeleton";
+import { Link } from "wouter";
 import {
   ShoppingBag,
   Users,
@@ -270,8 +275,68 @@ const salesData = [
   { name: 'Jun', value: 2390 },
 ];
 
+interface UserProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  userId: string;
+  createdAt?: any;
+}
+
 export default function MerchandisePage() {
   const [selectedTab, setSelectedTab] = useState("products");
+  const { user } = useAuth();
+  const [userProducts, setUserProducts] = useState<UserProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [userSlug, setUserSlug] = useState<string>("");
+
+  // Cargar perfil del usuario y productos desde Firestore
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user?.id) {
+        setLoadingProducts(false);
+        return;
+      }
+
+      try {
+        // Obtener el slug del usuario
+        const userQuery = query(collection(db, "users"), where("uid", "==", String(user.id)));
+        const userSnapshot = await getDocs(userQuery);
+        
+        if (!userSnapshot.empty) {
+          const userData = userSnapshot.docs[0].data();
+          setUserSlug(userData.slug || String(user.id));
+        } else {
+          setUserSlug(String(user.id));
+        }
+
+        // Obtener productos del usuario
+        const merchRef = collection(db, "merchandise");
+        const q = query(merchRef, where("userId", "==", String(user.id)));
+        const querySnapshot = await getDocs(q);
+        
+        const productsData: UserProduct[] = [];
+        querySnapshot.forEach((doc) => {
+          productsData.push({
+            id: doc.id,
+            ...doc.data()
+          } as UserProduct);
+        });
+        
+        setUserProducts(productsData);
+        console.log('📦 Productos cargados desde Firestore:', productsData.length);
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user?.id]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -334,111 +399,112 @@ export default function MerchandisePage() {
             </TabsList>
           </div>
 
-          {/* Products Tab */}
+          {/* Products Tab - Productos del Usuario */}
           <TabsContent value="products">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* T-shirt Designer */}
-              <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10">
-                <div className="aspect-video bg-gradient-to-br from-orange-500/5 to-orange-500/10 flex items-center justify-center relative">
-                  <div className="absolute inset-0 flex items-center justify-center bg-orange-500/5 group-hover:bg-orange-500/10 transition-colors">
-                    <Shirt className="h-12 w-12 text-orange-500" />
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-2xl font-semibold group-hover:text-orange-500 transition-colors mb-3">
-                    T-shirt Designer
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    Create custom t-shirt designs with our advanced design tools
-                  </p>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">DTG Printing</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Screen Printing</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Embroidery</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Custom Colors</Badge>
-                    </div>
-                  </div>
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Launch Designer
-                  </Button>
-                </div>
-              </Card>
-
-              {/* Poster Creator */}
-              <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10">
-                <div className="aspect-video bg-gradient-to-br from-orange-500/5 to-orange-500/10 flex items-center justify-center relative">
-                  <div className="absolute inset-0 flex items-center justify-center bg-orange-500/5 group-hover:bg-orange-500/10 transition-colors">
-                    <ImageIcon className="h-12 w-12 text-orange-500" />
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-2xl font-semibold group-hover:text-orange-500 transition-colors mb-3">
-                    Poster Creator
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    Design eye-catching posters and promotional materials
-                  </p>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">High Quality</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Multiple Sizes</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Templates</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Custom Designs</Badge>
-                    </div>
-                  </div>
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Create Poster
-                  </Button>
-                </div>
-              </Card>
-
-              {/* Vinyl Creator */}
-              <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10">
-                <div className="aspect-video bg-gradient-to-br from-orange-500/5 to-orange-500/10 flex items-center justify-center relative">
-                  <div className="absolute inset-0 flex items-center justify-center bg-orange-500/5 group-hover:bg-orange-500/10 transition-colors">
-                    <Music className="h-12 w-12 text-orange-500" />
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-2xl font-semibold group-hover:text-orange-500 transition-colors mb-3">
-                    Vinyl Creator
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    Create custom vinyl records and merchandise
-                  </p>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Album Covers</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Packaging</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Limited Editions</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">Custom Colors</Badge>
-                    </div>
-                  </div>
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Design Vinyl
-                  </Button>
-                </div>
-              </Card>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">Mis Productos</h2>
+              <p className="text-muted-foreground">
+                Estos son los productos que has creado en tu perfil de artista. Gestiónalos, edítalos o crea nuevos desde tu perfil.
+              </p>
             </div>
+
+            {loadingProducts ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <Skeleton className="h-48 w-full" />
+                    <div className="p-6 space-y-3">
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : userProducts.length === 0 ? (
+              <Card className="p-12 text-center">
+                <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-2xl font-semibold mb-2">No tienes productos aún</h3>
+                <p className="text-muted-foreground mb-6">
+                  Crea productos desde tu perfil de artista para verlos aquí
+                </p>
+                <Link href={`/artist/${userSlug}`}>
+                  <Button className="bg-orange-500 hover:bg-orange-600">
+                    Ir a Mi Perfil
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {userProducts.map((product) => (
+                  <Card 
+                    key={product.id} 
+                    className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10"
+                  >
+                    <div className="aspect-video relative overflow-hidden bg-gradient-to-br from-orange-500/5 to-orange-500/10">
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
+                          }}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <ShoppingBag className="h-12 w-12 text-orange-500" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2">
+                        <Badge className="bg-orange-500 text-white">
+                          ${product.price.toFixed(2)}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-xl font-semibold group-hover:text-orange-500 transition-colors line-clamp-1">
+                          {product.name}
+                        </h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        {product.description}
+                      </p>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Badge variant="outline">{product.category}</Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link href={`/artist/${userSlug}#merchandise`} className="flex-1">
+                          <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                            Ver en Perfil
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Mensaje informativo */}
+            {userProducts.length > 0 && (
+              <Card className="mt-6 p-6 bg-gradient-to-r from-orange-500/5 to-orange-500/10 border-orange-500/20">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-orange-500/20 rounded-lg">
+                    <Package className="h-6 w-6 text-orange-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">Gestión de Productos</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Todos los productos mostrados aquí están sincronizados con tu perfil de artista. 
+                      Para agregar, editar o eliminar productos, visita la sección de merchandise en tu perfil.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Shopify Integration Tab */}

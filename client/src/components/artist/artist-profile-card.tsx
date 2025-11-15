@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { EditProfileDialog } from "./edit-profile-dialog";
 import { ImageGalleryDisplay } from "./image-gallery-display";
+import { EarningsChart } from "../wallet/earnings-chart";
 import { useAuth } from "../../hooks/use-auth";
 import { useTranslation } from "react-i18next";
 import {
@@ -255,26 +256,27 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
             </div>
 
             {/* Contenido de la tarjeta */}
-            <div className="relative h-full p-4 md:p-6 flex flex-col justify-between">
+            <div className="relative h-full p-3 md:p-5 flex flex-col">
               {/* Header con QR Code */}
-              <div className="flex justify-between items-start gap-4">
+              <div className="flex justify-between items-start gap-2 mb-auto">
                 {/* Logo Boostify */}
                 <div 
-                  className="px-4 py-2 rounded-full text-xs md:text-sm font-black backdrop-blur-md border-2"
+                  className="px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-black backdrop-blur-md border-2"
                   style={{ 
-                    background: 'rgba(0,0,0,0.5)',
+                    background: 'rgba(0,0,0,0.6)',
                     borderColor: colors.hexAccent,
-                    color: colors.hexAccent
+                    color: colors.hexAccent,
+                    letterSpacing: '0.5px'
                   }}
                 >
                   BOOSTIFY
                 </div>
 
                 {/* QR Code arriba a la derecha */}
-                <div className="bg-white p-2 md:p-3 rounded-xl shadow-2xl">
+                <div className="bg-white p-1.5 md:p-2 rounded-lg md:rounded-xl shadow-2xl flex-shrink-0">
                   <QRCode
                     value={profileUrl}
-                    size={80}
+                    size={70}
                     className="md:hidden"
                     level="H"
                     fgColor="#000000"
@@ -282,7 +284,7 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
                   />
                   <QRCode
                     value={profileUrl}
-                    size={120}
+                    size={100}
                     className="hidden md:block"
                     level="H"
                     fgColor="#000000"
@@ -291,87 +293,119 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
                 </div>
               </div>
 
-              {/* Sección principal */}
-              <div className="flex items-end gap-4 md:gap-6">
-                {/* Imagen del artista */}
-                <div className="relative flex-shrink-0">
-                  <img
-                    src={artist.profileImage}
-                    alt={artist.name}
-                    className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-2xl object-cover border-4 shadow-2xl"
-                    style={{ borderColor: colors.hexAccent }}
-                  />
-                </div>
+              {/* Nombre del artista CENTRADO con gradientes y detalles */}
+              <div className="flex-1 flex items-center justify-center px-2 md:px-4 py-2">
+                <div className="text-center w-full space-y-1 md:space-y-2">
+                  {/* Icono decorativo superior */}
+                  <div className="flex items-center justify-center gap-2 mb-1 md:mb-2">
+                    <div 
+                      className="h-[2px] w-8 md:w-16"
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${colors.hexAccent}, transparent)`
+                      }}
+                    ></div>
+                    <svg 
+                      className="w-4 h-4 md:w-5 md:h-5" 
+                      fill="none" 
+                      stroke={colors.hexAccent} 
+                      viewBox="0 0 24 24"
+                      style={{ filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.5))' }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                    <div 
+                      className="h-[2px] w-8 md:w-16"
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${colors.hexAccent}, transparent)`
+                      }}
+                    ></div>
+                  </div>
 
-                {/* Info del artista */}
-                <div className="flex-1 pb-2">
-                  <h3 className="text-2xl md:text-3xl lg:text-5xl font-black text-white mb-1 md:mb-2 drop-shadow-lg">
+                  {/* Nombre con gradiente elegante */}
+                  <h3 
+                    className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight break-words"
+                    style={{
+                      background: `linear-gradient(135deg, 
+                        #ffffff 0%, 
+                        ${colors.hexAccent} 50%, 
+                        #ffffff 100%)`,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,255,255,0.3))',
+                      wordBreak: 'break-word',
+                      hyphens: 'auto',
+                      letterSpacing: '-0.02em'
+                    }}
+                  >
                     {artist.name}
                   </h3>
-                  <p 
-                    className="text-sm md:text-base lg:text-xl font-bold mb-2 md:mb-3 drop-shadow-lg" 
-                    style={{ color: colors.hexAccent }}
-                  >
-                    {artist.genre}
-                  </p>
                   
-                  {/* Links rápidos */}
-                  <div className="flex flex-wrap gap-2">
-                    <a
-                      href={profileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-bold backdrop-blur-md border transition-all duration-200 flex items-center gap-1 hover:scale-105"
-                      style={{
-                        background: 'rgba(255,255,255,0.15)',
-                        borderColor: 'rgba(255,255,255,0.3)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  {/* Género con icono */}
+                  {artist.genre && (
+                    <div className="flex items-center justify-center gap-2">
+                      <svg className="w-3 h-3 md:w-4 md:h-4" fill={colors.hexAccent} viewBox="0 0 24 24">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                       </svg>
-                      <span className="hidden sm:inline">Profile</span>
-                    </a>
-                    <a
-                      href={`${profileUrl}#merchandise`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-bold backdrop-blur-md border transition-all duration-200 flex items-center gap-1 hover:scale-105"
-                      style={{
-                        background: 'rgba(255,255,255,0.15)',
-                        borderColor: 'rgba(255,255,255,0.3)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      <p 
+                        className="text-xs md:text-base lg:text-lg font-bold tracking-wide uppercase" 
+                        style={{ 
+                          background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))'
+                        }}
+                      >
+                        {artist.genre}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Mini biografía */}
+                  {artist.biography && (
+                    <div className="mt-2 md:mt-3 px-2 md:px-4">
+                      <p 
+                        className="text-[10px] md:text-xs leading-relaxed text-white/90 line-clamp-2 md:line-clamp-3 backdrop-blur-sm bg-black/30 rounded-lg px-2 md:px-3 py-1.5 md:py-2 border border-white/10"
+                        style={{
+                          textShadow: '0 1px 4px rgba(0,0,0,0.8)'
+                        }}
+                      >
+                        {artist.biography.length > 120 
+                          ? `${artist.biography.substring(0, 120)}...` 
+                          : artist.biography}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Stats compactos */}
+                  <div className="flex items-center justify-center gap-3 md:gap-6 mt-2 md:mt-3 text-white/80">
+                    <div className="flex items-center gap-1 backdrop-blur-sm bg-black/30 px-2 py-1 rounded-full border border-white/10">
+                      <svg className="w-3 h-3 md:w-4 md:h-4" fill={colors.hexAccent} viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                       </svg>
-                      <span className="hidden sm:inline">Merch</span>
-                    </a>
-                    <a
-                      href={`${profileUrl}#shows`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs md:text-sm font-bold backdrop-blur-md border transition-all duration-200 flex items-center gap-1 hover:scale-105"
-                      style={{
-                        background: 'rgba(255,255,255,0.15)',
-                        borderColor: 'rgba(255,255,255,0.3)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <span className="text-[9px] md:text-xs font-bold">{artist.followers > 1000 ? `${(artist.followers / 1000).toFixed(1)}K` : artist.followers}</span>
+                    </div>
+                    <div className="flex items-center gap-1 backdrop-blur-sm bg-black/30 px-2 py-1 rounded-full border border-white/10">
+                      <svg className="w-3 h-3 md:w-4 md:h-4" fill={colors.hexAccent} viewBox="0 0 24 24">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                       </svg>
-                      <span className="hidden sm:inline">Shows</span>
-                    </a>
+                      <span className="text-[9px] md:text-xs font-bold">Artist</span>
+                    </div>
+                    <div className="flex items-center gap-1 backdrop-blur-sm bg-black/30 px-2 py-1 rounded-full border border-white/10">
+                      <svg className="w-3 h-3 md:w-4 md:h-4" fill={colors.hexAccent} viewBox="0 0 24 24">
+                        <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z"/>
+                      </svg>
+                      <span className="text-[9px] md:text-xs font-bold">Verified</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Barra decorativa inferior */}
               <div 
-                className="absolute bottom-0 left-0 right-0 h-1.5 md:h-2"
+                className="absolute bottom-0 left-0 right-0 h-2 md:h-3"
                 style={{
                   background: `linear-gradient(90deg, ${colors.hexPrimary} 0%, ${colors.hexAccent} 50%, ${colors.hexPrimary} 100%)`
                 }}
@@ -595,6 +629,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const [leftSections, setLeftSections] = useState<string[]>(['songs', 'videos', 'social-hub', 'merchandise']);
   const [isMerchandiseExpanded, setIsMerchandiseExpanded] = useState(true);
+  const [isEarningsExpanded, setIsEarningsExpanded] = useState(true);
   
   // Galleries refresh key
   const [galleriesRefreshKey, setGalleriesRefreshKey] = useState(0);
@@ -1381,7 +1416,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       <audio ref={audioRef} onEnded={() => setPlayingSongId(null)} />
       
       {/* Hero Header */}
-      <header className="relative h-72 md:h-96 lg:h-[450px] w-full mb-6 md:mb-8 overflow-hidden">
+      <header className="relative h-64 sm:h-80 md:h-96 lg:h-[450px] xl:h-[500px] w-full mb-4 sm:mb-6 md:mb-8 overflow-hidden">
         {(() => {
           // Detectar si es video (por extensión o por metadata)
           const isVideo = artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i) || 
@@ -1471,14 +1506,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </div>
 
         {/* Contenido del artista en el hero */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-10">
-          <div className="text-4xl lg:text-6xl font-extrabold mb-2 text-white drop-shadow-lg" data-testid="text-artist-name">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8 lg:p-10 z-10">
+          <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold mb-2 text-white drop-shadow-lg leading-tight" data-testid="text-artist-name">
             {artist.name}
           </div>
-          <div className="text-lg transition-colors duration-500" style={{ color: colors.hexAccent }}>
+          <div className="text-base sm:text-lg md:text-xl transition-colors duration-500" style={{ color: colors.hexAccent }}>
             {artist.genre} {artist.location && `· ${artist.location}`}
           </div>
-          <div className="flex flex-wrap gap-2 mt-3">
+          <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
             {artist.instagram && (
               <span 
                 className="text-xs rounded-full py-1 px-3 bg-black/50 backdrop-blur-sm border transition-colors duration-500"
@@ -1507,7 +1542,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto p-4 md:p-8 pt-0 pb-20 md:pb-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-0 pb-20 md:pb-8">
         
         {/* Selector de Paleta - Solo visible para el dueño del perfil */}
         {isOwnProfile && (
@@ -1537,18 +1572,18 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         )}
 
         {/* Main Layout */}
-        <main className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6">
+        <main className="grid grid-cols-1 lg:grid-cols-[1fr_0.8fr] xl:grid-cols-[1.2fr_1fr] gap-4 sm:gap-5 md:gap-6">
           {/* Columna Izquierda */}
-          <section className="flex flex-col gap-6">
+          <section className="flex flex-col gap-4 sm:gap-5 md:gap-6">
             
             {/* Tarjeta de Información de Artista */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-              <div className="flex flex-col sm:flex-row items-start gap-4">
-                <div className="relative">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 md:gap-6">
+                <div className="relative flex-shrink-0">
                   <img
                     src={artist.profileImage}
                     alt={`${artist.name} Avatar`}
-                    className="w-44 h-44 rounded-3xl object-cover shadow-xl transition-colors duration-500"
+                    className="w-32 h-32 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-2xl sm:rounded-3xl object-cover shadow-xl transition-all duration-500"
                     style={{ borderColor: colors.hexBorder, borderWidth: '1px', boxShadow: `0 4px 10px ${colors.hexAccent}50` }}
                     data-testid="img-profile"
                   />
@@ -1556,19 +1591,19 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     Verificado
                   </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-3xl font-semibold text-white">{artist.name}</div>
+                <div className="flex-1 min-w-0 text-center sm:text-left w-full">
+                  <div className="text-2xl sm:text-3xl font-semibold text-white">{artist.name}</div>
                   <div 
-                    className="text-sm mt-1 transition-colors duration-500" 
+                    className="text-sm sm:text-base mt-1 transition-colors duration-500" 
                     style={{ color: colors.hexAccent }}
                   >
                     {artist.genre}
                   </div>
-                  <div className="text-sm text-gray-400 mt-2 transition-colors duration-500">
+                  <div className="text-sm sm:text-base text-gray-400 mt-2 transition-colors duration-500 line-clamp-3">
                     {artist.biography}
                   </div>
                   
-                  <div className="flex flex-wrap gap-3 mt-4">
+                  <div className="flex flex-wrap gap-2 sm:gap-3 mt-4 justify-center sm:justify-start">
                     {isOwnProfile ? (
                       <>
                         <EditProfileDialog
@@ -1978,11 +2013,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     </Dialog>
                   )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {videos.map((video, index) => (
                     <div
                       key={video.id}
-                      className="rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border"
+                      className="rounded-lg sm:rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border"
                       style={{ borderColor: colors.hexBorder }}
                       data-testid={`card-video-${index}`}
                     >
@@ -1994,14 +2029,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                           <img
                             src={video.thumbnailUrl}
                             alt={video.title}
-                            className="w-full h-40 object-cover"
+                            className="w-full h-36 sm:h-40 md:h-44 object-cover"
                           />
                         ) : (
                           <div 
-                            className="w-full h-40 flex items-center justify-center"
+                            className="w-full h-36 sm:h-40 md:h-44 flex items-center justify-center"
                             style={{ backgroundColor: `${colors.hexPrimary}33` }}
                           >
-                            <VideoIcon className="h-12 w-12" style={{ color: colors.hexAccent }} />
+                            <VideoIcon className="h-10 sm:h-12 w-10 sm:w-12" style={{ color: colors.hexAccent }} />
                           </div>
                         )}
                         {/* Play overlay */}
@@ -2226,8 +2261,93 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                     )}
                   </div>
                 </div>
+
+                {/* Nota de colaboración */}
                 {isMerchandiseExpanded && (
-                <div className="grid grid-cols-2 md:grid-cols-2 gap-2 md:gap-3">
+                  <div 
+                    className="mb-4 p-3 sm:p-4 rounded-lg border-2 flex items-start gap-3"
+                    style={{ 
+                      borderColor: colors.hexBorder,
+                      background: `linear-gradient(135deg, ${colors.hexPrimary}15, ${colors.hexAccent}10)`
+                    }}
+                  >
+                    <div 
+                      className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`
+                      }}
+                    >
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-sm sm:text-base font-bold text-white">
+                          Colaboración Boostify x Artista
+                        </span>
+                        <span 
+                          className="px-2 py-0.5 rounded-full text-xs font-bold"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            color: 'white'
+                          }}
+                        >
+                          30% para ti
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                        Estos productos son una colaboración exclusiva entre <strong style={{ color: colors.hexAccent }}>Boostify</strong> y <strong style={{ color: colors.hexAccent }}>{artist.name}</strong>. 
+                        <span className="block mt-1">
+                          <strong className="text-white">Los artistas ganan el 30%</strong> de cada venta, sin inversión inicial ni inventario. Nosotros nos encargamos de producción, envío y atención al cliente.
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje de Disponibilidad - Enero 2025 */}
+                {isMerchandiseExpanded && (
+                  <div 
+                    className="mb-4 p-3 sm:p-4 rounded-lg border-2 flex items-start gap-3"
+                    style={{ 
+                      borderColor: colors.hexAccent,
+                      background: `linear-gradient(135deg, rgba(234, 179, 8, 0.15), ${colors.hexAccent}15)`,
+                      borderStyle: 'dashed'
+                    }}
+                    data-testid="message-coming-january"
+                  >
+                    <div 
+                      className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center animate-pulse"
+                      style={{ 
+                        background: `linear-gradient(135deg, #eab308, ${colors.hexAccent})`
+                      }}
+                    >
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className="text-sm sm:text-base font-bold text-white">
+                          🚀 Próximamente - Enero 2025
+                        </span>
+                        <span 
+                          className="px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-black"
+                        >
+                          PREVENTA
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                        <strong className="text-yellow-400">La tienda oficial estará disponible a partir de enero 2025.</strong> Los productos mostrados son una vista previa y <strong className="text-white">los precios finales pueden variar</strong>. 
+                        <span className="block mt-1.5 text-gray-400">
+                          Estamos preparando una experiencia de compra excepcional con productos de alta calidad para tus fans.
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {isMerchandiseExpanded && (
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {products.map((product, index) => (
                     <div
                       key={product.id}
@@ -2235,11 +2355,11 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                       style={{ borderColor: colors.hexBorder }}
                       data-testid={`card-product-${index}`}
                     >
-                      <div className="relative">
+                      <div className="relative aspect-square overflow-hidden">
                         <img
                           src={product.imageUrl}
                           alt={product.name}
-                          className="w-full h-32 md:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
@@ -2320,7 +2440,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
           </section>
 
           {/* Columna Derecha */}
-          <section className="flex flex-col gap-6">
+          <section className="flex flex-col gap-4 sm:gap-5 md:gap-6">
             
             {/* Artist Card con QR Code */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
@@ -2330,6 +2450,227 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 profileUrl={`${window.location.origin}/artist/${userProfile?.slug || artistId}`}
               />
             </div>
+
+            {/* Order Physical Cards - Solo visible para usuarios autenticados */}
+            {isOwnProfile && (
+              <motion.div 
+                className={`${cardStyles} overflow-hidden`}
+                style={{ 
+                  borderColor: colors.hexBorder, 
+                  borderWidth: '2px',
+                  background: `linear-gradient(135deg, ${colors.hexPrimary}15 0%, ${colors.hexAccent}10 100%)`
+                }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="relative">
+                  {/* Badge "Nuevo" */}
+                  <div className="absolute -top-2 -right-2 z-10">
+                    <div 
+                      className="px-3 py-1 rounded-full text-xs font-bold shadow-lg"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                        color: 'white'
+                      }}
+                    >
+                      ✨ NUEVO
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+                    {/* Icono de tarjeta */}
+                    <div 
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                        boxShadow: `0 8px 20px ${colors.hexPrimary}40`
+                      }}
+                    >
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                    </div>
+
+                    {/* Texto */}
+                    <div className="flex-1 text-center sm:text-left">
+                      <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
+                        Tarjetas Físicas Premium
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        Imprime tu Artist Card en plástico de alta calidad
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Detalles del producto */}
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Plástico PVC de calidad premium (mismo que tarjetas bancarias)</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Impresión a todo color con acabado brillante o mate</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Código QR integrado para compartir tu perfil fácilmente</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Tamaño estándar de tarjeta de crédito (85.6 × 53.98 mm)</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm text-gray-300">
+                      <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Resistente al agua y duradera</span>
+                    </div>
+                  </div>
+
+                  {/* Botón CTA */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button
+                        className="w-full py-4 px-6 rounded-xl font-bold text-base transition-all duration-300 hover:scale-105 hover:shadow-2xl relative overflow-hidden group"
+                        style={{
+                          background: `linear-gradient(135deg, ${colors.hexPrimary} 0%, ${colors.hexAccent} 100%)`,
+                          color: 'white',
+                          boxShadow: `0 10px 30px ${colors.hexPrimary}40`
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                        <span className="relative flex items-center justify-center gap-3">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                          </svg>
+                          Order Your Digital Cards
+                        </span>
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl">¡Próximamente!</DialogTitle>
+                        <DialogDescription className="text-base">
+                          Estamos trabajando en el sistema de pedidos para traerte tarjetas físicas de la más alta calidad.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div 
+                          className="p-4 rounded-lg border-2"
+                          style={{ 
+                            borderColor: colors.hexBorder,
+                            background: `${colors.hexPrimary}10`
+                          }}
+                        >
+                          <h4 className="font-bold text-white mb-2">¿Qué incluye?</h4>
+                          <ul className="space-y-2 text-sm text-gray-300">
+                            <li>• Paquetes desde 50 hasta 1000+ tarjetas</li>
+                            <li>• Envío internacional disponible</li>
+                            <li>• Precios especiales para pedidos grandes</li>
+                            <li>• Diseño personalizado incluido</li>
+                          </ul>
+                        </div>
+                        <div 
+                          className="p-4 rounded-lg border"
+                          style={{ borderColor: colors.hexBorder }}
+                        >
+                          <p className="text-sm text-gray-400">
+                            <strong className="text-white">Nota:</strong> Las tarjetas físicas son perfectas para eventos, shows, networking y promoción de tu marca musical. Comparte tu perfil digital de forma profesional y memorable.
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm" style={{ color: colors.hexAccent }}>
+                            📧 ¿Interesado? Contáctanos en <strong>cards@boostify.com</strong>
+                          </p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Artist Earnings - Solo visible para el dueño del perfil */}
+            {isOwnProfile && user?.id && (
+              <motion.div 
+                className={cardStyles} 
+                style={{ 
+                  borderColor: colors.hexBorder, 
+                  borderWidth: '2px',
+                  background: `linear-gradient(135deg, ${colors.hexPrimary}10, ${colors.hexAccent}05)`
+                }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div 
+                  className="flex justify-between items-center cursor-pointer group mb-4"
+                  onClick={() => setIsEarningsExpanded(!isEarningsExpanded)}
+                  data-testid="button-toggle-earnings"
+                >
+                  <div 
+                    className="text-base sm:text-lg font-bold transition-all duration-300 flex items-center gap-2 group-hover:gap-3" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    <div 
+                      className="p-2 rounded-lg transition-all duration-300 group-hover:scale-110"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                        boxShadow: `0 4px 12px ${colors.hexAccent}40`
+                      }}
+                    >
+                      <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                      Mis Ganancias
+                    </span>
+                    <span 
+                      className="px-2 py-1 rounded-full text-xs font-bold"
+                      style={{ 
+                        background: `${colors.hexPrimary}20`,
+                        color: colors.hexAccent,
+                        border: `1px solid ${colors.hexAccent}40`
+                      }}
+                    >
+                      30%
+                    </span>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: isEarningsExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ChevronDown 
+                      className="h-5 w-5 transition-colors duration-300" 
+                      style={{ color: colors.hexAccent }}
+                    />
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: isEarningsExpanded ? "auto" : 0,
+                    opacity: isEarningsExpanded ? 1 : 0
+                  }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {isEarningsExpanded && <EarningsChart userId={user.id} days={30} />}
+                </motion.div>
+              </motion.div>
+            )}
 
             {/* Tarjeta de Estadísticas con Gráficos */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
@@ -2341,38 +2682,38 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
               </div>
               
               {/* Stats Grid */}
-              <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
                 <motion.div 
-                  className="text-center p-3 rounded-lg"
+                  className="text-center p-2 sm:p-3 rounded-lg"
                   style={{ backgroundColor: `${colors.hexPrimary}15`, borderColor: colors.hexBorder, borderWidth: '1px' }}
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Music2 className="h-5 w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
-                  <div className="text-2xl font-bold text-white">{songs.length}</div>
-                  <div className="text-xs text-gray-400">Canciones</div>
+                  <Music2 className="h-4 sm:h-5 w-4 sm:w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
+                  <div className="text-xl sm:text-2xl font-bold text-white">{songs.length}</div>
+                  <div className="text-[10px] sm:text-xs text-gray-400">Canciones</div>
                 </motion.div>
                 
                 <motion.div 
-                  className="text-center p-3 rounded-lg"
+                  className="text-center p-2 sm:p-3 rounded-lg"
                   style={{ backgroundColor: `${colors.hexPrimary}15`, borderColor: colors.hexBorder, borderWidth: '1px' }}
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <VideoIcon className="h-5 w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
-                  <div className="text-2xl font-bold text-white">{videos.length}</div>
-                  <div className="text-xs text-gray-400">Videos</div>
+                  <VideoIcon className="h-4 sm:h-5 w-4 sm:w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
+                  <div className="text-xl sm:text-2xl font-bold text-white">{videos.length}</div>
+                  <div className="text-[10px] sm:text-xs text-gray-400">Videos</div>
                 </motion.div>
                 
                 <motion.div 
-                  className="text-center p-3 rounded-lg"
+                  className="text-center p-2 sm:p-3 rounded-lg"
                   style={{ backgroundColor: `${colors.hexPrimary}15`, borderColor: colors.hexBorder, borderWidth: '1px' }}
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Users className="h-5 w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
-                  <div className="text-2xl font-bold text-white">{artist.followers > 1000 ? `${(artist.followers / 1000).toFixed(1)}K` : artist.followers}</div>
-                  <div className="text-xs text-gray-400">Seguidores</div>
+                  <Users className="h-4 sm:h-5 w-4 sm:w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
+                  <div className="text-xl sm:text-2xl font-bold text-white">{artist.followers > 1000 ? `${(artist.followers / 1000).toFixed(1)}K` : artist.followers}</div>
+                  <div className="text-[10px] sm:text-xs text-gray-400">Seguidores</div>
                 </motion.div>
               </div>
 
@@ -2546,9 +2887,9 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
             {/* Image Galleries */}
             <ImageGalleryDisplay 
-              key={`galleries-${galleriesRefreshKey}`}
               artistId={artistId} 
               isOwner={isOwnProfile}
+              refreshKey={galleriesRefreshKey}
             />
 
             {/* Tarjeta CTA: Monetiza Tu Talento - Visible para todos */}

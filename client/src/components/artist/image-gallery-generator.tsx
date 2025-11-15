@@ -71,6 +71,35 @@ export function ImageGalleryGenerator({
     setReferenceImages(referenceImages.filter((_, i) => i !== index));
   };
 
+  // Convertir base64 a Firebase Storage URL
+  const uploadBase64ToStorage = async (base64Data: string, fileName: string): Promise<string> => {
+    // Extraer el tipo MIME y los datos base64
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      throw new Error('Invalid base64 string');
+    }
+
+    const contentType = matches[1];
+    const base64Content = matches[2];
+    
+    // Convertir base64 a blob
+    const byteCharacters = atob(base64Content);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: contentType });
+
+    // Subir a Firebase Storage
+    const storageRef = ref(storage, `reference-images/${artistId}/${fileName}`);
+    await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(storageRef);
+    
+    console.log('☁️ Imagen de referencia subida a Storage:', downloadURL);
+    return downloadURL;
+  };
+
   const handleGenerateGallery = async () => {
     if (!singleName.trim()) {
       toast({
@@ -131,14 +160,33 @@ export function ImageGalleryGenerator({
 
         console.log('✅ Galería generada con éxito:', data.gallery.generatedImages.length, 'imágenes');
         
-        // Subir las imágenes generadas (data URLs) a Firebase Storage
-        setGenerationStatus("Subiendo imágenes a Firebase Storage...");
+        // Primero: Subir imágenes de referencia a Firebase Storage
+        setGenerationStatus("Subiendo imágenes de referencia a Firebase Storage...");
+        const uploadedReferenceUrls: string[] = [];
+        
+        for (let i = 0; i < referenceImages.length; i++) {
+          try {
+            console.log(`📤 Subiendo imagen de referencia ${i + 1}/${referenceImages.length} a Storage...`);
+            const url = await uploadBase64ToStorage(
+              referenceImages[i],
+              `ref-${Date.now()}-${i}.jpg`
+            );
+            uploadedReferenceUrls.push(url);
+            console.log(`✅ Imagen de referencia ${i + 1} subida: ${url}`);
+          } catch (uploadError: any) {
+            console.error(`❌ Error subiendo imagen de referencia ${i + 1}:`, uploadError);
+            throw new Error(`No se pudo subir la imagen de referencia ${i + 1}`);
+          }
+        }
+        
+        // Segundo: Subir las imágenes generadas (data URLs) a Firebase Storage
+        setGenerationStatus("Subiendo imágenes generadas a Firebase Storage...");
         const uploadedImageUrls: string[] = [];
         
         for (let i = 0; i < data.gallery.generatedImages.length; i++) {
           const img = data.gallery.generatedImages[i];
           try {
-            console.log(`📤 Subiendo imagen ${i + 1}/${data.gallery.generatedImages.length} a Storage...`);
+            console.log(`📤 Subiendo imagen generada ${i + 1}/${data.gallery.generatedImages.length} a Storage...`);
             
             const imagePath = `galleries/${artistId}/${Date.now()}-gen-${i}.jpg`;
             const imageRef = ref(storage, imagePath);
@@ -151,9 +199,9 @@ export function ImageGalleryGenerator({
             const url = await getDownloadURL(imageRef);
             
             uploadedImageUrls.push(url);
-            console.log(`✅ Imagen ${i + 1} subida: ${url}`);
+            console.log(`✅ Imagen generada ${i + 1} subida: ${url}`);
           } catch (uploadError: any) {
-            console.error(`❌ Error subiendo imagen ${i + 1}:`, uploadError);
+            console.error(`❌ Error subiendo imagen generada ${i + 1}:`, uploadError);
             // Si falla, usar la data URL original como fallback
             uploadedImageUrls.push(img.url);
           }
@@ -180,7 +228,7 @@ export function ImageGalleryGenerator({
             artistName,
             basePrompt: basePrompt || `Professional promotional photos of ${artistName} for "${singleName}"`,
             styleInstructions: styleInstructions || "Modern, high-quality, professional artist photography with creative lighting and composition",
-            referenceImageUrls: referenceImages, // Guardar las imágenes de referencia en base64 temporalmente
+            referenceImageUrls: uploadedReferenceUrls, // URLs de Firebase Storage (no base64)
             generatedImages: generatedImagesWithUrls,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),

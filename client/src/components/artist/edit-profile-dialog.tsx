@@ -88,10 +88,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   // Cargar shows al abrir el diálogo
   useEffect(() => {
     if (isOpen && artistId) {
-      // Ensure Firebase auth before loading data
-      ensureFirebaseAuth().then(() => {
-        loadShows();
-      });
+      loadShows();
     }
   }, [isOpen, artistId]);
 

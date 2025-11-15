@@ -5,6 +5,8 @@
  */
 import { GoogleGenAI, Modality } from "@google/genai";
 import { logger } from '../utils/logger';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Configurar múltiples clientes de Gemini para fallback automático
 const apiKeys = [
@@ -82,6 +84,48 @@ export interface ImageGenerationResult {
   error?: string;
   quotaError?: boolean;
   provider?: 'gemini' | 'fal' | 'fal-kontext' | 'unknown';
+}
+
+/**
+ * Sube una imagen base64 a Firebase Storage y devuelve su URL pública
+ * @param base64Data - Datos de la imagen en base64
+ * @param mimeType - Tipo MIME de la imagen (default: 'image/png')
+ * @param folder - Carpeta donde guardar (default: 'merchandise')
+ * @returns URL pública de la imagen en Storage
+ */
+async function uploadBase64ToStorage(
+  base64Data: string,
+  mimeType: string = 'image/png',
+  folder: string = 'merchandise'
+): Promise<string> {
+  try {
+    // Generar nombre único con timestamp
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(7);
+    const extension = mimeType.split('/')[1] || 'png';
+    const fileName = `${folder}/${timestamp}_${randomId}.${extension}`;
+    
+    // Convertir base64 a Buffer
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    // Subir a Firebase Storage
+    const storageRef = ref(storage, fileName);
+    const metadata = {
+      contentType: mimeType,
+    };
+    
+    logger.log(`📤 Subiendo imagen a Storage: ${fileName}`);
+    await uploadBytes(storageRef, imageBuffer, metadata);
+    
+    // Obtener URL pública
+    const downloadUrl = await getDownloadURL(storageRef);
+    logger.log(`✅ Imagen subida exitosamente: ${downloadUrl.substring(0, 100)}...`);
+    
+    return downloadUrl;
+  } catch (error: any) {
+    logger.error('❌ Error subiendo imagen a Storage:', error);
+    throw error;
+  }
 }
 
 /**
@@ -235,12 +279,16 @@ export async function generateCinematicImage(
         logger.log('Texto de respuesta:', part.text);
       } else if (part.inlineData && part.inlineData.data) {
         const imageBase64 = part.inlineData.data;
-        logger.log('Imagen generada exitosamente');
+        const mimeType = part.inlineData.mimeType || 'image/png';
+        logger.log('Imagen generada exitosamente, subiendo a Storage...');
+        
+        // Subir a Firebase Storage y obtener URL pública
+        const storageUrl = await uploadBase64ToStorage(imageBase64, mimeType, 'generated-images');
         
         return {
           success: true,
           imageBase64: imageBase64,
-          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`,
+          imageUrl: storageUrl,
           provider: 'gemini'
         };
       }
@@ -526,12 +574,16 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
         logger.log('Texto de respuesta:', part.text);
       } else if (part.inlineData && part.inlineData.data) {
         const imageBase64 = part.inlineData.data;
-        logger.log('Imagen con rostros adaptados generada exitosamente');
+        const mimeType = part.inlineData.mimeType || 'image/png';
+        logger.log('Imagen con rostros adaptados generada exitosamente, subiendo a Storage...');
+        
+        // Subir a Firebase Storage y obtener URL pública
+        const storageUrl = await uploadBase64ToStorage(imageBase64, mimeType, 'generated-images');
         
         return {
           success: true,
           imageBase64: imageBase64,
-          imageUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${imageBase64}`,
+          imageUrl: storageUrl,
           provider: 'gemini'
         };
       }
@@ -790,13 +842,24 @@ export async function generateImageWithFAL(
     
     // Verificar si hay imágenes en la respuesta
     if (response.data && response.data.images && response.data.images.length > 0) {
-      const imageUrl = response.data.images[0].url;
+      const tempImageUrl = response.data.images[0].url;
       
-      logger.log(`✅ Imagen generada con FAL AI Kontext Pro (rostro preservado)`);
+      logger.log(`✅ Imagen generada con FAL AI Kontext Pro, descargando y subiendo a Storage...`);
+      
+      // Descargar imagen temporal de FAL y subirla a Firebase Storage
+      const imageResponse = await axios.get(tempImageUrl, { 
+        responseType: 'arraybuffer',
+        timeout: 30000
+      });
+      const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
+      const mimeType = imageResponse.headers['content-type'] || 'image/png';
+      
+      // Subir a Firebase Storage
+      const storageUrl = await uploadBase64ToStorage(imageBase64, mimeType, 'generated-images');
       
       return {
         success: true,
-        imageUrl: imageUrl,
+        imageUrl: storageUrl,
         provider: 'fal-kontext',
         error: undefined
       };

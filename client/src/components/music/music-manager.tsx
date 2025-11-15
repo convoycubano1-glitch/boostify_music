@@ -3,7 +3,7 @@ import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
 import { db, storage } from "../../lib/firebase";
 import { collection, addDoc, query, where, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject, getStorage, UploadTaskSnapshot } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -40,7 +40,7 @@ export function MusicManager() {
       const songsRef = collection(db, 'artist_music');
       const q = query(
         songsRef,
-        where("artistId", "==", user.uid),
+        where("artistId", "==", user.id),
         orderBy("uploadedAt", "desc")
       );
 
@@ -94,23 +94,25 @@ export function MusicManager() {
 
     try {
       // Upload to Firebase Storage
-      const storageRef = ref(storage, `artist_music/${user.uid}/${fileName}`);
-      const uploadTask = uploadBytes(storageRef, file);
+      const storageRef = ref(storage, `artist_music/${user.id}/${fileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
       // Monitor upload progress
       uploadTask.on(
         'state_changed',
-        (snapshot: UploadTaskSnapshot) => {
+        (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
         },
-        (error) => {
+        (error: any) => {
           console.error('Error uploading file:', error);
           toast({
             title: "Upload Failed",
             description: "There was an error uploading your song. Please try again.",
             variant: "destructive",
           });
+          setIsUploading(false);
+          setUploadProgress(0);
         },
         async () => {
           const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
@@ -118,7 +120,7 @@ export function MusicManager() {
           // Save metadata to Firestore
           const songData = {
             title: fileName.replace(/\.[^/.]+$/, ""), // Remove file extension
-            artistId: user.uid,
+            artistId: user.id,
             fileName,
             fileUrl: downloadUrl,
             uploadedAt: new Date(),
@@ -132,6 +134,9 @@ export function MusicManager() {
             title: "Success",
             description: "Your song has been uploaded successfully.",
           });
+          
+          setIsUploading(false);
+          setUploadProgress(0);
         }
       );
     } catch (error) {
@@ -141,7 +146,6 @@ export function MusicManager() {
         description: "There was an error uploading your song. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsUploading(false);
       setUploadProgress(0);
     }
@@ -190,7 +194,7 @@ export function MusicManager() {
       }
 
       // Delete from Storage
-      const storageRef = ref(storage, `artist_music/${user.uid}/${song.fileName}`);
+      const storageRef = ref(storage, `artist_music/${user.id}/${song.fileName}`);
       await deleteObject(storageRef);
 
       // Delete from Firestore

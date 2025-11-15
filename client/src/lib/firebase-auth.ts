@@ -55,15 +55,19 @@ export async function authenticateWithFirebase(): Promise<boolean> {
 /**
  * Hook para usar en componentes que requieren autenticación de Firebase
  * Llama a esta función cuando el componente se monte
+ * Retorna true si la autenticación fue exitosa, false en caso contrario
  */
-export async function ensureFirebaseAuth(): Promise<void> {
+export async function ensureFirebaseAuth(): Promise<boolean> {
   if (authInitialized && auth.currentUser) {
-    return;
+    console.log('✅ Firebase ya autenticado');
+    return true;
   }
 
   const success = await authenticateWithFirebase();
   
   if (!success) {
-    console.warn('Firebase authentication failed - some features may not work');
+    console.error('❌ Firebase authentication failed - some features may not work');
   }
+  
+  return success;
 }

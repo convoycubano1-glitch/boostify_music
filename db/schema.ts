@@ -125,6 +125,48 @@ export const subscriptions = pgTable("subscriptions", {
   currentPeriodEnd: timestamp("current_period_end").notNull()
 });
 
+// Artist Wallet - Balance de créditos del artista
+export const artistWallet = pgTable("artist_wallet", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).unique().notNull(),
+  balance: decimal("balance", { precision: 10, scale: 2 }).default('0').notNull(), // Saldo disponible en créditos
+  totalEarnings: decimal("total_earnings", { precision: 10, scale: 2 }).default('0').notNull(), // Total ganado histórico
+  totalSpent: decimal("total_spent", { precision: 10, scale: 2 }).default('0').notNull(), // Total gastado
+  currency: text("currency").default("usd").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Sales Transactions - Historial de ventas de merchandise
+export const salesTransactions = pgTable("sales_transactions", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").references(() => users.id).notNull(),
+  merchandiseId: integer("merchandise_id").references(() => merchandise.id),
+  productName: text("product_name").notNull(),
+  saleAmount: decimal("sale_amount", { precision: 10, scale: 2 }).notNull(), // Precio total de venta
+  artistEarning: decimal("artist_earning", { precision: 10, scale: 2 }).notNull(), // 30% para el artista
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(), // 70% para la plataforma
+  quantity: integer("quantity").default(1).notNull(),
+  currency: text("currency").default("usd").notNull(),
+  buyerEmail: text("buyer_email"),
+  stripePaymentId: text("stripe_payment_id"),
+  status: text("status", { enum: ["pending", "completed", "refunded", "cancelled"] }).default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Wallet Transactions - Movimientos del wallet (ganancias y gastos)
+export const walletTransactions = pgTable("wallet_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type", { enum: ["earning", "spending", "refund", "adjustment"] }).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  balanceBefore: decimal("balance_before", { precision: 10, scale: 2 }).notNull(),
+  balanceAfter: decimal("balance_after", { precision: 10, scale: 2 }).notNull(),
+  description: text("description").notNull(),
+  relatedSaleId: integer("related_sale_id").references(() => salesTransactions.id),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
 export const marketingMetrics = pgTable("marketing_metrics", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -750,6 +792,21 @@ export const insertMerchandiseSchema = createInsertSchema(merchandise)
     price: z.union([z.string(), z.number()]).transform(val => String(val)),
   });
 export const selectMerchandiseSchema = createSelectSchema(merchandise);
+
+// Artist Wallet Schemas
+export const insertArtistWalletSchema = createInsertSchema(artistWallet)
+  .omit({ id: true, updatedAt: true });
+export const selectArtistWalletSchema = createSelectSchema(artistWallet);
+
+// Sales Transactions Schemas  
+export const insertSalesTransactionSchema = createInsertSchema(salesTransactions)
+  .omit({ id: true, createdAt: true });
+export const selectSalesTransactionSchema = createSelectSchema(salesTransactions);
+
+// Wallet Transactions Schemas
+export const insertWalletTransactionSchema = createInsertSchema(walletTransactions)
+  .omit({ id: true, createdAt: true });
+export const selectWalletTransactionSchema = createSelectSchema(walletTransactions);
 
 export const insertMusicianSchema = createInsertSchema(musicians)
   .omit({ id: true, createdAt: true, updatedAt: true })

@@ -11,7 +11,8 @@ import {
   setPersistence, 
   browserLocalPersistence,
   browserSessionPersistence,
-  indexedDBLocalPersistence
+  indexedDBLocalPersistence,
+  signInAnonymously
 } from "firebase/auth";
 import { 
   getFirestore, 
@@ -22,7 +23,6 @@ import {
   CACHE_SIZE_UNLIMITED
 } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 /**
  * Default Firebase configuration from environment variables
@@ -66,51 +66,33 @@ try {
 // Initialize Firebase app
 const app = initializeApp(enhancedConfig);
 
-// Initialize App Check with reCAPTCHA Enterprise
-// This protects your app from abuse by ensuring requests come from your app
-try {
-  // Solo inicializar App Check en producción o si no estamos en localhost
-  const isLocalhost = window.location.hostname === 'localhost' || 
-                     window.location.hostname === '127.0.0.1';
-  
-  if (!isLocalhost) {
-    const appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider('6LeloAssAAAAAG7GWlxW1QGReAw_2y-bYSVmmH3K'),
-      isTokenAutoRefreshEnabled: true
-    });
-    console.log('✅ [APP CHECK] Firebase App Check initialized with reCAPTCHA Enterprise');
-  } else {
-    console.log('⚠️ [APP CHECK] Skipped in localhost (development mode)');
-  }
-} catch (appCheckError) {
-  // No fallar si App Check tiene problemas, solo loguear
-  console.warn('⚠️ [APP CHECK] Failed to initialize:', appCheckError);
-}
+// App Check deshabilitado temporalmente para desarrollo
+// Se reactivará en producción una vez configurado correctamente
+console.log('⚠️ [APP CHECK] Disabled for development');
 
 const auth = getAuth(app);
 
 // Configurar persistencia de Auth para iOS
 // iOS Safari puede tener problemas con persistencia, configuramos múltiples estrategias
-// Intentar configurar persistencia con fallback para iOS
+// Autenticar anónimamente de forma automática
 (async () => {
   try {
     // Intentar usar indexedDB primero (más robusto)
     await setPersistence(auth, indexedDBLocalPersistence);
-    console.log('✅ [iOS] Auth persistence: indexedDB');
-  } catch (indexedDBError) {
-    try {
-      // Si falla indexedDB, usar localStorage
-      await setPersistence(auth, browserLocalPersistence);
-      console.log('✅ [iOS] Auth persistence: localStorage');
-    } catch (localStorageError) {
-      try {
-        // Último recurso: sessionStorage
-        await setPersistence(auth, browserSessionPersistence);
-        console.log('⚠️ [iOS] Auth persistence: sessionStorage (menos persistente)');
-      } catch (sessionError) {
-        console.warn('❌ [iOS] No se pudo configurar persistencia:', sessionError);
-      }
+    console.log('✅ Auth persistence: indexedDB');
+  } catch (error) {
+    console.warn('⚠️ Could not set persistence, continuing anyway');
+  }
+  
+  // Autenticar anónimamente si no hay usuario
+  try {
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+      console.log('✅ Firebase: Autenticado anónimamente');
     }
+  } catch (anonError: any) {
+    console.error('❌ Error en autenticación anónima:', anonError.message);
+    // Continuar de todas formas, las reglas están abiertas
   }
 })();
 

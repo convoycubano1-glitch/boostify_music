@@ -72,15 +72,29 @@ router.post('/create-and-generate', async (req: Request, res: Response) => {
           (async () => {
             try {
               // Intentar con Gemini primero
+              console.log(`🔄 Intentando generar imagen ${i + 1} con Gemini...`);
               let result = await generateImageWithMultipleFaceReferences(
                 imagePrompts[i],
                 referenceImages
               );
+              
+              console.log(`📊 Resultado de Gemini para imagen ${i + 1}:`, {
+                success: result.success,
+                hasImageUrl: !!result.imageUrl,
+                error: result.error,
+                quotaError: (result as any).quotaError
+              });
 
               // Si Gemini falla, usar FAL AI como fallback
-              if (!result.success && (result as any).quotaError) {
-                console.log(`⚠️ Gemini quota exceeded para imagen ${i + 1}, usando FAL AI...`);
+              if (!result.success) {
+                console.log(`⚠️ Gemini falló para imagen ${i + 1}, usando FAL AI como fallback...`);
+                console.log(`📝 Error de Gemini:`, result.error);
                 result = await generateImageWithFAL(imagePrompts[i], referenceImages, Date.now() + i);
+                console.log(`📊 Resultado de FAL para imagen ${i + 1}:`, {
+                  success: result.success,
+                  hasImageUrl: !!result.imageUrl,
+                  error: result.error
+                });
               }
 
               if (result.success && result.imageUrl) {
@@ -97,10 +111,12 @@ router.post('/create-and-generate', async (req: Request, res: Response) => {
                 };
               } else {
                 console.error(`❌ Error generando imagen ${i + 1}:`, result.error);
+                console.error(`❌ Resultado completo:`, result);
                 return null;
               }
             } catch (error: any) {
-              console.error(`❌ Excepción generando imagen ${i + 1}:`, error);
+              console.error(`❌ Excepción generando imagen ${i + 1}:`, error.message);
+              console.error(`❌ Stack:`, error.stack);
               return null;
             }
           })()

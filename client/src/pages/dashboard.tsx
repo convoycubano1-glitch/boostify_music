@@ -35,7 +35,7 @@ import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../hooks/use-auth";
 import { Card } from "../components/ui/card";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useToast } from "../hooks/use-toast";
 import { motion } from 'framer-motion';
 import EcosystemDashboard from "../components/dashboard/ecosystem-dashboard";
@@ -47,6 +47,7 @@ import { ensureFirebaseAuth } from "../lib/firebase-auth";
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [metrics, setMetrics] = useState({
     spotifyFollowers: 0,
     instagramFollowers: 0,
@@ -65,10 +66,12 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    if (!user) return;
-
-    // Authenticate with Firebase using Replit Auth session
-    ensureFirebaseAuth();
+    // Redirigir al login si no hay usuario autenticado
+    if (!user) {
+      console.warn('⚠️ Usuario no autenticado, redirigiendo a login...');
+      setLocation('/auth/login');
+      return;
+    }
 
     // Initialize metrics with default values
     // TODO: Implement PostgreSQL metrics table

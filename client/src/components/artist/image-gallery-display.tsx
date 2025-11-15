@@ -7,10 +7,20 @@ import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { db, storage } from "../../firebase";
-import { collection, query, where, getDocs, doc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc, updateDoc, arrayUnion, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Image as ImageIcon, Download, Trash2, RotateCw, Upload, Plus } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog";
 
 interface GeneratedImage {
   id: string;
@@ -39,9 +49,10 @@ interface ImageGallery {
 interface ImageGalleryDisplayProps {
   artistId: string;
   isOwner?: boolean;
+  refreshKey?: number;
 }
 
-export function ImageGalleryDisplay({ artistId, isOwner = false }: ImageGalleryDisplayProps) {
+export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 }: ImageGalleryDisplayProps) {
   const [galleries, setGalleries] = useState<ImageGallery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<{ url: string; prompt: string } | null>(null);
@@ -49,13 +60,15 @@ export function ImageGalleryDisplay({ artistId, isOwner = false }: ImageGalleryD
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [galleryTitle, setGalleryTitle] = useState('');
+  const [galleryToDelete, setGalleryToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('🖼️ ImageGalleryDisplay montado para artistId:', artistId);
+    console.log('🖼️ ImageGalleryDisplay montado para artistId:', artistId, 'refreshKey:', refreshKey);
     loadGalleries();
-  }, [artistId]);
+  }, [artistId, refreshKey]);
 
   const loadGalleries = async () => {
     try {
@@ -205,6 +218,32 @@ export function ImageGalleryDisplay({ artistId, isOwner = false }: ImageGalleryD
     }
   };
 
+  const handleDeleteGallery = async () => {
+    if (!galleryToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, "image_galleries", galleryToDelete));
+      
+      toast({
+        title: "Galería eliminada",
+        description: "La galería ha sido eliminada exitosamente.",
+      });
+
+      setGalleryToDelete(null);
+      loadGalleries();
+    } catch (error) {
+      console.error("Error deleting gallery:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la galería. Por favor intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -260,9 +299,21 @@ export function ImageGalleryDisplay({ artistId, isOwner = false }: ImageGalleryD
                   {gallery.generatedImages.length} imágenes generadas
                 </CardDescription>
               </div>
-              <Badge variant="secondary">
-                {new Date(gallery.createdAt).toLocaleDateString()}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {new Date(gallery.createdAt).toLocaleDateString()}
+                </Badge>
+                {isOwner && (
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => setGalleryToDelete(gallery.id)}
+                    data-testid={`button-delete-gallery-${gallery.id}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -428,6 +479,28 @@ export function ImageGalleryDisplay({ artistId, isOwner = false }: ImageGalleryD
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo de confirmación para eliminar galería */}
+      <AlertDialog open={!!galleryToDelete} onOpenChange={() => setGalleryToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar galería?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente esta galería y todas sus imágenes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteGallery}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

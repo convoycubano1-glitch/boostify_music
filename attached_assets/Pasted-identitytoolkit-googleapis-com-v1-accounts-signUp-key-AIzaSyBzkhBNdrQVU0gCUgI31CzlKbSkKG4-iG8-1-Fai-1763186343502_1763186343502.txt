@@ -1,0 +1,37 @@
+identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBzkhBNdrQVU0gCUgI31CzlKbSkKG4_iG8:1  Failed to load resource: the server responded with a status of 401 ()Understand this error
+firebase.ts:95 ❌ Error en autenticación anónima: Firebase: Error (auth/firebase-app-check-token-is-invalid.).
+(anonymous) @ firebase.ts:95Understand this error
+chunk-NFC5BX5N.js?v=85032d59:521 Warning: Connect(Droppable): Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.
+    at Provider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=85032d59:666:20)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=85032d59:7183:25)
+    at ErrorBoundary2 (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=85032d59:1680:35)
+    at DragDropContext (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=85032d59:7303:19)
+    at section
+    at main
+    at div
+    at div
+    at ArtistProfileCard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/artist/artist-profile-card.tsx:846:37)
+    at div
+    at ProfilePage (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/profile.tsx:25:18)
+    at div
+    at PageWrapper (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=HGFMlusqLsOHut4L9oupn:258:24)
+    at Route (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=85032d59:206:16)
+    at ProtectedRoute (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=85032d59:262:17)
+    at Suspense
+    at Router (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=HGFMlusqLsOHut4L9oupn:300:37)
+    at EditorProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/editor-context.tsx:56:34)
+    at GlobalAuthGuard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/global-auth-guard.tsx:45:35)
+    at SubscriptionProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/subscription-context.tsx:32:40)
+    at QueryClientProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=85032d59:3093:3)
+    at div
+    at ErrorBoundary (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=HGFMlusqLsOHut4L9oupn:207:5)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=HGFMlusqLsOHut4L9oupn:532:37)
+printWarning @ chunk-NFC5BX5N.js?v=85032d59:521Understand this error
+artist-profile-card.tsx:1001 ❌ Error fetching/creating merchandise: FirebaseError: The value of property "imageUrl" is longer than 1048487 bytes.
+queryFn @ artist-profile-card.tsx:1001Understand this error
+edit-profile-dialog.tsx:758 Error saving profile: FirebaseError: Missing or insufficient permissions.
+handleSave @ edit-profile-dialog.tsx:758Understand this error
+edit-profile-dialog.tsx:758 Error saving profile: FirebaseError: Missing or insufficient permissions.
+handleSave @ edit-profile-dialog.tsx:758Understand this error
+edit-profile-dialog.tsx:286 Error generating products: FirebaseError: Missing or insufficient permissions.
