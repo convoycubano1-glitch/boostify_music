@@ -275,6 +275,7 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/gemini-agents', geminiAgentsRouter);
   app.use('/api/printful', printfulRouter); // Printful integration routes
   app.use('/api/crowdfunding', crowdfundingRouter); // Crowdfunding routes
+  app.use('/api/tokenization', tokenizationRouter); // Tokenization (Web3/Blockchain) routes
   app.use(creditsRouter); // Credits and payment routes
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
