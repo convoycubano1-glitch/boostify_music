@@ -21,9 +21,11 @@ export class PrintfulService {
     const apiToken = process.env.PRINTFUL_API_TOKEN;
     
     if (!apiToken) {
+      console.error('⚠️ PRINTFUL_API_TOKEN no está configurado en las variables de entorno');
       throw new Error('PRINTFUL_API_TOKEN no está configurado');
     }
 
+    console.log('✅ Printful Service inicializado correctamente');
     this.api = axios.create({
       baseURL: 'https://api.printful.com',
       headers: {
@@ -282,12 +284,17 @@ export class PrintfulService {
   }
 }
 
-// Singleton instance
+// Singleton instance - se inicializa bajo demanda
 let printfulServiceInstance: PrintfulService | null = null;
 
 export function getPrintfulService(): PrintfulService {
   if (!printfulServiceInstance) {
-    printfulServiceInstance = new PrintfulService();
+    try {
+      printfulServiceInstance = new PrintfulService();
+    } catch (error) {
+      console.error('Error al inicializar Printful Service:', error);
+      throw error;
+    }
   }
   return printfulServiceInstance;
 }

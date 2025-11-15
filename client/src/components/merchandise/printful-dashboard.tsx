@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Package, ShoppingCart, Store, AlertCircle, CheckCircle } from "lucide-react";
-import { SiPrintful } from "react-icons/si";
+import { Package, ShoppingCart, Store, AlertCircle, CheckCircle, Printer } from "lucide-react";
 import { PrintfulCatalog } from "./printful-catalog";
 import { PrintfulOrders } from "./printful-orders";
 import { PrintfulSyncProducts } from "./printful-sync-products";
@@ -36,7 +35,7 @@ export function PrintfulDashboard() {
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
             <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg">
-              <SiPrintful className="h-8 w-8 text-white" />
+              <Printer className="h-8 w-8 text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold mb-2">Printful Integration</h2>
