@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
 
   // Use the URL id or fallback to the authenticated user's id
-  const artistId = id || user?.uid || null;
+  const artistId = id || (user?.id ? String(user.id) : null);
 
   // Query para obtener datos del artista
   const { data: artistData, isLoading } = useQuery<ArtistData>({

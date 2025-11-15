@@ -75,12 +75,32 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setError(null);
       
       try {
+        // ADMIN tiene acceso premium automático
+        if (user.email === 'convoycubano@gmail.com') {
+          setSubscription({
+            id: 'admin',
+            userId: String(user.id),
+            plan: 'premium',
+            status: 'active',
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 año
+            cancelAtPeriodEnd: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          setIsLoading(false);
+          return;
+        }
+        
         // Verificar si existe una suscripción activa para el usuario
         const subscriptionsRef = collection(db, 'subscriptions');
         
+        // Usar user.id en lugar de user.uid (Replit Auth usa id, no uid)
+        const userId = String(user.id); // Convertir a string para Firestore
+        
         // Obtener la primera suscripción activa del usuario
         // En caso real, se usaría una consulta más precisa con Firestore
-        const subscriptionDoc = await getDoc(doc(db, 'user_subscriptions', user.uid));
+        const subscriptionDoc = await getDoc(doc(db, 'user_subscriptions', userId));
         
         if (subscriptionDoc.exists()) {
           // Obtener la suscripción activa

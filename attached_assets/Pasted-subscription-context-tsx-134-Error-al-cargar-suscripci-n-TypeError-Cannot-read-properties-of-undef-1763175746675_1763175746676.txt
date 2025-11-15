@@ -1,0 +1,89 @@
+subscription-context.tsx:134 Error al cargar suscripción: TypeError: Cannot read properties of undefined (reading 'indexOf')
+    at _ResourcePath.fromString (firebase_firestore.js?v=85032d59:3165:13)
+    at doc (firebase_firestore.js?v=85032d59:16008:28)
+    at loadSubscription (subscription-context.tsx:83:46)
+    at subscription-context.tsx:140:5
+    at commitHookEffectListMount (chunk-NFC5BX5N.js?v=85032d59:16915:34)
+    at commitPassiveMountOnFiber (chunk-NFC5BX5N.js?v=85032d59:18156:19)
+    at commitPassiveMountEffects_complete (chunk-NFC5BX5N.js?v=85032d59:18129:17)
+    at commitPassiveMountEffects_begin (chunk-NFC5BX5N.js?v=85032d59:18119:15)
+    at commitPassiveMountEffects (chunk-NFC5BX5N.js?v=85032d59:18109:11)
+    at flushPassiveEffectsImpl (chunk-NFC5BX5N.js?v=85032d59:19490:11)
+loadSubscription @ subscription-context.tsx:134Understand this error
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/firestore-social/users 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+apiRequest @ queryClient.ts:59
+await in apiRequest
+queryFn @ firestore-social.tsx:121
+fetchFn @ @tanstack_react-query.js?v=85032d59:1101
+run @ @tanstack_react-query.js?v=85032d59:800
+start @ @tanstack_react-query.js?v=85032d59:843
+fetch @ @tanstack_react-query.js?v=85032d59:1148
+executeFetch_fn @ @tanstack_react-query.js?v=85032d59:1651
+onSubscribe @ @tanstack_react-query.js?v=85032d59:1344
+subscribe @ @tanstack_react-query.js?v=85032d59:24
+(anonymous) @ @tanstack_react-query.js?v=85032d59:3310
+subscribeToStore @ chunk-NFC5BX5N.js?v=85032d59:11984
+commitHookEffectListMount @ chunk-NFC5BX5N.js?v=85032d59:16915
+commitPassiveMountOnFiber @ chunk-NFC5BX5N.js?v=85032d59:18156
+commitPassiveMountEffects_complete @ chunk-NFC5BX5N.js?v=85032d59:18129
+commitPassiveMountEffects_begin @ chunk-NFC5BX5N.js?v=85032d59:18119
+commitPassiveMountEffects @ chunk-NFC5BX5N.js?v=85032d59:18109
+flushPassiveEffectsImpl @ chunk-NFC5BX5N.js?v=85032d59:19490
+flushPassiveEffects @ chunk-NFC5BX5N.js?v=85032d59:19447
+performSyncWorkOnRoot @ chunk-NFC5BX5N.js?v=85032d59:18868
+flushSyncCallbacks @ chunk-NFC5BX5N.js?v=85032d59:9119
+commitRootImpl @ chunk-NFC5BX5N.js?v=85032d59:19432
+commitRoot @ chunk-NFC5BX5N.js?v=85032d59:19277
+finishConcurrentRender @ chunk-NFC5BX5N.js?v=85032d59:18805
+performConcurrentWorkOnRoot @ chunk-NFC5BX5N.js?v=85032d59:18718
+workLoop @ chunk-NFC5BX5N.js?v=85032d59:197
+flushWork @ chunk-NFC5BX5N.js?v=85032d59:176
+performWorkUntilDeadline @ chunk-NFC5BX5N.js?v=85032d59:384Understand this error
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/firestore-social/posts 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+apiRequest @ queryClient.ts:59
+await in apiRequest
+queryFn @ firestore-social.tsx:170
+fetchFn @ @tanstack_react-query.js?v=85032d59:1101
+run @ @tanstack_react-query.js?v=85032d59:800
+start @ @tanstack_react-query.js?v=85032d59:843
+fetch @ @tanstack_react-query.js?v=85032d59:1148
+executeFetch_fn @ @tanstack_react-query.js?v=85032d59:1651
+onSubscribe @ @tanstack_react-query.js?v=85032d59:1344
+subscribe @ @tanstack_react-query.js?v=85032d59:24
+(anonymous) @ @tanstack_react-query.js?v=85032d59:3310
+subscribeToStore @ chunk-NFC5BX5N.js?v=85032d59:11984
+commitHookEffectListMount @ chunk-NFC5BX5N.js?v=85032d59:16915
+commitPassiveMountOnFiber @ chunk-NFC5BX5N.js?v=85032d59:18156
+commitPassiveMountEffects_complete @ chunk-NFC5BX5N.js?v=85032d59:18129
+commitPassiveMountEffects_begin @ chunk-NFC5BX5N.js?v=85032d59:18119
+commitPassiveMountEffects @ chunk-NFC5BX5N.js?v=85032d59:18109
+flushPassiveEffectsImpl @ chunk-NFC5BX5N.js?v=85032d59:19490
+flushPassiveEffects @ chunk-NFC5BX5N.js?v=85032d59:19447
+performSyncWorkOnRoot @ chunk-NFC5BX5N.js?v=85032d59:18868
+flushSyncCallbacks @ chunk-NFC5BX5N.js?v=85032d59:9119
+commitRootImpl @ chunk-NFC5BX5N.js?v=85032d59:19432
+commitRoot @ chunk-NFC5BX5N.js?v=85032d59:19277
+finishConcurrentRender @ chunk-NFC5BX5N.js?v=85032d59:18805
+performConcurrentWorkOnRoot @ chunk-NFC5BX5N.js?v=85032d59:18718
+workLoop @ chunk-NFC5BX5N.js?v=85032d59:197
+flushWork @ chunk-NFC5BX5N.js?v=85032d59:176
+performWorkUntilDeadline @ chunk-NFC5BX5N.js?v=85032d59:384Understand this error
+dashboard.tsx:115 Error fetching metrics: FirebaseError: Missing or insufficient permissions.
+fetchMetrics @ dashboard.tsx:115
+await in fetchMetrics
+(anonymous) @ dashboard.tsx:124
+commitHookEffectListMount @ chunk-NFC5BX5N.js?v=85032d59:16915
+commitPassiveMountOnFiber @ chunk-NFC5BX5N.js?v=85032d59:18156
+commitPassiveMountEffects_complete @ chunk-NFC5BX5N.js?v=85032d59:18129
+commitPassiveMountEffects_begin @ chunk-NFC5BX5N.js?v=85032d59:18119
+commitPassiveMountEffects @ chunk-NFC5BX5N.js?v=85032d59:18109
+flushPassiveEffectsImpl @ chunk-NFC5BX5N.js?v=85032d59:19490
+flushPassiveEffects @ chunk-NFC5BX5N.js?v=85032d59:19447
+commitRootImpl @ chunk-NFC5BX5N.js?v=85032d59:19416
+commitRoot @ chunk-NFC5BX5N.js?v=85032d59:19277
+performSyncWorkOnRoot @ chunk-NFC5BX5N.js?v=85032d59:18895
+flushSyncCallbacks @ chunk-NFC5BX5N.js?v=85032d59:9119
+(anonymous) @ chunk-NFC5BX5N.js?v=85032d59:18627Understand this error
+dashboard.tsx:115 Error fetching metrics: FirebaseError: Missing or insufficient permissions.

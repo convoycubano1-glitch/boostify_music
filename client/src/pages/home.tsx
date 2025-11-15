@@ -13,7 +13,6 @@ import {
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
 import { useAuth } from "../hooks/use-auth";
-import { authService } from "../services/auth-service";
 import { useToast } from "../hooks/use-toast";
 import { Footer } from "../components/layout/footer";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
@@ -420,25 +419,9 @@ export default function HomePage() {
     };
   }, []);
 
-  const handleGoogleLogin = async () => {
-    try {
-      // Usar directamente el servicio de autenticación de Firebase
-      await authService.signInWithGoogle('/dashboard');
-      
-      toast({
-        title: "Success",
-        description: "Successfully logged in. Redirecting to dashboard..."
-      });
-      
-      // No es necesario setLocation ya que el método signInWithGoogle maneja la redirección
-    } catch (error: any) {
-      console.error("Login error:", error);
-      toast({
-        title: "Authentication Error",
-        description: "Could not sign in with Google. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const handleGoogleLogin = () => {
+    // Redirigir a la página de signup que muestra los planes
+    window.location.href = '/signup';
   };
 
   // Calculate days until launch
@@ -449,7 +432,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Promotional Banner */}
+      {/* Beta Development Notice */}
+      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white py-3 sticky top-0 z-50">
+        <div className="container mx-auto px-4">
+          <p className="text-center text-sm md:text-base font-medium">
+            🚀 Platform in Beta Testing & Development Phase - Official Launch: January 2026
+          </p>
+        </div>
+      </div>
       
       {/* Hero Section - Modern and Eye-catching */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
@@ -530,7 +520,7 @@ export default function HomePage() {
                   <span className="font-medium">Get Started</span>
                 </Button>
                 
-                <Link href="/pricing">
+                <Link href="/signup">
                   <Button 
                     size="lg" 
                     variant="outline" 
@@ -1182,9 +1172,9 @@ export default function HomePage() {
             transition={{ delay: 0.4 }}
             className="text-center mt-10"
           >
-            <Link href="/pricing">
+            <Link href="/signup">
               <Button variant="link" className="text-orange-500 hover:text-orange-400">
-                View detailed pricing comparison
+                View all plans and features
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
@@ -1283,13 +1273,13 @@ export default function HomePage() {
                 Get Started Now
                 <MoveRight className="ml-2 h-5 w-5" />
               </Button>
-              <Link href="/pricing">
+              <Link href="/signup">
                 <Button 
                   size="lg" 
                   variant="outline" 
                   className="border-white px-8 py-6 text-lg font-medium hover:bg-white/10"
                 >
-                  View Pricing
+                  View Plans
                 </Button>
               </Link>
             </div>

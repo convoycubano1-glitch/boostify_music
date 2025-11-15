@@ -1,0 +1,210 @@
+content.js:1 **** start checkBgReady
+content.js:1 +++++ checkBgReady response true
+content.js:1 **** end checkBgReady
+content.js:1 init port
+inpage.js:1 MetaMask: Connected to chain with ID "0x1".
+client:495 [vite] connecting...
+content.js:1 get message from injected CustomEvent
+content.js:1 get message from injected CustomEvent
+injected.js:1 Provider initialised
+injected.js:1 Provider initialised
+injected.js:1 Provider initialised
+content.js:1 get message from injected CustomEvent
+content.js:1 **** MessageNode handle message Object
+content.js:1 **** handleReply Object
+injected.js:1 get reply message from undefined CustomEvent
+injected.js:1 request handler got reply event Object
+content.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+content.js:1 **** MessageNode handle message Object
+content.js:1 **** handleReply Object
+injected.js:1 get reply message from undefined CustomEvent
+injected.js:1 request handler got reply event Object
+content.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+content.js:1 **** MessageNode handle message Object
+content.js:1 **** handleReply Object
+injected.js:1 get reply message from undefined CustomEvent
+injected.js:1 request handler got reply event Object
+content.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+injected.js:1 TronLink initiated
+chunk-NFC5BX5N.js?v=85032d59:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+firebase.ts:81 ✅ [APP CHECK] Firebase App Check initialized with reCAPTCHA Enterprise
+firebase.ts:146 ✅ Firestore initialized with enhanced persistence
+firebase.ts:157 Firebase initialized with enhanced network resilience and multi-tab support
+hmr-error-handler.ts:80 [HMR] Manejador de errores de WebSocket configurado correctamente
+hmr-error-handler.ts:85 WebSocket mejorado para prevenir errores de Vite HMR
+improved-websocket-context.tsx:199 WebSocket mejorado para prevenir errores de Vite HMR
+improved-websocket-context.tsx:199 WebSocket mejorado para prevenir errores de Vite HMR
+client:618 [vite] connected.
+firebase.ts:99 ✅ [iOS] Auth persistence: indexedDB
+content.js:1 get message from injected CustomEvent
+injected.js:1 Provider initialised
+injected.js:1 Provider initialised
+injected.js:1 Provider initialised
+content.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+content.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+content.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+injected.js:1 TronLink initiated
+stripe-service.ts:81 Creando sesión de checkout para: price_1R0lay2LyFplWimfQxUL6Hn0
+api/stripe/create-subscription:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+stripe-service.ts:99 Error creating checkout session: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:66:5)
+    at async createCheckoutSession (stripe-service.ts:85:22)
+    at async handleSignUp (auth-signup.tsx:139:27)
+createCheckoutSession @ stripe-service.ts:99
+stripe-service.ts:100 Error message: 401: {"success":false,"message":"User not authenticated"}
+createCheckoutSession @ stripe-service.ts:100
+stripe-service.ts:101 Error stack: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/queryClient.ts:6:11)
+    at async apiRequest (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/queryClient.ts:41:5)
+    at async createCheckoutSession (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/stripe-service.ts:29:22)
+    at async handleSignUp (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/auth-signup.tsx:156:27)
+createCheckoutSession @ stripe-service.ts:101
+auth-signup.tsx:147 Error al crear sesión de checkout: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:66:5)
+    at async createCheckoutSession (stripe-service.ts:85:22)
+    at async handleSignUp (auth-signup.tsx:139:27)
+handleSignUp @ auth-signup.tsx:147
+stripe-service.ts:81 Creando sesión de checkout para: price_1R0lay2LyFplWimfQxUL6Hn0
+api/stripe/create-subscription:1  Failed to load resource: the server responded with a status of 401 (Unauthorized)
+stripe-service.ts:99 Error creating checkout session: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:66:5)
+    at async createCheckoutSession (stripe-service.ts:85:22)
+    at async handleSignUp (auth-signup.tsx:139:27)
+createCheckoutSession @ stripe-service.ts:99
+stripe-service.ts:100 Error message: 401: {"success":false,"message":"User not authenticated"}
+createCheckoutSession @ stripe-service.ts:100
+stripe-service.ts:101 Error stack: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/queryClient.ts:6:11)
+    at async apiRequest (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/queryClient.ts:41:5)
+    at async createCheckoutSession (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/stripe-service.ts:29:22)
+    at async handleSignUp (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/auth-signup.tsx:156:27)
+createCheckoutSession @ stripe-service.ts:101
+auth-signup.tsx:147 Error al crear sesión de checkout: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:66:5)
+    at async createCheckoutSession (stripe-service.ts:85:22)
+    at async handleSignUp (auth-signup.tsx:139:27)
+handleSignUp @ auth-signup.tsx:147
+stripe-service.ts:81 Creando sesión de checkout para: price_1R0lay2LyFplWimfQxUL6Hn0
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/stripe/create-subscription 401 (Unauthorized)
+window.fetch @ hmr-error-handler.ts:15
+apiRequest @ queryClient.ts:59
+await in apiRequest
+createCheckoutSession @ stripe-service.ts:85
+handleSignUp @ auth-signup.tsx:139
+onClick @ auth-signup.tsx:292
+callCallback2 @ chunk-NFC5BX5N.js?v=85032d59:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=85032d59:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=85032d59:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=85032d59:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=85032d59:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=85032d59:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=85032d59:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=85032d59:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=85032d59:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=85032d59:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=85032d59:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=85032d59:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=85032d59:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=85032d59:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=85032d59:5449
+stripe-service.ts:99 Error creating checkout session: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:66:5)
+    at async createCheckoutSession (stripe-service.ts:85:22)
+    at async handleSignUp (auth-signup.tsx:139:27)
+createCheckoutSession @ stripe-service.ts:99
+await in createCheckoutSession
+handleSignUp @ auth-signup.tsx:139
+onClick @ auth-signup.tsx:292
+callCallback2 @ chunk-NFC5BX5N.js?v=85032d59:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=85032d59:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=85032d59:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=85032d59:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=85032d59:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=85032d59:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=85032d59:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=85032d59:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=85032d59:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=85032d59:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=85032d59:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=85032d59:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=85032d59:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=85032d59:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=85032d59:5449
+stripe-service.ts:100 Error message: 401: {"success":false,"message":"User not authenticated"}
+createCheckoutSession @ stripe-service.ts:100
+await in createCheckoutSession
+handleSignUp @ auth-signup.tsx:139
+onClick @ auth-signup.tsx:292
+callCallback2 @ chunk-NFC5BX5N.js?v=85032d59:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=85032d59:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=85032d59:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=85032d59:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=85032d59:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=85032d59:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=85032d59:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=85032d59:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=85032d59:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=85032d59:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=85032d59:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=85032d59:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=85032d59:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=85032d59:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=85032d59:5449
+stripe-service.ts:101 Error stack: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/queryClient.ts:6:11)
+    at async apiRequest (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/queryClient.ts:41:5)
+    at async createCheckoutSession (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/api/stripe-service.ts:29:22)
+    at async handleSignUp (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/auth-signup.tsx:156:27)
+createCheckoutSession @ stripe-service.ts:101
+await in createCheckoutSession
+handleSignUp @ auth-signup.tsx:139
+onClick @ auth-signup.tsx:292
+callCallback2 @ chunk-NFC5BX5N.js?v=85032d59:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=85032d59:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=85032d59:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=85032d59:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=85032d59:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=85032d59:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=85032d59:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=85032d59:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=85032d59:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=85032d59:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=85032d59:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=85032d59:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=85032d59:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=85032d59:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=85032d59:5449
+auth-signup.tsx:147 Error al crear sesión de checkout: Error: 401: {"success":false,"message":"User not authenticated"}
+    at throwIfResNotOk (queryClient.ts:7:11)
+    at async apiRequest (queryClient.ts:66:5)
+    at async createCheckoutSession (stripe-service.ts:85:22)
+    at async handleSignUp (auth-signup.tsx:139:27)
+handleSignUp @ auth-signup.tsx:147
+await in handleSignUp
+onClick @ auth-signup.tsx:292
+callCallback2 @ chunk-NFC5BX5N.js?v=85032d59:3674
+invokeGuardedCallbackDev @ chunk-NFC5BX5N.js?v=85032d59:3699
+invokeGuardedCallback @ chunk-NFC5BX5N.js?v=85032d59:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-NFC5BX5N.js?v=85032d59:3736
+executeDispatch @ chunk-NFC5BX5N.js?v=85032d59:7014
+processDispatchQueueItemsInOrder @ chunk-NFC5BX5N.js?v=85032d59:7034
+processDispatchQueue @ chunk-NFC5BX5N.js?v=85032d59:7043
+dispatchEventsForPlugins @ chunk-NFC5BX5N.js?v=85032d59:7051
+(anonymous) @ chunk-NFC5BX5N.js?v=85032d59:7174
+batchedUpdates$1 @ chunk-NFC5BX5N.js?v=85032d59:18913
+batchedUpdates @ chunk-NFC5BX5N.js?v=85032d59:3579
+dispatchEventForPluginEventSystem @ chunk-NFC5BX5N.js?v=85032d59:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-NFC5BX5N.js?v=85032d59:5478
+dispatchEvent @ chunk-NFC5BX5N.js?v=85032d59:5472
+dispatchDiscreteEvent @ chunk-NFC5BX5N.js?v=85032d59:5449

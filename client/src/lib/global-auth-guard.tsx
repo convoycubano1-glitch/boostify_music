@@ -15,7 +15,9 @@ const PUBLIC_ROUTES = [
   '/',
   '/auth',
   '/login',
+  '/signup',
   '/register',
+  '/dashboard', // Temporal para debugging auth
   '/pricing',
   '/features',
   '/privacy',

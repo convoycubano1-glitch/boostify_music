@@ -525,13 +525,12 @@ export function registerRoutes(app: Express): HttpServer {
     });
   });
   
-  // Registrar rutas protegidas por control de acceso por suscripción
-  // Servicios que requieren autenticación - después de definir todas las rutas públicas
-  setupAuth(app);
+  // NOTE: setupAuth() is now called from server/index.ts AFTER registerRoutes() 
+  // but BEFORE setupVite() to ensure auth endpoints are registered before Vite's catch-all
   
-  // Register contracts router AFTER setupAuth() to ensure Passport is initialized
+  // Register contracts router (Passport is initialized in server/index.ts)
   app.use('/api/contracts', contractsRouter);
-  console.log('✅ Router de contratos registrado (después de setupAuth)');
+  console.log('✅ Router de contratos registrado');
   
   setupSpotifyRoutes(app);
   setupInstagramRoutes(app);

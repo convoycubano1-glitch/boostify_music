@@ -113,10 +113,29 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
+    try {
+      // Create user object with session data
+      const user: any = {};
+      updateUserSession(user, tokens);
+      
+      // Upsert user in database and get the result
+      const dbUser = await upsertUser(tokens.claims());
+      
+      // Merge DB user data with session data
+      Object.assign(user, {
+        id: dbUser.id,
+        replitId: dbUser.replitId,
+        email: dbUser.email,
+        firstName: dbUser.firstName,
+        lastName: dbUser.lastName,
+        role: dbUser.role,
+      });
+      
+      verified(null, user);
+    } catch (error) {
+      console.error('❌ [VERIFY] Error verifying user:', error);
+      verified(error as Error, false);
+    }
   };
 
   // Keep track of registered strategies
@@ -140,8 +159,13 @@ export async function setupAuth(app: Express) {
     }
   };
 
-  passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+  passport.serializeUser((user: Express.User, cb) => {
+    cb(null, user);
+  });
+  
+  passport.deserializeUser((user: Express.User, cb) => {
+    cb(null, user);
+  });
 
   // Login route
   app.get("/api/login", (req, res, next) => {
@@ -155,9 +179,25 @@ export async function setupAuth(app: Express) {
   // Callback route
   app.get("/api/callback", (req, res, next) => {
     ensureStrategy(req.hostname);
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
+    passport.authenticate(`replitauth:${req.hostname}`, (err: any, user: any, info: any) => {
+      if (err) {
+        console.error('❌ [AUTH CALLBACK] Error:', err);
+        return res.redirect("/api/login");
+      }
+      
+      if (!user) {
+        console.error('❌ [AUTH CALLBACK] No user returned');
+        return res.redirect("/api/login");
+      }
+      
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error('❌ [AUTH CALLBACK] Login error:', loginErr);
+          return res.redirect("/api/login");
+        }
+        
+        return res.redirect("/dashboard");
+      });
     })(req, res, next);
   });
 
@@ -173,32 +213,14 @@ export async function setupAuth(app: Express) {
     });
   });
 
-  // User info route
-  app.get("/api/auth/user", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).claims.sub;
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.replitId, userId))
-        .limit(1);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // NOTE: /api/auth/user is now registered in server/index.ts to bypass Vite interception
+  // The route was moved there to ensure it's registered before Vite's catch-all middleware
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -209,8 +231,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
@@ -219,7 +240,6 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     updateUserSession(user, tokenResponse);
     return next();
   } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };

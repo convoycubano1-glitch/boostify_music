@@ -117,6 +117,19 @@ app.use((req, res, next) => {
     const { checkEnvironment } = await import('./utils/environment-check');
     checkEnvironment();
     
+    // CRITICAL: Setup Replit Auth FIRST before ANY routes
+    // This must be BEFORE all endpoints so they have access to req.user and req.session
+    log('🔐 Setting up Replit Auth...');
+    try {
+      const { setupAuth } = await import('./replitAuth');
+      await setupAuth(app);
+      log('✅ Replit Auth configured successfully');
+    } catch (error) {
+      log(`❌ ERROR setting up Replit Auth: ${error}`);
+      console.error('Full error:', error);
+      throw error;
+    }
+    
     // Serve uploaded files statically
     const uploadsPath = path.join(process.cwd(), 'uploads');
     app.use('/uploads', express.static(uploadsPath));
@@ -124,6 +137,56 @@ app.use((req, res, next) => {
 
     // IMPORTANT: Register API routes BEFORE static file serving
     const server = registerRoutes(app);
+    
+
+    // Register /api/auth/user FIRST before anything else
+    // This MUST be before setupAuth() and setupVite() to avoid interception
+    log('🔐 Registering /api/auth/user endpoint...');
+    app.get('/api/auth/user', async (req: any, res) => {
+      try {
+        // Check if user is authenticated
+        if (!req.isAuthenticated || !req.isAuthenticated()) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        // Get user from database
+        const user = req.user;
+        if (!user || !user.claims || !user.claims.sub) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        const replitId = user.claims.sub;
+        const userEmail = user.claims.email;
+        
+        // Check if user is admin (convoycubano@gmail.com)
+        const isAdmin = userEmail === 'convoycubano@gmail.com';
+        
+        const { db } = await import('./db');
+        const { users } = await import('@db/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        const [dbUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.replitId, replitId))
+          .limit(1);
+        
+        if (!dbUser) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Return user with admin status
+        res.json({
+          ...dbUser,
+          isAdmin,
+          role: isAdmin ? 'admin' : (dbUser.role || 'artist')
+        });
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).json({ message: "Failed to fetch user" });
+      }
+    });
+    log('✅ /api/auth/user endpoint registered');
     
     // Aumentar timeout del servidor a 5 minutos (300 segundos) para generar galerías de imágenes
     server.timeout = 300000; // 5 minutos en milisegundos

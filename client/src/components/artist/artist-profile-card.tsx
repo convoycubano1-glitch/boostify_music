@@ -625,7 +625,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   };
 
   
-  const isOwnProfile = user?.uid === artistId;
+  const isOwnProfile = user?.id ? String(user.id) === artistId : false;
   const colors = colorPalettes[selectedTheme];
 
   // Helper function to extract Spotify Artist ID from URL

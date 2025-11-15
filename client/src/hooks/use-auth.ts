@@ -3,11 +3,27 @@
  * Reemplaza Firebase Auth pero mantiene Firestore intacto
  */
 import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
+
+// Tipo de usuario basado en el schema de la base de datos
+interface User {
+  id: number;
+  replitId?: string | null;
+  username?: string | null;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  role: string;
+}
 
 export function useAuth() {
-  const { data: user, isLoading } = useQuery({
+  // Usar queryFn personalizado que retorna null en 401 en lugar de lanzar error
+  const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
   const logout = () => {
@@ -19,7 +35,7 @@ export function useAuth() {
   };
 
   return {
-    user,
+    user: user ?? null,
     isLoading,
     loading: isLoading,
     isAuthenticated: !!user,

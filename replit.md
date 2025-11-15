@@ -7,7 +7,51 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### ✂️ Mejora Timeline: Resize/Stretch de Clips Estilo CapCut (LATEST)
+### 🔐 Critical Fix: Replit Auth Endpoint Routing + React Query 401 Handling (LATEST)
+**Fecha**: 15 de Noviembre, 2024
+**Problema**: La aplicación se quedaba atascada en "Verificando acceso..." con bucle infinito de errores 401.
+
+**Causa raíz (Parte 1 - Backend)**: 
+- Vite's catch-all middleware (`app.use("*", ...)` en `server/vite.ts`) estaba interceptando el endpoint `/api/auth/user` antes de que pudiera llegar a los handlers de Express
+- El endpoint se registraba dentro de `setupAuth()` → `registerRoutes()`, pero el middleware de Vite tenía prioridad
+- Resultado: el endpoint devolvía HTML en lugar de JSON/401
+
+**Causa raíz (Parte 2 - Frontend)**:
+- El `queryClient` estaba configurado con `on401: "throw"` por defecto
+- React Query trataba el 401 como un error, causando que `isLoading` se quedara en `true` permanentemente
+- El hook `useAuth` intentaba manejar el error, pero React Query seguía en estado de error
+
+**Solución implementada**:
+
+**Backend**:
+1. ✅ Movió `/api/auth/user` de `server/replitAuth.ts` a `server/index.ts`
+2. ✅ Se registra DESPUÉS de `registerRoutes(app)` pero ANTES de `setupVite(app, server)`
+3. ✅ Esto asegura que el endpoint tenga prioridad sobre el catch-all de Vite
+
+**Frontend**:
+1. ✅ Modificó `useAuth()` para usar `getQueryFn({ on401: "returnNull" })`
+2. ✅ Ahora cuando el endpoint devuelve 401, React Query devuelve `null` en lugar de lanzar error
+3. ✅ Eliminó lógica compleja de manejo de errores que ya no es necesaria
+
+**Archivos modificados**:
+- `server/index.ts` - Llama a `setupAuth()` DESPUÉS de `registerRoutes()` pero ANTES de `setupVite()` (líneas 136-148)
+- `server/index.ts` - Sobrescribe `/api/auth/user` para manejo directo sin middleware (líneas 150-175)
+- `server/routes.ts` - Eliminó llamada a `setupAuth()` (ahora se llama desde index.ts)
+- `server/replitAuth.ts` - Eliminó endpoint duplicado `/api/auth/user`, dejó nota explicativa
+- `client/src/hooks/use-auth.ts` - Usa `getQueryFn({ on401: "returnNull" })`
+- `client/src/pages/home.tsx` - Cambió botón "Get Started" para redirigir a `/api/login` en lugar de Firebase Auth
+
+**Comportamiento correcto**:
+- Usuario NO autenticado: endpoint devuelve 401, React Query devuelve `null`, `isLoading` = `false`
+- Usuario autenticado: endpoint devuelve datos del usuario, React Query los cachea correctamente
+- No hay bucle infinito de errores, la aplicación carga la UI apropiada inmediatamente
+
+**Nota técnica importante**: 
+- Este endpoint NO puede estar en `setupAuth()` porque se registra antes que Vite
+- Vite's middleware se ejecuta en orden, y su catch-all captura todas las rutas no manejadas
+- Para endpoints de autenticación, siempre usar `getQueryFn({ on401: "returnNull" })` en React Query
+
+### ✂️ Mejora Timeline: Resize/Stretch de Clips Estilo CapCut
 **Fecha**: 14 de Noviembre, 2024
 **Objetivo**: Implementar funcionalidad de estirar/alargar clips como en CapCut
 

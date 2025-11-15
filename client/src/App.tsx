@@ -19,6 +19,8 @@ import { CustomerServiceAgent } from "./components/agents/customer-service-agent
 import NotFound from "./pages/not-found";
 import HomePage from "./pages/home";
 import AuthPage from "./pages/auth-page";
+import LoginPage from "./pages/login";
+import AuthSignupPage from "./pages/auth-signup";
 import DashboardPage from "./pages/dashboard";
 import ProfilePage from "./pages/profile";
 
@@ -261,6 +263,8 @@ const Router = () => {
   const WrappedVirtualRecordLabelPage = withPageWrapper(VirtualRecordLabelPage);
   const WrappedTestProgressPage = withPageWrapper(TestProgressPage);
   const WrappedAuthPage = withPageWrapper(AuthPage);
+  const WrappedLoginPage = withPageWrapper(LoginPage);
+  const WrappedAuthSignupPage = withPageWrapper(AuthSignupPage);
   const WrappedPluginsPage = withPageWrapper(PluginsPage);
   const WrappedTryOnPage = withPageWrapper(TryOnPage);
   const WrappedPricingPage = withPageWrapper(PricingPage);
@@ -292,6 +296,8 @@ const Router = () => {
           {/* Rutas públicas - accesibles sin autenticación */}
           {getRouteComponent("/", WrappedHomePage, null)}
           {getRouteComponent("/auth", WrappedAuthPage, null)}
+          {getRouteComponent("/login", WrappedLoginPage, null)}
+          {getRouteComponent("/signup", WrappedAuthSignupPage, null)}
           {getRouteComponent("/diagnostics", WrappedDiagnosticsPage, null)}
           {getRouteComponent("/terms", WrappedTermsPage, null)}
           {getRouteComponent("/privacy", WrappedPrivacyPage, null)}

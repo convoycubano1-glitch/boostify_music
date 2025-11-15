@@ -1,0 +1,71 @@
+content.js:1 **** start checkBgReady
+content.js:1 +++++ checkBgReady response true
+content.js:1 **** end checkBgReady
+content.js:1 init port
+inpage.js:1 MetaMask: Connected to chain with ID "0x1".
+injected.js:1 get message from injected CustomEvent {isTrusted: false, detail: {…}, type: '__ENVELOPE_EVENT__', target: Window, currentTarget: Window, …}
+injected.js:1 get message from injected CustomEvent {isTrusted: false, detail: {…}, type: '__ENVELOPE_EVENT__', target: Window, currentTarget: Window, …}
+injected.js:1 Provider initialised
+injected.js:1 Provider initialised
+injected.js:1 Provider initialised
+injected.js:1 get message from injected CustomEvent {isTrusted: false, detail: {…}, type: '__ENVELOPE_EVENT__', target: Window, currentTarget: Window, …}
+content.js:1 **** MessageNode handle message {action: '__REPLY_MESSAGE__', payload: {…}, needResp: false, messageID: '75d2f779-b86f-4e1c-93aa-7efdfac07454'}
+content.js:1 **** handleReply {error: false, res: {…}}
+injected.js:1 get reply message from undefined CustomEvent {isTrusted: false, detail: {…}, type: '__ENVELOPE_REPLY_EVENT__', target: Window, currentTarget: Window, …}
+injected.js:1 request handler got reply event {success: true, data: {…}, uuid: '905bc9fd-caa5-44e2-bfbc-f07cf09194dd'}
+injected.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+reply @ content.js:1
+(anonymous) @ content.js:1
+await in (anonymous)
+i.emit @ content.js:1
+(anonymous) @ content.js:1
+send @ injected.js:1
+send @ injected.js:1
+getProviderInitData @ injected.js:1
+initSelectedAddress @ injected.js:1
+initEthereumProvider @ injected.js:1
+init @ injected.js:1
+(anonymous) @ injected.js:1
+(anonymous) @ injected.js:1
+(anonymous) @ injected.js:1
+content.js:1 **** MessageNode handle message {action: '__REPLY_MESSAGE__', payload: {…}, needResp: false, messageID: '9c129b87-c1fc-4422-9517-3dd7b25ccd55'}
+content.js:1 **** handleReply {error: false, res: {…}}
+injected.js:1 get reply message from undefined CustomEvent {isTrusted: false, detail: {…}, type: '__ENVELOPE_REPLY_EVENT__', target: Window, currentTarget: Window, …}
+injected.js:1 request handler got reply event {success: true, data: {…}, uuid: '871e47f0-a934-47ba-87dd-e62195124fcf'}
+injected.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+reply @ content.js:1
+(anonymous) @ content.js:1
+await in (anonymous)
+i.emit @ content.js:1
+(anonymous) @ content.js:1
+send @ injected.js:1
+send @ injected.js:1
+getProviderInitData @ injected.js:1
+getInitTronWeb @ injected.js:1
+initTronProvider @ injected.js:1
+init @ injected.js:1
+(anonymous) @ injected.js:1
+(anonymous) @ injected.js:1
+(anonymous) @ injected.js:1
+content.js:1 **** MessageNode handle message {action: '__REPLY_MESSAGE__', payload: {…}, needResp: false, messageID: 'a8e33a5b-9c67-453a-8b9c-4f9525d2851c'}
+content.js:1 **** handleReply {error: false, res: {…}}
+injected.js:1 get reply message from undefined CustomEvent {isTrusted: false, detail: {…}, type: '__ENVELOPE_REPLY_EVENT__', target: Window, currentTarget: Window, …}
+injected.js:1 request handler got reply event {success: true, data: {…}, uuid: '10c13905-956a-4d66-9de6-c664ffe8ac62'}
+injected.js:1 Deprecation warning: tabReply will be removed
+(anonymous) @ content.js:1
+reply @ content.js:1
+(anonymous) @ content.js:1
+await in (anonymous)
+i.emit @ content.js:1
+(anonymous) @ content.js:1
+send @ injected.js:1
+send @ injected.js:1
+_initRequest @ injected.js:1
+init @ injected.js:1
+(anonymous) @ injected.js:1
+(anonymous) @ injected.js:1
+(anonymous) @ injected.js:1
+injected.js:1 TronLink initiated
+injected.js:1 get message from injected CustomEvent {isTrusted: false, detail: {…}, type: '__ENVELOPE_EVENT__', target: Window, currentTarget: Window, …}

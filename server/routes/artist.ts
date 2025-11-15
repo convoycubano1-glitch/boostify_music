@@ -21,6 +21,17 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Artist not found' });
     }
 
+    // Try to get profile data from Firestore first (using user ID as uid)
+    let firestoreProfile = null;
+    try {
+      const userDoc = await firestore.collection('users').doc(String(id)).get();
+      if (userDoc.exists) {
+        firestoreProfile = userDoc.data();
+      }
+    } catch (error) {
+      console.log('No Firestore profile found, using PostgreSQL data');
+    }
+
     // Get marketing metrics from PostgreSQL
     const [metrics] = await db
       .select()
@@ -62,19 +73,25 @@ router.get('/:id', async (req, res) => {
       };
     });
 
-    // Combine all data
+    // Combine all data, prioritizing Firestore profile data if available
     const artistData = {
-      name: user.username,
-      biography: user.biography || 'Biography not available',
-      genre: user.genre || 'Genre not specified',
-      location: user.location || 'Location not specified',
+      name: firestoreProfile?.displayName || firestoreProfile?.name || user.username || user.artistName || 'Artist',
+      biography: firestoreProfile?.biography || user.biography || 'Biography not available',
+      genre: firestoreProfile?.genre || user.genre || 'Genre not specified',
+      location: firestoreProfile?.location || user.location || 'Location not specified',
       email: user.email,
-      phone: user.phone || 'Phone not specified',
+      phone: firestoreProfile?.contactPhone || user.phone || 'Phone not specified',
       website: user.website || '',
+      profileImage: firestoreProfile?.profileImage || firestoreProfile?.photoURL || user.profileImage || '',
+      bannerImage: firestoreProfile?.bannerImage || user.coverImage || '',
+      bannerPosition: firestoreProfile?.bannerPosition || '50',
+      loopVideoUrl: firestoreProfile?.loopVideoUrl || '',
+      slug: firestoreProfile?.slug || user.slug || '',
       socialMedia: {
-        instagram: user.instagramHandle || '',
-        twitter: user.twitterHandle || '',
-        youtube: user.youtubeChannel || ''
+        instagram: firestoreProfile?.instagram || user.instagramHandle || '',
+        twitter: firestoreProfile?.twitter || user.twitterHandle || '',
+        youtube: firestoreProfile?.youtube || user.youtubeChannel || '',
+        spotify: firestoreProfile?.spotify || user.spotifyUrl || ''
       },
       stats: {
         monthlyListeners: metrics?.monthlyListeners || 0,

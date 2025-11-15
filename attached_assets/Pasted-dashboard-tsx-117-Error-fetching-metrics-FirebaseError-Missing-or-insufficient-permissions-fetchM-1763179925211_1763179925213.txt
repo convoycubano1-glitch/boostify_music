@@ -1,0 +1,41 @@
+dashboard.tsx:117 Error fetching metrics: FirebaseError: Missing or insufficient permissions.
+fetchMetrics @ dashboard.tsx:117
+await in fetchMetrics
+(anonymous) @ dashboard.tsx:126
+commitHookEffectListMount @ chunk-NFC5BX5N.js?v=85032d59:16915
+commitPassiveMountOnFiber @ chunk-NFC5BX5N.js?v=85032d59:18156
+commitPassiveMountEffects_complete @ chunk-NFC5BX5N.js?v=85032d59:18129
+commitPassiveMountEffects_begin @ chunk-NFC5BX5N.js?v=85032d59:18119
+commitPassiveMountEffects @ chunk-NFC5BX5N.js?v=85032d59:18109
+flushPassiveEffectsImpl @ chunk-NFC5BX5N.js?v=85032d59:19490
+flushPassiveEffects @ chunk-NFC5BX5N.js?v=85032d59:19447
+commitRootImpl @ chunk-NFC5BX5N.js?v=85032d59:19416
+commitRoot @ chunk-NFC5BX5N.js?v=85032d59:19277
+performSyncWorkOnRoot @ chunk-NFC5BX5N.js?v=85032d59:18895
+flushSyncCallbacks @ chunk-NFC5BX5N.js?v=85032d59:9119
+(anonymous) @ chunk-NFC5BX5N.js?v=85032d59:18627
+setTimeout
+systemSetTimeoutZero @ @tanstack_react-query.js?v=85032d59:103
+flush @ @tanstack_react-query.js?v=85032d59:615
+batch @ @tanstack_react-query.js?v=85032d59:633
+dispatch_fn @ @tanstack_react-query.js?v=85032d59:1260
+setData @ @tanstack_react-query.js?v=85032d59:935
+fetch @ @tanstack_react-query.js?v=85032d59:1157
+await in fetch
+executeFetch_fn @ @tanstack_react-query.js?v=85032d59:1651
+onSubscribe @ @tanstack_react-query.js?v=85032d59:1344
+subscribe @ @tanstack_react-query.js?v=85032d59:24
+(anonymous) @ @tanstack_react-query.js?v=85032d59:3310
+subscribeToStore @ chunk-NFC5BX5N.js?v=85032d59:11984
+commitHookEffectListMount @ chunk-NFC5BX5N.js?v=85032d59:16915
+commitPassiveMountOnFiber @ chunk-NFC5BX5N.js?v=85032d59:18156
+commitPassiveMountEffects_complete @ chunk-NFC5BX5N.js?v=85032d59:18129
+commitPassiveMountEffects_begin @ chunk-NFC5BX5N.js?v=85032d59:18119
+commitPassiveMountEffects @ chunk-NFC5BX5N.js?v=85032d59:18109
+flushPassiveEffectsImpl @ chunk-NFC5BX5N.js?v=85032d59:19490
+flushPassiveEffects @ chunk-NFC5BX5N.js?v=85032d59:19447
+(anonymous) @ chunk-NFC5BX5N.js?v=85032d59:19328
+workLoop @ chunk-NFC5BX5N.js?v=85032d59:197
+flushWork @ chunk-NFC5BX5N.js?v=85032d59:176
+performWorkUntilDeadline @ chunk-NFC5BX5N.js?v=85032d59:384Understand this error
+dashboard.tsx:117 Error fetching metrics: FirebaseError: Missing or insufficient permissions.

@@ -66,62 +66,67 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchMetrics = async () => {
+    // Initialize metrics with default values
+    // TODO: Implement PostgreSQL metrics table
+    const initialMetrics = {
+      spotifyFollowers: 0,
+      instagramFollowers: 0,
+      youtubeViews: 0,
+      contractsCreated: 0,
+      prCampaigns: 0,
+      totalEngagement: 0,
+      musicVideos: 0,
+      aiVideos: 0,
+      contacts: 0,
+      styleRecommendations: 0,
+      coursesEnrolled: 0,
+      merchandiseSold: 0,
+      aiAgentsUsed: 0,
+      musicGenerated: 0
+    };
+    setMetrics(initialMetrics);
+
+    // Process pending plan selection after login
+    const processPendingPlan = async () => {
+      const selectedPlanStr = localStorage.getItem('selectedPlan');
+      if (!selectedPlanStr) return;
+
       try {
-        const userMetricsRef = doc(db, `users/${user.uid}/metrics/current`);
-        const metricsDoc = await getDoc(userMetricsRef);
+        const planData = JSON.parse(selectedPlanStr);
+        const { planName, priceId } = planData;
 
-        if (!metricsDoc.exists()) {
-          const initialMetrics = {
-            spotifyFollowers: 0,
-            instagramFollowers: 0,
-            youtubeViews: 0,
-            contractsCreated: 0,
-            prCampaigns: 0,
-            totalEngagement: 0,
-            musicVideos: 0,
-            aiVideos: 0,
-            contacts: 0,
-            styleRecommendations: 0,
-            coursesEnrolled: 0,
-            merchandiseSold: 0,
-            aiAgentsUsed: 0,
-            musicGenerated: 0,
-            updatedAt: new Date()
-          };
+        // Remove the pending plan
+        localStorage.removeItem('selectedPlan');
 
-          await setDoc(userMetricsRef, initialMetrics);
-          setMetrics(initialMetrics);
+        // If it's a paid plan, redirect to checkout
+        if (priceId && planName !== 'Free') {
+          toast({
+            title: "Procesando suscripción",
+            description: `Redirigiendo a checkout para el plan ${planName}...`,
+          });
+
+          // Import createCheckoutSession dynamically
+          const { createCheckoutSession } = await import('../lib/api/stripe-service');
+          const checkoutUrl = await createCheckoutSession(priceId);
+          window.location.href = checkoutUrl;
         } else {
-          const data = metricsDoc.data();
-          setMetrics({
-            spotifyFollowers: data.spotifyFollowers || 0,
-            instagramFollowers: data.instagramFollowers || 0,
-            youtubeViews: data.youtubeViews || 0,
-            contractsCreated: data.contractsCreated || 0,
-            prCampaigns: data.prCampaigns || 0,
-            totalEngagement: data.totalEngagement || 0,
-            musicVideos: data.musicVideos || 0,
-            aiVideos: data.aiVideos || 0,
-            contacts: data.contacts || 0,
-            styleRecommendations: data.styleRecommendations || 0,
-            coursesEnrolled: data.coursesEnrolled || 0,
-            merchandiseSold: data.merchandiseSold || 0,
-            aiAgentsUsed: data.aiAgentsUsed || 0,
-            musicGenerated: data.musicGenerated || 0
+          toast({
+            title: "¡Bienvenido!",
+            description: `Has iniciado sesión con el plan ${planName}.`,
           });
         }
       } catch (error) {
-        console.error('Error fetching metrics:', error);
+        console.error('Error processing pending plan:', error);
+        localStorage.removeItem('selectedPlan');
         toast({
-          title: "Error Loading Metrics",
-          description: "Please try refreshing the page.",
-          variant: "destructive"
+          title: "Aviso",
+          description: "No se pudo procesar el plan seleccionado. Puedes suscribirte desde la página de Pricing.",
+          variant: "default",
         });
       }
     };
 
-    fetchMetrics();
+    processPendingPlan();
   }, [user, toast]);
 
   const services = [

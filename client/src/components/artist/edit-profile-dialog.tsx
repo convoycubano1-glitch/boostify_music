@@ -666,9 +666,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         bannerImageUrl = await uploadBase64ToStorage(bannerImageUrl, `banner_${Date.now()}.png`);
       }
 
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("uid", "==", artistId));
-      const querySnapshot = await getDocs(q);
+      // Guardar directamente usando el artistId como document ID en Firestore
+      const userDocRef = doc(db, "users", artistId);
 
       const profileData = {
         uid: artistId,
@@ -693,20 +692,13 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         updatedAt: new Date(),
       };
 
+      console.log('💾 DEBUG - Guardando perfil con ID:', artistId);
       console.log('💾 DEBUG - Guardando perfil con Spotify:', profileData.spotify);
       console.log('💾 DEBUG - FormData spotify antes de guardar:', formData.spotify);
 
-      if (!querySnapshot.empty) {
-        const userDocRef = querySnapshot.docs[0].ref;
-        await setDoc(userDocRef, profileData, { merge: true });
-        console.log('💾 DEBUG - Perfil guardado exitosamente');
-      } else {
-        const newDocRef = doc(collection(db, "users"));
-        await setDoc(newDocRef, {
-          ...profileData,
-          createdAt: new Date(),
-        });
-      }
+      // Usar merge: true para crear o actualizar el documento
+      await setDoc(userDocRef, profileData, { merge: true });
+      console.log('💾 DEBUG - Perfil guardado exitosamente en Firestore con ID:', artistId);
 
       // Invalidar caché de React Query para forzar actualización en todos los dispositivos
       await queryClient.invalidateQueries({ queryKey: ["userProfile", artistId] });
