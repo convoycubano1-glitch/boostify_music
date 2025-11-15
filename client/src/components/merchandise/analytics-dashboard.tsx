@@ -39,8 +39,8 @@ export function AnalyticsDashboard() {
     queryKey: ['/api/printful/orders'],
   });
 
-  const syncProducts = syncProductsData?.data || [];
-  const orders = ordersData?.data || [];
+  const syncProducts = (syncProductsData as any)?.data || [];
+  const orders = (ordersData as any)?.data || [];
 
   // Calcular métricas
   const totalProducts = syncProducts.length;
