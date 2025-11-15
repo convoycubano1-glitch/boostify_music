@@ -6,8 +6,25 @@ import { authenticate } from '../middleware/auth';
 import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
+import { db as pgDb } from '../../db';
+import { users } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
+
+/**
+ * Genera un slug único desde el nombre del artista
+ */
+function generateSlug(artistName: string, attempt = 0): string {
+  const baseSlug = artistName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  
+  return attempt > 0 ? `${baseSlug}-${attempt}` : baseSlug;
+}
 
 /**
  * Guarda un artista generado en Firestore
@@ -37,6 +54,64 @@ async function saveArtistToFirestore(artistData: any): Promise<string> {
 }
 
 /**
+ * Guarda un artista generado en PostgreSQL
+ * @param artistData Datos del artista desde Firestore
+ * @param firestoreId ID del documento en Firestore
+ * @param userId ID del usuario creador (opcional)
+ * @returns ID del usuario creado en PostgreSQL
+ */
+async function saveArtistToPostgreSQL(artistData: any, firestoreId: string, userId?: string): Promise<number> {
+  try {
+    // Generar slug único
+    let slug = generateSlug(artistData.name);
+    let attempt = 0;
+    let slugExists = true;
+    
+    while (slugExists && attempt < 100) {
+      const existing = await pgDb.select().from(users).where(eq(users.slug, slug)).limit(1);
+      if (existing.length === 0) {
+        slugExists = false;
+      } else {
+        attempt++;
+        slug = generateSlug(artistData.name, attempt);
+      }
+    }
+
+    // Mapear datos de Firestore a PostgreSQL
+    const postgresData = {
+      role: 'artist' as const,
+      artistName: artistData.name,
+      slug,
+      biography: artistData.biography || null,
+      profileImage: artistData.profileImage || null,
+      coverImage: artistData.coverImage || null,
+      realName: artistData.realName || null,
+      country: artistData.country || null,
+      genres: artistData.music_genres || [],
+      email: artistData.management?.email || null,
+      phone: artistData.management?.phone || null,
+      instagramHandle: artistData.social_media?.instagram?.handle || null,
+      twitterHandle: artistData.social_media?.twitter?.handle || null,
+      youtubeChannel: artistData.social_media?.youtube?.handle || null,
+      spotifyUrl: artistData.social_media?.spotify?.url || null,
+      // Virtual Record Label fields
+      firestoreId,
+      isAIGenerated: true,
+      generatedBy: userId ? parseInt(userId) : null,
+      recordLabelId: null
+    };
+
+    const [newUser] = await pgDb.insert(users).values(postgresData).returning({ id: users.id });
+    
+    console.log(`Artista guardado en PostgreSQL con ID: ${newUser.id}`);
+    return newUser.id;
+  } catch (error) {
+    console.error('Error al guardar artista en PostgreSQL:', error);
+    throw error;
+  }
+}
+
+/**
  * Endpoint para generar un artista aleatorio
  * Puede ser usado con o sin autenticación
  */
@@ -52,14 +127,22 @@ router.post("/generate-artist", async (req: Request, res: Response) => {
     const firestoreId = await saveArtistToFirestore(artistData);
     console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
 
-    // Añadir el ID de Firestore al objeto de artista y actualizar el documento con ese ID
+    // NUEVO: Guardar artista en PostgreSQL
+    const postgresId = await saveArtistToPostgreSQL(artistData, firestoreId);
+    console.log(`Artista guardado en PostgreSQL con ID: ${postgresId}`);
+
+    // Actualizar Firestore con el ID de PostgreSQL
+    await db.collection('generated_artists').doc(firestoreId).update({ 
+      firestoreId,
+      postgresId
+    });
+
+    // Añadir los IDs al objeto de artista
     const completeArtistData = {
       ...artistData,
-      firestoreId
+      firestoreId,
+      postgresId
     };
-
-    // Actualizar el documento para incluir firestoreId
-    await db.collection('generated_artists').doc(firestoreId).update({ firestoreId });
 
     // Devolver respuesta con datos completos del artista
     res.status(200).json(completeArtistData);
@@ -97,10 +180,21 @@ router.post("/generate-artist/secure", authenticate, async (req: Request, res: R
     const firestoreId = await saveArtistToFirestore(artistDataWithUser);
     console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
 
-    // Devolver respuesta con datos del artista y su ID en Firestore
+    // NUEVO: Guardar artista en PostgreSQL con referencia al creador
+    const postgresId = await saveArtistToPostgreSQL(artistDataWithUser, firestoreId, userId);
+    console.log(`Artista guardado en PostgreSQL con ID: ${postgresId}`);
+
+    // Actualizar Firestore con el ID de PostgreSQL
+    await db.collection('generated_artists').doc(firestoreId).update({ 
+      firestoreId,
+      postgresId
+    });
+
+    // Devolver respuesta con datos del artista y ambos IDs
     res.status(200).json({
       ...artistDataWithUser,
-      firestoreId
+      firestoreId,
+      postgresId
     });
   } catch (error) {
     console.error('Error generando artista aleatorio (ruta segura):', error);
