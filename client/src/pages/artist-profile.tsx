@@ -1,16 +1,90 @@
 import { useEffect, useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { Head } from "../components/ui/head";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../firebase";
+import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { db, auth } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ChevronDown, User } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+
+interface Artist {
+  id: string;
+  uid: string;
+  name: string;
+  slug: string;
+  profileImage?: string;
+  createdAt?: any;
+}
 
 export default function ArtistProfilePage() {
   const { slug } = useParams<{ slug: string }>();
+  const [currentPath, navigate] = useLocation();
   const [artistId, setArtistId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [artistData, setArtistData] = useState<any>(null);
+  const [currentUserUid, setCurrentUserUid] = useState<string | null>(null);
+  const [userArtists, setUserArtists] = useState<Artist[]>([]);
+  const [showArtistSelector, setShowArtistSelector] = useState(false);
+
+  const isEditMode = currentPath.includes('edit=true');
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUserUid(user.uid);
+        if (isEditMode) {
+          loadUserArtists(user.uid);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isEditMode]);
+
+  const loadUserArtists = async (userUid: string) => {
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("uid", "==", userUid));
+      const querySnapshot = await getDocs(q);
+
+      const artists: Artist[] = querySnapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          uid: data.uid || docSnap.id,
+          name: data.name || data.displayName || "Sin nombre",
+          slug: data.slug,
+          profileImage: data.profileImage,
+          createdAt: data.createdAt,
+        };
+      });
+
+      // Ordenar en el frontend
+      artists.sort((a, b) => {
+        const dateA = a.createdAt?.seconds || 0;
+        const dateB = b.createdAt?.seconds || 0;
+        return dateB - dateA;
+      });
+
+      setUserArtists(artists);
+      setShowArtistSelector(artists.length > 1);
+    } catch (error) {
+      console.error("Error loading user artists:", error);
+    }
+  };
+
+  const switchArtist = (newSlug: string) => {
+    navigate(`/artist/${newSlug}?edit=true`);
+  };
 
   useEffect(() => {
     const findArtistBySlug = async () => {
@@ -26,7 +100,6 @@ export default function ArtistProfilePage() {
         console.log(`🔍 [MOBILE] User Agent:`, navigator.userAgent);
         console.log(`🔍 [MOBILE] Window width:`, window.innerWidth);
         
-        // Timeout para móviles (15 segundos)
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Timeout')), 15000);
         });
@@ -154,6 +227,72 @@ export default function ArtistProfilePage() {
       />
       <div className="min-h-screen bg-black pt-2 md:pt-4 pb-20 overflow-x-hidden">
         <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6">
+          {isEditMode && showArtistSelector && userArtists.length > 0 && (
+            <Card className="bg-gray-900 border-orange-500 p-4 mb-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-orange-500" />
+                  <span className="text-white font-medium">Editando:</span>
+                </div>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="bg-gray-800 border-gray-700 hover:bg-gray-700 text-white min-w-[200px] justify-between"
+                    >
+                      <div className="flex items-center gap-2 flex-1 overflow-hidden">
+                        {artistData?.profileImage && (
+                          <img
+                            src={artistData.profileImage}
+                            alt={artistName}
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                        )}
+                        <span className="truncate">{artistName}</span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[250px] bg-gray-800 border-gray-700">
+                    {userArtists.map((artist) => (
+                      <DropdownMenuItem
+                        key={artist.id}
+                        onClick={() => switchArtist(artist.slug)}
+                        className={`cursor-pointer hover:bg-gray-700 ${
+                          artist.slug === slug ? 'bg-orange-500/20 text-orange-500' : 'text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          {artist.profileImage ? (
+                            <img
+                              src={artist.profileImage}
+                              alt={artist.name}
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
+                              <User className="h-4 w-4 text-gray-400" />
+                            </div>
+                          )}
+                          <span className="truncate">{artist.name}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button
+                  onClick={() => navigate('/my-artists')}
+                  variant="outline"
+                  className="bg-gray-800 border-gray-700 hover:bg-gray-700 text-white"
+                >
+                  Ver Todos
+                </Button>
+              </div>
+            </Card>
+          )}
+          
           <ArtistProfileCard artistId={artistId} />
         </div>
       </div>

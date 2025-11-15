@@ -19,6 +19,7 @@ interface Artist {
   bannerImage?: string;
   spotify?: string;
   instagram?: string;
+  createdAt?: any;
 }
 
 export default function MyArtistsPage() {
@@ -47,9 +48,9 @@ export default function MyArtistsPage() {
       
       let q;
       if (userUid) {
-        q = query(usersRef, where("uid", "==", userUid), orderBy("createdAt", "desc"));
+        q = query(usersRef, where("uid", "==", userUid));
       } else {
-        q = query(usersRef, orderBy("createdAt", "desc"));
+        q = query(usersRef);
       }
       
       const querySnapshot = await getDocs(q);
@@ -67,7 +68,15 @@ export default function MyArtistsPage() {
           bannerImage: data.bannerImage,
           spotify: data.spotify,
           instagram: data.instagram,
+          createdAt: data.createdAt,
         };
+      });
+
+      // Ordenar en el frontend para evitar necesitar índice compuesto
+      loadedArtists.sort((a, b) => {
+        const dateA = a.createdAt?.seconds || 0;
+        const dateB = b.createdAt?.seconds || 0;
+        return dateB - dateA;
       });
 
       setArtists(loadedArtists);
