@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, where, doc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -26,6 +26,7 @@ export default function MyArtistsPage() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUserUid, setCurrentUserUid] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,6 +97,57 @@ export default function MyArtistsPage() {
     window.location.href = `/artist/${slug}?edit=true`;
   };
 
+  const createNewArtist = async () => {
+    if (!currentUserUid) {
+      toast({
+        title: "Error",
+        description: "Debes iniciar sesión para crear un artista",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const timestamp = Date.now();
+      const newArtistId = `artist_${timestamp}`;
+      const slug = `artista${timestamp}`;
+
+      const newArtistRef = doc(db, "users", newArtistId);
+      await setDoc(newArtistRef, {
+        uid: currentUserUid,
+        displayName: "Nuevo Artista",
+        name: "Nuevo Artista",
+        slug: slug,
+        biography: "",
+        genre: "",
+        location: "",
+        createdAt: new Date(),
+        instagram: "",
+        spotify: "",
+        twitter: "",
+        youtube: "",
+      });
+
+      toast({
+        title: "Artista creado",
+        description: "Redirigiendo al editor...",
+      });
+
+      setTimeout(() => {
+        window.location.href = `/artist/${slug}?edit=true`;
+      }, 500);
+    } catch (error: any) {
+      console.error("Error creating artist:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el artista",
+        variant: "destructive",
+      });
+      setIsCreating(false);
+    }
+  };
+
   const copyLink = (slug: string) => {
     const url = `${window.location.origin}/artist/${slug}`;
     navigator.clipboard.writeText(url);
@@ -145,11 +197,21 @@ export default function MyArtistsPage() {
             Mis Artistas Generados
           </h1>
           <Button
-            onClick={() => window.location.href = '/artist-generator'}
+            onClick={createNewArtist}
+            disabled={isCreating}
             className="bg-orange-500 hover:bg-orange-600"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Crear Nuevo Artista
+            {isCreating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creando...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Nuevo Artista
+              </>
+            )}
           </Button>
         </div>
 
