@@ -83,6 +83,7 @@ import { CharacterGenerationModal } from "./character-generation-modal";
 import { analyzeFaceFeatures } from "../../lib/api/face-analyzer";
 import { generateMasterCharacter } from "../../lib/api/master-character-generator";
 import { EnhancedScenesGallery } from "./EnhancedScenesGallery";
+import { ensureArtistProfile, saveSongToProfile, updateProfileImages } from "../../lib/auto-profile-service";
 
 // Fal.ai configuration
 fal.config({
@@ -1384,6 +1385,39 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         await new Promise(resolve => setTimeout(resolve, 800));
         setTranscription(transcriptionText);
         setCurrentStep(1.5);
+        
+        // 🎨 AUTO-PERFIL: Guardar canción automáticamente en perfil del artista
+        try {
+          console.log('🎨 Guardando canción en perfil del artista...');
+          
+          // Get genre from director or use default
+          const genre = videoStyle.selectedDirector?.name || 'Music Video';
+          
+          // Ensure profile exists
+          const profileResult = await ensureArtistProfile(genre);
+          if (profileResult.success) {
+            console.log('✅ Perfil verificado/creado:', profileResult.profile?.slug);
+            
+            // Save song to Firestore
+            const songResult = await saveSongToProfile({
+              title: projectName || selectedFile.name.replace(/\.[^/.]+$/, ''),
+              audioUrl: audioUrl || '',
+              lyrics: transcriptionText,
+              genre: genre,
+              duration: audioDuration,
+              fileName: selectedFile.name,
+              format: selectedFile.type
+            });
+            
+            if (songResult.success) {
+              console.log('✅ Canción guardada automáticamente:', songResult.song?.id);
+              console.log('🔗 Ver perfil en: /artist/' + profileResult.profile?.slug);
+            }
+          }
+        } catch (autoProfileError) {
+          // No bloqueamos el flujo si falla el auto-perfil
+          console.warn('⚠️ Error en auto-perfil (no crítico):', autoProfileError);
+        }
         
         // ✅ TRANSCRIPCIÓN COMPLETADA - Ahora sí generar conceptos con contexto
         setProgressMessage("✅ Lyrics analyzed! Now generating creative proposals...");
