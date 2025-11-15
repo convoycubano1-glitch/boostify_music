@@ -123,7 +123,7 @@ export default function AuthPage() {
     setIsLoading(true);
     
     try {
-      await authService.signInWithGoogle();
+      await authService.signInWithGoogle(returnTo);
       // Si llegamos aquí sin error, el redirect se hará automáticamente
     } catch (error: any) {
       console.error('Error en login:', error);
