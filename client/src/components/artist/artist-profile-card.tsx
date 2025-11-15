@@ -1478,19 +1478,18 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       {/* Hero Header */}
       <header className="relative h-72 md:h-96 lg:h-[450px] w-full mb-6 md:mb-8 overflow-hidden">
         {(() => {
-          // Detectar si es video (por extensión o por metadata)
-          const isVideo = artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i) || 
-                         artist.bannerImage?.includes('video') ||
-                         artist.bannerImage?.includes('.mp4') ||
-                         artist.bannerImage?.includes('.webm') ||
-                         artist.bannerImage?.includes('.mov');
+          // Detectar si es video SOLO por extensión real del archivo
+          // Extraer la parte antes del "?" para ignorar parámetros de query
+          const urlWithoutQuery = artist.bannerImage?.split('?')[0] || '';
+          const isVideoBanner = /\.(mp4|mov|avi|webm)$/i.test(urlWithoutQuery);
           
-          const videoUrl = artist.loopVideoUrl || (isVideo ? artist.bannerImage : null);
+          // Solo usar loopVideoUrl si existe, o bannerImage si es realmente un video
+          const videoUrl = artist.loopVideoUrl || (isVideoBanner ? artist.bannerImage : null);
           
           console.log('🎬 Video detection:', { 
             bannerImage: artist.bannerImage?.substring(0, 100), 
             loopVideoUrl: artist.loopVideoUrl,
-            isVideo, 
+            isVideoBanner, 
             videoUrl: videoUrl?.substring(0, 100) 
           });
           

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -8,7 +8,7 @@ import { useToast } from "../hooks/use-toast";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 export default function FixArtistBannerPage() {
-  const [artistUid, setArtistUid] = useState("BWTYGZZYcgT9WRyXAUAZm5PkpBA3");
+  const [artistSlug, setArtistSlug] = useState("reychavezsolofranck");
   const [newBannerUrl, setNewBannerUrl] = useState("https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-references%2FBWTYGZZYcgT9WRyXAUAZm5PkpBA3%2F1763159128175_freepik__-id-10-escena-final-conjunto-frank-rey-chvez-descr__87841.png?alt=media&token=d4ad8932-f497-4519-8ef7-93eec98ce319");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -19,7 +19,25 @@ export default function FixArtistBannerPage() {
     setSuccess(false);
 
     try {
-      const userDocRef = doc(db, "users", artistUid);
+      // Buscar el artista por slug
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("slug", "==", artistSlug));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        toast({
+          title: "Error",
+          description: `No se encontró el artista con slug: ${artistSlug}`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Actualizar el primer documento encontrado
+      const artistDoc = querySnapshot.docs[0];
+      const userDocRef = doc(db, "users", artistDoc.id);
+      
       await updateDoc(userDocRef, {
         bannerImage: newBannerUrl,
         updatedAt: new Date()
@@ -75,12 +93,12 @@ export default function FixArtistBannerPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">UID del Artista:</label>
+              <label className="text-sm text-gray-400">Slug del Artista:</label>
               <Input
-                value={artistUid}
-                onChange={(e) => setArtistUid(e.target.value)}
+                value={artistSlug}
+                onChange={(e) => setArtistSlug(e.target.value)}
                 className="bg-gray-800 text-white border-gray-700"
-                disabled
+                placeholder="reychavezsolofranck"
               />
             </div>
 
