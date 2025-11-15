@@ -50,6 +50,8 @@ import {
 } from "recharts";
 import { Download, Video } from "lucide-react";
 import { PrintfulDashboard } from "../components/merchandise/printful-dashboard";
+import { ShopifyIntegration } from "../components/merchandise/shopify-integration";
+import { AnalyticsDashboard } from "../components/merchandise/analytics-dashboard";
 
 // Product type definition from original code
 interface Product {
@@ -510,7 +512,8 @@ export default function MerchandisePage() {
 
           {/* Shopify Integration Tab */}
           <TabsContent value="shopify">
-            <div className="grid gap-6 md:grid-cols-2">
+            <ShopifyIntegration />
+            <div className="grid gap-6 md:grid-cols-2 mt-6">
               <Card className="p-8">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-4 bg-orange-500/10 rounded-lg">
@@ -591,7 +594,8 @@ export default function MerchandisePage() {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics">
-            <div className="grid gap-6 md:grid-cols-2">
+            <AnalyticsDashboard />
+            <div className="grid gap-6 md:grid-cols-2 mt-6">
               <Card className="p-8">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-4 bg-orange-500/10 rounded-lg">
