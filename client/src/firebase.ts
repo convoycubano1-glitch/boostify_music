@@ -67,13 +67,9 @@ try {
 const app = initializeApp(enhancedConfig);
 
 // Initialize App Check with reCAPTCHA Enterprise
-// DESACTIVADO PERMANENTEMENTE - Causa problemas con el login
+// This protects your app from abuse by ensuring requests come from your app
 try {
-  console.log('⚠️ [APP CHECK] DESACTIVADO - Causaba errores en el login (recaptcha-error)');
-  // App Check está causando errores de reCAPTCHA que rompen el login
-  // Se mantiene desactivado hasta resolver la configuración correcta
-  
-  /*
+  // Solo inicializar App Check en producción o si no estamos en localhost
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1';
   
@@ -86,7 +82,6 @@ try {
   } else {
     console.log('⚠️ [APP CHECK] Skipped in localhost (development mode)');
   }
-  */
 } catch (appCheckError) {
   // No fallar si App Check tiene problemas, solo loguear
   console.warn('⚠️ [APP CHECK] Failed to initialize:', appCheckError);

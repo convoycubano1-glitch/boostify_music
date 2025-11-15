@@ -14,8 +14,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { useToast } from "../../hooks/use-toast";
-import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images, Store } from "lucide-react";
-import { Switch } from "../ui/switch";
+import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images } from "lucide-react";
 import { ImageGalleryGenerator } from "./image-gallery-generator";
 import { db, storage } from "../../firebase";
 import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
@@ -48,7 +47,6 @@ interface EditProfileDialogProps {
     twitter: string;
     youtube: string;
     spotify: string;
-    storeEnabled?: boolean;
   };
   onUpdate: () => void;
   onGalleryCreated?: () => void;
@@ -691,7 +689,6 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         twitter: formData.twitter || "",
         youtube: formData.youtube || "",
         spotify: formData.spotify || "",
-        storeEnabled: formData.storeEnabled !== undefined ? formData.storeEnabled : true,
         referenceImage: referenceImage || "",
         updatedAt: new Date(),
       };
@@ -1372,30 +1369,6 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 <p className="text-xs text-gray-500 mt-1">
                   Genera productos promocionales con imágenes únicas creadas por IA
                 </p>
-              </div>
-            </div>
-
-            {/* Toggle para activar/desactivar la tienda */}
-            <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20 mb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3">
-                  <Store className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <Label htmlFor="store-toggle" className="text-sm font-semibold text-white cursor-pointer">
-                      Mostrar Tienda en Perfil Público
-                    </Label>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {formData.storeEnabled !== false 
-                        ? "La tienda está visible para tus fans" 
-                        : "La tienda está oculta en tu perfil"}
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  id="store-toggle"
-                  checked={formData.storeEnabled !== false}
-                  onCheckedChange={(checked) => setFormData({ ...formData, storeEnabled: checked })}
-                />
               </div>
             </div>
 

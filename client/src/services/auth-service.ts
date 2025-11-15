@@ -89,28 +89,113 @@ class AuthService {
 
   async signInWithGoogle(redirectPath: string = '/dashboard'): Promise<User | null> {
     try {
-      console.log('🔐 [AUTH] Iniciando login con Google con REDIRECT');
-      
-      // Guardar la ruta de redirección
+      // USAR LOCALSTORAGE en lugar de sessionStorage para iOS Safari
+      // sessionStorage se borra en iOS entre redirecciones
       localStorage.setItem('auth_redirect_path', redirectPath);
-      localStorage.setItem('auth_redirect_attempt', 'true');
-      localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
       
-      // Configurar el proveedor de Google
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ 
-        prompt: 'select_account'
+      // Generar un proveedor específico para esta sesión para evitar problemas de caché
+      const sessionProvider = new GoogleAuthProvider();
+      
+      // Configuración mejorada para móviles
+      sessionProvider.setCustomParameters({ 
+        prompt: 'select_account',
+        // Forzar UI responsive
+        display: 'popup'
       });
       
-      // SIEMPRE usar redirect - el popup falla porque usa el dominio de desarrollo
-      // que Firebase rechaza. Redirect usa el authDomain de Firebase que está autorizado.
-      console.log('🔐 [AUTH] Usando signInWithRedirect (más confiable)');
-      await signInWithRedirect(this.auth, provider);
+      // Mejorar detección de móviles incluyendo tablets y navegadores específicos
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile Safari/i.test(navigator.userAgent) ||
+                       (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
       
-      return null;
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+      
+      console.log('🔐 [AUTH] Device detection:', {
+        isMobile,
+        isIOS,
+        isSafari,
+        userAgent: navigator.userAgent,
+        touchPoints: navigator.maxTouchPoints
+      });
+      
+      // En móviles o Safari, usar redirect directamente (los popups no funcionan bien)
+      if (isMobile || (isIOS && isSafari)) {
+        console.log('🔐 [MOBILE] Dispositivo móvil/iOS detectado, usando redirect');
+        console.log('🔐 [MOBILE] authDomain:', this.auth.config.authDomain);
+        
+        // USAR LOCALSTORAGE para iOS - sessionStorage se borra
+        localStorage.setItem('auth_redirect_attempt', 'true');
+        localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
+        localStorage.setItem('auth_device_info', JSON.stringify({
+          isMobile,
+          isIOS,
+          isSafari,
+          timestamp: new Date().toISOString()
+        }));
+        
+        await signInWithRedirect(this.auth, sessionProvider);
+        return null;
+      }
+      
+      // Estrategia 1: Usar popup (preferido en desktop por mejor experiencia de usuario)
+      try {
+        console.log('AuthService: Intentando autenticación con popup');
+        const result = await signInWithPopup(this.auth, sessionProvider);
+        console.log('AuthService: Autenticación con popup exitosa');
+        
+        // Redirigir después de una autenticación exitosa
+        if (typeof window !== 'undefined') {
+          window.location.href = redirectPath;
+        }
+        
+        return result.user;
+      } catch (popupError: any) {
+        console.warn('AuthService: Error en autenticación con popup:', popupError);
+        
+        // Si el error es que el usuario cerró el popup, no intentamos redirect
+        if (popupError.code === 'auth/popup-closed-by-user') {
+          throw popupError;
+        }
+        
+        // Si el error está relacionado con API key inválida, intentamos autenticación anónima
+        if (popupError.code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.') {
+          console.log('AuthService: Error de API key inválida, iniciando sesión anónima como fallback');
+          return this.signInAnonymously(redirectPath);
+        }
+        
+        // Si el error es específicamente de popup bloqueado o error interno,
+        // intentamos con redirect que es más robusto
+        if (popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/internal-error') {
+          
+          console.log('AuthService: Intentando autenticación con redirect como fallback');
+          
+          // Primero almacenamos información sobre el reintento para la redirección
+          // USAR LOCALSTORAGE para iOS - sessionStorage se borra
+          localStorage.setItem('auth_redirect_attempt', 'true');
+          localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
+          
+          // Estrategia 2: Usar redirect como fallback
+          await signInWithRedirect(this.auth, sessionProvider);
+          // El control NO regresa aquí - la página se recargará después de la redirección
+          return null;
+        }
+        
+        // Si no es un error específico que podamos manejar, intentamos con autenticación anónima
+        console.log('AuthService: Error no manejado en autenticación, intentando sesión anónima');
+        return this.signInAnonymously(redirectPath);
+      }
     } catch (error) {
-      console.error('❌ [AUTH] Error en autenticación:', error);
-      throw error;
+      console.error('AuthService: Error general en autenticación:', error);
+      
+      // Como último recurso, intentamos sesión anónima
+      console.log('AuthService: Intentando sesión anónima como último recurso');
+      try {
+        return await this.signInAnonymously(redirectPath);
+      } catch (anonError) {
+        console.error('AuthService: Error también en la autenticación anónima:', anonError);
+        throw error; // Lanzamos el error original
+      }
     }
   }
   
