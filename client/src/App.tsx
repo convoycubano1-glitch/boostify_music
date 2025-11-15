@@ -1,7 +1,11 @@
 import React, { lazy, Suspense, ReactNode, useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Switch, Route, Router as WouterRouter } from "wouter";
+import { WagmiProvider } from 'wagmi';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import '@rainbow-me/rainbowkit/styles.css';
 import { queryClient } from "./lib/queryClient";
+import { wagmiConfig } from "./lib/web3-config";
 import { Toaster } from "./components/ui/toaster";
 import { PageLoader } from "./components/ui/page-loader";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -448,16 +452,20 @@ const App = () => {
       {/* Componente invisible para manejar errores de WebSocket */}
       <div className="min-h-screen bg-background text-foreground">
         <ViteHMRErrorHandler />
-        <QueryClientProvider client={queryClient}>
-          <SubscriptionProvider>
-            <GlobalAuthGuard>
-              <EditorProvider>
-                <Router />
-                <Toaster />
-              </EditorProvider>
-            </GlobalAuthGuard>
-          </SubscriptionProvider>
-        </QueryClientProvider>
+        <WagmiProvider config={wagmiConfig}>
+          <QueryClientProvider client={queryClient}>
+            <RainbowKitProvider>
+              <SubscriptionProvider>
+                <GlobalAuthGuard>
+                  <EditorProvider>
+                    <Router />
+                    <Toaster />
+                  </EditorProvider>
+                </GlobalAuthGuard>
+              </SubscriptionProvider>
+            </RainbowKitProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
       </div>
     </ErrorBoundary>
   );
