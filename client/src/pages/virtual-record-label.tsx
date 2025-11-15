@@ -432,7 +432,7 @@ export default function VirtualRecordLabelPage() {
     });
   };
 
-  // Generate logo for the record label
+  // Generate logo for the record label usando Gemini Nano Banana
   const generateLogo = async () => {
     if (!config.name || !config.genre) {
       toast({
@@ -446,12 +446,28 @@ export default function VirtualRecordLabelPage() {
     setIsGeneratingLogo(true);
 
     try {
-      // In a real implementation, this would call an AI image generation API
-      // For now, we'll simulate a delay and provide a static example
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Generar logo usando Gemini Nano Banana con prompt optimizado
+      const logoPrompt = `Create a professional record label logo for "${config.name}", a ${config.genre} music label. Modern, minimalist design with music elements. High quality, clean vector style, professional branding.`;
       
-      // Placeholder for AI-generated logo URL with dark gray background and light gray text
-      const logoUrl = "https://placehold.co/400x400/121212/505050?text="+encodeURIComponent(config.name || "Record Label");
+      const response = await fetch('/api/ai/nano-banana', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: logoPrompt,
+          aspectRatio: '1:1'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate logo');
+      }
+
+      const data = await response.json();
+      const logoUrl = data.imageUrl || data.url;
+      
+      if (!logoUrl) {
+        throw new Error('No logo URL returned');
+      }
       
       setConfig({
         ...config,
@@ -460,13 +476,13 @@ export default function VirtualRecordLabelPage() {
       
       toast({
         title: "Logo generated",
-        description: "Your record label logo has been created successfully."
+        description: "Your professional record label logo has been created with AI."
       });
     } catch (error) {
       console.error("Error generating logo:", error);
       toast({
         title: "Error",
-        description: "Could not generate logo. Please try again.",
+        description: "Could not generate logo with AI. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -474,7 +490,7 @@ export default function VirtualRecordLabelPage() {
     }
   };
 
-  // Create the virtual record label with progress simulation
+  // Create the virtual record label with real AI artists generation
   const createRecordLabel = async () => {
     if (!user) {
       toast({
@@ -500,9 +516,12 @@ export default function VirtualRecordLabelPage() {
     setProgressStage(0);
 
     try {
+      // Create record label ID
+      const recordLabelId = uuidv4();
+      
       // Create a complete record label object
       const recordLabel: RecordLabelConfig = {
-        id: uuidv4(),
+        id: recordLabelId,
         name: config.name || "",
         type: config.type || "",
         genre: config.genre || "",
@@ -514,16 +533,10 @@ export default function VirtualRecordLabelPage() {
         createdAt: new Date()
       };
       
-      // Simulate creation process with stages
-      let currentProgress = 0;
-      let currentStage = 0;
-      
       // Function to update progress with animation
       const updateProgress = (stage: number, progressValue: number) => {
         return new Promise<void>(resolve => {
           setProgressStage(stage);
-          
-          // Animate progress bar
           const interval = setInterval(() => {
             setProgress(prev => {
               if (prev >= progressValue) {
@@ -537,30 +550,73 @@ export default function VirtualRecordLabelPage() {
         });
       };
       
-      // Process each stage
-      for (let i = 0; i < creationStages.length; i++) {
-        // Calculate target progress for this stage
-        const targetProgress = Math.round(((i + 1) / creationStages.length) * 100);
-        
-        // Update UI with current stage and animate progress
-        await updateProgress(i, targetProgress);
-        
-        // Simulate processing time for this stage
-        await new Promise(resolve => setTimeout(resolve, 
-          i === creationStages.length - 1 ? 2000 : 3000)); // Last stage is shorter
+      // Stage 0-3: Setup and preparation
+      for (let i = 0; i < 4; i++) {
+        await updateProgress(i, Math.round(((i + 1) / creationStages.length) * 40));
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
       
-      // Save to Firestore
-      const docRef = doc(collection(db, "record_labels"), recordLabel.id);
-      await setDoc(docRef, recordLabel);
+      // Stage 4: Generate AI Artists (this is the real work)
+      setProgressStage(4);
+      const generatedArtistIds: number[] = [];
+      
+      // Generate each artist using the backend API
+      for (let i = 0; i < config.artistCount; i++) {
+        const artistConfig = config.artists?.[i];
+        if (artistConfig) {
+          try {
+            const response = await fetch('/api/artist-generator/generate-artist/secure', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: artistConfig.name,
+                genre: config.genre,
+                imagePrompt: artistConfig.imagePrompt,
+                recordLabelId: recordLabelId
+              })
+            });
+            
+            if (response.ok) {
+              const artistData = await response.json();
+              generatedArtistIds.push(artistData.postgresId);
+              console.log(`✅ Generated artist: ${artistConfig.name}`, artistData);
+            }
+          } catch (error) {
+            console.error(`Error generating artist ${artistConfig.name}:`, error);
+          }
+        }
+        
+        // Update progress as we generate each artist
+        const artistProgress = 40 + Math.round((i + 1) / config.artistCount * 30);
+        setProgress(artistProgress);
+      }
+      
+      // Stage 5-7: Final setup
+      for (let i = 5; i < creationStages.length; i++) {
+        await updateProgress(i, Math.round(((i + 1) / creationStages.length) * 100));
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      
+      // Save record label to Firestore with generated artist data
+      const recordLabelWithArtists = {
+        ...recordLabel,
+        generatedArtistIds,
+        generatedAt: new Date().toISOString()
+      };
+      
+      const docRef = doc(collection(db, "record_labels"), recordLabelId);
+      await setDoc(docRef, recordLabelWithArtists);
+      
+      // Refresh the artists list
+      await refetchArtists();
       
       // Show success toast
       toast({
-        title: "Record Label Created",
-        description: "Your virtual record label is now under review!",
+        title: "Record Label Created!",
+        description: `Successfully created ${generatedArtistIds.length} AI artists for your label!`,
       });
       
-      // Show "Under Review" screen instead of success
+      // Show "Under Review" screen
       setIsUnderReview(true);
       
     } catch (error) {
