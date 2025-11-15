@@ -18,7 +18,10 @@ export default function AuthPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isAnonLoading, setIsAnonLoading] = useState(false);
-  const { isConnecting, canConnect, checkGoogleConnection } = useGoogleConnectionCheck();
+  // DESACTIVADO: Google connection check causa errores 400 innecesarios
+  // const { isConnecting, canConnect, checkGoogleConnection } = useGoogleConnectionCheck();
+  const isConnecting = false;
+  const canConnect = true;
   const [connectionErrorShown, setConnectionErrorShown] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [email, setEmail] = useState("");
@@ -114,110 +117,31 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoogleSignIn = async (useRedirect: boolean = false) => {
-    if (isLoading) return; // Prevenir múltiples clics
+  const handleGoogleSignIn = async () => {
+    if (isLoading) return;
     
     setIsLoading(true);
     
-    // Si el usuario quiere usar redirect, forzar ese método
-    if (useRedirect) {
-      console.log('🔐 [PC] Usuario solicitó método redirect (más confiable)');
-      localStorage.setItem('force_redirect_auth', 'true');
-    }
-    
     try {
-      // Primero verificamos la conexión con Google
-      toast({
-        title: "Verificando conexión",
-        description: "Comprobando conectividad con los servidores de Google...",
-      });
-      
-      const canConnectNow = await checkGoogleConnection();
-      
-      if (!canConnectNow) {
-        setIsLoading(false);
-        toast({
-          title: "Problema de conexión",
-          description: "No podemos conectar con los servidores de Google. Por favor, verifica tu conexión a internet.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Mostramos un mensaje informativo durante el proceso
-      toast({
-        title: "Preparando autenticación",
-        description: "Conectando con Google...",
-      });
-      
-      try {
-        // Usamos nuestro nuevo servicio de autenticación con estrategias múltiples
-        // en lugar del método directo anterior
-        await authService.signInWithGoogle();
-        
-        // El servicio manejará la notificación de éxito, pero establecemos un temporizador
-        // para asegurar que el estado de carga se desactive eventualmente
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 3000);
-      } catch (error: any) {
-        console.log("Error detallado en página de autenticación:", error);
-        
-        // Manejar específicamente el error interno
-        if (error.code === 'auth/internal-error') {
-          toast({
-            title: "Método alternativo",
-            description: "Estamos utilizando un método alternativo de autenticación. Por favor, espera un momento o intenta refrescar la página.",
-          });
-          
-          // Opcional: intentar método de redirección como último recurso
-          try {
-            console.log("Intentando autenticación con método de respaldo...");
-            await authService.clearAuthState();
-            
-            // Retrasamos un momento antes de intentar la autenticación directa como último recurso
-            setTimeout(async () => {
-              try {
-                // Aquí usamos el signInWithGoogle original como último recurso
-                await signInWithGoogle();
-              } catch (lastError) {
-                console.error("Error en método final de respaldo:", lastError);
-                setIsLoading(false);
-              }
-            }, 1000);
-            
-            return; // Salimos para evitar mostrar el error ya que estamos usando un método alternativo
-          } catch (backupError) {
-            console.error("Error en método de respaldo:", backupError);
-          }
-        }
-        
-        // Para otros errores, mostramos mensajes específicos
-        let errorMessage = "No se pudo iniciar sesión. Por favor, intenta nuevamente.";
-        
-        if (error.code === 'auth/network-request-failed') {
-          errorMessage = "Error de red al conectar con Google. Verifica tu conexión a internet.";
-        } else if (error.code === 'auth/popup-closed-by-user') {
-          errorMessage = "Has cerrado la ventana de inicio de sesión antes de completar el proceso.";
-        } else if (error.code === 'auth/popup-blocked') {
-          errorMessage = "Tu navegador bloqueó la ventana emergente. Haz clic en 'Método Alternativo' abajo para continuar.";
-        }
-        
-        toast({
-          title: "Error de autenticación",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        
-        setIsLoading(false);
-      }
+      await authService.signInWithGoogle();
+      // Si llegamos aquí sin error, el redirect se hará automáticamente
     } catch (error: any) {
-      console.error("Error crítico en manejo de autenticación:", error);
+      console.error('Error en login:', error);
       setIsLoading(false);
       
+      let errorMessage = "No se pudo iniciar sesión. Por favor, intenta nuevamente.";
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Cerraste la ventana de Google. Intenta de nuevo.";
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = "Tu navegador bloqueó el popup. Permite popups e intenta de nuevo.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Error de red. Verifica tu conexión a internet.";
+      }
+      
       toast({
-        title: "Error inesperado",
-        description: "Ha ocurrido un problema con el sistema de autenticación. Por favor, refresca la página e intenta nuevamente.",
+        title: "Error",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -288,23 +212,14 @@ export default function AuthPage() {
           <Button 
             variant="outline" 
             className="w-full gap-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white border-none hover:from-orange-600 hover:via-red-600 hover:to-orange-600 transition-all duration-300"
-            onClick={() => handleGoogleSignIn(false)}
-            disabled={isLoading || isConnecting || (!canConnect && !isConnecting)}
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+            data-testid="button-google-signin"
           >
             {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Redirigiendo a Google...
-              </>
-            ) : isConnecting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Verificando conexión...
-              </>
-            ) : !canConnect ? (
-              <>
-                <WifiOff className="w-5 h-5 mr-2" />
-                Reintentar conexión
+                Conectando con Google...
               </>
             ) : (
               <>

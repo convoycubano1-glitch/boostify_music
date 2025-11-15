@@ -1,0 +1,66 @@
+hmr-error-handler.ts:15  HEAD https://accounts.google.com/gsi/status net::ERR_ABORTED 400 (Bad Request)
+window.fetch @ hmr-error-handler.ts:15
+(anonymous) @ google-connection-check.tsx:31
+(anonymous) @ google-connection-check.tsx:25
+checkGoogleConnection @ google-connection-check.tsx:24
+(anonymous) @ google-connection-check.tsx:67
+commitHookEffectListMount @ chunk-NFC5BX5N.js?v=12bbeb8e:16915
+invokePassiveEffectMountInDEV @ chunk-NFC5BX5N.js?v=12bbeb8e:18324
+invokeEffectsInDev @ chunk-NFC5BX5N.js?v=12bbeb8e:19701
+commitDoubleInvokeEffectsInDEV @ chunk-NFC5BX5N.js?v=12bbeb8e:19686
+flushPassiveEffectsImpl @ chunk-NFC5BX5N.js?v=12bbeb8e:19503
+flushPassiveEffects @ chunk-NFC5BX5N.js?v=12bbeb8e:19447
+performSyncWorkOnRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:18868
+flushSyncCallbacks @ chunk-NFC5BX5N.js?v=12bbeb8e:9119
+commitRootImpl @ chunk-NFC5BX5N.js?v=12bbeb8e:19432
+commitRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:19277
+finishConcurrentRender @ chunk-NFC5BX5N.js?v=12bbeb8e:18805
+performConcurrentWorkOnRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:18718
+workLoop @ chunk-NFC5BX5N.js?v=12bbeb8e:197
+flushWork @ chunk-NFC5BX5N.js?v=12bbeb8e:176
+performWorkUntilDeadline @ chunk-NFC5BX5N.js?v=12bbeb8e:384Understand this error
+hmr-error-handler.ts:15  HEAD https://accounts.google.com/gsi/status net::ERR_ABORTED 400 (Bad Request)
+window.fetch @ hmr-error-handler.ts:15
+(anonymous) @ google-connection-check.tsx:31
+(anonymous) @ google-connection-check.tsx:25
+checkGoogleConnection @ google-connection-check.tsx:24
+(anonymous) @ google-connection-check.tsx:67
+commitHookEffectListMount @ chunk-NFC5BX5N.js?v=12bbeb8e:16915
+commitPassiveMountOnFiber @ chunk-NFC5BX5N.js?v=12bbeb8e:18156
+commitPassiveMountEffects_complete @ chunk-NFC5BX5N.js?v=12bbeb8e:18129
+commitPassiveMountEffects_begin @ chunk-NFC5BX5N.js?v=12bbeb8e:18119
+commitPassiveMountEffects @ chunk-NFC5BX5N.js?v=12bbeb8e:18109
+flushPassiveEffectsImpl @ chunk-NFC5BX5N.js?v=12bbeb8e:19490
+flushPassiveEffects @ chunk-NFC5BX5N.js?v=12bbeb8e:19447
+performSyncWorkOnRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:18868
+flushSyncCallbacks @ chunk-NFC5BX5N.js?v=12bbeb8e:9119
+commitRootImpl @ chunk-NFC5BX5N.js?v=12bbeb8e:19432
+commitRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:19277
+finishConcurrentRender @ chunk-NFC5BX5N.js?v=12bbeb8e:18805
+performConcurrentWorkOnRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:18718
+workLoop @ chunk-NFC5BX5N.js?v=12bbeb8e:197
+flushWork @ chunk-NFC5BX5N.js?v=12bbeb8e:176
+performWorkUntilDeadline @ chunk-NFC5BX5N.js?v=12bbeb8e:384Understand this error
+hmr-error-handler.ts:15  HEAD https://accounts.google.com/gsi/status net::ERR_ABORTED 400 (Bad Request)
+window.fetch @ hmr-error-handler.ts:15
+(anonymous) @ google-connection-check.tsx:31
+(anonymous) @ google-connection-check.tsx:25
+checkGoogleConnection @ google-connection-check.tsx:24
+(anonymous) @ google-connection-check.tsx:67
+commitHookEffectListMount @ chunk-NFC5BX5N.js?v=12bbeb8e:16915
+commitPassiveMountOnFiber @ chunk-NFC5BX5N.js?v=12bbeb8e:18156
+commitPassiveMountEffects_complete @ chunk-NFC5BX5N.js?v=12bbeb8e:18129
+commitPassiveMountEffects_begin @ chunk-NFC5BX5N.js?v=12bbeb8e:18119
+commitPassiveMountEffects @ chunk-NFC5BX5N.js?v=12bbeb8e:18109
+flushPassiveEffectsImpl @ chunk-NFC5BX5N.js?v=12bbeb8e:19490
+flushPassiveEffects @ chunk-NFC5BX5N.js?v=12bbeb8e:19447
+performSyncWorkOnRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:18868
+flushSyncCallbacks @ chunk-NFC5BX5N.js?v=12bbeb8e:9119
+commitRootImpl @ chunk-NFC5BX5N.js?v=12bbeb8e:19432
+commitRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:19277
+finishConcurrentRender @ chunk-NFC5BX5N.js?v=12bbeb8e:18805
+performConcurrentWorkOnRoot @ chunk-NFC5BX5N.js?v=12bbeb8e:18718
+workLoop @ chunk-NFC5BX5N.js?v=12bbeb8e:197
+flushWork @ chunk-NFC5BX5N.js?v=12bbeb8e:176
+performWorkUntilDeadline @ chunk-NFC5BX5N.js?v=12bbeb8e:384Understand this error
+hmr-error-handler.ts:15  HEAD https://accounts.google.com/gsi/status net::ERR_ABORTED 400 (Bad Request)
