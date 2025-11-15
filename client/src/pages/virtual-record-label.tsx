@@ -148,6 +148,15 @@ export default function VirtualRecordLabelPage() {
   // Estado para pantalla de revisión (solo debe mostrarse después del envío)
   const [isUnderReview, setIsUnderReview] = useState(false);
   
+  // Virtual Artists state
+  const [showMyArtists, setShowMyArtists] = useState(false);
+  
+  // Query para cargar artistas virtuales del usuario
+  const { data: myVirtualArtists, isLoading: loadingArtists, refetch: refetchArtists } = useQuery<any[]>({
+    queryKey: ['/api/virtual-label/my-artists'],
+    enabled: !!user
+  });
+  
   // Console log para depuración
   useEffect(() => {
     console.log("isUnderReview state:", isUnderReview);
@@ -844,6 +853,103 @@ export default function VirtualRecordLabelPage() {
       
       {/* Enhanced Hero Section con video y animaciones */}
       <HeroSection handleCreateLabel={() => setCurrentStep(1)} />
+      
+      {/* My Virtual Artists Section - Solo si el usuario tiene artistas */}
+      {user && myVirtualArtists && myVirtualArtists.length > 0 && (
+        <section className="py-8 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 border-b">
+          <div className="container">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Bot className="h-6 w-6 text-orange-500" />
+                  Mis Artistas Virtuales
+                </h2>
+                <p className="text-muted-foreground text-sm mt-1">
+                  {myVirtualArtists.length} {myVirtualArtists.length === 1 ? 'artista creado' : 'artistas creados'}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMyArtists(!showMyArtists)}
+                data-testid="toggle-my-artists"
+              >
+                {showMyArtists ? 'Ocultar' : 'Ver Todos'}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+            
+            {showMyArtists && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {myVirtualArtists.map((artist: any) => (
+                  <Link
+                    key={artist.id}
+                    href={`/profile/${artist.slug}`}
+                    data-testid={`artist-card-${artist.slug}`}
+                  >
+                    <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer group">
+                      <div className="aspect-square relative bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-900">
+                        {artist.profileImage ? (
+                          <img
+                            src={artist.profileImage}
+                            alt={artist.artistName}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Music2 className="h-16 w-16 text-slate-400" />
+                          </div>
+                        )}
+                        <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                          <Bot className="h-3 w-3" />
+                          IA
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold truncate">{artist.artistName}</h3>
+                        {artist.genres && artist.genres.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {artist.genres.slice(0, 2).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+            
+            {!showMyArtists && (
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {myVirtualArtists.slice(0, 6).map((artist: any) => (
+                  <Link
+                    key={artist.id}
+                    href={`/profile/${artist.slug}`}
+                    data-testid={`artist-preview-${artist.slug}`}
+                  >
+                    <div className="flex-shrink-0 w-24 cursor-pointer group">
+                      <div className="aspect-square relative rounded-lg overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-900">
+                        {artist.profileImage ? (
+                          <img
+                            src={artist.profileImage}
+                            alt={artist.artistName}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Music2 className="h-8 w-8 text-slate-400" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium mt-2 truncate text-center">{artist.artistName}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Configuration Steps */}
       <section className="container py-16 mb-8">
