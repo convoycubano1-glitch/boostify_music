@@ -5,7 +5,8 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
 import { Skeleton } from "../ui/skeleton";
-import { Search, Package, ShoppingCart, Eye, Printer } from "lucide-react";
+import { Search, Package, ShoppingCart, Eye, Printer, Plus } from "lucide-react";
+import { CreateSyncProductDialog } from "./create-sync-product-dialog";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,8 @@ interface CatalogVariant {
 export function PrintfulCatalog() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [productToSync, setProductToSync] = useState<CatalogProduct | null>(null);
 
   const { data: catalogData, isLoading } = useQuery({
     queryKey: ['/api/printful/catalog/products'],
@@ -132,6 +135,21 @@ export function PrintfulCatalog() {
                 <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
                   {product.brand} - {product.type_name}
                 </p>
+                <div className="flex gap-2 mb-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      setProductToSync(product);
+                      setSyncDialogOpen(true);
+                    }}
+                    data-testid={`button-sync-product-${product.id}`}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Sincronizar
+                  </Button>
+                </div>
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button
@@ -246,6 +264,17 @@ export function PrintfulCatalog() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Dialog para sincronizar producto */}
+      {productToSync && (
+        <CreateSyncProductDialog
+          productId={productToSync.id}
+          productName={productToSync.title}
+          productImage={productToSync.image}
+          open={syncDialogOpen}
+          onOpenChange={setSyncDialogOpen}
+        />
       )}
     </div>
   );

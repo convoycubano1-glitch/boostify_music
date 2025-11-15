@@ -4,7 +4,8 @@ import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Skeleton } from "../ui/skeleton";
-import { Package, Eye, X, RefreshCw, Truck, AlertCircle } from "lucide-react";
+import { Package, Eye, X, RefreshCw, Truck, AlertCircle, Plus } from "lucide-react";
+import { CreateOrderDialog } from "./create-order-dialog";
 import {
   Dialog,
   DialogContent,
@@ -110,14 +111,17 @@ export function PrintfulOrders() {
             {orders.length} órdenes
           </Badge>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => refetch()}
-          data-testid="button-refresh-orders"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Actualizar
-        </Button>
+        <div className="flex gap-2">
+          <CreateOrderDialog />
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            data-testid="button-refresh-orders"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualizar
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
