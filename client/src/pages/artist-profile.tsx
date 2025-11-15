@@ -96,44 +96,46 @@ export default function ArtistProfilePage() {
 
       try {
         setIsLoading(true);
-        console.log(`🔍 [MOBILE] Looking for artist with slug: ${slug}`);
-        console.log(`🔍 [MOBILE] User Agent:`, navigator.userAgent);
-        console.log(`🔍 [MOBILE] Window width:`, window.innerWidth);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout')), 15000);
-        });
-
-        const queryPromise = (async () => {
-          const usersRef = collection(db, "users");
-          const q = query(usersRef, where("slug", "==", slug));
-          return await getDocs(q);
-        })();
-
-        const querySnapshot = await Promise.race([queryPromise, timeoutPromise]) as any;
-
-        console.log(`🔍 [MOBILE] Query completed: ${querySnapshot.size} users found`);
+        console.log(`🔍 [${isMobile ? 'MOBILE' : 'DESKTOP'}] Looking for artist with slug: ${slug}`);
+        console.log(`🔍 User Agent:`, navigator.userAgent);
+        console.log(`🔍 Window width:`, window.innerWidth);
+        console.log(`🔍 Is Mobile:`, isMobile);
+        
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("slug", "==", slug));
+        
+        console.log(`🔍 Starting Firestore query...`);
+        const querySnapshot = await getDocs(q);
+        console.log(`✅ Query completed: ${querySnapshot.size} users found`);
 
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
-          console.log(`✅ [MOBILE] Artist found:`, {
+          console.log(`✅ Artist found:`, {
             uid: userData.uid,
             name: userData.displayName || userData.name,
-            slug: userData.slug
+            slug: userData.slug,
+            hasBanner: !!userData.bannerImage,
+            bannerType: userData.bannerImage ? (
+              /\.(mp4|mov|avi|webm)$/i.test(userData.bannerImage.split('?')[0]) ? 'VIDEO' : 'IMAGE'
+            ) : 'NONE'
           });
           setArtistId(userData.uid);
           setArtistData(userData);
           setError(false);
         } else {
-          console.warn(`⚠️ [MOBILE] No artist found with slug: ${slug}`);
+          console.warn(`⚠️ No artist found with slug: ${slug}`);
+          console.warn(`⚠️ Query details: collection=users, field=slug, value=${slug}`);
           setError(true);
         }
       } catch (err: any) {
-        console.error("❌ [MOBILE] Error finding artist by slug:", err);
-        console.error("❌ [MOBILE] Error details:", {
+        console.error("❌ Error finding artist by slug:", err);
+        console.error("❌ Error details:", {
           message: err.message,
           code: err.code,
-          stack: err.stack?.substring(0, 200)
+          name: err.name,
+          stack: err.stack?.substring(0, 300)
         });
         setError(true);
       } finally {

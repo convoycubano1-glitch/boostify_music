@@ -8,18 +8,87 @@ import { useToast } from "../hooks/use-toast";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 export default function FixArtistBannerPage() {
-  const [artistSlug, setArtistSlug] = useState("reychavezsolofranck");
-  const [newBannerUrl, setNewBannerUrl] = useState("https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/artist-references%2FBWTYGZZYcgT9WRyXAUAZm5PkpBA3%2F1763159128175_freepik__-id-10-escena-final-conjunto-frank-rey-chvez-descr__87841.png?alt=media&token=d4ad8932-f497-4519-8ef7-93eec98ce319");
+  const [artistSlug, setArtistSlug] = useState("");
+  const [newBannerUrl, setNewBannerUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [currentBanner, setCurrentBanner] = useState<string | null>(null);
+  const [artistName, setArtistName] = useState<string>("");
   const { toast } = useToast();
 
+  const checkArtist = async () => {
+    if (!artistSlug.trim()) {
+      toast({
+        title: "Error",
+        description: "Ingresa un slug de artista",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("slug", "==", artistSlug));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        toast({
+          title: "Error",
+          description: `No se encontró el artista con slug: ${artistSlug}`,
+          variant: "destructive",
+        });
+        setCurrentBanner(null);
+        setArtistName("");
+      } else {
+        const data = querySnapshot.docs[0].data();
+        setCurrentBanner(data.bannerImage || null);
+        setArtistName(data.name || data.displayName || "Sin nombre");
+        
+        // Auto-sugerir la profileImage como nuevo banner si tiene video
+        const urlWithoutQuery = data.bannerImage?.split('?')[0] || '';
+        const isVideo = /\.(mp4|mov|avi|webm)$/i.test(urlWithoutQuery);
+        
+        if (isVideo && data.profileImage) {
+          setNewBannerUrl(data.profileImage);
+          toast({
+            title: "Video detectado",
+            description: "Se sugiere usar la imagen de perfil como banner",
+          });
+        } else if (isVideo) {
+          toast({
+            title: "Video detectado",
+            description: "Necesitas proporcionar una imagen PNG/JPG como nuevo banner",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("Error checking artist:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const updateBanner = async () => {
+    if (!newBannerUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "Ingresa la URL del nuevo banner",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     setSuccess(false);
 
     try {
-      // Buscar el artista por slug
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("slug", "==", artistSlug));
       const querySnapshot = await getDocs(q);
@@ -34,7 +103,6 @@ export default function FixArtistBannerPage() {
         return;
       }
 
-      // Actualizar el primer documento encontrado
       const artistDoc = querySnapshot.docs[0];
       const userDocRef = doc(db, "users", artistDoc.id);
       
@@ -48,6 +116,7 @@ export default function FixArtistBannerPage() {
         description: "El banner se ha cambiado correctamente. Prueba el perfil en móvil ahora.",
       });
       setSuccess(true);
+      setCurrentBanner(newBannerUrl);
     } catch (error: any) {
       console.error("Error updating banner:", error);
       toast({
@@ -70,51 +139,69 @@ export default function FixArtistBannerPage() {
         <Card className="bg-gray-900 border-gray-800 mb-6">
           <CardHeader>
             <CardTitle className="text-orange-500">
-              Rey Chavez & Solo Franck
+              Arreglar Banner de Artista
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-red-900/20 border border-red-500 p-4 rounded-lg">
-              <p className="text-red-400 text-sm mb-2">
-                <strong>Problema detectado:</strong>
-              </p>
-              <p className="text-gray-300 text-sm">
-                El banner actual es un video MP4, lo cual causa que el perfil no cargue en móviles.
-              </p>
+            <div className="space-y-2">
+              <label className="text-sm text-gray-400">Paso 1: Ingresa el Slug del Artista</label>
+              <div className="flex gap-2">
+                <Input
+                  value={artistSlug}
+                  onChange={(e) => setArtistSlug(e.target.value)}
+                  className="bg-gray-800 text-white border-gray-700 flex-1"
+                  placeholder="ejemplo: reyfranck"
+                />
+                <Button
+                  onClick={checkArtist}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Verificar
+                </Button>
+              </div>
             </div>
 
-            <div className="bg-green-900/20 border border-green-500 p-4 rounded-lg">
-              <p className="text-green-400 text-sm mb-2">
-                <strong>Solución:</strong>
-              </p>
-              <p className="text-gray-300 text-sm">
-                Cambiar el banner a tu referenceImage (que es PNG y funcionará perfectamente).
-              </p>
-            </div>
+            {artistName && (
+              <div className="bg-blue-900/20 border border-blue-500 p-4 rounded-lg">
+                <p className="text-blue-400 text-sm mb-2">
+                  <strong>Artista encontrado:</strong> {artistName}
+                </p>
+                {currentBanner && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-400">Banner actual:</p>
+                    <p className="text-xs text-gray-300 break-all font-mono mt-1">
+                      {currentBanner.substring(0, 80)}...
+                    </p>
+                    <p className="text-xs mt-2">
+                      {/\.(mp4|mov|avi|webm)$/i.test(currentBanner.split('?')[0]) ? (
+                        <span className="text-red-400">🎬 VIDEO (causa problemas en móvil)</span>
+                      ) : (
+                        <span className="text-green-400">✅ IMAGEN</span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Slug del Artista:</label>
-              <Input
-                value={artistSlug}
-                onChange={(e) => setArtistSlug(e.target.value)}
-                className="bg-gray-800 text-white border-gray-700"
-                placeholder="reychavezsolofranck"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-gray-400">Nueva URL del Banner (debe ser imagen PNG/JPG):</label>
+              <label className="text-sm text-gray-400">Paso 2: Nueva URL del Banner (PNG/JPG)</label>
               <Input
                 value={newBannerUrl}
                 onChange={(e) => setNewBannerUrl(e.target.value)}
                 className="bg-gray-800 text-white border-gray-700"
+                placeholder="https://..."
               />
+              <p className="text-xs text-gray-500">
+                Tip: Puedes usar la profileImage del artista o cualquier imagen PNG/JPG
+              </p>
             </div>
 
             <div className="pt-4">
               <Button
                 onClick={updateBanner}
-                disabled={loading || success}
+                disabled={loading || success || !artistName}
                 className={`w-full ${success ? 'bg-green-600 hover:bg-green-700' : 'bg-orange-500 hover:bg-orange-600'}`}
               >
                 {loading ? (
@@ -128,25 +215,25 @@ export default function FixArtistBannerPage() {
                     ¡Banner Actualizado!
                   </>
                 ) : (
-                  "Actualizar Banner Ahora"
+                  "Actualizar Banner"
                 )}
               </Button>
             </div>
 
-            {success && (
-              <div className="bg-blue-900/20 border border-blue-500 p-4 rounded-lg">
-                <p className="text-blue-400 text-sm mb-2">
-                  <strong>Siguiente paso:</strong>
+            {success && artistSlug && (
+              <div className="bg-green-900/20 border border-green-500 p-4 rounded-lg">
+                <p className="text-green-400 text-sm mb-2">
+                  <strong>✅ Listo!</strong>
                 </p>
                 <p className="text-gray-300 text-sm mb-3">
-                  Prueba el perfil en tu móvil ahora:
+                  Prueba el perfil en tu iPhone ahora:
                 </p>
                 <a
-                  href="/artist/reychavezsolofranck"
+                  href={`/artist/${artistSlug}`}
                   target="_blank"
-                  className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                  className="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
                 >
-                  Abrir Perfil en Móvil
+                  Abrir /artist/{artistSlug}
                 </a>
               </div>
             )}
