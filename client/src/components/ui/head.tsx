@@ -68,14 +68,26 @@ export function Head({
       <meta property="og:locale" content="es_ES" />
       <meta property="og:locale:alternate" content="en_US" />
       
-      {/* WhatsApp optimizations */}
-      <meta property="og:image:type" content="image/jpeg" />
+      {/* WhatsApp optimizations - Prefiere JPG/PNG de alta calidad */}
+      <meta property="og:image:type" content="image/png" />
       
       {/* Additional Twitter optimizations */}
       <meta name="twitter:image:alt" content={title} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image:width" content="1200" />
+      <meta name="twitter:image:height" content="630" />
       
       {/* LinkedIn optimizations */}
       <meta property="article:author" content={siteName} />
+      
+      {/* Instagram & Facebook Story optimizations */}
+      <meta property="og:image:secure_url" content={absoluteImageUrl} />
+      
+      {/* Telegram optimizations */}
+      <meta property="telegram:channel" content={siteName} />
+      
+      {/* Discord optimizations */}
+      <meta name="theme-color" content="#ea580c" />
       
       {/* Additional SEO */}
       <meta name="robots" content="index, follow" />

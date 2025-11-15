@@ -77,6 +77,7 @@ import crowdfundingRouter from './routes/crowdfunding'; // Import Crowdfunding r
 import tokenizationRouter from './routes/tokenization'; // Import Tokenization (Web3/Blockchain) router
 import adminImportArtistsRouter from './routes/admin-import-artists'; // Import Admin artists import router
 import virtualRecordLabelRouter from './routes/virtual-record-label'; // Import Virtual Record Label integration router
+import ogImageRouter from './routes/og-image'; // Import Open Graph image generator
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -280,6 +281,7 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/tokenization', tokenizationRouter); // Tokenization (Web3/Blockchain) routes
   app.use('/api/admin/import-artists', adminImportArtistsRouter); // Admin: Import artists from JSON/Excel
   app.use('/api/virtual-label', virtualRecordLabelRouter); // Virtual Record Label integration routes
+  app.use('/api/og-image', ogImageRouter); // Open Graph dynamic image generation
   app.use(creditsRouter); // Credits and payment routes
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');

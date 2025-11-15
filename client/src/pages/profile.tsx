@@ -40,7 +40,11 @@ export default function ProfilePage() {
 
   const fullUrl = window.location.origin + '/profile/' + artistId;
 
-  // Asegurar que la imagen sea una URL absoluta
+  // Usar imagen Open Graph dinámica generada por el servidor
+  // Esta imagen incluye: nombre del artista, género, biografía, imagen de perfil, badge AI si aplica
+  const ogImageUrl = `${window.location.origin}/api/og-image/artist/${artistId}`;
+  
+  // Fallback a imagen de perfil si la OG image falla
   const getAbsoluteImageUrl = (imageUrl?: string) => {
     if (!imageUrl) return `${window.location.origin}/assets/freepik__boostify_music_organe_abstract_icon.png`;
     if (imageUrl.startsWith('http')) return imageUrl;
@@ -66,7 +70,7 @@ export default function ProfilePage() {
           title={title}
           description={description}
           url={fullUrl}
-          image={profileImage}
+          image={ogImageUrl}
           type="profile"
           siteName="Boostify Music"
         />
