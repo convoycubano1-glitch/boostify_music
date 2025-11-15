@@ -62,6 +62,7 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import QRCode from "react-qr-code";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, RadialBarChart, RadialBar } from "recharts";
+import { CrowdfundingButton } from "../crowdfunding/crowdfunding-button";
 
 export interface ArtistProfileProps {
   artistId: string;

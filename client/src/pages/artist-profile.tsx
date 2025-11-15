@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
+import { CrowdfundingButton } from "../components/crowdfunding/crowdfunding-button";
 import { Head } from "../components/ui/head";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
@@ -127,6 +128,16 @@ export default function ArtistProfilePage() {
         twitterUsername="@boostifymusic"
       />
       <div className="min-h-screen bg-black pt-4">
+        {slug && (
+          <CrowdfundingButton 
+            artistSlug={slug} 
+            colors={{
+              hexAccent: '#F97316',
+              hexPrimary: '#FF8800',
+              hexBorder: '#5E2B0C',
+            }}
+          />
+        )}
         <ArtistProfileCard artistId={artistId} />
       </div>
     </>
