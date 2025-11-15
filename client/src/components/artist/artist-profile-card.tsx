@@ -713,16 +713,40 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     return null;
   };
 
-  // Query para obtener perfil
+  // Query para obtener perfil (combinado de Firestore + PostgreSQL)
   const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["userProfile", artistId],
     queryFn: async () => {
       try {
+        // Primero intentar obtener de Firestore
         const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", artistId)));
+        let firestoreData = null;
         if (!userDoc.empty) {
-          return userDoc.docs[0].data();
+          firestoreData = userDoc.docs[0].data();
         }
-        return null;
+        
+        // Intentar obtener datos de PostgreSQL usando artistId como slug
+        let postgresData = null;
+        try {
+          const response = await fetch(`/api/profile/${artistId}`);
+          if (response.ok) {
+            postgresData = await response.json();
+          }
+        } catch (pgError) {
+          console.log("Artist not found in PostgreSQL, using Firestore only");
+        }
+        
+        // Combinar datos: PostgreSQL tiene precedencia para campos estructurales
+        return {
+          ...firestoreData,
+          ...(postgresData && {
+            isAIGenerated: postgresData.isAIGenerated || false,
+            firestoreId: postgresData.firestoreId,
+            generatedBy: postgresData.generatedBy,
+            slug: postgresData.slug,
+            pgId: postgresData.id
+          })
+        };
       } catch (error) {
         console.error("Error fetching user profile:", error);
         return null;
@@ -1597,7 +1621,18 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 text-center sm:text-left w-full">
-                  <div className="text-2xl sm:text-3xl font-semibold text-white">{artist.name}</div>
+                  <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+                    <div className="text-2xl sm:text-3xl font-semibold text-white">{artist.name}</div>
+                    {userProfile?.isAIGenerated && (
+                      <div 
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"
+                        data-testid="badge-virtual-artist"
+                      >
+                        <Bot className="h-3.5 w-3.5" />
+                        Artista Virtual
+                      </div>
+                    )}
+                  </div>
                   <div 
                     className="text-sm sm:text-base mt-1 transition-colors duration-500" 
                     style={{ color: colors.hexAccent }}
