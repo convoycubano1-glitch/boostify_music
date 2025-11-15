@@ -101,9 +101,12 @@ export default function AuthPage() {
       setShowEmailDialog(false);
       setIsAnonLoading(false);
       
+      // Redirigir al returnTo después del login anónimo
+      window.location.href = returnTo;
+      
       toast({
         title: "Acceso temporal concedido",
-        description: "Has iniciado sesión en modo de vista previa. Ten en cuenta que todas las funciones están en desarrollo.",
+        description: "Has iniciado sesión en modo de vista previa.",
       });
     } catch (error) {
       console.error("Error en autenticación anónima:", error);
@@ -202,10 +205,10 @@ export default function AuthPage() {
           {/* Instrucción clara */}
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-center">
             <p className="text-xs text-blue-300 font-medium">
-              🔐 Al hacer clic, se abrirá la página de Google para iniciar sesión
+              🔐 Serás redirigido a Google para iniciar sesión
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              Serás redirigido de vuelta automáticamente
+              Después de iniciar sesión, volverás aquí automáticamente
             </p>
           </div>
           
@@ -219,7 +222,7 @@ export default function AuthPage() {
             {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Conectando con Google...
+                Redirigiendo a Google...
               </>
             ) : (
               <>

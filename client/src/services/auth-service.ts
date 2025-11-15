@@ -89,10 +89,12 @@ class AuthService {
 
   async signInWithGoogle(redirectPath: string = '/dashboard'): Promise<User | null> {
     try {
-      console.log('🔐 [AUTH] Iniciando login con Google...');
+      console.log('🔐 [AUTH] Iniciando login con Google con REDIRECT');
       
       // Guardar la ruta de redirección
       localStorage.setItem('auth_redirect_path', redirectPath);
+      localStorage.setItem('auth_redirect_attempt', 'true');
+      localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
       
       // Configurar el proveedor de Google
       const provider = new GoogleAuthProvider();
@@ -100,49 +102,12 @@ class AuthService {
         prompt: 'select_account'
       });
       
-      // Detectar si es móvil
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      // SIEMPRE usar redirect - el popup falla porque usa el dominio de desarrollo
+      // que Firebase rechaza. Redirect usa el authDomain de Firebase que está autorizado.
+      console.log('🔐 [AUTH] Usando signInWithRedirect (más confiable)');
+      await signInWithRedirect(this.auth, provider);
       
-      console.log('🔐 [AUTH] Dispositivo móvil:', isMobile);
-      
-      // En móviles usar redirect, en desktop usar popup
-      if (isMobile) {
-        console.log('🔐 [AUTH] Móvil detectado, usando redirect');
-        localStorage.setItem('auth_redirect_attempt', 'true');
-        localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
-        await signInWithRedirect(this.auth, provider);
-        return null;
-      }
-      
-      // En desktop, intentar popup primero
-      try {
-        console.log('🔐 [AUTH] Desktop detectado, intentando popup...');
-        const result = await signInWithPopup(this.auth, provider);
-        console.log('✅ [AUTH] Popup exitoso');
-        
-        // Redirigir al dashboard
-        if (typeof window !== 'undefined') {
-          window.location.href = redirectPath;
-        }
-        
-        return result.user;
-      } catch (popupError: any) {
-        console.warn('⚠️ [AUTH] Error en popup:', popupError.code);
-        
-        // Si falla el popup, usar redirect
-        if (popupError.code === 'auth/popup-blocked' || 
-            popupError.code === 'auth/popup-closed-by-user' ||
-            popupError.code === 'auth/internal-error') {
-          console.log('🔐 [AUTH] Popup falló, usando redirect...');
-          localStorage.setItem('auth_redirect_attempt', 'true');
-          localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
-          await signInWithRedirect(this.auth, provider);
-          return null;
-        }
-        
-        // Lanzar otros errores
-        throw popupError;
-      }
+      return null;
     } catch (error) {
       console.error('❌ [AUTH] Error en autenticación:', error);
       throw error;
