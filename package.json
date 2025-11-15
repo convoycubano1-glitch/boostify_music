@@ -20,7 +20,7 @@
     "@faker-js/faker": "^9.5.0",
     "@fal-ai/client": "^1.2.3",
     "@fal-ai/serverless-client": "^0.15.0",
-    "@google/genai": "^1.29.0",
+    "@google/genai": "^1.29.1",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",

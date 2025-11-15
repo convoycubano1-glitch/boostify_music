@@ -24,16 +24,20 @@ interface TokenizedSong {
 }
 
 interface TokenizedMusicViewProps {
-  artistId: number;
+  artistId: string | number;
   artistName?: string;
 }
 
 export function TokenizedMusicView({ artistId, artistName }: TokenizedMusicViewProps) {
   const { isConnected } = useAccount();
   const [selectedSong, setSelectedSong] = useState<TokenizedSong | null>(null);
+  
+  const numericArtistId = typeof artistId === 'string' ? parseInt(artistId) : artistId;
+  const isValidId = !isNaN(numericArtistId);
 
   const { data: songs = [], isLoading } = useQuery<TokenizedSong[]>({
-    queryKey: ['/api/tokenization/songs/active', artistId],
+    queryKey: ['/api/tokenization/songs/active', numericArtistId],
+    enabled: isValidId,
   });
 
   if (isLoading) {

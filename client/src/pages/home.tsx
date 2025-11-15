@@ -510,26 +510,55 @@ export default function HomePage() {
                 transition={{ delay: 0.7, duration: 0.6 }}
                 className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 py-4"
               >
-                <Button
-                  size="lg"
-                  onClick={handleGoogleLogin}
-                  className="relative overflow-hidden group bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 hover:from-orange-600 hover:via-red-600 hover:to-orange-600 text-white h-14 px-8 shadow-xl transition-all duration-300 transform hover:scale-105"
-                  aria-label="Login with Google"
-                >
-                  <SiGoogle className="w-5 h-5 mr-2" />
-                  <span className="font-medium">Get Started</span>
-                </Button>
-                
-                <Link href="/signup">
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="h-14 px-8 border-white/30 text-white hover:bg-white/10 hover:text-white"
-                  >
-                    View Pricing
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </Link>
+                {user ? (
+                  // Mostrar botón de perfil cuando el usuario está logueado
+                  <>
+                    <Link href="/profile">
+                      <Button
+                        size="lg"
+                        className="relative overflow-hidden group bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 hover:from-orange-600 hover:via-red-600 hover:to-orange-600 text-white h-14 px-8 shadow-xl transition-all duration-300 transform hover:scale-105"
+                        data-testid="button-my-profile-hero"
+                      >
+                        <UserCircle2 className="w-5 h-5 mr-2" />
+                        <span className="font-medium">My Profile</span>
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard">
+                      <Button 
+                        size="lg" 
+                        variant="outline" 
+                        className="h-14 px-8 border-white/30 text-white hover:bg-white/10 hover:text-white"
+                      >
+                        Dashboard
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  // Mostrar botones de login cuando no está logueado
+                  <>
+                    <Button
+                      size="lg"
+                      onClick={handleGoogleLogin}
+                      className="relative overflow-hidden group bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 hover:from-orange-600 hover:via-red-600 hover:to-orange-600 text-white h-14 px-8 shadow-xl transition-all duration-300 transform hover:scale-105"
+                      aria-label="Login with Google"
+                    >
+                      <SiGoogle className="w-5 h-5 mr-2" />
+                      <span className="font-medium">Get Started</span>
+                    </Button>
+                    
+                    <Link href="/signup">
+                      <Button 
+                        size="lg" 
+                        variant="outline" 
+                        className="h-14 px-8 border-white/30 text-white hover:bg-white/10 hover:text-white"
+                      >
+                        View Pricing
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </motion.div>
             </motion.div>
             
@@ -560,14 +589,24 @@ export default function HomePage() {
           </div>
         </div>
         
-        {/* Navigation Button for logged-in users */}
+        {/* Navigation Buttons for logged-in users */}
         {user && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="fixed top-4 right-4 z-50"
+            className="fixed top-4 right-4 z-50 flex gap-2"
           >
+            <Link href="/profile" aria-label="My Profile">
+              <Button
+                variant="outline"
+                size="icon"
+                className="bg-black/20 backdrop-blur-lg border-orange-500/20 hover:bg-orange-500/10"
+                data-testid="button-profile-nav"
+              >
+                <UserCircle2 className="h-5 w-5" />
+              </Button>
+            </Link>
             <Link href="/dashboard" aria-label="Dashboard">
               <Button
                 variant="outline"

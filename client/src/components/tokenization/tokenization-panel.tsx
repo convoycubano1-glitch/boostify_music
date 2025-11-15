@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Coins, TrendingUp, Wallet, Plus, Eye, EyeOff } from 'lucide-react';
+import { Coins, TrendingUp, Wallet, Plus, Eye, EyeOff, Sparkles, Image as ImageIcon, Upload, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
@@ -32,6 +33,9 @@ interface TokenizationPanelProps {
 export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isImprovingDescription, setIsImprovingDescription] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageTab, setImageTab] = useState<'url' | 'generate'>('url');
   const [formData, setFormData] = useState({
     songName: '',
     tokenSymbol: '',
@@ -52,10 +56,10 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/tokenization/create', {
+    mutationFn: (data: any) => apiRequest({
+      url: '/api/tokenization/create',
       method: 'POST',
-      body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json' },
+      data: data,
     }),
     onSuccess: () => {
       toast({
@@ -85,7 +89,8 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: (songId: number) => apiRequest(`/api/tokenization/song/${songId}/toggle`, {
+    mutationFn: (songId: number) => apiRequest({
+      url: `/api/tokenization/song/${songId}/toggle`,
       method: 'PUT',
     }),
     onSuccess: () => {
@@ -106,7 +111,82 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
     });
   };
 
-  const totalEarningsEth = earnings?.totalEarningsEth || '0';
+  const handleImproveDescription = async () => {
+    if (!formData.songName) {
+      toast({
+        title: 'Nombre requerido',
+        description: 'Ingresa el nombre de la canción primero',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsImprovingDescription(true);
+    try {
+      const result = await apiRequest({
+        url: '/api/tokenization/ai/improve-description',
+        method: 'POST',
+        data: {
+          songName: formData.songName,
+          currentDescription: formData.description,
+        },
+      });
+
+      setFormData({ ...formData, description: result.description });
+      toast({
+        title: '¡Descripción mejorada!',
+        description: 'La IA ha mejorado tu descripción',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo mejorar la descripción',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImprovingDescription(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!formData.songName) {
+      toast({
+        title: 'Nombre requerido',
+        description: 'Ingresa el nombre de la canción primero',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const result = await apiRequest({
+        url: '/api/tokenization/ai/generate-image',
+        method: 'POST',
+        data: {
+          songName: formData.songName,
+          description: formData.description,
+        },
+      });
+
+      setFormData({ ...formData, imageUrl: result.imageUrl });
+      setImageTab('url');
+      toast({
+        title: '¡Imagen generada!',
+        description: 'La IA ha generado la imagen para tu canción',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo generar la imagen',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const totalEarningsEth = (earnings as any)?.totalEarningsEth || '0';
 
   return (
     <div className="space-y-6" data-testid="tokenization-panel">
@@ -223,14 +303,40 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Descripción</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="description">Descripción</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleImproveDescription}
+                      disabled={isImprovingDescription || !formData.songName}
+                      className="gap-2"
+                    >
+                      {isImprovingDescription ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Mejorando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3" />
+                          Mejorar con IA
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Describe tu canción..."
+                    placeholder="Describe tu canción... (o usa IA para generar)"
+                    rows={4}
                     data-testid="input-description"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tip: Ingresa el nombre de la canción y haz clic en "Mejorar con IA"
+                  </p>
                 </div>
 
                 <div>
@@ -245,14 +351,64 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="imageUrl">URL de la Imagen</Label>
-                  <Input
-                    id="imageUrl"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    placeholder="https://..."
-                    data-testid="input-image-url"
-                  />
+                  <Label>Imagen de la Canción</Label>
+                  <Tabs value={imageTab} onValueChange={(v) => setImageTab(v as 'url' | 'generate')} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="url">
+                        <Upload className="w-3 h-3 mr-1" />
+                        URL de Imagen
+                      </TabsTrigger>
+                      <TabsTrigger value="generate">
+                        <ImageIcon className="w-3 h-3 mr-1" />
+                        Generar con IA
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="url" className="space-y-2">
+                      <Input
+                        id="imageUrl"
+                        value={formData.imageUrl}
+                        onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                        placeholder="https://ejemplo.com/imagen.jpg"
+                        data-testid="input-image-url"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Pega la URL de una imagen existente
+                      </p>
+                    </TabsContent>
+                    <TabsContent value="generate" className="space-y-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleGenerateImage}
+                        disabled={isGeneratingImage || !formData.songName}
+                        className="w-full gap-2"
+                      >
+                        {isGeneratingImage ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Generando imagen...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            Generar Imagen con IA
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        La IA creará una imagen profesional basada en el nombre y descripción
+                      </p>
+                    </TabsContent>
+                  </Tabs>
+                  {formData.imageUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={formData.imageUrl}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <Button 

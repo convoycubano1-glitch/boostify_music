@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { CrowdfundingButton } from "../components/crowdfunding/crowdfunding-button";
+import { TokenizedMusicView } from "../components/tokenization/tokenized-music-view";
 import { Head } from "../components/ui/head";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
@@ -139,6 +140,11 @@ export default function ArtistProfilePage() {
           />
         )}
         <ArtistProfileCard artistId={artistId} />
+        
+        {/* Music Tokenization Section (Web3/Blockchain) */}
+        <div className="container mx-auto px-4 py-8">
+          <TokenizedMusicView artistId={artistId} />
+        </div>
       </div>
     </>
   );

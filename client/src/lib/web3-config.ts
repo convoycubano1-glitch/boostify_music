@@ -3,7 +3,7 @@ import { polygon, polygonMumbai } from 'wagmi/chains';
 
 export const wagmiConfig = getDefaultConfig({
   appName: 'Boostify Music',
-  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID',
+  projectId: 'd66803c6-d493-438d-b9d8-2c4637eb1868',
   chains: [
     polygon,
     polygonMumbai,

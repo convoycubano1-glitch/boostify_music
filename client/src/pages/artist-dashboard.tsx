@@ -22,8 +22,12 @@ import {
 import { Badge } from "../components/ui/badge";
 import { RightsManagementCard } from "../components/rights/rights-management-card";
 import { DistributionCard } from "../components/distribution/distribution-card";
+import { TokenizationPanel } from "../components/tokenization/tokenization-panel";
+import { useAuth } from "../hooks/use-auth";
 
 export default function DistributionTools() {
+  const { user } = useAuth();
+  
   return (
     <div className="min-h-screen flex flex-col bg-background text-gray-100">
       <main className="flex-1 pt-0">
@@ -152,6 +156,24 @@ export default function DistributionTools() {
                 <DistributionCard />
               </div>
             </motion.div>
+
+            {/* Music Tokenization (Web3/Blockchain) */}
+            {user && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <Sparkles className="h-6 w-6 text-orange-500" />
+                  <h2 className="text-2xl font-bold">Music Tokenization (Web3)</h2>
+                  <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white border-none">
+                    Blockchain
+                  </Badge>
+                </div>
+                <TokenizationPanel artistId={user.id} />
+              </motion.div>
+            )}
 
             {/* Coming Soon: Multi-Platform Distribution */}
             <motion.div

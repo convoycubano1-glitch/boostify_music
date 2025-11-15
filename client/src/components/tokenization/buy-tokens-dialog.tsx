@@ -92,16 +92,16 @@ export function BuyTokensDialog({ song, artistName, isConnected, onClose }: BuyT
       const pricePerTokenEth = song.pricePerTokenEth || '0.0001';
       const totalPrice = (parseFloat(pricePerTokenEth) * amount).toString();
 
-      await apiRequest('/api/tokenization/purchase/record', {
+      await apiRequest({
+        url: '/api/tokenization/purchase/record',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        data: {
           tokenizedSongId: song.id,
           buyerWalletAddress: address,
           amountTokens: amount,
           pricePaidEth: totalPrice,
           transactionHash: hash,
-        }),
+        },
       });
 
       queryClient.invalidateQueries({ queryKey: ['/api/tokenization/songs/active'] });

@@ -64,6 +64,8 @@ import QRCode from "react-qr-code";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, RadialBarChart, RadialBar } from "recharts";
 import { CrowdfundingButton } from "../crowdfunding/crowdfunding-button";
 import { CrowdfundingPanel } from "../crowdfunding/crowdfunding-panel";
+import { TokenizationPanel } from "../tokenization/tokenization-panel";
+import { TokenizedMusicView } from "../tokenization/tokenized-music-view";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -3020,6 +3022,32 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                 </div>
               </div>
             </div>
+
+            {/* Music Tokenization Section (Web3/Blockchain) */}
+            {isOwnProfile && (
+              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
+                <div className="absolute inset-0 opacity-10" style={{
+                  background: `radial-gradient(circle at 70% 50%, ${colors.hexPrimary}, transparent 70%)`
+                }}></div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                    <div className="text-base font-bold transition-colors duration-500" style={{ color: colors.hexAccent }}>
+                      Tokenización de Música (Web3)
+                    </div>
+                    <div className="ml-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30">
+                      <span className="text-xs font-bold text-purple-400">Blockchain</span>
+                    </div>
+                  </div>
+                  
+                  <TokenizationPanel artistId={parseInt(artistId)} />
+                </div>
+              </div>
+            )}
+            
+            {/* Public View: Tokenized Music */}
+            <TokenizedMusicView artistId={artistId} />
 
             {/* Tarjeta de Información */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>

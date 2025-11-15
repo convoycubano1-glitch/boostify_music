@@ -7,7 +7,128 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 ## Recent Changes (November 2024)
 
-### 💰 Sistema de Crowdfunding Completo (LATEST)
+### 🎵 Sistema de Tokenización de Música Web3/Blockchain (LATEST)
+**Fecha**: 15 de Noviembre, 2024
+**Objetivo**: Implementar sistema completo de tokenización de música usando ERC-1155 en Polygon blockchain
+
+**Funcionalidades implementadas**:
+1. ✅ **Base de Datos PostgreSQL**:
+   - Tabla `tokenized_songs`: Canciones tokenizadas con metadata blockchain
+   - Tabla `token_purchases`: Registro de compras de tokens con transaction hashes
+   - Tabla `artist_token_earnings`: Ganancias de artistas por venta de tokens
+   - Tracking automático de supply disponible y ganancias en ETH/USD
+
+2. ✅ **Backend API (server/routes/tokenization.ts)**:
+   - `GET /api/tokenization/songs/:artistId` - Obtener todas las canciones tokenizadas
+   - `GET /api/tokenization/songs/active/:artistId` - Obtener canciones activas
+   - `POST /api/tokenization/create` - Tokenizar nueva canción
+   - `POST /api/tokenization/purchase/record` - Registrar compra de tokens
+   - `PUT /api/tokenization/song/:id/toggle` - Activar/desactivar venta
+   - `GET /api/tokenization/earnings/:artistId` - Ver ganancias en blockchain
+
+3. ✅ **Smart Contract ERC-1155** (contracts/BoostifyMusicTokens.sol):
+   - Un contrato maestro para TODAS las canciones (gas efficient)
+   - Cada canción = Token ID único en el contrato
+   - Split automático on-chain: 80% artista, 20% plataforma
+   - Funciones de mint, buy, toggle, y gestión de precios
+   - Seguridad: ReentrancyGuard, OpenZeppelin audited libraries
+   - Desplegable en Polygon (~$0.01 por transacción)
+
+4. ✅ **Web3 Frontend Integration**:
+   - Wagmi + Viem (stack moderno TypeScript-first)
+   - RainbowKit para wallet connection (MetaMask, WalletConnect, etc.)
+   - Providers configurados en App.tsx
+   - Soporte para Polygon y Mumbai testnet
+
+5. ✅ **Panel de Tokenización para Artistas** (TokenizationPanel):
+   - Dashboard con métricas: canciones tokenizadas, ganancias totales ETH
+   - Formulario para tokenizar nuevas canciones
+   - Configuración de: nombre, símbolo, supply total, precio USD
+   - Toggle para activar/desactivar ventas
+   - Visualización de supply disponible vs total
+
+6. ✅ **Vista Pública de Música Tokenizada** (TokenizedMusicView):
+   - Muestra canciones tokenizadas en perfil público del artista
+   - Cards atractivos con imagen, descripción y beneficios
+   - Precio en USD y ETH
+   - Indicador de supply disponible
+   - Botón "Connect Wallet" si no está conectado
+   - Botón "Comprar Tokens" que abre modal de compra
+
+7. ✅ **Diálogo de Compra de Tokens** (BuyTokensDialog):
+   - Integración completa con MetaMask
+   - Input para cantidad de tokens a comprar
+   - Cálculo en tiempo real del total en USD y ETH
+   - Ejecución de transacción on-chain con Wagmi
+   - Confirmación de transacción en blockchain
+   - Registro automático en base de datos
+   - Estados de UI: loading, confirming, success, error
+
+**Características del sistema**:
+- ⛓️ **Blockchain**: ERC-1155 multi-token en Polygon
+- 💰 **Split automático**: 80% artista, 20% plataforma (on-chain)
+- 🦊 **MetaMask Integration**: Compra directa con wallet
+- 🎨 **Token Metadata**: Imagen, descripción, beneficios para holders
+- 💎 **Benefits System**: Descuentos en merch, acceso exclusivo, etc.
+- 📊 **Real-time tracking**: Actualización automática de supply y ganancias
+- 🔐 **Seguridad**: Smart contract auditado, ReentrancyGuard, validaciones
+
+**Arquitectura técnica**:
+```
+Frontend (Viem + Wagmi)
+    ↓
+  MetaMask
+    ↓
+Polygon Blockchain (ERC-1155 Contract)
+    ↓
+Backend API (record purchase)
+    ↓
+PostgreSQL (analytics + tracking)
+```
+
+**Archivos clave**:
+- `db/schema.ts` - Tablas tokenized_songs, token_purchases, artist_token_earnings
+- `server/routes/tokenization.ts` - API completa de tokenización
+- `contracts/BoostifyMusicTokens.sol` - Smart contract ERC-1155
+- `contracts/README.md` - Guía de deployment y testing
+- `client/src/lib/web3-config.ts` - Configuración Wagmi + chains
+- `client/src/components/tokenization/tokenization-panel.tsx` - Panel artista
+- `client/src/components/tokenization/tokenized-music-view.tsx` - Vista pública
+- `client/src/components/tokenization/buy-tokens-dialog.tsx` - Compra con MetaMask
+
+**Workflow del usuario**:
+1. Artista crea canción tokenizada desde su panel
+2. Define supply (ej: 10,000 tokens), precio (ej: $0.10/token), beneficios
+3. Boostify admin despliega tokens en blockchain (mint on ERC-1155)
+4. Fans visitan perfil del artista y ven sección "Música Tokenizada"
+5. Fan conecta MetaMask y selecciona cantidad de tokens
+6. Transacción se ejecuta en Polygon (~$0.01 gas fee)
+7. Smart contract transfiere tokens al fan y ETH al artista (80%) y plataforma (20%)
+8. Backend registra compra en PostgreSQL para analytics
+9. Artista ve ganancias en tiempo real en su panel
+
+**Deployment del Smart Contract**:
+1. Instalar Hardhat: `npm install --save-dev hardhat @openzeppelin/contracts`
+2. Configurar `hardhat.config.js` con Polygon RPC
+3. Obtener test MATIC de faucet.polygon.technology (Mumbai)
+4. Deploy: `npx hardhat run scripts/deploy.js --network mumbai`
+5. Verificar: `npx hardhat verify --network mumbai CONTRACT_ADDRESS`
+6. Actualizar `BOOSTIFY_CONTRACT_ADDRESS` en `client/src/lib/web3-config.ts`
+
+**Gas Costs (Polygon)**:
+- Deploy contract: ~$0.05
+- Mint song tokens: ~$0.003
+- Buy tokens: ~$0.002
+- Toggle status: ~$0.001
+
+**Roadmap**:
+- [ ] WalletConnect project ID configuration
+- [ ] Metadata hosting (IPFS o server)
+- [ ] Secondary market (OpenSea integration)
+- [ ] Dynamic pricing based on demand
+- [ ] Staking rewards for token holders
+
+### 💰 Sistema de Crowdfunding Completo
 **Fecha**: 15 de Noviembre, 2024
 **Objetivo**: Implementar sistema completo de crowdfunding para financiar proyectos musicales
 
