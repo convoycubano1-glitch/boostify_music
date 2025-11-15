@@ -165,7 +165,6 @@ class AuthService {
         // Si el popup fue bloqueado, informar al usuario
         if (popupError.code === 'auth/popup-blocked') {
           console.error('AuthService: Popup bloqueado por el navegador');
-          // Agregar información útil al error
           popupError.userMessage = 'El navegador bloqueó la ventana emergente. Habilita popups o usa el método alternativo.';
           throw popupError;
         }
@@ -184,13 +183,11 @@ class AuthService {
           console.log('AuthService: Intentando autenticación con redirect como fallback');
           
           // Primero almacenamos información sobre el reintento para la redirección
-          // USAR LOCALSTORAGE para iOS - sessionStorage se borra
           localStorage.setItem('auth_redirect_attempt', 'true');
           localStorage.setItem('auth_redirect_timestamp', Date.now().toString());
           
           // Estrategia 2: Usar redirect como fallback
           await signInWithRedirect(this.auth, sessionProvider);
-          // El control NO regresa aquí - la página se recargará después de la redirección
           return null;
         }
         

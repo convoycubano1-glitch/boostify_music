@@ -274,7 +274,17 @@ export default function AuthPage() {
           </span>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
+          {/* Instrucción clara */}
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-center">
+            <p className="text-xs text-blue-300 font-medium">
+              🔐 Al hacer clic, se abrirá la página de Google para iniciar sesión
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Serás redirigido de vuelta automáticamente
+            </p>
+          </div>
+          
           <Button 
             variant="outline" 
             className="w-full gap-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 text-white border-none hover:from-orange-600 hover:via-red-600 hover:to-orange-600 transition-all duration-300"
@@ -284,7 +294,7 @@ export default function AuthPage() {
             {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Conectando...
+                Redirigiendo a Google...
               </>
             ) : isConnecting ? (
               <>
@@ -299,18 +309,9 @@ export default function AuthPage() {
             ) : (
               <>
                 <SiGoogle className="w-5 h-5" />
-                Continuar con Google
+                Iniciar Sesión con Google
               </>
             )}
-          </Button>
-          
-          <Button 
-            variant="ghost"
-            className="w-full gap-2 text-gray-400 hover:text-white hover:bg-white/10 text-xs"
-            onClick={() => handleGoogleSignIn(true)}
-            disabled={isLoading || isConnecting || (!canConnect && !isConnecting)}
-          >
-            Método Alternativo (si el popup está bloqueado)
           </Button>
         </div>
 
