@@ -6,7 +6,6 @@ import { Toaster } from "./components/ui/toaster";
 import { PageLoader } from "./components/ui/page-loader";
 import { ProtectedRoute } from "./lib/protected-route";
 import { SubscriptionProtectedRoute } from "./lib/subscription-protected-route";
-import { AuthProvider } from "./hooks/use-auth";
 import { useToast } from "./hooks/use-toast";
 import { SubscriptionProvider } from "./lib/context/subscription-context";
 import { SubscriptionPlan } from "./lib/api/subscription-service";
@@ -444,16 +443,14 @@ const App = () => {
       <div className="min-h-screen bg-background text-foreground">
         <ViteHMRErrorHandler />
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <GlobalAuthGuard>
-                <EditorProvider>
-                  <Router />
-                  <Toaster />
-                </EditorProvider>
-              </GlobalAuthGuard>
-            </SubscriptionProvider>
-          </AuthProvider>
+          <SubscriptionProvider>
+            <GlobalAuthGuard>
+              <EditorProvider>
+                <Router />
+                <Toaster />
+              </EditorProvider>
+            </GlobalAuthGuard>
+          </SubscriptionProvider>
         </QueryClientProvider>
       </div>
     </ErrorBoundary>
