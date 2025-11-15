@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server as HttpServer } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth } from "./replitAuth";
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { setupOpenAIRoutes } from "./routes/openai";

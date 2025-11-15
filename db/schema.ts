@@ -1,12 +1,30 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, decimal, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, decimal, uuid, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { z } from "zod";
+
+// Session storage table for Replit Auth
+// IMPORTANTE: Necesaria para Replit Auth, no borrar
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").unique().notNull(),
-  password: text("password").notNull(),
+  // Campos para Replit Auth (opcional para retrocompatibilidad)
+  replitId: varchar("replit_id").unique(), // ID de Replit Auth
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  profileImageUrl: text("profile_image_url"),
+  // Campos legacy (ahora opcionales)
+  username: text("username").unique(),
+  password: text("password"),
   role: text("role", { enum: ["artist", "admin"] }).default("artist").notNull(),
   email: text("email"),
   phone: text("phone"),
