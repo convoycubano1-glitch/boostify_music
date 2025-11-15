@@ -49,6 +49,7 @@ import {
   AreaChart
 } from "recharts";
 import { Download, Video } from "lucide-react";
+import { PrintfulDashboard } from "../components/merchandise/printful-dashboard";
 
 // Product type definition from original code
 interface Product {
@@ -756,85 +757,9 @@ export default function MerchandisePage() {
             </div>
           </TabsContent>
 
-          {/* Providers Tab */}
+          {/* Providers Tab - Printful Integration */}
           <TabsContent value="providers">
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card className="p-8">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Building2 className="h-8 w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-semibold">Connected Providers</h3>
-                    <p className="text-muted-foreground">
-                      Manage your merchandise providers
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {[
-                    { name: 'PrintfulPro', type: 'Print Provider', status: 'Active' },
-                    { name: 'VinylPress', type: 'Vinyl Manufacturer', status: 'Active' },
-                    { name: 'ShirtWorks', type: 'Clothing Provider', status: 'Pending' }
-                  ].map((provider) => (
-                    <div key={provider.name} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h4 className="font-medium">{provider.name}</h4>
-                          <p className="text-sm text-muted-foreground">{provider.type}</p>
-                        </div>
-                        <Badge variant={provider.status === 'Active' ? 'default' : 'secondary'}>
-                          {provider.status}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm">Configure</Button>
-                        <Button variant="outline" size="sm">View Orders</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <Card className="p-8">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-orange-500/10 rounded-lg">
-                    <Package className="h-8 w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-semibold">Provider Directory</h3>
-                    <p className="text-muted-foreground">
-                      Find and connect with new providers
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Input placeholder="Search providers..." className="mb-4" />
-
-                  {[
-                    { name: 'Global Print Solutions', rating: 4.8, speciality: 'All Print Products' },
-                    { name: 'Vinyl Masters', rating: 4.7, speciality: 'Vinyl Records' },
-                    { name: 'Eco Merch', rating: 4.9, speciality: 'Sustainable Products' }
-                  ].map((provider) => (
-                    <div key={provider.name} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h4 className="font-medium">{provider.name}</h4>
-                          <p className="text-sm text-muted-foreground">{provider.speciality}</p>
-                        </div>
-                        <div className="text-sm">
-                          ⭐ {provider.rating}
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="mt-4">
-                        View Details
-                      </Button>
-                    </div>
-                  ))}
-                </div>              </Card>
-            </div>
+            <PrintfulDashboard />
           </TabsContent>
         </Tabs>
       </div>
