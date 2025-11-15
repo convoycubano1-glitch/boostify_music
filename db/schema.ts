@@ -167,6 +167,37 @@ export const walletTransactions = pgTable("wallet_transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
+// Crowdfunding Campaigns - Campañas de financiamiento colectivo de artistas
+export const crowdfundingCampaigns = pgTable("crowdfunding_campaigns", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  goalAmount: decimal("goal_amount", { precision: 10, scale: 2 }).notNull(),
+  currentAmount: decimal("current_amount", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  isActive: boolean("is_active").default(false).notNull(),
+  endDate: timestamp("end_date"),
+  contributorsCount: integer("contributors_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Crowdfunding Contributions - Contribuciones a campañas
+export const crowdfundingContributions = pgTable("crowdfunding_contributions", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").references(() => crowdfundingCampaigns.id).notNull(),
+  contributorEmail: text("contributor_email"),
+  contributorName: text("contributor_name"),
+  isAnonymous: boolean("is_anonymous").default(false).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(),
+  artistAmount: decimal("artist_amount", { precision: 10, scale: 2 }).notNull(),
+  stripePaymentIntentId: text("stripe_payment_intent_id").unique(),
+  paymentStatus: text("payment_status", { enum: ["pending", "succeeded", "failed", "refunded"] }).default("pending").notNull(),
+  message: text("message"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
 export const marketingMetrics = pgTable("marketing_metrics", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -449,7 +480,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   media: many(artistMedia),
   musicians: many(musicians),
   songs: many(songs),
-  merchandise: many(merchandise)
+  merchandise: many(merchandise),
+  crowdfundingCampaigns: many(crowdfundingCampaigns)
 }));
 
 export const musiciansRelations = relations(musicians, ({ one, many }) => ({
@@ -713,6 +745,21 @@ export const merchandiseRelations = relations(merchandise, ({ one }) => ({
   }),
 }));
 
+export const crowdfundingCampaignsRelations = relations(crowdfundingCampaigns, ({ one, many }) => ({
+  user: one(users, {
+    fields: [crowdfundingCampaigns.userId],
+    references: [users.id],
+  }),
+  contributions: many(crowdfundingContributions),
+}));
+
+export const crowdfundingContributionsRelations = relations(crowdfundingContributions, ({ one }) => ({
+  campaign: one(crowdfundingCampaigns, {
+    fields: [crowdfundingContributions.campaignId],
+    references: [crowdfundingCampaigns.id],
+  }),
+}));
+
 export const musicianClipsRelations = relations(musicianClips, ({ one }) => ({
   project: one(musicVideoProjects, {
     fields: [musicianClips.projectId],
@@ -781,6 +828,16 @@ export const selectUserAchievementSchema = createSelectSchema(userAchievements);
 
 export const insertArtistMediaSchema = createInsertSchema(artistMedia);
 export const selectArtistMediaSchema = createSelectSchema(artistMedia);
+
+export const insertCrowdfundingCampaignSchema = createInsertSchema(crowdfundingCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectCrowdfundingCampaignSchema = createSelectSchema(crowdfundingCampaigns);
+export type InsertCrowdfundingCampaign = z.infer<typeof insertCrowdfundingCampaignSchema>;
+export type SelectCrowdfundingCampaign = typeof crowdfundingCampaigns.$inferSelect;
+
+export const insertCrowdfundingContributionSchema = createInsertSchema(crowdfundingContributions).omit({ id: true, createdAt: true });
+export const selectCrowdfundingContributionSchema = createSelectSchema(crowdfundingContributions);
+export type InsertCrowdfundingContribution = z.infer<typeof insertCrowdfundingContributionSchema>;
+export type SelectCrowdfundingContribution = typeof crowdfundingContributions.$inferSelect;
 
 export const insertSongSchema = createInsertSchema(songs)
   .omit({ id: true, createdAt: true, updatedAt: true });
