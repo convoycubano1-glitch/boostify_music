@@ -287,7 +287,8 @@ export default function ArtistProfilePage() {
                   variant="outline"
                   className="bg-gray-800 border-gray-700 hover:bg-gray-700 text-white"
                 >
-                  Ver Todos
+                  <User className="h-4 w-4 mr-2" />
+                  Mis Artistas
                 </Button>
               </div>
             </Card>

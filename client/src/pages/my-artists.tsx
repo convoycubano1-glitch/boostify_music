@@ -4,7 +4,7 @@ import { db, auth } from "../firebase";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { useToast } from "../hooks/use-toast";
-import { Copy, ExternalLink, User, Loader2, CheckCircle2, Edit } from "lucide-react";
+import { Copy, ExternalLink, User, Loader2, CheckCircle2, Edit, Plus } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -140,9 +140,18 @@ export default function MyArtistsPage() {
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold mb-8 text-orange-500">
-          Mis Artistas Generados
-        </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-orange-500">
+            Mis Artistas Generados
+          </h1>
+          <Button
+            onClick={() => window.location.href = '/artist-generator'}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Crear Nuevo Artista
+          </Button>
+        </div>
 
         {artists.length === 0 ? (
           <Card className="bg-gray-900 border-gray-800">
