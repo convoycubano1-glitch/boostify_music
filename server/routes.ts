@@ -77,7 +77,7 @@ import crowdfundingRouter from './routes/crowdfunding'; // Import Crowdfunding r
 import tokenizationRouter from './routes/tokenization'; // Import Tokenization (Web3/Blockchain) router
 import adminImportArtistsRouter from './routes/admin-import-artists'; // Import Admin artists import router
 import virtualRecordLabelRouter from './routes/virtual-record-label'; // Import Virtual Record Label integration router
-import ogImageRouter from './routes/og-image'; // Import Open Graph image generator
+import ogImageRouter from './routes/og-image.tsx'; // Import Open Graph image generator
 
 
 if (!process.env.STRIPE_SECRET_KEY) {

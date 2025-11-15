@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ImageResponse } from '@vercel/og';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import React from 'react';
 
 const router = Router();
 
