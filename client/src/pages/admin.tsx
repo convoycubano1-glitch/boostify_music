@@ -12,9 +12,10 @@ import { useAuth } from '../hooks/use-auth';
 import { 
   Users, DollarSign, TrendingUp, Music, FileVideo, GraduationCap, Target, BarChart3,
   Shield, Trash2, Eye, Search, Download, RefreshCw, Database, Activity, CreditCard,
-  Globe, Image as ImageIcon, Film, Layout
+  Globe, Image as ImageIcon, Film, Layout, Upload
 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { ArtistImportModal } from '../components/admin/artist-import-modal';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
   
   const ADMIN_EMAIL = 'convoycubano@gmail.com';
   const isAdmin = user && user.email === ADMIN_EMAIL;
@@ -209,10 +211,20 @@ export default function AdminDashboard() {
                     Admin: {user.email}
                   </Badge>
                 </div>
-                <Button onClick={() => loadAllData()} variant="outline" className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={() => setShowImportModal(true)} 
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    data-testid="button-import-artists"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar Artistas
+                  </Button>
+                  <Button onClick={() => loadAllData()} variant="outline" className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -615,6 +627,19 @@ export default function AdminDashboard() {
           </div>
         </ScrollArea>
       </main>
+      
+      {/* Import Artists Modal */}
+      <ArtistImportModal
+        open={showImportModal}
+        onOpenChange={setShowImportModal}
+        onSuccess={() => {
+          loadAllData();
+          toast({
+            title: 'Artistas importados',
+            description: 'Los artistas fueron importados exitosamente'
+          });
+        }}
+      />
     </div>
   );
 }
