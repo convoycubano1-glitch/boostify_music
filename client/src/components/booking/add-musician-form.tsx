@@ -11,6 +11,7 @@ import { Loader2, Image as ImageIcon, Upload, ChevronDown, FileText, X } from "l
 import { apiRequest, queryClient } from "../../lib/queryClient";
 import { z } from "zod";
 import musicianPrompts from "../../data/musician-prompts.json";
+import { ensureArtistProfile, updateProfileImages } from "../../lib/auto-profile-service";
 
 interface AddMusicianFormProps {
   onClose: () => void;
@@ -253,6 +254,36 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
     try {
       const genresList = formData.genres.split(',').map(g => g.trim()).filter(g => g.length > 0);
 
+      // 🎨 AUTO-PERFIL: Crear/verificar perfil de artista antes de guardar músico
+      let profileSlug = null;
+      try {
+        console.log('🎨 Creando/verificando perfil de artista para músico...');
+        
+        const profileResult = await ensureArtistProfile(genresList[0] || formData.instrument);
+        
+        if (profileResult.success && profileResult.profile) {
+          profileSlug = profileResult.profile.slug;
+          console.log('✅ Perfil verificado/creado:', profileSlug);
+          
+          // Actualizar imagen de perfil con foto profesional generada
+          const imageUpdateResult = await updateProfileImages({
+            profileImageUrl: generatedImageUrl,
+            onlyIfEmpty: true // Solo actualizar si no tiene foto de perfil
+          });
+          
+          if (imageUpdateResult.success) {
+            console.log('✅ Imagen de perfil actualizada con foto profesional');
+            toast({
+              title: "Perfil de Artista Creado",
+              description: `Tu perfil público está disponible en /artist/${profileSlug}`,
+            });
+          }
+        }
+      } catch (profileError) {
+        // No bloqueamos el registro del músico si falla el auto-perfil
+        console.warn('⚠️ Error creando perfil automático (no crítico):', profileError);
+      }
+
       const musicianData = {
         name: formData.name,
         description: formData.description,
@@ -294,7 +325,9 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
 
       toast({
         title: "Success",
-        description: "Musician added successfully to the database",
+        description: profileSlug 
+          ? `Musician added successfully! View your profile at /artist/${profileSlug}`
+          : "Musician added successfully to the database",
       });
 
       if (onSuccess) {
