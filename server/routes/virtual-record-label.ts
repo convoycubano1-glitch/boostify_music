@@ -18,19 +18,31 @@ router.get('/my-artists', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.uid || req.user?.id;
     
+    console.log('🔍 [MY-ARTISTS] req.user:', req.user);
+    console.log('🔍 [MY-ARTISTS] userId:', userId);
+    
     if (!userId) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
-    // Buscar en PostgreSQL usando el uid de Firebase
-    const firestoreUsers = await pgDb.select()
-      .from(users)
-      .where(eq(users.replitId, userId));
-
     let postgresUserId: number | null = null;
-    
-    if (firestoreUsers.length > 0) {
-      postgresUserId = firestoreUsers[0].id;
+
+    // Intentar primero como ID numérico directo
+    if (typeof userId === 'number' || !isNaN(Number(userId))) {
+      postgresUserId = Number(userId);
+      console.log('🔍 [MY-ARTISTS] Using direct userId as postgresUserId:', postgresUserId);
+    } else {
+      // Si no, buscar por replitId
+      const firestoreUsers = await pgDb.select()
+        .from(users)
+        .where(eq(users.replitId, String(userId)));
+
+      console.log('🔍 [MY-ARTISTS] firestoreUsers found:', firestoreUsers.length);
+
+      if (firestoreUsers.length > 0) {
+        postgresUserId = firestoreUsers[0].id;
+        console.log('🔍 [MY-ARTISTS] postgresUserId from replitId:', postgresUserId);
+      }
     }
 
     // Obtener artistas virtuales del usuario desde PostgreSQL
@@ -40,6 +52,9 @@ router.get('/my-artists', authenticate, async (req: Request, res: Response) => {
       virtualArtists = await pgDb.select()
         .from(users)
         .where(eq(users.generatedBy, postgresUserId));
+      console.log('🔍 [MY-ARTISTS] virtualArtists found:', virtualArtists.length);
+    } else {
+      console.log('⚠️ [MY-ARTISTS] No postgresUserId found');
     }
 
     // Enriquecer con datos de Firestore

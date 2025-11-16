@@ -156,6 +156,20 @@ export default function VirtualRecordLabelPage() {
     queryKey: ['/api/virtual-label/my-artists'],
     enabled: !!user
   });
+
+  // Log de artistas para debugging
+  useEffect(() => {
+    if (myVirtualArtists) {
+      console.log('👥 Artistas virtuales cargados:', myVirtualArtists);
+      myVirtualArtists.forEach((artist: any, index: number) => {
+        console.log(`Artista ${index + 1}:`, {
+          name: artist.artistName,
+          profileImage: artist.profileImage,
+          hasImage: !!artist.profileImage
+        });
+      });
+    }
+  }, [myVirtualArtists]);
   
   // Console log para depuración
   useEffect(() => {
@@ -924,15 +938,52 @@ export default function VirtualRecordLabelPage() {
                   {myVirtualArtists.length} {myVirtualArtists.length === 1 ? 'artista creado' : 'artistas creados'}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowMyArtists(!showMyArtists)}
-                data-testid="toggle-my-artists"
-              >
-                {showMyArtists ? 'Ocultar' : 'Ver Todos'}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      toast({
+                        title: "Generando imágenes...",
+                        description: "Esto puede tardar unos minutos"
+                      });
+                      
+                      const res = await fetch('/api/artist-generator/regenerate-artist-images', {
+                        method: 'POST'
+                      });
+                      const data = await res.json();
+                      
+                      if (data.success) {
+                        toast({
+                          title: "¡Imágenes generadas!",
+                          description: data.message
+                        });
+                        refetchArtists();
+                      } else {
+                        throw new Error(data.error);
+                      }
+                    } catch (error) {
+                      toast({
+                        title: "Error",
+                        description: error instanceof Error ? error.message : "No se pudieron generar las imágenes",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                >
+                  ✨ Generar Imágenes
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowMyArtists(!showMyArtists)}
+                  data-testid="toggle-my-artists"
+                >
+                  {showMyArtists ? 'Ocultar' : 'Ver Todos'}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
             
             {showMyArtists && (

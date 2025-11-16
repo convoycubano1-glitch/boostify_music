@@ -149,8 +149,8 @@ async function saveArtistToPostgreSQL(artistData: any, firestoreId: string, user
       artistName: artistData.name,
       slug,
       biography: artistData.biography || null,
-      profileImage: artistData.profileImage || null,
-      coverImage: artistData.coverImage || null,
+      profileImage: artistData.look?.profile_url || artistData.profileImage || null,
+      coverImage: artistData.look?.cover_url || artistData.coverImage || null,
       realName: artistData.realName || null,
       country: artistData.country || null,
       genres: artistData.music_genres || [],
@@ -571,6 +571,148 @@ router.delete("/delete-all-artists", async (req: Request, res: Response) => {
     console.error('Error eliminando todos los artistas:', error);
     res.status(500).json({
       error: 'Error al eliminar todos los artistas',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para regenerar imágenes de artistas existentes sin imágenes
+ */
+router.post("/regenerate-artist-images", async (req: Request, res: Response) => {
+  try {
+    const { generateArtistImages } = await import('../../scripts/generate-artist-images');
+    
+    console.log('🎨 Iniciando regeneración de imágenes...');
+
+    // Obtener artistas AI sin imágenes en Firestore
+    const artistsToUpdate = await pgDb.select()
+      .from(users)
+      .where(eq(users.isAIGenerated, true));
+
+    console.log(`📊 Encontrados ${artistsToUpdate.length} artistas virtuales`);
+
+    let regenerated = 0;
+    for (const artist of artistsToUpdate) {
+      if (artist.firestoreId) {
+        try {
+          const firestoreDoc = await db.collection('generated_artists').doc(artist.firestoreId).get();
+          
+          if (firestoreDoc.exists) {
+            const data = firestoreDoc.data();
+            
+            // Solo regenerar si NO tiene imágenes
+            if (!data?.look?.profile_url || !data?.look?.cover_url) {
+              console.log(`🔄 Regenerando imágenes para: ${artist.artistName}`);
+              
+              // Generar imágenes usando la descripción existente
+              const imageUrls = await generateArtistImages(data.look.description);
+              
+              // Actualizar Firestore con las nuevas imágenes
+              await db.collection('generated_artists').doc(artist.firestoreId).update({
+                'look.profile_url': imageUrls.profileUrl,
+                'look.cover_url': imageUrls.coverUrl
+              });
+              
+              // Actualizar PostgreSQL
+              await pgDb.update(users)
+                .set({
+                  profileImage: imageUrls.profileUrl,
+                  coverImage: imageUrls.coverUrl
+                })
+                .where(eq(users.id, artist.id));
+              
+              console.log(`✅ Imágenes regeneradas para: ${artist.artistName}`);
+              regenerated++;
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Error regenerando imágenes para ${artist.artistName}:`, error);
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Regeneración completada: ${regenerated} artistas actualizados`,
+      regenerated
+    });
+  } catch (error) {
+    console.error('Error en regeneración:', error);
+    res.status(500).json({
+      error: 'Error al regenerar imágenes',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint temporal para sincronizar imágenes de artistas desde Firestore
+ */
+router.post("/sync-artist-images", async (req: Request, res: Response) => {
+  try {
+    console.log('🔄 Iniciando sincronización de imágenes de artistas...');
+
+    // Obtener todos los artistas AI sin imágenes
+    const artistsWithoutImages = await pgDb.select()
+      .from(users)
+      .where(eq(users.isAIGenerated, true));
+
+    console.log(`📊 Encontrados ${artistsWithoutImages.length} artistas virtuales`);
+
+    let updated = 0;
+    for (const artist of artistsWithoutImages) {
+      console.log(`\n🔍 Procesando: ${artist.artistName} (ID: ${artist.id})`);
+      console.log(`   firestoreId: ${artist.firestoreId}`);
+      
+      if (artist.firestoreId) {
+        try {
+          const firestoreDoc = await db.collection('generated_artists').doc(artist.firestoreId).get();
+          console.log(`   Documento existe: ${firestoreDoc.exists}`);
+          
+          if (firestoreDoc.exists) {
+            const data = firestoreDoc.data();
+            console.log(`   Estructura look:`, data?.look ? 'SÍ' : 'NO');
+            
+            const profileImage = data?.look?.profile_url;
+            const coverImage = data?.look?.cover_url;
+            
+            console.log(`   profile_url: ${profileImage ? 'ENCONTRADO' : 'VACÍO'}`);
+            console.log(`   cover_url: ${coverImage ? 'ENCONTRADO' : 'VACÍO'}`);
+
+            if (profileImage || coverImage) {
+              await pgDb.update(users)
+                .set({
+                  profileImage: profileImage || artist.profileImage,
+                  coverImage: coverImage || artist.coverImage
+                })
+                .where(eq(users.id, artist.id));
+
+              console.log(`   ✅ ACTUALIZADO`);
+              updated++;
+            } else {
+              console.log(`   ⚠️ No se encontraron URLs de imágenes`);
+            }
+          } else {
+            console.log(`   ❌ Documento no existe en Firestore`);
+          }
+        } catch (error) {
+          console.error(`   ❌ Error:`, error);
+        }
+      } else {
+        console.log(`   ⚠️ Sin firestoreId`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Sincronización completada: ${updated} artistas actualizados`,
+      updated
+    });
+  } catch (error) {
+    console.error('Error en sincronización:', error);
+    res.status(500).json({
+      error: 'Error al sincronizar imágenes',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }

@@ -317,46 +317,40 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
           </div>
 
           {/* Contenido fijo encima */}
-          <div className="relative h-full flex flex-col justify-end p-6 md:p-10 lg:p-14 z-10">
-            <div className="space-y-4 max-w-3xl">
+          <div className="relative h-full flex flex-col justify-between p-6 md:p-8 z-10">
+            {/* Badge superior izquierdo */}
+            <div>
               <Badge variant="secondary" className="backdrop-blur-md bg-white/20 text-white border-white/30 w-fit">
                 <ImageIcon className="h-3 w-3 mr-1" />
-                Galería {currentImageIndex + 1} de {allImages.length}
+                {currentImageIndex + 1} / {allImages.length}
               </Badge>
-              
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight drop-shadow-2xl">
-                {allImages[currentImageIndex]?.galleryName || 'Galería de Imágenes'}
-              </h2>
-              
-              <p className="text-lg md:text-xl text-white/90 drop-shadow-lg max-w-2xl">
-                {allImages[currentImageIndex]?.prompt || 'Explora mi colección de imágenes'}
-              </p>
+            </div>
 
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Button
-                  onClick={() => setSelectedImage({
-                    url: allImages[currentImageIndex].url,
-                    prompt: allImages[currentImageIndex].prompt
-                  })}
-                  className="backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border border-white/30"
-                  data-testid="button-view-full"
-                >
-                  <Maximize2 className="h-4 w-4 mr-2" />
-                  Ver Completa
-                </Button>
-                <Button
-                  onClick={() => downloadImage(
-                    allImages[currentImageIndex].url,
-                    `${allImages[currentImageIndex].galleryName}-${currentImageIndex + 1}.jpg`
-                  )}
-                  variant="outline"
-                  className="backdrop-blur-md bg-black/20 hover:bg-black/30 text-white border-white/30"
-                  data-testid="button-download-current"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Descargar
-                </Button>
-              </div>
+            {/* Botones de acción en la parte inferior */}
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={() => setSelectedImage({
+                  url: allImages[currentImageIndex].url,
+                  prompt: allImages[currentImageIndex].prompt
+                })}
+                className="backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                data-testid="button-view-full"
+              >
+                <Maximize2 className="h-4 w-4 mr-2" />
+                Ver Completa
+              </Button>
+              <Button
+                onClick={() => downloadImage(
+                  allImages[currentImageIndex].url,
+                  `${allImages[currentImageIndex].galleryName}-${currentImageIndex + 1}.jpg`
+                )}
+                variant="outline"
+                className="backdrop-blur-md bg-black/20 hover:bg-black/30 text-white border-white/30"
+                data-testid="button-download-current"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Descargar
+              </Button>
             </div>
           </div>
 
