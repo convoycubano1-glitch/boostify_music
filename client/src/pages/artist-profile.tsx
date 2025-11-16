@@ -180,7 +180,7 @@ export default function ArtistProfilePage() {
             }}
           />
         )}
-        <ArtistProfileCard artistId={artistId} />
+        <ArtistProfileCard artistId={artistId} initialArtistData={artistData} />
         
         {/* Music Tokenization Section (Web3/Blockchain) */}
         <div className="container mx-auto px-4 py-8">

@@ -1,0 +1,36 @@
+25-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+title: "Si un dia caigo preso"
+url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519"
+hasUrl: true
+isYouTube: false
+2025-11-16 17:29:47.42
+🎥 Rendering video card:
+{title: "Si un dia caigo preso", url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519", hasUrl: true, isYouTube: false}
+title: "Si un dia caigo preso"
+url: "https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519"

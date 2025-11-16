@@ -6,7 +6,6 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { logger } from '../utils/logger';
 import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Configurar múltiples clientes de Gemini para fallback automático
 const apiKeys = [
@@ -99,6 +98,11 @@ async function uploadBase64ToStorage(
   folder: string = 'merchandise'
 ): Promise<string> {
   try {
+    // Verificar que storage esté inicializado
+    if (!storage) {
+      throw new Error('Firebase Storage no está inicializado');
+    }
+    
     // Generar nombre único con timestamp
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(7);
@@ -108,20 +112,28 @@ async function uploadBase64ToStorage(
     // Convertir base64 a Buffer
     const imageBuffer = Buffer.from(base64Data, 'base64');
     
-    // Subir a Firebase Storage
-    const storageRef = ref(storage, fileName);
-    const metadata = {
-      contentType: mimeType,
-    };
+    // Usar Firebase Admin SDK para subir
+    const bucket = storage.bucket();
+    const file = bucket.file(fileName);
     
     logger.log(`📤 Subiendo imagen a Storage: ${fileName}`);
-    await uploadBytes(storageRef, imageBuffer, metadata);
     
-    // Obtener URL pública
-    const downloadUrl = await getDownloadURL(storageRef);
-    logger.log(`✅ Imagen subida exitosamente: ${downloadUrl.substring(0, 100)}...`);
+    // Guardar archivo con metadata
+    await file.save(imageBuffer, {
+      metadata: {
+        contentType: mimeType,
+      },
+      public: true,
+      validation: false,
+    });
     
-    return downloadUrl;
+    // Hacer el archivo público y obtener URL
+    await file.makePublic();
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+    
+    logger.log(`✅ Imagen subida exitosamente: ${publicUrl.substring(0, 100)}...`);
+    
+    return publicUrl;
   } catch (error: any) {
     logger.error('❌ Error subiendo imagen a Storage:', error);
     throw error;

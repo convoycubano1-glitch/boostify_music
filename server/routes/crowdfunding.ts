@@ -11,6 +11,67 @@ import {
 } from '../db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 
+// Helper para extraer el ID del usuario de req.user
+// Funciona con Replit Auth (req.user.id) y Firebase Auth (req.user.uid)
+async function getUserId(req: Request): Promise<number | null> {
+  const user = req.user as any;
+  
+  // Caso 1: Replit Auth - tiene directamente el ID de la base de datos
+  if (user?.id && typeof user.id === 'number') {
+    console.log('✅ [getUserId] Usando Replit Auth user.id:', user.id);
+    return user.id;
+  }
+  
+  // Caso 2: Replit Auth - tiene claims.sub (replitId como string)
+  if (user?.claims?.sub) {
+    const replitId = user.claims.sub;
+    console.log('✅ [getUserId] Buscando usuario por claims.sub (replitId):', replitId);
+    const [dbUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.replitId, String(replitId)))
+      .limit(1);
+    
+    if (dbUser) {
+      console.log('✅ [getUserId] Usuario encontrado con ID:', dbUser.id);
+      return dbUser.id;
+    }
+  }
+  
+  // Caso 3: Firebase Auth - tiene uid
+  if (user?.uid) {
+    console.log('✅ [getUserId] Buscando usuario por Firebase uid:', user.uid);
+    const [dbUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.replitId, String(user.uid)))
+      .limit(1);
+    
+    if (dbUser) {
+      console.log('✅ [getUserId] Usuario encontrado con ID:', dbUser.id);
+      return dbUser.id;
+    }
+  }
+  
+  // Caso 4: Tiene replitId directamente
+  if (user?.replitId) {
+    console.log('✅ [getUserId] Buscando usuario por replitId:', user.replitId);
+    const [dbUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.replitId, String(user.replitId)))
+      .limit(1);
+    
+    if (dbUser) {
+      console.log('✅ [getUserId] Usuario encontrado con ID:', dbUser.id);
+      return dbUser.id;
+    }
+  }
+  
+  console.error('❌ [getUserId] No se pudo obtener ID del usuario. req.user:', JSON.stringify(user, null, 2));
+  return null;
+}
+
 const router = Router();
 
 const stripeKey = process.env.TESTING_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
@@ -21,31 +82,19 @@ const stripe = new Stripe(stripeKey!, {
 // Crear o actualizar campaña de crowdfunding
 router.post('/campaign', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.uid;
+    const userId = await getUserId(req);
+    
     if (!userId) {
-      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
-    }
-
-    const { title, description, goalAmount, isActive, endDate } = req.body;
-
-    // Buscar usuario en PostgreSQL por replitId
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.replitId, userId))
-      .limit(1);
-
-    if (!user || user.length === 0) {
       return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     }
 
-    const dbUserId = user[0].id;
+    const { title, description, goalAmount, isActive, endDate } = req.body;
 
     // Verificar si ya existe una campaña
     const existingCampaign = await db
       .select()
       .from(crowdfundingCampaigns)
-      .where(eq(crowdfundingCampaigns.userId, dbUserId))
+      .where(eq(crowdfundingCampaigns.userId, userId))
       .limit(1);
 
     let campaign;
@@ -71,7 +120,7 @@ router.post('/campaign', authenticate, async (req: Request, res: Response) => {
       const [newCampaign] = await db
         .insert(crowdfundingCampaigns)
         .values({
-          userId: dbUserId,
+          userId: userId,
           title,
           description,
           goalAmount,
@@ -136,27 +185,16 @@ router.get('/campaign/:slug', async (req: Request, res: Response) => {
 // Obtener campaña del usuario autenticado
 router.get('/my-campaign', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.uid;
+    const userId = await getUserId(req);
+    
     if (!userId) {
-      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
-    }
-
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.replitId, userId))
-      .limit(1);
-
-    if (!user || user.length === 0) {
       return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     }
-
-    const dbUserId = user[0].id;
 
     const campaign = await db
       .select()
       .from(crowdfundingCampaigns)
-      .where(eq(crowdfundingCampaigns.userId, dbUserId))
+      .where(eq(crowdfundingCampaigns.userId, userId))
       .limit(1);
 
     if (!campaign || campaign.length === 0) {
@@ -370,20 +408,13 @@ router.post('/confirm-contribution', async (req: Request, res: Response) => {
 router.get('/contributions/:campaignId', authenticate, async (req: Request, res: Response) => {
   try {
     const { campaignId } = req.params;
-    const userId = req.user?.uid;
-
+    console.log('📊 [Contributions] Getting contributions for campaign:', campaignId);
+    
+    const userId = await getUserId(req);
+    console.log('📊 [Contributions] User ID:', userId);
+    
     if (!userId) {
-      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
-    }
-
-    // Verificar que la campaña pertenece al usuario
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.replitId, userId))
-      .limit(1);
-
-    if (!user || user.length === 0) {
+      console.error('❌ [Contributions] User ID not found');
       return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     }
 
@@ -393,14 +424,17 @@ router.get('/contributions/:campaignId', authenticate, async (req: Request, res:
       .where(
         and(
           eq(crowdfundingCampaigns.id, parseInt(campaignId)),
-          eq(crowdfundingCampaigns.userId, user[0].id)
+          eq(crowdfundingCampaigns.userId, userId)
         )
       )
       .limit(1);
 
     if (!campaign || campaign.length === 0) {
+      console.log('⚠️ [Contributions] Campaign not found for campaignId:', campaignId, 'userId:', userId);
       return res.status(404).json({ success: false, message: 'Campaña no encontrada' });
     }
+
+    console.log('✅ [Contributions] Campaign found:', campaign[0].title);
 
     // Obtener contribuciones
     const contributions = await db

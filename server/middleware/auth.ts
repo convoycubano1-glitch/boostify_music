@@ -61,10 +61,26 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   try {
     // Check if user is already authenticated via session
     if (req.session && req.session.user) {
-      console.log('User authenticated via session:', req.session.user);
+      console.log('✅ User authenticated via session:', {
+        id: req.session.user.id,
+        replitId: req.session.user.replitId,
+        email: req.session.user.email
+      });
       req.user = req.session.user;
       return next();
     }
+    
+    // También verificar req.user de passport (Replit Auth)
+    if (req.user) {
+      console.log('✅ User authenticated via passport:', {
+        id: (req.user as any).id,
+        replitId: (req.user as any).replitId,
+        email: (req.user as any).email
+      });
+      return next();
+    }
+    
+    console.log('⚠️ No session.user and no req.user found, checking Firebase token...');
     
     // Check Firebase token from Authorization header
     const authHeader = req.headers.authorization;

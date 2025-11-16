@@ -11,14 +11,14 @@ const router = Router();
 
 const createTokenizedSongSchema = z.object({
   songName: z.string().min(1, "Song name is required"),
-  songUrl: z.string().url().optional().nullable(),
-  tokenSymbol: z.string().min(1).max(20),
+  songUrl: z.string().url().optional().nullable().or(z.literal('')),
+  tokenSymbol: z.string().min(1, "Token symbol is required").max(20),
   totalSupply: z.number().int().positive(),
   pricePerTokenUsd: z.number().positive(),
-  contractAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
-  metadataUri: z.string().url().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
-  description: z.string().optional().nullable(),
+  contractAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address").default('0x0000000000000000000000000000000000000000'),
+  metadataUri: z.string().url().optional().nullable().or(z.literal('')),
+  imageUrl: z.string().url().optional().nullable().or(z.literal('')),
+  description: z.string().optional().nullable().or(z.literal('')),
   benefits: z.array(z.string()).optional().nullable(),
   royaltyPercentageArtist: z.number().int().min(0).max(100).default(80),
   royaltyPercentagePlatform: z.number().int().min(0).max(100).default(20),
@@ -96,13 +96,19 @@ router.get('/song/:id', async (req, res) => {
 
 router.post('/create', async (req, res) => {
   try {
+    console.log('🎵 [CREATE TOKEN] Datos recibidos:', JSON.stringify(req.body, null, 2));
+    console.log('🎵 [CREATE TOKEN] Usuario:', req.user);
+    
     const validatedData = createTokenizedSongSchema.parse(req.body);
+    console.log('✅ [CREATE TOKEN] Validación exitosa:', validatedData);
     
     if (!req.user || !req.user.id) {
+      console.error('❌ [CREATE TOKEN] No autorizado - req.user:', req.user);
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const artistId = req.user.id;
+    console.log('✅ [CREATE TOKEN] Artist ID:', artistId);
 
     const maxTokenId = await db.select({ max: sql<number>`COALESCE(MAX(${tokenizedSongs.tokenId}), 0)` })
       .from(tokenizedSongs);
@@ -127,12 +133,18 @@ router.post('/create', async (req, res) => {
       isActive: true,
     }).returning();
 
+    console.log('✅ [CREATE TOKEN] Canción creada exitosamente:', newSong);
     res.status(201).json(newSong);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Validation error', details: error.errors });
+      console.error('❌ [CREATE TOKEN] Error de validación Zod:', JSON.stringify(error.errors, null, 2));
+      return res.status(400).json({ 
+        error: 'Validation error', 
+        details: error.errors,
+        message: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+      });
     }
-    console.error('Error creating tokenized song:', error);
+    console.error('❌ [CREATE TOKEN] Error general:', error);
     res.status(500).json({ error: 'Failed to create tokenized song' });
   }
 });

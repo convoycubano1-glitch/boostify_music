@@ -56,12 +56,16 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest({
-      url: '/api/tokenization/create',
-      method: 'POST',
-      data: data,
-    }),
+    mutationFn: (data: any) => {
+      console.log('🎵 [Tokenization] Enviando datos:', data);
+      return apiRequest({
+        url: '/api/tokenization/create',
+        method: 'POST',
+        data: data,
+      });
+    },
     onSuccess: () => {
+      console.log('✅ [Tokenization] Canción tokenizada exitosamente');
       toast({
         title: '¡Canción tokenizada!',
         description: 'Tu canción ha sido tokenizada exitosamente.',
@@ -80,9 +84,12 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
       });
     },
     onError: (error: any) => {
+      console.error('❌ [Tokenization] Error completo:', error);
+      console.error('❌ [Tokenization] Error message:', error.message);
+      console.error('❌ [Tokenization] Error response:', error.response?.data);
       toast({
-        title: 'Error',
-        description: error.message || 'No se pudo tokenizar la canción',
+        title: 'Error de validación',
+        description: JSON.stringify(error.response?.data) || error.message || 'No se pudo tokenizar la canción',
         variant: 'destructive',
       });
     },

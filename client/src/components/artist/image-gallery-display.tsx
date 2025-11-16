@@ -9,7 +9,7 @@ import { Label } from "../ui/label";
 import { db, storage } from "../../firebase";
 import { collection, query, where, getDocs, doc, setDoc, updateDoc, arrayUnion, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { Image as ImageIcon, Download, Trash2, RotateCw, Upload, Plus } from "lucide-react";
+import { Image as ImageIcon, Download, Trash2, RotateCw, Upload, Plus, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import {
   AlertDialog,
@@ -55,6 +55,7 @@ interface ImageGalleryDisplayProps {
 export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 }: ImageGalleryDisplayProps) {
   const [galleries, setGalleries] = useState<ImageGallery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState<{ url: string; prompt: string } | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -62,6 +63,7 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
   const [galleryTitle, setGalleryTitle] = useState('');
   const [galleryToDelete, setGalleryToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -69,6 +71,20 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
     console.log('🖼️ ImageGalleryDisplay montado para artistId:', artistId, 'refreshKey:', refreshKey);
     loadGalleries();
   }, [artistId, refreshKey]);
+
+  // Auto-rotación de imágenes cada 5 segundos
+  useEffect(() => {
+    if (galleries.length === 0 || isPaused) return;
+
+    const allImages = galleries.flatMap(g => g.generatedImages);
+    if (allImages.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [galleries, isPaused]);
 
   const loadGalleries = async () => {
     try {
@@ -93,11 +109,10 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
         } as ImageGallery;
       });
       
-      // Ordenar en el cliente en lugar de Firestore para evitar índices
       galleriesData.sort((a, b) => {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
-        return dateB - dateA; // Más reciente primero
+        return dateB - dateA;
       });
       
       console.log('✅ Galerías cargadas:', galleriesData.length);
@@ -244,112 +259,242 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
     }
   };
 
+  const allImages = galleries.flatMap(g => g.generatedImages.map(img => ({
+    ...img,
+    galleryName: g.singleName,
+    galleryId: g.id
+  })));
+
+  const goToPrevious = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+    setIsPaused(true);
+    setTimeout(() => setIsPaused(false), 10000);
+  };
+
+  const goToNext = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+    setIsPaused(true);
+    setTimeout(() => setIsPaused(false), 10000);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-96" />
-          <Skeleton className="h-96" />
-        </div>
+        <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     );
   }
 
   if (galleries.length === 0 && !isOwner) {
-    return null; // No mostrar nada si no hay galerías y no es el dueño
+    return null;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ImageIcon className="h-5 w-5" />
-          <h2 className="text-2xl font-bold">Galerías de Imágenes</h2>
-        </div>
-        {isOwner && (
-          <Button
-            onClick={() => setShowUploadDialog(true)}
-            className="gap-2"
-            data-testid="button-upload-images"
-          >
-            <Plus className="h-4 w-4" />
-            Subir Imágenes
-          </Button>
-        )}
-      </div>
+      {/* Hero Carousel de Galerías */}
+      {allImages.length > 0 && (
+        <div className="relative h-[60vh] md:h-[70vh] lg:h-[80vh] rounded-2xl overflow-hidden group">
+          {/* Imagen de fondo con animación */}
+          <div className="absolute inset-0">
+            {allImages.map((image, index) => (
+              <div
+                key={image.id}
+                className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
+                  index === currentImageIndex
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-105'
+                }`}
+              >
+                <img
+                  src={image.url}
+                  alt={image.galleryName}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+              </div>
+            ))}
+          </div>
 
-      {galleries.length === 0 && isOwner && (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No tienes galerías de imágenes aún.</p>
-            <p className="text-sm mt-1">Haz clic en "Subir Imágenes" para crear tu primera galería.</p>
-          </CardContent>
-        </Card>
+          {/* Contenido fijo encima */}
+          <div className="relative h-full flex flex-col justify-end p-6 md:p-10 lg:p-14 z-10">
+            <div className="space-y-4 max-w-3xl">
+              <Badge variant="secondary" className="backdrop-blur-md bg-white/20 text-white border-white/30 w-fit">
+                <ImageIcon className="h-3 w-3 mr-1" />
+                Galería {currentImageIndex + 1} de {allImages.length}
+              </Badge>
+              
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight drop-shadow-2xl">
+                {allImages[currentImageIndex]?.galleryName || 'Galería de Imágenes'}
+              </h2>
+              
+              <p className="text-lg md:text-xl text-white/90 drop-shadow-lg max-w-2xl">
+                {allImages[currentImageIndex]?.prompt || 'Explora mi colección de imágenes'}
+              </p>
+
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button
+                  onClick={() => setSelectedImage({
+                    url: allImages[currentImageIndex].url,
+                    prompt: allImages[currentImageIndex].prompt
+                  })}
+                  className="backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                  data-testid="button-view-full"
+                >
+                  <Maximize2 className="h-4 w-4 mr-2" />
+                  Ver Completa
+                </Button>
+                <Button
+                  onClick={() => downloadImage(
+                    allImages[currentImageIndex].url,
+                    `${allImages[currentImageIndex].galleryName}-${currentImageIndex + 1}.jpg`
+                  )}
+                  variant="outline"
+                  className="backdrop-blur-md bg-black/20 hover:bg-black/30 text-white border-white/30"
+                  data-testid="button-download-current"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Descargar
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Controles de navegación */}
+          <button
+            onClick={goToPrevious}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 z-20"
+            aria-label="Anterior"
+            data-testid="button-prev-image"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <button
+            onClick={goToNext}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 z-20"
+            aria-label="Siguiente"
+            data-testid="button-next-image"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+
+          {/* Indicadores de posición */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {allImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setCurrentImageIndex(index);
+                  setIsPaused(true);
+                  setTimeout(() => setIsPaused(false), 10000);
+                }}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  index === currentImageIndex
+                    ? 'w-8 bg-white'
+                    : 'w-2 bg-white/50 hover:bg-white/75'
+                }`}
+                aria-label={`Ir a imagen ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Botón de administración para el dueño */}
+          {isOwner && (
+            <div className="absolute top-6 right-6 z-20">
+              <Button
+                onClick={() => setShowUploadDialog(true)}
+                className="backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                data-testid="button-upload-images"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Subir Imágenes
+              </Button>
+            </div>
+          )}
+        </div>
       )}
 
-      {galleries.map((gallery) => (
-        <Card key={gallery.id} data-testid={`gallery-${gallery.id}`}>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle>{gallery.singleName}</CardTitle>
-                <CardDescription>
-                  {gallery.generatedImages.length} imágenes generadas
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">
-                  {new Date(gallery.createdAt).toLocaleDateString()}
-                </Badge>
-                {isOwner && (
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => setGalleryToDelete(gallery.id)}
-                    data-testid={`button-delete-gallery-${gallery.id}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+      {/* Vista de tarjetas para gestión (solo visible para el dueño) */}
+      {isOwner && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              <h3 className="text-xl font-bold">Gestionar Galerías</h3>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {gallery.generatedImages.map((image, index) => (
-                <div
-                  key={image.id}
-                  className="relative group cursor-pointer rounded-lg overflow-hidden border hover:border-primary transition-all"
-                  onClick={() => setSelectedImage({ url: image.url, prompt: image.prompt })}
-                  data-testid={`image-${gallery.id}-${index}`}
-                >
-                  <img
-                    src={image.url}
-                    alt={`${gallery.singleName} - ${index + 1}`}
-                    className="w-full aspect-square object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        downloadImage(image.url, `${gallery.singleName}-${index + 1}.jpg`);
-                      }}
-                      data-testid={`button-download-${index}`}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
+          </div>
+
+          {galleries.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No tienes galerías de imágenes aún.</p>
+                <p className="text-sm mt-1">Haz clic en "Subir Imágenes" para crear tu primera galería.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            galleries.map((gallery) => (
+              <Card key={gallery.id} data-testid={`gallery-${gallery.id}`}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle>{gallery.singleName}</CardTitle>
+                      <CardDescription>
+                        {gallery.generatedImages.length} imágenes
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">
+                        {new Date(gallery.createdAt).toLocaleDateString()}
+                      </Badge>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => setGalleryToDelete(gallery.id)}
+                        data-testid={`button-delete-gallery-${gallery.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {gallery.generatedImages.map((image, index) => (
+                      <div
+                        key={image.id}
+                        className="relative group cursor-pointer rounded-lg overflow-hidden border hover:border-primary transition-all"
+                        onClick={() => setSelectedImage({ url: image.url, prompt: image.prompt })}
+                        data-testid={`image-${gallery.id}-${index}`}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`${gallery.singleName} - ${index + 1}`}
+                          className="w-full aspect-square object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              downloadImage(image.url, `${gallery.singleName}-${index + 1}.jpg`);
+                            }}
+                            data-testid={`button-download-${index}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Diálogo para subir imágenes */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>

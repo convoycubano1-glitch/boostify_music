@@ -1,0 +1,983 @@
+chunk-Z2GUPSCO.js?v=cb36e691:521 Warning: Connect(Droppable): Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.
+    at Provider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=cb36e691:666:20)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=cb36e691:7183:25)
+    at ErrorBoundary2 (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=cb36e691:1680:35)
+    at DragDropContext (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=cb36e691:7303:19)
+    at section
+    at main
+    at div
+    at div
+    at ArtistProfileCard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/artist/artist-profile-card.tsx?t=1763332342796:906:37)
+    at div
+    at ProfilePage (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/profile.tsx?t=1763332342796:30:18)
+    at div
+    at PageWrapper (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?t=1763332342796&v=gaPGKsCdg3Tehx68WUAY_:266:24)
+    at Route (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cb36e691:206:16)
+    at ProtectedRoute (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cb36e691:262:17)
+    at Suspense
+    at Router (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?t=1763332342796&v=gaPGKsCdg3Tehx68WUAY_:308:37)
+    at EditorProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/editor-context.tsx:56:34)
+    at GlobalAuthGuard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/global-auth-guard.tsx:45:35)
+    at SubscriptionProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/subscription-context.tsx:32:40)
+    at div
+    at ModalProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:27094:26)
+    at ShowBalanceProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22214:32)
+    at TransactionStoreProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22652:3)
+    at ModalSizeProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22803:3)
+    at I18nProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:21915:23)
+    at WalletButtonProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22779:33)
+    at RainbowKitChainProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22179:3)
+    at RainbowKitProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:23584:3)
+    at QueryClientProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WJPGYOZ7.js?v=cb36e691:3093:3)
+    at Hydrate (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVPNNXW7.js?v=cb36e691:3552:11)
+    at WagmiProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVPNNXW7.js?v=cb36e691:3576:11)
+    at div
+    at ErrorBoundary (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?t=1763332342796&v=gaPGKsCdg3Tehx68WUAY_:215:5)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?t=1763332342796&v=gaPGKsCdg3Tehx68WUAY_:544:37)
+printWarning @ chunk-Z2GUPSCO.js?v=cb36e691:521
+error @ chunk-Z2GUPSCO.js?v=cb36e691:505
+updateMemoComponent @ chunk-Z2GUPSCO.js?v=cb36e691:14382
+beginWork @ chunk-Z2GUPSCO.js?v=cb36e691:15977
+beginWork$1 @ chunk-Z2GUPSCO.js?v=cb36e691:19753
+performUnitOfWork @ chunk-Z2GUPSCO.js?v=cb36e691:19198
+workLoopSync @ chunk-Z2GUPSCO.js?v=cb36e691:19137
+renderRootSync @ chunk-Z2GUPSCO.js?v=cb36e691:19116
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18874
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+setData @ chunk-WJPGYOZ7.js?v=cb36e691:935
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1157
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:19328
+workLoop @ chunk-Z2GUPSCO.js?v=cb36e691:197
+flushWork @ chunk-Z2GUPSCO.js?v=cb36e691:176
+performWorkUntilDeadline @ chunk-Z2GUPSCO.js?v=cb36e691:384
+hmr-error-handler.ts:15  POST https://pulse.walletconnect.org/e?projectId=d66803c6-d493-438d-b9d8-2c4637eb1868&st=appkit&sv=html-core-1.7.8 400 (Bad Request)
+window.fetch @ hmr-error-handler.ts:15
+fetchData @ chunk-UVFTA5C7.js?v=cb36e691:2957
+post @ chunk-UVFTA5C7.js?v=cb36e691:2983
+_sendAnalyticsEvent @ chunk-UVFTA5C7.js?v=cb36e691:4126
+sendEvent @ chunk-UVFTA5C7.js?v=cb36e691:4154
+sendInitializeEvent @ core-PGAYN35L.js?v=cb36e691:9930
+initialize @ core-PGAYN35L.js?v=cb36e691:9902
+await in initialize
+AppKitBaseClient @ core-PGAYN35L.js?v=cb36e691:9887
+AppKit @ core-PGAYN35L.js?v=cb36e691:11107
+createAppKit @ core-PGAYN35L.js?v=cb36e691:11148
+initialize @ index.es-6GCA7KXQ.js?v=cb36e691:8947
+await in initialize
+init @ index.es-6GCA7KXQ.js?v=cb36e691:8799
+initProvider @ @rainbow-me_rainbowkit.js?v=cb36e691:21032
+await in initProvider
+getProvider @ @rainbow-me_rainbowkit.js?v=cb36e691:21049
+setup @ @rainbow-me_rainbowkit.js?v=cb36e691:20900
+setup @ chunk-DVPNNXW7.js?v=cb36e691:3097
+(anonymous) @ chunk-DVPNNXW7.js?v=cb36e691:3064
+createStoreImpl @ chunk-DVPNNXW7.js?v=cb36e691:2870
+createStore2 @ chunk-DVPNNXW7.js?v=cb36e691:2873
+createConfig @ chunk-DVPNNXW7.js?v=cb36e691:3060
+getDefaultConfig @ @rainbow-me_rainbowkit.js?v=cb36e691:28272
+(anonymous) @ web3-config.ts:4
+hmr-error-handler.ts:15  GET https://api.web3modal.org/appkit/v1/config?projectId=d66803c6-d493-438d-b9d8-2c4637eb1868&st=appkit&sv=html-core-1.7.8 403 (Forbidden)
+window.fetch @ hmr-error-handler.ts:15
+fetchData @ chunk-UVFTA5C7.js?v=cb36e691:2957
+get @ chunk-UVFTA5C7.js?v=cb36e691:2973
+fetchProjectConfig @ chunk-UVFTA5C7.js?v=cb36e691:6107
+fetchRemoteFeatures @ core-PGAYN35L.js?v=cb36e691:9701
+initialize @ core-PGAYN35L.js?v=cb36e691:9904
+await in initialize
+AppKitBaseClient @ core-PGAYN35L.js?v=cb36e691:9887
+AppKit @ core-PGAYN35L.js?v=cb36e691:11107
+createAppKit @ core-PGAYN35L.js?v=cb36e691:11148
+initialize @ index.es-6GCA7KXQ.js?v=cb36e691:8947
+await in initialize
+init @ index.es-6GCA7KXQ.js?v=cb36e691:8799
+initProvider @ @rainbow-me_rainbowkit.js?v=cb36e691:21032
+await in initProvider
+getProvider @ @rainbow-me_rainbowkit.js?v=cb36e691:21049
+setup @ @rainbow-me_rainbowkit.js?v=cb36e691:20900
+setup @ chunk-DVPNNXW7.js?v=cb36e691:3097
+(anonymous) @ chunk-DVPNNXW7.js?v=cb36e691:3064
+createStoreImpl @ chunk-DVPNNXW7.js?v=cb36e691:2870
+createStore2 @ chunk-DVPNNXW7.js?v=cb36e691:2873
+createConfig @ chunk-DVPNNXW7.js?v=cb36e691:3060
+getDefaultConfig @ @rainbow-me_rainbowkit.js?v=cb36e691:28272
+(anonymous) @ web3-config.ts:4
+chunk-Z2GUPSCO.js?v=cb36e691:521 Warning: validateDOMNesting(...): <div> cannot appear as a descendant of <p>.
+    at div
+    at Badge (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/ui/badge.tsx:54:18)
+    at p
+    at _c7 (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/ui/card.tsx:90:12)
+    at div
+    at div
+    at div
+    at _c3 (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/ui/card.tsx:47:12)
+    at div
+    at _c (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/ui/card.tsx:19:39)
+    at div
+    at div
+    at TokenizedMusicView (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/tokenization/tokenized-music-view.tsx:27:38)
+    at section
+    at main
+    at div
+    at div
+    at ArtistProfileCard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/artist/artist-profile-card.tsx?t=1763332342796:906:37)
+    at div
+    at ProfilePage (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/profile.tsx?t=1763332342796:30:18)
+    at div
+    at PageWrapper (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?t=1763332342796&v=gaPGKsCdg3Tehx68WUAY_:266:24)
+    at Route (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cb36e691:206:16)
+    at ProtectedRoute (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/protected-route.tsx:22:3)
+    at Switch (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=cb36e691:262:17)
+    at Suspense
+    at Router (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?t=1763332342796&v=gaPGKsCdg3Tehx68WUAY_:308:37)
+    at EditorProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/editor-context.tsx:56:34)
+    at GlobalAuthGuard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/global-auth-guard.tsx:45:35)
+    at SubscriptionProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/subscription-context.tsx:32:40)
+    at div
+    at ModalProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:27094:26)
+    at ShowBalanceProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22214:32)
+    at TransactionStoreProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22652:3)
+    at ModalSizeProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22803:3)
+    at I18nProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:21915:23)
+    at WalletButtonProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22779:33)
+    at RainbowKitChainProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:22179:3)
+    at RainbowKitProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=cb36e691:23584:3)
+    at QueryClientProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WJPGYOZ7.js?v=cb36e691:3093:3)
+    at Hydrate (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVPNNXW7.js?v=cb36e691:3552:11)
+    at WagmiProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DVPNNXW7.js?v=cb36e691:3576:11)
+    at div
+    at ErrorBoundary (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?t=1763332342796&v=gaPGKsCdg3Tehx68WUAY_:215:5)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?t=1763332342796&v=gaPGKsCdg3Tehx68WUAY_:544:37)
+printWarning @ chunk-Z2GUPSCO.js?v=cb36e691:521
+error @ chunk-Z2GUPSCO.js?v=cb36e691:505
+validateDOMNesting @ chunk-Z2GUPSCO.js?v=cb36e691:8256
+createInstance @ chunk-Z2GUPSCO.js?v=cb36e691:8328
+completeWork @ chunk-Z2GUPSCO.js?v=cb36e691:16290
+completeUnitOfWork @ chunk-Z2GUPSCO.js?v=cb36e691:19224
+performUnitOfWork @ chunk-Z2GUPSCO.js?v=cb36e691:19206
+workLoopSync @ chunk-Z2GUPSCO.js?v=cb36e691:19137
+renderRootSync @ chunk-Z2GUPSCO.js?v=cb36e691:19116
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18874
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+setData @ chunk-WJPGYOZ7.js?v=cb36e691:935
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1157
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+setData @ chunk-WJPGYOZ7.js?v=cb36e691:935
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1157
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:19328
+workLoop @ chunk-Z2GUPSCO.js?v=cb36e691:197
+flushWork @ chunk-Z2GUPSCO.js?v=cb36e691:176
+performWorkUntilDeadline @ chunk-Z2GUPSCO.js?v=cb36e691:384
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+setData @ chunk-WJPGYOZ7.js?v=cb36e691:935
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1157
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:19328
+workLoop @ chunk-Z2GUPSCO.js?v=cb36e691:197
+flushWork @ chunk-Z2GUPSCO.js?v=cb36e691:176
+performWorkUntilDeadline @ chunk-Z2GUPSCO.js?v=cb36e691:384
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+invokePassiveEffectMountInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:18324
+invokeEffectsInDev @ chunk-Z2GUPSCO.js?v=cb36e691:19701
+commitDoubleInvokeEffectsInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:19686
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19503
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+setData @ chunk-WJPGYOZ7.js?v=cb36e691:935
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1157
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+onSubscribe @ chunk-WJPGYOZ7.js?v=cb36e691:1344
+subscribe @ chunk-WJPGYOZ7.js?v=cb36e691:24
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:3310
+subscribeToStore @ chunk-Z2GUPSCO.js?v=cb36e691:11984
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:19328
+workLoop @ chunk-Z2GUPSCO.js?v=cb36e691:197
+flushWork @ chunk-Z2GUPSCO.js?v=cb36e691:176
+performWorkUntilDeadline @ chunk-Z2GUPSCO.js?v=cb36e691:384
+profile:1 Access to video at 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519' from origin 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519:1  GET https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519 net::ERR_FAILED 304 (Not Modified)
+artist-profile-card.tsx?t=1763332509006:3229 ❌ Video load error: {title: 'Si un dia caigo preso', format: 'mp4', url: 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F17633305', error: 4, errorMessage: 'MEDIA_ELEMENT_ERROR: Format error', …}
+onError @ artist-profile-card.tsx?t=1763332509006:3229
+callCallback2 @ chunk-Z2GUPSCO.js?v=cb36e691:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=cb36e691:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=cb36e691:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=cb36e691:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=cb36e691:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=cb36e691:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=cb36e691:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=cb36e691:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=cb36e691:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=cb36e691:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=cb36e691:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=cb36e691:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=cb36e691:5472
+profile:1 Access to video at 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519' from origin 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519:1  GET https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519 net::ERR_FAILED 304 (Not Modified)
+artist-profile-card.tsx?t=1763332509006:3229 ❌ Video load error: {title: 'Si un dia caigo preso', format: 'mp4', url: 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F17633305', error: 4, errorMessage: 'MEDIA_ELEMENT_ERROR: Format error', …}
+onError @ artist-profile-card.tsx?t=1763332509006:3229
+callCallback2 @ chunk-Z2GUPSCO.js?v=cb36e691:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=cb36e691:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=cb36e691:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=cb36e691:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=cb36e691:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=cb36e691:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=cb36e691:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=cb36e691:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=cb36e691:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=cb36e691:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=cb36e691:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=cb36e691:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=cb36e691:5472
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+invokePassiveEffectMountInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:18324
+invokeEffectsInDev @ chunk-Z2GUPSCO.js?v=cb36e691:19701
+commitDoubleInvokeEffectsInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:19686
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19503
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+profile:1 Access to video at 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519' from origin 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519:1  GET https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519 net::ERR_FAILED 304 (Not Modified)
+artist-profile-card.tsx?t=1763332509006:3229 ❌ Video load error: {title: 'Si un dia caigo preso', format: 'mp4', url: 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F17633305', error: 4, errorMessage: 'MEDIA_ELEMENT_ERROR: Format error', …}
+onError @ artist-profile-card.tsx?t=1763332509006:3229
+callCallback2 @ chunk-Z2GUPSCO.js?v=cb36e691:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=cb36e691:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=cb36e691:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=cb36e691:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=cb36e691:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=cb36e691:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=cb36e691:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=cb36e691:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=cb36e691:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=cb36e691:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=cb36e691:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=cb36e691:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=cb36e691:5472
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+invokePassiveEffectMountInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:18324
+invokeEffectsInDev @ chunk-Z2GUPSCO.js?v=cb36e691:19701
+commitDoubleInvokeEffectsInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:19686
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19503
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+profile:1 Access to video at 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519' from origin 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519:1  GET https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519 net::ERR_FAILED 304 (Not Modified)
+artist-profile-card.tsx?t=1763332509006:3229 ❌ Video load error: {title: 'Si un dia caigo preso', format: 'mp4', url: 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F17633305', error: 4, errorMessage: 'MEDIA_ELEMENT_ERROR: Format error', …}
+onError @ artist-profile-card.tsx?t=1763332509006:3229
+callCallback2 @ chunk-Z2GUPSCO.js?v=cb36e691:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=cb36e691:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=cb36e691:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=cb36e691:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=cb36e691:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=cb36e691:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=cb36e691:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=cb36e691:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=cb36e691:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=cb36e691:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=cb36e691:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=cb36e691:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=cb36e691:5472
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+invokePassiveEffectMountInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:18324
+invokeEffectsInDev @ chunk-Z2GUPSCO.js?v=cb36e691:19701
+commitDoubleInvokeEffectsInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:19686
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19503
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+profile:1 Access to video at 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519' from origin 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519:1  GET https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519 net::ERR_FAILED 304 (Not Modified)
+artist-profile-card.tsx?t=1763332509006:3229 ❌ Video load error: {title: 'Si un dia caigo preso', format: 'mp4', url: 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F17633305', error: 4, errorMessage: 'MEDIA_ELEMENT_ERROR: Format error', …}
+onError @ artist-profile-card.tsx?t=1763332509006:3229
+callCallback2 @ chunk-Z2GUPSCO.js?v=cb36e691:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=cb36e691:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=cb36e691:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=cb36e691:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=cb36e691:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=cb36e691:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=cb36e691:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=cb36e691:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=cb36e691:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=cb36e691:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=cb36e691:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=cb36e691:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=cb36e691:5472
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+invokePassiveEffectMountInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:18324
+invokeEffectsInDev @ chunk-Z2GUPSCO.js?v=cb36e691:19701
+commitDoubleInvokeEffectsInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:19686
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19503
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+profile:1 Access to video at 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519' from origin 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519:1  GET https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519 net::ERR_FAILED 304 (Not Modified)
+artist-profile-card.tsx?t=1763332509006:3229 ❌ Video load error: {title: 'Si un dia caigo preso', format: 'mp4', url: 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F17633305', error: 4, errorMessage: 'MEDIA_ELEMENT_ERROR: Format error', …}
+onError @ artist-profile-card.tsx?t=1763332509006:3229
+callCallback2 @ chunk-Z2GUPSCO.js?v=cb36e691:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=cb36e691:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=cb36e691:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=cb36e691:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=cb36e691:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=cb36e691:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=cb36e691:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=cb36e691:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=cb36e691:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=cb36e691:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=cb36e691:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=cb36e691:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=cb36e691:5472
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+invokePassiveEffectMountInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:18324
+invokeEffectsInDev @ chunk-Z2GUPSCO.js?v=cb36e691:19701
+commitDoubleInvokeEffectsInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:19686
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19503
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+profile:1 Access to video at 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519' from origin 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519:1  GET https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F1763330571197_SI%20CAIGO%20PRESO.mp4?alt=media&token=367e2da6-454d-42a8-a5e5-ffb0f2059519 net::ERR_FAILED 304 (Not Modified)
+artist-profile-card.tsx:2248 ❌ Video load error: {title: 'Si un dia caigo preso', format: 'mp4', url: 'https://firebasestorage.googleapis.com/v0/b/artist-boost.firebasestorage.app/o/videos%2F2%2F17633305', error: 4, errorMessage: 'MEDIA_ELEMENT_ERROR: Format error', …}
+onError @ artist-profile-card.tsx:2248
+callCallback2 @ chunk-Z2GUPSCO.js?v=cb36e691:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=cb36e691:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=cb36e691:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=cb36e691:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=cb36e691:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=cb36e691:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=cb36e691:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=cb36e691:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=cb36e691:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=cb36e691:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=cb36e691:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=cb36e691:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=cb36e691:5472
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+commitPassiveMountOnFiber @ chunk-Z2GUPSCO.js?v=cb36e691:18156
+commitPassiveMountEffects_complete @ chunk-Z2GUPSCO.js?v=cb36e691:18129
+commitPassiveMountEffects_begin @ chunk-Z2GUPSCO.js?v=cb36e691:18119
+commitPassiveMountEffects @ chunk-Z2GUPSCO.js?v=cb36e691:18109
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19490
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347
+hmr-error-handler.ts:15  GET https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/crowdfunding/contributions/1 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadCampaignData @ crowdfunding-panel.tsx:87
+await in loadCampaignData
+(anonymous) @ crowdfunding-panel.tsx:63
+commitHookEffectListMount @ chunk-Z2GUPSCO.js?v=cb36e691:16915
+invokePassiveEffectMountInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:18324
+invokeEffectsInDev @ chunk-Z2GUPSCO.js?v=cb36e691:19701
+commitDoubleInvokeEffectsInDEV @ chunk-Z2GUPSCO.js?v=cb36e691:19686
+flushPassiveEffectsImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19503
+flushPassiveEffects @ chunk-Z2GUPSCO.js?v=cb36e691:19447
+commitRootImpl @ chunk-Z2GUPSCO.js?v=cb36e691:19416
+commitRoot @ chunk-Z2GUPSCO.js?v=cb36e691:19277
+performSyncWorkOnRoot @ chunk-Z2GUPSCO.js?v=cb36e691:18895
+flushSyncCallbacks @ chunk-Z2GUPSCO.js?v=cb36e691:9119
+(anonymous) @ chunk-Z2GUPSCO.js?v=cb36e691:18627
+setTimeout
+systemSetTimeoutZero @ chunk-WJPGYOZ7.js?v=cb36e691:103
+flush @ chunk-WJPGYOZ7.js?v=cb36e691:615
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:633
+dispatch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1260
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1177
+await in fetch
+executeFetch_fn @ chunk-WJPGYOZ7.js?v=cb36e691:1651
+fetch @ chunk-WJPGYOZ7.js?v=cb36e691:1461
+refetch @ chunk-WJPGYOZ7.js?v=cb36e691:1451
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:1002
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2725
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2724
+batch @ chunk-WJPGYOZ7.js?v=cb36e691:629
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:2723
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:2763
+await in (anonymous)
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:390
+onFocus @ chunk-WJPGYOZ7.js?v=cb36e691:389
+(anonymous) @ chunk-WJPGYOZ7.js?v=cb36e691:376
+listener @ chunk-WJPGYOZ7.js?v=cb36e691:347

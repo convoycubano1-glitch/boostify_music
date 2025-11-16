@@ -106,6 +106,15 @@ export function CrowdfundingPanel({ colors }: CrowdfundingPanelProps) {
   };
 
   const handleSave = async () => {
+    if (!title || title.trim() === '') {
+      toast({
+        title: "Invalid Title",
+        description: "Please enter a campaign title",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!goalAmount || parseFloat(goalAmount) <= 0) {
       toast({
         title: "Invalid Goal",
@@ -118,6 +127,13 @@ export function CrowdfundingPanel({ colors }: CrowdfundingPanelProps) {
     setIsSaving(true);
 
     try {
+      console.log('💾 Saving campaign with data:', {
+        title,
+        description,
+        goalAmount: parseFloat(goalAmount),
+        isActive,
+      });
+
       const response = await fetch('/api/crowdfunding/campaign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,7 +146,16 @@ export function CrowdfundingPanel({ colors }: CrowdfundingPanelProps) {
         }),
       });
 
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Response error:', errorText);
+        throw new Error(`Server error: ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log('✅ Response data:', data);
 
       if (data.success) {
         toast({
@@ -145,7 +170,7 @@ export function CrowdfundingPanel({ colors }: CrowdfundingPanelProps) {
       console.error('Error saving campaign:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save campaign",
+        description: error.message || "Failed to save campaign. Please make sure you're logged in.",
         variant: "destructive",
       });
     } finally {

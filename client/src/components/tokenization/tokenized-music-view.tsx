@@ -36,7 +36,7 @@ export function TokenizedMusicView({ artistId, artistName }: TokenizedMusicViewP
   const isValidId = !isNaN(numericArtistId);
 
   const { data: songs = [], isLoading } = useQuery<TokenizedSong[]>({
-    queryKey: ['/api/tokenization/songs/active', numericArtistId],
+    queryKey: [`/api/tokenization/songs/active/${numericArtistId}`],
     enabled: isValidId,
   });
 

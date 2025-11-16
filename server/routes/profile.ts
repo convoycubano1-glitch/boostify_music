@@ -79,17 +79,30 @@ router.get('/user/profile', authenticate, async (req: Request, res: Response) =>
   }
 });
 
-// GET /api/profile/:slug - Get public profile by slug
-router.get('/:slug', async (req: Request, res: Response) => {
+// GET /api/profile/:slugOrId - Get public profile by slug or ID
+router.get('/:slugOrId', async (req: Request, res: Response) => {
   try {
-    const { slug } = req.params;
+    const { slugOrId } = req.params;
     
-    // Get user by slug
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.slug, slug))
-      .limit(1);
+    // Check if it's a numeric ID or a slug
+    const isNumericId = /^\d+$/.test(slugOrId);
+    
+    let user;
+    if (isNumericId) {
+      // Search by ID
+      [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, parseInt(slugOrId)))
+        .limit(1);
+    } else {
+      // Search by slug
+      [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.slug, slugOrId))
+        .limit(1);
+    }
       
     if (!user) {
       return res.status(404).json({ message: 'Artist not found' });

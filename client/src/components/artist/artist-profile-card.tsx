@@ -40,13 +40,14 @@ import {
   Crown,
   Zap,
   Film,
-  Bot
+  Bot,
+  AlertCircle
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, query, where, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db, storage } from "../../firebase";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { useToast } from "../../hooks/use-toast";
 import {
   Dialog,
@@ -70,6 +71,7 @@ import { TokenizedMusicView } from "../tokenization/tokenized-music-view";
 
 export interface ArtistProfileProps {
   artistId: string;
+  initialArtistData?: any; // Datos iniciales del artista (opcional)
 }
 
 interface Song {
@@ -602,7 +604,7 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
   );
 }
 
-export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
+export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfileProps) {
   const { t } = useTranslation();
   const [playingSongId, setPlayingSongId] = useState<string | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<keyof typeof colorPalettes>('Boostify Naranja');
@@ -614,6 +616,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   
   const [isUploadingSong, setIsUploadingSong] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [songUploadProgress, setSongUploadProgress] = useState(0);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [showUploadSongDialog, setShowUploadSongDialog] = useState(false);
   const [showUploadVideoDialog, setShowUploadVideoDialog] = useState(false);
   const [newSongTitle, setNewSongTitle] = useState('');
@@ -718,14 +722,14 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     queryKey: ["userProfile", artistId],
     queryFn: async () => {
       try {
-        // Primero intentar obtener de Firestore
-        const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", artistId)));
-        let firestoreData = null;
-        if (!userDoc.empty) {
-          firestoreData = userDoc.docs[0].data();
+        // Si hay datos iniciales, usarlos como base
+        if (initialArtistData) {
+          console.log('✅ Using initial artist data:', initialArtistData);
+          return initialArtistData;
         }
         
-        // Intentar obtener datos de PostgreSQL usando artistId como slug
+        // artistId puede ser un ID numérico (de PostgreSQL) o un slug
+        // Intentamos primero PostgreSQL por slug, luego por ID
         let postgresData = null;
         try {
           const response = await fetch(`/api/profile/${artistId}`);
@@ -733,10 +737,29 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
             postgresData = await response.json();
           }
         } catch (pgError) {
-          console.log("Artist not found in PostgreSQL, using Firestore only");
+          console.log("Artist not found in PostgreSQL by slug/id, trying Firestore");
         }
         
-        // Combinar datos: PostgreSQL tiene precedencia para campos estructurales
+        // Buscar en Firestore usando el artistId (que puede ser el UID)
+        // Intentar primero por uid, luego por el campo id personalizado
+        const userDocByUid = await getDocs(query(collection(db, "users"), where("uid", "==", artistId)));
+        let firestoreData = null;
+        
+        if (!userDocByUid.empty) {
+          firestoreData = userDocByUid.docs[0].data();
+          console.log('✅ Found user in Firestore by uid:', artistId);
+        } else {
+          // Si no se encuentra por uid, intentar por el ID como string
+          const userDocById = await getDocs(query(collection(db, "users"), where("id", "==", artistId)));
+          if (!userDocById.empty) {
+            firestoreData = userDocById.docs[0].data();
+            console.log('✅ Found user in Firestore by id field:', artistId);
+          } else {
+            console.log('⚠️ User not found in Firestore for artistId:', artistId);
+          }
+        }
+        
+        // Combinar datos: Firestore tiene los datos completos, PostgreSQL agrega metadata
         return {
           ...firestoreData,
           ...(postgresData && {
@@ -752,7 +775,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         return null;
       }
     },
-    enabled: !!artistId
+    enabled: !!artistId,
+    initialData: initialArtistData // Usar datos iniciales para evitar loading state
   });
 
   // Query para canciones
@@ -1208,9 +1232,23 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     }
 
     setIsUploadingSong(true);
+    setSongUploadProgress(0);
     try {
       const storageRef = ref(storage, `songs/${artistId}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      await new Promise((resolve, reject) => {
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setSongUploadProgress(Math.round(progress));
+            console.log(`📤 Upload progress: ${progress}%`);
+          },
+          (error) => reject(error),
+          () => resolve(uploadTask.snapshot)
+        );
+      });
+      
       const audioUrl = await getDownloadURL(storageRef);
 
       const newDocRef = doc(collection(db, "songs"));
@@ -1229,6 +1267,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
 
       setNewSongTitle('');
       setShowUploadSongDialog(false);
+      setSongUploadProgress(0);
       refetchSongs();
     } catch (error) {
       console.error("Error uploading song:", error);
@@ -1239,6 +1278,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       });
     } finally {
       setIsUploadingSong(false);
+      setSongUploadProgress(0);
     }
   };
 
@@ -1311,6 +1351,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     }
 
     setIsUploadingVideo(true);
+    setVideoUploadProgress(0);
     try {
       if (videoUploadType === 'youtube') {
         const newDocRef = doc(collection(db, "videos"));
@@ -1326,7 +1367,20 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
         const storagePath = `videos/${artistId}/${Date.now()}_${videoFile!.name}`;
         const storageRef = ref(storage, storagePath);
         
-        await uploadBytes(storageRef, videoFile!);
+        const uploadTask = uploadBytesResumable(storageRef, videoFile!);
+        
+        await new Promise((resolve, reject) => {
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setVideoUploadProgress(Math.round(progress));
+              console.log(`📹 Video upload progress: ${progress}%`);
+            },
+            (error) => reject(error),
+            () => resolve(uploadTask.snapshot)
+          );
+        });
+        
         const downloadURL = await getDownloadURL(storageRef);
         
         const newDocRef = doc(collection(db, "videos"));
@@ -1355,6 +1409,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       setVideoFile(null);
       setVideoPassword('');
       setShowUploadVideoDialog(false);
+      setVideoUploadProgress(0);
       refetchVideos();
     } catch (error) {
       console.error("Error uploading video:", error);
@@ -1365,6 +1420,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
       });
     } finally {
       setIsUploadingVideo(false);
+      setVideoUploadProgress(0);
     }
   };
 
@@ -1824,13 +1880,36 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                               accept="audio/*"
                               ref={songFileInputRef}
                               onChange={handleUploadSong}
+                              disabled={isUploadingSong}
                             />
                           </div>
+                          
+                          {/* Barra de progreso */}
+                          {isUploadingSong && songUploadProgress > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">Subiendo canción...</span>
+                                <span className="font-medium" style={{ color: colors.hexAccent }}>{songUploadProgress}%</span>
+                              </div>
+                              <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                                <div 
+                                  className="h-2.5 rounded-full transition-all duration-300"
+                                  style={{ 
+                                    width: `${songUploadProgress}%`,
+                                    background: `linear-gradient(90deg, ${colors.hexPrimary}, ${colors.hexAccent})`
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <DialogFooter>
                           <Button
                             variant="outline"
-                            onClick={() => setShowUploadSongDialog(false)}
+                            onClick={() => {
+                              setShowUploadSongDialog(false);
+                              setSongUploadProgress(0);
+                            }}
                             disabled={isUploadingSong}
                           >
                             Cancelar
@@ -2019,14 +2098,35 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                                 <Input
                                   id="video-file"
                                   type="file"
-                                  accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo,.mp4,.mpg,.mov,.avi"
+                                  accept="video/mp4,video/mpeg,video/webm,.mp4,.mpg,.webm"
                                   ref={videoFileInputRef}
-                                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const ext = file.name.split('.').pop()?.toLowerCase();
+                                      if (ext === 'mov' || ext === 'avi') {
+                                        toast({
+                                          title: "⚠️ Formato no recomendado",
+                                          description: `Los archivos .${ext} no son compatibles con todos los navegadores. Para mejor compatibilidad, usa .MP4 o .WEBM`,
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }
+                                    setVideoFile(file || null);
+                                  }}
                                 />
                                 {videoFile && (
-                                  <p className="text-sm text-gray-400">
-                                    Archivo seleccionado: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
-                                  </p>
+                                  <div className="space-y-1">
+                                    <p className="text-sm text-gray-400">
+                                      Archivo seleccionado: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                                    </p>
+                                    {videoFile.name.toLowerCase().endsWith('.mov') && (
+                                      <p className="text-xs text-orange-400 flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        ⚠️ Formato .MOV no funciona en Chrome/Firefox. Usa .MP4 para mejor compatibilidad.
+                                      </p>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                               <div className="space-y-2">
@@ -2044,6 +2144,25 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                               </div>
                             </>
                           )}
+                          
+                          {/* Barra de progreso */}
+                          {isUploadingVideo && videoUploadProgress > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">Subiendo video...</span>
+                                <span className="font-medium" style={{ color: colors.hexAccent }}>{videoUploadProgress}%</span>
+                              </div>
+                              <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                                <div 
+                                  className="h-2.5 rounded-full transition-all duration-300"
+                                  style={{ 
+                                    width: `${videoUploadProgress}%`,
+                                    background: `linear-gradient(90deg, ${colors.hexPrimary}, ${colors.hexAccent})`
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <DialogFooter>
                           <Button
@@ -2055,6 +2174,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                               setVideoFile(null);
                               setVideoPassword('');
                               setVideoUploadType('youtube');
+                              setVideoUploadProgress(0);
                             }}
                             disabled={isUploadingVideo}
                           >
@@ -2065,7 +2185,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             disabled={isUploadingVideo}
                             style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
                           >
-                            {isUploadingVideo ? 'Subiendo...' : 'Agregar Video'}
+                            {isUploadingVideo ? `Subiendo... ${videoUploadProgress}%` : 'Agregar Video'}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -2073,7 +2193,16 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                   )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {videos.map((video, index) => (
+                  {videos.map((video, index) => {
+                    console.log('🎥 Rendering video card:', { 
+                      title: video.title, 
+                      url: video.url, 
+                      thumbnailUrl: video.thumbnailUrl,
+                      hasUrl: !!video.url,
+                      isYouTube: video.url?.includes('youtube')
+                    });
+                    
+                    return (
                     <div
                       key={video.id}
                       className="rounded-lg sm:rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border"
@@ -2090,6 +2219,66 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                             alt={video.title}
                             className="w-full h-36 sm:h-40 md:h-44 object-cover"
                           />
+                        ) : video.url && !video.url.includes('youtube') ? (
+                          <div className="relative w-full h-36 sm:h-40 md:h-44 bg-black">
+                            <video
+                              src={video.url}
+                              className="w-full h-full object-cover"
+                              muted
+                              playsInline
+                              onLoadedMetadata={(e) => {
+                                console.log('✅ Video metadata loaded:', video.title);
+                                console.log('📊 Video details:', {
+                                  duration: e.currentTarget.duration,
+                                  videoWidth: e.currentTarget.videoWidth,
+                                  videoHeight: e.currentTarget.videoHeight,
+                                  readyState: e.currentTarget.readyState,
+                                  networkState: e.currentTarget.networkState
+                                });
+                              }}
+                              onCanPlay={() => console.log('✅ Video can play:', video.title)}
+                              onError={(e) => {
+                                const fileExt = video.url?.split('.').pop()?.split('?')[0]?.toLowerCase() || 'unknown';
+                                const videoEl = e.currentTarget;
+                                const errorCode = videoEl.error?.code;
+                                console.error('❌ Video load error:', {
+                                  title: video.title,
+                                  format: fileExt,
+                                  url: video.url?.substring(0, 100),
+                                  error: errorCode,
+                                  errorMessage: videoEl.error?.message,
+                                  networkState: videoEl.networkState,
+                                  readyState: videoEl.readyState
+                                });
+                                const target = e.currentTarget;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  let formatMsg = '';
+                                  let helpMsg = '';
+                                  
+                                  if (fileExt === 'mov') {
+                                    formatMsg = 'Formato .MOV no compatible';
+                                    helpMsg = 'Usa Safari o convierte a .MP4 (H.264)';
+                                  } else if (errorCode === 4 || videoEl.error?.message?.includes('Format error')) {
+                                    formatMsg = 'Códec de video no compatible';
+                                    helpMsg = 'El video usa H.265/HEVC. Convierte a H.264 (freeconvert.com)';
+                                  } else {
+                                    formatMsg = videoEl.error?.message || 'Error al cargar video';
+                                    helpMsg = 'Haz clic para reproducir el video completo';
+                                  }
+                                  
+                                  parent.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center gap-2 p-4" style="background-color: ${colors.hexPrimary}33">
+                                    <svg class="h-10 sm:h-12 w-10 sm:w-12" fill="none" stroke="${colors.hexAccent}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <p class="text-xs text-center text-gray-400 font-medium">${formatMsg}</p>
+                                    <p class="text-xs text-center text-orange-400">${helpMsg}</p>
+                                  </div>`;
+                                }
+                              }}
+                            />
+                          </div>
                         ) : (
                           <div 
                             className="w-full h-36 sm:h-40 md:h-44 flex items-center justify-center"
@@ -2168,7 +2357,8 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
                         );
