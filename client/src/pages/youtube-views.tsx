@@ -7,7 +7,9 @@ import { useToast } from "../hooks/use-toast";
 import { 
   Loader2, Play, TrendingUp, Home, Key, Video, MessageSquare, 
   Eye, Database, Brain, FileText, Sparkles, CheckCircle, 
-  AlertTriangle, Copy, X, Star, Lightbulb, Target, Award
+  AlertTriangle, Copy, X, Star, Lightbulb, Target, Award,
+  Image, Search, TrendingDown, Scissors, Users, Calendar,
+  Gauge, Code
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -64,6 +66,95 @@ interface VideoIdea {
   hook: string;
 }
 
+// PHASE 2 Types
+interface ThumbnailResult {
+  imageUrl: string;
+  prompt: string;
+  ctrScore: number;
+  suggestedText: string;
+  reason: string;
+}
+
+interface CompetitorAnalysis {
+  channelName: string;
+  avgViews: number;
+  topPerformingTopics: string[];
+  uploadFrequency: string;
+  bestUploadDays: string[];
+  bestUploadTime: string;
+  contentGaps: string[];
+  strengths: string[];
+  weaknesses: string[];
+  insights: string[];
+}
+
+interface Trend {
+  topic: string;
+  confidence: number;
+  timeToAct: string;
+  risingKeywords: string[];
+  competitionLevel: 'low' | 'medium' | 'high';
+  urgency: 'low' | 'medium' | 'high';
+  reason: string;
+}
+
+interface ShortClip {
+  startTime: string;
+  endTime: string;
+  duration: number;
+  viralScore: number;
+  reason: string;
+  hook: string;
+  suggestedTitle: string;
+  tags: string[];
+}
+
+// PHASE 3 Types
+interface TrackedChannel {
+  id: string;
+  channelName: string;
+  channelUrl: string;
+  metrics: {
+    totalVideos: number;
+    totalViews: number;
+    subscribers: number;
+    avgViews: number;
+  };
+}
+
+interface CalendarVideo {
+  day: string;
+  date: string;
+  title: string;
+  description: string;
+  keywords: string[];
+  uploadTime: string;
+  scriptOutline: string[];
+  thumbnailConcept: string;
+  estimatedViews: number;
+}
+
+interface CalendarWeek {
+  weekNumber: number;
+  videos: CalendarVideo[];
+}
+
+interface OptimizationAction {
+  action: string;
+  impact: 'high' | 'medium' | 'low';
+  urgency: string;
+  reason: string;
+}
+
+interface ApiKey {
+  id: string;
+  apiKey: string;
+  createdAt: any;
+  isActive: boolean;
+  usageCount: number;
+  rateLimit: number;
+}
+
 export default function YoutubeViewsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -97,6 +188,51 @@ export default function YoutubeViewsPage() {
   const [videoIdeas, setVideoIdeas] = useState<VideoIdea[]>([]);
   const [contentGaps, setContentGaps] = useState<string[]>([]);
   const [trendingSubtopics, setTrendingSubtopics] = useState<string[]>([]);
+
+  // PHASE 2 - Thumbnail Generator states
+  const [thumbnailTitle, setThumbnailTitle] = useState("");
+  const [thumbnailStyle, setThumbnailStyle] = useState("modern");
+  const [thumbnailNiche, setThumbnailNiche] = useState("");
+  const [thumbnailLoading, setThumbnailLoading] = useState(false);
+  const [thumbnails, setThumbnails] = useState<ThumbnailResult[]>([]);
+
+  // PHASE 2 - Competitor Analysis states
+  const [competitorChannel, setCompetitorChannel] = useState("");
+  const [competitorLoading, setCompetitorLoading] = useState(false);
+  const [competitorData, setCompetitorData] = useState<CompetitorAnalysis | null>(null);
+
+  // PHASE 2 - Trend Predictor states
+  const [trendNiche, setTrendNiche] = useState("");
+  const [trendsLoading, setTrendsLoading] = useState(false);
+  const [trends, setTrends] = useState<Trend[]>([]);
+
+  // PHASE 2 - Transcript Extractor states
+  const [transcriptUrl, setTranscriptUrl] = useState("");
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [shortClips, setShortClips] = useState<ShortClip[]>([]);
+
+  // PHASE 3 - Multi-Channel Tracking states
+  const [newChannelUrl, setNewChannelUrl] = useState("");
+  const [newChannelName, setNewChannelName] = useState("");
+  const [channelsLoading, setChannelsLoading] = useState(false);
+  const [trackedChannels, setTrackedChannels] = useState<TrackedChannel[]>([]);
+  const [channelAnalytics, setChannelAnalytics] = useState<any>(null);
+
+  // PHASE 3 - Content Calendar states
+  const [calendarNiche, setCalendarNiche] = useState("");
+  const [calendarGoals, setCalendarGoals] = useState("");
+  const [videosPerWeek, setVideosPerWeek] = useState(3);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarWeeks, setCalendarWeeks] = useState<CalendarWeek[]>([]);
+
+  // PHASE 3 - Auto-Optimization states
+  const [optVideoUrl, setOptVideoUrl] = useState("");
+  const [optLoading, setOptLoading] = useState(false);
+  const [optResult, setOptResult] = useState<any>(null);
+
+  // PHASE 3 - API Access states
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [apiLoading, setApiLoading] = useState(false);
 
   // 1. PRE-LAUNCH SCORE
   const handlePreLaunchScore = async () => {
@@ -307,6 +443,463 @@ export default function YoutubeViewsPage() {
     }
   };
 
+  // PHASE 2 HANDLERS
+
+  // 5. THUMBNAIL GENERATOR
+  const handleGenerateThumbnails = async () => {
+    if (!thumbnailTitle || !thumbnailNiche) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide title and niche",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setThumbnailLoading(true);
+    setThumbnails([]);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/generate-thumbnail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: thumbnailTitle,
+          style: thumbnailStyle,
+          niche: thumbnailNiche
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate thumbnails');
+      }
+
+      setThumbnails(data.thumbnails);
+      toast({
+        title: "Thumbnails Generated!",
+        description: `Created ${data.thumbnails.length} AI thumbnails`,
+      });
+    } catch (error: any) {
+      console.error('Thumbnail generation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate thumbnails",
+        variant: "destructive"
+      });
+    } finally {
+      setThumbnailLoading(false);
+    }
+  };
+
+  // 6. COMPETITOR ANALYSIS
+  const handleCompetitorAnalysis = async () => {
+    if (!competitorChannel) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a competitor channel name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCompetitorLoading(true);
+    setCompetitorData(null);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/analyze-competitor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          channelName: competitorChannel
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze competitor');
+      }
+
+      setCompetitorData(data);
+      toast({
+        title: "Analysis Complete!",
+        description: `Analyzed ${data.channelName}'s strategy`,
+      });
+    } catch (error: any) {
+      console.error('Competitor analysis error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to analyze competitor",
+        variant: "destructive"
+      });
+    } finally {
+      setCompetitorLoading(false);
+    }
+  };
+
+  // 7. TREND PREDICTOR
+  const handlePredictTrends = async () => {
+    if (!trendNiche) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a niche",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setTrendsLoading(true);
+    setTrends([]);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/predict-trends', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          niche: trendNiche
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to predict trends');
+      }
+
+      setTrends(data.trends);
+      toast({
+        title: "Trends Detected!",
+        description: `Found ${data.trends.length} emerging trends`,
+      });
+    } catch (error: any) {
+      console.error('Trend prediction error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to predict trends",
+        variant: "destructive"
+      });
+    } finally {
+      setTrendsLoading(false);
+    }
+  };
+
+  // 8. TRANSCRIPT EXTRACTOR
+  const handleExtractTranscript = async () => {
+    if (!transcriptUrl) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a video URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setTranscriptLoading(true);
+    setShortClips([]);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/extract-transcript', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          videoUrl: transcriptUrl
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to extract transcript');
+      }
+
+      setShortClips(data.shortsOpportunities);
+      toast({
+        title: "Shorts Clips Found!",
+        description: `Identified ${data.shortsOpportunities.length} viral moments`,
+      });
+    } catch (error: any) {
+      console.error('Transcript extraction error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to extract transcript",
+        variant: "destructive"
+      });
+    } finally {
+      setTranscriptLoading(false);
+    }
+  };
+
+  // PHASE 3 HANDLERS
+
+  // 9. MULTI-CHANNEL TRACKING
+  const handleAddChannel = async () => {
+    if (!newChannelUrl || !newChannelName) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide channel URL and name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setChannelsLoading(true);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/track-channel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'add',
+          channelUrl: newChannelUrl,
+          channelName: newChannelName
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add channel');
+      }
+
+      toast({
+        title: "Channel Added!",
+        description: `Now tracking ${newChannelName}`,
+      });
+      setNewChannelUrl("");
+      setNewChannelName("");
+      loadTrackedChannels();
+    } catch (error: any) {
+      console.error('Add channel error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add channel",
+        variant: "destructive"
+      });
+    } finally {
+      setChannelsLoading(false);
+    }
+  };
+
+  const loadTrackedChannels = async () => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/track-channel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'list' })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setTrackedChannels(data.channels || []);
+      }
+    } catch (error) {
+      console.error('Load channels error:', error);
+    }
+  };
+
+  const loadChannelAnalytics = async () => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/multi-channel-analytics', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setChannelAnalytics(data);
+      }
+    } catch (error) {
+      console.error('Load analytics error:', error);
+    }
+  };
+
+  // 10. CONTENT CALENDAR
+  const handleGenerateCalendar = async () => {
+    if (!calendarNiche) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a niche",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCalendarLoading(true);
+    setCalendarWeeks([]);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/generate-calendar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          niche: calendarNiche,
+          goals: calendarGoals,
+          videosPerWeek: videosPerWeek
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate calendar');
+      }
+
+      setCalendarWeeks(data.weeks);
+      toast({
+        title: "Calendar Generated!",
+        description: `Created ${data.totalVideos} video plan`,
+      });
+    } catch (error: any) {
+      console.error('Calendar generation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate calendar",
+        variant: "destructive"
+      });
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
+  // 11. AUTO-OPTIMIZATION
+  const handleCheckOptimization = async () => {
+    if (!optVideoUrl) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a video URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setOptLoading(true);
+    setOptResult(null);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/check-optimization', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          videoUrl: optVideoUrl
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to check optimization');
+      }
+
+      setOptResult(data);
+      toast({
+        title: "Optimization Check Complete!",
+        description: `Performance score: ${data.performanceScore}/100`,
+      });
+    } catch (error: any) {
+      console.error('Optimization check error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to check optimization",
+        variant: "destructive"
+      });
+    } finally {
+      setOptLoading(false);
+    }
+  };
+
+  // 12. API ACCESS
+  const handleGenerateApiKey = async () => {
+    setApiLoading(true);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/api-key/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate API key');
+      }
+
+      toast({
+        title: "API Key Generated!",
+        description: "Your new API key is ready to use",
+      });
+      loadApiKeys();
+    } catch (error: any) {
+      console.error('API key generation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate API key",
+        variant: "destructive"
+      });
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  const loadApiKeys = async () => {
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/api-keys', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setApiKeys(data.keys || []);
+      }
+    } catch (error) {
+      console.error('Load API keys error:', error);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -425,10 +1018,12 @@ export default function YoutubeViewsPage() {
 
         <div className="container mx-auto">
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <TabsList className="flex flex-wrap gap-2 h-auto p-2">
+              {/* PHASE 1 - CREATOR */}
               <TabsTrigger value="pre-launch" data-testid="tab-pre-launch" className="data-[state=active]:bg-orange-500">
                 <Target className="w-4 h-4 mr-2" />
-                Pre-Launch Score
+                <span className="hidden md:inline">Pre-Launch Score</span>
+                <span className="md:hidden">Pre-Launch</span>
               </TabsTrigger>
               <TabsTrigger value="keywords" data-testid="tab-keywords" className="data-[state=active]:bg-orange-500">
                 <Key className="w-4 h-4 mr-2" />
@@ -436,11 +1031,51 @@ export default function YoutubeViewsPage() {
               </TabsTrigger>
               <TabsTrigger value="title" data-testid="tab-title" className="data-[state=active]:bg-orange-500">
                 <FileText className="w-4 h-4 mr-2" />
-                Title Analyzer
+                <span className="hidden md:inline">Title Analyzer</span>
+                <span className="md:hidden">Title</span>
               </TabsTrigger>
               <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-orange-500">
                 <Lightbulb className="w-4 h-4 mr-2" />
-                Content Ideas
+                <span className="hidden md:inline">Content Ideas</span>
+                <span className="md:hidden">Ideas</span>
+              </TabsTrigger>
+              
+              {/* PHASE 2 - PRO */}
+              <TabsTrigger value="thumbnail" data-testid="tab-thumbnail" className="data-[state=active]:bg-orange-500">
+                <Image className="w-4 h-4 mr-2" />
+                Thumbnail
+              </TabsTrigger>
+              <TabsTrigger value="competitor" data-testid="tab-competitor" className="data-[state=active]:bg-orange-500">
+                <Search className="w-4 h-4 mr-2" />
+                Competitor
+              </TabsTrigger>
+              <TabsTrigger value="trends" data-testid="tab-trends" className="data-[state=active]:bg-orange-500">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Trends
+              </TabsTrigger>
+              <TabsTrigger value="transcript" data-testid="tab-transcript" className="data-[state=active]:bg-orange-500">
+                <Scissors className="w-4 h-4 mr-2" />
+                Shorts
+              </TabsTrigger>
+
+              {/* PHASE 3 - ENTERPRISE */}
+              <TabsTrigger value="channels" data-testid="tab-channels" className="data-[state=active]:bg-orange-500">
+                <Users className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">Multi-Channel</span>
+                <span className="md:hidden">Channels</span>
+              </TabsTrigger>
+              <TabsTrigger value="calendar" data-testid="tab-calendar" className="data-[state=active]:bg-orange-500">
+                <Calendar className="w-4 h-4 mr-2" />
+                Calendar
+              </TabsTrigger>
+              <TabsTrigger value="optimization" data-testid="tab-optimization" className="data-[state=active]:bg-orange-500">
+                <Gauge className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">Auto-Optimize</span>
+                <span className="md:hidden">Optimize</span>
+              </TabsTrigger>
+              <TabsTrigger value="api" data-testid="tab-api" className="data-[state=active]:bg-orange-500">
+                <Code className="w-4 h-4 mr-2" />
+                API
               </TabsTrigger>
             </TabsList>
 
@@ -989,6 +1624,615 @@ export default function YoutubeViewsPage() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  </motion.div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* PHASE 2 - THUMBNAIL GENERATOR TAB */}
+            <TabsContent value="thumbnail">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Image className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">AI Thumbnail Generator</h3>
+                    <p className="text-muted-foreground">Generate eye-catching thumbnails with FAL AI - PRO Feature</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Video Title *</label>
+                    <Input
+                      placeholder="Enter your video title..."
+                      value={thumbnailTitle}
+                      onChange={(e) => setThumbnailTitle(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Niche *</label>
+                    <Input
+                      placeholder="e.g., Gaming, Tech, Cooking..."
+                      value={thumbnailNiche}
+                      onChange={(e) => setThumbnailNiche(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Style</label>
+                    <select
+                      className="w-full p-2 rounded-md border bg-background"
+                      value={thumbnailStyle}
+                      onChange={(e) => setThumbnailStyle(e.target.value)}
+                    >
+                      <option value="modern">Modern</option>
+                      <option value="dramatic">Dramatic</option>
+                      <option value="minimalist">Minimalist</option>
+                      <option value="colorful">Colorful</option>
+                    </select>
+                  </div>
+                  <Button
+                    onClick={handleGenerateThumbnails}
+                    disabled={thumbnailLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {thumbnailLoading ? <Loader2 className="animate-spin mr-2" /> : <Image className="mr-2" />}
+                    Generate Thumbnails
+                  </Button>
+                </div>
+
+                {thumbnails.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <h4 className="text-lg font-semibold mb-4">Generated Thumbnails ({thumbnails.length})</h4>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {thumbnails.map((thumb, idx) => (
+                        <Card key={idx} className="p-4">
+                          <img src={thumb.imageUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-48 object-cover rounded-lg mb-3" />
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold">CTR Score:</span>
+                              <span className={getScoreColor(thumb.ctrScore)}>{thumb.ctrScore}/100</span>
+                            </div>
+                            <p className="text-sm"><strong>Text:</strong> {thumb.suggestedText}</p>
+                            <p className="text-sm text-muted-foreground">{thumb.reason}</p>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* PHASE 2 - COMPETITOR ANALYSIS TAB */}
+            <TabsContent value="competitor">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Search className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Competitor Deep Analysis</h3>
+                    <p className="text-muted-foreground">Analyze competitor strategy - PRO Feature</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Competitor Channel Name *</label>
+                    <Input
+                      placeholder="e.g., MrBeast, PewDiePie..."
+                      value={competitorChannel}
+                      onChange={(e) => setCompetitorChannel(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleCompetitorAnalysis}
+                    disabled={competitorLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {competitorLoading ? <Loader2 className="animate-spin mr-2" /> : <Search className="mr-2" />}
+                    Analyze Competitor
+                  </Button>
+                </div>
+
+                {competitorData && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="space-y-6">
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <Card className="p-4">
+                          <p className="text-muted-foreground text-sm">Avg Views</p>
+                          <p className="text-2xl font-bold text-orange-500">{competitorData.avgViews.toLocaleString()}</p>
+                        </Card>
+                        <Card className="p-4">
+                          <p className="text-muted-foreground text-sm">Upload Frequency</p>
+                          <p className="text-2xl font-bold">{competitorData.uploadFrequency}</p>
+                        </Card>
+                        <Card className="p-4">
+                          <p className="text-muted-foreground text-sm">Best Time</p>
+                          <p className="text-2xl font-bold">{competitorData.bestUploadTime}</p>
+                        </Card>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold mb-2">Top Topics</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {competitorData.topPerformingTopics.map((topic, idx) => (
+                            <Badge key={idx} variant="secondary">{topic}</Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold mb-2">Content Gaps (Your Opportunities)</h4>
+                        <ul className="space-y-2">
+                          {competitorData.contentGaps.map((gap, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <Lightbulb className="w-4 h-4 text-orange-500 mt-1" />
+                              <span>{gap}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold mb-2">Strategic Insights</h4>
+                        <ul className="space-y-2">
+                          {competitorData.insights.map((insight, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <CheckCircle className="w-4 h-4 text-green-500 mt-1" />
+                              <span>{insight}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* PHASE 2 - TREND PREDICTOR TAB */}
+            <TabsContent value="trends">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <TrendingUp className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Trend Predictor</h3>
+                    <p className="text-muted-foreground">Detect trends BEFORE they explode - PRO Feature</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Your Niche *</label>
+                    <Input
+                      placeholder="e.g., Gaming, Tech, Fitness..."
+                      value={trendNiche}
+                      onChange={(e) => setTrendNiche(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={handlePredictTrends}
+                    disabled={trendsLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {trendsLoading ? <Loader2 className="animate-spin mr-2" /> : <TrendingUp className="mr-2" />}
+                    Predict Trends
+                  </Button>
+                </div>
+
+                {trends.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <h4 className="text-lg font-semibold mb-4">Emerging Trends ({trends.length})</h4>
+                    <div className="space-y-4">
+                      {trends.map((trend, idx) => (
+                        <Card key={idx} className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-lg">{trend.topic}</h5>
+                              <p className="text-sm text-muted-foreground mt-1">{trend.reason}</p>
+                            </div>
+                            <Badge className={trend.urgency === 'high' ? 'bg-red-500' : trend.urgency === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}>
+                              {trend.urgency} urgency
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4 mb-3">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Confidence</p>
+                              <p className="font-semibold text-orange-500">{trend.confidence}%</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Time to Act</p>
+                              <p className="font-semibold">{trend.timeToAct}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Competition</p>
+                              <Badge variant="outline">{trend.competitionLevel}</Badge>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium mb-2">Rising Keywords:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {trend.risingKeywords.map((kw, kidx) => (
+                                <Badge key={kidx} variant="secondary">{kw}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* PHASE 2 - TRANSCRIPT EXTRACTOR TAB */}
+            <TabsContent value="transcript">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Scissors className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Shorts Clip Extractor</h3>
+                    <p className="text-muted-foreground">Find viral moments for Shorts - PRO Feature</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Video URL *</label>
+                    <Input
+                      placeholder="https://youtube.com/watch?v=..."
+                      value={transcriptUrl}
+                      onChange={(e) => setTranscriptUrl(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleExtractTranscript}
+                    disabled={transcriptLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {transcriptLoading ? <Loader2 className="animate-spin mr-2" /> : <Scissors className="mr-2" />}
+                    Extract Shorts Clips
+                  </Button>
+                </div>
+
+                {shortClips.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <h4 className="text-lg font-semibold mb-4">Viral Shorts Opportunities ({shortClips.length})</h4>
+                    <div className="space-y-4">
+                      {shortClips.map((clip, idx) => (
+                        <Card key={idx} className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h5 className="font-semibold">{clip.suggestedTitle}</h5>
+                              <p className="text-sm text-muted-foreground">
+                                {clip.startTime} - {clip.endTime} ({clip.duration}s)
+                              </p>
+                            </div>
+                            <Badge className={clip.viralScore >= 80 ? 'bg-green-500' : clip.viralScore >= 60 ? 'bg-yellow-500' : 'bg-gray-500'}>
+                              {clip.viralScore}% viral
+                            </Badge>
+                          </div>
+                          <p className="text-sm mb-3"><strong>Hook:</strong> "{clip.hook}"</p>
+                          <p className="text-sm text-muted-foreground mb-3">{clip.reason}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {clip.tags.map((tag, tidx) => (
+                              <Badge key={tidx} variant="secondary" className="text-xs">{tag}</Badge>
+                            ))}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* PHASE 3 - MULTI-CHANNEL TRACKING TAB */}
+            <TabsContent value="channels">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Users className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Multi-Channel Tracking</h3>
+                    <p className="text-muted-foreground">Manage multiple channels - ENTERPRISE Feature</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Channel Name *</label>
+                      <Input
+                        placeholder="e.g., Tech Channel"
+                        value={newChannelName}
+                        onChange={(e) => setNewChannelName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Channel URL *</label>
+                      <Input
+                        placeholder="https://youtube.com/@channel"
+                        value={newChannelUrl}
+                        onChange={(e) => setNewChannelUrl(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleAddChannel}
+                    disabled={channelsLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {channelsLoading ? <Loader2 className="animate-spin mr-2" /> : <Users className="mr-2" />}
+                    Add Channel
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <Button onClick={loadTrackedChannels} variant="outline" className="w-full">
+                    <Eye className="mr-2 w-4 h-4" />
+                    Load Tracked Channels
+                  </Button>
+                  {trackedChannels.length > 0 && (
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {trackedChannels.map((channel) => (
+                        <Card key={channel.id} className="p-4">
+                          <h5 className="font-semibold mb-2">{channel.channelName}</h5>
+                          <div className="space-y-1 text-sm">
+                            <p>Videos: {channel.metrics?.totalVideos || 0}</p>
+                            <p>Views: {(channel.metrics?.totalViews || 0).toLocaleString()}</p>
+                            <p>Subscribers: {(channel.metrics?.subscribers || 0).toLocaleString()}</p>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* PHASE 3 - CONTENT CALENDAR TAB */}
+            <TabsContent value="calendar">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Calendar className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">AI Content Calendar</h3>
+                    <p className="text-muted-foreground">Generate 30-day plan - ENTERPRISE Feature</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Niche *</label>
+                    <Input
+                      placeholder="e.g., Tech Reviews"
+                      value={calendarNiche}
+                      onChange={(e) => setCalendarNiche(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Goals (Optional)</label>
+                    <Textarea
+                      placeholder="e.g., Grow to 100k subs, increase engagement..."
+                      value={calendarGoals}
+                      onChange={(e) => setCalendarGoals(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Videos per Week</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="7"
+                      value={videosPerWeek}
+                      onChange={(e) => setVideosPerWeek(parseInt(e.target.value))}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleGenerateCalendar}
+                    disabled={calendarLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {calendarLoading ? <Loader2 className="animate-spin mr-2" /> : <Calendar className="mr-2" />}
+                    Generate Calendar
+                  </Button>
+                </div>
+
+                {calendarWeeks.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <h4 className="text-lg font-semibold mb-4">Your 30-Day Plan</h4>
+                    <div className="space-y-6">
+                      {calendarWeeks.map((week) => (
+                        <Card key={week.weekNumber} className="p-4">
+                          <h5 className="font-semibold mb-3">Week {week.weekNumber}</h5>
+                          <div className="space-y-3">
+                            {week.videos.map((video, idx) => (
+                              <div key={idx} className="border-l-4 border-orange-500 pl-4">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="font-medium">{video.title}</p>
+                                  <Badge variant="outline">{video.day}</Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-2">{video.description}</p>
+                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                  <span>📅 {video.uploadTime}</span>
+                                  <span>👁️ ~{video.estimatedViews.toLocaleString()} views</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* PHASE 3 - AUTO-OPTIMIZATION TAB */}
+            <TabsContent value="optimization">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Gauge className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Auto-Optimization Engine</h3>
+                    <p className="text-muted-foreground">24/7 Performance Monitoring - ENTERPRISE Feature</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Video URL *</label>
+                    <Input
+                      placeholder="https://youtube.com/watch?v=..."
+                      value={optVideoUrl}
+                      onChange={(e) => setOptVideoUrl(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleCheckOptimization}
+                    disabled={optLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {optLoading ? <Loader2 className="animate-spin mr-2" /> : <Gauge className="mr-2" />}
+                    Check Performance
+                  </Button>
+                </div>
+
+                {optResult && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="space-y-4">
+                      <Card className="p-4 bg-gradient-to-r from-orange-500/10 to-orange-500/5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Performance Score</p>
+                            <p className="text-4xl font-bold text-orange-500">{optResult.performanceScore}/100</p>
+                          </div>
+                          <Badge className={optResult.status === 'exceeding' ? 'bg-green-500' : optResult.status === 'on-track' ? 'bg-blue-500' : 'bg-red-500'}>
+                            {optResult.status}
+                          </Badge>
+                        </div>
+                      </Card>
+
+                      {optResult.criticalIssues && optResult.criticalIssues.length > 0 && (
+                        <div>
+                          <h5 className="font-semibold mb-2 text-red-500">Critical Issues</h5>
+                          <ul className="space-y-1">
+                            {optResult.criticalIssues.map((issue: string, idx: number) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 text-red-500 mt-1" />
+                                <span>{issue}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {optResult.optimizations && optResult.optimizations.length > 0 && (
+                        <div>
+                          <h5 className="font-semibold mb-3">Optimization Actions</h5>
+                          <div className="space-y-3">
+                            {optResult.optimizations.map((opt: OptimizationAction, idx: number) => (
+                              <Card key={idx} className="p-4">
+                                <div className="flex items-start justify-between mb-2">
+                                  <p className="font-medium">{opt.action}</p>
+                                  <div className="flex gap-2">
+                                    <Badge variant={opt.impact === 'high' ? 'default' : 'outline'}>{opt.impact} impact</Badge>
+                                    <Badge variant="secondary">{opt.urgency}</Badge>
+                                  </div>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{opt.reason}</p>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {optResult.predictedImprovement && (
+                        <Card className="p-4 bg-green-500/10">
+                          <p className="text-sm text-muted-foreground">Predicted Improvement</p>
+                          <p className="text-xl font-bold text-green-500">{optResult.predictedImprovement}</p>
+                        </Card>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* PHASE 3 - API ACCESS TAB */}
+            <TabsContent value="api">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Code className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">API Access</h3>
+                    <p className="text-muted-foreground">External Integration - ENTERPRISE Feature</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <Button
+                    onClick={handleGenerateApiKey}
+                    disabled={apiLoading}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {apiLoading ? <Loader2 className="animate-spin mr-2" /> : <Code className="mr-2" />}
+                    Generate New API Key
+                  </Button>
+                  <Button onClick={loadApiKeys} variant="outline" className="w-full">
+                    <Eye className="mr-2 w-4 h-4" />
+                    Load My API Keys
+                  </Button>
+                </div>
+
+                {apiKeys.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    <h4 className="text-lg font-semibold mb-4">Your API Keys ({apiKeys.length})</h4>
+                    <div className="space-y-3">
+                      {apiKeys.map((key) => (
+                        <Card key={key.id} className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-mono bg-muted px-3 py-1 rounded">{key.apiKey.substring(0, 40)}...</p>
+                            <Button size="sm" variant="outline" onClick={() => copyToClipboard(key.apiKey)}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <span>Usage: {key.usageCount.toLocaleString()} / {key.rateLimit.toLocaleString()}</span>
+                            <Badge variant={key.isActive ? 'default' : 'secondary'}>
+                              {key.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                    <div className="mt-6 p-4 bg-muted rounded-lg">
+                      <h5 className="font-semibold mb-2">API Documentation</h5>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Include your API key in the Authorization header:
+                      </p>
+                      <pre className="bg-background p-3 rounded text-xs overflow-x-auto">
+{`curl -X POST https://boostify.com/api/youtube/pre-launch-score \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"title": "My Video", "niche": "Gaming"}'`}
+                      </pre>
                     </div>
                   </motion.div>
                 )}
