@@ -2,6 +2,7 @@
  * Rutas para generación de imágenes con Gemini
  */
 import { Router, Request, Response } from 'express';
+import { authenticate } from '../middleware/auth';
 import { 
   generateCinematicImage, 
   generateImageFromCinematicScene,
@@ -18,7 +19,7 @@ const router = Router();
 /**
  * Edita una imagen existente con instrucciones específicas
  */
-router.post('/edit-image', async (req: Request, res: Response) => {
+router.post('/edit-image', authenticate, async (req: Request, res: Response) => {
   try {
     const { imageUrl, editInstructions, originalPrompt } = req.body;
     
@@ -66,7 +67,7 @@ router.post('/edit-image', async (req: Request, res: Response) => {
  * Genera una imagen simple desde un prompt
  * Opcionalmente acepta imágenes de referencia para mantener identidad facial
  */
-router.post('/generate-simple', async (req: Request, res: Response) => {
+router.post('/generate-simple', authenticate, async (req: Request, res: Response) => {
   try {
     const { prompt, referenceImages, seed } = req.body;
     
@@ -101,7 +102,7 @@ router.post('/generate-simple', async (req: Request, res: Response) => {
 /**
  * Genera una imagen desde una escena cinematográfica completa
  */
-router.post('/generate-scene', async (req: Request, res: Response) => {
+router.post('/generate-scene', authenticate, async (req: Request, res: Response) => {
   try {
     const scene: CinematicScene = req.body;
     
@@ -127,7 +128,7 @@ router.post('/generate-scene', async (req: Request, res: Response) => {
 /**
  * Genera múltiples imágenes en lote
  */
-router.post('/generate-batch', async (req: Request, res: Response) => {
+router.post('/generate-batch', authenticate, async (req: Request, res: Response) => {
   try {
     const { scenes }: { scenes: CinematicScene[] } = req.body;
     
@@ -162,7 +163,7 @@ router.post('/generate-batch', async (req: Request, res: Response) => {
 /**
  * Genera una imagen adaptando rostro de imagen de referencia
  */
-router.post('/generate-with-face', async (req: Request, res: Response) => {
+router.post('/generate-with-face', authenticate, async (req: Request, res: Response) => {
   try {
     const { prompt, referenceImageBase64 } = req.body;
     
@@ -187,7 +188,7 @@ router.post('/generate-with-face', async (req: Request, res: Response) => {
 });
 
 // Nuevo endpoint para generar UNA imagen con MÚLTIPLES referencias faciales
-router.post('/generate-single-with-multiple-faces', async (req: Request, res: Response) => {
+router.post('/generate-single-with-multiple-faces', authenticate, async (req: Request, res: Response) => {
   try {
     const { prompt, referenceImagesBase64, seed, scene, sceneId } = req.body;
 
@@ -295,7 +296,7 @@ router.post('/generate-single-with-multiple-faces', async (req: Request, res: Re
 /**
  * Genera múltiples imágenes en lote con referencia facial
  */
-router.post('/generate-batch-with-face', async (req: Request, res: Response) => {
+router.post('/generate-batch-with-face', authenticate, async (req: Request, res: Response) => {
   try {
     const { scenes, referenceImageBase64 }: { scenes: CinematicScene[], referenceImageBase64: string } = req.body;
     

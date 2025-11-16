@@ -8,7 +8,8 @@ import { TabsList, TabsTrigger, Tabs, TabsContent } from "../components/ui/tabs"
 import { 
   Play, Tv, Film, Music2, Star, Clock, TrendingUp, Search, 
   Share2, Facebook, Twitter, Copy, Instagram, Linkedin, Loader2,
-  PlusCircle, Bookmark, BookmarkPlus, ThumbsUp, MessageCircle, Info
+  PlusCircle, Bookmark, BookmarkPlus, ThumbsUp, MessageCircle, Info,
+  Mic, Video, Radio, Users, Zap, Sparkles, Calendar, CheckCircle2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
@@ -137,14 +138,14 @@ export default function BoostifyTvPage() {
     if (savedVideos.includes(videoId)) {
       setSavedVideos(savedVideos.filter(id => id !== videoId));
       toast({
-        title: "Video eliminado",
-        description: "Video eliminado de tu lista de guardados",
+        title: "Video removed",
+        description: "Video removed from your saved list",
       });
     } else {
       setSavedVideos([...savedVideos, videoId]);
       toast({
-        title: "Video guardado",
-        description: "Video añadido a tu lista de guardados",
+        title: "Video saved",
+        description: "Video added to your saved list",
       });
     }
   };
@@ -177,7 +178,9 @@ export default function BoostifyTvPage() {
                 muted
                 loop
                 playsInline
-                poster="/assets/video-fallback.jpg"
+                onError={(e) => {
+                  console.error('Error loading featured video:', featuredVideo.filePath);
+                }}
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
@@ -468,18 +471,11 @@ export default function BoostifyTvPage() {
 
                               <video
                                 className="w-full h-full object-cover"
-                                src={video.filePath}
+                                src={`${video.filePath}#t=0.001`}
                                 controls
                                 preload="metadata"
-                                poster={video.thumbnailPath || "/assets/video-fallback.jpg"}
                                 onError={(e) => {
                                   console.error(`Error loading video: ${video.filePath}`, e);
-                                  // Try to reload once
-                                  const target = e.target as HTMLVideoElement;
-                                  if (!target.dataset.retried) {
-                                    target.dataset.retried = "true";
-                                    target.load();
-                                  }
                                 }}
                               />
                             </div>
@@ -591,9 +587,11 @@ export default function BoostifyTvPage() {
                   <div className="aspect-video relative">
                     <video
                       className="w-full h-full object-cover"
-                      src={video.filePath}
-                      preload="none"
-                      poster={video.thumbnailPath || "/assets/video-fallback.jpg"}
+                      src={`${video.filePath}#t=0.001`}
+                      preload="metadata"
+                      onError={(e) => {
+                        console.error(`Error loading recommended video: ${video.filePath}`);
+                      }}
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
                       <Button size="sm" variant="secondary" className="bg-orange-500 text-white hover:bg-orange-600">
@@ -610,6 +608,168 @@ export default function BoostifyTvPage() {
             </div>
           </div>
         )}
+        
+        {/* Coming Soon: Live Podcast Studio */}
+        <motion.div 
+          className="mt-16 mb-16"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900 via-orange-900 to-black border border-orange-500/20">
+            {/* Animated background */}
+            <div className="absolute inset-0 opacity-30">
+              <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full blur-3xl animate-pulse"></div>
+              <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+            </div>
+            
+            <div className="relative p-8 md:p-12">
+              {/* Badge */}
+              <div className="flex items-center gap-2 mb-6">
+                <Badge className="bg-orange-500 text-white px-4 py-1.5 text-sm font-semibold">
+                  <Sparkles className="w-4 h-4 mr-2 inline" />
+                  COMING JANUARY 2026
+                </Badge>
+              </div>
+              
+              {/* Main content */}
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                  <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                    Live Podcast Studio
+                  </h2>
+                  <p className="text-lg text-orange-100 mb-6">
+                    Connect, create, and broadcast professional live podcasts with multiple participants. 
+                    Edit in real-time with our professional switcher and stream simultaneously 
+                    to all your social networks.
+                  </p>
+                  
+                  {/* Features list */}
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-orange-500/20 rounded-lg">
+                        <Users className="w-5 h-5 text-orange-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-white mb-1">Up to 3 Live Participants</h4>
+                        <p className="text-sm text-orange-200">Connect with co-hosts and guests from anywhere in the world</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-purple-500/20 rounded-lg">
+                        <Video className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-white mb-1">Professional Real-Time Switcher</h4>
+                        <p className="text-sm text-orange-200">Control your live output like a pro with our integrated switcher</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-orange-500/20 rounded-lg">
+                        <Radio className="w-5 h-5 text-orange-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-white mb-1">Multi-Streaming to Social Media</h4>
+                        <p className="text-sm text-orange-200">Stream simultaneously to YouTube, Facebook, Instagram, Twitch and more</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-purple-500/20 rounded-lg">
+                        <Mic className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-white mb-1">Professional HD Audio & Video</h4>
+                        <p className="text-sm text-orange-200">Studio quality with noise reduction and automatic enhancement</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* CTA */}
+                  <div className="flex flex-wrap gap-4">
+                    <Button 
+                      size="lg" 
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30"
+                    >
+                      <Calendar className="w-5 h-5 mr-2" />
+                      Notify me at launch
+                    </Button>
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="border-orange-500/50 text-white hover:bg-orange-500/10"
+                    >
+                      <Info className="w-5 h-5 mr-2" />
+                      More information
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Visual preview */}
+                <div className="relative">
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-orange-500/30 shadow-2xl">
+                    {/* Mock interface */}
+                    <div className="absolute inset-0 p-4">
+                      {/* Top bar */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                          <span className="text-xs text-white font-semibold">LIVE</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="px-3 py-1 bg-white/10 rounded text-xs text-white">1.2K viewers</div>
+                        </div>
+                      </div>
+                      
+                      {/* Main video grid */}
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="aspect-video bg-gradient-to-br from-orange-500/20 to-purple-500/20 rounded-lg border border-white/10 relative">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Users className="w-8 h-8 text-white/40" />
+                            </div>
+                            <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs text-white">
+                              Host {i}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Control bar */}
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="p-2 bg-orange-500/80 rounded-full">
+                          <Mic className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="p-2 bg-orange-500/80 rounded-full">
+                          <Video className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="p-2 bg-purple-500/80 rounded-full">
+                          <Zap className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="p-2 bg-red-500/80 rounded-full">
+                          <Radio className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Floating badges */}
+                  <motion.div 
+                    className="absolute -top-4 -right-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-full shadow-lg"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <CheckCircle2 className="w-4 h-4 inline mr-2" />
+                    <span className="text-sm font-semibold">Professional Tools</span>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
         
         {/* Call to action for non-registered users */}
         {!user && !isLoading && !isError && (

@@ -26,8 +26,7 @@ import {
 } from 'lucide-react';
 import { CinematicSceneEditor, type CinematicSceneData } from './CinematicSceneEditor';
 import { useToast } from "../../hooks/use-toast";
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../../lib/firebase';
+import { useAuth } from '../../hooks/use-auth';
 import { musicVideoProjectService } from '../../lib/services/music-video-project-service';
 import { useLocation } from 'wouter';
 
@@ -63,7 +62,7 @@ export function MusicVideoWorkspaceComplete({
   projectName = "Mi Video Musical"
 }: MusicVideoWorkspaceCompleteProps) {
   const { toast } = useToast();
-  const [user] = useAuthState(auth);
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [isSavingProject, setIsSavingProject] = useState(false);
@@ -364,12 +363,13 @@ export function MusicVideoWorkspaceComplete({
       });
 
       const endpoint = selectedReference 
-        ? '/api/gemini/generate-batch-with-face'
-        : '/api/gemini/generate-batch';
+        ? '/api/gemini-image/generate-batch-with-face'
+        : '/api/gemini-image/generate-batch';
 
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           scenes: scenes,
           ...(selectedReference && { referenceImageBase64: selectedReference.base64 })
@@ -463,7 +463,7 @@ export function MusicVideoWorkspaceComplete({
 
       // Guardar proyecto
       const savedProjectId = await musicVideoProjectService.saveProject(
-        user.uid,
+        user.id.toString(),
         projectName,
         {
           audioUrl: audioFile.url,
