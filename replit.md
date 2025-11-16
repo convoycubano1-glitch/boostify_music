@@ -37,7 +37,68 @@ req.user = {
 
 ## Recent Changes (November 2024)
 
-### 🎵 Sistema de Tokenización de Música Web3/Blockchain (LATEST)
+### 🎬 YouTube Growth Tools - AI-Powered Analytics (LATEST)
+**Fecha**: 16 de Noviembre, 2024
+**Objetivo**: Implementar herramientas de optimización de YouTube usando Gemini AI + Apify scraping
+
+**Funcionalidades implementadas (FASE 1 - Quick Wins Creator)**:
+1. ✅ **Pre-Launch Score** (`POST /api/youtube/pre-launch-score`):
+   - Predice el éxito de un video ANTES de publicar (score 0-100)
+   - Usa Apify para scraping de videos top en el nicho
+   - Gemini AI analiza patrones y genera score predictivo
+   - Incluye: fortalezas, debilidades, recomendaciones
+   - Estimación de vistas (7 días / 30 días)
+
+2. ✅ **Keywords Generator** (`POST /api/youtube/generate-keywords`):
+   - Genera keywords optimizados basados en datos reales de YouTube
+   - Apify extrae tags trending del nicho
+   - Gemini AI optimiza keywords con análisis de dificultad
+   - Métricas: relevancia (1-10), competencia, búsquedas estimadas
+   - Código de dificultad: easy (verde), medium (amarillo), hard (rojo)
+
+3. ✅ **Title Analyzer** (`POST /api/youtube/analyze-title`):
+   - Analiza y optimiza títulos de videos
+   - Scores: Overall, CTR, SEO, Emotional (0-100 cada uno)
+   - Identifica fortalezas y debilidades del título
+   - Genera 3 títulos alternativos mejorados
+   - Sugerencias específicas de optimización
+
+4. ✅ **Content Ideas Generator** (`POST /api/youtube/content-ideas`):
+   - Descubre gaps de contenido en tu nicho
+   - Scraping de 20+ videos populares con Apify
+   - Gemini AI identifica oportunidades no explotadas
+   - Genera ideas completas: título, descripción, keywords, hook
+   - Estimación de vistas y dificultad por idea
+   - Detecta subtemas trending
+
+**Subscription Limits por Plan**:
+```typescript
+FREE: Pre-Launch (5/mes), Keywords (5/mes), Title (5/mes), Ideas (0)
+CREATOR ($59.99): Pre-Launch (20/mes), Keywords (50/mes), Title (20/mes), Ideas (20/mes)
+PRO ($99.99): Pre-Launch (100/mes), Keywords (100/mes), Title (100/mes), Ideas (50/mes)
+ENTERPRISE ($149.99): UNLIMITED en todas las herramientas
+```
+
+**Tecnologías Usadas**:
+- **Gemini AI** (gemini-2.0-flash-exp): Análisis y generación de contenido
+- **Apify Client**: Scraping de YouTube con actor `streamers/youtube-scraper`
+- **Firebase Firestore**: Tracking de usage limits por usuario/feature
+- **TypeScript**: Full-stack type safety
+
+**Frontend Components** (`client/src/pages/youtube-views.tsx`):
+- 4 tabs interactivos con resultados en tiempo real
+- Animaciones con Framer Motion
+- Copy-to-clipboard para keywords y títulos
+- Scores visuales con código de colores
+- Badges para dificultad y competencia
+- Diseño responsive (mobile-first)
+
+**Archivos principales**:
+- `server/routes/youtube-tools.ts` - Backend endpoints con Gemini + Apify
+- `client/src/pages/youtube-views.tsx` - Frontend completo
+- `server/routes.ts` - Registro de rutas `/api/youtube/*`
+
+### 🎵 Sistema de Tokenización de Música Web3/Blockchain
 **Fecha**: 15 de Noviembre, 2024
 **Objetivo**: Implementar sistema completo de tokenización de música usando ERC-1155 en Polygon blockchain
 
