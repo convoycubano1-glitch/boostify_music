@@ -640,6 +640,7 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
   // Galleries refresh key
   const [galleriesRefreshKey, setGalleriesRefreshKey] = useState(0);
   
+  
   // Cargar orden guardado al montar
   useEffect(() => {
     const savedLayout = localStorage.getItem(`profile-layout-${artistId}`);
@@ -665,20 +666,6 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     });
   };
 
-  
-  const isOwnProfile = user?.id ? String(user.id) === artistId : false;
-  
-  // Debug logging para verificar autenticación
-  useEffect(() => {
-    console.log('🔍 [Artist Profile] Debug info:', {
-      userId: user?.id,
-      userIdAsString: user?.id ? String(user.id) : null,
-      artistId,
-      isOwnProfile,
-      userAuthenticated: !!user
-    });
-  }, [user, artistId, isOwnProfile]);
-  
   const colors = colorPalettes[selectedTheme];
 
   // Helper function to extract Spotify Artist ID from URL
@@ -1092,8 +1079,27 @@ export function ArtistProfileCard({ artistId }: ArtistProfileProps) {
     }
   }, [products]);
 
+  // Verificar si es perfil propio (directo) O si el usuario es el creador del artista
+  const isOwnProfile = user?.id ? (
+    String(user.id) === artistId || 
+    userProfile?.generatedBy === user.id
+  ) : false;
+  
+  // Debug logging para verificar autenticación
+  useEffect(() => {
+    console.log('🔍 [Artist Profile] Debug info:', {
+      userId: user?.id,
+      userIdAsString: user?.id ? String(user.id) : null,
+      artistId,
+      userProfileGeneratedBy: userProfile?.generatedBy,
+      isOwnProfile,
+      isCreator: userProfile?.generatedBy === user?.id,
+      userAuthenticated: !!user
+    });
+  }, [user, artistId, userProfile, isOwnProfile]);
+
   // Query para shows
-  const { data: shows = [] as Show[], refetch: refetchShows } = useQuery<Show[]>({
+  const { data: shows = [] as Show[], refetch: refetchShows} = useQuery<Show[]>({
     queryKey: ["shows", artistId],
     queryFn: async () => {
       try {

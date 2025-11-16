@@ -13,7 +13,8 @@ import { eq } from 'drizzle-orm';
 const router = Router();
 
 /**
- * Endpoint para obtener todos los artistas creados por un usuario
+ * Endpoint para obtener todos los artistas de un usuario
+ * Incluye: su propio perfil + artistas generados con IA
  */
 router.get("/my-artists", isAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -25,15 +26,24 @@ router.get("/my-artists", isAuthenticated, async (req: Request, res: Response) =
       });
     }
 
-    console.log(`🎨 Obteniendo artistas creados por usuario ${userId}`);
+    console.log(`🎨 Obteniendo todos los artistas del usuario ${userId}`);
 
     // Obtener artistas de PostgreSQL
+    // 1. Su propio perfil (id = userId AND role = 'artist')
+    // 2. Artistas generados por IA (generatedBy = userId)
+    const { or } = await import('drizzle-orm');
+    
     const artistsFromPg = await pgDb
       .select()
       .from(users)
-      .where(eq(users.generatedBy, userId));
+      .where(
+        or(
+          eq(users.id, userId),          // Su propio perfil
+          eq(users.generatedBy, userId)   // Artistas generados por IA
+        )
+      );
 
-    console.log(`✅ Encontrados ${artistsFromPg.length} artistas en PostgreSQL`);
+    console.log(`✅ Encontrados ${artistsFromPg.length} artistas en PostgreSQL (propio + IA generados)`);
 
     // Formatear respuesta
     const formattedArtists = artistsFromPg.map(artist => ({
@@ -206,6 +216,72 @@ router.post("/generate-artist", async (req: Request, res: Response) => {
     console.error('Error generando artista aleatorio:', error);
     res.status(500).json({ 
       error: 'Error al generar artista aleatorio',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para crear un artista manualmente
+ */
+router.post("/create-manual", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    console.log('📝 Recibida solicitud para crear artista manualmente');
+    
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        error: 'Usuario no autenticado' 
+      });
+    }
+
+    const { name, biography, genre, location, slug } = req.body;
+
+    if (!name || !slug) {
+      return res.status(400).json({ 
+        error: 'Nombre y slug son requeridos' 
+      });
+    }
+
+    // Verificar que el slug no exista
+    const existingUser = await pgDb.select().from(users).where(eq(users.slug, slug)).limit(1);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ 
+        error: 'Ya existe un artista con ese nombre' 
+      });
+    }
+
+    // Crear artista en PostgreSQL
+    const [newArtist] = await pgDb.insert(users).values({
+      role: 'artist',
+      artistName: name,
+      slug,
+      biography: biography || null,
+      location: location || null,
+      genres: genre ? [genre] : [],
+      generatedBy: userId, // Asociar al usuario creador
+      isAIGenerated: false, // No es generado por IA
+      createdAt: new Date()
+    }).returning();
+
+    console.log(`✅ Artista creado manualmente con ID: ${newArtist.id}`);
+
+    res.status(200).json({
+      success: true,
+      artist: {
+        id: newArtist.id,
+        name: newArtist.artistName,
+        slug: newArtist.slug,
+        biography: newArtist.biography,
+        location: newArtist.location,
+        genres: newArtist.genres,
+        isAIGenerated: newArtist.isAIGenerated
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error creando artista manualmente:', error);
+    res.status(500).json({ 
+      error: 'Error al crear artista',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }

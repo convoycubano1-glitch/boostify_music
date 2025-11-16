@@ -14,7 +14,7 @@ import { setupSocialNetworkRoutes } from "./routes/social-network.setup";
 import { setupSubscriptionRoutes } from "./routes/subscription-protected-routes";
 import firestoreSocialNetworkRouter from "./routes/firestore-social-network";
 import { db } from "./db";
-import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events, courseEnrollments } from "./db/schema";
+import { marketingMetrics, contracts, bookings, payments, analyticsHistory, events, courseEnrollments, users } from "./db/schema";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
 import Stripe from 'stripe';
 import { z } from "zod";
@@ -109,6 +109,56 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Session middleware is configured in setupAuth() which is called later
   // No need to configure it here to avoid duplication
+
+  // Endpoint público para buscar artista por slug (usado por artist-profile.tsx)
+  app.get('/api/artist/by-slug/:slug', async (req, res) => {
+    try {
+      const { slug } = req.params;
+      console.log(`🔍 Buscando artista con slug: ${slug}`);
+      
+      // Buscar en PostgreSQL
+      const artist = await db.select().from(users).where(eq(users.slug, slug)).limit(1);
+      
+      if (artist.length > 0) {
+        const artistData = artist[0];
+        console.log(`✅ Artista encontrado en PostgreSQL: ${artistData.artistName}`);
+        
+        res.json({
+          success: true,
+          artist: {
+            id: artistData.id,
+            firestoreId: artistData.firestoreId || String(artistData.id),
+            artistName: artistData.artistName,
+            slug: artistData.slug,
+            biography: artistData.biography,
+            profileImage: artistData.profileImage,
+            coverImage: artistData.coverImage,
+            genres: artistData.genres,
+            country: artistData.country,
+            location: artistData.location,
+            instagramHandle: artistData.instagramHandle,
+            twitterHandle: artistData.twitterHandle,
+            youtubeHandle: artistData.youtubeHandle,
+            spotifyUrl: artistData.spotifyUrl,
+            isAIGenerated: artistData.isAIGenerated,
+            generatedBy: artistData.generatedBy
+          }
+        });
+      } else {
+        console.log(`⚠️ No se encontró artista con slug: ${slug}`);
+        res.status(404).json({
+          success: false,
+          error: 'Artist not found'
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error buscando artista por slug:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+      });
+    }
+  });
 
   // Health check and status endpoints (no authentication required)
   app.get('/api/health', (req, res) => {

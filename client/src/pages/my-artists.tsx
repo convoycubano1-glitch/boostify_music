@@ -5,7 +5,7 @@ import { apiRequest, queryClient } from "../lib/queryClient";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { useToast } from "../hooks/use-toast";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   Plus,
   User,
@@ -14,9 +14,21 @@ import {
   ExternalLink,
   Loader2,
   Sparkles,
-  Bot
+  Bot,
+  UserPlus
 } from "lucide-react";
 import { Head } from "../components/ui/head";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 
 interface Artist {
   id: number;
@@ -39,7 +51,18 @@ interface Artist {
 export default function MyArtistsPage() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  
+  // Form state for manual artist creation
+  const [manualArtistForm, setManualArtistForm] = useState({
+    name: "",
+    biography: "",
+    genre: "",
+    location: "",
+  });
 
   // Query para obtener los artistas del usuario
   const { data: artistsData, isLoading: artistsLoading, refetch } = useQuery<{
@@ -54,9 +77,9 @@ export default function MyArtistsPage() {
   // Mutation para crear un nuevo artista
   const createArtistMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/artist-generator/generate-artist/secure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
+      const response = await apiRequest({
+        url: "/api/artist-generator/generate-artist/secure",
+        method: "POST"
       });
       return response;
     },
@@ -81,6 +104,64 @@ export default function MyArtistsPage() {
   const handleCreateArtist = async () => {
     setIsGenerating(true);
     createArtistMutation.mutate();
+  };
+
+  const handleCreateManualArtist = async () => {
+    if (!manualArtistForm.name.trim()) {
+      toast({
+        title: "Nombre requerido",
+        description: "Por favor ingresa un nombre para el artista",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      // Create slug from name
+      const slug = manualArtistForm.name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+      const response = await apiRequest({
+        url: "/api/artist-generator/create-manual",
+        method: "POST",
+        data: {
+          name: manualArtistForm.name,
+          biography: manualArtistForm.biography,
+          genre: manualArtistForm.genre,
+          location: manualArtistForm.location,
+          slug
+        }
+      });
+
+      toast({
+        title: "¡Artista creado!",
+        description: `${manualArtistForm.name} ha sido creado exitosamente`,
+      });
+
+      // Reset form
+      setManualArtistForm({
+        name: "",
+        biography: "",
+        genre: "",
+        location: "",
+      });
+      
+      setIsDialogOpen(false);
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo crear el artista",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   if (authLoading) {
@@ -128,27 +209,116 @@ export default function MyArtistsPage() {
                 My Artists
               </h1>
               <p className="text-gray-400">
-                Administra tus artistas generados con IA
+                Administra todos tus artistas
               </p>
             </div>
-            <Button
-              onClick={handleCreateArtist}
-              disabled={isGenerating}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-              data-testid="button-create-artist"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generando...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Nuevo Artista
-                </>
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                    data-testid="button-create-manual-artist"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Crear Manualmente
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-gray-900 border-gray-800 text-white">
+                  <DialogHeader>
+                    <DialogTitle>Crear Nuevo Artista</DialogTitle>
+                    <DialogDescription className="text-gray-400">
+                      Ingresa la información básica del artista
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nombre del Artista *</Label>
+                      <Input
+                        id="name"
+                        placeholder="Ej: John Doe"
+                        value={manualArtistForm.name}
+                        onChange={(e) => setManualArtistForm({ ...manualArtistForm, name: e.target.value })}
+                        className="bg-gray-800 border-gray-700"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="genre">Género Musical</Label>
+                      <Input
+                        id="genre"
+                        placeholder="Ej: Pop, Rock, Hip-Hop"
+                        value={manualArtistForm.genre}
+                        onChange={(e) => setManualArtistForm({ ...manualArtistForm, genre: e.target.value })}
+                        className="bg-gray-800 border-gray-700"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Ubicación</Label>
+                      <Input
+                        id="location"
+                        placeholder="Ej: Miami, FL"
+                        value={manualArtistForm.location}
+                        onChange={(e) => setManualArtistForm({ ...manualArtistForm, location: e.target.value })}
+                        className="bg-gray-800 border-gray-700"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="biography">Biografía</Label>
+                      <Textarea
+                        id="biography"
+                        placeholder="Cuéntanos sobre el artista..."
+                        rows={4}
+                        value={manualArtistForm.biography}
+                        onChange={(e) => setManualArtistForm({ ...manualArtistForm, biography: e.target.value })}
+                        className="bg-gray-800 border-gray-700"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                      disabled={isCreating}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleCreateManualArtist}
+                      disabled={isCreating}
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                    >
+                      {isCreating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Creando...
+                        </>
+                      ) : (
+                        "Crear Artista"
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                onClick={handleCreateArtist}
+                disabled={isGenerating}
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                data-testid="button-create-ai-artist"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generando...
+                  </>
+                ) : (
+                  <>
+                    <Bot className="h-4 w-4 mr-2" />
+                    Generar con IA
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* Stats */}
