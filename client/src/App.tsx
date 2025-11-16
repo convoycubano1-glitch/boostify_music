@@ -85,6 +85,7 @@ const InvestorsDashboard = lazy(() => import("./pages/investors-dashboard"));
 const SocialNetworkPage = lazy(() => import("./pages/social-network"));
 const FirestoreSocialPage = lazy(() => import("./pages/firestore-social"));
 const ArtistProfilePage = lazy(() => import("./pages/artist-profile"));
+const MyArtistPage = lazy(() => import("./pages/my-artist"));
 const DiagnosticsPage = lazy(() => import("./pages/diagnostics"));
 const AffiliatesPage = lazy(() => import("./pages/affiliates"));
 const InitProductsPage = lazy(() => import("./pages/init-products"));
@@ -208,6 +209,7 @@ const Router = () => {
   const WrappedCookiesPage = withPageWrapper(CookiesPage);
   const WrappedProfilePage = withPageWrapper(ProfilePage);
   const WrappedArtistProfilePage = withPageWrapper(ArtistProfilePage);
+  const WrappedMyArtistPage = withPageWrapper(MyArtistPage);
   const WrappedDashboardPage = withPageWrapper(DashboardPage);
   const WrappedAdminPage = withPageWrapper(AdminPage);
   const WrappedArtistDashboard = withPageWrapper(ArtistDashboard);
@@ -308,6 +310,7 @@ const Router = () => {
           {getRouteComponent("/cookies", WrappedCookiesPage, null)}
           {getRouteComponent("/profile/:id", WrappedProfilePage, null)}
           {getRouteComponent("/artist/:slug", WrappedArtistProfilePage, null)}
+          {getRouteComponent("/my-artist", WrappedMyArtistPage, 'free')}
           {getRouteComponent("/pricing", WrappedPricingPage, null)}
           {getRouteComponent("/boostify-explicit", WrappedBoostifyExplicitPage, null)}
           
