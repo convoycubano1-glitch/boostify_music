@@ -34,25 +34,41 @@ const PLAN_LIMITS = {
     preLaunchScore: 5,
     keywords: 5,
     titleAnalyzer: 5,
-    contentIdeas: 0
+    contentIdeas: 0,
+    thumbnailGenerator: 0,
+    competitorAnalysis: 0,
+    trendPredictor: 0,
+    transcriptExtractor: 0
   },
   basic: {
     preLaunchScore: 20,
     keywords: 50,
     titleAnalyzer: 20,
-    contentIdeas: 20
+    contentIdeas: 20,
+    thumbnailGenerator: 0,
+    competitorAnalysis: 0,
+    trendPredictor: 0,
+    transcriptExtractor: 0
   },
   pro: {
     preLaunchScore: 100,
     keywords: 100,
     titleAnalyzer: 100,
-    contentIdeas: 50
+    contentIdeas: 50,
+    thumbnailGenerator: 30,
+    competitorAnalysis: 20,
+    trendPredictor: -1, // daily alerts
+    transcriptExtractor: 50
   },
   premium: {
     preLaunchScore: -1, // unlimited
     keywords: -1,
     titleAnalyzer: -1,
-    contentIdeas: -1
+    contentIdeas: -1,
+    thumbnailGenerator: -1,
+    competitorAnalysis: -1,
+    trendPredictor: -1,
+    transcriptExtractor: -1
   }
 };
 
@@ -612,6 +628,499 @@ Return JSON:
 });
 
 /**
+ * 5. THUMBNAIL GENERATOR (PHASE 2 - PRO)
+ * Generates eye-catching thumbnails using Gemini AI + FAL AI
+ * 
+ * Process:
+ * 1. Gemini AI generates optimized thumbnail prompts
+ * 2. FAL AI generates 3-5 thumbnail variations
+ * 3. Returns URLs and CTR predictions
+ */
+router.post('/generate-thumbnail', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.uid || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const { title, style = 'modern', niche } = req.body;
+    
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    
+    // Check usage limits
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
+    
+    const usageCheck = await checkUsageLimit(userId, 'thumbnailGenerator', userPlan);
+    if (!usageCheck.allowed) {
+      return res.status(429).json({ 
+        error: 'Thumbnail Generator is a PRO feature',
+        message: 'Upgrade to PRO to generate AI thumbnails',
+        limit: usageCheck.limit,
+        remaining: 0
+      });
+    }
+    
+    console.log(`🎨 [THUMBNAIL] Generating for: "${title}" (${style})`);
+    
+    // Step 1: Generate optimized prompts with Gemini AI
+    const prompt = `You are a YouTube thumbnail design expert. Generate 3 optimized image prompts for thumbnails.
+
+VIDEO TITLE: "${title}"
+STYLE: ${style}
+NICHE: ${niche || 'General'}
+
+REQUIREMENTS:
+1. High contrast, eye-catching designs
+2. Include text elements (but don't write the text in the prompt)
+3. Vibrant colors that pop
+4. Professional YouTube aesthetic
+5. Consider CTR optimization
+
+For each thumbnail, generate:
+- A detailed image prompt (for AI generation)
+- Predicted CTR score (0-100)
+- Why this thumbnail would perform well
+
+Return JSON:
+{
+  "thumbnails": [
+    {
+      "prompt": "detailed image generation prompt",
+      "ctrScore": number,
+      "reason": "why this works",
+      "suggestedText": "text to overlay"
+    }
+  ]
+}`;
+    
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const aiSuggestions = jsonMatch ? JSON.parse(jsonMatch[0]) : { thumbnails: [] };
+    
+    // Step 2: Generate images with FAL AI
+    const thumbnails = [];
+    
+    for (const suggestion of aiSuggestions.thumbnails.slice(0, 3)) {
+      try {
+        // Call FAL AI to generate thumbnail
+        const falResponse = await fetch('https://fal.run/fal-ai/flux/schnell', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Key ${process.env.FAL_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: suggestion.prompt + '. YouTube thumbnail style, 16:9 aspect ratio, high quality, vibrant colors',
+            image_size: 'landscape_16_9',
+            num_inference_steps: 4,
+            num_images: 1
+          })
+        });
+        
+        if (falResponse.ok) {
+          const falData = await falResponse.json();
+          if (falData.images && falData.images.length > 0) {
+            thumbnails.push({
+              url: falData.images[0].url,
+              ctrScore: suggestion.ctrScore,
+              reason: suggestion.reason,
+              suggestedText: suggestion.suggestedText,
+              prompt: suggestion.prompt
+            });
+          }
+        }
+      } catch (error) {
+        console.error('FAL AI error for thumbnail:', error);
+      }
+    }
+    
+    // Log usage
+    await logUsage(userId, 'thumbnailGenerator', { title, count: thumbnails.length });
+    
+    console.log(`✅ Generated ${thumbnails.length} thumbnails`);
+    
+    return res.json({
+      success: true,
+      thumbnails,
+      remaining: usageCheck.remaining - 1
+    });
+    
+  } catch (error) {
+    console.error('Error generating thumbnails:', error);
+    return res.status(500).json({ 
+      error: 'Failed to generate thumbnails',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * 6. COMPETITOR DEEP ANALYSIS (PHASE 2 - PRO)
+ * Analyzes competitor channels to reveal their strategy
+ * 
+ * Process:
+ * 1. Scrape competitor's channel with Apify
+ * 2. Gemini AI analyzes patterns and strategies
+ * 3. Returns actionable insights
+ */
+router.post('/analyze-competitor', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.uid || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const { channelUrl, channelName } = req.body;
+    
+    if (!channelUrl && !channelName) {
+      return res.status(400).json({ error: 'Channel URL or name is required' });
+    }
+    
+    // Check usage limits
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
+    
+    const usageCheck = await checkUsageLimit(userId, 'competitorAnalysis', userPlan);
+    if (!usageCheck.allowed) {
+      return res.status(429).json({ 
+        error: 'Competitor Analysis is a PRO feature',
+        message: 'Upgrade to PRO to analyze competitors',
+        limit: usageCheck.limit,
+        remaining: 0
+      });
+    }
+    
+    console.log(`🔍 [COMPETITOR] Analyzing: ${channelName || channelUrl}`);
+    
+    // Step 1: Scrape channel with Apify
+    const apifyClient = getApifyClient();
+    
+    const input = {
+      searchQueries: [channelName || channelUrl],
+      maxResults: 30,
+      resultsPerPage: 30
+    };
+    
+    const run = await apifyClient.actor('streamers/youtube-scraper').call(input);
+    const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
+    
+    // Extract channel data
+    const videos = items.map((item: any) => ({
+      title: item.title,
+      views: item.viewCount,
+      likes: item.likeCount,
+      publishedAt: item.publishedAt,
+      duration: item.duration
+    }));
+    
+    console.log(`✅ Scraped ${videos.length} videos from competitor`);
+    
+    // Step 2: Analyze with Gemini AI
+    const prompt = `You are a YouTube strategy analyst. Analyze this competitor's channel strategy.
+
+COMPETITOR VIDEOS (${videos.length} videos):
+${JSON.stringify(videos.slice(0, 20), null, 2)}
+
+TASK:
+1. Identify content strategy patterns
+2. Find their best-performing content types
+3. Analyze upload schedule
+4. Discover gaps you can exploit
+5. Provide actionable insights
+
+Return JSON:
+{
+  "overview": {
+    "averageViews": number,
+    "topicsProduced": ["topic1", "topic2"],
+    "uploadFrequency": "X videos per week"
+  },
+  "bestPerformingContent": [
+    {
+      "type": "content type",
+      "avgViews": number,
+      "reason": "why it works"
+    }
+  ],
+  "contentGaps": ["gap 1", "gap 2"],
+  "uploadPattern": {
+    "bestDays": ["Monday", "Friday"],
+    "bestTimes": ["2PM", "7PM"]
+  },
+  "actionableInsights": ["insight 1", "insight 2", "insight 3"],
+  "weaknesses": ["weakness 1", "weakness 2"]
+}`;
+    
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+    
+    // Log usage
+    await logUsage(userId, 'competitorAnalysis', { channel: channelName || channelUrl });
+    
+    console.log(`✅ Competitor analysis complete`);
+    
+    return res.json({
+      success: true,
+      channelName: channelName || 'Unknown',
+      videosAnalyzed: videos.length,
+      ...analysis,
+      remaining: usageCheck.remaining - 1
+    });
+    
+  } catch (error) {
+    console.error('Error analyzing competitor:', error);
+    return res.status(500).json({ 
+      error: 'Failed to analyze competitor',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * 7. TREND PREDICTOR (PHASE 2 - PRO)
+ * Detects emerging trends BEFORE they explode
+ * 
+ * Process:
+ * 1. Scrape trending videos across niches
+ * 2. Gemini AI detects patterns and emerging topics
+ * 3. Returns opportunities to create content early
+ */
+router.post('/predict-trends', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.uid || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const { niche } = req.body;
+    
+    if (!niche) {
+      return res.status(400).json({ error: 'Niche is required' });
+    }
+    
+    // Check usage limits
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
+    
+    const usageCheck = await checkUsageLimit(userId, 'trendPredictor', userPlan);
+    if (!usageCheck.allowed) {
+      return res.status(429).json({ 
+        error: 'Trend Predictor is a PRO feature',
+        message: 'Upgrade to PRO to predict trends',
+        limit: usageCheck.limit,
+        remaining: 0
+      });
+    }
+    
+    console.log(`📈 [TRENDS] Predicting for niche: ${niche}`);
+    
+    // Step 1: Scrape recent trending videos
+    const apifyClient = getApifyClient();
+    
+    const input = {
+      searchQueries: [niche, `${niche} trending`, `${niche} 2024`],
+      maxResults: 40,
+      resultsPerPage: 40
+    };
+    
+    const run = await apifyClient.actor('streamers/youtube-scraper').call(input);
+    const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
+    
+    // Get recent videos (last 7 days with growth)
+    const recentVideos = items.filter((item: any) => {
+      const publishedDate = new Date(item.publishedAt);
+      const daysAgo = (Date.now() - publishedDate.getTime()) / (1000 * 60 * 60 * 24);
+      return daysAgo <= 7;
+    }).map((item: any) => ({
+      title: item.title,
+      views: item.viewCount,
+      publishedAt: item.publishedAt,
+      keywords: item.keywords || []
+    }));
+    
+    console.log(`✅ Found ${recentVideos.length} recent trending videos`);
+    
+    // Step 2: Predict trends with Gemini AI
+    const prompt = `You are a YouTube trend forecaster. Analyze recent videos to predict emerging trends.
+
+NICHE: "${niche}"
+
+RECENT TRENDING VIDEOS (last 7 days):
+${JSON.stringify(recentVideos.slice(0, 25), null, 2)}
+
+TASK:
+1. Detect emerging patterns and topics
+2. Identify trends BEFORE they peak
+3. Find keywords gaining momentum
+4. Predict which topics will explode
+
+Return JSON:
+{
+  "emergingTrends": [
+    {
+      "trend": "trend name",
+      "confidence": number (0-100),
+      "timeToAct": "24 hours|3 days|1 week",
+      "reason": "why this is emerging",
+      "keywords": ["keyword1", "keyword2"],
+      "competitionLevel": "low|medium|high"
+    }
+  ],
+  "risingKeywords": ["keyword1", "keyword2"],
+  "recommendations": ["recommendation 1", "recommendation 2"],
+  "urgentOpportunities": ["opportunity 1", "opportunity 2"]
+}`;
+    
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const predictions = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+    
+    // Log usage
+    await logUsage(userId, 'trendPredictor', { niche });
+    
+    console.log(`✅ Trend prediction complete`);
+    
+    return res.json({
+      success: true,
+      niche,
+      videosAnalyzed: recentVideos.length,
+      scanDate: new Date().toISOString(),
+      ...predictions,
+      remaining: usageCheck.remaining - 1
+    });
+    
+  } catch (error) {
+    console.error('Error predicting trends:', error);
+    return res.status(500).json({ 
+      error: 'Failed to predict trends',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * 8. TRANSCRIPT EXTRACTOR (PHASE 2 - PRO)
+ * Extracts transcripts from videos and suggests clips for Shorts
+ * 
+ * Process:
+ * 1. Scrape video metadata and transcript
+ * 2. Gemini AI identifies viral moments
+ * 3. Suggests timestamps for Shorts clips
+ */
+router.post('/extract-transcript', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.uid || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const { videoUrl } = req.body;
+    
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'Video URL is required' });
+    }
+    
+    // Check usage limits
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
+    
+    const usageCheck = await checkUsageLimit(userId, 'transcriptExtractor', userPlan);
+    if (!usageCheck.allowed) {
+      return res.status(429).json({ 
+        error: 'Transcript Extractor is a PRO feature',
+        message: 'Upgrade to PRO to extract transcripts',
+        limit: usageCheck.limit,
+        remaining: 0
+      });
+    }
+    
+    console.log(`📝 [TRANSCRIPT] Extracting from: ${videoUrl}`);
+    
+    // For now, we'll simulate transcript extraction
+    // In production, you'd use YouTube API or subtitle extraction service
+    const mockTranscript = `This is a simulated transcript. 
+In a real implementation, this would use YouTube's API or a subtitle extraction service
+to get the actual video transcript. The transcript would then be analyzed by Gemini AI
+to identify the most engaging moments that would work well as YouTube Shorts.`;
+    
+    // Analyze transcript with Gemini AI
+    const prompt = `You are a YouTube Shorts expert. Analyze this video transcript and identify the best moments for Shorts.
+
+VIDEO URL: ${videoUrl}
+
+TRANSCRIPT:
+"${mockTranscript}"
+
+TASK:
+1. Identify 3-5 viral-worthy moments (30-60 seconds each)
+2. For each moment, provide:
+   - Suggested start/end timestamps
+   - Why this moment would go viral
+   - Hook for the Short
+   - Suggested title
+
+Return JSON:
+{
+  "shortsOpportunities": [
+    {
+      "startTime": "MM:SS",
+      "endTime": "MM:SS",
+      "duration": number (seconds),
+      "viralScore": number (0-100),
+      "reason": "why this will go viral",
+      "hook": "opening line for Short",
+      "suggestedTitle": "Short title",
+      "tags": ["tag1", "tag2"]
+    }
+  ],
+  "overallSummary": "brief summary of video",
+  "bestMoment": "which clip to create first"
+}`;
+    
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {
+      shortsOpportunities: [],
+      overallSummary: 'Unable to analyze',
+      bestMoment: 'N/A'
+    };
+    
+    // Log usage
+    await logUsage(userId, 'transcriptExtractor', { videoUrl });
+    
+    console.log(`✅ Found ${analysis.shortsOpportunities.length} Shorts opportunities`);
+    
+    return res.json({
+      success: true,
+      videoUrl,
+      transcriptLength: mockTranscript.length,
+      ...analysis,
+      remaining: usageCheck.remaining - 1,
+      note: 'This is a demo. Full transcript extraction requires YouTube API integration.'
+    });
+    
+  } catch (error) {
+    console.error('Error extracting transcript:', error);
+    return res.status(500).json({ 
+      error: 'Failed to extract transcript',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
  * Get user's current usage stats
  */
 router.get('/usage-stats', authenticate, async (req: Request, res: Response) => {
@@ -627,7 +1136,16 @@ router.get('/usage-stats', authenticate, async (req: Request, res: Response) => 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const features = ['preLaunchScore', 'keywords', 'titleAnalyzer', 'contentIdeas'];
+    const features = [
+      'preLaunchScore', 
+      'keywords', 
+      'titleAnalyzer', 
+      'contentIdeas',
+      'thumbnailGenerator',
+      'competitorAnalysis',
+      'trendPredictor',
+      'transcriptExtractor'
+    ];
     const stats: any = {};
     
     for (const feature of features) {
