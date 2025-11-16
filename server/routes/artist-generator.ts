@@ -13,6 +13,62 @@ import { eq } from 'drizzle-orm';
 const router = Router();
 
 /**
+ * Endpoint para obtener todos los artistas creados por un usuario
+ */
+router.get("/my-artists", authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        error: 'Usuario no autenticado' 
+      });
+    }
+
+    console.log(`🎨 Obteniendo artistas creados por usuario ${userId}`);
+
+    // Obtener artistas de PostgreSQL
+    const artistsFromPg = await pgDb
+      .select()
+      .from(users)
+      .where(eq(users.generatedBy, userId));
+
+    console.log(`✅ Encontrados ${artistsFromPg.length} artistas en PostgreSQL`);
+
+    // Formatear respuesta
+    const formattedArtists = artistsFromPg.map(artist => ({
+      id: artist.id,
+      firestoreId: artist.firestoreId,
+      name: artist.artistName,
+      slug: artist.slug,
+      biography: artist.biography,
+      profileImage: artist.profileImage,
+      coverImage: artist.coverImage,
+      genres: artist.genres,
+      country: artist.country,
+      isAIGenerated: artist.isAIGenerated,
+      createdAt: artist.createdAt,
+      instagram: artist.instagramHandle,
+      twitter: artist.twitterHandle,
+      youtube: artist.youtubeChannel,
+      spotify: artist.spotifyUrl
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: formattedArtists.length,
+      artists: formattedArtists
+    });
+  } catch (error) {
+    console.error('❌ Error obteniendo artistas del usuario:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener artistas',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
  * Genera un slug único desde el nombre del artista
  */
 function generateSlug(artistName: string, attempt = 0): string {
