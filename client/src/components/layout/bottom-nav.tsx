@@ -109,9 +109,9 @@ export function BottomNav() {
       plan: "free"
     },
     {
-      title: "My Artist",
+      title: "My Artists",
       icon: Mic,
-      href: "/my-artist",
+      href: "/my-artists",
       plan: "free"
     },
   ];

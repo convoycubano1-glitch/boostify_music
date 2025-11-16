@@ -117,6 +117,7 @@ export default function MyArtistsPage() {
       <Head
         title="My Artists | Boostify Music"
         description="Administra todos tus artistas generados con IA en Boostify Music"
+        url={window.location.href}
       />
       <div className="min-h-screen bg-black text-white py-8">
         <div className="container mx-auto px-4 max-w-7xl">

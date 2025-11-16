@@ -477,7 +477,7 @@ router.delete("/delete-all-artists", async (req: Request, res: Response) => {
     const batch = db.batch();
     let count = 0;
 
-    snapshot.forEach((doc) => {
+    snapshot.forEach((doc: DocumentData) => {
       batch.delete(doc.ref);
       count++;
     });

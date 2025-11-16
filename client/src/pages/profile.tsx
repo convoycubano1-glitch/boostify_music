@@ -43,7 +43,7 @@ export default function ProfilePage() {
   // Mutation para crear un nuevo artista
   const createArtistMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest<any>("/api/artist-generator/generate-artist/secure", {
+      const response = await apiRequest("/api/artist-generator/generate-artist/secure", {
         method: "POST",
         headers: { "Content-Type": "application/json" }
       });
