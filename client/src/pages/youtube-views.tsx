@@ -1,290 +1,333 @@
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card } from "../components/ui/card";
-import { AspectRatio } from "../components/ui/aspect-ratio";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../hooks/use-auth";
 import { useToast } from "../hooks/use-toast";
-import { Loader2, Play, TrendingUp, PackageCheck, AlertCircle, Clock, Home, CheckCircle2, Shield, Users, Key, Video, FileText, MessageSquare, Eye, Database, Brain, Music2, Scissors, Type, Sparkles, Music, Search, Image } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-// Stripe is loaded dynamically to prevent initialization errors
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog";
-import { getAuthToken } from "../lib/firebase";
-import { createYouTubeViewsOrder, checkApifyRun, YouTubeViewsData } from "../lib/youtube-store";
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import { motion, AnimatePresence } from "framer-motion";
-import 'react-circular-progressbar/dist/styles.css';
+import { 
+  Loader2, Play, TrendingUp, Home, Key, Video, MessageSquare, 
+  Eye, Database, Brain, FileText, Sparkles, CheckCircle, 
+  AlertTriangle, Copy, X, Star, Lightbulb, Target, Award
+} from "lucide-react";
+import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { SiYoutube } from "react-icons/si";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Textarea } from "../components/ui/textarea";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart
-} from "recharts";
 import { Users2 } from "lucide-react";
 import { Header } from "../components/layout/header";
+import { getAuthToken } from "../lib/firebase";
+import { Progress } from "../components/ui/progress";
+import { Badge } from "../components/ui/badge";
 
-// Function to load Stripe dynamically
-const getStripe = async () => {
-  try {
-    const { loadStripe } = await import('@stripe/stripe-js');
-    return await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-  } catch (error) {
-    console.error('Error loading Stripe:', error);
-    return null;
-  }
-};
+// Types
+interface PreLaunchResult {
+  score: number;
+  prediction: string;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
+  estimatedViews: {
+    '7days': number;
+    '30days': number;
+  };
+  remaining: number;
+}
 
-const viewsPackages = [
-  {
-    views: 1000,
-    price: 50,
-    description: "Perfect for new content creators",
-    features: ["Organic views", "24/7 Support", "Real-time tracking"]
-  },
-  {
-    views: 10000,
-    price: 450,
-    description: "Most popular for growing channels",
-    features: ["Premium viewer retention", "Priority support", "Detailed analytics"]
-  },
-  {
-    views: 100000,
-    price: 4000,
-    description: "For professional content creators",
-    features: ["Maximum engagement", "Dedicated account manager", "Custom delivery schedule"]
-  }
-];
+interface Keyword {
+  keyword: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  relevance: number;
+  estimatedSearches: number;
+  competition: 'low' | 'medium' | 'high';
+}
+
+interface TitleAnalysis {
+  score: number;
+  ctrScore: number;
+  seoScore: number;
+  emotionalScore: number;
+  strengths: string[];
+  issues: string[];
+  suggestions: string[];
+  improvedTitles: string[];
+  remaining: number;
+}
+
+interface VideoIdea {
+  title: string;
+  description: string;
+  targetAudience: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  estimatedViews: number;
+  keywords: string[];
+  hook: string;
+}
 
 export default function YoutubeViewsPage() {
-  const [videoUrl, setVideoUrl] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [desiredViews, setDesiredViews] = useState(1000);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStep, setProcessingStep] = useState(0);
-  const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null);
-  const [activeTab, setActiveTab] = useState("strategy");
-  const [keywordInput, setKeywordInput] = useState("");
-  const [generatedKeywords, setGeneratedKeywords] = useState<string[]>([]);
-  const [videoTitle, setVideoTitle] = useState("");
-  const [generatingCover, setGeneratingCover] = useState(false);
+  const [activeTab, setActiveTab] = useState("pre-launch");
+  
+  // Pre-Launch Score states
+  const [preLaunchTitle, setPreLaunchTitle] = useState("");
+  const [preLaunchDescription, setPreLaunchDescription] = useState("");
+  const [preLaunchNiche, setPreLaunchNiche] = useState("");
+  const [preLaunchKeywords, setPreLaunchKeywords] = useState("");
+  const [preLaunchLoading, setPreLaunchLoading] = useState(false);
+  const [preLaunchResult, setPreLaunchResult] = useState<PreLaunchResult | null>(null);
+  
+  // Keywords Generator states
+  const [keywordTopic, setKeywordTopic] = useState("");
+  const [keywordNiche, setKeywordNiche] = useState("");
+  const [keywordsLoading, setKeywordsLoading] = useState(false);
+  const [generatedKeywords, setGeneratedKeywords] = useState<Keyword[]>([]);
+  const [trendingTags, setTrendingTags] = useState<string[]>([]);
+  
+  // Title Analyzer states
+  const [titleToAnalyze, setTitleToAnalyze] = useState("");
+  const [titleNiche, setTitleNiche] = useState("");
+  const [titleLoading, setTitleLoading] = useState(false);
+  const [titleResult, setTitleResult] = useState<TitleAnalysis | null>(null);
+  
+  // Content Ideas states
+  const [contentNiche, setContentNiche] = useState("");
+  const [contentIdeasCount, setContentIdeasCount] = useState(5);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [videoIdeas, setVideoIdeas] = useState<VideoIdea[]>([]);
+  const [contentGaps, setContentGaps] = useState<string[]>([]);
+  const [trendingSubtopics, setTrendingSubtopics] = useState<string[]>([]);
 
-  const { data: apifyData, refetch } = useQuery({
-    queryKey: ["apify-run", orderId],
-    queryFn: async () => {
-      if (!orderId) return null;
-      return checkApifyRun(orderId);
-    },
-    enabled: !!orderId,
-    refetchInterval: orderId ? 5000 : false
-  });
-
-  const getPackagePrice = (views: number) => {
-    if (views <= 1000) return 50;
-    if (views <= 10000) return 450;
-    return Math.ceil(views * 0.04);
-  };
-
-  const currentPrice = getPackagePrice(desiredViews);
-
-  const handlePackageSelect = async (packageIndex: number) => {
-    if (!videoUrl) {
+  // 1. PRE-LAUNCH SCORE
+  const handlePreLaunchScore = async () => {
+    if (!preLaunchTitle || !preLaunchNiche) {
       toast({
-        title: "Error",
-        description: "Please enter a valid YouTube URL",
+        title: "Missing Information",
+        description: "Please provide both title and niche",
         variant: "destructive"
       });
       return;
     }
 
-    setDesiredViews(viewsPackages[packageIndex].views);
-    setShowDialog(true);
-  };
-
-  const handlePayment = async () => {
-    if (!videoUrl) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid YouTube URL",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to continue",
-        variant: "destructive"
-      });
-      return;
-    }
+    setPreLaunchLoading(true);
+    setPreLaunchResult(null);
 
     try {
       const token = await getAuthToken();
-      if (!token) {
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to continue",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setIsProcessing(true);
-
-      const orderData = await createYouTubeViewsOrder(user, {
-        videoUrl,
-        purchasedViews: desiredViews,
-        apifyRunId: '',
-      });
-
-      if (!orderData || !orderData.id) {
-        throw new Error('Failed to create order');
-      }
-
-      const stripe = await getStripe();
-      if (!stripe) {
-        throw new Error("Could not initialize Stripe");
-      }
-
-      const response = await fetch('/api/create-checkout-session', {
+      const response = await fetch('/api/youtube/pre-launch-score', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          videoUrl,
-          views: desiredViews,
-          price: currentPrice,
-          orderId: orderData.id
-        }),
+          title: preLaunchTitle,
+          description: preLaunchDescription,
+          keywords: preLaunchKeywords,
+          niche: preLaunchNiche
+        })
       });
+
+      const data = await response.json();
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error creating payment session');
+        throw new Error(data.error || 'Failed to analyze video');
       }
 
-      const { sessionId } = await response.json();
-      if (!sessionId) {
-        throw new Error('Stripe session ID was not received');
-      }
-
-      const { error } = await stripe.redirectToCheckout({
-        sessionId
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-    } catch (error: any) {
-      console.error('Payment process error:', error);
+      setPreLaunchResult(data);
       toast({
-        title: "Payment Error",
-        description: error.message || "There was an error processing the payment. Please try again.",
+        title: "Analysis Complete!",
+        description: `Your video scored ${data.score}/100`,
+      });
+    } catch (error: any) {
+      console.error('Pre-launch error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to analyze video concept",
         variant: "destructive"
       });
     } finally {
-      setIsProcessing(false);
-      setShowDialog(false);
+      setPreLaunchLoading(false);
     }
   };
-  const chartData = Array.from({ length: 7 }, (_, i) => ({
-      day: `Day ${i + 1}`,
-      views: Math.floor(Math.random() * 5000) + 1000
-    }));
 
-  const progress = 75;
-  const currentViews = 7500;
-
-  const startViewsProcess = () => {
-    if (!videoUrl) {
+  // 2. KEYWORDS GENERATOR
+  const handleGenerateKeywords = async () => {
+    if (!keywordTopic) {
       toast({
-        title: "Error",
-        description: "Please enter a valid YouTube URL",
+        title: "Missing Information",
+        description: "Please provide a topic",
         variant: "destructive"
       });
       return;
     }
 
-    setIsProcessing(true);
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      setProcessingStep(step);
-      if (step >= 3) {
-        clearInterval(interval);
-        setShowDialog(true);
+    setKeywordsLoading(true);
+    setGeneratedKeywords([]);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/generate-keywords', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          topic: keywordTopic,
+          niche: keywordNiche
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate keywords');
       }
-    }, 1500);
-  };
 
-  const getStepMessage = (step: number) => {
-    switch (step) {
-      case 1:
-        return "Validating video URL...";
-      case 2:
-        return "Analyzing current metrics...";
-      case 3:
-        return "Ready to start. Payment required to continue.";
-      default:
-        return "Initializing process...";
+      setGeneratedKeywords(data.keywords);
+      setTrendingTags(data.trendingTags);
+      toast({
+        title: "Keywords Generated!",
+        description: `Found ${data.keywords.length} optimized keywords`,
+      });
+    } catch (error: any) {
+      console.error('Keywords error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate keywords",
+        variant: "destructive"
+      });
+    } finally {
+      setKeywordsLoading(false);
     }
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
-    const success = params.get('success');
-    const canceled = params.get('canceled');
-
-    if (sessionId && success === 'true') {
-      setPaymentStatus('success');
+  // 3. TITLE ANALYZER
+  const handleAnalyzeTitle = async () => {
+    if (!titleToAnalyze) {
       toast({
-        title: "Payment Successful",
-        description: "Your order has been processed successfully. You can track your views progress here.",
-        variant: "default",
+        title: "Missing Information",
+        description: "Please provide a title to analyze",
+        variant: "destructive"
       });
-    } else if (canceled === 'true') {
-      setPaymentStatus('canceled');
-      toast({
-        title: "Payment Canceled",
-        description: "Your payment was canceled. You can try again when you're ready.",
-        variant: "destructive",
-      });
+      return;
     }
-  }, []);
 
-  const handleGenerateKeywords = async () => {
-    setGeneratedKeywords([
-      "#trending", "#viral", "#youtubegrowth",
-      "#contentcreator", "#youtubetips", "#socialmedia"
-    ]);
+    setTitleLoading(true);
+    setTitleResult(null);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/analyze-title', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: titleToAnalyze,
+          niche: titleNiche
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze title');
+      }
+
+      setTitleResult(data);
+      toast({
+        title: "Title Analyzed!",
+        description: `Your title scored ${data.score}/100`,
+      });
+    } catch (error: any) {
+      console.error('Title analysis error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to analyze title",
+        variant: "destructive"
+      });
+    } finally {
+      setTitleLoading(false);
+    }
   };
 
-  const handleGenerateCover = async () => {
-    setGeneratingCover(true);
-    setTimeout(() => {
-      setGeneratingCover(false);
+  // 4. CONTENT IDEAS GENERATOR
+  const handleGenerateContentIdeas = async () => {
+    if (!contentNiche) {
       toast({
-        title: "Cover Generated",
-        description: "Your video cover has been generated successfully",
+        title: "Missing Information",
+        description: "Please provide a niche",
+        variant: "destructive"
       });
-    }, 2000);
+      return;
+    }
+
+    setContentLoading(true);
+    setVideoIdeas([]);
+
+    try {
+      const token = await getAuthToken();
+      const response = await fetch('/api/youtube/content-ideas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          niche: contentNiche,
+          count: contentIdeasCount
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate ideas');
+      }
+
+      setVideoIdeas(data.videoIdeas);
+      setContentGaps(data.contentGaps);
+      setTrendingSubtopics(data.trendingSubtopics);
+      toast({
+        title: "Ideas Generated!",
+        description: `Found ${data.videoIdeas.length} video ideas`,
+      });
+    } catch (error: any) {
+      console.error('Content ideas error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate content ideas",
+        variant: "destructive"
+      });
+    } finally {
+      setContentLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: "Text copied to clipboard",
+    });
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy': return 'text-green-500 bg-green-500/10';
+      case 'medium': return 'text-yellow-500 bg-yellow-500/10';
+      case 'hard': return 'text-red-500 bg-red-500/10';
+      default: return 'text-gray-500 bg-gray-500/10';
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-500';
+    if (score >= 60) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
   return (
@@ -307,39 +350,42 @@ export default function YoutubeViewsPage() {
                 transition={{ duration: 0.5 }}
               >
                 <h1 className="text-3xl md:text-6xl font-bold text-white mb-4">
-                  Boost Your Presence on{" "}
+                  Master YouTube with{" "}
                   <span className="bg-gradient-to-r from-orange-500 to-orange-400 bg-clip-text text-transparent">
-                    YouTube
+                    AI-Powered Tools
                   </span>
                 </h1>
                 <p className="text-base md:text-xl text-gray-200 mb-8">
-                  Enhance your videos with organic, high-retention views. Reach your ideal audience and increase your visibility.
+                  Analyze, optimize, and grow your channel with cutting-edge AI technology powered by Gemini
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     size="lg"
                     className="bg-orange-500 hover:bg-orange-600 text-white w-full sm:w-auto"
-                    onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={() => document.getElementById('tools')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    <Play className="w-5 h-5 mr-2" />
-                    Start Now
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Start Analyzing
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="bg-black/50 hover:bg-black/60 border-white/20 text-white w-full sm:w-auto"
-                  >
-                    Watch Demo
-                  </Button>
+                  <Link href="/dashboard">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="bg-black/50 hover:bg-black/60 border-white/20 text-white w-full sm:w-auto"
+                    >
+                      <Home className="w-5 h-5 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
                 </div>
                 <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-orange-500" />
+                      <Brain className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                      <p className="text-white font-semibold">+2M</p>
-                      <p className="text-gray-400 text-sm">Generated Views</p>
+                      <p className="text-white font-semibold">Gemini AI</p>
+                      <p className="text-gray-400 text-sm">Powered Analysis</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -347,8 +393,8 @@ export default function YoutubeViewsPage() {
                       <Users2 className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                      <p className="text-white font-semibold">10k+</p>
-                      <p className="text-gray-400 text-sm">Satisfied Clients</p>
+                      <p className="text-white font-semibold">Real Data</p>
+                      <p className="text-gray-400 text-sm">From YouTube</p>
                     </div>
                   </div>
                 </div>
@@ -358,6 +404,7 @@ export default function YoutubeViewsPage() {
         </div>
 
         <motion.div
+          id="tools"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -367,668 +414,588 @@ export default function YoutubeViewsPage() {
             <SiYoutube className="w-12 h-12 text-orange-500" />
             <div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                YouTube Views Generator
+                YouTube Growth Tools
               </h2>
               <p className="text-muted-foreground mt-2">
-                Boost your videos with organic, high-retention views
+                Powered by Gemini AI + Apify scraping
               </p>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/dashboard">
-              <Button variant="outline" className="gap-2 w-full md:w-auto">
-                <Home className="w-4 h-4" />
-                Dashboard
-              </Button>
-            </Link>
           </div>
         </motion.div>
 
         <div className="container mx-auto">
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="flex flex-wrap gap-2 md:grid md:grid-cols-7">
-              {[
-                { value: "strategy", icon: <Brain className="w-4 h-4" />, label: "AI Strategy" },
-                { value: "keywords", icon: <Key className="w-4 h-4" />, label: "Keywords" },
-                { value: "cover", icon: <Video className="w-4 h-4" />, label: "Cover Gen" },
-                { value: "shorts", icon: <FileText className="w-4 h-4" />, label: "Shorts" },
-                { value: "comments", icon: <MessageSquare className="w-4 h-4" />, label: "Comments" },
-                { value: "views", icon: <Eye className="w-4 h-4" />, label: "Views" },
-                { value: "scraping", icon: <Database className="w-4 h-4" />, label: "Scraping" }
-              ].map(({ value, icon, label }) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  className="flex-1 md:flex-none data-[state=active]:bg-orange-500 min-w-[80px]"
-                >
-                  {icon}
-                  <span className="hidden md:inline ml-2">{label}</span>
-                  <span className="md:hidden ml-2">{label.split(' ')[0]}</span>
-                </TabsTrigger>
-              ))}
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <TabsTrigger value="pre-launch" data-testid="tab-pre-launch" className="data-[state=active]:bg-orange-500">
+                <Target className="w-4 h-4 mr-2" />
+                Pre-Launch Score
+              </TabsTrigger>
+              <TabsTrigger value="keywords" data-testid="tab-keywords" className="data-[state=active]:bg-orange-500">
+                <Key className="w-4 h-4 mr-2" />
+                Keywords
+              </TabsTrigger>
+              <TabsTrigger value="title" data-testid="tab-title" className="data-[state=active]:bg-orange-500">
+                <FileText className="w-4 h-4 mr-2" />
+                Title Analyzer
+              </TabsTrigger>
+              <TabsTrigger value="content" data-testid="tab-content" className="data-[state=active]:bg-orange-500">
+                <Lightbulb className="w-4 h-4 mr-2" />
+                Content Ideas
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="strategy">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <Brain className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
+            {/* PRE-LAUNCH SCORE TAB */}
+            <TabsContent value="pre-launch">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Target className="h-8 w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">AI YouTube Strategy</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Get personalized content and growth strategies
+                    <h3 className="text-2xl font-semibold">Pre-Launch Success Predictor</h3>
+                    <p className="text-muted-foreground">
+                      Analyze your video concept before publishing - powered by Gemini AI
                     </p>
                   </div>
                 </div>
-                <div className="space-y-6">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-4">Ask AI Assistant</h4>
-                    <Textarea
-                      className="mb-4"
-                      placeholder="Ask about content strategy, audience growth, or optimization tips..."
-                      rows={4}
-                    />
-                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                      Get AI Response
-                    </Button>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-4">Quick Analysis</h4>
-                      <div className="space-y-4">
-                        <Button variant="outline" className="w-full justify-start">
-                          <TrendingUp className="mr-2 h-4 w-4" />
-                          Analyze Channel Growth
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                          <Users className="mr-2 h-4 w-4" />
-                          Audience Insights
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-4">Strategy Tools</h4>
-                      <div className="space-y-4">
-                        <Button variant="outline" className="w-full justify-start">
-                          <Clock className="mr-2 h-4 w-4" />
-                          Best Upload Times
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                          <TrendingUp className="mr-2 h-4 w-4" />
-                          Trending Topics
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-            <TabsContent value="keywords">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <Key className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
-                  </div>
+
+                <div className="space-y-4 mb-6">
                   <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Keywords Generator</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Generate optimized keywords for your videos
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <div className="p-4 border rounded-lg">
+                    <label className="block text-sm font-medium mb-2">Video Title *</label>
                     <Input
-                      placeholder="Enter your video topic..."
-                      value={keywordInput}
-                      onChange={(e) => setKeywordInput(e.target.value)}
-                      className="mb-4"
+                      data-testid="input-pre-launch-title"
+                      placeholder="Enter your video title..."
+                      value={preLaunchTitle}
+                      onChange={(e) => setPreLaunchTitle(e.target.value)}
                     />
-                    <Button
-                      className="w-full bg-orange-500 hover:bg-orange-600"
-                      onClick={handleGenerateKeywords}
-                    >
-                      Generate Keywords
-                    </Button>
                   </div>
-                  {generatedKeywords.length > 0 && (
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-4">Generated Keywords</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {generatedKeywords.map((keyword, index) => (
-                          <div key={index} className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">
-                            {keyword}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Niche/Category *</label>
+                    <Input
+                      data-testid="input-pre-launch-niche"
+                      placeholder="e.g., Gaming, Tech Reviews, Cooking..."
+                      value={preLaunchNiche}
+                      onChange={(e) => setPreLaunchNiche(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Description (Optional)</label>
+                    <Textarea
+                      data-testid="input-pre-launch-description"
+                      placeholder="Brief description of your video..."
+                      value={preLaunchDescription}
+                      onChange={(e) => setPreLaunchDescription(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Keywords (Optional)</label>
+                    <Input
+                      data-testid="input-pre-launch-keywords"
+                      placeholder="keyword1, keyword2, keyword3..."
+                      value={preLaunchKeywords}
+                      onChange={(e) => setPreLaunchKeywords(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    data-testid="button-analyze-pre-launch"
+                    onClick={handlePreLaunchScore}
+                    disabled={preLaunchLoading || !preLaunchTitle || !preLaunchNiche}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {preLaunchLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing with Gemini AI...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Analyze Video Concept
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {preLaunchResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6 mt-6 p-6 border rounded-lg bg-card"
+                  >
+                    <div className="text-center">
+                      <h4 className="text-lg font-semibold mb-2">Success Score</h4>
+                      <div className={`text-6xl font-bold ${getScoreColor(preLaunchResult.score)}`}>
+                        {preLaunchResult.score}/100
+                      </div>
+                      <p className="text-muted-foreground mt-2">{preLaunchResult.prediction}</p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <h5 className="font-semibold mb-2 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          Strengths
+                        </h5>
+                        <ul className="space-y-1">
+                          {preLaunchResult.strengths.map((strength, idx) => (
+                            <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <span className="text-green-500 mt-0.5">•</span>
+                              {strength}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h5 className="font-semibold mb-2 flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                          Weaknesses
+                        </h5>
+                        <ul className="space-y-1">
+                          {preLaunchResult.weaknesses.map((weakness, idx) => (
+                            <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <span className="text-yellow-500 mt-0.5">•</span>
+                              {weakness}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h5 className="font-semibold mb-2">Recommendations</h5>
+                      <div className="space-y-2">
+                        {preLaunchResult.recommendations.map((rec, idx) => (
+                          <div key={idx} className="p-3 bg-orange-500/5 rounded-lg text-sm">
+                            <span className="text-orange-500 font-semibold mr-2">{idx + 1}.</span>
+                            {rec}
                           </div>
                         ))}
                       </div>
                     </div>
-                  )}
-                </div>
-              </Card>
-            </TabsContent>
-            <TabsContent value="cover">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <Video className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Cover Generator</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Create eye-catching thumbnails for your videos
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <div className="p-4 border rounded-lg">
-                    <Input
-                      placeholder="Enter video title..."
-                      value={videoTitle}
-                      onChange={(e) => setVideoTitle(e.target.value)}
-                      className="mb-4"
-                    />
-                    <Button
-                      className="w-full bg-orange-500 hover:bg-orange-600"
-                      onClick={handleGenerateCover}
-                      disabled={generatingCover}
-                    >
-                      {generatingCover ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        'Generate Cover'
-                      )}
-                    </Button>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-4">Style Presets</h4>
-                      <div className="space-y-4">
-                        <Button variant="outline" className="w-full justify-start">
-                          <Play className="mr-2 h-4 w-4" />
-                          Gaming Style
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                          <Users className="mr-2 h-4 w-4" />
-                          Vlog Style
-                        </Button>
+
+                    <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                      <div className="text-center p-4 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Estimated Views (7 days)</p>
+                        <p className="text-2xl font-bold text-orange-500">
+                          {preLaunchResult.estimatedViews['7days'].toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-center p-4 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Estimated Views (30 days)</p>
+                        <p className="text-2xl font-bold text-orange-500">
+                          {preLaunchResult.estimatedViews['30days'].toLocaleString()}
+                        </p>
                       </div>
                     </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-4">Elements</h4>
-                      <div className="space-y-4">
-                        <Button variant="outline" className="w-full justify-start">
-                          <FileText className="mr-2 h-4 w-4" />
-                          Add Text
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                          <Image className="mr-2 h-4 w-4" />
-                          Add Image
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  </motion.div>
+                )}
               </Card>
             </TabsContent>
-            <TabsContent value="shorts">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <FileText className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
+
+            {/* KEYWORDS GENERATOR TAB */}
+            <TabsContent value="keywords">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Key className="h-8 w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Shorts Creator</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Create engaging short-form videos
-                    </p>
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-4">Video Templates</h4>
-                    <div className="space-y-4">
-                      <Button variant="outline" className="w-full justify-start">
-                        <Play className="mr-2 h-4 w-4" />
-                        Tutorial Template
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Music2 className="mr-2 h-4 w-4" />
-                        Music Template
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-4">Edit Tools</h4>
-                    <div className="space-y-4">
-                      <Button variant="outline" className="w-full justify-start">
-                        <Scissors className="mr-2 h-4 w-4" />
-                        Trim Video
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Type className="mr-2 h-4 w-4" />
-                        Add Captions
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-4">Effects</h4>
-                    <div className="space-y-4">
-                      <Button variant="outline" className="w-full justify-start">
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Visual Effects
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Music className="mr-2 h-4 w-4" />
-                        Sound Effects
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-            <TabsContent value="comments">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <MessageSquare className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Auto Comments</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Manage automated comments and engagement
-                    </p>
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-6">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-4">Comment Templates</h4>
-                      <Textarea
-                        className="mb-4"
-                        placeholder="Create your comment template..."
-                        rows={4}
-                      />
-                      <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                        Save Template
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-6">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-4">Bot Settings</h4>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span>Comment Frequency</span>
-                          <Input type="number" className="w-24" placeholder="30" />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Daily Limit</span>
-                          <Input type="number" className="w-24" placeholder="100" />
-                        </div>
-                        <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                          Start Bot
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
-            <TabsContent value="views">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <Eye className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Views Generator</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Boost your video views organically
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-8">
-                  <div>
-                    <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                      Start Growing Your Views
-                    </h3>
+                    <h3 className="text-2xl font-semibold">AI Keywords Generator</h3>
                     <p className="text-muted-foreground">
-                      Enter your video details and desired view count to begin
+                      Discover optimized keywords based on trending YouTube data
                     </p>
                   </div>
-
-                  <div className="grid gap-6">
-                    <div className="space-y-2">
-                      <label htmlFor="video-url" className="text-sm font-medium">
-                        Video URL
-                      </label>
-                      <div className="relative">
-                        <Input
-                          id="video-url"
-                          placeholder="https://youtube.com/watch?v=..."
-                          value={videoUrl}
-                          onChange={(e) => setVideoUrl(e.target.value)}
-                          className="bg-background/50 border-orange-500/10 focus:border-orange-500 pl-10"
-                        />
-                        <SiYoutube className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 h-4 w-4" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="desired-views" className="text-sm font-medium">
-                        Desired Views
-                      </label>
-                      <div className="relative">
-                        <Input
-                          id="desired-views"
-                          type="number"
-                          min="1000"
-                          step="1000"
-                          value={desiredViews}
-                          onChange={(e) => setDesiredViews(parseInt(e.target.value))}
-                          className="bg-background/50 border-orange-500/10 focus:border-orange-500"
-                        />
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                          Views
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <PackageCheck className="h-4 w-4" />
-                        Minimum: 1,000 views
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-orange-500/5 rounded-lg border border-orange-500/10">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">Estimated Price</span>
-                        <span className="text-2xl font-bold">${currentPrice}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Based on {desiredViews.toLocaleString()} views at ${(currentPrice / desiredViews).toFixed(3)} per view
-                      </p>
-                    </div>
-
-                    {isProcessing ? (
-                      <div className="space-y-4">
-                        <div className="h-2 bg-orange-500/20 rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-orange-500"
-                            initial={{ width: "0%" }}
-                            animate={{ width: `${(processingStep / 3) * 100}%` }}
-                            transition={{ duration: 0.5 }}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-orange-500/20 flex items-center justify-center">
-                            {processingStep < 3 ? (
-                              <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="h-4 w-4 text-orange-500" />
-                            )}
-                          </div>
-                          <p className="text-sm font-medium">
-                            {getStepMessage(processingStep)}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button
-                        onClick={startViewsProcess}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-lg h-12"
-                      >
-                        <Play className="w-5 h-5 mr-2" />
-                        Start Process
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 pt-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                        <Shield className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Secure</p>
-                        <p className="text-xs text-muted-foreground">SSL Protected</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                        <Clock className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Fast Delivery</p>
-                        <p className="text-xs text-muted-foreground">24-72 hours</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Support</p>
-                        <p className="text-xs text-muted-foreground">24/7 Available</p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Topic *</label>
+                    <Input
+                      data-testid="input-keyword-topic"
+                      placeholder="What is your video about?"
+                      value={keywordTopic}
+                      onChange={(e) => setKeywordTopic(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Niche (Optional)</label>
+                    <Input
+                      data-testid="input-keyword-niche"
+                      placeholder="e.g., Tech, Gaming, Lifestyle..."
+                      value={keywordNiche}
+                      onChange={(e) => setKeywordNiche(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    data-testid="button-generate-keywords"
+                    onClick={handleGenerateKeywords}
+                    disabled={keywordsLoading || !keywordTopic}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {keywordsLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating Keywords with AI...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate Keywords
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {generatedKeywords.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    <div>
+                      <h4 className="font-semibold mb-4">Optimized Keywords ({generatedKeywords.length})</h4>
+                      <div className="space-y-2">
+                        {generatedKeywords.map((kw, idx) => (
+                          <div key={idx} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <span className="font-medium">{kw.keyword}</span>
+                                  <Badge className={getDifficultyColor(kw.difficulty)}>
+                                    {kw.difficulty}
+                                  </Badge>
+                                  <Badge variant="outline">{kw.competition} competition</Badge>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <span>Relevance: {kw.relevance}/10</span>
+                                  <span>~{kw.estimatedSearches.toLocaleString()} searches/month</span>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => copyToClipboard(kw.keyword)}
+                                data-testid={`button-copy-keyword-${idx}`}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {trendingTags.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-4">Trending Tags in Niche</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {trendingTags.map((tag, idx) => (
+                            <Badge
+                              key={idx}
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-orange-500/20"
+                              onClick={() => copyToClipboard(tag)}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
               </Card>
             </TabsContent>
 
-            <TabsContent value="scraping">
-              <Card className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-                  <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
-                    <Database className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
+            {/* TITLE ANALYZER TAB */}
+            <TabsContent value="title">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <FileText className="h-8 w-8 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl md:text-2xl font-semibold">Scraping Tools</h3>
-                    <p className="text-sm md:text-base text-muted-foreground">
-                      Analyze competitors and track trends
+                    <h3 className="text-2xl font-semibold">Title Analyzer</h3>
+                    <p className="text-muted-foreground">
+                      Optimize your video title for maximum clicks and SEO
                     </p>
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-4">Competitor Analysis</h4>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Video Title *</label>
                     <Input
-                      placeholder="Enter channel URL..."
-                      className="mb-4"
+                      data-testid="input-title-analyze"
+                      placeholder="Enter your video title..."
+                      value={titleToAnalyze}
+                      onChange={(e) => setTitleToAnalyze(e.target.value)}
                     />
-                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                      Analyze Channel
-                    </Button>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {titleToAnalyze.length} characters (ideal: 50-70)
+                    </p>
                   </div>
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-4">Trend Tracking</h4>
-                    <div className="space-y-4">
-                      <Button variant="outline" className="w-full justify-start">
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        Track Hashtags
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Search className="mr-2 h-4 w-4" />
-                        Find Keywords
-                      </Button>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Niche (Optional)</label>
+                    <Input
+                      data-testid="input-title-niche"
+                      placeholder="e.g., Gaming, Tech, Cooking..."
+                      value={titleNiche}
+                      onChange={(e) => setTitleNiche(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    data-testid="button-analyze-title"
+                    onClick={handleAnalyzeTitle}
+                    disabled={titleLoading || !titleToAnalyze}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {titleLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing Title...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Analyze Title
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {titleResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    <div className="grid md:grid-cols-4 gap-4">
+                      <div className="text-center p-4 border rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Overall Score</p>
+                        <p className={`text-3xl font-bold ${getScoreColor(titleResult.score)}`}>
+                          {titleResult.score}
+                        </p>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">CTR Score</p>
+                        <p className={`text-3xl font-bold ${getScoreColor(titleResult.ctrScore)}`}>
+                          {titleResult.ctrScore}
+                        </p>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">SEO Score</p>
+                        <p className={`text-3xl font-bold ${getScoreColor(titleResult.seoScore)}`}>
+                          {titleResult.seoScore}
+                        </p>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <p className="text-sm text-muted-foreground mb-1">Emotional</p>
+                        <p className={`text-3xl font-bold ${getScoreColor(titleResult.emotionalScore)}`}>
+                          {titleResult.emotionalScore}
+                        </p>
+                      </div>
                     </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <h5 className="font-semibold mb-2 text-green-500">What Works</h5>
+                        <ul className="space-y-1">
+                          {titleResult.strengths.map((str, idx) => (
+                            <li key={idx} className="text-sm flex items-start gap-2">
+                              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                              {str}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h5 className="font-semibold mb-2 text-yellow-500">Needs Improvement</h5>
+                        <ul className="space-y-1">
+                          {titleResult.issues.map((issue, idx) => (
+                            <li key={idx} className="text-sm flex items-start gap-2">
+                              <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                              {issue}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h5 className="font-semibold mb-2">Suggestions</h5>
+                      <div className="space-y-2">
+                        {titleResult.suggestions.map((sug, idx) => (
+                          <div key={idx} className="p-3 bg-muted rounded-lg text-sm">
+                            {sug}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h5 className="font-semibold mb-2">Alternative Titles</h5>
+                      <div className="space-y-2">
+                        {titleResult.improvedTitles.map((title, idx) => (
+                          <div key={idx} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <span className="flex-1">{title}</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => copyToClipboard(title)}
+                                data-testid={`button-copy-title-${idx}`}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* CONTENT IDEAS TAB */}
+            <TabsContent value="content">
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-orange-500/10 rounded-lg">
+                    <Lightbulb className="h-8 w-8 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold">Content Ideas Generator</h3>
+                    <p className="text-muted-foreground">
+                      Discover untapped video opportunities in your niche
+                    </p>
                   </div>
                 </div>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Niche *</label>
+                    <Input
+                      data-testid="input-content-niche"
+                      placeholder="e.g., Tech Tutorials, Cooking, Fitness..."
+                      value={contentNiche}
+                      onChange={(e) => setContentNiche(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Number of Ideas</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={contentIdeasCount}
+                      onChange={(e) => setContentIdeasCount(parseInt(e.target.value) || 5)}
+                    />
+                  </div>
+                  <Button
+                    data-testid="button-generate-content-ideas"
+                    onClick={handleGenerateContentIdeas}
+                    disabled={contentLoading || !contentNiche}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {contentLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing Content Gaps...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate Video Ideas
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {videoIdeas.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    {contentGaps.length > 0 && (
+                      <div className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-lg">
+                        <h5 className="font-semibold mb-2 text-orange-500">Content Gaps Discovered</h5>
+                        <div className="space-y-1">
+                          {contentGaps.map((gap, idx) => (
+                            <p key={idx} className="text-sm">• {gap}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {trendingSubtopics.length > 0 && (
+                      <div>
+                        <h5 className="font-semibold mb-2">Trending Subtopics</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {trendingSubtopics.map((topic, idx) => (
+                            <Badge key={idx} variant="secondary">
+                              {topic}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <h5 className="font-semibold mb-4">Video Ideas ({videoIdeas.length})</h5>
+                      <div className="space-y-4">
+                        {videoIdeas.map((idea, idx) => (
+                          <div key={idx} className="p-6 border rounded-lg hover:bg-muted/50 transition-colors">
+                            <div className="flex items-start justify-between mb-3">
+                              <h6 className="font-semibold text-lg flex-1">{idea.title}</h6>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => copyToClipboard(idea.title)}
+                                data-testid={`button-copy-idea-${idx}`}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-4">{idea.description}</p>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              <Badge className={getDifficultyColor(idea.difficulty)}>
+                                {idea.difficulty}
+                              </Badge>
+                              <Badge variant="outline">
+                                <TrendingUp className="w-3 h-3 mr-1" />
+                                ~{idea.estimatedViews.toLocaleString()} views
+                              </Badge>
+                            </div>
+                            <div className="text-sm">
+                              <p className="text-muted-foreground mb-1">
+                                <span className="font-medium">Target Audience:</span> {idea.targetAudience}
+                              </p>
+                              <p className="text-muted-foreground mb-2">
+                                <span className="font-medium">Opening Hook:</span> "{idea.hook}"
+                              </p>
+                              <p className="font-medium mb-1">Keywords:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {idea.keywords.map((kw, kidx) => (
+                                  <Badge key={kidx} variant="secondary" className="text-xs">
+                                    {kw}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </Card>
             </TabsContent>
           </Tabs>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <Card className="p-4 md:p-6 backdrop-blur-sm border-orange-500/10">
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-xl md:text-2xl font-bold mb-4 bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                  Start Growing Your Views
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground">
-                  Enter your video details and desired view count to begin
-                </p>
-              </div>
-
-              <div className="grid gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="video-url" className="text-sm font-medium">
-                    Video URL
-                  </label>
-                  <div className="relative">
-                    <Input
-                      id="video-url"
-                      placeholder="https://youtube.com/watch?v=..."
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      className="bg-background/50 border-orange-500/10 focus:border-orange-500 pl-10"
-                    />
-                    <SiYoutube className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 h-4 w-4" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="desired-views" className="text-sm font-medium">
-                    Desired Views
-                  </label>
-                  <div className="relative">
-                    <Input
-                      id="desired-views"
-                      type="number"
-                      min="1000"
-                      step="1000"
-                      value={desiredViews}
-                      onChange={(e) => setDesiredViews(parseInt(e.target.value))}
-                      className="bg-background/50 border-orange-500/10 focus:border-orange-500"
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                      Views
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <PackageCheck className="h-4 w-4" />
-                    Minimum: 1,000 views
-                  </p>
-                </div>
-
-                <div className="p-4 bg-orange-500/5 rounded-lg border border-orange-500/10">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">Estimated Price</span>
-                    <span className="text-2xl font-bold">${currentPrice}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Based on {desiredViews.toLocaleString()} views at ${(currentPrice / desiredViews).toFixed(3)} per view
-                  </p>
-                </div>
-
-                {isProcessing ? (
-                  <div className="space-y-4">
-                    <div className="h-2 bg-orange-500/20 rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full bg-orange-500"
-                        initial={{ width: "0%" }}
-                        animate={{ width: `${(processingStep / 3) * 100}%` }}
-                        transition={{ duration: 0.5 }}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-orange-500/20 flex items-center justify-center">
-                        {processingStep < 3 ? (
-                          <Loader2 className="h-4 w-4 text-orange-500 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="h-4 w-4 text-orange-500" />
-                        )}
-                      </div>
-                      <p className="text-sm font-medium">
-                        {getStepMessage(processingStep)}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={startViewsProcess}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-lg h-12"
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    Start Process
-                  </Button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 pt-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Secure</p>
-                    <p className="text-xs text-muted-foreground">SSL Protected</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Fast Delivery</p>
-                    <p className="text-xs text-muted-foreground">24-72 hours</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Support</p>
-                    <p className="text-xs text-muted-foreground">24/7 Available</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        {apifyData && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card className="p-4 md:p-6 backdrop-blur-sm border-orange-500/10">
-              <div className="space-y-4">
-                <h3 className="text-lg md:text-xl font-semibold">Process Status</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Generated Views</p>
-                    <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                      {apifyData.stats.viewsGenerated.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Remaining Views</p>
-                    <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-500/70 bg-clip-text text-transparent">
-                      {apifyData.stats.remainingViews.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="pt-4">
-                  <div className="flex items-center gap-2 text-sm md:text-base">
-                    <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-orange-500" />
-                    <span>Status: {apifyData.status}</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        )}
       </main>
     </div>
   );
