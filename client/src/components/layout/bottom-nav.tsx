@@ -108,6 +108,12 @@ export function BottomNav() {
       href: profileHref,
       plan: "free"
     },
+    {
+      title: "My Artist",
+      icon: Mic,
+      href: "/my-artist",
+      plan: "free"
+    },
   ];
 
   // Listen for radio toggle event

@@ -102,6 +102,12 @@ export function Header() {
 
             {user ? (
               <div className="flex items-center space-x-4">
+                <Link href="/my-artist">
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <UserCircle className="h-4 w-4" />
+                    My Artist
+                  </Button>
+                </Link>
                 <Link href="/dashboard">
                   <Button variant="outline" size="sm" className="gap-1">
                     <UserCircle className="h-4 w-4" />
