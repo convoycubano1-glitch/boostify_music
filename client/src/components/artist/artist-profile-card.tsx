@@ -39,7 +39,8 @@ import {
   Megaphone,
   Crown,
   Zap,
-  Film
+  Film,
+  Bot
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
