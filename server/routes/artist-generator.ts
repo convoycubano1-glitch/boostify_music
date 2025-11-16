@@ -2,7 +2,7 @@
  * Rutas para la generación de artistas aleatorios
  */
 import { Router, Request, Response } from 'express';
-import { authenticate } from '../middleware/auth';
+import { isAuthenticated } from '../replitAuth';
 import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
@@ -15,7 +15,7 @@ const router = Router();
 /**
  * Endpoint para obtener todos los artistas creados por un usuario
  */
-router.get("/my-artists", authenticate, async (req: Request, res: Response) => {
+router.get("/my-artists", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     
@@ -215,7 +215,7 @@ router.post("/generate-artist", async (req: Request, res: Response) => {
  * Endpoint para generar un artista aleatorio (requiere autenticación)
  * Versión protegida del endpoint anterior
  */
-router.post("/generate-artist/secure", authenticate, async (req: Request, res: Response) => {
+router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res: Response) => {
   try {
     console.log('Recibida solicitud autenticada para generar artista aleatorio');
 

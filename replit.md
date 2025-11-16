@@ -5,6 +5,36 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 **URL de Producción**: https://boostify.replit.app
 
+## ⚠️ AUTHENTICATION ARCHITECTURE
+
+**IMPORTANTE**: Este proyecto usa **Replit Auth** (OpenID Connect), NO Firebase Auth.
+
+### Middleware Correcto por Caso de Uso:
+1. **Para endpoints de autenticación de usuario** → Use `isAuthenticated` de `server/replitAuth.ts`
+   - Ejemplo: `/api/artist-generator/my-artists`
+   - Este middleware verifica sesiones de Replit Auth
+   - `req.user.id` contiene el user ID (número)
+
+2. **Para endpoints que necesitan validación Firebase** → Use `authenticate` de `server/middleware/auth.ts`
+   - Solo para casos específicos donde se valida token Firebase
+   - `req.user.uid` contiene el Firebase UID (string)
+
+### User Object Structure (Replit Auth):
+```typescript
+req.user = {
+  id: number,           // PostgreSQL user ID
+  replitId: string,     // Replit user ID
+  email: string,
+  firstName: string,
+  lastName: string,
+  role: string
+}
+```
+
+### Bug Fix Pattern - November 16, 2024:
+❌ **INCORRECTO**: `import { authenticate } from '../middleware/auth'`
+✅ **CORRECTO**: `import { isAuthenticated } from '../replitAuth'`
+
 ## Recent Changes (November 2024)
 
 ### 🎵 Sistema de Tokenización de Música Web3/Blockchain (LATEST)
