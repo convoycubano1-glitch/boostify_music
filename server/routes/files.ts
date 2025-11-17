@@ -30,7 +30,7 @@ export function setupFilesRoutes(app: Express) {
       }
       
       // Convertir los documentos a objetos con el formato esperado
-      const videos = querySnapshot.docs.map(doc => {
+      const videos = querySnapshot.docs.map((doc: any) => {
         const data = doc.data();
         
         return {

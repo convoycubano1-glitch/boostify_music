@@ -27,7 +27,7 @@ import { useAuth } from "../hooks/use-auth";
 import { Skeleton } from "../components/ui/skeleton";
 import { Badge } from "../components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip";
-import { Dialog, DialogContent } from "../components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
 
 interface VideoContent {
   id: string;
@@ -106,6 +106,7 @@ function VideoPlayer({ video, isOpen, onClose, onNext, onPrevious }: VideoPlayer
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl w-full p-0 bg-black border-0">
+        <DialogTitle className="sr-only">{video.title}</DialogTitle>
         <div 
           className="relative w-full h-[90vh] bg-black group"
           onMouseEnter={() => setShowControls(true)}
