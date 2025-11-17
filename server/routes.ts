@@ -5,6 +5,7 @@ import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { setupOpenAIRoutes } from "./routes/openai";
 import { setupEducationRoutes } from "./routes/education";
+import educationProgressiveRouter from "./routes/education-progressive";
 import { setupFilesRoutes } from "./routes/files";
 import stripeRouter from "./routes/stripe";
 import { setupVideosRoutes } from "./routes/videos";
@@ -246,6 +247,7 @@ export function registerRoutes(app: Express): HttpServer {
   // Configurar las rutas que NO requieren autenticación primero
   setupOpenAIRoutes(app);
   setupEducationRoutes(app);
+  app.use(educationProgressiveRouter);
   setupFilesRoutes(app);
 
   // Register generated artists routes (no authentication required)
