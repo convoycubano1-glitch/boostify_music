@@ -44,7 +44,8 @@ export default function CourseDetailPage() {
 
   const enrollMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/education/enroll/${courseId}`, {
+      return apiRequest({
+        url: `/api/education/enroll/${courseId}`,
         method: "POST"
       });
     },
@@ -67,7 +68,8 @@ export default function CourseDetailPage() {
 
   const completeLessonMutation = useMutation({
     mutationFn: async (lessonId: number) => {
-      return apiRequest(`/api/education/lessons/${lessonId}/complete`, {
+      return apiRequest({
+        url: `/api/education/lessons/${lessonId}/complete`,
         method: "POST"
       });
     },
@@ -91,6 +93,8 @@ export default function CourseDetailPage() {
     );
   }
 
+  const courseData: any = course || {};
+  
   if (!course) {
     return (
       <div className="min-h-screen bg-background">
@@ -106,19 +110,22 @@ export default function CourseDetailPage() {
     );
   }
 
-  const completedLessons = progress.filter((p: any) => p.completed).length;
-  const totalLessons = lessons.length;
+  const progressData = (progress as any[]) || [];
+  const lessonsData = (lessons as any[]) || [];
+  
+  const completedLessons = progressData.filter((p: any) => p.completed).length;
+  const totalLessons = lessonsData.length;
   const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
 
   const isLessonUnlocked = (lesson: any) => {
     if (!enrollment) return false;
     
-    const lessonProgress = progress.find((p: any) => p.lessonId === lesson.id);
+    const lessonProgress = progressData.find((p: any) => p.lessonId === lesson.id);
     return lessonProgress?.isUnlocked || false;
   };
 
   const isLessonCompleted = (lessonId: number) => {
-    return progress.some((p: any) => p.lessonId === lessonId && p.completed);
+    return progressData.some((p: any) => p.lessonId === lessonId && p.completed);
   };
 
   return (
@@ -142,16 +149,16 @@ export default function CourseDetailPage() {
               <div className="flex items-start gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge>{course.level}</Badge>
-                    {course.isAIGenerated && (
+                    <Badge>{courseData.level}</Badge>
+                    {courseData.isAIGenerated && (
                       <Badge variant="outline" className="gap-1">
                         <Sparkles className="w-3 h-3" />
                         AI Generated
                       </Badge>
                     )}
                   </div>
-                  <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
-                  <p className="text-lg text-muted-foreground">{course.description}</p>
+                  <h1 className="text-4xl font-bold mb-4">{courseData.title}</h1>
+                  <p className="text-lg text-muted-foreground">{courseData.description}</p>
                 </div>
               </div>
 
@@ -162,11 +169,11 @@ export default function CourseDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  <span>{course.duration}</span>
+                  <span>{courseData.duration}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <GraduationCap className="w-4 h-4" />
-                  <span>{course.category}</span>
+                  <span>{courseData.category}</span>
                 </div>
               </div>
             </div>
@@ -175,7 +182,7 @@ export default function CourseDetailPage() {
               <div className="space-y-4">
                 <div>
                   <div className="text-3xl font-bold text-primary mb-2">
-                    {parseFloat(course.price) === 0 ? 'Free' : `$${parseFloat(course.price).toFixed(2)}`}
+                    {parseFloat(courseData.price || '0') === 0 ? 'Free' : `$${parseFloat(courseData.price).toFixed(2)}`}
                   </div>
                   {enrollment ? (
                     <div className="space-y-3">
@@ -226,7 +233,7 @@ export default function CourseDetailPage() {
           </TabsList>
 
           <TabsContent value="curriculum" className="space-y-4">
-            {lessons.length === 0 ? (
+            {lessonsData.length === 0 ? (
               <Card className="p-8 text-center">
                 <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
@@ -234,7 +241,7 @@ export default function CourseDetailPage() {
                 </p>
               </Card>
             ) : (
-              lessons.map((lesson: any, index: number) => {
+              lessonsData.map((lesson: any, index: number) => {
                 const unlocked = isLessonUnlocked(lesson);
                 const completed = isLessonCompleted(lesson.id);
 
@@ -306,7 +313,7 @@ export default function CourseDetailPage() {
             <Card className="p-6">
               <h3 className="text-xl font-semibold mb-4">About This Course</h3>
               <p className="text-muted-foreground leading-relaxed">
-                {course.description}
+                {courseData.description}
               </p>
               <div className="mt-6 space-y-4">
                 <div>
@@ -314,7 +321,7 @@ export default function CourseDetailPage() {
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span>Comprehensive coverage of {course.category}</span>
+                      <span>Comprehensive coverage of {courseData.category}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />

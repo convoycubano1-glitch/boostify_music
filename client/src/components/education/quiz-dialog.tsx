@@ -34,16 +34,21 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
     enabled: !!lessonId
   });
 
+  const quizData: any = quiz || {};
+
   const { data: questions = [] } = useQuery({
-    queryKey: ["/api/education/quiz-questions", quiz?.id],
-    enabled: !!quiz?.id
+    queryKey: ["/api/education/quiz-questions", quizData.id],
+    enabled: !!quizData.id
   });
+
+  const questionsData = (questions as any[]) || [];
 
   const submitQuizMutation = useMutation({
     mutationFn: async (data: { quizId: number; answers: Record<number, number> }) => {
-      return apiRequest("/api/education/submit-quiz", {
+      return apiRequest({
+        url: "/api/education/submit-quiz",
         method: "POST",
-        body: JSON.stringify(data)
+        body: data
       });
     },
     onSuccess: (result) => {
@@ -66,7 +71,7 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
     }
   });
 
-  if (isLoading || !quiz) {
+  if (isLoading || !quizData.id) {
     return (
       <Dialog open={true} onOpenChange={onClose}>
         <DialogContent>
@@ -78,7 +83,7 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
     );
   }
 
-  if (questions.length === 0) {
+  if (questionsData.length === 0) {
     return (
       <Dialog open={true} onOpenChange={onClose}>
         <DialogContent>
@@ -96,15 +101,15 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
     );
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const currentQuestion = questionsData[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questionsData.length) * 100;
 
   const handleAnswerSelect = (questionId: number, optionIndex: number) => {
     setAnswers(prev => ({ ...prev, [questionId]: optionIndex }));
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
+    if (currentQuestionIndex < questionsData.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -116,7 +121,7 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
   };
 
   const handleSubmit = () => {
-    if (Object.keys(answers).length < questions.length) {
+    if (Object.keys(answers).length < questionsData.length) {
       toast({
         title: "Incomplete Quiz",
         description: "Please answer all questions before submitting",
@@ -126,13 +131,13 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
     }
 
     submitQuizMutation.mutate({
-      quizId: quiz.id,
+      quizId: quizData.id,
       answers
     });
   };
 
   if (showResults) {
-    const passed = score >= (quiz.passingScore || 70);
+    const passed = score >= (quizData.passingScore || 70);
     
     return (
       <Dialog open={true} onOpenChange={onClose}>
@@ -174,7 +179,7 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
                 ) : (
                   <span className="flex items-center gap-2">
                     <XCircle className="w-4 h-4 text-orange-500" />
-                    Passing score: {quiz.passingScore || 70}%
+                    Passing score: {quizData.passingScore || 70}%
                   </span>
                 )}
               </div>
@@ -212,7 +217,7 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
             <DialogTitle>Lesson Quiz</DialogTitle>
           </div>
           <DialogDescription>
-            Question {currentQuestionIndex + 1} of {questions.length}
+            Question {currentQuestionIndex + 1} of {questionsData.length}
           </DialogDescription>
           <Progress value={progress} className="mt-2" />
         </DialogHeader>
@@ -252,7 +257,7 @@ export function QuizDialog({ lessonId, courseId, onClose }: QuizDialogProps) {
           </Button>
 
           <div className="flex gap-2">
-            {currentQuestionIndex === questions.length - 1 ? (
+            {currentQuestionIndex === questionsData.length - 1 ? (
               <Button
                 onClick={handleSubmit}
                 disabled={submitQuizMutation.isPending}
