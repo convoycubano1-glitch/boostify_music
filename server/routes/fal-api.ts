@@ -298,8 +298,10 @@ router.get('/minimax-music/:requestId', async (req: Request, res: Response) => {
     const { requestId } = req.params;
 
     // Check status first
+    console.log(`🔍 [FAL-BACKEND] Checking status for: ${requestId}`);
+    
     const statusResponse = await fetch(
-      `https://queue.fal.run/fal-ai/minimax-music/v2/requests/${requestId}/status`,
+      `https://queue.fal.run/fal-ai/minimax-music/requests/${requestId}/status`,
       {
         headers: {
           'Authorization': `Key ${FAL_API_KEY}`
@@ -308,18 +310,23 @@ router.get('/minimax-music/:requestId', async (req: Request, res: Response) => {
     );
 
     if (!statusResponse.ok) {
+      const errorText = await statusResponse.text();
+      console.error(`❌ [FAL-BACKEND] Status check failed (${statusResponse.status}):`, errorText);
       return res.status(500).json({
         success: false,
-        error: 'Error checking music status'
+        error: 'Error checking music status',
+        details: errorText,
+        statusCode: statusResponse.status
       });
     }
 
     const statusData = await statusResponse.json();
+    console.log(`✅ [FAL-BACKEND] Status data:`, statusData);
 
     // If completed, get the result
     if (statusData.status === 'COMPLETED') {
       const resultResponse = await fetch(
-        `https://queue.fal.run/fal-ai/minimax-music/v2/requests/${requestId}`,
+        `https://queue.fal.run/fal-ai/minimax-music/requests/${requestId}`,
         {
           headers: {
             'Authorization': `Key ${FAL_API_KEY}`
@@ -441,8 +448,10 @@ router.get('/stable-audio/:requestId', async (req: Request, res: Response) => {
     const { requestId } = req.params;
 
     // Check status first
+    console.log(`🔍 [FAL-BACKEND] Checking Stable Audio status for: ${requestId}`);
+    
     const statusResponse = await fetch(
-      `https://queue.fal.run/fal-ai/stable-audio-25/text-to-audio/requests/${requestId}/status`,
+      `https://queue.fal.run/fal-ai/stable-audio-25/requests/${requestId}/status`,
       {
         headers: {
           'Authorization': `Key ${FAL_API_KEY}`
@@ -451,18 +460,23 @@ router.get('/stable-audio/:requestId', async (req: Request, res: Response) => {
     );
 
     if (!statusResponse.ok) {
+      const errorText = await statusResponse.text();
+      console.error(`❌ [FAL-BACKEND] Stable Audio status check failed (${statusResponse.status}):`, errorText);
       return res.status(500).json({
         success: false,
-        error: 'Error checking Stable Audio status'
+        error: 'Error checking Stable Audio status',
+        details: errorText,
+        statusCode: statusResponse.status
       });
     }
 
     const statusData = await statusResponse.json();
+    console.log(`✅ [FAL-BACKEND] Stable Audio status data:`, statusData);
 
     // If completed, get the result
     if (statusData.status === 'COMPLETED') {
       const resultResponse = await fetch(
-        `https://queue.fal.run/fal-ai/stable-audio-25/text-to-audio/requests/${requestId}`,
+        `https://queue.fal.run/fal-ai/stable-audio-25/requests/${requestId}`,
         {
           headers: {
             'Authorization': `Key ${FAL_API_KEY}`
