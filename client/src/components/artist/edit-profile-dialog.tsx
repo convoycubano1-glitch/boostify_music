@@ -14,7 +14,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { useToast } from "../../hooks/use-toast";
-import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images, Newspaper } from "lucide-react";
 import { ImageGalleryGenerator } from "./image-gallery-generator";
 import { db, storage } from "../../firebase";
 import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
@@ -74,6 +74,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   const [newShow, setNewShow] = useState({ venue: '', date: '', location: '', ticketUrl: '' });
   const [isAddingShow, setIsAddingShow] = useState(false);
   const [isGeneratingProducts, setIsGeneratingProducts] = useState(false);
+  const [isGeneratingNews, setIsGeneratingNews] = useState(false);
   const [imageUpdateKey, setImageUpdateKey] = useState(0);
 
   // Actualizar formData cuando se abre el diálogo
@@ -291,6 +292,53 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       });
     } finally {
       setIsGeneratingProducts(false);
+    }
+  };
+
+  const handleGenerateNews = async () => {
+    if (!formData.displayName) {
+      toast({
+        title: "Error",
+        description: "Por favor ingresa tu nombre artístico primero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingNews(true);
+    try {
+      toast({
+        title: "Generando noticias...",
+        description: "Esto puede tomar unos momentos. Estamos creando 5 noticias únicas con IA.",
+      });
+
+      const response = await fetch(`/api/artist-generator/generate-news/${artistId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: "¡Noticias generadas!",
+          description: `Se han creado ${result.count} noticias con imágenes únicas.`,
+        });
+        
+        onUpdate();
+      } else {
+        throw new Error(result.error || 'Error generando noticias');
+      }
+    } catch (error) {
+      console.error("Error generating news:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron generar las noticias. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingNews(false);
     }
   };
 
@@ -1410,6 +1458,62 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
                     Generar Productos con IA
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Sección de Noticias con IA */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Newspaper className="h-4 w-4" />
+                  Noticias del Artista
+                </h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  Genera noticias de prensa profesionales con imágenes únicas creadas por IA
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
+              <div className="flex items-start gap-3 mb-3">
+                <Sparkles className="h-5 w-5 text-blue-400 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h5 className="text-sm font-semibold text-white mb-1">
+                    Generación Automática con IA
+                  </h5>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Crea 5 noticias profesionales (Lanzamiento, Performance, Colaboración, Logros, Lifestyle) 
+                    con imágenes únicas generadas por Gemini 2.5 Flash Image (Nano Banana).
+                  </p>
+                  <p className="text-xs text-blue-400 mt-2">
+                    📰 Contenido periodístico de alta calidad para aumentar tu presencia mediática
+                  </p>
+                </div>
+              </div>
+              
+              <Button
+                type="button"
+                onClick={handleGenerateNews}
+                disabled={isGeneratingNews || !formData.displayName}
+                className="w-full"
+                style={{ 
+                  backgroundColor: isGeneratingNews ? undefined : '#3b82f6',
+                  color: 'white'
+                }}
+              >
+                {isGeneratingNews ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando noticias e imágenes...
+                  </>
+                ) : (
+                  <>
+                    <Newspaper className="mr-2 h-4 w-4" />
+                    Generar Noticias con IA
                   </>
                 )}
               </Button>
