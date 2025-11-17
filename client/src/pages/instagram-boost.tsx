@@ -113,6 +113,12 @@ export default function InstagramBoostPage() {
   const [dateRange, setDateRange] = useState("7d");
   const [selectedMetric, setSelectedMetric] = useState("engagement");
 
+  // Apify Test States
+  const [apifyUsername, setApifyUsername] = useState("");
+  const [apifyProfileData, setApifyProfileData] = useState<any>(null);
+  const [apifyPosts, setApifyPosts] = useState<any[]>([]);
+  const [apifyLoading, setApifyLoading] = useState(false);
+
   // Get artist profile for auto-fill
   const { data: artistProfile } = useQuery({
     queryKey: ['/api/user/profile'],
@@ -384,6 +390,60 @@ export default function InstagramBoostPage() {
     toast({ title: "Copied to clipboard!" });
   };
 
+  // Apify Test Functions
+  const handleApifyProfileTest = async () => {
+    if (!apifyUsername) {
+      toast({ title: "Please enter an Instagram username", variant: "destructive" });
+      return;
+    }
+    
+    setApifyLoading(true);
+    setApifyProfileData(null);
+    setApifyPosts([]);
+    
+    try {
+      const response = await fetch(`/api/apify/instagram/profile/${apifyUsername}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setApifyProfileData(data.profile);
+        toast({ title: "Profile loaded successfully!", variant: "default" });
+      } else {
+        toast({ title: "Error loading profile", description: data.error, variant: "destructive" });
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setApifyLoading(false);
+    }
+  };
+
+  const handleApifyPostsTest = async () => {
+    if (!apifyUsername) {
+      toast({ title: "Please enter an Instagram username", variant: "destructive" });
+      return;
+    }
+    
+    setApifyLoading(true);
+    setApifyPosts([]);
+    
+    try {
+      const response = await fetch(`/api/apify/instagram/posts/${apifyUsername}?limit=12`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setApifyPosts(data.posts);
+        toast({ title: `Loaded ${data.posts.length} posts`, variant: "default" });
+      } else {
+        toast({ title: "Error loading posts", description: data.error, variant: "destructive" });
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setApifyLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -486,6 +546,14 @@ export default function InstagramBoostPage() {
                 >
                   <Brain className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                   <span className="hidden sm:inline">AI Assistant</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="apify-test" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  data-testid="tab-apify-test"
+                >
+                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Apify Test</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -1574,6 +1642,141 @@ export default function InstagramBoostPage() {
                 )}
               </div>
             </TabsContent>
+
+            {/* Apify Test Tab */}
+            <TabsContent value="apify-test" className="space-y-6">
+              <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-primary/5 border-orange-500/20">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-orange-500 flex items-center justify-center">
+                      <Zap className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black">Apify Instagram Integration Test</h2>
+                      <p className="text-sm text-muted-foreground">Test real Instagram data fetching with Apify</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter Instagram username (e.g., nasa)"
+                        value={apifyUsername}
+                        onChange={(e) => setApifyUsername(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleApifyProfileTest()}
+                        data-testid="input-apify-username"
+                      />
+                      <Button
+                        onClick={handleApifyProfileTest}
+                        disabled={apifyLoading || !apifyUsername}
+                        size="sm"
+                        data-testid="button-test-profile"
+                      >
+                        {apifyLoading ? "Loading..." : "Get Profile"}
+                      </Button>
+                      <Button
+                        onClick={handleApifyPostsTest}
+                        disabled={apifyLoading || !apifyUsername}
+                        size="sm"
+                        variant="outline"
+                        data-testid="button-test-posts"
+                      >
+                        {apifyLoading ? "Loading..." : "Get Posts"}
+                      </Button>
+                    </div>
+
+                    {apifyProfileData && (
+                      <Card className="p-6 bg-card">
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <User className="h-5 w-5 text-primary" />
+                          Profile Data
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center gap-3">
+                            {apifyProfileData.profilePicUrl && (
+                              <img 
+                                src={apifyProfileData.profilePicUrl} 
+                                alt={apifyProfileData.username}
+                                className="w-16 h-16 rounded-full"
+                              />
+                            )}
+                            <div>
+                              <p className="font-bold text-lg flex items-center gap-2">
+                                @{apifyProfileData.username}
+                                {apifyProfileData.isVerified && <BadgeCheck className="h-4 w-4 text-blue-500" />}
+                              </p>
+                              <p className="text-sm text-muted-foreground">{apifyProfileData.fullName}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                              <p className="font-bold text-xl">{apifyProfileData.postsCount.toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground">Posts</p>
+                            </div>
+                            <div>
+                              <p className="font-bold text-xl">{apifyProfileData.followersCount.toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground">Followers</p>
+                            </div>
+                            <div>
+                              <p className="font-bold text-xl">{apifyProfileData.followingCount.toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground">Following</p>
+                            </div>
+                          </div>
+                        </div>
+                        {apifyProfileData.biography && (
+                          <div className="mt-4 p-3 bg-muted/50 rounded">
+                            <p className="text-sm">{apifyProfileData.biography}</p>
+                          </div>
+                        )}
+                      </Card>
+                    )}
+
+                    {apifyPosts.length > 0 && (
+                      <Card className="p-6 bg-card">
+                        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <Image className="h-5 w-5 text-primary" />
+                          Recent Posts ({apifyPosts.length})
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {apifyPosts.map((post, idx) => (
+                            <div key={post.id || idx} className="space-y-2">
+                              <div className="aspect-square bg-muted rounded overflow-hidden">
+                                {post.displayUrl && (
+                                  <img 
+                                    src={post.displayUrl} 
+                                    alt={`Post ${idx + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                )}
+                              </div>
+                              <div className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                  <Heart className="h-3 w-3" />
+                                  <span>{post.likesCount?.toLocaleString() || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <MessageCircle className="h-3 w-3" />
+                                  <span>{post.commentsCount?.toLocaleString() || 0}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
+
+                    {!apifyProfileData && !apifyPosts.length && !apifyLoading && (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Zap className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                        <p className="font-medium">Enter an Instagram username to test Apify integration</p>
+                        <p className="text-sm mt-2">This will fetch real Instagram data using Apify scraper</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
               </Tabs>
             </TabsContent>
           </Tabs>
