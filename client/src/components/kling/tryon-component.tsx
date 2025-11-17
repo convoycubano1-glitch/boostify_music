@@ -196,7 +196,7 @@ export function VirtualTryOnComponent() {
     setIsLoading(false);
   };
 
-  // Save a successful result
+  // Save a successful result - saves to localStorage
   const handleSaveResult = async () => {
     if (!result || !result.resultImage) {
       toast({
@@ -208,19 +208,24 @@ export function VirtualTryOnComponent() {
     }
 
     try {
-      const saved = await klingService.saveResult(result);
+      // Save to localStorage
+      const savedResults = JSON.parse(localStorage.getItem('tryonResults') || '[]');
+      savedResults.push({
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        resultImage: result.resultImage,
+        modelImage,
+        clothingImage
+      });
+      localStorage.setItem('tryonResults', JSON.stringify(savedResults));
       
-      if (saved) {
-        toast({
-          title: "Guardado con éxito",
-          description: "El resultado se ha guardado en tu historial",
-        });
-        
-        // Refresh the saved results list
-        loadSavedResults();
-      } else {
-        throw new Error("Error al guardar el resultado");
-      }
+      toast({
+        title: "Guardado con éxito",
+        description: "El resultado se ha guardado en tu historial local",
+      });
+      
+      // Refresh the saved results list
+      loadSavedResults();
     } catch (error: any) {
       toast({
         title: "Error al guardar",

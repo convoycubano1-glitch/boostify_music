@@ -179,7 +179,7 @@ export function SimpleTryOnComponent() {
     document.body.removeChild(link);
   };
 
-  // Save a successful result
+  // Save a successful result - saves to localStorage
   const handleSaveResult = async () => {
     if (!result || !result.resultImage) {
       toast({
@@ -191,16 +191,21 @@ export function SimpleTryOnComponent() {
     }
 
     try {
-      const saved = await klingService.saveResult(result);
+      // Save to localStorage
+      const savedResults = JSON.parse(localStorage.getItem('tryonResults') || '[]');
+      savedResults.push({
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        resultImage: result.resultImage,
+        modelImage,
+        clothingImage
+      });
+      localStorage.setItem('tryonResults', JSON.stringify(savedResults));
       
-      if (saved) {
-        toast({
-          title: "Saved successfully",
-          description: "The try-on result has been saved to your history",
-        });
-      } else {
-        throw new Error("Failed to save the result");
-      }
+      toast({
+        title: "Saved successfully",
+        description: "The try-on result has been saved to your local history",
+      });
     } catch (error: any) {
       toast({
         title: "Save failed",
