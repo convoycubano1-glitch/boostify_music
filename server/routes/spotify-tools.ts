@@ -1044,4 +1044,103 @@ Return JSON:
   }
 });
 
+/**
+ * SEND PITCH TO CURATOR VIA WEBHOOK
+ * Sends pitch data to Make.com webhook for automated delivery
+ */
+router.post('/curators/send-pitch', authenticate, async (req: Request, res: Response) => {
+  try {
+    const user = req.session?.user || req.user;
+    const userId = user?.id || user?.replitId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const { 
+      curatorId,
+      pitch,
+      curatorEmail,
+      curatorInstagram,
+      curatorTwitter,
+      curatorName
+    } = req.body;
+    
+    if (!curatorId || !pitch) {
+      return res.status(400).json({ error: 'Curator ID and pitch data are required' });
+    }
+    
+    // Webhook URL de Make.com
+    const webhookUrl = 'https://hook.us2.make.com/x2jtmaywnhmnqovpbt2hoc98e7qff6na';
+    
+    // Preparar payload para el webhook
+    const payload = {
+      // User info
+      userId,
+      userEmail: user?.email || '',
+      userName: user?.firstName && user?.lastName 
+        ? `${user.firstName} ${user.lastName}` 
+        : user?.username || 'Artist',
+      
+      // Curator info
+      curatorId,
+      curatorName,
+      curatorEmail: curatorEmail || '',
+      curatorInstagram: curatorInstagram || '',
+      curatorTwitter: curatorTwitter || '',
+      
+      // Pitch content
+      subjectLine: pitch.subjectLine || '',
+      emailBody: pitch.emailBody || '',
+      callToAction: pitch.callToAction || '',
+      followUpTiming: pitch.followUpTiming || '',
+      
+      // Metadata
+      timestamp: new Date().toISOString(),
+      source: 'boostify-spotify-tools'
+    };
+    
+    // Enviar al webhook
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Webhook returned status ${response.status}`);
+    }
+    
+    // Marcar curator como contactado en la DB
+    await db
+      .update(spotifyCurators)
+      .set({ 
+        contacted: true,
+        contactedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(spotifyCurators.id, curatorId),
+        eq(spotifyCurators.userId, userId)
+      ));
+    
+    console.log(`✅ [PITCH SEND] Sent pitch to webhook for curator ${curatorId}`);
+    
+    res.json({
+      success: true,
+      message: 'Pitch sent successfully to automation system',
+      webhookStatus: 'delivered'
+    });
+    
+  } catch (error) {
+    console.error('Error sending pitch to webhook:', error);
+    res.status(500).json({ 
+      error: 'Failed to send pitch',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;

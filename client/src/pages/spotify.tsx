@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Badge } from "../components/ui/badge";
 import { Music2, Target, ListMusic, Mail, Search, TrendingUp, Sparkles, Copy, Check, Home } from "lucide-react";
 import { useAuth } from "../hooks/use-auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "../hooks/use-toast";
 import { motion } from "framer-motion";
 import { SiSpotify } from "react-icons/si";
@@ -39,6 +39,17 @@ export default function SpotifyPage() {
   const [curatorArtist, setCuratorArtist] = useState("");
   const [trackDescription, setTrackDescription] = useState("");
   const [curatorData, setCuratorData] = useState<any>(null);
+  const [curatorSubTab, setCuratorSubTab] = useState("search"); // "search" or "saved"
+  
+  // Pitch Generation
+  const [showPitchModal, setShowPitchModal] = useState(false);
+  const [selectedCurator, setSelectedCurator] = useState<any>(null);
+  const [pitchData, setPitchData] = useState<any>(null);
+  const [pitchArtistName, setPitchArtistName] = useState("");
+  const [pitchArtistBio, setPitchArtistBio] = useState("");
+  const [pitchSpotifyUrl, setPitchSpotifyUrl] = useState("");
+  const [pitchInstagramUrl, setPitchInstagramUrl] = useState("");
+  const [pitchYoutubeUrl, setPitchYoutubeUrl] = useState("");
 
   // Tab 4: SEO Optimizer
   const [seoType, setSeoType] = useState("track_title");
@@ -178,6 +189,124 @@ export default function SpotifyPage() {
       });
     }
   });
+
+  // Query: Get Saved Curators
+  const { data: savedCurators, refetch: refetchCurators } = useQuery({
+    queryKey: ['/api/spotify/curators/my-list'],
+    enabled: !!user && curatorSubTab === 'saved'
+  });
+
+  // Query: Get Artist Profile (for pre-filling pitch form)
+  const { data: artistProfile } = useQuery({
+    queryKey: ['/api/user/profile'],
+    enabled: !!user
+  });
+
+  // Mutation: Save Curator
+  const saveCuratorMutation = useMutation({
+    mutationFn: async (curator: any) => {
+      const response = await fetch('/api/spotify/curators/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(curator)
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save curator');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchCurators();
+      toast({
+        title: "✅ Curator Saved",
+        description: "Curator added to your favorites",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save curator",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Mutation: Generate Pitch
+  const generatePitchMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/spotify/curators/generate-pitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate pitch');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setPitchData(data.pitch);
+      toast({
+        title: "✅ Pitch Generated",
+        description: "AI has created a personalized pitch for you",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate pitch",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Mutation: Send Pitch to Webhook
+  const sendPitchMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/spotify/curators/send-pitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send pitch');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchCurators();
+      setShowPitchModal(false);
+      setPitchData(null);
+      toast({
+        title: "✅ Pitch Sent!",
+        description: "Your pitch has been sent to the curator",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send pitch",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Auto-fill pitch form with artist profile data when modal opens
+  useEffect(() => {
+    if (showPitchModal && artistProfile) {
+      setPitchArtistName(artistProfile.artistName || '');
+      setPitchArtistBio(artistProfile.biography || '');
+      setPitchSpotifyUrl(artistProfile.spotifyUrl || '');
+      setPitchInstagramUrl(artistProfile.instagramHandle ? `https://instagram.com/${artistProfile.instagramHandle}` : '');
+      setPitchYoutubeUrl(artistProfile.youtubeChannel || '');
+    }
+  }, [showPitchModal, artistProfile]);
 
   const handlePrediction = () => {
     if (!artistUrl || !currentListeners || !targetListeners) {
@@ -539,106 +668,158 @@ export default function SpotifyPage() {
               </div>
             </TabsContent>
 
-            {/* TAB 3: Curator Finder */}
+            {/* TAB 3: Curator Finder & Management */}
             <TabsContent value="curators" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Mail className="h-5 w-5 text-green-500" />
-                      <h3 className="text-lg font-semibold">Find Curators</h3>
-                    </div>
-                    <Input
-                      placeholder="Genre"
-                      value={curatorGenre}
-                      onChange={(e) => setCuratorGenre(e.target.value)}
-                      data-testid="input-curator-genre"
-                    />
-                    <Input
-                      placeholder="Track Name"
-                      value={curatorTrackName}
-                      onChange={(e) => setCuratorTrackName(e.target.value)}
-                      data-testid="input-curator-track"
-                    />
-                    <Input
-                      placeholder="Artist Name"
-                      value={curatorArtist}
-                      onChange={(e) => setCuratorArtist(e.target.value)}
-                      data-testid="input-curator-artist"
-                    />
-                    <Input
-                      placeholder="Track Description (Optional)"
-                      value={trackDescription}
-                      onChange={(e) => setTrackDescription(e.target.value)}
-                      data-testid="input-track-description"
-                    />
-                    <Button
-                      className="w-full bg-green-500 hover:bg-green-600"
-                      onClick={handleCuratorFinder}
-                      disabled={curatorFinderMutation.isPending}
-                      data-testid="button-find-curators"
-                    >
-                      {curatorFinderMutation.isPending ? (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                          Finding Curators...
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="w-4 h-4 mr-2" />
-                          Find Curators
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </Card>
+              {/* Sub-tabs */}
+              <div className="flex gap-2 border-b">
+                <Button
+                  variant={curatorSubTab === 'search' ? 'default' : 'ghost'}
+                  onClick={() => setCuratorSubTab('search')}
+                  className="rounded-b-none"
+                >
+                  Search Curators
+                </Button>
+                <Button
+                  variant={curatorSubTab === 'saved' ? 'default' : 'ghost'}
+                  onClick={() => setCuratorSubTab('saved')}
+                  className="rounded-b-none"
+                >
+                  My Saved Curators ({savedCurators?.total || 0})
+                </Button>
+              </div>
 
-                {/* Curator Results */}
-                {curatorData && (
-                  <Card className="p-6 max-h-[600px] overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4" data-testid="curator-results-title">
-                      Curator Profiles ({curatorData.curatorData?.curatorProfiles?.length || 0})
-                    </h3>
+              {/* Search Sub-tab */}
+              {curatorSubTab === 'search' && (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <Card className="p-6">
                     <div className="space-y-4">
-                      {curatorData.curatorData?.curatorProfiles?.map((curator: any, idx: number) => (
-                        <div key={idx} className="p-4 bg-background rounded border">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <p className="font-medium">{curator.curatorType}</p>
-                              <p className="text-sm text-muted-foreground">{curator.playlistFocus}</p>
-                            </div>
-                          </div>
-                          <div className="space-y-2 mt-3">
-                            <div>
-                              <p className="text-xs font-medium text-muted-foreground mb-1">Pitch Template:</p>
-                              <div className="relative">
-                                <p className="text-sm p-3 bg-green-500/5 rounded border text-muted-foreground">
-                                  {curator.pitchTemplate?.substring(0, 150)}...
-                                </p>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="absolute top-1 right-1"
-                                  onClick={() => copyToClipboard(curator.pitchTemplate, `curator-${idx}`)}
-                                >
-                                  {copiedId === `curator-${idx}` ? (
-                                    <Check className="w-4 h-4 text-green-500" />
-                                  ) : (
-                                    <Copy className="w-4 h-4" />
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-xs">
-                              <span className="font-medium">Subject:</span> {curator.subjectLine}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                      <div className="flex items-center gap-2 mb-4">
+                        <Mail className="h-5 w-5 text-green-500" />
+                        <h3 className="text-lg font-semibold">Find Curators</h3>
+                      </div>
+                      <Input placeholder="Genre" value={curatorGenre} onChange={(e) => setCuratorGenre(e.target.value)} />
+                      <Input placeholder="Track Name" value={curatorTrackName} onChange={(e) => setCuratorTrackName(e.target.value)} />
+                      <Input placeholder="Artist Name" value={curatorArtist} onChange={(e) => setCuratorArtist(e.target.value)} />
+                      <Input placeholder="Track Description (Optional)" value={trackDescription} onChange={(e) => setTrackDescription(e.target.value)} />
+                      <Button className="w-full bg-green-500 hover:bg-green-600" onClick={handleCuratorFinder} disabled={curatorFinderMutation.isPending}>
+                        {curatorFinderMutation.isPending ? <><Sparkles className="w-4 h-4 mr-2 animate-spin" />Finding...</> : <><Mail className="w-4 h-4 mr-2" />Find Curators</>}
+                      </Button>
                     </div>
                   </Card>
-                )}
-              </div>
+
+                  {curatorData && (
+                    <Card className="p-6 max-h-[600px] overflow-y-auto">
+                      <h3 className="text-lg font-semibold mb-4">Found {curatorData.curatorData?.curatorProfiles?.length || 0} Curators</h3>
+                      <div className="space-y-4">
+                        {curatorData.curatorData?.curatorProfiles?.map((curator: any, idx: number) => (
+                          <div key={idx} className="p-4 bg-background rounded border">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <p className="font-medium">{curator.curatorName || curator.curatorType}</p>
+                                <p className="text-sm text-muted-foreground">{curator.playlistFocus}</p>
+                                {curator.playlistName && <p className="text-xs text-green-500">📋 {curator.playlistName}</p>}
+                              </div>
+                              <Button size="sm" variant="outline" onClick={() => saveCuratorMutation.mutate({ ...curator, genre: curatorGenre })} disabled={saveCuratorMutation.isPending}>
+                                💾 Save
+                              </Button>
+                            </div>
+                            {(curator.email || curator.instagram || curator.twitter) && (
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {curator.email && <Badge variant="secondary" className="text-xs">📧 {curator.email}</Badge>}
+                                {curator.instagram && <Badge variant="secondary" className="text-xs">📷 {curator.instagram}</Badge>}
+                                {curator.twitter && <Badge variant="secondary" className="text-xs">🐦 {curator.twitter}</Badge>}
+                              </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">{curator.estimatedFollowers} followers</p>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* Saved Curators Sub-tab */}
+              {curatorSubTab === 'saved' && (
+                <div className="space-y-4">
+                  {savedCurators?.curators && savedCurators.curators.length > 0 ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {savedCurators.curators.map((curator: any) => (
+                        <Card key={curator.id} className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium">{curator.curatorName}</p>
+                                <p className="text-xs text-muted-foreground">{curator.playlistFocus}</p>
+                              </div>
+                              {curator.contacted && <Badge variant="default" className="bg-green-500">✓ Contacted</Badge>}
+                            </div>
+                            {(curator.email || curator.instagram || curator.twitter) && (
+                              <div className="flex flex-wrap gap-1">
+                                {curator.email && <Badge variant="outline" className="text-xs">📧</Badge>}
+                                {curator.instagram && <Badge variant="outline" className="text-xs">📷</Badge>}
+                                {curator.twitter && <Badge variant="outline" className="text-xs">🐦</Badge>}
+                              </div>
+                            )}
+                            <Button size="sm" className="w-full bg-green-500 hover:bg-green-600" onClick={() => { setSelectedCurator(curator); setShowPitchModal(true); }}>
+                              ✉️ Generate & Send Pitch
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="p-8 text-center">
+                      <p className="text-muted-foreground">No saved curators yet. Search and save curators to get started!</p>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* Pitch Generation Modal */}
+              {showPitchModal && selectedCurator && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowPitchModal(false)}>
+                  <Card className="p-6 max-w-2xl w-full m-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold">Generate Pitch for {selectedCurator.curatorName}</h3>
+                      {artistProfile?.artistName && <Badge variant="secondary" className="text-xs">✨ Auto-filled from profile</Badge>}
+                    </div>
+                    {!pitchData ? (
+                      <div className="space-y-4">
+                        <Input placeholder="Your Artist Name" value={pitchArtistName} onChange={(e) => setPitchArtistName(e.target.value)} />
+                        <textarea className="w-full p-3 rounded border bg-background min-h-[80px]" placeholder="Short Artist Bio" value={pitchArtistBio} onChange={(e) => setPitchArtistBio(e.target.value)} />
+                        <Input placeholder="Spotify URL (optional)" value={pitchSpotifyUrl} onChange={(e) => setPitchSpotifyUrl(e.target.value)} />
+                        <Input placeholder="Instagram URL (optional)" value={pitchInstagramUrl} onChange={(e) => setPitchInstagramUrl(e.target.value)} />
+                        <Input placeholder="YouTube URL (optional)" value={pitchYoutubeUrl} onChange={(e) => setPitchYoutubeUrl(e.target.value)} />
+                        <div className="flex gap-2">
+                          <Button className="flex-1" variant="outline" onClick={() => setShowPitchModal(false)}>Cancel</Button>
+                          <Button className="flex-1 bg-green-500" onClick={() => generatePitchMutation.mutate({ curatorId: selectedCurator.id, artistName: pitchArtistName, artistBio: pitchArtistBio, spotifyUrl: pitchSpotifyUrl, instagramUrl: pitchInstagramUrl, youtubeUrl: pitchYoutubeUrl })} disabled={!pitchArtistName || generatePitchMutation.isPending}>
+                            {generatePitchMutation.isPending ? 'Generating...' : 'Generate Pitch'}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-green-500/10 rounded">
+                          <p className="font-medium mb-2">Subject: {pitchData.subjectLine}</p>
+                          <div className="relative">
+                            <pre className="text-sm whitespace-pre-wrap p-3 bg-background rounded border">{pitchData.emailBody}</pre>
+                            <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyToClipboard(pitchData.emailBody, 'pitch-body')}>
+                              {copiedId === 'pitch-body' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" onClick={() => { setPitchData(null); setShowPitchModal(false); }}>Close</Button>
+                          <Button className="flex-1 bg-green-500" onClick={() => sendPitchMutation.mutate({ curatorId: selectedCurator.id, pitch: pitchData, curatorEmail: selectedCurator.email, curatorInstagram: selectedCurator.instagram, curatorTwitter: selectedCurator.twitter, curatorName: selectedCurator.curatorName })} disabled={sendPitchMutation.isPending}>
+                            {sendPitchMutation.isPending ? 'Sending...' : '🚀 Send to Curator'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+              )}
             </TabsContent>
 
             {/* TAB 4: SEO Optimizer */}
