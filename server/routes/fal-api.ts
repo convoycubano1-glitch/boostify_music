@@ -8,11 +8,61 @@ import { Router, type Request, type Response } from 'express';
 
 const router = Router();
 
-// Verificar que la API key esté configurada
+// Verificar que las API keys estén configuradas (principal + backup)
 const FAL_API_KEY = process.env.FAL_KEY || process.env.FAL_API_KEY;
+const FAL_API_KEY_BACKUP = process.env.FAL_KEY_BACKUP;
 
 if (!FAL_API_KEY) {
   console.error('⚠️ WARNING: FAL_KEY no está configurada. Las funciones de FAL AI no funcionarán.');
+} else if (!FAL_API_KEY_BACKUP) {
+  console.warn('⚠️ WARNING: FAL_KEY_BACKUP no está configurada. No habrá failover automático.');
+} else {
+  console.log('✅ FAL API keys configuradas: Principal + Backup (failover automático habilitado)');
+}
+
+/**
+ * Sistema de failover automático para FAL API
+ * Intenta con la key principal primero, y usa la backup si falla por balance agotado
+ */
+async function fetchWithFailover(url: string, options: RequestInit, context: string = 'FAL API'): Promise<Response> {
+  // Intentar con la key principal
+  const primaryOptions = {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Key ${FAL_API_KEY}`
+    }
+  };
+
+  try {
+    const response = await fetch(url, primaryOptions);
+    
+    // Si es 403 y menciona balance agotado, intentar con backup
+    if (response.status === 403 && FAL_API_KEY_BACKUP) {
+      const errorText = await response.text();
+      if (errorText.includes('Exhausted balance') || errorText.includes('locked')) {
+        console.warn(`⚠️ [FAILOVER] Key principal sin balance. Usando backup para: ${context}`);
+        
+        // Reintentar con la key de backup
+        const backupOptions = {
+          ...options,
+          headers: {
+            ...options.headers,
+            'Authorization': `Key ${FAL_API_KEY_BACKUP}`
+          }
+        };
+        
+        const backupResponse = await fetch(url, backupOptions);
+        console.log(`✅ [FAILOVER] Usando FAL_KEY_BACKUP exitosamente para: ${context}`);
+        return backupResponse;
+      }
+    }
+    
+    return response;
+  } catch (error) {
+    console.error(`❌ [FAILOVER] Error en ${context}:`, error);
+    throw error;
+  }
 }
 
 interface MuseTalkRequest {
@@ -237,19 +287,22 @@ router.post('/minimax-music', async (req: Request, res: Response) => {
 
     const startTime = Date.now();
 
-    // Submit job a FAL AI minimax-music/v2
-    const submitResponse = await fetch('https://queue.fal.run/fal-ai/minimax-music/v2', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${FAL_API_KEY}`,
-        'Content-Type': 'application/json'
+    // Submit job a FAL AI minimax-music/v2 con failover automático
+    const submitResponse = await fetchWithFailover(
+      'https://queue.fal.run/fal-ai/minimax-music/v2',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt,
+          duration: duration || 30,
+          reference_audio_url: reference_audio_url || undefined
+        })
       },
-      body: JSON.stringify({
-        prompt,
-        duration: duration || 30,
-        reference_audio_url: reference_audio_url || undefined
-      })
-    });
+      'Minimax Music Submit'
+    );
 
     if (!submitResponse.ok) {
       const errorData = await submitResponse.json().catch(() => ({}));
@@ -297,16 +350,15 @@ router.get('/minimax-music/:requestId', async (req: Request, res: Response) => {
 
     const { requestId } = req.params;
 
-    // Check status first
+    // Check status first con failover automático
     console.log(`🔍 [FAL-BACKEND] Checking status for: ${requestId}`);
     
-    const statusResponse = await fetch(
+    const statusResponse = await fetchWithFailover(
       `https://queue.fal.run/fal-ai/minimax-music/requests/${requestId}/status`,
       {
-        headers: {
-          'Authorization': `Key ${FAL_API_KEY}`
-        }
-      }
+        headers: {}
+      },
+      'Minimax Music Status'
     );
 
     if (!statusResponse.ok) {
@@ -323,15 +375,14 @@ router.get('/minimax-music/:requestId', async (req: Request, res: Response) => {
     const statusData = await statusResponse.json();
     console.log(`✅ [FAL-BACKEND] Status data:`, statusData);
 
-    // If completed, get the result
+    // If completed, get the result con failover automático
     if (statusData.status === 'COMPLETED') {
-      const resultResponse = await fetch(
+      const resultResponse = await fetchWithFailover(
         `https://queue.fal.run/fal-ai/minimax-music/requests/${requestId}`,
         {
-          headers: {
-            'Authorization': `Key ${FAL_API_KEY}`
-          }
-        }
+          headers: {}
+        },
+        'Minimax Music Result'
       );
 
       if (resultResponse.ok) {
@@ -388,18 +439,21 @@ router.post('/stable-audio', async (req: Request, res: Response) => {
     console.log('📝 Prompt:', prompt.substring(0, 100));
     console.log('⏱️ Duration:', duration || 180);
 
-    // Submit job a FAL AI Stable Audio 2.5
-    const submitResponse = await fetch('https://queue.fal.run/fal-ai/stable-audio-25/text-to-audio', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Key ${FAL_API_KEY}`,
-        'Content-Type': 'application/json'
+    // Submit job a FAL AI Stable Audio 2.5 con failover automático
+    const submitResponse = await fetchWithFailover(
+      'https://queue.fal.run/fal-ai/stable-audio-25/text-to-audio',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt,
+          duration: duration || 180  // 3 minutos por defecto
+        })
       },
-      body: JSON.stringify({
-        prompt,
-        duration: duration || 180  // 3 minutos por defecto
-      })
-    });
+      'Stable Audio Submit'
+    );
 
     if (!submitResponse.ok) {
       const errorData = await submitResponse.json().catch(() => ({}));
@@ -447,16 +501,15 @@ router.get('/stable-audio/:requestId', async (req: Request, res: Response) => {
 
     const { requestId } = req.params;
 
-    // Check status first
+    // Check status first con failover automático
     console.log(`🔍 [FAL-BACKEND] Checking Stable Audio status for: ${requestId}`);
     
-    const statusResponse = await fetch(
+    const statusResponse = await fetchWithFailover(
       `https://queue.fal.run/fal-ai/stable-audio-25/requests/${requestId}/status`,
       {
-        headers: {
-          'Authorization': `Key ${FAL_API_KEY}`
-        }
-      }
+        headers: {}
+      },
+      'Stable Audio Status'
     );
 
     if (!statusResponse.ok) {
@@ -473,15 +526,14 @@ router.get('/stable-audio/:requestId', async (req: Request, res: Response) => {
     const statusData = await statusResponse.json();
     console.log(`✅ [FAL-BACKEND] Stable Audio status data:`, statusData);
 
-    // If completed, get the result
+    // If completed, get the result con failover automático
     if (statusData.status === 'COMPLETED') {
-      const resultResponse = await fetch(
+      const resultResponse = await fetchWithFailover(
         `https://queue.fal.run/fal-ai/stable-audio-25/requests/${requestId}`,
         {
-          headers: {
-            'Authorization': `Key ${FAL_API_KEY}`
-          }
-        }
+          headers: {}
+        },
+        'Stable Audio Result'
       );
 
       if (resultResponse.ok) {
