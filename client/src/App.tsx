@@ -79,7 +79,7 @@ const YoutubeViewsPage = lazy(() => import("./pages/youtube-views"));
 const RealTimeTranslator = lazy(() => import("./pages/real-time-translator"));
 const EducationPage = lazy(() => import("./pages/education-new"));
 const AchievementsPage = lazy(() => import("./pages/achievements-page"));
-const CourseDetailPage = lazy(() => import("./pages/course-detail"));
+const CourseDetailPage = lazy(() => import("./pages/course-detail-new"));
 const SmartCardsPage = lazy(() => import("./pages/smart-cards"));
 const InvestorsDashboard = lazy(() => import("./pages/investors-dashboard"));
 const SocialNetworkPage = lazy(() => import("./pages/social-network"));
