@@ -2257,60 +2257,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         ) : video.url && !video.url.includes('youtube') ? (
                           <div className="relative w-full h-36 sm:h-40 md:h-44 bg-black">
                             <video
-                              src={video.url}
+                              src={`${video.url}#t=0.5`}
                               className="w-full h-full object-cover"
                               muted
                               playsInline
-                              onLoadedMetadata={(e) => {
-                                console.log('✅ Video metadata loaded:', video.title);
-                                console.log('📊 Video details:', {
-                                  duration: e.currentTarget.duration,
-                                  videoWidth: e.currentTarget.videoWidth,
-                                  videoHeight: e.currentTarget.videoHeight,
-                                  readyState: e.currentTarget.readyState,
-                                  networkState: e.currentTarget.networkState
-                                });
-                              }}
-                              onCanPlay={() => console.log('✅ Video can play:', video.title)}
-                              onError={(e) => {
-                                const fileExt = video.url?.split('.').pop()?.split('?')[0]?.toLowerCase() || 'unknown';
-                                const videoEl = e.currentTarget;
-                                const errorCode = videoEl.error?.code;
-                                console.error('❌ Video load error:', {
-                                  title: video.title,
-                                  format: fileExt,
-                                  url: video.url?.substring(0, 100),
-                                  error: errorCode,
-                                  errorMessage: videoEl.error?.message,
-                                  networkState: videoEl.networkState,
-                                  readyState: videoEl.readyState
-                                });
-                                const target = e.currentTarget;
-                                target.style.display = 'none';
-                                const parent = target.parentElement;
-                                if (parent) {
-                                  let formatMsg = '';
-                                  let helpMsg = '';
-                                  
-                                  if (fileExt === 'mov') {
-                                    formatMsg = 'Formato .MOV no compatible';
-                                    helpMsg = 'Usa Safari o convierte a .MP4 (H.264)';
-                                  } else if (errorCode === 4 || videoEl.error?.message?.includes('Format error')) {
-                                    formatMsg = 'Códec de video no compatible';
-                                    helpMsg = 'El video usa H.265/HEVC. Convierte a H.264 (freeconvert.com)';
-                                  } else {
-                                    formatMsg = videoEl.error?.message || 'Error al cargar video';
-                                    helpMsg = 'Haz clic para reproducir el video completo';
-                                  }
-                                  
-                                  parent.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center gap-2 p-4" style="background-color: ${colors.hexPrimary}33">
-                                    <svg class="h-10 sm:h-12 w-10 sm:w-12" fill="none" stroke="${colors.hexAccent}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                                    </svg>
-                                    <p class="text-xs text-center text-gray-400 font-medium">${formatMsg}</p>
-                                    <p class="text-xs text-center text-orange-400">${helpMsg}</p>
-                                  </div>`;
-                                }
+                              preload="metadata"
+                              onLoadedData={(e) => {
+                                console.log('✅ Video thumbnail loaded for:', video.title);
                               }}
                             />
                           </div>
