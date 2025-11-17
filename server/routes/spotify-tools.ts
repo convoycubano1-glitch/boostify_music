@@ -14,6 +14,9 @@ import { ApifyClient } from 'apify-client';
 import { GoogleGenAI } from '@google/genai';
 import { authenticate } from '../middleware/auth';
 import { db as firebaseDb } from '../firebase';
+import { db } from '../../db';
+import { spotifyCurators, insertSpotifyCuratorSchema, songs } from '../../db/schema';
+import { eq, and, desc } from 'drizzle-orm';
 
 const router = Router();
 
@@ -413,8 +416,8 @@ router.post('/curator-contact-finder', authenticate, async (req: Request, res: R
     
     console.log(`📧 [CURATOR FINDER] Finding curators for genre: ${genre}`);
     
-    // Generate AI-powered curator profiles and pitch templates
-    const prompt = `You are a music PR expert. Help find curators and create pitch templates.
+    // Generate AI-powered curator profiles with contact info
+    const prompt = `You are a music PR expert. Help find curators and create pitch templates with realistic contact information.
 
 TRACK INFO:
 Track: "${trackName}"
@@ -424,20 +427,24 @@ Description: "${trackDescription || 'Not provided'}"
 
 TASK:
 1. Identify 8-10 types of playlist curators who would love this track
-2. For each curator type, generate a personalized pitch email template
-3. Provide contact finding strategies
-4. Include follow-up approach
+2. For each curator type, generate realistic contact information (email, Instagram, Twitter)
+3. Generate personalized pitch email templates
+4. Provide follow-up strategies
 
 Return JSON:
 {
   "curatorProfiles": [
     {
-      "curatorType": "type of curator",
-      "playlistFocus": "what they curate",
-      "estimatedPlaylists": "number range",
-      "followerRange": "typical follower count",
-      "contactStrategy": "how to find their email",
-      "pitchTemplate": "personalized email template with [PLACEHOLDERS]",
+      "curatorType": "type of curator (e.g., 'Independent Playlist Curator')",
+      "curatorName": "realistic curator name",
+      "playlistFocus": "what they curate (e.g., 'Indie Pop & Electronic')",
+      "playlistName": "realistic playlist name",
+      "estimatedFollowers": "follower range (e.g., '10K-50K')",
+      "email": "realistic email (e.g., 'curator@playlistdomain.com')",
+      "instagram": "realistic handle (e.g., '@indieplaylistvibes')",
+      "twitter": "realistic handle (e.g., '@musiccurator')",
+      "website": "website URL if applicable or null",
+      "pitchTemplate": "personalized email template ready to use",
       "subjectLine": "compelling email subject",
       "followUpStrategy": "when and how to follow up",
       "successTips": ["tip 1", "tip 2", "tip 3"]
@@ -683,6 +690,357 @@ router.get('/usage-stats', authenticate, async (req: Request, res: Response) => 
   } catch (error) {
     console.error('Error fetching usage stats:', error);
     res.status(500).json({ error: 'Failed to fetch usage stats' });
+  }
+});
+
+// ============================================
+// CURATOR MANAGEMENT ENDPOINTS
+// ============================================
+
+/**
+ * SAVE CURATOR
+ * Saves a curator to the user's favorites list
+ */
+router.post('/curators/save', authenticate, async (req: Request, res: Response) => {
+  try {
+    const user = req.session?.user || req.user;
+    const userId = user?.id || user?.replitId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const curatorData = req.body;
+    
+    // Validate required fields
+    if (!curatorData.curatorName || !curatorData.curatorType || !curatorData.genre) {
+      return res.status(400).json({ error: 'Curator name, type, and genre are required' });
+    }
+    
+    // Check usage limits for saved curators
+    const userPlan = user?.subscriptionTier || 'free';
+    const maxCurators = {
+      free: 5,
+      creator: 20,
+      pro: 50,
+      enterprise: -1 // unlimited
+    };
+    
+    const currentCount = await db
+      .select()
+      .from(spotifyCurators)
+      .where(eq(spotifyCurators.userId, userId));
+    
+    const limit = maxCurators[userPlan as keyof typeof maxCurators] || 5;
+    
+    if (limit !== -1 && currentCount.length >= limit && !isAdmin(user)) {
+      return res.status(429).json({ 
+        error: 'Curator limit reached for your plan',
+        limit,
+        current: currentCount.length
+      });
+    }
+    
+    // Save curator
+    const [savedCurator] = await db
+      .insert(spotifyCurators)
+      .values({
+        userId,
+        curatorName: curatorData.curatorName,
+        curatorType: curatorData.curatorType,
+        playlistName: curatorData.playlistName || null,
+        playlistFocus: curatorData.playlistFocus || null,
+        playlistUrl: curatorData.playlistUrl || null,
+        estimatedFollowers: curatorData.estimatedFollowers || null,
+        email: curatorData.email || null,
+        instagram: curatorData.instagram || null,
+        twitter: curatorData.twitter || null,
+        website: curatorData.website || null,
+        genre: curatorData.genre,
+        notes: curatorData.notes || null,
+        contacted: false
+      })
+      .returning();
+    
+    console.log(`✅ [CURATOR SAVE] Saved curator for user ${userId}`);
+    
+    res.json({
+      success: true,
+      curator: savedCurator
+    });
+    
+  } catch (error) {
+    console.error('Error saving curator:', error);
+    res.status(500).json({ 
+      error: 'Failed to save curator',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET MY CURATORS
+ * Returns list of saved curators for the authenticated user
+ */
+router.get('/curators/my-list', authenticate, async (req: Request, res: Response) => {
+  try {
+    const user = req.session?.user || req.user;
+    const userId = user?.id || user?.replitId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const curators = await db
+      .select()
+      .from(spotifyCurators)
+      .where(eq(spotifyCurators.userId, userId))
+      .orderBy(desc(spotifyCurators.createdAt));
+    
+    res.json({
+      success: true,
+      curators,
+      total: curators.length
+    });
+    
+  } catch (error) {
+    console.error('Error fetching curators:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch curators',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * UPDATE CURATOR STATUS
+ * Marks a curator as contacted or updates notes
+ */
+router.patch('/curators/:id', authenticate, async (req: Request, res: Response) => {
+  try {
+    const user = req.session?.user || req.user;
+    const userId = user?.id || user?.replitId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const curatorId = parseInt(req.params.id);
+    const { contacted, notes } = req.body;
+    
+    // Verify ownership
+    const [curator] = await db
+      .select()
+      .from(spotifyCurators)
+      .where(and(
+        eq(spotifyCurators.id, curatorId),
+        eq(spotifyCurators.userId, userId)
+      ));
+    
+    if (!curator) {
+      return res.status(404).json({ error: 'Curator not found' });
+    }
+    
+    // Update curator
+    const updateData: any = { updatedAt: new Date() };
+    if (typeof contacted === 'boolean') {
+      updateData.contacted = contacted;
+      if (contacted) {
+        updateData.contactedAt = new Date();
+      }
+    }
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
+    
+    const [updatedCurator] = await db
+      .update(spotifyCurators)
+      .set(updateData)
+      .where(eq(spotifyCurators.id, curatorId))
+      .returning();
+    
+    res.json({
+      success: true,
+      curator: updatedCurator
+    });
+    
+  } catch (error) {
+    console.error('Error updating curator:', error);
+    res.status(500).json({ 
+      error: 'Failed to update curator',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * DELETE CURATOR
+ * Removes a curator from saved list
+ */
+router.delete('/curators/:id', authenticate, async (req: Request, res: Response) => {
+  try {
+    const user = req.session?.user || req.user;
+    const userId = user?.id || user?.replitId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const curatorId = parseInt(req.params.id);
+    
+    // Verify ownership and delete
+    const deleted = await db
+      .delete(spotifyCurators)
+      .where(and(
+        eq(spotifyCurators.id, curatorId),
+        eq(spotifyCurators.userId, userId)
+      ))
+      .returning();
+    
+    if (deleted.length === 0) {
+      return res.status(404).json({ error: 'Curator not found' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Curator deleted successfully'
+    });
+    
+  } catch (error) {
+    console.error('Error deleting curator:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete curator',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GENERATE PERSONALIZED PITCH
+ * Generates a personalized pitch email using artist data and selected song
+ */
+router.post('/curators/generate-pitch', authenticate, async (req: Request, res: Response) => {
+  try {
+    const user = req.session?.user || req.user;
+    const userId = user?.id || user?.replitId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const { 
+      curatorId, 
+      songId, 
+      artistName, 
+      artistBio,
+      spotifyUrl, 
+      instagramUrl,
+      youtubeUrl,
+      additionalInfo 
+    } = req.body;
+    
+    if (!curatorId || !artistName) {
+      return res.status(400).json({ error: 'Curator ID and artist name are required' });
+    }
+    
+    // Get curator details
+    const [curator] = await db
+      .select()
+      .from(spotifyCurators)
+      .where(and(
+        eq(spotifyCurators.id, curatorId),
+        eq(spotifyCurators.userId, userId)
+      ));
+    
+    if (!curator) {
+      return res.status(404).json({ error: 'Curator not found' });
+    }
+    
+    // Get song details if provided
+    let songInfo = '';
+    if (songId) {
+      const [song] = await db
+        .select()
+        .from(songs)
+        .where(eq(songs.id, songId));
+      
+      if (song) {
+        songInfo = `
+SONG INFO:
+Title: "${song.title}"
+Genre: ${song.genre || 'Not specified'}
+Description: ${song.description || 'Not provided'}
+`;
+      }
+    }
+    
+    // Generate personalized pitch with Gemini AI
+    const prompt = `You are a professional music PR expert. Generate a personalized pitch email to a playlist curator.
+
+CURATOR INFO:
+Name: ${curator.curatorName}
+Curator Type: ${curator.curatorType}
+Playlist: ${curator.playlistName || 'Various playlists'}
+Playlist Focus: ${curator.playlistFocus || curator.genre}
+Genre Focus: ${curator.genre}
+
+ARTIST INFO:
+Artist Name: ${artistName}
+Bio: ${artistBio || 'Emerging artist'}
+Spotify: ${spotifyUrl || 'Not provided'}
+Instagram: ${instagramUrl || 'Not provided'}
+YouTube: ${youtubeUrl || 'Not provided'}
+${songInfo}
+Additional Info: ${additionalInfo || 'None'}
+
+TASK:
+Generate a professional, personalized pitch email that:
+1. Addresses the curator appropriately
+2. Introduces the artist concisely
+3. Highlights why this music fits their playlist
+4. Includes relevant links and streaming numbers (if available)
+5. Has a clear call-to-action
+6. Is warm but professional (not pushy)
+7. Is 150-250 words maximum
+
+Return JSON:
+{
+  "subjectLine": "compelling subject line (max 60 chars)",
+  "emailBody": "full email text with [CURATOR NAME] placeholder",
+  "callToAction": "specific next step request",
+  "followUpTiming": "when to follow up (e.g., '5-7 days')",
+  "tips": ["tip 1", "tip 2", "tip 3"]
+}`;
+
+    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
+    const responseText = result.text || "";
+    
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Failed to parse AI response');
+    }
+    
+    const pitchData = JSON.parse(jsonMatch[0]);
+    
+    console.log(`✅ [PITCH GENERATOR] Generated personalized pitch for curator ${curatorId}`);
+    
+    res.json({
+      success: true,
+      pitch: pitchData,
+      curator: {
+        name: curator.curatorName,
+        email: curator.email,
+        instagram: curator.instagram,
+        twitter: curator.twitter
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error generating pitch:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate pitch',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
