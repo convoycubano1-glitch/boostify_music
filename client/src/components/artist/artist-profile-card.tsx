@@ -36,12 +36,25 @@ import {
   GraduationCap,
   Briefcase,
   Eye,
+  EyeOff,
   Megaphone,
   Crown,
   Zap,
   Film,
   Bot,
-  AlertCircle
+  AlertCircle,
+  Save,
+  Image,
+  TrendingUp,
+  DollarSign,
+  Target,
+  Globe,
+  Twitter,
+  Facebook,
+  Tag,
+  Settings,
+  Download,
+  RefreshCw
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -675,7 +688,36 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   
   // Estados para drag-and-drop del layout
   const [isEditingLayout, setIsEditingLayout] = useState(false);
-  const [leftSections, setLeftSections] = useState<string[]>(['songs', 'videos', 'social-hub', 'merchandise']);
+  const [showLayoutConfig, setShowLayoutConfig] = useState(false);
+  
+  // Todas las secciones disponibles con metadata
+  const allSections = {
+    'songs': { name: 'Música', icon: Music, isOwnerOnly: false },
+    'videos': { name: 'Videos', icon: VideoIcon, isOwnerOnly: false },
+    'social-hub': { name: 'Redes Sociales', icon: Share2, isOwnerOnly: false },
+    'merchandise': { name: 'Merchandising', icon: ShoppingBag, isOwnerOnly: false },
+    'galleries': { name: 'Galerías de Imágenes', icon: Image, isOwnerOnly: false },
+    'monetize-cta': { name: 'Monetiza Tu Talento', icon: Sparkles, isOwnerOnly: false },
+    'analytics': { name: 'Analytics', icon: TrendingUp, isOwnerOnly: false },
+    'earnings': { name: 'Ganancias', icon: DollarSign, isOwnerOnly: true },
+    'crowdfunding': { name: 'Crowdfunding', icon: Target, isOwnerOnly: true },
+  };
+  
+  const defaultOrder = ['songs', 'videos', 'social-hub', 'merchandise', 'galleries', 'monetize-cta', 'analytics', 'earnings', 'crowdfunding'];
+  const defaultVisibility: Record<string, boolean> = {
+    'songs': true,
+    'videos': true,
+    'social-hub': true,
+    'merchandise': true,
+    'galleries': true,
+    'monetize-cta': true,
+    'analytics': true,
+    'earnings': true,
+    'crowdfunding': true,
+  };
+  
+  const [sectionOrder, setSectionOrder] = useState<string[]>(defaultOrder);
+  const [sectionVisibility, setSectionVisibility] = useState<Record<string, boolean>>(defaultVisibility);
   const [isMerchandiseExpanded, setIsMerchandiseExpanded] = useState(true);
   const [isEarningsExpanded, setIsEarningsExpanded] = useState(true);
   const [isCrowdfundingExpanded, setIsCrowdfundingExpanded] = useState(true);
@@ -683,30 +725,46 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   // Galleries refresh key
   const [galleriesRefreshKey, setGalleriesRefreshKey] = useState(0);
   
-  
-  // Cargar orden guardado al montar
-  useEffect(() => {
-    const savedLayout = localStorage.getItem(`profile-layout-${artistId}`);
-    if (savedLayout) {
-      setLeftSections(JSON.parse(savedLayout));
-    }
-  }, [artistId]);
-  
   // Manejar reordenamiento de secciones
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     
-    const items = Array.from(leftSections);
+    const items = Array.from(sectionOrder);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
     
-    setLeftSections(items);
-    localStorage.setItem(`profile-layout-${artistId}`, JSON.stringify(items));
-    
-    toast({
-      title: "Layout actualizado",
-      description: "El orden de las secciones se ha guardado",
-    });
+    setSectionOrder(items);
+  };
+  
+  // Guardar layout en la base de datos
+  const saveLayout = async () => {
+    try {
+      const response = await fetch(`/api/profile/${artistId}/layout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order: sectionOrder,
+          visibility: sectionVisibility
+        })
+      });
+      
+      if (!response.ok) throw new Error('Failed to save layout');
+      
+      toast({
+        title: "✅ Layout guardado",
+        description: "Los cambios se han guardado correctamente",
+      });
+      
+      setIsEditingLayout(false);
+      setShowLayoutConfig(false);
+    } catch (error) {
+      console.error('Error saving layout:', error);
+      toast({
+        title: "❌ Error",
+        description: "No se pudo guardar el layout",
+        variant: "destructive"
+      });
+    }
   };
 
   const colors = colorPalettes[selectedTheme];
@@ -806,7 +864,8 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             loopVideoUrl: postgresData.loopVideoUrl || firestoreData?.loopVideoUrl,
             location: postgresData.location || firestoreData?.location,
             email: postgresData.email || firestoreData?.email || firestoreData?.contactEmail,
-            phone: postgresData.phone || firestoreData?.phone || firestoreData?.contactPhone
+            phone: postgresData.phone || firestoreData?.phone || firestoreData?.contactPhone,
+            profileLayout: postgresData.profileLayout || null
           })
         };
       } catch (error) {
@@ -1218,8 +1277,17 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     twitter: userProfile?.twitter || "",
     youtube: userProfile?.youtube || "",
     spotify: userProfile?.spotify || "",
-    website: userProfile?.website || ""
+    website: userProfile?.website || "",
+    profileLayout: userProfile?.profileLayout || null
   };
+
+  // Cargar layout desde la base de datos
+  useEffect(() => {
+    if (artist?.profileLayout) {
+      setSectionOrder(artist.profileLayout.order || defaultOrder);
+      setSectionVisibility(artist.profileLayout.visibility || defaultVisibility);
+    }
+  }, [artist?.profileLayout]);
 
   // DEBUG: Log completo del perfil de usuario y spotify
   console.log('🔍 DEBUG - userProfile completo:', userProfile);
@@ -1786,18 +1854,18 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         />
                         <Button
                           size="sm"
-                          variant={isEditingLayout ? "default" : "outline"}
+                          variant="outline"
                           className="rounded-full"
                           style={{
-                            backgroundColor: isEditingLayout ? colors.hexPrimary : 'transparent',
+                            backgroundColor: 'transparent',
                             borderColor: colors.hexBorder,
-                            color: isEditingLayout ? 'white' : colors.hexAccent
+                            color: colors.hexAccent
                           }}
-                          onClick={() => setIsEditingLayout(!isEditingLayout)}
+                          onClick={() => setShowLayoutConfig(true)}
                           data-testid="button-edit-layout"
                         >
                           <Layout className="h-4 w-4 mr-2" />
-                          {isEditingLayout ? 'Guardar Layout' : 'Personalizar Layout'}
+                          Personalizar Layout
                         </Button>
                       </>
                     ) : (
@@ -1830,6 +1898,130 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               </div>
             </div>
 
+            {/* Layout Configuration Modal */}
+            <Dialog open={showLayoutConfig} onOpenChange={setShowLayoutConfig}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-zinc-900 border-zinc-800">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold text-white">
+                    <Layout className="h-6 w-6 inline mr-2" style={{ color: colors.hexAccent }} />
+                    Personalizar Layout del Perfil
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-400">
+                    Reordena las secciones y activa/desactiva las que quieras mostrar
+                  </DialogDescription>
+                </DialogHeader>
+
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="layout-config">
+                    {(provided) => (
+                      <div 
+                        ref={provided.innerRef} 
+                        {...provided.droppableProps}
+                        className="space-y-2 py-4"
+                      >
+                        {sectionOrder.map((sectionId, index) => {
+                          const section = allSections[sectionId as keyof typeof allSections];
+                          if (!section) return null;
+                          
+                          // Skip owner-only sections if not owner
+                          if (section.isOwnerOnly && !isOwnProfile) return null;
+                          
+                          const Icon = section.icon;
+                          const isVisible = sectionVisibility[sectionId];
+                          
+                          return (
+                            <Draggable key={sectionId} draggableId={sectionId} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`p-4 rounded-lg border transition-all ${
+                                    snapshot.isDragging ? 'shadow-lg' : ''
+                                  }`}
+                                  style={{
+                                    ...provided.draggableProps.style,
+                                    backgroundColor: isVisible ? `${colors.hexPrimary}20` : '#18181b',
+                                    borderColor: isVisible ? colors.hexBorder : '#27272a'
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="cursor-grab active:cursor-grabbing"
+                                    >
+                                      <GripVertical className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    
+                                    <Icon 
+                                      className="h-5 w-5" 
+                                      style={{ color: isVisible ? colors.hexAccent : '#71717a' }}
+                                    />
+                                    
+                                    <span 
+                                      className="flex-1 font-medium"
+                                      style={{ color: isVisible ? 'white' : '#71717a' }}
+                                    >
+                                      {section.name}
+                                    </span>
+                                    
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setSectionVisibility(prev => ({
+                                          ...prev,
+                                          [sectionId]: !prev[sectionId]
+                                        }));
+                                      }}
+                                      className="gap-2"
+                                    >
+                                      {isVisible ? (
+                                        <>
+                                          <Eye className="h-4 w-4" style={{ color: colors.hexAccent }} />
+                                          <span style={{ color: colors.hexAccent }}>Visible</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <EyeOff className="h-4 w-4 text-gray-500" />
+                                          <span className="text-gray-500">Oculto</span>
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowLayoutConfig(false)}
+                    className="border-zinc-700 text-white hover:bg-zinc-800"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={saveLayout}
+                    className="gap-2"
+                    style={{
+                      background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                      color: 'white'
+                    }}
+                  >
+                    <Save className="h-4 w-4" />
+                    Guardar Layout
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             {/* CTA for non-authenticated visitors - Between bio and music */}
             {!isOwnProfile && !user && (
               <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
@@ -1841,7 +2033,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       Crea tu perfil de artista profesional gratis y llega a más fans
                     </p>
                   </div>
-                  <Link href="/auth?returnTo=/profile">
+                  <Link href="/signup">
                     <Button
                       className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg gap-2 px-6 py-6 text-base font-bold rounded-full hover:scale-105 transition-all duration-300"
                       data-testid="button-cta-middle"
@@ -1854,21 +2046,14 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               </div>
             )}
 
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="profile-sections" isDropDisabled={!isEditingLayout}>
-                {(provided) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col gap-6">
-                    {leftSections.map((sectionId: string, index: number) => {
-                      let sectionElement = null;
+            {/* Render all sections based on order and visibility */}
+            <div className="flex flex-col gap-6">
+              {sectionOrder.filter(sectionId => sectionVisibility[sectionId]).map((sectionId: string) => {
+                let sectionElement = null;
                       
                       if (sectionId === 'songs' && (songs.length > 0 || isOwnProfile)) {
                         sectionElement = (
-            <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-              {isEditingLayout && (
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing">
-                  <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
-                </div>
-              )}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
                   <div 
                     className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
@@ -2054,12 +2239,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         );
                       } else if (sectionId === 'videos' && (videos.length > 0 || isOwnProfile)) {
                         sectionElement = (
-            <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-              {isEditingLayout && (
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing">
-                  <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
-                </div>
-              )}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
                   <div 
                     className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
@@ -2353,12 +2533,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       } else if (sectionId === 'social-hub') {
                         // Elemento circular con iconos de redes sociales
                         sectionElement = (
-            <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-              {isEditingLayout && (
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing">
-                  <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
-                </div>
-              )}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               
               {/* Contenedor del elemento circular */}
               <div className="relative py-8 md:py-12 overflow-hidden bg-black rounded-2xl">
@@ -2477,12 +2652,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         );
                       } else if (sectionId === 'merchandise' && (products.length > 0 || isOwnProfile)) {
                         sectionElement = (
-            <div className={`${cardStyles} ${isEditingLayout ? 'relative pl-8' : ''}`} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-              {isEditingLayout && (
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing">
-                  <GripVertical className="h-6 w-6" style={{ color: colors.hexAccent }} />
-                </div>
-              )}
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
                   <div 
                     className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 cursor-pointer"
@@ -2649,30 +2819,193 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 )}
               </div>
                         );
+                      } else if (sectionId === 'galleries') {
+                        sectionElement = (
+                          <ImageGalleryDisplay 
+                            artistId={artistId} 
+                            isOwner={isOwnProfile}
+                            refreshKey={galleriesRefreshKey}
+                          />
+                        );
+                      } else if (sectionId === 'monetize-cta') {
+                        sectionElement = (
+                          <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
+                            <div className="absolute inset-0 opacity-10" style={{
+                              background: `radial-gradient(circle at 30% 50%, ${colors.hexPrimary}, transparent 70%)`
+                            }}></div>
+                            
+                            <div className="relative z-10">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Music className="h-6 w-6" style={{ color: colors.hexAccent }} />
+                                <div 
+                                  className="text-base font-bold transition-colors duration-500" 
+                                  style={{ color: colors.hexAccent }}
+                                >
+                                  {t('profile.monetize.title')}
+                                </div>
+                              </div>
+                              
+                              <p className="text-sm text-gray-300 mb-4 leading-relaxed">
+                                {t('profile.monetize.description')}
+                              </p>
+                              
+                              <Link href="/producer-tools">
+                                <button
+                                  className="w-full py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
+                                  style={{ 
+                                    background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                                    color: 'white'
+                                  }}
+                                  data-testid="button-producer-tools"
+                                >
+                                  <Sparkles className="h-4 w-4" />
+                                  <span>{t('profile.monetize.cta')}</span>
+                                  <ArrowRight className="h-4 w-4" />
+                                </button>
+                              </Link>
+                              
+                              <div className="mt-3 flex items-center justify-center gap-4 text-xs text-gray-400">
+                                <span className="flex items-center gap-1">
+                                  <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                                  Beats
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                                  Mezclas
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
+                                  Master
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      } else if (sectionId === 'analytics') {
+                        const analyticsData = {
+                          totalPlays: songs.length * Math.floor(Math.random() * 100 + 50),
+                          totalViews: videos.length * Math.floor(Math.random() * 150 + 75)
+                        };
+                        
+                        sectionElement = (
+                          <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                            <div 
+                              className="text-base font-semibold mb-4 transition-colors duration-500 flex items-center gap-2" 
+                              style={{ color: colors.hexAccent }}
+                            >
+                              <TrendingUp className="h-5 w-5" />
+                              {t('profile.analytics.title')}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <motion.div 
+                                className="p-3 rounded-lg text-center"
+                                style={{ backgroundColor: `${colors.hexPrimary}10`, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                                whileHover={{ scale: 1.05 }}
+                              >
+                                <div className="text-xs text-gray-400 mb-1">{t('profile.analytics.totalPlays')}</div>
+                                <div className="text-xl font-bold" style={{ color: colors.hexPrimary }}>
+                                  {analyticsData.totalPlays.toLocaleString()}
+                                </div>
+                              </motion.div>
+                              
+                              <motion.div 
+                                className="p-3 rounded-lg text-center"
+                                style={{ backgroundColor: `${colors.hexAccent}10`, borderColor: colors.hexBorder, borderWidth: '1px' }}
+                                whileHover={{ scale: 1.05 }}
+                              >
+                                <div className="text-xs text-gray-400 mb-1">{t('profile.analytics.totalViews')}</div>
+                                <div className="text-xl font-bold" style={{ color: colors.hexAccent }}>
+                                  {analyticsData.totalViews.toLocaleString()}
+                                </div>
+                              </motion.div>
+                            </div>
+                          </div>
+                        );
+                      } else if (sectionId === 'earnings' && isOwnProfile) {
+                        sectionElement = (
+                          <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                            <div className="flex justify-between items-center mb-4">
+                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" style={{ color: colors.hexAccent }}>
+                                <DollarSign className="h-5 w-5" />
+                                {t('profile.earnings.title')}
+                              </div>
+                              <button 
+                                onClick={() => setIsEarningsExpanded(!isEarningsExpanded)}
+                                className="p-2 rounded-full hover:bg-white/5 transition-colors"
+                                style={{ color: colors.hexAccent }}
+                              >
+                                <motion.div
+                                  animate={{ rotate: isEarningsExpanded ? 180 : 0 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <ChevronDown className="h-5 w-5" />
+                                </motion.div>
+                              </button>
+                            </div>
+
+                            <motion.div
+                              initial={false}
+                              animate={{
+                                height: isEarningsExpanded ? "auto" : 0,
+                                opacity: isEarningsExpanded ? 1 : 0
+                              }}
+                              transition={{ duration: 0.3 }}
+                              style={{ overflow: "hidden" }}
+                            >
+                              {isEarningsExpanded && <EarningsChart userId={user.id} days={30} />}
+                            </motion.div>
+                          </div>
+                        );
+                      } else if (sectionId === 'crowdfunding' && isOwnProfile) {
+                        sectionElement = (
+                          <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                            <div className="flex justify-between items-center mb-4">
+                              <div 
+                                className="text-base font-semibold transition-colors duration-500 flex items-center gap-2"
+                                style={{ color: colors.hexAccent }}
+                              >
+                                <Target className="h-5 w-5" />
+                                Crowdfunding
+                              </div>
+                              <button 
+                                onClick={() => setIsCrowdfundingExpanded(!isCrowdfundingExpanded)}
+                                className="p-2 rounded-full hover:bg-white/5 transition-colors"
+                                style={{ color: colors.hexAccent }}
+                              >
+                                <motion.div
+                                  animate={{ rotate: isCrowdfundingExpanded ? 180 : 0 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <ChevronDown className="h-5 w-5" />
+                                </motion.div>
+                              </button>
+                            </div>
+
+                            <motion.div
+                              initial={false}
+                              animate={{
+                                height: isCrowdfundingExpanded ? "auto" : 0,
+                                opacity: isCrowdfundingExpanded ? 1 : 0
+                              }}
+                              transition={{ duration: 0.3 }}
+                              style={{ overflow: "hidden" }}
+                            >
+                              {isCrowdfundingExpanded && <CrowdfundingPanel colors={colors} />}
+                            </motion.div>
+                          </div>
+                        );
                       }
 
-                      if (!sectionElement) return null;
+                if (!sectionElement) return null;
 
-                      return (
-                        <Draggable key={sectionId} draggableId={sectionId} index={index} isDragDisabled={!isEditingLayout}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={snapshot.isDragging ? 'opacity-50' : ''}
-                            >
-                              {sectionElement}
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                    {provided.placeholder}
+                return (
+                  <div key={sectionId}>
+                    {sectionElement}
                   </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+                );
+              })}
+            </div>
 
           </section>
 

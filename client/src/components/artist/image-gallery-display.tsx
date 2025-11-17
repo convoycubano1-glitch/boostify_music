@@ -58,13 +58,18 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState<{ url: string; prompt: string } | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showAddToGalleryDialog, setShowAddToGalleryDialog] = useState(false);
+  const [selectedGalleryToAddImages, setSelectedGalleryToAddImages] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [additionalFiles, setAdditionalFiles] = useState<File[]>([]);
   const [galleryTitle, setGalleryTitle] = useState('');
   const [galleryToDelete, setGalleryToDelete] = useState<string | null>(null);
+  const [imageToDelete, setImageToDelete] = useState<{ galleryId: string; imageId: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const additionalFilesInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -259,6 +264,127 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
     }
   };
 
+  const handleDeleteImage = async () => {
+    if (!imageToDelete) return;
+    
+    try {
+      setIsDeleting(true);
+      const { galleryId, imageId } = imageToDelete;
+      
+      // Obtener la galería actual
+      const gallery = galleries.find(g => g.id === galleryId);
+      if (!gallery) {
+        throw new Error("Galería no encontrada");
+      }
+      
+      // Filtrar la imagen a eliminar
+      const updatedImages = gallery.generatedImages.filter(img => img.id !== imageId);
+      
+      // Si no quedan imágenes, eliminar toda la galería
+      if (updatedImages.length === 0) {
+        await deleteDoc(doc(db, "image_galleries", galleryId));
+        toast({
+          title: "Galería eliminada",
+          description: "Se eliminó la última imagen, por lo que se eliminó toda la galería",
+        });
+      } else {
+        // Actualizar la galería con las imágenes restantes
+        await updateDoc(doc(db, "image_galleries", galleryId), {
+          generatedImages: updatedImages,
+          updatedAt: new Date().toISOString()
+        });
+        
+        toast({
+          title: "Imagen eliminada",
+          description: "La imagen ha sido eliminada correctamente",
+        });
+      }
+      
+      setImageToDelete(null);
+      await loadGalleries();
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la imagen",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleAddImagesToGallery = async () => {
+    if (!selectedGalleryToAddImages || additionalFiles.length === 0) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona al menos una imagen",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const gallery = galleries.find(g => g.id === selectedGalleryToAddImages);
+      if (!gallery) {
+        throw new Error("Galería no encontrada");
+      }
+
+      // Subir imágenes a Cloudinary
+      const uploadedImages: GeneratedImage[] = [];
+      for (const file of additionalFiles) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', 'boostify_preset');
+        
+        const response = await fetch(
+          'https://api.cloudinary.com/v1_1/dq3chxk1v/image/upload',
+          { method: 'POST', body: formData }
+        );
+        
+        const data = await response.json();
+        uploadedImages.push({
+          id: crypto.randomUUID(),
+          url: data.secure_url,
+          prompt: `Agregado a ${gallery.singleName}`,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      // Actualizar la galería con las nuevas imágenes
+      const updatedImages = [...gallery.generatedImages, ...uploadedImages];
+      await updateDoc(doc(db, "image_galleries", selectedGalleryToAddImages), {
+        generatedImages: updatedImages,
+        updatedAt: new Date().toISOString()
+      });
+
+      toast({
+        title: "¡Imágenes agregadas!",
+        description: `Se han agregado ${uploadedImages.length} imágenes a la galería.`,
+      });
+
+      setShowAddToGalleryDialog(false);
+      setAdditionalFiles([]);
+      setSelectedGalleryToAddImages(null);
+      await loadGalleries();
+    } catch (error) {
+      console.error("Error adding images to gallery:", error);
+      toast({
+        title: "Error al agregar",
+        description: "No se pudieron agregar las imágenes. Por favor intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAdditionalFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setAdditionalFiles(files);
+  };
+
   const allImages = galleries.flatMap(g => g.generatedImages.map(img => ({
     ...img,
     galleryName: g.singleName,
@@ -442,6 +568,18 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
                         {new Date(gallery.createdAt).toLocaleDateString()}
                       </Badge>
                       <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedGalleryToAddImages(gallery.id);
+                          setShowAddToGalleryDialog(true);
+                        }}
+                        data-testid={`button-add-images-${gallery.id}`}
+                        title="Agregar más imágenes"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
                         variant="destructive"
                         size="icon"
                         onClick={() => setGalleryToDelete(gallery.id)}
@@ -479,6 +617,20 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
                           >
                             <Download className="h-4 w-4" />
                           </Button>
+                          {isOwner && (
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setImageToDelete({ galleryId: gallery.id, imageId: image.id });
+                              }}
+                              data-testid={`button-delete-image-${index}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -590,6 +742,100 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
         </DialogContent>
       </Dialog>
 
+      {/* Diálogo para agregar imágenes a galería existente */}
+      <Dialog open={showAddToGalleryDialog} onOpenChange={setShowAddToGalleryDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Agregar Imágenes a la Galería</DialogTitle>
+            <DialogDescription>
+              {selectedGalleryToAddImages && 
+                `Agrega más imágenes a "${galleries.find(g => g.id === selectedGalleryToAddImages)?.singleName}"`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Seleccionar Imágenes</Label>
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <input
+                  ref={additionalFilesInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleAdditionalFileSelect}
+                  className="hidden"
+                />
+                <Upload className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm text-muted-foreground mb-3">
+                  Arrastra imágenes aquí o haz clic para seleccionar
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => additionalFilesInputRef.current?.click()}
+                  type="button"
+                >
+                  Seleccionar Archivos
+                </Button>
+              </div>
+            </div>
+
+            {additionalFiles.length > 0 && (
+              <div className="space-y-2">
+                <Label>Imágenes seleccionadas ({additionalFiles.length})</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  {additionalFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      className="relative group rounded-lg border overflow-hidden"
+                    >
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={file.name}
+                        className="w-full aspect-square object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setAdditionalFiles(additionalFiles.filter((_, i) => i !== index));
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-2 py-1">
+                        <p className="text-xs text-white truncate">{file.name}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddToGalleryDialog(false);
+                setAdditionalFiles([]);
+                setSelectedGalleryToAddImages(null);
+              }}
+              disabled={isUploading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAddImagesToGallery}
+              disabled={isUploading || additionalFiles.length === 0}
+            >
+              {isUploading ? 'Agregando...' : `Agregar ${additionalFiles.length} imagen${additionalFiles.length !== 1 ? 'es' : ''}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal para ver imagen en tamaño completo */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-4xl">
@@ -636,6 +882,33 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de confirmación para eliminar imagen individual */}
+      <AlertDialog open={!!imageToDelete} onOpenChange={() => setImageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar imagen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. La imagen será eliminada de la galería.
+              {imageToDelete && galleries.find(g => g.id === imageToDelete.galleryId)?.generatedImages.length === 1 && (
+                <span className="block mt-2 font-semibold text-amber-600">
+                  ⚠️ Esta es la última imagen de la galería. Al eliminarla, se eliminará toda la galería.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteImage}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

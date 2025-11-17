@@ -404,4 +404,43 @@ router.post('/update-images', authenticate, async (req: Request, res: Response) 
   }
 });
 
+// POST /api/profile/:artistId/layout - Save profile layout configuration
+router.post('/profile/:artistId/layout', authenticate, async (req: Request, res: Response) => {
+  try {
+    const artistId = parseInt(req.params.artistId);
+    const userId = req.user!.id;
+    
+    // Verify ownership
+    const [artist] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, artistId))
+      .limit(1);
+      
+    if (!artist || artist.generatedBy !== userId) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    const layoutSchema = z.object({
+      order: z.array(z.string()),
+      visibility: z.record(z.boolean())
+    });
+    
+    const layout = layoutSchema.parse(req.body);
+    
+    await db
+      .update(users)
+      .set({ 
+        profileLayout: layout,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, artistId));
+    
+    res.json({ success: true, layout });
+  } catch (error) {
+    console.error('Error saving profile layout:', error);
+    res.status(500).json({ message: 'Failed to save profile layout' });
+  }
+});
+
 export default router;

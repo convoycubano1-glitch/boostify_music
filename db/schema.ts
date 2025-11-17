@@ -75,6 +75,11 @@ export const users = pgTable("users", {
   isAIGenerated: boolean("is_ai_generated").default(false).notNull(),
   generatedBy: integer("generated_by").references(() => users.id),
   recordLabelId: text("record_label_id"),
+  // Profile Layout Configuration
+  profileLayout: json("profile_layout").$type<{
+    order: string[];
+    visibility: Record<string, boolean>;
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
