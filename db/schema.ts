@@ -1193,8 +1193,36 @@ export type NewTokenPurchase = typeof tokenPurchases.$inferInsert;
 export type ArtistTokenEarnings = typeof artistTokenEarnings.$inferSelect;
 export type NewArtistTokenEarnings = typeof artistTokenEarnings.$inferInsert;
 
+// Instagram Connections - OAuth tokens and account info
+export const instagramConnections = pgTable("instagram_connections", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).unique().notNull(),
+  accessToken: text("access_token").notNull(), // Long-lived token (60 days)
+  instagramUserId: text("instagram_user_id").notNull(), // Instagram Business Account ID
+  instagramUsername: text("instagram_username"),
+  pageId: text("page_id").notNull(), // Facebook Page ID
+  pageAccessToken: text("page_access_token").notNull(),
+  tokenExpiresAt: timestamp("token_expires_at").notNull(), // Token expiration date
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const instagramConnectionsRelations = relations(instagramConnections, ({ one }) => ({
+  user: one(users, {
+    fields: [instagramConnections.userId],
+    references: [users.id],
+  }),
+}));
+
 // Spotify Curators schemas
 export const insertSpotifyCuratorSchema = createInsertSchema(spotifyCurators).omit({ id: true, createdAt: true, updatedAt: true });
 export const selectSpotifyCuratorSchema = createSelectSchema(spotifyCurators);
 export type InsertSpotifyCurator = z.infer<typeof insertSpotifyCuratorSchema>;
 export type SelectSpotifyCurator = typeof spotifyCurators.$inferSelect;
+
+// Instagram Connections schemas
+export const insertInstagramConnectionSchema = createInsertSchema(instagramConnections).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectInstagramConnectionSchema = createSelectSchema(instagramConnections);
+export type InsertInstagramConnection = z.infer<typeof insertInstagramConnectionSchema>;
+export type SelectInstagramConnection = typeof instagramConnections.$inferSelect;

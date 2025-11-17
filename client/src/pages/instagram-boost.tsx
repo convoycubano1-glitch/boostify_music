@@ -66,51 +66,6 @@ export default function InstagramBoostPage() {
   const [activeTab, setActiveTab] = useState("community");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Get artist profile for auto-fill
-  const { data: artistProfile } = useQuery({
-    queryKey: ['/api/user/profile'],
-    enabled: !!user
-  });
-
-  // Fetch Community Data
-  const { data: calendarData } = useQuery({
-    queryKey: ['/api/instagram/community/calendar'],
-    enabled: !!user && activeTab === 'community'
-  });
-
-  const { data: engagementStats } = useQuery({
-    queryKey: ['/api/instagram/community/engagement'],
-    enabled: !!user && activeTab === 'community'
-  });
-
-  // Fetch Influencers Data
-  const { data: campaignsData } = useQuery({
-    queryKey: ['/api/instagram/influencers/campaigns'],
-    enabled: !!user && activeTab === 'influencers'
-  });
-
-  // Fetch Strategies Data
-  const { data: contentMixData } = useQuery({
-    queryKey: ['/api/instagram/strategies/content-mix'],
-    enabled: !!user && activeTab === 'strategies'
-  });
-
-  const { data: hashtagsData } = useQuery({
-    queryKey: ['/api/instagram/strategies/hashtags'],
-    enabled: !!user && activeTab === 'strategies'
-  });
-
-  const { data: optimalTimesData } = useQuery({
-    queryKey: ['/api/instagram/strategies/optimal-times'],
-    enabled: !!user && activeTab === 'strategies'
-  });
-
-  // Fetch Reports Data
-  const { data: analyticsData } = useQuery({
-    queryKey: ['/api/instagram/reports/analytics', dateRange],
-    enabled: !!user && activeTab === 'reports'
-  });
-
   // Caption Generator States
   const [postTopic, setPostTopic] = useState("");
   const [tone, setTone] = useState("professional");
@@ -157,6 +112,51 @@ export default function InstagramBoostPage() {
   // Reports Tab States
   const [dateRange, setDateRange] = useState("7d");
   const [selectedMetric, setSelectedMetric] = useState("engagement");
+
+  // Get artist profile for auto-fill
+  const { data: artistProfile } = useQuery({
+    queryKey: ['/api/user/profile'],
+    enabled: !!user
+  });
+
+  // Fetch Community Data
+  const { data: calendarData } = useQuery({
+    queryKey: ['/api/instagram/community/calendar'],
+    enabled: !!user && activeTab === 'community'
+  });
+
+  const { data: engagementStats } = useQuery({
+    queryKey: ['/api/instagram/community/engagement'],
+    enabled: !!user && activeTab === 'community'
+  });
+
+  // Fetch Influencers Data
+  const { data: campaignsData } = useQuery({
+    queryKey: ['/api/instagram/influencers/campaigns'],
+    enabled: !!user && activeTab === 'influencers'
+  });
+
+  // Fetch Strategies Data
+  const { data: contentMixData } = useQuery({
+    queryKey: ['/api/instagram/strategies/content-mix'],
+    enabled: !!user && activeTab === 'strategies'
+  });
+
+  const { data: hashtagsData } = useQuery({
+    queryKey: ['/api/instagram/strategies/hashtags'],
+    enabled: !!user && activeTab === 'strategies'
+  });
+
+  const { data: optimalTimesData } = useQuery({
+    queryKey: ['/api/instagram/strategies/optimal-times'],
+    enabled: !!user && activeTab === 'strategies'
+  });
+
+  // Fetch Reports Data
+  const { data: analyticsData } = useQuery({
+    queryKey: ['/api/instagram/reports/analytics', dateRange],
+    enabled: !!user && activeTab === 'reports'
+  });
 
   // Auto-fill bio from profile
   useEffect(() => {
@@ -556,7 +556,7 @@ export default function InstagramBoostPage() {
                               <span className="font-medium">{item.title}</span>
                             </div>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>{item.date.toLocaleDateString()}</span>
+                              <span>{new Date(item.date).toLocaleDateString()}</span>
                               <Badge variant={item.status === 'published' ? "default" : "outline"} className="text-xs">
                                 {item.status}
                               </Badge>
