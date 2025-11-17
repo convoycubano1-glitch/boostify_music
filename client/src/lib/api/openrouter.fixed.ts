@@ -960,109 +960,35 @@ export async function generateThreeConceptProposals(
   audioDuration?: number
 ): Promise<MusicVideoConcept[]> {
   try {
-    console.log("🎨 Generando 3 propuestas de concepto visual...");
+    console.log("🎨 Generando 3 propuestas de concepto visual con Gemini...");
     
-    const apiKey = env.VITE_OPENROUTER_API_KEY;
-    if (!apiKey) {
-      throw new Error("OpenRouter API key missing");
-    }
-    
-    const headers = {
-      "Authorization": `Bearer ${apiKey.trim()}`,
-      "HTTP-Referer": window.location.origin,
-      "X-Title": "Boostify Music Video Concept Generator",
-      "Content-Type": "application/json"
-    };
-    
-    const prompt = `Based on these lyrics and the director ${directorName}, create THREE DIFFERENT creative concepts for a music video.
-
-LYRICS:
-${lyrics}
-
-${audioDuration ? `DURATION: ${Math.floor(audioDuration)} seconds` : ''}
-DIRECTOR: ${directorName}
-
-${artistReferences && artistReferences.length > 0 ? `NOTE: The artist has ${artistReferences.length} reference images provided. Use these to inform wardrobe and styling consistency.` : ''}
-
-Create THREE DISTINCT visual concepts, each with a different creative approach:
-- Concept 1: Bold and artistic
-- Concept 2: Narrative-driven storytelling
-- Concept 3: Performance-focused with strong visuals
-
-Return ONLY valid JSON with this structure:
-{
-  "concepts": [
-    {
-      "title": "Concept title",
-      "story_concept": "Complete narrative description...",
-      "visual_theme": "Main visual theme...",
-      "mood_progression": "How the mood evolves...",
-      "main_wardrobe": {
-        "outfit_description": "Detailed outfit description",
-        "colors": ["color1", "color2"],
-        "style": "urban/elegant/casual/etc",
-        "accessories": ["accessory1", "accessory2"],
-        "hair_makeup": "Hair and makeup description"
-      },
-      "locations": [
-        {
-          "name": "Location name",
-          "description": "Detailed description",
-          "mood": "Mood of this location",
-          "scenes_usage": "When/how this location is used"
-        }
-      ],
-      "color_palette": {
-        "primary_colors": ["color1", "color2"],
-        "accent_colors": ["color3"],
-        "mood_colors": "Description of color mood"
-      },
-      "recurring_visual_elements": ["element1", "element2"],
-      "key_narrative_moments": [
-        {
-          "timestamp": "0:30",
-          "description": "What happens at this moment"
-        }
-      ]
-    }
-  ]
-}`;
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    // Llamar al endpoint del backend que usa Gemini
+    const response = await fetch("/api/music-video/generate-concepts", {
       method: "POST",
-      headers,
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert music video creative director working with ${directorName}. Create three distinct, creative concepts that showcase different approaches to the same song.`
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.9,
-        max_tokens: 8000,
-        response_format: { type: "json_object" }
+        lyrics,
+        directorName,
+        characterReference: artistReferences,
+        audioDuration
       })
     });
     
     if (!response.ok) {
-      throw new Error(`Error generating concepts: ${response.status}`);
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(`Error generating concepts: ${response.status} - ${errorData.error || errorData.details || 'Unknown error'}`);
     }
     
     const data = await response.json();
-    const conceptContent = data.choices?.[0]?.message?.content;
     
-    if (!conceptContent) {
-      throw new Error("No concept content received");
+    if (!data.success || !data.concepts) {
+      throw new Error("No concept data received from backend");
     }
     
-    const result = JSON.parse(conceptContent);
-    console.log("✅ 3 conceptos visuales generados exitosamente");
-    return result.concepts || [];
+    console.log("✅ 3 conceptos visuales generados exitosamente con Gemini");
+    return data.concepts;
     
   } catch (error) {
     console.error("Error generating concept proposals:", error);
