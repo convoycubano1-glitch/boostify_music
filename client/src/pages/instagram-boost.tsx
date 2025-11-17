@@ -388,83 +388,210 @@ export default function InstagramBoostPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pt-20">
-        <div className="flex-1 space-y-8 p-8 pt-6 bg-gradient-to-b from-background to-background/80">
-          {/* Hero Section with Video Background */}
-          <div className="relative w-full min-h-[60vh] sm:min-h-[70vh] overflow-hidden rounded-2xl">
+        <div className="flex-1 space-y-8 p-4 sm:p-8 pt-6 bg-gradient-to-b from-background via-background/95 to-background/80">
+          {/* Hero Section with Enhanced Design */}
+          <div className="relative w-full min-h-[75vh] sm:min-h-[85vh] overflow-hidden rounded-3xl border border-orange-500/20 shadow-2xl">
+            {/* Animated Background Video */}
             <video
               autoPlay
               loop
               muted
               playsInline
-              className="absolute inset-0 w-full h-full object-cover opacity-50"
+              className="absolute inset-0 w-full h-full object-cover opacity-30"
               src="/assets/instagram_promo.mp4"
             />
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-900/90 via-orange-600/80 to-background" />
-            <div className="relative h-full flex items-center">
+            
+            {/* Multi-layer Gradients */}
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-600/95 via-pink-600/90 to-purple-900/95" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-orange-500/30" />
+            
+            {/* Animated Orbs */}
+            <div className="absolute top-20 right-20 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+            
+            {/* Content Container */}
+            <div className="relative h-full flex items-center py-12 sm:py-20">
               <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="max-w-2xl space-y-6">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                  {/* Left Side - Text Content */}
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="space-y-8"
                   >
-                    <span className="inline-flex items-center rounded-full bg-orange-500/10 px-3 py-1.5 text-sm font-medium text-orange-500 ring-1 ring-inset ring-orange-500/20 mb-6">
-                      <Sparkles className="mr-1.5 h-3.5 w-3.5" /> AI-Powered Growth
-                    </span>
-                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-                      Instagram Growth
-                      <span className="block bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-orange-600">
-                        Reimagined
+                    {/* Badge */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                    >
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-xl px-4 py-2 text-sm font-semibold text-white ring-1 ring-white/20 shadow-lg">
+                        <Sparkles className="h-4 w-4 text-orange-300 animate-pulse" /> 
+                        AI-Powered Instagram Growth
                       </span>
-                    </h1>
-                    <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 font-medium max-w-xl">
-                      Transform your Instagram presence with our AI-powered platform. Grow organically and engage authentically.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    </motion.div>
+
+                    {/* Main Heading */}
+                    <motion.h1 
+                      className="text-4xl sm:text-5xl md:text-7xl font-black text-white leading-[1.1] tracking-tight"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.3 }}
+                    >
+                      Domina Instagram
+                      <span className="block mt-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-200 via-orange-300 to-yellow-200 animate-gradient">
+                        Como Nunca Antes
+                      </span>
+                    </motion.h1>
+
+                    {/* Description */}
+                    <motion.p 
+                      className="text-lg sm:text-xl text-white/90 font-medium leading-relaxed max-w-xl"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                    >
+                      Genera contenido viral con IA, conecta con influencers top y multiplica tu engagement. 
+                      <span className="text-orange-200 font-bold"> Todo en una plataforma.</span>
+                    </motion.p>
+
+                    {/* Feature Pills */}
+                    <motion.div 
+                      className="flex flex-wrap gap-3"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.5 }}
+                    >
+                      {['AI Caption Generator', 'Influencer Network', 'Real-time Analytics'].map((feature, i) => (
+                        <span key={i} className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-md text-white text-sm font-medium border border-white/20">
+                          {feature}
+                        </span>
+                      ))}
+                    </motion.div>
+
+                    {/* CTA Buttons */}
+                    <motion.div 
+                      className="flex flex-col sm:flex-row gap-4 pt-4"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.6 }}
+                    >
                       <Button
                         size="lg"
-                        className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-3"
+                        className="group relative overflow-hidden bg-white hover:bg-orange-50 text-orange-600 px-8 py-6 text-lg font-bold shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 rounded-2xl"
                       >
-                        <Sparkles className="mr-2 h-5 w-5" />
-                        Start Growing
+                        <span className="relative z-10 flex items-center">
+                          <Rocket className="mr-2 h-5 w-5 group-hover:animate-bounce" />
+                          Empezar Gratis
+                        </span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-pink-400 opacity-0 group-hover:opacity-20 transition-opacity" />
                       </Button>
                       <Link href="/dashboard">
                         <Button
                           size="lg"
                           variant="outline"
-                          className="w-full sm:w-auto bg-black/50 hover:bg-black/60 border-white/20 text-white px-6 py-3"
+                          className="group bg-white/5 hover:bg-white/10 backdrop-blur-xl border-2 border-white/30 hover:border-white/50 text-white px-8 py-6 text-lg font-bold rounded-2xl transition-all duration-300"
                         >
-                          <Home className="mr-2 h-4 w-4" />
-                          Dashboard
+                          <BarChart2 className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                          Ver Dashboard
                         </Button>
                       </Link>
-                    </div>
+                    </motion.div>
+
+                    {/* Social Proof */}
+                    <motion.div 
+                      className="flex items-center gap-6 pt-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 0.7 }}
+                    >
+                      <div className="flex -space-x-3">
+                        {[1,2,3,4].map(i => (
+                          <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-orange-400 to-pink-500" />
+                        ))}
+                      </div>
+                      <div className="text-white/90">
+                        <p className="font-bold text-lg">+10,000 artistas</p>
+                        <p className="text-sm text-white/70">creciendo con nosotros</p>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Right Side - Feature Cards */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.4 }}
+                    className="hidden lg:grid grid-cols-2 gap-4"
+                  >
+                    {[
+                      { icon: TrendingUp, title: '300% Growth', desc: 'Promedio de crecimiento', color: 'from-green-400 to-emerald-600' },
+                      { icon: Users, title: '50K+ Influencers', desc: 'Red verificada', color: 'from-blue-400 to-indigo-600' },
+                      { icon: Zap, title: 'AI en Tiempo Real', desc: 'Análisis instantáneo', color: 'from-yellow-400 to-orange-600' },
+                      { icon: Award, title: 'Top Rated', desc: '4.9/5 estrellas', color: 'from-purple-400 to-pink-600' }
+                    ].map((item, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.6 + i * 0.1 }}
+                        className="group relative bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 hover:border-white/40 hover:bg-white/15 transition-all duration-300 cursor-pointer"
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity`} />
+                        <item.icon className="h-8 w-8 text-white mb-3 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-white font-bold text-xl mb-1">{item.title}</h3>
+                        <p className="text-white/70 text-sm">{item.desc}</p>
+                      </motion.div>
+                    ))}
                   </motion.div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stats Grid */}
+          {/* Enhanced Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[
-              { icon: Users, label: "Active Users", value: "10K+" },
-              { icon: TrendingUp, label: "Growth Rate", value: "85%" },
-              { icon: MessageCircle, label: "Engagement", value: "95%" },
-              { icon: Globe, label: "Countries", value: "150+" }
+              { icon: Users, label: "Usuarios Activos", value: "50K+", change: "+18%", color: "from-blue-500 to-cyan-500" },
+              { icon: TrendingUp, label: "Tasa de Crecimiento", value: "285%", change: "+42%", color: "from-green-500 to-emerald-500" },
+              { icon: MessageCircle, label: "Engagement Promedio", value: "12.8%", change: "+5.2%", color: "from-purple-500 to-pink-500" },
+              { icon: Globe, label: "Países", value: "150+", change: "+12", color: "from-orange-500 to-red-500" }
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-orange-500/20"
+                transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
+                whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                className="group relative bg-gradient-to-br from-background via-background/95 to-background/90 backdrop-blur-xl rounded-2xl p-6 border border-orange-500/20 hover:border-orange-500/40 shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <stat.icon className="h-5 w-5 text-orange-500" />
-                  <h3 className="text-sm font-medium text-muted-foreground">{stat.label}</h3>
+                {/* Gradient Overlay on Hover */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                
+                {/* Icon with Gradient Background */}
+                <div className={`relative w-14 h-14 rounded-xl bg-gradient-to-br ${stat.color} p-3 mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <stat.icon className="h-full w-full text-white" />
                 </div>
-                <p className="text-2xl sm:text-3xl font-bold">{stat.value}</p>
+                
+                {/* Label */}
+                <h3 className="text-sm font-semibold text-muted-foreground mb-2 group-hover:text-foreground transition-colors">
+                  {stat.label}
+                </h3>
+                
+                {/* Value with Gradient on Hover */}
+                <div className="flex items-baseline gap-3">
+                  <p className={`text-3xl sm:text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r ${stat.color} group-hover:scale-105 transition-transform`}>
+                    {stat.value}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
+                    <ArrowUpRight className="h-3 w-3" />
+                    {stat.change}
+                  </span>
+                </div>
+                
+                {/* Bottom Accent Line */}
+                <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300`} />
               </motion.div>
             ))}
           </div>
