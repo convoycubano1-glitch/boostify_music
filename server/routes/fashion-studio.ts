@@ -42,10 +42,15 @@ router.post('/sessions', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const userId = user.uid || user.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'User ID not found' });
+    }
+
     const { sessionType, metadata } = req.body;
 
     const [session] = await db.insert(fashionSessions).values({
-      userId: user.id,
+      userId: userId.toString(),
       sessionType,
       metadata,
       status: 'active'
@@ -66,10 +71,11 @@ router.get('/sessions', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const userId = user.uid || user.id;
     const sessions = await db
       .select()
       .from(fashionSessions)
-      .where(eq(fashionSessions.userId, user.id))
+      .where(eq(fashionSessions.userId, userId.toString()))
       .orderBy(desc(fashionSessions.createdAt))
       .limit(20);
 
@@ -91,6 +97,7 @@ router.post('/tryon', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const userId = user.uid || user.id;
     const { modelImage, clothingImage, sessionId, merchandiseId } = req.body;
 
     console.log('🎨 Iniciando Virtual Try-On con FAL...');
@@ -110,7 +117,7 @@ router.post('/tryon', authenticate, async (req: Request, res: Response) => {
       // Guardar resultado en DB
       const [fashionResult] = await db.insert(fashionResults).values({
         sessionId: sessionId || null,
-        userId: user.id,
+        userId: userId.toString(),
         resultType: 'tryon',
         imageUrl: result.image.url,
         metadata: {
@@ -123,7 +130,7 @@ router.post('/tryon', authenticate, async (req: Request, res: Response) => {
       // Si está asociado a un producto, guardar en historial
       if (merchandiseId) {
         await db.insert(productTryOnHistory).values({
-          userId: user.id,
+          userId: userId.toString(),
           merchandiseId,
           modelImage,
           resultImage: result.image.url,
@@ -157,13 +164,14 @@ router.post('/generate-video', authenticate, async (req: Request, res: Response)
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const userId = user.uid || user.id;
     const { imageUrl, prompt, sessionId, duration = 5, aspectRatio = '16:9' } = req.body;
 
     console.log('🎬 Generando video fashion con Kling...');
 
     // Crear registro de video en DB (estado: processing)
     const [video] = await db.insert(fashionVideos).values({
-      userId: user.id,
+      userId: userId.toString(),
       sessionId: sessionId || null,
       videoUrl: '', // Se actualizará cuando termine
       prompt,
@@ -300,10 +308,12 @@ router.post('/analyze', authenticate, async (req: Request, res: Response) => {
       };
     }
 
+    const userId = user.uid || user.id;
+
     // Guardar análisis en DB
     const [analysisRecord] = await db.insert(fashionAnalysis).values({
       sessionId: sessionId || null,
-      userId: user.id,
+      userId: userId.toString(),
       analysisType: 'style',
       imageUrl,
       recommendations: {
@@ -341,10 +351,11 @@ router.post('/portfolio', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const userId = user.uid || user.id;
     const { title, description, images, products, category, season, tags, isPublic } = req.body;
 
     const [portfolioItem] = await db.insert(fashionPortfolio).values({
-      userId: user.id,
+      userId: userId.toString(),
       title,
       description,
       images,
@@ -370,10 +381,11 @@ router.get('/portfolio', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const userId = user.uid || user.id;
     const portfolio = await db
       .select()
       .from(fashionPortfolio)
-      .where(eq(fashionPortfolio.userId, user.id))
+      .where(eq(fashionPortfolio.userId, userId.toString()))
       .orderBy(desc(fashionPortfolio.createdAt));
 
     res.json({ success: true, portfolio });
@@ -395,11 +407,12 @@ router.get('/products', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const userId = user.uid || user.id;
     const products = await db
       .select()
       .from(merchandise)
       .where(and(
-        eq(merchandise.userId, user.id),
+        eq(merchandise.userId, userId.toString()),
         eq(merchandise.category, 'apparel')
       ))
       .orderBy(desc(merchandise.createdAt));
@@ -419,10 +432,11 @@ router.get('/tryon-history', authenticate, async (req: Request, res: Response) =
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const userId = user.uid || user.id;
     const history = await db
       .select()
       .from(productTryOnHistory)
-      .where(eq(productTryOnHistory.userId, user.id))
+      .where(eq(productTryOnHistory.userId, userId.toString()))
       .orderBy(desc(productTryOnHistory.createdAt))
       .limit(50);
 
