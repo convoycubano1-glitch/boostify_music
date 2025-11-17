@@ -9,9 +9,10 @@ import {
   Play, Tv, Film, Music2, Star, Clock, TrendingUp, Search, 
   Share2, Facebook, Twitter, Copy, Instagram, Linkedin, Loader2,
   PlusCircle, Bookmark, BookmarkPlus, ThumbsUp, MessageCircle, Info,
-  Mic, Video, Radio, Users, Zap, Sparkles, Calendar, CheckCircle2
+  Mic, Video, Radio, Users, Zap, Sparkles, Calendar, CheckCircle2,
+  Pause, Volume2, VolumeX, Maximize, X, SkipForward, SkipBack
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
 import { 
   DropdownMenu, 
@@ -26,6 +27,7 @@ import { useAuth } from "../hooks/use-auth";
 import { Skeleton } from "../components/ui/skeleton";
 import { Badge } from "../components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip";
+import { Dialog, DialogContent } from "../components/ui/dialog";
 
 interface VideoContent {
   id: string;
@@ -38,7 +40,6 @@ interface VideoContent {
   category: "featured" | "live" | "videos" | "music";
 }
 
-// API response interface
 interface VideoResponse {
   success: boolean;
   videos: VideoContent[];
@@ -46,14 +47,198 @@ interface VideoResponse {
   error?: string;
 }
 
+interface VideoPlayerProps {
+  video: VideoContent;
+  isOpen: boolean;
+  onClose: () => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
+}
+
+function VideoPlayer({ video, isOpen, onClose, onNext, onPrevious }: VideoPlayerProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+  
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+  
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+      setDuration(videoRef.current.duration);
+    }
+  };
+  
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+  
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-7xl w-full p-0 bg-black border-0">
+        <div 
+          className="relative w-full h-[90vh] bg-black group"
+          onMouseEnter={() => setShowControls(true)}
+          onMouseLeave={() => setShowControls(false)}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 z-50 text-white hover:bg-white/20"
+            onClick={onClose}
+            data-testid="button-close-video"
+          >
+            <X className="w-6 h-6" />
+          </Button>
+          
+          <video
+            ref={videoRef}
+            className="w-full h-full object-contain"
+            src={video.filePath}
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleTimeUpdate}
+            onClick={togglePlay}
+            data-testid="video-player"
+          />
+          
+          <AnimatePresence>
+            {showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6"
+              >
+                <div className="mb-4">
+                  <input
+                    type="range"
+                    min="0"
+                    max={duration || 0}
+                    value={currentTime}
+                    onChange={handleSeek}
+                    className="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, hsl(24, 95%, 53%) 0%, hsl(24, 95%, 53%) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.3) ${(currentTime / duration) * 100}%, rgba(255,255,255,0.3) 100%)`
+                    }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between text-white">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={togglePlay}
+                      className="text-white hover:bg-white/20"
+                      data-testid="button-play-pause"
+                    >
+                      {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                    </Button>
+                    
+                    {onPrevious && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onPrevious}
+                        className="text-white hover:bg-white/20"
+                        data-testid="button-previous"
+                      >
+                        <SkipBack className="w-5 h-5" />
+                      </Button>
+                    )}
+                    
+                    {onNext && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onNext}
+                        className="text-white hover:bg-white/20"
+                        data-testid="button-next"
+                      >
+                        <SkipForward className="w-5 h-5" />
+                      </Button>
+                    )}
+                    
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleMute}
+                      className="text-white hover:bg-white/20"
+                      data-testid="button-mute"
+                    >
+                      {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                    </Button>
+                    
+                    <span className="text-sm">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-lg">{video.title}</h3>
+                    <p className="text-sm text-gray-300">{video.views.toLocaleString()} views</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {!isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Button
+                size="lg"
+                onClick={togglePlay}
+                className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-20 h-20"
+                data-testid="button-play-overlay"
+              >
+                <Play className="w-10 h-10 ml-1" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function BoostifyTvPage() {
   const [selectedTab, setSelectedTab] = useState("featured");
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<VideoContent | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Fetch videos from the API
   const { data, isLoading, isError } = useQuery<VideoResponse>({
     queryKey: ['/api/files/videos/tv'],
     queryFn: async () => {
@@ -62,18 +247,15 @@ export default function BoostifyTvPage() {
     }
   });
 
-  // Assign categories to videos if not already assigned
   const processedVideos = useMemo(() => {
     if (!data?.videos) return [];
     
     return data.videos.map((video: VideoContent, index: number) => ({
       ...video,
-      // Alternate between featured and videos categories if not already assigned
       category: video.category || (index % 2 === 0 ? "featured" : "videos") as "featured" | "live" | "videos" | "music"
     }));
   }, [data?.videos]);
   
-  // Function to filter videos based on search term
   const filteredVideos = useMemo(() => {
     if (!processedVideos.length) return [];
     
@@ -83,7 +265,6 @@ export default function BoostifyTvPage() {
     );
   }, [processedVideos, searchTerm]);
 
-  // Function to share video
   const shareVideo = (video: VideoContent, platform: string) => {
     const videoUrl = window.location.origin + video.filePath;
     const text = `Check out this video: ${video.title}`;
@@ -115,12 +296,10 @@ export default function BoostifyTvPage() {
     }
   };
 
-  // Estado para video destacado
   const [featuredVideo, setFeaturedVideo] = useState<VideoContent | null>(null);
   const [savedVideos, setSavedVideos] = useState<string[]>([]);
   const [likedVideos, setLikedVideos] = useState<string[]>([]);
   
-  // Cargar video destacado al azar
   useEffect(() => {
     if (processedVideos.length > 0) {
       const featured = processedVideos.filter(v => v.category === "featured");
@@ -133,7 +312,6 @@ export default function BoostifyTvPage() {
     }
   }, [processedVideos]);
   
-  // Simulación de guardado y me gusta
   const toggleSaveVideo = (videoId: string) => {
     if (savedVideos.includes(videoId)) {
       setSavedVideos(savedVideos.filter(id => id !== videoId));
@@ -162,17 +340,34 @@ export default function BoostifyTvPage() {
     }
   };
   
+  const openVideoPlayer = (video: VideoContent) => {
+    setSelectedVideo(video);
+  };
+  
+  const currentVideoIndex = selectedVideo ? processedVideos.findIndex(v => v.id === selectedVideo.id) : -1;
+  
+  const handleNext = () => {
+    if (currentVideoIndex < processedVideos.length - 1) {
+      setSelectedVideo(processedVideos[currentVideoIndex + 1]);
+    }
+  };
+  
+  const handlePrevious = () => {
+    if (currentVideoIndex > 0) {
+      setSelectedVideo(processedVideos[currentVideoIndex - 1]);
+    }
+  };
+  
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 space-y-8 p-4 md:p-8 pt-20">
-        {/* Hero Section with Background Video */}
-        <div className="relative w-full h-[60vh] overflow-hidden rounded-xl mb-8">
-          {/* Video background with fallback gradient */}
+        {/* Hero Section - Improved */}
+        <div className="relative w-full h-[40vh] md:h-[60vh] overflow-hidden rounded-xl mb-8">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-800 via-orange-700 to-black">
             {featuredVideo && (
               <video
-                className="absolute inset-0 w-full h-full object-cover opacity-40"
+                className="absolute inset-0 w-full h-full object-cover opacity-60"
                 src={featuredVideo.filePath}
                 autoPlay
                 muted
@@ -183,12 +378,9 @@ export default function BoostifyTvPage() {
                 }}
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-            <div className="absolute inset-0 opacity-30" 
-                 style={{backgroundImage: "url('/assets/noise.png')", backgroundRepeat: "repeat"}}></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
           </div>
           
-          {/* Content overlay */}
           <div className="relative h-full flex items-center justify-start px-4 md:px-12">
             <div className="max-w-2xl">
               <motion.div
@@ -202,62 +394,32 @@ export default function BoostifyTvPage() {
                     Boostify TV
                   </span>
                 </h1>
-                <p className="text-base md:text-xl text-gray-200 mb-8">
+                <p className="text-base md:text-xl text-gray-200 mb-6">
                   Stream exclusive music content, live performances, and behind-the-scenes footage
                 </p>
-                <div className="flex gap-4 flex-wrap">
-                  <Button
-                    size="lg"
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={() => {
-                      if (processedVideos.length > 0) {
-                        const videoElements = document.querySelectorAll('video');
-                        if (videoElements && videoElements.length > 0) {
-                          videoElements[1]?.play();
-                        }
-                      }
-                    }}
-                    disabled={isLoading || isError || processedVideos.length === 0}
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    Browse Content
-                  </Button>
-                  <div className="relative flex-1 max-w-sm">
-                    <Input
-                      placeholder="Search videos..."
-                      className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
-                  </div>
-                </div>
                 
-                {/* Featured video info */}
                 {featuredVideo && (
                   <motion.div 
-                    className="mt-8 bg-black/30 backdrop-blur-sm p-4 rounded-lg border border-white/10"
+                    className="mt-6 bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/20"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
                   >
-                    <div className="flex items-center">
-                      <Badge variant="secondary" className="bg-orange-500 text-white">
+                    <div className="flex items-center mb-2">
+                      <Badge className="bg-orange-500 text-white mr-2">
                         Featured
                       </Badge>
-                      <h3 className="text-white ml-2 font-medium">{featuredVideo.title}</h3>
+                      <h3 className="text-white font-medium">{featuredVideo.title}</h3>
                     </div>
-                    <p className="text-gray-300 text-sm mt-1 line-clamp-2">{featuredVideo.description}</p>
-                    <div className="flex mt-2 gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="border-white/20 text-white hover:bg-white/10"
-                        onClick={() => window.location.href = `#video-${featuredVideo.id}`}
-                      >
-                        <Play className="w-3 h-3 mr-1" /> Watch now
-                      </Button>
-                    </div>
+                    <p className="text-gray-300 text-sm mb-3 line-clamp-2">{featuredVideo.description}</p>
+                    <Button 
+                      size="sm" 
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                      onClick={() => openVideoPlayer(featuredVideo)}
+                      data-testid="button-watch-featured"
+                    >
+                      <Play className="w-4 h-4 mr-2" /> Watch Now
+                    </Button>
                   </motion.div>
                 )}
               </motion.div>
@@ -265,226 +427,279 @@ export default function BoostifyTvPage() {
           </div>
         </div>
 
-        {/* Stats section */}
+        {/* Search Bar - Repositioned */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold">Video Library</h2>
+          
+          <div className="flex gap-4 items-center w-full md:w-auto">
+            <div className="relative flex-1 md:w-80">
+              <Input
+                placeholder="Search videos..."
+                className="pr-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                data-testid="input-search-videos"
+              />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            </div>
+            
+            {user && (
+              <Button
+                onClick={() => setIsUploadDialogOpen(true)}
+                className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+                size="sm"
+                data-testid="button-upload-video"
+              >
+                <PlusCircle className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Upload</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Stats section - Enhanced */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Total Videos</p>
-                <h3 className="text-2xl font-bold mt-1">
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    processedVideos.length
-                  )}
-                </h3>
-              </div>
-              <div className="h-12 w-12 bg-orange-100 dark:bg-orange-800 rounded-full flex items-center justify-center">
-                <Film className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              {isLoading ? (
-                <Skeleton className="h-4 w-full" />
-              ) : (
-                <div className="flex items-center">
-                  <TrendingUp className="w-4 h-4 mr-1 text-green-500" />
-                  <span>Videos uploaded this month: {Math.floor(processedVideos.length * 0.4)}</span>
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Total Videos</p>
+                  <h3 className="text-3xl font-bold mt-1">
+                    {isLoading ? (
+                      <Skeleton className="h-10 w-16" />
+                    ) : (
+                      processedVideos.length
+                    )}
+                  </h3>
                 </div>
-              )}
-            </div>
-          </Card>
+                <div className="h-16 w-16 bg-orange-500/20 rounded-full flex items-center justify-center">
+                  <Film className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                </div>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                {isLoading ? (
+                  <Skeleton className="h-4 w-full" />
+                ) : (
+                  <div className="flex items-center">
+                    <TrendingUp className="w-4 h-4 mr-1 text-green-500" />
+                    <span>New this month: {Math.floor(processedVideos.length * 0.4)}</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
           
-          <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Views</p>
-                <h3 className="text-2xl font-bold mt-1">
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-24" />
-                  ) : (
-                    processedVideos.reduce((sum, video) => sum + video.views, 0).toLocaleString()
-                  )}
-                </h3>
-              </div>
-              <div className="h-12 w-12 bg-orange-100 dark:bg-orange-800 rounded-full flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              {isLoading ? (
-                <Skeleton className="h-4 w-full" />
-              ) : (
-                <div className="flex items-center">
-                  <TrendingUp className="w-4 h-4 mr-1 text-green-500" />
-                  <span>37% growth compared to previous month</span>
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Total Views</p>
+                  <h3 className="text-3xl font-bold mt-1">
+                    {isLoading ? (
+                      <Skeleton className="h-10 w-24" />
+                    ) : (
+                      processedVideos.reduce((sum, video) => sum + video.views, 0).toLocaleString()
+                    )}
+                  </h3>
                 </div>
-              )}
-            </div>
-          </Card>
+                <div className="h-16 w-16 bg-purple-500/20 rounded-full flex items-center justify-center">
+                  <TrendingUp className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                </div>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                {isLoading ? (
+                  <Skeleton className="h-4 w-full" />
+                ) : (
+                  <div className="flex items-center">
+                    <TrendingUp className="w-4 h-4 mr-1 text-green-500" />
+                    <span>+37% from last month</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
           
-          <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Popular Categories</p>
-                <h3 className="text-2xl font-bold mt-1">
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-20" />
-                  ) : (
-                    processedVideos.filter(v => v.category === "featured").length > 0 ? "Featured" : "Music"
-                  )}
-                </h3>
-              </div>
-              <div className="h-12 w-12 bg-orange-100 dark:bg-orange-800 rounded-full flex items-center justify-center">
-                <Star className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              {isLoading ? (
-                <Skeleton className="h-4 w-full" />
-              ) : (
-                <div className="flex items-center">
-                  <Info className="w-4 h-4 mr-1 text-blue-500" />
-                  <span>Featured videos receive 2.5x more views</span>
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+            <Card className="p-6 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900 border-pink-200 dark:border-pink-800 hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-pink-600 dark:text-pink-400">Popular</p>
+                  <h3 className="text-2xl font-bold mt-1">
+                    {isLoading ? (
+                      <Skeleton className="h-10 w-20" />
+                    ) : (
+                      processedVideos.filter(v => v.category === "featured").length > 0 ? "Featured" : "Music"
+                    )}
+                  </h3>
                 </div>
-              )}
-            </div>
-          </Card>
+                <div className="h-16 w-16 bg-pink-500/20 rounded-full flex items-center justify-center">
+                  <Star className="h-8 w-8 text-pink-600 dark:text-pink-400" />
+                </div>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                {isLoading ? (
+                  <Skeleton className="h-4 w-full" />
+                ) : (
+                  <div className="flex items-center">
+                    <Info className="w-4 h-4 mr-1 text-blue-500" />
+                    <span>2.5x more engagement</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
         </div>
         
         {/* Loading state */}
         {isLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-500 mr-2" />
-            <p>Loading videos...</p>
+          <div className="space-y-6">
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="aspect-video w-full" />
+                  <div className="p-4 space-y-2">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
         ) : isError ? (
           <div className="flex justify-center items-center py-12">
-            <p className="text-red-500">Error loading videos. Please try again later.</p>
+            <div className="text-center">
+              <Film className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-xl font-semibold mb-2">Error loading videos</p>
+              <p className="text-muted-foreground">Please try again later</p>
+            </div>
           </div>
         ) : (
           <>
-            <div className="flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">Video Library</h2>
-                
-                {/* Upload button for authenticated users */}
-                {user && (
-                  <Button
-                    onClick={() => setIsUploadDialogOpen(true)}
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                  >
-                    <PlusCircle className="w-4 h-4 mr-2" />
-                    Upload Video
-                  </Button>
+            <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+              <TabsList className="flex flex-wrap gap-2 mb-6 bg-muted/50">
+                <TabsTrigger value="featured" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white" data-testid="tab-featured">
+                  <Star className="w-4 h-4 mr-2" />
+                  Featured
+                </TabsTrigger>
+                <TabsTrigger value="videos" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white" data-testid="tab-videos">
+                  <Film className="w-4 h-4 mr-2" />
+                  Videos
+                </TabsTrigger>
+                {processedVideos.some((v: VideoContent) => v.category === "live") && (
+                  <TabsTrigger value="live" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white" data-testid="tab-live">
+                    <Tv className="w-4 h-4 mr-2" />
+                    Live
+                  </TabsTrigger>
                 )}
-              </div>
-              
-              <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList className="flex flex-wrap gap-2 mb-6">
-                  <TabsTrigger value="featured" className="data-[state=active]:bg-orange-500">
-                    <Star className="w-4 h-4 mr-2" />
-                    Featured
+                {processedVideos.some((v: VideoContent) => v.category === "music") && (
+                  <TabsTrigger value="music" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white" data-testid="tab-music">
+                    <Music2 className="w-4 h-4 mr-2" />
+                    Music
                   </TabsTrigger>
-                  <TabsTrigger value="videos" className="data-[state=active]:bg-orange-500">
-                    <Film className="w-4 h-4 mr-2" />
-                    Videos
-                  </TabsTrigger>
-                  {processedVideos.some((v: VideoContent) => v.category === "live") && (
-                    <TabsTrigger value="live" className="data-[state=active]:bg-orange-500">
-                      <Tv className="w-4 h-4 mr-2" />
-                      Live
-                    </TabsTrigger>
-                  )}
-                  {processedVideos.some((v: VideoContent) => v.category === "music") && (
-                    <TabsTrigger value="music" className="data-[state=active]:bg-orange-500">
-                      <Music2 className="w-4 h-4 mr-2" />
-                      Music
-                    </TabsTrigger>
-                  )}
-                </TabsList>
+                )}
+              </TabsList>
 
-                {/* Video Categories Sections */}
-                {["featured", "videos", "live", "music"].map((category) => (
-                  <TabsContent key={category} value={category}>
-                    {/* Empty state when no videos in category */}
-                    {(searchTerm ? filteredVideos : processedVideos).filter((video: VideoContent) => video.category === category).length === 0 && (
-                      <div className="text-center py-16 border border-dashed rounded-lg">
-                        <Film className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No videos in this category</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {searchTerm 
-                            ? `No results found for "${searchTerm}" in this category.` 
-                            : "No videos available in this category yet."}
-                        </p>
-                        {user && (
-                          <Button onClick={() => setIsUploadDialogOpen(true)}>
-                            <PlusCircle className="w-4 h-4 mr-2" />
-                            Upload the first one
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Videos grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {(searchTerm ? filteredVideos : processedVideos)
-                        .filter((video: VideoContent) => video.category === category)
-                        .map((video: VideoContent) => (
+              {["featured", "videos", "live", "music"].map((category) => (
+                <TabsContent key={category} value={category}>
+                  {(searchTerm ? filteredVideos : processedVideos).filter((video: VideoContent) => video.category === category).length === 0 && (
+                    <div className="text-center py-16 border border-dashed rounded-lg">
+                      <Film className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No videos in this category</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {searchTerm 
+                          ? `No results found for "${searchTerm}" in this category.` 
+                          : "No videos available in this category yet."}
+                      </p>
+                      {user && (
+                        <Button onClick={() => setIsUploadDialogOpen(true)} data-testid="button-upload-first">
+                          <PlusCircle className="w-4 h-4 mr-2" />
+                          Upload the first one
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {(searchTerm ? filteredVideos : processedVideos)
+                      .filter((video: VideoContent) => video.category === category)
+                      .map((video: VideoContent) => (
+                        <motion.div
+                          key={video.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                          whileHover={{ y: -8 }}
+                        >
                           <Card 
-                            key={video.id} 
-                            className="overflow-hidden group hover:shadow-lg transition-all duration-300"
+                            className="overflow-hidden group hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-orange-500/50 bg-card/50 backdrop-blur-sm"
                             id={`video-${video.id}`}
+                            data-testid={`video-card-${video.id}`}
                           >
-                            <div className="aspect-video relative overflow-hidden">
-                              {/* Overlay on hover */}
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
+                            <div className="aspect-video relative overflow-hidden bg-gradient-to-br from-orange-500/10 to-purple-500/10">
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center z-20">
                                 <Button 
-                                  size="sm" 
-                                  variant="secondary"
-                                  className="bg-orange-500 hover:bg-orange-600 text-white"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const videoEl = document.querySelector(`#video-${video.id} video`) as HTMLVideoElement;
-                                    if (videoEl) {
-                                      if (videoEl.paused) {
-                                        videoEl.play();
-                                      } else {
-                                        videoEl.pause();
-                                      }
-                                    }
-                                  }}
+                                  size="lg" 
+                                  className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-16 h-16 shadow-lg"
+                                  onClick={() => openVideoPlayer(video)}
+                                  data-testid={`button-play-${video.id}`}
                                 >
-                                  <Play className="w-4 h-4 mr-1" /> Play
+                                  <Play className="w-8 h-8 ml-1" />
                                 </Button>
                               </div>
                               
-                              {/* Category badge */}
                               <Badge 
-                                className="absolute top-2 left-2 z-20 bg-orange-500 text-white"
+                                className="absolute top-3 left-3 z-30 bg-orange-500 text-white shadow-lg"
                               >
                                 {category === "featured" && "Featured"}
                                 {category === "videos" && "Video"}
                                 {category === "live" && "Live"}
                                 {category === "music" && "Music"}
                               </Badge>
+                              
+                              <Badge 
+                                className="absolute bottom-3 right-3 z-30 bg-black/80 text-white"
+                              >
+                                <Clock className="w-3 h-3 mr-1" />
+                                {video.duration || "0:00"}
+                              </Badge>
 
                               <video
-                                className="w-full h-full object-cover"
-                                src={`${video.filePath}#t=0.001`}
-                                controls
+                                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
+                                src={`${video.filePath}#t=0.5`}
                                 preload="metadata"
                                 onError={(e) => {
-                                  console.error(`Error loading video: ${video.filePath}`, e);
+                                  const target = e.target as HTMLVideoElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent && !parent.querySelector('.error-placeholder')) {
+                                    const placeholder = document.createElement('div');
+                                    placeholder.className = 'error-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-900 to-purple-900';
+                                    placeholder.innerHTML = `
+                                      <div class="text-center text-white">
+                                        <svg class="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <p class="text-sm">Video Preview</p>
+                                      </div>
+                                    `;
+                                    parent.appendChild(placeholder);
+                                  }
                                 }}
                               />
                             </div>
-                            <div className="p-4">
+                            
+                            <div className="p-4 bg-gradient-to-b from-card to-card/50">
                               <div className="flex justify-between items-start mb-2">
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <h3 className="font-semibold line-clamp-1">{video.title}</h3>
+                                      <h3 className="font-semibold text-lg line-clamp-1 cursor-help">{video.title}</h3>
                                     </TooltipTrigger>
                                     <TooltipContent className="max-w-md">
                                       <div className="p-1">
@@ -497,7 +712,7 @@ export default function BoostifyTvPage() {
                                 
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid={`button-share-${video.id}`}>
                                       <Share2 className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -532,81 +747,90 @@ export default function BoostifyTvPage() {
                               </p>
                               
                               <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span className="flex items-center">
-                                    <Clock className="w-4 h-4 mr-1" />
-                                    {video.duration || "0:00"}
-                                  </span>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <span className="flex items-center">
                                     <TrendingUp className="w-4 h-4 mr-1" />
-                                    {video.views.toLocaleString()} views
+                                    {video.views.toLocaleString()}
                                   </span>
                                 </div>
                                 
                                 <div className="flex items-center gap-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className={`h-8 w-8 ${likedVideos.includes(video.id) ? 'text-orange-500' : ''}`}
-                                    onClick={() => toggleLikeVideo(video.id)}
-                                  >
-                                    <ThumbsUp className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className={`h-8 w-8 ${savedVideos.includes(video.id) ? 'text-orange-500' : ''}`}
-                                    onClick={() => toggleSaveVideo(video.id)}
-                                  >
-                                    {savedVideos.includes(video.id) ? (
-                                      <Bookmark className="h-4 w-4" />
-                                    ) : (
-                                      <BookmarkPlus className="h-4 w-4" />
-                                    )}
-                                  </Button>
+                                  <motion.div whileTap={{ scale: 0.9 }}>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className={`h-8 w-8 transition-colors ${likedVideos.includes(video.id) ? 'text-orange-500 hover:text-orange-600' : 'hover:text-orange-500'}`}
+                                      onClick={() => toggleLikeVideo(video.id)}
+                                      data-testid={`button-like-${video.id}`}
+                                    >
+                                      <ThumbsUp className="h-4 w-4" fill={likedVideos.includes(video.id) ? "currentColor" : "none"} />
+                                    </Button>
+                                  </motion.div>
+                                  <motion.div whileTap={{ scale: 0.9 }}>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className={`h-8 w-8 transition-colors ${savedVideos.includes(video.id) ? 'text-orange-500 hover:text-orange-600' : 'hover:text-orange-500'}`}
+                                      onClick={() => toggleSaveVideo(video.id)}
+                                      data-testid={`button-save-${video.id}`}
+                                    >
+                                      <Bookmark className="h-4 w-4" fill={savedVideos.includes(video.id) ? "currentColor" : "none"} />
+                                    </Button>
+                                  </motion.div>
                                 </div>
                               </div>
                             </div>
                           </Card>
-                        ))}
-                    </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </div>
+                        </motion.div>
+                      ))}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
           </>
         )}
         
-        {/* Personalized recommendations */}
+        {/* Recommended Section - Enhanced */}
         {!isLoading && !isError && processedVideos.length > 0 && (
-          <div className="mt-12 mb-12">
+          <motion.div 
+            className="mt-12 mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
             <h2 className="text-2xl font-bold mb-6">Recommended for you</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {processedVideos.slice(0, 4).map((video: VideoContent) => (
-                <Card key={`rec-${video.id}`} className="overflow-hidden hover:shadow-md transition-all">
-                  <div className="aspect-video relative">
-                    <video
-                      className="w-full h-full object-cover"
-                      src={`${video.filePath}#t=0.001`}
-                      preload="metadata"
-                      onError={(e) => {
-                        console.error(`Error loading recommended video: ${video.filePath}`);
-                      }}
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="secondary" className="bg-orange-500 text-white hover:bg-orange-600">
-                        <Play className="h-4 w-4 mr-1" /> Watch
-                      </Button>
+                <motion.div
+                  key={`rec-${video.id}`}
+                  whileHover={{ y: -4 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer group" onClick={() => openVideoPlayer(video)} data-testid={`recommended-${video.id}`}>
+                    <div className="aspect-video relative bg-gradient-to-br from-orange-500/10 to-purple-500/10">
+                      <video
+                        className="w-full h-full object-cover"
+                        src={`${video.filePath}#t=0.5`}
+                        preload="metadata"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="bg-orange-500 rounded-full p-3">
+                          <Play className="h-6 w-6 text-white ml-0.5" />
+                        </div>
+                      </div>
+                      <Badge className="absolute bottom-2 right-2 bg-black/80 text-white text-xs">
+                        {video.duration || "0:00"}
+                      </Badge>
                     </div>
-                  </div>
-                  <div className="p-3">
-                    <h4 className="font-medium text-sm line-clamp-1">{video.title}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">{video.views.toLocaleString()} views</p>
-                  </div>
-                </Card>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm line-clamp-2 mb-1">{video.title}</h4>
+                      <p className="text-xs text-muted-foreground">{video.views.toLocaleString()} views</p>
+                    </div>
+                  </Card>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
         
         {/* Coming Soon: Live Podcast Studio */}
@@ -618,14 +842,12 @@ export default function BoostifyTvPage() {
           transition={{ duration: 0.6 }}
         >
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900 via-orange-900 to-black border border-orange-500/20">
-            {/* Animated background */}
             <div className="absolute inset-0 opacity-30">
               <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full blur-3xl animate-pulse"></div>
               <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
             </div>
             
             <div className="relative p-8 md:p-12">
-              {/* Badge */}
               <div className="flex items-center gap-2 mb-6">
                 <Badge className="bg-orange-500 text-white px-4 py-1.5 text-sm font-semibold">
                   <Sparkles className="w-4 h-4 mr-2 inline" />
@@ -633,7 +855,6 @@ export default function BoostifyTvPage() {
                 </Badge>
               </div>
               
-              {/* Main content */}
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
                   <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -645,7 +866,6 @@ export default function BoostifyTvPage() {
                     to all your social networks.
                   </p>
                   
-                  {/* Features list */}
                   <div className="space-y-4 mb-8">
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-orange-500/20 rounded-lg">
@@ -688,7 +908,6 @@ export default function BoostifyTvPage() {
                     </div>
                   </div>
                   
-                  {/* CTA */}
                   <div className="flex flex-wrap gap-4">
                     <Button 
                       size="lg" 
@@ -708,12 +927,9 @@ export default function BoostifyTvPage() {
                   </div>
                 </div>
                 
-                {/* Visual preview */}
                 <div className="relative">
                   <div className="relative aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-orange-500/30 shadow-2xl">
-                    {/* Mock interface */}
                     <div className="absolute inset-0 p-4">
-                      {/* Top bar */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
@@ -724,7 +940,6 @@ export default function BoostifyTvPage() {
                         </div>
                       </div>
                       
-                      {/* Main video grid */}
                       <div className="grid grid-cols-3 gap-2 mb-3">
                         {[1, 2, 3].map((i) => (
                           <div key={i} className="aspect-video bg-gradient-to-br from-orange-500/20 to-purple-500/20 rounded-lg border border-white/10 relative">
@@ -738,7 +953,6 @@ export default function BoostifyTvPage() {
                         ))}
                       </div>
                       
-                      {/* Control bar */}
                       <div className="flex items-center justify-center gap-3">
                         <div className="p-2 bg-orange-500/80 rounded-full">
                           <Mic className="w-4 h-4 text-white" />
@@ -756,7 +970,6 @@ export default function BoostifyTvPage() {
                     </div>
                   </div>
                   
-                  {/* Floating badges */}
                   <motion.div 
                     className="absolute -top-4 -right-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-full shadow-lg"
                     animate={{ y: [0, -10, 0] }}
@@ -771,9 +984,14 @@ export default function BoostifyTvPage() {
           </div>
         </motion.div>
         
-        {/* Call to action for non-registered users */}
+        {/* CTA for non-registered users */}
         {!user && !isLoading && !isError && (
-          <div className="mt-12 mb-8 bg-gradient-to-r from-orange-600 to-orange-500 rounded-lg p-8 text-white">
+          <motion.div 
+            className="mt-12 mb-8 bg-gradient-to-r from-orange-600 to-orange-500 rounded-lg p-8 text-white"
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+          >
             <div className="flex flex-col md:flex-row items-center justify-between">
               <div className="mb-6 md:mb-0">
                 <h2 className="text-2xl font-bold mb-2">Want to upload your own videos?</h2>
@@ -790,10 +1008,9 @@ export default function BoostifyTvPage() {
                 </Button>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
         
-        {/* Video upload dialog */}
         {isUploadDialogOpen && (
           <VideoUpload
             isOpen={isUploadDialogOpen}
@@ -803,10 +1020,10 @@ export default function BoostifyTvPage() {
       </main>
       
       {/* Footer */}
-      <footer className="bg-orange-950 text-orange-100 py-12 px-4 md:px-8">
+      <footer className="bg-gradient-to-br from-orange-950 to-black text-orange-100 py-12 px-4 md:px-8 border-t border-orange-900">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="font-bold text-xl mb-4">Boostify TV</h3>
+            <h3 className="font-bold text-xl mb-4 text-orange-400">Boostify TV</h3>
             <p className="text-sm text-orange-300">
               The streaming platform designed specifically for musicians and music lovers.
             </p>
@@ -862,6 +1079,16 @@ export default function BoostifyTvPage() {
           © {new Date().getFullYear()} Boostify TV. All rights reserved.
         </div>
       </footer>
+      
+      {selectedVideo && (
+        <VideoPlayer
+          video={selectedVideo}
+          isOpen={!!selectedVideo}
+          onClose={() => setSelectedVideo(null)}
+          onNext={currentVideoIndex < processedVideos.length - 1 ? handleNext : undefined}
+          onPrevious={currentVideoIndex > 0 ? handlePrevious : undefined}
+        />
+      )}
     </div>
   );
 }

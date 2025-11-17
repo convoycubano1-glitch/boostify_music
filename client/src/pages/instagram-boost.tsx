@@ -64,6 +64,7 @@ export default function InstagramBoostPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("ai-tools");
+  const [aiToolTab, setAiToolTab] = useState("captions");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Caption Generator States
@@ -167,9 +168,9 @@ export default function InstagramBoostPage() {
   // Auto-fill bio from profile
   useEffect(() => {
     if (artistProfile && activeTab === 'bio') {
-      setCurrentBio(artistProfile.biography || '');
-      setBioNiche(artistProfile.genre || '');
-      setWebsiteUrl(artistProfile.website || '');
+      setCurrentBio((artistProfile as any)?.biography || '');
+      setBioNiche((artistProfile as any)?.genre || '');
+      setWebsiteUrl((artistProfile as any)?.website || '');
     }
   }, [artistProfile, activeTab]);
 
@@ -357,13 +358,13 @@ export default function InstagramBoostPage() {
   });
 
   // Prepare data with fallbacks
-  const contentItems = calendarData?.contentItems || [];
-  const stats = engagementStats || {};
-  const campaigns = campaignsData?.campaigns || [];
-  const campaignStats = campaignsData?.stats || {};
-  const contentMix = contentMixData?.contentMix || { entertainment: 40, education: 35, promotion: 25 };
-  const savedHashtags = hashtagsData?.savedHashtags || [];
-  const engagementData = analyticsData?.engagementData || [
+  const contentItems = (calendarData as any)?.contentItems || [];
+  const stats = (engagementStats as any) || {};
+  const campaigns = (campaignsData as any)?.campaigns || [];
+  const campaignStats = (campaignsData as any)?.stats || {};
+  const contentMix = (contentMixData as any)?.contentMix || { entertainment: 40, education: 35, promotion: 25 };
+  const savedHashtags = (hashtagsData as any)?.savedHashtags || [];
+  const engagementData = (analyticsData as any)?.engagementData || [
     { name: 'Mon', value: 420 },
     { name: 'Tue', value: 380 },
     { name: 'Wed', value: 450 },
@@ -565,25 +566,25 @@ export default function InstagramBoostPage() {
                 <p className="text-muted-foreground">Generate professional content with our advanced AI assistants</p>
               </div>
 
-              <Tabs defaultValue="captions" className="space-y-6">
+              <Tabs value={aiToolTab} onValueChange={setAiToolTab} className="space-y-6">
                 <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
-                  <TabsTrigger value="captions" className="gap-2">
+                  <TabsTrigger value="captions" className="gap-2" data-testid="aitab-captions">
                     <Sparkles className="w-4 h-4" />
                     Captions
                   </TabsTrigger>
-                  <TabsTrigger value="hashtags" className="gap-2">
+                  <TabsTrigger value="hashtags" className="gap-2" data-testid="aitab-hashtags">
                     <Hash className="w-4 h-4" />
                     Hashtags
                   </TabsTrigger>
-                  <TabsTrigger value="ideas" className="gap-2">
+                  <TabsTrigger value="ideas" className="gap-2" data-testid="aitab-ideas">
                     <Lightbulb className="w-4 h-4" />
                     Ideas
                   </TabsTrigger>
-                  <TabsTrigger value="timing" className="gap-2">
+                  <TabsTrigger value="timing" className="gap-2" data-testid="aitab-timing">
                     <Clock className="w-4 h-4" />
                     Timing
                   </TabsTrigger>
-                  <TabsTrigger value="bio" className="gap-2">
+                  <TabsTrigger value="bio" className="gap-2" data-testid="aitab-bio">
                     <User className="w-4 h-4" />
                     Bio
                   </TabsTrigger>
@@ -598,15 +599,24 @@ export default function InstagramBoostPage() {
                     Generate Captions
                   </h3>
                   <div className="space-y-4">
-                    <Input placeholder="Post Topic (e.g., New Product Launch)" value={postTopic} onChange={(e) => setPostTopic(e.target.value)} data-testid="input-post-topic" />
-                    <select className="w-full p-2 rounded border bg-background" value={tone} onChange={(e) => setTone(e.target.value)} data-testid="select-tone">
-                      <option value="professional">Professional</option>
-                      <option value="casual">Casual</option>
-                      <option value="funny">Funny</option>
-                      <option value="inspirational">Inspirational</option>
-                      <option value="educational">Educational</option>
-                    </select>
-                    <Input placeholder="Target Audience (optional)" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} data-testid="input-target-audience" />
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Post Topic <span className="text-red-500">*</span></label>
+                      <Input placeholder="e.g., New Product Launch, Behind the scenes" value={postTopic} onChange={(e) => setPostTopic(e.target.value)} data-testid="input-post-topic" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Tone</label>
+                      <select className="w-full p-2 rounded border bg-background" value={tone} onChange={(e) => setTone(e.target.value)} data-testid="select-tone">
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="funny">Funny</option>
+                        <option value="inspirational">Inspirational</option>
+                        <option value="educational">Educational</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Target Audience (optional)</label>
+                      <Input placeholder="e.g., Gen Z, Professionals, Parents" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} data-testid="input-target-audience" />
+                    </div>
                     <div className="flex gap-4">
                       <label className="flex items-center gap-2">
                         <input type="checkbox" checked={includeEmojis} onChange={(e) => setIncludeEmojis(e.target.checked)} />
@@ -666,8 +676,14 @@ export default function InstagramBoostPage() {
                     Generate Hashtags
                   </h3>
                   <div className="space-y-4">
-                    <Input placeholder="Niche (e.g., Fitness, Fashion)" value={hashtagNiche} onChange={(e) => setHashtagNiche(e.target.value)} data-testid="input-hashtag-niche" />
-                    <Input placeholder="Content Type (e.g., Reel, Photo)" value={contentType} onChange={(e) => setContentType(e.target.value)} data-testid="input-content-type" />
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Niche <span className="text-red-500">*</span></label>
+                      <Input placeholder="e.g., Fitness, Fashion, Music, Travel" value={hashtagNiche} onChange={(e) => setHashtagNiche(e.target.value)} data-testid="input-hashtag-niche" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Content Type</label>
+                      <Input placeholder="e.g., Reel, Photo, Story" value={contentType} onChange={(e) => setContentType(e.target.value)} data-testid="input-content-type" />
+                    </div>
                     <select className="w-full p-2 rounded border bg-background" value={targetSize} onChange={(e) => setTargetSize(e.target.value)} data-testid="select-target-size">
                       <option value="mixed">Mixed Sizes</option>
                       <option value="high">High Competition</option>
@@ -750,8 +766,14 @@ export default function InstagramBoostPage() {
                     Content Ideas
                   </h3>
                   <div className="space-y-4">
-                    <Input placeholder="Niche (e.g., Music, Travel)" value={ideasNiche} onChange={(e) => setIdeasNiche(e.target.value)} data-testid="input-ideas-niche" />
-                    <Input placeholder="Goals (e.g., Increase engagement)" value={goals} onChange={(e) => setGoals(e.target.value)} data-testid="input-goals" />
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Niche <span className="text-red-500">*</span></label>
+                      <Input placeholder="e.g., Music, Travel, Food, Tech" value={ideasNiche} onChange={(e) => setIdeasNiche(e.target.value)} data-testid="input-ideas-niche" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Goals</label>
+                      <Input placeholder="e.g., Increase engagement, Build community" value={goals} onChange={(e) => setGoals(e.target.value)} data-testid="input-goals" />
+                    </div>
                     <Input placeholder="Posting Frequency (e.g., 5 times/week)" value={postingFrequency} onChange={(e) => setPostingFrequency(e.target.value)} data-testid="input-posting-frequency" />
                     <Button 
                       className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600" 
@@ -797,8 +819,14 @@ export default function InstagramBoostPage() {
                     Best Time to Post
                   </h3>
                   <div className="space-y-4">
-                    <Input placeholder="Niche (e.g., Fitness)" value={timeNiche} onChange={(e) => setTimeNiche(e.target.value)} data-testid="input-time-niche" />
-                    <Input placeholder="Target Audience (e.g., Young adults)" value={timeAudience} onChange={(e) => setTimeAudience(e.target.value)} data-testid="input-time-audience" />
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Niche <span className="text-red-500">*</span></label>
+                      <Input placeholder="e.g., Fitness, Business, Art" value={timeNiche} onChange={(e) => setTimeNiche(e.target.value)} data-testid="input-time-niche" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Target Audience</label>
+                      <Input placeholder="e.g., Young adults, Professionals, Students" value={timeAudience} onChange={(e) => setTimeAudience(e.target.value)} data-testid="input-time-audience" />
+                    </div>
                     <select className="w-full p-2 rounded border bg-background" value={timezone} onChange={(e) => setTimezone(e.target.value)} data-testid="select-timezone">
                       <option value="UTC">UTC</option>
                       <option value="America/New_York">Eastern Time</option>
@@ -867,15 +895,24 @@ export default function InstagramBoostPage() {
                     Optimize Bio
                   </h3>
                   <div className="space-y-4">
-                    <textarea 
-                      className="w-full p-2 rounded border bg-background min-h-[100px]" 
-                      placeholder="Current Bio (optional)" 
-                      value={currentBio} 
-                      onChange={(e) => setCurrentBio(e.target.value)}
-                      data-testid="textarea-current-bio"
-                    />
-                    <Input placeholder="Niche (e.g., Travel Blogger)" value={bioNiche} onChange={(e) => setBioNiche(e.target.value)} data-testid="input-bio-niche" />
-                    <Input placeholder="Goals (e.g., Drive sales)" value={bioGoals} onChange={(e) => setBioGoals(e.target.value)} data-testid="input-bio-goals" />
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Current Bio (optional)</label>
+                      <textarea 
+                        className="w-full p-2 rounded border bg-background min-h-[100px]" 
+                        placeholder="Paste your current bio here if you want to improve it" 
+                        value={currentBio} 
+                        onChange={(e) => setCurrentBio(e.target.value)}
+                        data-testid="textarea-current-bio"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Niche <span className="text-red-500">*</span></label>
+                      <Input placeholder="e.g., Travel Blogger, Musician, Coach" value={bioNiche} onChange={(e) => setBioNiche(e.target.value)} data-testid="input-bio-niche" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Goals</label>
+                      <Input placeholder="e.g., Drive sales, Build brand, Get collaborations" value={bioGoals} onChange={(e) => setBioGoals(e.target.value)} data-testid="input-bio-goals" />
+                    </div>
                     <Input placeholder="Website URL (optional)" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} data-testid="input-website-url" />
                     <Button 
                       className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600" 
@@ -972,7 +1009,7 @@ export default function InstagramBoostPage() {
                   </div>
 
                   <div className="space-y-3">
-                    {contentItems.map((item) => (
+                    {contentItems.map((item: any) => (
                       <motion.div
                         key={item.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -1213,7 +1250,7 @@ export default function InstagramBoostPage() {
                     </div>
 
                     <div className="space-y-3">
-                      {campaigns.map((campaign) => (
+                      {campaigns.map((campaign: any) => (
                         <div key={campaign.id} className="p-4 rounded-lg border border-orange-500/20 bg-orange-500/5">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
@@ -1369,7 +1406,7 @@ export default function InstagramBoostPage() {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        {savedHashtags.map((tag, idx) => (
+                        {savedHashtags.map((tag: any, idx: number) => (
                           <Badge
                             key={idx}
                             variant="secondary"
