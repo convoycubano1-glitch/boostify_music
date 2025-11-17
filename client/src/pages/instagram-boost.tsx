@@ -3,7 +3,9 @@ import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Progress } from "../components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/use-auth";
 import { useToast } from "../hooks/use-toast";
@@ -40,8 +42,19 @@ import {
 export default function InstagramBoostPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("captions");
+  const [activeTab, setActiveTab] = useState("community");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Sample data for charts
+  const engagementData = [
+    { name: 'Mon', value: 45 },
+    { name: 'Tue', value: 52 },
+    { name: 'Wed', value: 49 },
+    { name: 'Thu', value: 63 },
+    { name: 'Fri', value: 58 },
+    { name: 'Sat', value: 71 },
+    { name: 'Sun', value: 68 }
+  ];
 
   // Get artist profile for auto-fill
   const { data: artistProfile } = useQuery({
@@ -340,30 +353,410 @@ export default function InstagramBoostPage() {
 
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-5 w-full max-w-4xl mx-auto">
-              <TabsTrigger value="captions" className="gap-2">
-                <Sparkles className="w-4 h-4" />
-                Captions
+            <TabsList className="flex flex-nowrap overflow-x-auto p-1 bg-background/50 backdrop-blur-sm rounded-full border border-orange-500/20 w-full max-w-4xl mx-auto">
+              <TabsTrigger value="community" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
+                <Calendar className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Community</span>
+                <span className="sm:hidden">Com</span>
               </TabsTrigger>
-              <TabsTrigger value="hashtags" className="gap-2">
-                <Hash className="w-4 h-4" />
-                Hashtags
+              <TabsTrigger value="influencers" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
+                <UserPlus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Influencers</span>
+                <span className="sm:hidden">Inf</span>
               </TabsTrigger>
-              <TabsTrigger value="ideas" className="gap-2">
-                <Lightbulb className="w-4 h-4" />
-                Ideas
+              <TabsTrigger value="strategies" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
+                <Sparkles className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Strategies</span>
+                <span className="sm:hidden">Str</span>
               </TabsTrigger>
-              <TabsTrigger value="timing" className="gap-2">
-                <Clock className="w-4 h-4" />
-                Timing
+              <TabsTrigger value="reports" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
+                <BarChart2 className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Reports</span>
+                <span className="sm:hidden">Rep</span>
               </TabsTrigger>
-              <TabsTrigger value="bio" className="gap-2">
-                <User className="w-4 h-4" />
-                Bio
+              <TabsTrigger value="ai-tools" className="data-[state=active]:bg-orange-500 rounded-full px-4 py-2 whitespace-nowrap">
+                <Brain className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">AI Tools</span>
+                <span className="sm:hidden">AI</span>
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB 1: Caption Generator */}
+            {/* Community Tab */}
+            <TabsContent value="community">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Calendar className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">Content Calendar</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Plan and schedule your content
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    {['Product Showcase', 'Behind the Scenes', 'User Feature'].map((task, index) => (
+                      <motion.div
+                        key={task}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{task}</span>
+                          <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
+                            Schedule <ChevronRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Schedule New Post
+                  </Button>
+                </Card>
+
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <MessageCircle className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">Community Management</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Engage with your audience
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
+                      <h4 className="font-medium mb-4">Engagement Tasks</h4>
+                      <div className="space-y-3">
+                        {['Respond to comments', 'Like relevant posts', 'Follow back engaged users'].map((task, index) => (
+                          <motion.div
+                            key={task}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                            className="flex items-center gap-2"
+                          >
+                            <BadgeCheck className="h-4 w-4 text-orange-500" />
+                            <span>{task}</span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    View Community Dashboard
+                  </Button>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Influencers Tab */}
+            <TabsContent value="influencers">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <UserPlus className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">Influencer Discovery</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Find and connect with relevant influencers
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <Input
+                      placeholder="Search influencers by niche..."
+                      className="bg-background border-orange-500/20 focus:border-orange-500"
+                    />
+                    <div className="space-y-4">
+                      {[
+                        { name: 'Sarah Johnson', niche: 'Fashion & Lifestyle' },
+                        { name: 'Mike Stevens', niche: 'Tech & Gaming' }
+                      ].map((influencer, index) => (
+                        <motion.div
+                          key={influencer.name}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 }}
+                          className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-orange-500/20" />
+                            <div>
+                              <h4 className="font-medium">{influencer.name}</h4>
+                              <p className="text-sm text-muted-foreground">{influencer.niche}</p>
+                            </div>
+                            <Button className="ml-auto" variant="outline">
+                              Connect
+                            </Button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    View All Influencers
+                  </Button>
+                </Card>
+
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Share2 className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">Active Collaborations</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Manage your influencer partnerships
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h4 className="font-medium">Summer Collection Campaign</h4>
+                          <p className="text-sm text-muted-foreground">3 Influencers • 15 Posts</p>
+                        </div>
+                        <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                          Active
+                        </Badge>
+                      </div>
+                      <Progress value={75} className="bg-orange-500/20 h-2 rounded-full" />
+                      <p className="text-sm text-muted-foreground mt-2">75% Complete</p>
+                    </div>
+                  </div>
+
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Create New Campaign
+                  </Button>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Strategies Tab */}
+            <TabsContent value="strategies">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Sparkles className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">Growth Strategies</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Optimize your Instagram presence
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
+                      <h4 className="font-medium mb-2">Content Mix Strategy</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Optimal content distribution for maximum engagement
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="p-2 bg-orange-500/10 rounded text-center">
+                          <div className="text-lg font-bold text-orange-500">40%</div>
+                          <div className="text-xs">Entertainment</div>
+                        </div>
+                        <div className="p-2 bg-orange-600/10 rounded text-center">
+                          <div className="text-lg font-bold text-orange-600">35%</div>
+                          <div className="text-xs">Education</div>
+                        </div>
+                        <div className="p-2 bg-orange-700/10 rounded text-center">
+                          <div className="text-lg font-bold text-orange-700">25%</div>
+                          <div className="text-xs">Promotion</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Get Custom Strategy
+                  </Button>
+                </Card>
+
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Target className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">Hashtag Strategy</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Optimize your hashtag usage
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">#fashion</span>
+                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">#style</span>
+                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">#beauty</span>
+                    </div>
+                    <Input
+                      placeholder="Search hashtags..."
+                      className="bg-background border-orange-500/20 focus:border-orange-500"
+                    />
+                  </div>
+
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Generate Hashtags
+                  </Button>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Reports Tab */}
+            <TabsContent value="reports">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <BarChart2 className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">Growth Analytics</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Track your Instagram growth
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={engagementData}>
+                        <defs>
+                          <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Area
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#f97316"
+                          fillOpacity={1}
+                          fill="url(#colorEngagement)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+
+                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-500/10 rounded-lg">
+                      <Users className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">Audience Insights</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Understand your followers
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="font-medium mb-4">Demographics</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Age 18-24</span>
+                          <div className="w-32 h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                            <div className="w-3/4 h-full bg-orange-500" />
+                          </div>
+                          <span className="text-sm">75%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Age 25-34</span>
+                          <div className="w-32 h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                            <div className="w-1/2 h-full bg-orange-500" />
+                          </div>
+                          <span className="text-sm">50%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium mb-4">Top Locations</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">United States</span>
+                          <div className="w-32 h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                            <div className="w-4/5 h-full bg-orange-500" />
+                          </div>
+                          <span className="text-sm">80%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">United Kingdom</span>
+                          <div className="w-32 h-2 bg-orange-500/20 rounded-full overflow-hidden">
+                            <div className="w-2/5 h-full bg-orange-500" />
+                          </div>
+                          <span className="text-sm">40%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* AI Tools Tab - Contains all 5 AI Tools */}
+            <TabsContent value="ai-tools">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-2">AI-Powered Instagram Tools</h2>
+                <p className="text-muted-foreground">Generate professional content with our advanced AI assistants</p>
+              </div>
+
+              <Tabs value={activeTab === "ai-tools" ? "captions" : activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
+                  <TabsTrigger value="captions" className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Captions
+                  </TabsTrigger>
+                  <TabsTrigger value="hashtags" className="gap-2">
+                    <Hash className="w-4 h-4" />
+                    Hashtags
+                  </TabsTrigger>
+                  <TabsTrigger value="ideas" className="gap-2">
+                    <Lightbulb className="w-4 h-4" />
+                    Ideas
+                  </TabsTrigger>
+                  <TabsTrigger value="timing" className="gap-2">
+                    <Clock className="w-4 h-4" />
+                    Timing
+                  </TabsTrigger>
+                  <TabsTrigger value="bio" className="gap-2">
+                    <User className="w-4 h-4" />
+                    Bio
+                  </TabsTrigger>
+                </TabsList>
+
+            {/* Caption Generator */}
             <TabsContent value="captions" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <Card className="p-6">
@@ -672,6 +1065,8 @@ export default function InstagramBoostPage() {
                   </Card>
                 )}
               </div>
+            </TabsContent>
+              </Tabs>
             </TabsContent>
           </Tabs>
         </div>
