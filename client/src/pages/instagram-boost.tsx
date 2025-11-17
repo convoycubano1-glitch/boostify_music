@@ -36,7 +36,28 @@ import {
   BadgeCheck,
   Share2,
   Rocket,
-  SendHorizontal
+  SendHorizontal,
+  Plus,
+  Filter,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  Heart,
+  ThumbsUp,
+  Star,
+  DollarSign,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Image,
+  Video,
+  FileText,
+  ArrowUpRight,
+  ArrowDownRight,
+  TrendingDown,
+  Zap,
+  Award
 } from "lucide-react";
 
 export default function InstagramBoostPage() {
@@ -94,6 +115,31 @@ export default function InstagramBoostPage() {
   const [bioGoals, setBioGoals] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [bioResults, setBioResults] = useState<any>(null);
+
+  // Community Tab States
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [contentItems, setContentItems] = useState([
+    { id: 1, title: 'Product Showcase', date: new Date(), status: 'scheduled', type: 'post' },
+    { id: 2, title: 'Behind the Scenes', date: new Date(), status: 'draft', type: 'story' },
+    { id: 3, title: 'User Feature', date: new Date(), status: 'published', type: 'reel' }
+  ]);
+
+  // Influencers Tab States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedNiche, setSelectedNiche] = useState("all");
+  const [campaigns, setCampaigns] = useState([
+    { id: 1, name: 'Summer Collection', influencers: 3, posts: 15, budget: 5000, progress: 75, status: 'active' },
+    { id: 2, name: 'Holiday Special', influencers: 2, posts: 8, budget: 3000, progress: 30, status: 'active' }
+  ]);
+
+  // Strategies Tab States
+  const [contentMix, setContentMix] = useState({ entertainment: 40, education: 35, promotion: 25 });
+  const [hashtagSearch, setHashtagSearch] = useState("");
+  const [savedHashtags, setSavedHashtags] = useState(['fashion', 'style', 'beauty', 'ootd', 'trending']);
+
+  // Reports Tab States
+  const [dateRange, setDateRange] = useState("7d");
+  const [selectedMetric, setSelectedMetric] = useState("engagement");
 
   // Auto-fill bio from profile
   useEffect(() => {
@@ -381,82 +427,156 @@ export default function InstagramBoostPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Community Tab */}
-            <TabsContent value="community">
-              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Calendar className="h-6 w-6 text-orange-500" />
+            {/* Community Tab - Restructured */}
+            <TabsContent value="community" className="space-y-6">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[
+                  { label: "Posts This Week", value: "12", change: "+15%", icon: FileText, trend: "up" },
+                  { label: "Engagement Rate", value: "8.4%", change: "+2.3%", icon: Heart, trend: "up" },
+                  { label: "Comments", value: "342", change: "+12%", icon: MessageCircle, trend: "up" },
+                  { label: "New Followers", value: "156", change: "+8%", icon: Users, trend: "up" }
+                ].map((stat, idx) => (
+                  <Card key={idx} className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <stat.icon className="h-5 w-5 text-orange-500" />
+                      <Badge variant="outline" className={stat.trend === "up" ? "text-green-500" : "text-red-500"}>
+                        {stat.change}
+                      </Badge>
                     </div>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Content Calendar */}
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold">Content Calendar</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Plan and schedule your content
-                      </p>
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-orange-500" />
+                        Content Calendar
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">Manage your posting schedule</p>
                     </div>
+                    <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Post
+                    </Button>
                   </div>
 
-                  <div className="space-y-4 mb-6">
-                    {['Product Showcase', 'Behind the Scenes', 'User Feature'].map((task, index) => (
+                  <div className="space-y-3">
+                    {contentItems.map((item) => (
                       <motion.div
-                        key={task}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
+                        key={item.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-4 rounded-lg border border-orange-500/20 hover:border-orange-500/40 bg-orange-500/5 transition-all group"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{task}</span>
-                          <Button variant="ghost" size="sm" className="hover:bg-orange-500/10">
-                            Schedule <ChevronRight className="ml-2 h-4 w-4" />
-                          </Button>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              {item.type === 'post' && <Image className="h-4 w-4 text-orange-500" />}
+                              {item.type === 'story' && <Zap className="h-4 w-4 text-purple-500" />}
+                              {item.type === 'reel' && <Video className="h-4 w-4 text-pink-500" />}
+                              <span className="font-medium">{item.title}</span>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <span>{item.date.toLocaleDateString()}</span>
+                              <Badge variant={item.status === 'published' ? "default" : "outline"} className="text-xs">
+                                {item.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
                         </div>
                       </motion.div>
                     ))}
                   </div>
-
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Schedule New Post
-                  </Button>
                 </Card>
 
-                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <MessageCircle className="h-6 w-6 text-orange-500" />
-                    </div>
+                {/* Engagement Dashboard */}
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold">Community Management</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Engage with your audience
-                      </p>
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <MessageCircle className="h-5 w-5 text-orange-500" />
+                        Engagement Dashboard
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">Monitor interactions</p>
                     </div>
                   </div>
 
-                  <div className="space-y-4 mb-6">
-                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
-                      <h4 className="font-medium mb-4">Engagement Tasks</h4>
-                      <div className="space-y-3">
-                        {['Respond to comments', 'Like relevant posts', 'Follow back engaged users'].map((task, index) => (
-                          <motion.div
-                            key={task}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                            className="flex items-center gap-2"
-                          >
-                            <BadgeCheck className="h-4 w-4 text-orange-500" />
-                            <span>{task}</span>
-                          </motion.div>
-                        ))}
+                  <div className="space-y-4">
+                    {/* Recent Activity */}
+                    <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="flex items-center gap-3 mb-3">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <span className="font-medium">45 Comments Pending</span>
+                      </div>
+                      <Button variant="outline" size="sm" className="w-full">
+                        Respond Now
+                      </Button>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="flex items-center gap-3 mb-3">
+                        <ThumbsUp className="h-5 w-5 text-blue-500" />
+                        <span className="font-medium">127 New Likes Today</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        +23% from yesterday
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Star className="h-5 w-5 text-purple-500" />
+                        <span className="font-medium">Top Performing Post</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">"Behind the Scenes"</p>
+                      <div className="flex gap-4 text-xs">
+                        <span>❤️ 234</span>
+                        <span>💬 45</span>
+                        <span>📤 12</span>
+                      </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="pt-4 space-y-2">
+                      <h4 className="font-medium text-sm mb-3">Quick Actions</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" size="sm" className="justify-start">
+                          <Heart className="h-4 w-4 mr-2 text-red-500" />
+                          Like Posts
+                        </Button>
+                        <Button variant="outline" size="sm" className="justify-start">
+                          <MessageCircle className="h-4 w-4 mr-2 text-blue-500" />
+                          Reply
+                        </Button>
+                        <Button variant="outline" size="sm" className="justify-start">
+                          <UserPlus className="h-4 w-4 mr-2 text-green-500" />
+                          Follow Back
+                        </Button>
+                        <Button variant="outline" size="sm" className="justify-start">
+                          <Share2 className="h-4 w-4 mr-2 text-purple-500" />
+                          Share
+                        </Button>
                       </div>
                     </div>
                   </div>
-
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    View Community Dashboard
-                  </Button>
                 </Card>
               </div>
             </TabsContent>
