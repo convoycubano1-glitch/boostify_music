@@ -407,11 +407,14 @@ export const courses = pgTable("courses", {
   category: text("category").notNull(),
   level: text("level", { enum: ["Beginner", "Intermediate", "Advanced"] }).notNull(),
   duration: text("duration").notNull(),
-  lessons: integer("lessons").notNull(),
-  thumbnail: text("thumbnail").notNull(),
+  lessonsCount: integer("lessons_count").notNull(),
+  thumbnail: text("thumbnail"),
   rating: decimal("rating", { precision: 3, scale: 2 }).default('0'),
   totalReviews: integer("total_reviews").default(0),
   status: text("status", { enum: ["draft", "published", "archived"] }).default("draft").notNull(),
+  dripStrategy: text("drip_strategy", { enum: ["date", "enrollment", "sequential", "prerequisite"] }).default("sequential").notNull(),
+  isAIGenerated: boolean("is_ai_generated").default(false).notNull(),
+  generationStatus: text("generation_status", { enum: ["pending", "generating", "completed", "failed"] }).default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -422,10 +425,16 @@ export const courseLessons = pgTable("course_lessons", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   content: text("content").notNull(),
-  duration: integer("duration").notNull(), // in minutes
+  duration: integer("duration").notNull(),
   orderIndex: integer("order_index").notNull(),
   videoUrl: text("video_url"),
+  imageUrl: text("image_url"),
   materials: json("materials"),
+  dripDate: timestamp("drip_date"),
+  dripDaysOffset: integer("drip_days_offset"),
+  prerequisiteLessonId: integer("prerequisite_lesson_id"),
+  isGenerated: boolean("is_generated").default(false).notNull(),
+  generationStatus: text("generation_status", { enum: ["pending", "generating", "completed", "failed"] }).default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -471,6 +480,68 @@ export const courseReviews = pgTable("course_reviews", {
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const courseQuizzes = pgTable("course_quizzes", {
+  id: serial("id").primaryKey(),
+  lessonId: integer("lesson_id").references(() => courseLessons.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  passingScore: integer("passing_score").default(70).notNull(),
+  orderIndex: integer("order_index").notNull(),
+  isGenerated: boolean("is_generated").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const quizQuestions = pgTable("quiz_questions", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").references(() => courseQuizzes.id).notNull(),
+  question: text("question").notNull(),
+  questionType: text("question_type", { enum: ["multiple_choice", "true_false", "short_answer"] }).default("multiple_choice").notNull(),
+  options: json("options").$type<string[]>(),
+  correctAnswer: text("correct_answer").notNull(),
+  explanation: text("explanation"),
+  points: integer("points").default(1).notNull(),
+  orderIndex: integer("order_index").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const quizAttempts = pgTable("quiz_attempts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  quizId: integer("quiz_id").references(() => courseQuizzes.id).notNull(),
+  score: integer("score").notNull(),
+  totalPoints: integer("total_points").notNull(),
+  passed: boolean("passed").notNull(),
+  answers: json("answers").$type<Record<string, string>>(),
+  completedAt: timestamp("completed_at").defaultNow().notNull()
+});
+
+export const lessonProgress = pgTable("lesson_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  lessonId: integer("lesson_id").references(() => courseLessons.id).notNull(),
+  completed: boolean("completed").default(false).notNull(),
+  unlockedAt: timestamp("unlocked_at"),
+  completedAt: timestamp("completed_at"),
+  timeSpentMinutes: integer("time_spent_minutes").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const contentGenerationQueue = pgTable("content_generation_queue", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").references(() => courses.id),
+  lessonId: integer("lesson_id").references(() => courseLessons.id),
+  generationType: text("generation_type", { enum: ["course_outline", "lesson_content", "quiz", "image"] }).notNull(),
+  prompt: text("prompt").notNull(),
+  status: text("status", { enum: ["pending", "processing", "completed", "failed"] }).default("pending").notNull(),
+  result: json("result"),
+  errorMessage: text("error_message"),
+  priority: integer("priority").default(5).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at")
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -854,6 +925,31 @@ export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments
 export const selectCourseEnrollmentSchema = createSelectSchema(courseEnrollments);
 export const insertCourseReviewSchema = createInsertSchema(courseReviews);
 export const selectCourseReviewSchema = createSelectSchema(courseReviews);
+
+export const insertCourseQuizSchema = createInsertSchema(courseQuizzes).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectCourseQuizSchema = createSelectSchema(courseQuizzes);
+export type InsertCourseQuiz = z.infer<typeof insertCourseQuizSchema>;
+export type SelectCourseQuiz = typeof courseQuizzes.$inferSelect;
+
+export const insertQuizQuestionSchema = createInsertSchema(quizQuestions).omit({ id: true, createdAt: true });
+export const selectQuizQuestionSchema = createSelectSchema(quizQuestions);
+export type InsertQuizQuestion = z.infer<typeof insertQuizQuestionSchema>;
+export type SelectQuizQuestion = typeof quizQuestions.$inferSelect;
+
+export const insertQuizAttemptSchema = createInsertSchema(quizAttempts).omit({ id: true, completedAt: true });
+export const selectQuizAttemptSchema = createSelectSchema(quizAttempts);
+export type InsertQuizAttempt = z.infer<typeof insertQuizAttemptSchema>;
+export type SelectQuizAttempt = typeof quizAttempts.$inferSelect;
+
+export const insertLessonProgressSchema = createInsertSchema(lessonProgress).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectLessonProgressSchema = createSelectSchema(lessonProgress);
+export type InsertLessonProgress = z.infer<typeof insertLessonProgressSchema>;
+export type SelectLessonProgress = typeof lessonProgress.$inferSelect;
+
+export const insertContentGenerationQueueSchema = createInsertSchema(contentGenerationQueue).omit({ id: true, createdAt: true, completedAt: true });
+export const selectContentGenerationQueueSchema = createSelectSchema(contentGenerationQueue);
+export type InsertContentGenerationQueue = z.infer<typeof insertContentGenerationQueueSchema>;
+export type SelectContentGenerationQueue = typeof contentGenerationQueue.$inferSelect;
 
 export const insertAchievementSchema = createInsertSchema(achievements);
 export const selectAchievementSchema = createSelectSchema(achievements);
