@@ -7,8 +7,10 @@ import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
-import { users } from '../../db/schema';
+import { users, artistNews } from '../../db/schema';
 import { eq } from 'drizzle-orm';
+import { generateCinematicImage } from '../services/gemini-image-service';
+import { GoogleGenAI } from "@google/genai";
 
 const router = Router();
 
@@ -845,6 +847,175 @@ router.put("/update-artist/:artistId", isAuthenticated, async (req: Request, res
     console.error('❌ Error actualizando perfil del artista:', error);
     res.status(500).json({ 
       error: 'Error al actualizar perfil',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para generar noticias del artista usando Gemini + Nano Banana
+ * Genera 5 noticias con diferentes categorías y contextos relevantes
+ */
+router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const artistIdParam = req.params.artistId;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    console.log(`📰 Generando noticias para artista ${artistIdParam}`);
+
+    let artist;
+    const numericId = parseInt(artistIdParam);
+    
+    if (!isNaN(numericId)) {
+      [artist] = await pgDb.select().from(users).where(eq(users.id, numericId)).limit(1);
+    } else {
+      [artist] = await pgDb.select().from(users).where(eq(users.firestoreId, artistIdParam)).limit(1);
+    }
+    
+    if (!artist) {
+      return res.status(404).json({ error: 'Artista no encontrado' });
+    }
+
+    if (artist.id !== userId && artist.generatedBy !== userId) {
+      return res.status(403).json({ error: 'No tienes permiso para generar noticias de este artista' });
+    }
+
+    const artistName = artist.artistName || artist.firstName || 'Unknown Artist';
+    const genre = artist.genres?.[0] || artist.genre || 'music';
+    const location = artist.location || artist.country || 'international';
+    const biography = artist.biography || 'Emerging artist';
+
+    const apiKeys = [
+      process.env.GEMINI_API_KEY,
+      process.env.GEMINI_API_KEY2
+    ].filter(key => key && key.length > 0);
+
+    if (apiKeys.length === 0) {
+      throw new Error('No hay API keys de Gemini configuradas');
+    }
+
+    const geminiClient = new GoogleGenAI({ apiKey: apiKeys[0] || "" });
+
+    const newsCategories = [
+      {
+        category: "release",
+        prompt: `Write a compelling news article about ${artistName}, a ${genre} artist, announcing their latest single or album release. Make it exciting and professional, as if written by a music journalist. Include specific release details and what makes this music special. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`
+      },
+      {
+        category: "performance",
+        prompt: `Write a news article about ${artistName}'s upcoming or recent live performance. Describe the venue, the energy, fan reactions, and what made this show memorable. Make it vivid and engaging. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`
+      },
+      {
+        category: "collaboration",
+        prompt: `Write a news article about ${artistName} collaborating with other artists or producers in the ${genre} scene. Make it newsworthy and exciting, highlighting the creative synergy. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`
+      },
+      {
+        category: "achievement",
+        prompt: `Write a news article celebrating ${artistName}'s recent achievement - could be streaming milestones, chart positions, or industry recognition. Make it celebratory and inspirational. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`
+      },
+      {
+        category: "lifestyle",
+        prompt: `Write a lifestyle feature article about ${artistName}'s creative process, inspirations, or behind-the-scenes insights. Make it personal and relatable, showing the human side of the artist. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`
+      }
+    ];
+
+    console.log(`🤖 Generando ${newsCategories.length} noticias con Gemini...`);
+    
+    const generatedNews = [];
+
+    for (let i = 0; i < newsCategories.length; i++) {
+      const { category, prompt } = newsCategories[i];
+      
+      console.log(`📝 Generando noticia ${i + 1}/${newsCategories.length} (${category})...`);
+
+      try {
+        const textResponse = await geminiClient.models.generateContent({
+          model: "gemini-2.0-flash-exp",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          config: {
+            temperature: 0.8,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+        });
+
+        const textContent = textResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!textContent) {
+          throw new Error('No se recibió contenido de texto');
+        }
+
+        let newsData;
+        try {
+          const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            newsData = JSON.parse(jsonMatch[0]);
+          } else {
+            newsData = {
+              title: `${artistName} - ${category}`,
+              content: textContent,
+              summary: textContent.substring(0, 150) + '...'
+            };
+          }
+        } catch (parseError) {
+          newsData = {
+            title: `${artistName} - ${category}`,
+            content: textContent,
+            summary: textContent.substring(0, 150) + '...'
+          };
+        }
+
+        console.log(`🎨 Generando imagen para noticia ${i + 1} con Nano Banana...`);
+        
+        const imagePrompt = `Professional press photo for music news article: ${artistName}, ${genre} artist, ${newsData.title}. High-quality, editorial photography style, professional lighting, modern aesthetic. Create a compelling visual that captures the essence of this news story. Photorealistic, magazine-quality image.`;
+        
+        const imageResult = await generateCinematicImage(imagePrompt);
+
+        if (!imageResult.success || !imageResult.imageUrl) {
+          console.warn(`⚠️ Error generando imagen para noticia ${i + 1}, usando placeholder`);
+        }
+
+        const newsItem = {
+          userId: artist.id,
+          title: newsData.title,
+          content: newsData.content,
+          summary: newsData.summary,
+          imageUrl: imageResult.imageUrl || 'https://via.placeholder.com/800x600/FF6B35/FFFFFF?text=News',
+          category: category as "release" | "performance" | "collaboration" | "achievement" | "lifestyle",
+          isPublished: true,
+          views: 0
+        };
+
+        const [insertedNews] = await pgDb.insert(artistNews).values(newsItem).returning();
+        generatedNews.push(insertedNews);
+
+        console.log(`✅ Noticia ${i + 1}/${newsCategories.length} generada y guardada`);
+
+        if (i < newsCategories.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+      } catch (error) {
+        console.error(`❌ Error generando noticia ${i + 1}:`, error);
+      }
+    }
+
+    console.log(`✅ ${generatedNews.length} noticias generadas exitosamente`);
+
+    res.status(200).json({
+      success: true,
+      message: `${generatedNews.length} noticias generadas exitosamente`,
+      news: generatedNews,
+      count: generatedNews.length
+    });
+
+  } catch (error) {
+    console.error('❌ Error generando noticias:', error);
+    res.status(500).json({ 
+      error: 'Error al generar noticias',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
