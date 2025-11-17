@@ -2651,7 +2651,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                           {/* Botón de descarga - visible para todos si es video subido */}
                           {video.type === 'uploaded' && video.downloadPassword && (
                             <button
-                              className="w-full py-2 px-4 rounded-full text-xs font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                              className="w-full py-2.5 sm:py-2 px-4 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 transform hover:scale-105 shadow-lg active:scale-95"
                               style={{ 
                                 background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
                                 color: 'white'
@@ -2659,7 +2659,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                               onClick={() => handleDownloadVideo(video)}
                               data-testid={`button-download-video-${video.id}`}
                             >
-                              <Upload className="h-3 w-3 inline mr-1" />
+                              <Download className="h-3.5 w-3.5 sm:h-3 sm:w-3 inline mr-1.5 sm:mr-1" />
                               Descargar Video
                             </button>
                           )}

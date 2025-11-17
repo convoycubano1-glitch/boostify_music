@@ -139,8 +139,7 @@ app.use((req, res, next) => {
     const server = registerRoutes(app);
     log('✅ API routes registered successfully');
 
-    // Register /api/auth/user FIRST before anything else
-    // This MUST be before setupAuth() and setupVite() to avoid interception
+    // Register /api/auth/user endpoint
     log('🔐 Registering /api/auth/user endpoint...');
     app.get('/api/auth/user', async (req: any, res) => {
       try {
@@ -149,14 +148,14 @@ app.use((req, res, next) => {
           return res.status(401).json({ message: "Unauthorized" });
         }
         
-        // Get user from database
+        // Get user from session (already deserialized by passport)
         const user = req.user;
-        if (!user || !user.claims || !user.claims.sub) {
+        if (!user || !user.id) {
           return res.status(401).json({ message: "Unauthorized" });
         }
         
-        const replitId = user.claims.sub;
-        const userEmail = user.claims.email;
+        const userId = user.id;
+        const userEmail = user.email;
         
         // Check if user is admin (convoycubano@gmail.com)
         const isAdmin = userEmail === 'convoycubano@gmail.com';
@@ -168,7 +167,7 @@ app.use((req, res, next) => {
         const [dbUser] = await db
           .select()
           .from(users)
-          .where(eq(users.replitId, replitId))
+          .where(eq(users.id, userId))
           .limit(1);
         
         if (!dbUser) {

@@ -220,26 +220,48 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user || !user.expires_at) {
+  console.log('🔐 [isAuthenticated] Checking authentication...');
+  console.log('🔐 [isAuthenticated] req.isAuthenticated():', req.isAuthenticated ? req.isAuthenticated() : 'undefined');
+  console.log('🔐 [isAuthenticated] user:', user ? { id: user.id, email: user.email, hasExpiresAt: !!user.expires_at } : 'null');
+
+  if (!req.isAuthenticated()) {
+    console.log('❌ [isAuthenticated] Not authenticated via passport');
     return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (!user || !user.id) {
+    console.log('❌ [isAuthenticated] No user or user.id');
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // Si no hay expires_at, significa que es una sesión deserializada sin tokens
+  // En ese caso, permitir el acceso ya que el usuario está autenticado
+  if (!user.expires_at) {
+    console.log('✅ [isAuthenticated] User authenticated (no token expiry check needed)');
+    return next();
   }
 
   const now = Math.floor(Date.now() / 1000);
   if (now <= user.expires_at) {
+    console.log('✅ [isAuthenticated] Token still valid');
     return next();
   }
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
+    console.log('❌ [isAuthenticated] Token expired and no refresh token');
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
+    console.log('🔄 [isAuthenticated] Refreshing token...');
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
+    console.log('✅ [isAuthenticated] Token refreshed successfully');
     return next();
   } catch (error) {
+    console.error('❌ [isAuthenticated] Error refreshing token:', error);
     return res.status(401).json({ message: "Unauthorized" });
   }
 };
