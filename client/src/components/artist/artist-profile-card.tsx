@@ -1624,12 +1624,12 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   const totalPlays = songs.reduce((acc, song) => acc + (parseInt(song.duration?.split(':')[0] || '0') * 100), 0);
 
   return (
-    <div className={`min-h-screen ${colors.bgGradient} text-white transition-colors duration-500`}>
+    <div className="min-h-screen text-white transition-colors duration-500" style={{ margin: 0, padding: 0, backgroundColor: '#000000' }}>
       <audio ref={audioRef} onEnded={() => setPlayingSongId(null)} />
       
-      {/* Hero Header - Diseño Premium Modernizado */}
-      <header className="relative h-[70vh] sm:h-[75vh] md:h-[80vh] lg:h-[85vh] xl:h-screen w-full mb-4 sm:mb-6 md:mb-8 overflow-hidden">
-        {/* Background con efecto parallax */}
+      {/* Hero Header - Diseño Ultra Premium 2025 */}
+      <header className="relative h-screen w-full overflow-hidden" style={{ margin: 0, padding: 0, top: 0, left: 0 }}>
+        {/* Background con efecto cinematográfico */}
         <div className="absolute inset-0">
           {(() => {
             const isVideo = artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i) || 
@@ -1651,7 +1651,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   muted
                   loop
                   playsInline
-                  className="absolute inset-0 w-full h-full object-cover filter brightness-50 scale-105 transition-all duration-700 hover:scale-100"
+                  className="absolute inset-0 w-full h-full object-cover filter brightness-40 contrast-110 saturate-110 scale-110 transition-all duration-1000 hover:scale-105 hover:brightness-45"
                   style={{ objectPosition: objectPositionStyle }}
                   onError={(e) => console.error('❌ Hero video error:', e)}
                 />
@@ -1662,12 +1662,12 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               <img
                 src={artist.bannerImage}
                 alt={`${artist.name} Cover`}
-                className="absolute inset-0 w-full h-full object-cover filter brightness-50 scale-105 transition-all duration-700 hover:scale-100"
+                className="absolute inset-0 w-full h-full object-cover filter brightness-40 contrast-110 saturate-110 scale-110 transition-all duration-1000 hover:scale-105 hover:brightness-45"
                 style={{ objectPosition: objectPositionStyle }}
                 onError={(e) => { 
                   e.currentTarget.style.display = 'none';
                   if (e.currentTarget.parentElement) {
-                    e.currentTarget.parentElement.style.background = 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)';
+                    e.currentTarget.parentElement.style.background = `radial-gradient(circle at 50% 50%, ${colors.hexPrimary}20 0%, #000000 100%)`;
                   }
                 }}
               />
@@ -1675,16 +1675,45 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           })()}
         </div>
 
-        {/* Gradientes mejorados en capas */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40"></div>
+        {/* Overlay gradiente cinematográfico */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/20"></div>
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: `radial-gradient(circle at 30% 50%, ${colors.hexAccent}15 0%, transparent 60%)`
+          }}
+        ></div>
         
-        {/* Efecto de partículas/puntos flotantes */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-10 w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: colors.hexAccent }}></div>
-          <div className="absolute top-40 right-20 w-3 h-3 rounded-full animate-pulse delay-100" style={{ backgroundColor: colors.hexAccent }}></div>
-          <div className="absolute bottom-32 left-1/4 w-2 h-2 rounded-full animate-pulse delay-200" style={{ backgroundColor: colors.hexAccent }}></div>
-          <div className="absolute bottom-48 right-1/3 w-2 h-2 rounded-full animate-pulse delay-300" style={{ backgroundColor: colors.hexAccent }}></div>
+        {/* Grid animado de fondo */}
+        <div className="absolute inset-0 opacity-5" 
+          style={{
+            backgroundImage: `
+              linear-gradient(${colors.hexAccent}40 1px, transparent 1px),
+              linear-gradient(90deg, ${colors.hexAccent}40 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
+            animation: 'grid-move 20s linear infinite'
+          }}
+        ></div>
+        
+        {/* Partículas flotantes mejoradas */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full blur-sm"
+              style={{
+                width: `${Math.random() * 6 + 2}px`,
+                height: `${Math.random() * 6 + 2}px`,
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                backgroundColor: colors.hexAccent,
+                opacity: Math.random() * 0.4 + 0.1,
+                animation: `float ${Math.random() * 10 + 15}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 5}s`
+              }}
+            />
+          ))}
         </div>
         
         {/* Barra superior con glassmorphism */}
@@ -1728,105 +1757,170 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           </div>
         </div>
 
-        {/* Contenido principal del hero */}
-        <div className="absolute inset-0 flex items-end z-20">
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-8 md:pb-12 lg:pb-16">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-8 items-end">
+        {/* Contenido principal del hero - Layout centrado */}
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <div className="text-center space-y-6 md:space-y-8">
               
-              {/* Información del artista */}
-              <div className="space-y-4 md:space-y-6">
-                {/* Badge de verificación flotante */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-xl bg-white/10 border border-white/20">
-                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                  <span className="text-sm font-semibold text-white">Artista Verificado</span>
-                </div>
-
-                {/* Nombre del artista */}
+              {/* Nombre del artista */}
+              <div className="space-y-3">
                 <h1 
-                  className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-none tracking-tighter"
+                  className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-none tracking-tighter"
                   style={{
-                    background: `linear-gradient(135deg, #FFFFFF 0%, ${colors.hexAccent} 40%, ${colors.hexPrimary} 60%, #FFFFFF 100%)`,
+                    background: `linear-gradient(135deg, #FFFFFF 0%, ${colors.hexAccent} 35%, ${colors.hexPrimary} 55%, ${colors.hexAccent} 75%, #FFFFFF 100%)`,
                     backgroundSize: '200% 200%',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                    filter: `drop-shadow(0 0 30px ${colors.hexAccent}90) drop-shadow(0 8px 16px rgba(0,0,0,0.8))`,
-                    animation: 'gradient-x 8s ease infinite, subtle-pulse 3s ease-in-out infinite'
+                    filter: `drop-shadow(0 0 40px ${colors.hexAccent}99) drop-shadow(0 10px 20px rgba(0,0,0,0.9))`,
+                    animation: 'gradient-x 6s ease infinite, text-glow 2s ease-in-out infinite',
+                    textTransform: 'uppercase',
+                    letterSpacing: '-0.05em'
                   }}
                   data-testid="text-artist-name"
                 >
                   {artist.name}
                 </h1>
-
-                {/* Género y ubicación */}
-                <div className="flex flex-wrap items-center gap-3 text-lg md:text-xl lg:text-2xl font-bold">
-                  <span className="text-white drop-shadow-lg">{artist.genre}</span>
-                  {artist.location && (
-                    <>
-                      <span className="text-white/40">•</span>
-                      <span className="text-white/90 drop-shadow-lg">{artist.location}</span>
-                    </>
-                  )}
-                </div>
-
-                {/* Estadísticas del artista */}
-                <div className="flex flex-wrap gap-3 md:gap-4">
-                  {songs.length > 0 && (
-                    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-4 md:px-6 py-3 md:py-4 transform hover:scale-105 transition-all duration-300">
-                      <div className="text-2xl md:text-3xl font-black" style={{ color: colors.hexAccent }}>{songs.length}</div>
-                      <div className="text-xs md:text-sm text-white/80 font-semibold">Canciones</div>
-                    </div>
-                  )}
-                  {videos.length > 0 && (
-                    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-4 md:px-6 py-3 md:py-4 transform hover:scale-105 transition-all duration-300">
-                      <div className="text-2xl md:text-3xl font-black" style={{ color: colors.hexAccent }}>{videos.length}</div>
-                      <div className="text-xs md:text-sm text-white/80 font-semibold">Videos</div>
-                    </div>
-                  )}
-                  {artist.instagram && (
-                    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-4 md:px-6 py-3 md:py-4 flex items-center gap-2 transform hover:scale-105 transition-all duration-300">
-                      <Instagram className="h-4 w-4 md:h-5 md:w-5" style={{ color: colors.hexAccent }} />
-                      <span className="text-sm md:text-base font-bold text-white">@{artist.instagram}</span>
-                    </div>
-                  )}
+                
+                {/* Línea decorativa bajo el nombre */}
+                <div className="flex items-center justify-center gap-3">
+                  <div 
+                    className="h-1 w-16 md:w-24 rounded-full"
+                    style={{ 
+                      background: `linear-gradient(90deg, transparent, ${colors.hexAccent}, transparent)`,
+                      boxShadow: `0 0 20px ${colors.hexAccent}80`
+                    }}
+                  ></div>
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: colors.hexAccent, boxShadow: `0 0 20px ${colors.hexAccent}` }}
+                  ></div>
+                  <div 
+                    className="h-1 w-16 md:w-24 rounded-full"
+                    style={{ 
+                      background: `linear-gradient(90deg, transparent, ${colors.hexAccent}, transparent)`,
+                      boxShadow: `0 0 20px ${colors.hexAccent}80`
+                    }}
+                  ></div>
                 </div>
               </div>
 
-              {/* Imagen de perfil con efecto premium */}
-              <div className="hidden lg:block relative">
+              {/* Género y ubicación con íconos */}
+              <div className="flex flex-wrap items-center justify-center gap-4 text-xl md:text-2xl lg:text-3xl font-bold">
+                <div className="flex items-center gap-2">
+                  <Music className="h-5 w-5 md:h-6 md:w-6" style={{ color: colors.hexAccent }} />
+                  <span className="text-white drop-shadow-2xl">{artist.genre}</span>
+                </div>
+                {artist.location && (
+                  <>
+                    <span className="text-white/30 text-3xl">•</span>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 md:h-6 md:w-6" style={{ color: colors.hexAccent }} />
+                      <span className="text-white/90 drop-shadow-2xl">{artist.location}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Estadísticas mejoradas */}
+              <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-6">
+                {songs.length > 0 && (
+                  <div className="group relative">
+                    <div 
+                      className="absolute -inset-2 rounded-3xl blur-xl opacity-50 group-hover:opacity-80 transition-all duration-300"
+                      style={{ backgroundColor: colors.hexAccent }}
+                    ></div>
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-br from-white/20 to-white/5 border-2 rounded-3xl px-6 md:px-8 py-4 md:py-6 transform group-hover:scale-110 transition-all duration-300"
+                      style={{ borderColor: `${colors.hexAccent}60` }}
+                    >
+                      <div className="text-4xl md:text-5xl font-black mb-1" style={{ color: colors.hexAccent }}>{songs.length}</div>
+                      <div className="text-xs md:text-sm text-white font-bold uppercase tracking-widest">Canciones</div>
+                    </div>
+                  </div>
+                )}
+                {videos.length > 0 && (
+                  <div className="group relative">
+                    <div 
+                      className="absolute -inset-2 rounded-3xl blur-xl opacity-50 group-hover:opacity-80 transition-all duration-300"
+                      style={{ backgroundColor: colors.hexAccent }}
+                    ></div>
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-br from-white/20 to-white/5 border-2 rounded-3xl px-6 md:px-8 py-4 md:py-6 transform group-hover:scale-110 transition-all duration-300"
+                      style={{ borderColor: `${colors.hexAccent}60` }}
+                    >
+                      <div className="text-4xl md:text-5xl font-black mb-1" style={{ color: colors.hexAccent }}>{videos.length}</div>
+                      <div className="text-xs md:text-sm text-white font-bold uppercase tracking-widest">Videos</div>
+                    </div>
+                  </div>
+                )}
+                {artist.instagram && (
+                  <div className="group relative">
+                    <div 
+                      className="absolute -inset-2 rounded-3xl blur-xl opacity-50 group-hover:opacity-80 transition-all duration-300"
+                      style={{ backgroundColor: colors.hexAccent }}
+                    ></div>
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-br from-white/20 to-white/5 border-2 rounded-3xl px-6 md:px-8 py-4 md:py-6 flex flex-col items-center gap-2 transform group-hover:scale-110 transition-all duration-300"
+                      style={{ borderColor: `${colors.hexAccent}60` }}
+                    >
+                      <Instagram className="h-6 w-6 md:h-8 md:w-8" style={{ color: colors.hexAccent }} />
+                      <span className="text-sm md:text-base font-black text-white">@{artist.instagram}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Foto de perfil circular abajo + Badge de verificación */}
+              <div className="relative inline-block mt-4">
                 <div 
-                  className="absolute -inset-4 rounded-3xl blur-2xl opacity-50 animate-pulse"
+                  className="absolute -inset-4 rounded-full blur-3xl opacity-50 animate-pulse"
                   style={{ backgroundColor: colors.hexAccent }}
                 ></div>
-                <img
-                  src={artist.profileImage}
-                  alt={`${artist.name} Avatar`}
-                  className="relative w-48 h-48 xl:w-56 xl:h-56 rounded-3xl object-cover border-4 shadow-2xl transform hover:scale-105 transition-all duration-500"
+                <div className="relative">
+                  <img
+                    src={artist.profileImage}
+                    alt={`${artist.name} Avatar`}
+                    className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full object-cover border-4 shadow-2xl transform hover:scale-110 transition-all duration-500 mx-auto"
+                    style={{ 
+                      borderColor: colors.hexAccent,
+                      boxShadow: `0 20px 60px ${colors.hexAccent}70, 0 0 40px ${colors.hexAccent}50, inset 0 0 20px rgba(255,255,255,0.1)`
+                    }}
+                    data-testid="img-profile"
+                  />
+                  <div 
+                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-black text-sm shadow-2xl transform hover:rotate-12 transition-all duration-300"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${colors.hexAccent} 0%, ${colors.hexPrimary} 100%)`,
+                      boxShadow: `0 10px 30px ${colors.hexAccent}70`
+                    }}
+                  >
+                    ✓
+                  </div>
+                </div>
+                {/* Badge de verificación - pequeño debajo de foto */}
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl bg-white/5 border shadow-lg mt-3"
                   style={{ 
-                    borderColor: colors.hexAccent,
-                    boxShadow: `0 20px 60px ${colors.hexAccent}60, 0 0 40px ${colors.hexAccent}40`
-                  }}
-                  data-testid="img-profile"
-                />
-                <div className="absolute -bottom-2 -right-2 px-4 py-2 rounded-2xl font-black text-sm"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${colors.hexAccent} 0%, ${colors.hexPrimary} 100%)`,
-                    boxShadow: `0 8px 24px ${colors.hexAccent}60`
+                    borderColor: `${colors.hexAccent}30`,
+                    boxShadow: `0 4px 16px ${colors.hexAccent}20`
                   }}
                 >
-                  ✓ Verificado
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" style={{ boxShadow: '0 0 8px #4ade80' }}></div>
+                  <span className="text-xs font-semibold text-white/90 tracking-wide">Verificado</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Borde inferior decorativo */}
+        {/* Indicador de scroll */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 animate-bounce">
+          <ChevronDown className="h-8 w-8 md:h-10 md:w-10 text-white/60" />
+        </div>
+
+        {/* Borde inferior decorativo mejorado */}
         <div 
-          className="absolute bottom-0 left-0 right-0 h-1"
+          className="absolute bottom-0 left-0 right-0 h-1.5"
           style={{
-            background: `linear-gradient(90deg, transparent 0%, ${colors.hexAccent} 50%, transparent 100%)`,
-            boxShadow: `0 0 20px ${colors.hexAccent}80`
+            background: `linear-gradient(90deg, transparent 0%, ${colors.hexAccent} 30%, ${colors.hexPrimary} 50%, ${colors.hexAccent} 70%, transparent 100%)`,
+            boxShadow: `0 0 30px ${colors.hexAccent}90, 0 0 60px ${colors.hexAccent}50`
           }}
         ></div>
       </header>

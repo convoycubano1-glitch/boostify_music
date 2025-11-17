@@ -33,6 +33,46 @@
   }
 }
 
+/* Animación para partículas flotantes */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-40px) translateX(-10px);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateY(-20px) translateX(15px);
+    opacity: 0.5;
+  }
+}
+
+/* Animación de grid en movimiento */
+@keyframes grid-move {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(50px);
+  }
+}
+
+/* Animación de brillo de texto */
+@keyframes text-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 30px currentColor) drop-shadow(0 10px 20px rgba(0,0,0,0.9));
+  }
+  50% {
+    filter: drop-shadow(0 0 50px currentColor) drop-shadow(0 10px 20px rgba(0,0,0,0.9));
+  }
+}
+
 @keyframes gradient {
   0%, 100% {
     background-position: 0% 50%;
