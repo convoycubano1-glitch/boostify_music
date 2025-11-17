@@ -552,21 +552,25 @@ export default function MusicGeneratorPage() {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto mb-8">
-            {/* Video explanation */}
-            <div className="lg:col-span-1 rounded-lg overflow-hidden shadow-lg">
-              <div className="aspect-video relative overflow-hidden">
-                <video 
-                  className="w-full h-full object-cover" 
-                  controls
-                  poster="/assets/music-generator-poster.jpg"
-                >
-                  <source src="/assets/indications/Welcome to Boostify Music 1.mp4" type="video/mp4" />
-                </video>
+            {/* Music Studio Showcase */}
+            <div className="lg:col-span-1 rounded-lg overflow-hidden shadow-lg border-2 border-primary/20">
+              <div className="aspect-video relative overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-background">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center space-y-4">
+                    <div className="inline-flex p-6 rounded-full bg-primary/10 border-4 border-primary/20">
+                      <Music className="h-16 w-16 text-primary" />
+                    </div>
+                    <div className="flex items-center gap-2 justify-center">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      <span className="font-semibold text-sm">Tecnología IA Avanzada</span>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="p-4 bg-card">
-                <h3 className="text-lg font-medium mb-2">How It Works</h3>
+                <h3 className="text-lg font-medium mb-2">Estudio Musical IA</h3>
                 <p className="text-sm text-muted-foreground">
-                  Watch this quick tutorial to learn how to create amazing music in just a few clicks using our AI generator.
+                  Crea música profesional con nuestros 4 modelos de IA: desde demos rápidas hasta canciones completas de 3 minutos.
                 </p>
               </div>
             </div>
