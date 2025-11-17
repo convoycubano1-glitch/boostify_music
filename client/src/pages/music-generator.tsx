@@ -7,7 +7,7 @@ import {
   getDetailedPrompt,
   MusicGenreTemplate
 } from "../components/music/genre-templates/genre-data";
-import { generateMusic, checkGenerationStatus, getRecentGenerations, saveGeneratedSongToProfile, generateMusicWithFAL, checkFALMusicStatus } from "../lib/api/music-generator-service";
+import { generateMusic, checkGenerationStatus, getRecentGenerations, saveGeneratedSongToProfile, generateMusicWithFAL, checkFALMusicStatus, generateMusicWithStableAudio, checkStableAudioStatus } from "../lib/api/music-generator-service";
 import { useToast } from "../hooks/use-toast";
 import { Header } from "../components/layout/header";
 import { motion } from "framer-motion";
@@ -132,10 +132,15 @@ export default function MusicGeneratorPage() {
     if (isGeneratingMusic && currentTaskId) {
       intervalId = setInterval(async () => {
         try {
-          // Use FAL status check if model is music-fal
-          const status = selectedModel === 'music-fal' 
-            ? await checkFALMusicStatus(currentTaskId)
-            : await checkGenerationStatus(currentTaskId);
+          // Use appropriate status check based on model
+          let status;
+          if (selectedModel === 'music-stable') {
+            status = await checkStableAudioStatus(currentTaskId);
+          } else if (selectedModel === 'music-fal') {
+            status = await checkFALMusicStatus(currentTaskId);
+          } else {
+            status = await checkGenerationStatus(currentTaskId);
+          }
           
           // Update progress based on status
           if (status.status === 'pending') {
@@ -325,8 +330,16 @@ export default function MusicGeneratorPage() {
     try {
       let result: { taskId?: string; requestId?: string };
       
-      // Use FAL AI if model is music-fal
-      if (selectedModel === 'music-fal') {
+      // Use FAL AI Stable Audio 2.5 if model is music-stable
+      if (selectedModel === 'music-stable') {
+        result = await generateMusicWithStableAudio({
+          prompt: musicPrompt,
+          duration: 180  // 3 minutos
+        });
+        setCurrentTaskId(result.requestId || '');
+      }
+      // Use FAL AI Minimax if model is music-fal
+      else if (selectedModel === 'music-fal') {
         result = await generateMusicWithFAL({
           prompt: musicPrompt,
           duration: 30
