@@ -41,6 +41,51 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/songs/generated - Save AI-generated song with URL (authenticated)
+router.post('/generated', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { title, description, audioUrl, genre, duration, prompt, coverArt } = req.body;
+    
+    if (!audioUrl) {
+      return res.status(400).json({ message: 'Audio URL is required' });
+    }
+    
+    if (!title) {
+      return res.status(400).json({ message: 'Title is required' });
+    }
+    
+    // Create song record with AI-generated audio URL
+    const [newSong] = await db
+      .insert(songs)
+      .values({
+        userId,
+        title,
+        description: description || prompt || 'AI-generated music',
+        audioUrl,
+        genre: genre || 'AI Generated',
+        coverArt: coverArt || null,
+        duration: duration || null,
+        releaseDate: new Date(),
+        isPublished: true,
+        plays: 0
+      })
+      .returning();
+      
+    res.json({ 
+      success: true,
+      message: 'AI-generated song saved to profile', 
+      song: newSong 
+    });
+  } catch (error) {
+    console.error('Error saving generated song:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error saving generated song' 
+    });
+  }
+});
+
 // POST /api/songs - Create new song (authenticated)
 router.post('/', authenticate, async (req: any, res: Response) => {
   try {
