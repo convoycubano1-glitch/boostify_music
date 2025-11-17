@@ -9,10 +9,10 @@ import { Router, type Request, type Response } from 'express';
 const router = Router();
 
 // Verificar que la API key esté configurada
-const FAL_API_KEY = process.env.FAL_API_KEY;
+const FAL_API_KEY = process.env.FAL_KEY || process.env.FAL_API_KEY;
 
 if (!FAL_API_KEY) {
-  console.error('⚠️ WARNING: FAL_API_KEY no está configurada. Las funciones de lip-sync no funcionarán.');
+  console.error('⚠️ WARNING: FAL_KEY no está configurada. Las funciones de FAL AI no funcionarán.');
 }
 
 interface MuseTalkRequest {

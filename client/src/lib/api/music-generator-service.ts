@@ -454,6 +454,81 @@ export async function saveGeneratedSongToProfile(generation: {
 }
 
 /**
+ * Genera música usando FAL AI minimax-music/v2
+ * @param options Opciones para la generación
+ * @returns Objeto con el requestId
+ */
+export async function generateMusicWithFAL(options: {
+  prompt: string;
+  duration?: number;
+  reference_audio_url?: string;
+}): Promise<{ requestId: string }> {
+  try {
+    console.log('Generando música con FAL AI minimax-music/v2:', options);
+    
+    const response = await fetch('/api/fal/minimax-music', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: options.prompt,
+        duration: options.duration || 30,
+        reference_audio_url: options.reference_audio_url
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error generating music with FAL');
+    }
+    
+    const data = await response.json();
+    return { requestId: data.requestId };
+  } catch (error) {
+    console.error('Error en generateMusicWithFAL:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verifica el estado de una generación de FAL minimax-music
+ * @param requestId ID de la request de FAL
+ * @returns Estado de la generación
+ */
+export async function checkFALMusicStatus(requestId: string): Promise<MusicGenerationStatus> {
+  try {
+    const response = await fetch(`/api/fal/minimax-music/${requestId}`);
+    
+    if (!response.ok) {
+      throw new Error('Error checking FAL music status');
+    }
+    
+    const data = await response.json();
+    
+    // Map FAL status to our format
+    let status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
+    if (data.status === 'completed') {
+      status = 'completed';
+    } else if (data.status === 'in_progress' || data.status === 'in_queue') {
+      status = 'processing';
+    } else if (data.status === 'failed') {
+      status = 'failed';
+    }
+    
+    return {
+      id: requestId,
+      status,
+      audioUrl: data.audioUrl,
+      message: getStatusMessage(status)
+    };
+  } catch (error) {
+    console.error('Error en checkFALMusicStatus:', error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene un mensaje descriptivo para cada estado
  * @param status Estado de la generación
  * @returns Mensaje descriptivo
