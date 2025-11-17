@@ -148,7 +148,7 @@ function VirtualTryOnSection() {
   const [resultImage, setResultImage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const { data: products } = useQuery({
+  const { data: products } = useQuery<{ success: boolean; products: any[] }>({
     queryKey: ['/api/fashion/products']
   });
 
@@ -164,15 +164,17 @@ function VirtualTryOnSection() {
 
     setIsProcessing(true);
     try {
-      const response = await apiRequest('/api/fashion/tryon', {
+      const response: any = await fetch('/api/fashion/tryon', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           modelImage,
           clothingImage
         })
       });
 
-      setResultImage(response.imageUrl);
+      const data = await response.json();
+      setResultImage(data.imageUrl);
       toast({
         title: 'Success!',
         description: 'Virtual try-on completed'
@@ -317,8 +319,9 @@ function FashionVideoSection() {
 
     setIsProcessing(true);
     try {
-      const response = await apiRequest('/api/fashion/generate-video', {
+      const response = await fetch('/api/fashion/generate-video', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl,
           prompt,
@@ -327,7 +330,8 @@ function FashionVideoSection() {
         })
       });
 
-      setVideoId(response.videoId);
+      const data = await response.json();
+      setVideoId(data.videoId);
       toast({
         title: 'Video processing started!',
         description: 'This may take 2-3 minutes. We\'ll notify you when it\'s ready.'
@@ -343,10 +347,10 @@ function FashionVideoSection() {
     }
   };
 
-  const { data: videoStatus } = useQuery({
+  const { data: videoStatus } = useQuery<{ success: boolean; video: any }>({
     queryKey: ['/api/fashion/video-status', videoId],
     enabled: !!videoId,
-    refetchInterval: (data) => {
+    refetchInterval: (data: any) => {
       if (!data) return 5000;
       return data.video?.status === 'processing' ? 5000 : false;
     }
@@ -486,7 +490,7 @@ function DesignGenerationSection() {
 // PORTFOLIO SECTION
 // ============================================
 function PortfolioSection() {
-  const { data: portfolio } = useQuery({
+  const { data: portfolio } = useQuery<{ success: boolean; portfolio: any[] }>({
     queryKey: ['/api/fashion/portfolio']
   });
 
