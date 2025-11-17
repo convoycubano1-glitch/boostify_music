@@ -83,6 +83,45 @@ export default function InstagramBoostPage() {
     enabled: !!user
   });
 
+  // Fetch Community Data
+  const { data: calendarData } = useQuery({
+    queryKey: ['/api/instagram/community/calendar'],
+    enabled: !!user && activeTab === 'community'
+  });
+
+  const { data: engagementStats } = useQuery({
+    queryKey: ['/api/instagram/community/engagement'],
+    enabled: !!user && activeTab === 'community'
+  });
+
+  // Fetch Influencers Data
+  const { data: campaignsData } = useQuery({
+    queryKey: ['/api/instagram/influencers/campaigns'],
+    enabled: !!user && activeTab === 'influencers'
+  });
+
+  // Fetch Strategies Data
+  const { data: contentMixData } = useQuery({
+    queryKey: ['/api/instagram/strategies/content-mix'],
+    enabled: !!user && activeTab === 'strategies'
+  });
+
+  const { data: hashtagsData } = useQuery({
+    queryKey: ['/api/instagram/strategies/hashtags'],
+    enabled: !!user && activeTab === 'strategies'
+  });
+
+  const { data: optimalTimesData } = useQuery({
+    queryKey: ['/api/instagram/strategies/optimal-times'],
+    enabled: !!user && activeTab === 'strategies'
+  });
+
+  // Fetch Reports Data
+  const { data: analyticsData } = useQuery({
+    queryKey: ['/api/instagram/reports/analytics', dateRange],
+    enabled: !!user && activeTab === 'reports'
+  });
+
   // Caption Generator States
   const [postTopic, setPostTopic] = useState("");
   const [tone, setTone] = useState("professional");
@@ -118,24 +157,13 @@ export default function InstagramBoostPage() {
 
   // Community Tab States
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [contentItems, setContentItems] = useState([
-    { id: 1, title: 'Product Showcase', date: new Date(), status: 'scheduled', type: 'post' },
-    { id: 2, title: 'Behind the Scenes', date: new Date(), status: 'draft', type: 'story' },
-    { id: 3, title: 'User Feature', date: new Date(), status: 'published', type: 'reel' }
-  ]);
 
   // Influencers Tab States
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNiche, setSelectedNiche] = useState("all");
-  const [campaigns, setCampaigns] = useState([
-    { id: 1, name: 'Summer Collection', influencers: 3, posts: 15, budget: 5000, progress: 75, status: 'active' },
-    { id: 2, name: 'Holiday Special', influencers: 2, posts: 8, budget: 3000, progress: 30, status: 'active' }
-  ]);
 
   // Strategies Tab States
-  const [contentMix, setContentMix] = useState({ entertainment: 40, education: 35, promotion: 25 });
   const [hashtagSearch, setHashtagSearch] = useState("");
-  const [savedHashtags, setSavedHashtags] = useState(['fashion', 'style', 'beauty', 'ootd', 'trending']);
 
   // Reports Tab States
   const [dateRange, setDateRange] = useState("7d");
@@ -304,6 +332,50 @@ export default function InstagramBoostPage() {
       });
     }
   });
+
+  // Mutation: Influencer Search
+  const [influencerResults, setInfluencerResults] = useState<any>(null);
+  const influencerSearchMutation = useMutation({
+    mutationFn: async (data: { query: string; niche: string }) => {
+      const response = await fetch('/api/instagram/influencers/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to search influencers');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setInfluencerResults(data);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Auto-search influencers when niche changes
+  useEffect(() => {
+    if (activeTab === 'influencers') {
+      influencerSearchMutation.mutate({ query: searchQuery, niche: selectedNiche });
+    }
+  }, [selectedNiche, activeTab]);
+
+  // Prepare data with fallbacks
+  const contentItems = calendarData?.contentItems || [];
+  const stats = engagementStats || {};
+  const campaigns = campaignsData?.campaigns || [];
+  const campaignStats = campaignsData?.stats || {};
+  const contentMix = contentMixData?.contentMix || { entertainment: 40, education: 35, promotion: 25 };
+  const savedHashtags = hashtagsData?.savedHashtags || [];
+  const engagementData = analyticsData?.engagementData || [];
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
