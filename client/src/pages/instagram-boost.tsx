@@ -388,241 +388,107 @@ export default function InstagramBoostPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pt-20">
-        <div className="flex-1 space-y-8 p-4 sm:p-8 pt-6">
-          {/* Hero Section - Boostify Professional Style */}
-          <div className="relative w-full min-h-[70vh] overflow-hidden border border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]" />
-            
-            {/* Gradient Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/5" />
-            <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-primary/5 blur-3xl" />
-            
-            {/* Content Container */}
-            <div className="relative h-full flex items-center py-16 sm:py-24">
-              <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid lg:grid-cols-2 gap-16 items-center">
-                  {/* Left Side - Text Content */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.7, ease: "easeOut" }}
-                    className="space-y-8"
-                  >
-                    {/* Badge */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.1 }}
-                    >
-                      <span className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 text-sm font-bold text-primary border border-primary/20">
-                        <SiInstagram className="h-4 w-4" /> 
-                        Instagram Growth Tools
-                      </span>
-                    </motion.div>
-
-                    {/* Main Heading */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.2 }}
-                    >
-                      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight">
-                        Grow Your Instagram
-                        <span className="block text-primary mt-2">
-                          Like a Pro
-                        </span>
-                      </h1>
-                    </motion.div>
-
-                    {/* Description */}
-                    <motion.p 
-                      className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.3 }}
-                    >
-                      AI-powered tools to create viral content, connect with top influencers, and skyrocket your engagement. Everything you need in one powerful platform.
-                    </motion.p>
-
-                    {/* Feature List */}
-                    <motion.div 
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.4 }}
-                    >
-                      {[
-                        { icon: Sparkles, text: 'AI Caption Generator' },
-                        { icon: Users, text: '50K+ Influencer Network' },
-                        { icon: BarChart2, text: 'Real-time Analytics' },
-                        { icon: TrendingUp, text: 'Growth Strategies' }
-                      ].map((feature, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 bg-primary/10 flex items-center justify-center border border-primary/20">
-                            <feature.icon className="h-4 w-4 text-primary" />
-                          </div>
-                          <span className="text-sm font-semibold">{feature.text}</span>
-                        </div>
-                      ))}
-                    </motion.div>
-
-                    {/* CTA Buttons */}
-                    <motion.div 
-                      className="flex flex-col sm:flex-row gap-4 pt-4"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.5 }}
-                    >
-                      <Button
-                        size="lg"
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-base font-bold"
-                        data-testid="button-get-started"
-                      >
-                        <Rocket className="mr-2 h-5 w-5" />
-                        Get Started Free
-                      </Button>
-                      <Link href="/dashboard">
-                        <Button
-                          size="lg"
-                          variant="outline"
-                          className="border-2 px-8 py-6 text-base font-bold hover:bg-primary/5"
-                          data-testid="button-view-dashboard"
-                        >
-                          <BarChart2 className="mr-2 h-5 w-5" />
-                          View Dashboard
-                        </Button>
-                      </Link>
-                    </motion.div>
-
-                    {/* Social Proof */}
-                    <motion.div 
-                      className="flex items-center gap-6 pt-4 border-t border-border/50"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.6 }}
-                    >
-                      <div className="flex -space-x-2">
-                        {[1,2,3,4,5].map(i => (
-                          <div key={i} className="w-10 h-10 border-2 border-background bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-xs font-bold text-white">
-                            {String.fromCharCode(64 + i)}
-                          </div>
-                        ))}
-                      </div>
-                      <div>
-                        <p className="font-bold text-base">50,000+ Artists</p>
-                        <p className="text-sm text-muted-foreground">Growing with Boostify</p>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-
-                  {/* Right Side - Stats Cards */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.7, delay: 0.3 }}
-                    className="hidden lg:grid grid-cols-2 gap-6"
-                  >
-                    {[
-                      { icon: TrendingUp, value: '285%', label: 'Average Growth', trend: '+42%' },
-                      { icon: Users, value: '50K+', label: 'Influencers', trend: '+1.2K' },
-                      { icon: MessageCircle, value: '12.8%', label: 'Avg Engagement', trend: '+5.2%' },
-                      { icon: Globe, value: '150+', label: 'Countries', trend: '+12' }
-                    ].map((stat, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                        className="group bg-card border border-border hover:border-primary/50 p-6 transition-all duration-300 hover:shadow-lg"
-                      >
-                        <stat.icon className="h-8 w-8 text-primary mb-4" />
-                        <div className="space-y-1">
-                          <p className="text-3xl font-black text-foreground">{stat.value}</p>
-                          <p className="text-sm font-semibold text-muted-foreground">{stat.label}</p>
-                          <div className="flex items-center gap-1 text-xs font-bold text-green-500">
-                            <ArrowUpRight className="h-3 w-3" />
-                            {stat.trend}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </motion.div>
+        <div className="flex-1 space-y-6 p-4 sm:p-6 lg:p-8 pt-6">
+          {/* Hero Section - Compact */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <SiInstagram className="h-8 w-8 text-primary" />
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground">
+                    Instagram Growth Suite
+                  </h1>
                 </div>
+                <p className="text-muted-foreground text-sm sm:text-base">
+                  All-in-one platform for Instagram growth and engagement
+                </p>
               </div>
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  data-testid="button-dashboard"
+                >
+                  <BarChart2 className="mr-2 h-4 w-4" />
+                  Dashboard
+                </Button>
+              </Link>
             </div>
           </div>
 
-          {/* Platform Stats - Professional Layout */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: Users, label: "Active Users", value: "50K+", change: "+18%", desc: "Monthly active artists" },
-              { icon: TrendingUp, label: "Growth Rate", value: "285%", change: "+42%", desc: "Average follower increase" },
-              { icon: MessageCircle, label: "Engagement", value: "12.8%", change: "+5.2%", desc: "Average engagement rate" },
-              { icon: Globe, label: "Countries", value: "150+", change: "+12", desc: "Worldwide coverage" }
+              { icon: Users, label: "Active Users", value: "10K+" },
+              { icon: TrendingUp, label: "Growth Rate", value: "85%" },
+              { icon: MessageCircle, label: "Engagement", value: "95%" },
+              { icon: Globe, label: "Countries", value: "150+" }
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group bg-card border border-border hover:border-primary/30 p-6 transition-all duration-300 hover:shadow-lg"
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                className="bg-card border border-border p-6 hover:border-primary/30 transition-colors"
                 data-testid={`stat-${stat.label.toLowerCase().replace(' ', '-')}`}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <stat.icon className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center">
+                    <stat.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 border border-green-500/20">
-                    <ArrowUpRight className="h-3 w-3" />
-                    {stat.change}
-                  </span>
+                  <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
                 </div>
-                
-                <div className="space-y-2">
-                  <p className="text-4xl font-black text-foreground group-hover:text-primary transition-colors">
-                    {stat.value}
-                  </p>
-                  <h3 className="text-sm font-bold text-foreground">
-                    {stat.label}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {stat.desc}
-                  </p>
-                </div>
+                <p className="text-3xl font-black text-foreground">{stat.value}</p>
               </motion.div>
             ))}
           </div>
 
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="flex flex-nowrap overflow-x-auto p-1 bg-card border border-border w-full max-w-4xl mx-auto">
-              <TabsTrigger value="community" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 whitespace-nowrap font-bold" data-testid="tab-community">
-                <Calendar className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Community</span>
-                <span className="sm:hidden">Com</span>
-              </TabsTrigger>
-              <TabsTrigger value="influencers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 whitespace-nowrap font-bold" data-testid="tab-influencers">
-                <UserPlus className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Influencers</span>
-                <span className="sm:hidden">Inf</span>
-              </TabsTrigger>
-              <TabsTrigger value="strategies" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 whitespace-nowrap font-bold" data-testid="tab-strategies">
-                <Sparkles className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Strategies</span>
-                <span className="sm:hidden">Str</span>
-              </TabsTrigger>
-              <TabsTrigger value="reports" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 whitespace-nowrap font-bold" data-testid="tab-reports">
-                <BarChart2 className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Reports</span>
-                <span className="sm:hidden">Rep</span>
-              </TabsTrigger>
-              <TabsTrigger value="ai-tools" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6 py-2.5 whitespace-nowrap font-bold" data-testid="tab-ai-tools">
-                <Brain className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">AI Tools</span>
-                <span className="sm:hidden">AI</span>
-              </TabsTrigger>
-            </TabsList>
+            <div className="w-full overflow-x-auto">
+              <TabsList className="inline-flex w-full sm:w-auto min-w-full sm:min-w-0 p-1 bg-card border border-border">
+                <TabsTrigger 
+                  value="community" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  data-testid="tab-community"
+                >
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Community</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="influencers" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  data-testid="tab-influencers"
+                >
+                  <UserPlus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Influencers</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="strategies" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  data-testid="tab-strategies"
+                >
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Strategies</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="reports" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  data-testid="tab-reports"
+                >
+                  <BarChart2 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Reports</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="ai-tools" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  data-testid="tab-ai-tools"
+                >
+                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">AI Assistant</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* Community Tab - Restructured */}
             <TabsContent value="community" className="space-y-6">
@@ -755,21 +621,25 @@ export default function InstagramBoostPage() {
                     <div className="pt-4 space-y-2">
                       <h4 className="font-medium text-sm mb-3">Quick Actions</h4>
                       <div className="grid grid-cols-2 gap-2">
-                        <Button variant="outline" size="sm" className="justify-start">
-                          <Heart className="h-4 w-4 mr-2 text-red-500" />
-                          Like Posts
+                        <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                          <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-red-500" />
+                          <span className="hidden sm:inline">Like Posts</span>
+                          <span className="sm:hidden">Like</span>
                         </Button>
-                        <Button variant="outline" size="sm" className="justify-start">
-                          <MessageCircle className="h-4 w-4 mr-2 text-blue-500" />
-                          Reply
+                        <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                          <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-500" />
+                          <span className="hidden sm:inline">Reply</span>
+                          <span className="sm:hidden">Reply</span>
                         </Button>
-                        <Button variant="outline" size="sm" className="justify-start">
-                          <UserPlus className="h-4 w-4 mr-2 text-green-500" />
-                          Follow Back
+                        <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                          <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-green-500" />
+                          <span className="hidden sm:inline">Follow Back</span>
+                          <span className="sm:hidden">Follow</span>
                         </Button>
-                        <Button variant="outline" size="sm" className="justify-start">
-                          <Share2 className="h-4 w-4 mr-2 text-purple-500" />
-                          Share
+                        <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                          <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-purple-500" />
+                          <span className="hidden sm:inline">Share</span>
+                          <span className="sm:hidden">Share</span>
                         </Button>
                       </div>
                     </div>
@@ -781,31 +651,31 @@ export default function InstagramBoostPage() {
             {/* Influencers Tab - Restructured */}
             <TabsContent value="influencers" className="space-y-6">
               {/* Search and Filters */}
-              <Card className="p-6">
-                <div className="flex flex-col md:flex-row gap-4">
+              <Card className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search influencers by name or niche..."
+                      placeholder="Search influencers..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 text-sm"
                     />
                   </div>
                   <select
                     value={selectedNiche}
                     onChange={(e) => setSelectedNiche(e.target.value)}
-                    className="px-4 py-2 rounded-md border bg-background"
+                    className="px-3 py-2 text-sm border bg-background"
                   >
                     <option value="all">All Niches</option>
-                    <option value="fashion">Fashion & Lifestyle</option>
-                    <option value="tech">Tech & Gaming</option>
-                    <option value="beauty">Beauty & Makeup</option>
-                    <option value="fitness">Fitness & Health</option>
+                    <option value="fashion">Fashion</option>
+                    <option value="tech">Tech</option>
+                    <option value="beauty">Beauty</option>
+                    <option value="fitness">Fitness</option>
                   </select>
-                  <Button variant="outline">
-                    <Filter className="h-4 w-4 mr-2" />
-                    More Filters
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                    <Filter className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Filters</span>
                   </Button>
                 </div>
               </Card>
@@ -863,17 +733,19 @@ export default function InstagramBoostPage() {
                               </div>
                             </div>
 
-                            <div className="flex gap-2">
-                              <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Connect
+                            <div className="flex flex-wrap gap-2">
+                              <Button size="sm" className="bg-primary hover:bg-primary/90 text-xs sm:text-sm">
+                                <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden sm:inline">Connect</span>
+                                <span className="sm:hidden">Add</span>
                               </Button>
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Profile
+                              <Button size="sm" variant="outline" className="text-xs sm:text-sm">
+                                <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden sm:inline">View Profile</span>
+                                <span className="sm:hidden">View</span>
                               </Button>
-                              <Button size="sm" variant="outline">
-                                <MessageCircle className="h-4 w-4" />
+                              <Button size="sm" variant="outline" className="text-xs sm:text-sm px-2 sm:px-3">
+                                <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           </div>
