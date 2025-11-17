@@ -83,6 +83,7 @@ import spotifyToolsRouter from './routes/spotify-tools'; // Import Spotify Growt
 import instagramToolsRouter from './routes/instagram-tools'; // Import Instagram Boost AI Tools (Gemini AI)
 import instagramOAuthRouter from './routes/instagram-oauth'; // Import Instagram OAuth for real API connection
 import apifyInstagramRouter from './routes/apify-instagram'; // Import Apify Instagram integration for real data
+import fashionStudioRouter from './routes/fashion-studio'; // Import Artist Fashion Studio (FAL + Gemini)
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -342,6 +343,7 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/instagram', instagramToolsRouter); // Instagram Boost AI Tools (Caption Generator, Hashtags, Content Ideas, Best Time, Bio Optimizer)
   app.use('/api/instagram/auth', instagramOAuthRouter); // Instagram OAuth for real API connection
   app.use('/api/apify/instagram', apifyInstagramRouter); // Apify Instagram integration for real Instagram data
+  app.use('/api/fashion', fashionStudioRouter); // Artist Fashion Studio (Virtual Try-On, AI Advisor, Kling Videos)
   app.use(creditsRouter); // Credits and payment routes
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
