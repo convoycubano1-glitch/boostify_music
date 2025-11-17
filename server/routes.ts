@@ -81,6 +81,7 @@ import ogImageRouter from './routes/og-image.tsx'; // Import Open Graph image ge
 import youtubeToolsRouter from './routes/youtube-tools'; // Import YouTube Growth Tools (Gemini AI + Apify)
 import spotifyToolsRouter from './routes/spotify-tools'; // Import Spotify Growth Tools (Gemini AI + Apify)
 import instagramToolsRouter from './routes/instagram-tools'; // Import Instagram Boost AI Tools (Gemini AI)
+import instagramOAuthRouter from './routes/instagram-oauth'; // Import Instagram OAuth for real API connection
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -338,6 +339,7 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/youtube', youtubeToolsRouter); // YouTube Growth Tools (Pre-Launch Score, Keywords, Title Analyzer, Content Ideas)
   app.use('/api/spotify', spotifyToolsRouter); // Spotify Growth Tools (Listeners Prediction, Playlist Match, Curator Finder, SEO Optimizer)
   app.use('/api/instagram', instagramToolsRouter); // Instagram Boost AI Tools (Caption Generator, Hashtags, Content Ideas, Best Time, Bio Optimizer)
+  app.use('/api/instagram/auth', instagramOAuthRouter); // Instagram OAuth for real API connection
   app.use(creditsRouter); // Credits and payment routes
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
