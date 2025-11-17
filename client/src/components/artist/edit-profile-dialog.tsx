@@ -402,10 +402,21 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
       toast({
         title: "Archivo inválido",
-        description: "Por favor selecciona una imagen (JPG, PNG, etc.) o un video (MP4, MOV, etc.).",
+        description: "Por favor selecciona una imagen (JPG, PNG, etc.) o un video (MP4, WebM, etc.).",
         variant: "destructive",
       });
       return;
+    }
+
+    // Advertir si el archivo es .MOV
+    const isMovFile = file.name.toLowerCase().endsWith('.mov') || file.type === 'video/quicktime';
+    if (isMovFile) {
+      toast({
+        title: "⚠️ Formato .MOV detectado",
+        description: "Los archivos .MOV no funcionan en Chrome/Firefox. Recomendamos convertir a .MP4 para mejor compatibilidad.",
+        variant: "destructive",
+      });
+      // Aún permitimos subir, pero con advertencia
     }
 
     setIsUploadingBannerImage(true);
@@ -419,7 +430,9 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       const fileType = file.type.startsWith('image/') ? 'imagen' : 'video';
       toast({
         title: `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} de banner cargada`,
-        description: `Tu ${fileType} de banner ha sido subida exitosamente.`,
+        description: isMovFile 
+          ? `Tu ${fileType} fue subido, pero puede no funcionar en todos los navegadores. Considera usar .MP4 en su lugar.`
+          : `Tu ${fileType} de banner ha sido subida exitosamente.`,
       });
     } catch (error) {
       console.error("Error uploading banner media:", error);
@@ -653,49 +666,51 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     setIsSaving(true);
 
     try {
-      // Las imágenes generadas por IA ya vienen como URLs públicas
-      // Las imágenes subidas se convierten a URLs de Storage
-      // Solo guardamos URLs, nunca base64
-      const profileImageUrl = formData.profileImage || "";
-      const bannerImageUrl = formData.bannerImage || "";
-      const referenceImageUrl = referenceImage || "";
+      console.log('💾 Guardando perfil del artista', artistId);
 
-      // Guardar directamente usando el artistId como document ID en Firestore
-      const userDocRef = doc(db, "users", artistId);
+      // Llamar al endpoint del backend que actualiza AMBAS bases de datos
+      const response = await fetch(`/api/artist-generator/update-artist/${artistId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          displayName: formData.displayName,
+          biography: formData.biography || "",
+          genre: formData.genre || "",
+          location: formData.location || "",
+          profileImage: formData.profileImage || "",
+          bannerImage: formData.bannerImage || "",
+          bannerPosition: formData.bannerPosition || "50",
+          loopVideoUrl: formData.loopVideoUrl || "",
+          slug: formData.slug || generateSlug(formData.displayName),
+          contactEmail: formData.contactEmail || "",
+          contactPhone: formData.contactPhone || "",
+          instagram: formData.instagram || "",
+          twitter: formData.twitter || "",
+          youtube: formData.youtube || "",
+          spotify: formData.spotify || "",
+        }),
+      });
 
-      const profileData = {
-        uid: artistId,
-        displayName: formData.displayName,
-        name: formData.displayName,
-        biography: formData.biography || "",
-        genre: formData.genre || "",
-        location: formData.location || "",
-        profileImage: profileImageUrl,
-        photoURL: profileImageUrl,
-        bannerImage: bannerImageUrl,
-        bannerPosition: String(formData.bannerPosition || "50"),
-        loopVideoUrl: formData.loopVideoUrl || "",
-        slug: formData.slug || generateSlug(formData.displayName),
-        contactEmail: formData.contactEmail || "",
-        contactPhone: formData.contactPhone || "",
-        instagram: formData.instagram || "",
-        twitter: formData.twitter || "",
-        youtube: formData.youtube || "",
-        spotify: formData.spotify || "",
-        referenceImage: referenceImageUrl,
-        updatedAt: new Date(),
-      };
+      const data = await response.json();
 
-      console.log('💾 DEBUG - Guardando perfil con ID:', artistId);
-      console.log('💾 DEBUG - Guardando perfil con Spotify:', profileData.spotify);
-      console.log('💾 DEBUG - FormData spotify antes de guardar:', formData.spotify);
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Error al actualizar perfil');
+      }
 
-      // Usar merge: true para crear o actualizar el documento
-      await setDoc(userDocRef, profileData, { merge: true });
-      console.log('💾 DEBUG - Perfil guardado exitosamente en Firestore con ID:', artistId);
+      console.log('✅ Perfil actualizado exitosamente en PostgreSQL y Firebase');
 
-      // Invalidar caché de React Query para forzar actualización en todos los dispositivos
-      await queryClient.invalidateQueries({ queryKey: ["userProfile", artistId] });
+      // Invalidar TODAS las queryKeys relevantes para forzar actualización en el UI
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["userProfile", artistId] }),
+        queryClient.invalidateQueries({ queryKey: ["userProfile", String(artistId)] }),
+        queryClient.invalidateQueries({ queryKey: ["userProfile", Number(artistId)] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/my-artists"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/artist", artistId] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/artist-profile", artistId] }),
+      ]);
       
       // 🔔 Enviar datos al webhook de Make.com para automatización
       try {
@@ -707,25 +722,23 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
           event: 'profile_updated',
           artistId: artistId,
           profile: {
-            displayName: profileData.displayName,
-            biography: profileData.biography,
-            genre: profileData.genre,
-            location: profileData.location,
-            profileImage: profileData.profileImage,
-            bannerImage: profileData.bannerImage,
-            bannerPosition: profileData.bannerPosition,
-            loopVideoUrl: profileData.loopVideoUrl,
-            slug: profileData.slug,
-            contactEmail: profileData.contactEmail,
-            contactPhone: profileData.contactPhone,
+            displayName: formData.displayName,
+            biography: formData.biography,
+            genre: formData.genre,
+            location: formData.location,
+            profileImage: formData.profileImage,
+            bannerImage: formData.bannerImage,
+            bannerPosition: formData.bannerPosition,
+            loopVideoUrl: formData.loopVideoUrl,
+            slug: formData.slug,
+            contactEmail: formData.contactEmail,
+            contactPhone: formData.contactPhone,
             socialMedia: {
-              instagram: profileData.instagram,
-              twitter: profileData.twitter,
-              youtube: profileData.youtube,
-              spotify: profileData.spotify,
+              instagram: formData.instagram,
+              twitter: formData.twitter,
+              youtube: formData.youtube,
+              spotify: formData.spotify,
             },
-            referenceImage: profileData.referenceImage,
-            updatedAt: profileData.updatedAt.toISOString(),
           }
         };
 
@@ -996,7 +1009,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 <input
                   ref={bannerImageInputRef}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,video/mp4,video/quicktime,video/x-msvideo,video/webm"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,video/mp4,video/webm,video/quicktime"
                   onChange={handleUploadBannerImage}
                   className="hidden"
                 />
@@ -1044,8 +1057,11 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               id="bannerImage"
               value={formData.bannerImage}
               onChange={(e) => handleChange("bannerImage", e.target.value)}
-              placeholder="URL de imagen/video o usa los botones para subir/generar"
+              placeholder="URL de imagen/video (MP4/WebM recomendado)"
             />
+            <p className="text-xs text-muted-foreground">
+              💡 Para videos, usa formato <strong>.MP4</strong> o <strong>.WebM</strong> para mejor compatibilidad con todos los navegadores. ⚠️ .MOV no funciona en Chrome/Firefox.
+            </p>
             {formData.bannerImage && (
               <div className="space-y-3">
                 {formData.bannerImage.match(/\.(mp4|mov|avi|webm)$/i) || formData.bannerImage.includes('video') ? (
@@ -1116,7 +1132,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 placeholder="https://ejemplo.com/video.mp4"
               />
               <p className="text-xs text-gray-400 italic">
-                Sube tu video a Firebase Storage o usa una URL directa. Formatos: MP4, WebM.
+                Sube tu video a Firebase Storage o usa una URL directa. Formatos recomendados: <strong>MP4</strong> o <strong>WebM</strong>. ⚠️ .MOV no funciona en Chrome/Firefox.
               </p>
             </div>
             {formData.loopVideoUrl && (

@@ -171,6 +171,35 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
   const [showDownload, setShowDownload] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [imagePosition, setImagePosition] = useState('center 30%');
+
+  // Detectar orientación y ajustar posición de imagen
+  useEffect(() => {
+    const updateImagePosition = () => {
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const isMobile = window.innerWidth < 768;
+      
+      if (isMobile && isPortrait) {
+        // Móvil vertical: mostrar parte superior (cabezas)
+        setImagePosition('center 25%');
+      } else if (isMobile && !isPortrait) {
+        // Móvil horizontal: centrar más
+        setImagePosition('center 35%');
+      } else {
+        // Desktop: posición balanceada
+        setImagePosition('center 30%');
+      }
+    };
+
+    updateImagePosition();
+    window.addEventListener('resize', updateImagePosition);
+    window.addEventListener('orientationchange', updateImagePosition);
+
+    return () => {
+      window.removeEventListener('resize', updateImagePosition);
+      window.removeEventListener('orientationchange', updateImagePosition);
+    };
+  }, []);
 
   const handleDownloadCard = async () => {
     try {
@@ -237,12 +266,22 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
               margin: '0 auto'
             }}
           >
-            {/* Imagen de fondo con overlay */}
+            {/* Imagen de fondo con overlay - SIEMPRE usa profileImage con posición dinámica */}
             <div className="absolute inset-0">
               <img
-                src={artist.bannerImage || artist.profileImage}
+                src={artist.profileImage}
                 alt={artist.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-all duration-300"
+                style={{
+                  objectPosition: imagePosition
+                }}
+                onError={(e) => {
+                  // Fallback si la imagen de perfil falla y el banner NO es video
+                  const isVideo = artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i);
+                  if (!isVideo && artist.bannerImage) {
+                    e.currentTarget.src = artist.bannerImage;
+                  }
+                }}
               />
               {/* Overlay oscuro con gradiente */}
               <div 
@@ -722,14 +761,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     queryKey: ["userProfile", artistId],
     queryFn: async () => {
       try {
-        // Si hay datos iniciales, usarlos como base
-        if (initialArtistData) {
-          console.log('✅ Using initial artist data:', initialArtistData);
-          return initialArtistData;
-        }
-        
-        // artistId puede ser un ID numérico (de PostgreSQL) o un slug
-        // Intentamos primero PostgreSQL por slug, luego por ID
+        // SIEMPRE hacer fetch fresco desde PostgreSQL (fuente de verdad)
         let postgresData = null;
         try {
           const response = await fetch(`/api/profile/${artistId}`);
@@ -759,7 +791,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           }
         }
         
-        // Combinar datos: Firestore tiene los datos completos, PostgreSQL agrega metadata
+        // Combinar datos: PostgreSQL es la fuente de verdad para campos del perfil
         return {
           ...firestoreData,
           ...(postgresData && {
@@ -767,7 +799,14 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             firestoreId: postgresData.firestoreId,
             generatedBy: postgresData.generatedBy,
             slug: postgresData.slug,
-            pgId: postgresData.id
+            pgId: postgresData.id,
+            // ✅ Usar valores de PostgreSQL (fuente de verdad)
+            biography: postgresData.biography || firestoreData?.biography,
+            bannerPosition: postgresData.bannerPosition ?? firestoreData?.bannerPosition ?? "50",
+            loopVideoUrl: postgresData.loopVideoUrl || firestoreData?.loopVideoUrl,
+            location: postgresData.location || firestoreData?.location,
+            email: postgresData.email || firestoreData?.email || firestoreData?.contactEmail,
+            phone: postgresData.phone || firestoreData?.phone || firestoreData?.contactPhone
           })
         };
       } catch (error) {
@@ -776,7 +815,8 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       }
     },
     enabled: !!artistId,
-    initialData: initialArtistData // Usar datos iniciales para evitar loading state
+    staleTime: 0, // Siempre considerar datos como stale para refrescar
+    gcTime: 0 // No mantener datos en caché
   });
 
   // Query para canciones
@@ -1171,7 +1211,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     profileImage: userProfile?.photoURL || userProfile?.profileImage || '/assets/freepik__boostify_music_organe_abstract_icon.png',
     bannerImage: userProfile?.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80',
     loopVideoUrl: userProfile?.loopVideoUrl || "",
-    bannerPosition: userProfile?.bannerPosition || "50",
+    bannerPosition: userProfile?.bannerPosition ?? "50",
     biography: userProfile?.biography || "Music artist profile",
     followers: userProfile?.followers || 0,
     instagram: userProfile?.instagram || "",
@@ -1531,12 +1571,8 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           
           const videoUrl = artist.loopVideoUrl || (isVideo ? artist.bannerImage : null);
           
-          console.log('🎬 Video detection:', { 
-            bannerImage: artist.bannerImage?.substring(0, 100), 
-            loopVideoUrl: artist.loopVideoUrl,
-            isVideo, 
-            videoUrl: videoUrl?.substring(0, 100) 
-          });
+          const bannerPos = artist.bannerPosition || "50";
+          const objectPositionStyle = `center ${bannerPos}%`;
           
           if (videoUrl) {
             return (
@@ -1548,8 +1584,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 loop
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
-                style={{ objectPosition: `center ${artist.bannerPosition}%` }}
-                onCanPlay={() => console.log('✅ Hero video can play')}
+                style={{ objectPosition: objectPositionStyle }}
                 onError={(e) => console.error('❌ Hero video error:', e)}
               />
             );
@@ -1560,7 +1595,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               src={artist.bannerImage}
               alt={`${artist.name} Cover`}
               className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
-              style={{ objectPosition: `center ${artist.bannerPosition}%` }}
+              style={{ objectPosition: objectPositionStyle }}
               onError={(e) => { 
                 e.currentTarget.style.display = 'none';
                 if (e.currentTarget.parentElement) {
@@ -1730,7 +1765,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                             location: userProfile?.location || "",
                             profileImage: userProfile?.photoURL || userProfile?.profileImage || "",
                             bannerImage: userProfile?.bannerImage || "",
-                            bannerPosition: String((userProfile as any)?.bannerPosition || "50"),
+                            bannerPosition: String((userProfile as any)?.bannerPosition ?? "50"),
                             loopVideoUrl: (userProfile as any)?.loopVideoUrl || "",
                             slug: (userProfile as any)?.slug || "",
                             contactEmail: userProfile?.email || userProfile?.contactEmail || "",
@@ -3980,11 +4015,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
         </DialogContent>
       </Dialog>
 
-      {/* Video Player Modal */}
+      {/* Video Player Modal - Optimizado para móviles */}
       <Dialog open={!!playingVideo} onOpenChange={(open) => !open && setPlayingVideo(null)}>
         <DialogContent className="max-w-4xl w-full bg-black/95 border border-gray-800 p-0">
           <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-            {playingVideo && getYouTubeEmbedUrl(playingVideo.url) && (
+            {playingVideo && getYouTubeEmbedUrl(playingVideo.url) ? (
               <iframe
                 src={getYouTubeEmbedUrl(playingVideo.url)!}
                 className="absolute top-0 left-0 w-full h-full rounded-lg"
@@ -3992,15 +4027,44 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 allowFullScreen
                 title={playingVideo.title}
               />
-            )}
+            ) : playingVideo?.url ? (
+              <video
+                key={playingVideo.url}
+                src={playingVideo.url}
+                poster={playingVideo.thumbnailUrl || undefined}
+                className="absolute top-0 left-0 w-full h-full rounded-lg bg-black"
+                controls
+                controlsList="nodownload"
+                playsInline
+                preload="auto"
+                webkit-playsinline="true"
+                x-webkit-airplay="allow"
+                title={playingVideo.title}
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                onLoadStart={() => console.log('📱 Video load started (mobile-friendly)')}
+                onCanPlay={() => console.log('✅ Video ready to play')}
+                onError={(e) => {
+                  const videoEl = e.currentTarget;
+                  console.error('❌ Error reproduciendo video móvil:', {
+                    url: playingVideo.url,
+                    error: videoEl.error?.code,
+                    message: videoEl.error?.message,
+                    networkState: videoEl.networkState,
+                    readyState: videoEl.readyState
+                  });
+                }}
+              />
+            ) : null}
           </div>
           <div className="p-4 border-t border-gray-800">
             <h3 className="text-white font-semibold text-lg">{playingVideo?.title}</h3>
-            <p className="text-gray-400 text-sm mt-1">Powered by Boostify</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {playingVideo?.url?.includes('youtube') ? 'YouTube' : 'Video Local'} • Powered by Boostify
+            </p>
           </div>
           <button
             onClick={() => setPlayingVideo(null)}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-all z-10"
             aria-label="Cerrar"
             data-testid="button-close-video"
           >

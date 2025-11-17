@@ -54,8 +54,13 @@ router.get("/my-artists", isAuthenticated, async (req: Request, res: Response) =
       biography: artist.biography,
       profileImage: artist.profileImage,
       coverImage: artist.coverImage,
+      bannerPosition: artist.bannerPosition,
+      loopVideoUrl: artist.loopVideoUrl,
       genres: artist.genres,
       country: artist.country,
+      location: artist.location,
+      email: artist.email,
+      phone: artist.phone,
       isAIGenerated: artist.isAIGenerated,
       createdAt: artist.createdAt,
       instagram: artist.instagramHandle,
@@ -713,6 +718,133 @@ router.post("/sync-artist-images", async (req: Request, res: Response) => {
     console.error('Error en sincronización:', error);
     res.status(500).json({
       error: 'Error al sincronizar imágenes',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para actualizar el perfil de un artista
+ * Actualiza TANTO PostgreSQL COMO Firebase
+ * Acepta tanto ID numérico como firestoreId
+ */
+router.put("/update-artist/:artistId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const artistIdParam = req.params.artistId;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    console.log(`📝 Actualizando artista ${artistIdParam} por usuario ${userId}`);
+
+    const {
+      displayName,
+      biography,
+      genre,
+      location,
+      profileImage,
+      bannerImage,
+      bannerPosition,
+      loopVideoUrl,
+      slug,
+      contactEmail,
+      contactPhone,
+      instagram,
+      twitter,
+      youtube,
+      spotify
+    } = req.body;
+
+    // Buscar artista por ID numérico o firestoreId
+    let artist;
+    const numericId = parseInt(artistIdParam);
+    
+    if (!isNaN(numericId)) {
+      // Es un ID numérico
+      [artist] = await pgDb.select().from(users).where(eq(users.id, numericId)).limit(1);
+    } else {
+      // Es un firestoreId
+      [artist] = await pgDb.select().from(users).where(eq(users.firestoreId, artistIdParam)).limit(1);
+    }
+    
+    if (!artist) {
+      return res.status(404).json({ error: 'Artista no encontrado' });
+    }
+
+    // Verificar permisos: debe ser el mismo usuario o un artista generado por él
+    if (artist.id !== userId && artist.generatedBy !== userId) {
+      return res.status(403).json({ error: 'No tienes permiso para editar este artista' });
+    }
+
+    // Actualizar PostgreSQL
+    await pgDb.update(users)
+      .set({
+        artistName: displayName,
+        biography: biography || null,
+        genres: genre ? [genre] : artist.genres,
+        location: location || null,
+        profileImage: profileImage || null,
+        coverImage: bannerImage || null,
+        bannerPosition: bannerPosition !== undefined && bannerPosition !== null ? String(bannerPosition) : artist.bannerPosition,
+        loopVideoUrl: loopVideoUrl || null,
+        slug: slug || artist.slug,
+        email: contactEmail || null,
+        phone: contactPhone || null,
+        instagramHandle: instagram || null,
+        twitterHandle: twitter || null,
+        youtubeChannel: youtube || null,
+        spotifyUrl: spotify || null,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, artist.id));
+
+    console.log(`✅ PostgreSQL actualizado - Biography: ${biography ? 'SI' : 'NO'}, BannerPos: ${bannerPosition}, LoopVideo: ${loopVideoUrl ? 'SI' : 'NO'}`);
+
+    console.log(`✅ Artista ${artist.id} actualizado en PostgreSQL`);
+
+    // Actualizar Firebase si tiene firestoreId
+    if (artist.firestoreId) {
+      try {
+        const userDocRef = db.collection('users').doc(artist.firestoreId);
+        await userDocRef.set({
+          uid: artist.firestoreId,
+          displayName,
+          name: displayName,
+          biography: biography || "",
+          genre: genre || "",
+          location: location || "",
+          profileImage: profileImage || "",
+          photoURL: profileImage || "",
+          bannerImage: bannerImage || "",
+          bannerPosition: bannerPosition !== undefined && bannerPosition !== null ? String(bannerPosition) : "50",
+          loopVideoUrl: loopVideoUrl || "",
+          slug: slug || artist.slug,
+          contactEmail: contactEmail || "",
+          contactPhone: contactPhone || "",
+          instagram: instagram || "",
+          twitter: twitter || "",
+          youtube: youtube || "",
+          spotify: spotify || "",
+          updatedAt: new Date()
+        }, { merge: true });
+        
+        console.log(`✅ Artista ${artist.id} actualizado en Firebase`);
+      } catch (firebaseError) {
+        console.warn(`⚠️ No se pudo actualizar Firebase para artista ${artist.id}:`, firebaseError);
+        // No bloqueamos si Firebase falla
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Perfil actualizado correctamente'
+    });
+  } catch (error) {
+    console.error('❌ Error actualizando perfil del artista:', error);
+    res.status(500).json({ 
+      error: 'Error al actualizar perfil',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }

@@ -42,6 +42,8 @@ export const users = pgTable("users", {
   artistName: text("artist_name"),
   profileImage: text("profile_image"),
   coverImage: text("cover_image"),
+  bannerPosition: text("banner_position").default("50"),
+  loopVideoUrl: text("loop_video_url"),
   realName: text("real_name"),
   country: text("country"),
   genres: text("genres").array(),
@@ -73,7 +75,8 @@ export const users = pgTable("users", {
   isAIGenerated: boolean("is_ai_generated").default(false).notNull(),
   generatedBy: integer("generated_by").references(() => users.id),
   recordLabelId: text("record_label_id"),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
 export const artistMedia = pgTable("artist_media", {
