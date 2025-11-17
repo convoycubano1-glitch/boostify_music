@@ -39,9 +39,13 @@ async function fetchWithFailover(url: string, options: RequestInit, context: str
     
     // Si es 403 y menciona balance agotado, intentar con backup
     if (response.status === 403 && FAL_API_KEY_BACKUP) {
-      const errorText = await response.text();
+      // Clonar response para poder leer el body sin consumirlo
+      const clonedResponse = response.clone();
+      const errorText = await clonedResponse.text();
+      
       if (errorText.includes('Exhausted balance') || errorText.includes('locked')) {
         console.warn(`⚠️ [FAILOVER] Key principal sin balance. Usando backup para: ${context}`);
+        console.log(`🔄 [FAILOVER] Reintentando con FAL_KEY_BACKUP...`);
         
         // Reintentar con la key de backup
         const backupOptions = {
@@ -53,7 +57,13 @@ async function fetchWithFailover(url: string, options: RequestInit, context: str
         };
         
         const backupResponse = await fetch(url, backupOptions);
-        console.log(`✅ [FAILOVER] Usando FAL_KEY_BACKUP exitosamente para: ${context}`);
+        
+        if (backupResponse.ok) {
+          console.log(`✅ [FAILOVER] FAL_KEY_BACKUP funcionó correctamente para: ${context}`);
+        } else {
+          console.error(`❌ [FAILOVER] FAL_KEY_BACKUP también falló para: ${context}`);
+        }
+        
         return backupResponse;
       }
     }
@@ -64,6 +74,21 @@ async function fetchWithFailover(url: string, options: RequestInit, context: str
     throw error;
   }
 }
+
+/**
+ * GET /api/fal/debug-failover
+ * Endpoint de debug para verificar el sistema de failover
+ */
+router.get('/debug-failover', async (req: Request, res: Response) => {
+  res.json({
+    hasPrimaryKey: !!FAL_API_KEY,
+    hasBackupKey: !!FAL_API_KEY_BACKUP,
+    failoverEnabled: !!FAL_API_KEY && !!FAL_API_KEY_BACKUP,
+    message: !!FAL_API_KEY && !!FAL_API_KEY_BACKUP 
+      ? 'Failover automático está habilitado' 
+      : 'Failover no está completamente configurado'
+  });
+});
 
 interface MuseTalkRequest {
   imageUrl: string;

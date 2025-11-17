@@ -4,13 +4,13 @@ import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
 import { Button } from "../../ui/button";
 import { Progress } from "../../ui/progress";
-import { Tabs, TabsList, TabsTrigger } from "../../ui/tabs";
 import { Alert, AlertDescription } from "../../ui/alert";
 import { MusicGenreTemplate } from "./genre-data";
 import { GenreTemplateSelector } from "./genre-template-selector";
 import { 
   MusicGenerationAdvancedParams,
 } from "./advanced-music-params";
+import { ModelSelectorCards } from "../model-selector-cards";
 
 import { 
   Sparkles, 
@@ -19,7 +19,8 @@ import {
   Loader2,
   PlusCircle,
   Info,
-  AlertCircle
+  AlertCircle,
+  Lightbulb
 } from "lucide-react";
 
 interface MusicGenerationSectionProps {
@@ -107,68 +108,61 @@ export function MusicGenerationSection({
       
       {/* Main generation controls */}
       <div className="space-y-4">
-        {/* Prompt text field */}
+        {/* Prompt text field with examples */}
         <div className="space-y-2">
-          <Label htmlFor="musicPrompt">Music Description</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="musicPrompt">Describe tu música</Label>
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+              onClick={() => {
+                const examples = [
+                  "Upbeat electronic dance music with synth leads, driving bass, and energetic drums",
+                  "Relaxing lo-fi hip hop with smooth piano, soft drums, and atmospheric sounds",
+                  "Epic orchestral soundtrack with strings, brass, and powerful percussion",
+                  "Acoustic indie folk with gentle guitar, warm vocals, and organic instruments",
+                  "Tropical house with steel drums, marimba, and summer beach vibes"
+                ];
+                const randomExample = examples[Math.floor(Math.random() * examples.length)];
+                setMusicPrompt(randomExample);
+              }}
+            >
+              <Lightbulb className="h-3 w-3" />
+              Usar ejemplo
+            </button>
+          </div>
           <Textarea
             id="musicPrompt"
-            placeholder="Describe the music you want to generate. For example: An energetic pop song with dance rhythm, synthesizers and female vocals..."
+            placeholder="Ej: Música electrónica energética con sintetizadores, bajo potente y ritmo bailable..."
             value={musicPrompt}
             onChange={(e) => setMusicPrompt(e.target.value)}
-            className="min-h-[80px]"
+            className="min-h-[100px] resize-none"
             disabled={isGeneratingMusic}
+            data-testid="input-music-prompt"
           />
+          <p className="text-xs text-muted-foreground">
+            💡 Tip: Incluye el género, instrumentos, tempo y ambiente para mejores resultados
+          </p>
         </div>
         
         {/* Title field */}
         <div className="space-y-2">
-          <Label htmlFor="musicTitle">Song Title (optional)</Label>
+          <Label htmlFor="musicTitle">Título de la canción (opcional)</Label>
           <Input
             id="musicTitle"
-            placeholder="Enter a title for your generation"
+            placeholder="Ej: Mi Canción Épica, Summer Vibes, Midnight Dreams..."
             value={musicTitle}
             onChange={(e) => setMusicTitle(e.target.value)}
             disabled={isGeneratingMusic}
+            data-testid="input-music-title"
           />
         </div>
         
-        {/* Model selector */}
-        <div className="space-y-2">
-          <Label htmlFor="model-selector">Model</Label>
-          <Tabs 
-            value={selectedModel} 
-            onValueChange={setSelectedModel} 
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-4 h-9">
-              <TabsTrigger value="music-fal" className="text-xs" data-testid="model-fal">
-                <Sparkles className="h-3.5 w-3.5 mr-1.5" /> 
-                Minimax
-              </TabsTrigger>
-              <TabsTrigger value="music-stable" className="text-xs" data-testid="model-stable">
-                <Sparkles className="h-3.5 w-3.5 mr-1.5" /> 
-                Stable 2.5
-              </TabsTrigger>
-              <TabsTrigger value="music-s" className="text-xs" data-testid="model-suno">
-                <Music className="h-3.5 w-3.5 mr-1.5" /> 
-                Suno
-              </TabsTrigger>
-              <TabsTrigger value="music-u" className="text-xs" data-testid="model-udio">
-                <Music className="h-3.5 w-3.5 mr-1.5" /> 
-                Udio
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <p className="text-xs text-muted-foreground">
-            {selectedModel === 'music-fal'
-              ? "FAL Minimax v2 - Ultra rápido (30s), genera música de alta calidad en segundos con IA avanzada."
-              : selectedModel === 'music-stable'
-              ? "FAL Stable Audio 2.5 - Profesional enterprise-grade (3 min), calidad comparable a Suno con estructura musical completa."
-              : selectedModel === 'music-s' 
-              ? "Suno generates high-quality music with a wider range of styles and precise control." 
-              : "Udio produces results with more natural vocals and is optimal for pop and modern music."}
-          </p>
-        </div>
+        {/* Model selector - New card design */}
+        <ModelSelectorCards
+          selectedModel={selectedModel}
+          onModelSelect={setSelectedModel}
+        />
         
         {/* Advanced parameters toggle */}
         <div className="flex items-center justify-between">
@@ -207,29 +201,40 @@ export function MusicGenerationSection({
         </Alert>
         
         {/* Generation button and progress */}
-        <div className="pt-2">
+        <div className="pt-4">
           {isGeneratingMusic ? (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-sm text-muted-foreground mb-1">
-                <span>Generating music...</span>
-                <span>{musicGenerationProgress}%</span>
-              </div>
-              <Progress value={musicGenerationProgress} className="h-2" />
-              <div className="flex justify-center">
-                <div className="flex items-center text-sm text-muted-foreground gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>This process may take up to 2 minutes...</span>
+            <div className="space-y-4 bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg border border-primary/20">
+              <div className="flex items-center justify-center mb-4">
+                <div className="relative">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <Sparkles className="h-6 w-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-primary animate-pulse" />
                 </div>
+              </div>
+              <div className="text-center space-y-2">
+                <p className="font-medium">Generando tu música...</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedModel === 'music-fal' ? 'Esto tomará ~10 segundos' : 
+                   selectedModel === 'music-stable' ? 'Esto tomará ~30 segundos' :
+                   'Esto puede tomar hasta 2 minutos'}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Progreso</span>
+                  <span className="font-medium text-primary">{musicGenerationProgress}%</span>
+                </div>
+                <Progress value={musicGenerationProgress} className="h-3" />
               </div>
             </div>
           ) : (
             <Button 
               onClick={handleGenerateMusic} 
-              className="w-full py-6 text-md group"
+              className="w-full py-7 text-lg font-semibold group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={!musicPrompt.trim()}
+              data-testid="button-generate-music"
             >
-              <Sparkles className="h-5 w-5 mr-2 group-hover:animate-pulse" />
-              Generate Music
+              <Sparkles className="h-6 w-6 mr-2 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300" />
+              Generar Música con IA
             </Button>
           )}
         </div>

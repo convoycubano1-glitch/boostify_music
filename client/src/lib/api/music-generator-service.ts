@@ -415,19 +415,32 @@ export async function saveGeneratedSongToProfile(generation: {
   coverArt?: string;
 }): Promise<any> {
   try {
-    const authToken = await getAuthToken();
+    // Intentar obtener token de Firebase Auth primero
+    let authToken = await getAuthToken();
     
-    if (!authToken) {
-      console.warn('No hay token de autenticación para guardar en perfil');
-      return null;
+    // Si no hay token de Firebase, intentar con credenciales por defecto (para Replit Auth)
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+      console.log('✅ Usando Firebase Auth para guardar canción');
+    } else {
+      console.log('⚠️ No hay token de Firebase Auth, intentando guardar con sesión de Replit');
+      // Las cookies de sesión de Replit Auth se envían automáticamente
     }
+    
+    console.log('📤 Guardando canción en perfil:', {
+      title: generation.title,
+      audioUrl: generation.audioUrl.substring(0, 50),
+      genre: generation.genre
+    });
     
     const response = await fetch('/api/songs/generated', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
+      headers,
+      credentials: 'include', // Importante para enviar cookies de sesión
       body: JSON.stringify({
         title: generation.title,
         audioUrl: generation.audioUrl,
@@ -440,12 +453,13 @@ export async function saveGeneratedSongToProfile(generation: {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error saving to profile');
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Error al guardar canción:', response.status, errorData);
+      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log('Música guardada en perfil del artista:', data.song);
+    console.log('✅ Música guardada en perfil del artista:', data.song);
     return data.song;
   } catch (error) {
     console.error('Error guardando música en perfil:', error);
