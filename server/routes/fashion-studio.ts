@@ -49,6 +49,21 @@ router.post('/sessions', authenticate, async (req: Request, res: Response) => {
 
     const { sessionType, metadata } = req.body;
 
+    console.log('📝 Creating session - Body:', req.body);
+    console.log('📝 sessionType:', sessionType);
+    console.log('📝 metadata:', metadata);
+
+    if (!sessionType) {
+      return res.status(400).json({ error: 'sessionType is required' });
+    }
+
+    const validSessionTypes = ['tryon', 'generation', 'analysis', 'video', 'portfolio'];
+    if (!validSessionTypes.includes(sessionType)) {
+      return res.status(400).json({ 
+        error: `Invalid sessionType: ${sessionType}. Must be one of: ${validSessionTypes.join(', ')}` 
+      });
+    }
+
     const [session] = await db.insert(fashionSessions).values({
       userId: userId.toString(),
       sessionType,
@@ -56,9 +71,11 @@ router.post('/sessions', authenticate, async (req: Request, res: Response) => {
       status: 'active'
     }).returning();
 
+    console.log('✅ Session created:', session);
+
     res.json({ success: true, session });
   } catch (error: any) {
-    console.error('Error creando sesión:', error);
+    console.error('❌ Error creando sesión:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -101,6 +118,8 @@ router.post('/tryon', authenticate, async (req: Request, res: Response) => {
     const { modelImage, clothingImage, sessionId, merchandiseId } = req.body;
 
     console.log('🎨 Iniciando Virtual Try-On con FAL...');
+    console.log('📸 Model Image URL:', modelImage?.substring(0, 100) + '...');
+    console.log('👕 Clothing Image URL:', clothingImage?.substring(0, 100) + '...');
 
     const result: any = await fal.subscribe("fal-ai/idm-vton", {
       input: {
@@ -111,6 +130,12 @@ router.post('/tryon', authenticate, async (req: Request, res: Response) => {
         auto_crop: true,
       },
       logs: true,
+    });
+
+    console.log('✅ FAL Try-On result:', { 
+      hasImage: !!result.image, 
+      hasUrl: !!result.image?.url,
+      imageUrl: result.image?.url?.substring(0, 100)
     });
 
     if (result.image && result.image.url) {
@@ -144,12 +169,21 @@ router.post('/tryon', authenticate, async (req: Request, res: Response) => {
         resultId: fashionResult.id
       });
     } else {
+      console.error('❌ No image generated in result:', result);
       res.status(500).json({ error: 'No se generó imagen' });
     }
 
   } catch (error: any) {
-    console.error('Error en try-on:', error);
-    res.status(500).json({ error: error.message });
+    console.error('❌ ERROR COMPLETO en try-on:');
+    console.error('Message:', error.message);
+    console.error('Status:', error.status || error.statusCode);
+    console.error('Response:', error.response?.data || error.data);
+    console.error('Full error:', JSON.stringify(error, null, 2));
+    
+    res.status(500).json({ 
+      error: error.message || 'Error en try-on',
+      details: error.response?.data || error.data
+    });
   }
 });
 
@@ -399,7 +433,7 @@ router.get('/portfolio', authenticate, async (req: Request, res: Response) => {
 // PRODUCTOS DEL ARTISTA
 // ============================================
 
-// Obtener productos para try-on
+// Obtener productos para try-on (del artista seleccionado o del usuario)
 router.get('/products', authenticate, async (req: Request, res: Response) => {
   try {
     const user = req.user || req.session?.user;
@@ -407,19 +441,61 @@ router.get('/products', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
+    const { artistId } = req.query;
     const userId = user.uid || user.id;
-    const products = await db
-      .select()
-      .from(merchandise)
-      .where(and(
-        eq(merchandise.userId, userId.toString()),
-        eq(merchandise.category, 'apparel')
-      ))
-      .orderBy(desc(merchandise.createdAt));
+
+    console.log('🛍️ Fetching products from Firestore - artistId:', artistId, 'userId:', userId);
+
+    // Importar Firestore Admin
+    const { db: firestoreDb } = await import('../firebase');
+    
+    if (!firestoreDb) {
+      console.log('⚠️ Firestore not available, falling back to PostgreSQL');
+      // Fallback a PostgreSQL si Firestore no está disponible
+      const targetUserId = artistId ? parseInt(artistId as string) : (typeof userId === 'string' ? parseInt(userId) : userId);
+      const products = await db
+        .select()
+        .from(merchandise)
+        .where(and(
+          eq(merchandise.userId, targetUserId),
+          eq(merchandise.category, 'apparel')
+        ))
+        .orderBy(desc(merchandise.createdAt));
+      
+      return res.json({ success: true, products });
+    }
+
+    // Buscar productos en Firestore colección "merchandise"
+    const targetFirestoreUserId = artistId || userId.toString();
+    console.log('🔍 Searching Firestore merchandise for userId:', targetFirestoreUserId);
+
+    const merchandiseRef = firestoreDb.collection('merchandise');
+    const merchandiseSnapshot = await merchandiseRef
+      .where('userId', '==', targetFirestoreUserId)
+      .where('category', '==', 'Apparel')
+      .get();
+
+    const products = merchandiseSnapshot.docs.map((doc: any) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        userId: data.userId,
+        sizes: data.sizes,
+        // Mapear imageUrl de Firestore a images array esperado por el frontend
+        images: data.imageUrl ? [data.imageUrl] : [],
+        createdAt: data.createdAt
+      };
+    });
+
+    console.log(`✅ Found ${products.length} apparel products in Firestore for userId: ${targetFirestoreUserId}`);
 
     res.json({ success: true, products });
   } catch (error: any) {
-    console.error('Error obteniendo productos:', error);
+    console.error('❌ Error obteniendo productos:', error);
     res.status(500).json({ error: error.message });
   }
 });

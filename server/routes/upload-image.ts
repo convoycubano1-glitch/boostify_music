@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '../replitAuth';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
@@ -7,7 +7,7 @@ const router = Router();
  * Endpoint para subir imágenes en base64 y convertirlas a URLs
  * Sin dependencia de Firebase Storage - usa almacenamiento local o CDN
  */
-router.post('/api/upload-image', requireAuth, async (req: Request, res: Response) => {
+router.post('/upload-image', authenticate, async (req: Request, res: Response) => {
   try {
     const { imageData, fileName, folder } = req.body;
 

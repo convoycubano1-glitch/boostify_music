@@ -11,7 +11,7 @@ import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
 import { 
   ArrowLeft, Shirt, Video, Wand2, User, Download, Heart, Play, 
-  Loader2, ArrowRight, ImageIcon, Sparkles, ChevronRight, Grid, Camera
+  Loader2, ArrowRight, ImageIcon, Sparkles, ChevronRight, Grid, Camera, X
 } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import { useLocation } from "wouter";
@@ -51,7 +51,7 @@ export default function ArtistImageAdvisorPage() {
 
   // Fetch products for selected artist
   const { data: productsData } = useQuery<{ success: boolean; products: any[] }>({
-    queryKey: ["/api/fashion/products", selectedArtistId],
+    queryKey: [`/api/fashion/products?artistId=${selectedArtistId}`],
     enabled: !!selectedArtistId
   });
 
@@ -103,7 +103,13 @@ export default function ArtistImageAdvisorPage() {
               products={productsData?.products || []}
               sessionId={currentSessionId}
               onBack={() => setViewMode('dashboard')}
-              onNext={() => setViewMode('video')}
+              onNext={(resultImageUrl) => {
+                // Pasar la imagen del resultado al siguiente paso
+                if (resultImageUrl) {
+                  localStorage.setItem('fashion-tryon-result', resultImageUrl);
+                }
+                setViewMode('video');
+              }}
             />
           )}
 
@@ -112,6 +118,7 @@ export default function ArtistImageAdvisorPage() {
               key="video"
               artistId={selectedArtistId}
               artist={selectedArtist}
+              products={productsData?.products || []}
               sessionId={currentSessionId}
               onBack={() => setViewMode('tryon')}
               onNext={() => setViewMode('advisor')}
@@ -123,6 +130,7 @@ export default function ArtistImageAdvisorPage() {
               key="advisor"
               artistId={selectedArtistId}
               artist={selectedArtist}
+              products={productsData?.products || []}
               sessionId={currentSessionId}
               onBack={() => setViewMode('video')}
               onNext={() => setViewMode('gallery')}
@@ -189,7 +197,16 @@ function DashboardView({
       return;
     }
 
-    await createSessionMutation.mutateAsync(mode);
+    const sessionTypeMap: Record<ViewMode, string> = {
+      'dashboard': 'portfolio',
+      'tryon': 'tryon',
+      'video': 'video',
+      'advisor': 'analysis',
+      'gallery': 'portfolio'
+    };
+
+    const sessionType = sessionTypeMap[mode] || 'portfolio';
+    await createSessionMutation.mutateAsync(sessionType);
     onSelectMode(mode);
   };
 
@@ -447,6 +464,94 @@ function VirtualTryOnView({ artistId, artist, products, sessionId, onBack, onNex
   const [resultImage, setResultImage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultId, setResultId] = useState<number | null>(null);
+  const [modelFile, setModelFile] = useState<File | null>(null);
+  const [clothingFile, setClothingFile] = useState<File | null>(null);
+  const [useArtistPhoto, setUseArtistPhoto] = useState(true);
+
+  // Auto-select artist photo as model
+  useEffect(() => {
+    if (artist?.profileImage && useArtistPhoto) {
+      setModelImage(artist.profileImage);
+    }
+  }, [artist, useArtistPhoto]);
+
+  // Debug products
+  useEffect(() => {
+    console.log('🛍️ Products loaded:', products);
+    console.log('🎨 Artist:', artist);
+    console.log('🆔 Artist ID:', artistId);
+  }, [products, artist, artistId]);
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const imageData = await fileToBase64(file);
+    
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imageData,
+        fileName: file.name,
+        folder: 'fashion-studio'
+      }),
+      credentials: 'include'
+    });
+
+    const data = await response.json();
+    if (!data.imageUrl) throw new Error('Upload failed');
+    return data.imageUrl;
+  };
+
+  const handleModelFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setModelFile(file);
+    setUseArtistPhoto(false);
+    
+    try {
+      toast({ title: "Uploading...", description: "Please wait" });
+      const url = await uploadImage(file);
+      setModelImage(url);
+      toast({ title: "Image uploaded!", description: "Model photo ready" });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ 
+        title: "Upload failed", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const handleClothingFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setClothingFile(file);
+    
+    try {
+      toast({ title: "Uploading...", description: "Please wait" });
+      const url = await uploadImage(file);
+      setClothingImage(url);
+      toast({ title: "Image uploaded!", description: "Clothing photo ready" });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ 
+        title: "Upload failed",
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
+    }
+  };
 
   const handleTryOn = async () => {
     if (!modelImage || !clothingImage) {
@@ -517,48 +622,106 @@ function VirtualTryOnView({ artistId, artist, products, sessionId, onBack, onNex
         <Card>
           <CardHeader>
             <CardTitle>Setup</CardTitle>
-            <CardDescription>Upload images to try on</CardDescription>
+            <CardDescription>Select or upload images to try on</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label>Artist Photo (Model)</Label>
-              <Input
-                type="url"
-                placeholder="Paste image URL..."
-                value={modelImage}
-                onChange={(e) => setModelImage(e.target.value)}
-                data-testid="input-model-image"
-              />
+            {/* Model Image Selection */}
+            <div className="space-y-2">
+              <Label>Model Photo</Label>
+              
+              {artist?.profileImage && (
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="use-artist-photo"
+                    checked={useArtistPhoto}
+                    onChange={(e) => {
+                      setUseArtistPhoto(e.target.checked);
+                      if (e.target.checked) {
+                        setModelImage(artist.profileImage);
+                        setModelFile(null);
+                      } else {
+                        setModelImage("");
+                      }
+                    }}
+                    className="rounded"
+                  />
+                  <label htmlFor="use-artist-photo" className="text-sm cursor-pointer">
+                    Use artist profile photo
+                  </label>
+                </div>
+              )}
+
+              {!useArtistPhoto && (
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleModelFileChange}
+                    className="cursor-pointer"
+                    data-testid="input-model-file"
+                  />
+                  {modelImage && (
+                    <img src={modelImage} alt="Model preview" className="w-32 h-32 object-cover rounded" />
+                  )}
+                </div>
+              )}
+
+              {useArtistPhoto && artist?.profileImage && (
+                <img src={artist.profileImage} alt="Artist" className="w-32 h-32 object-cover rounded" />
+              )}
             </div>
 
-            <div>
-              <Label>Clothing Image</Label>
-              <Input
-                type="url"
-                placeholder="Paste clothing image URL..."
-                value={clothingImage}
-                onChange={(e) => setClothingImage(e.target.value)}
-                data-testid="input-clothing-image"
-              />
-            </div>
+            {/* Clothing Image Selection */}
+            <div className="space-y-2">
+              <Label>Clothing/Product</Label>
+              
+              {products && products.length > 0 ? (
+                <>
+                  <div className="p-3 bg-muted rounded-lg space-y-2">
+                    <p className="text-xs text-muted-foreground font-semibold">Select from your products:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {products.map((product: any) => (
+                        <div 
+                          key={product.id}
+                          onClick={() => {
+                            setClothingImage(product.images?.[0] || '');
+                            setClothingFile(null);
+                          }}
+                          className={`cursor-pointer p-2 border rounded-lg hover:border-orange-500 transition ${
+                            clothingImage === product.images?.[0] ? 'border-orange-500 bg-orange-500/10' : 'border-border'
+                          }`}
+                        >
+                          {product.images?.[0] && (
+                            <img 
+                              src={product.images[0]} 
+                              alt={product.name}
+                              className="w-full h-20 object-cover rounded mb-1"
+                            />
+                          )}
+                          <p className="text-xs font-medium truncate">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">${product.price}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Or upload a custom image:</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No products found. Upload an image below:</p>
+              )}
 
-            {products && products.length > 0 && (
-              <div>
-                <Label>Or select from your products</Label>
-                <Select onValueChange={(url) => setClothingImage(url)}>
-                  <SelectTrigger data-testid="select-product">
-                    <SelectValue placeholder="Select a product..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((product: any) => (
-                      <SelectItem key={product.id} value={product.images?.[0] || ''}>
-                        {product.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleClothingFileChange}
+                className="cursor-pointer"
+                data-testid="input-clothing-file"
+              />
+              {clothingImage && !products.find((p: any) => p.images?.[0] === clothingImage) && (
+                <img src={clothingImage} alt="Clothing preview" className="w-32 h-32 object-cover rounded" />
+              )}
+            </div>
 
             <Button
               onClick={handleTryOn}
@@ -605,7 +768,7 @@ function VirtualTryOnView({ artistId, artist, products, sessionId, onBack, onNex
                     Download
                   </Button>
                   <Button 
-                    onClick={onNext}
+                    onClick={() => onNext(resultImage)}
                     className="bg-purple-500 hover:bg-purple-600"
                     data-testid="button-next-video"
                   >
@@ -632,12 +795,22 @@ function VirtualTryOnView({ artistId, artist, products, sessionId, onBack, onNex
 // ============================================
 // FASHION VIDEO VIEW
 // ============================================
-function FashionVideoView({ artistId, artist, sessionId, onBack, onNext }: any) {
+function FashionVideoView({ artistId, artist, products, sessionId, onBack, onNext }: any) {
   const { toast } = useToast();
   const [imageUrl, setImageUrl] = useState("");
   const [prompt, setPrompt] = useState("");
   const [videoId, setVideoId] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Auto-cargar imagen del try-on result si existe
+  useEffect(() => {
+    const tryonResult = localStorage.getItem('fashion-tryon-result');
+    if (tryonResult) {
+      setImageUrl(tryonResult);
+      // Limpiar después de cargar
+      localStorage.removeItem('fashion-tryon-result');
+    }
+  }, []);
 
   const { data: videoStatus, refetch: refetchVideo } = useQuery<{
     success: boolean;
@@ -725,15 +898,63 @@ function FashionVideoView({ artistId, artist, sessionId, onBack, onNext }: any) 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
+          <div className="space-y-3">
             <Label>Photo with Outfit</Label>
-            <Input
-              type="url"
-              placeholder="Paste image URL (from try-on or upload new)..."
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              data-testid="input-video-image"
-            />
+            
+            {imageUrl ? (
+              <div className="space-y-2">
+                <div className="relative border-2 border-purple-500 rounded-lg overflow-hidden">
+                  <img 
+                    src={imageUrl} 
+                    alt="Selected outfit" 
+                    className="w-full h-64 object-cover"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => setImageUrl("")}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-green-500 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Image ready for video generation
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {products && products.length > 0 && (
+                  <div className="p-3 bg-muted rounded-lg space-y-2">
+                    <p className="text-sm font-semibold">Select a product image:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {products.map((product: any) => (
+                        <div 
+                          key={product.id}
+                          onClick={() => setImageUrl(product.images?.[0] || '')}
+                          className="cursor-pointer p-2 border rounded-lg hover:border-purple-500 hover:bg-purple-500/10 transition"
+                        >
+                          {product.images?.[0] && (
+                            <img 
+                              src={product.images[0]} 
+                              alt={product.name}
+                              className="w-full h-32 object-cover rounded mb-1"
+                            />
+                          )}
+                          <p className="text-xs font-medium truncate">{product.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground text-center">
+                  {products?.length > 0 
+                    ? 'Select a product above or complete a try-on first' 
+                    : 'No products available. Complete a try-on to generate a video.'}
+                </p>
+              </div>
+            )}
           </div>
 
           <div>
@@ -828,13 +1049,27 @@ function FashionVideoView({ artistId, artist, sessionId, onBack, onNext }: any) 
 // ============================================
 // AI ADVISOR VIEW
 // ============================================
-function AIAdvisorView({ artistId, artist, sessionId, onBack, onNext }: any) {
+function AIAdvisorView({ artistId, artist, products, sessionId, onBack, onNext }: any) {
   const { toast } = useToast();
   const [imageUrl, setImageUrl] = useState("");
   const [genre, setGenre] = useState("");
   const [occasion, setOccasion] = useState("");
   const [analysis, setAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Auto-cargar género del artista
+  useEffect(() => {
+    if (artist?.genres && artist.genres.length > 0) {
+      const artistGenre = artist.genres[0].toLowerCase();
+      // Mapear géneros comunes
+      if (artistGenre.includes('rock')) setGenre('rock');
+      else if (artistGenre.includes('pop')) setGenre('pop');
+      else if (artistGenre.includes('hip') || artistGenre.includes('rap')) setGenre('hip-hop');
+      else if (artistGenre.includes('electronic') || artistGenre.includes('edm')) setGenre('electronic');
+      else if (artistGenre.includes('latin')) setGenre('latin');
+      else if (artistGenre.includes('indie')) setGenre('indie');
+    }
+  }, [artist]);
 
   const handleAnalyze = async () => {
     if (!imageUrl) {
@@ -911,15 +1146,63 @@ function AIAdvisorView({ artistId, artist, sessionId, onBack, onNext }: any) {
             <CardDescription>Get AI-powered fashion advice from Gemini</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
+            <div className="space-y-3">
               <Label>Image to Analyze</Label>
-              <Input
-                type="url"
-                placeholder="Paste image URL..."
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                data-testid="input-analysis-image"
-              />
+              
+              {imageUrl ? (
+                <div className="space-y-2">
+                  <div className="relative border-2 border-blue-500 rounded-lg overflow-hidden">
+                    <img 
+                      src={imageUrl} 
+                      alt="Image to analyze" 
+                      className="w-full h-64 object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => setImageUrl("")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-green-500 flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Ready for AI analysis
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {products && products.length > 0 && (
+                    <div className="p-3 bg-muted rounded-lg space-y-2">
+                      <p className="text-sm font-semibold">Select a product to analyze:</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {products.map((product: any) => (
+                          <div 
+                            key={product.id}
+                            onClick={() => setImageUrl(product.images?.[0] || '')}
+                            className="cursor-pointer p-2 border rounded-lg hover:border-blue-500 hover:bg-blue-500/10 transition"
+                          >
+                            {product.images?.[0] && (
+                              <img 
+                                src={product.images[0]} 
+                                alt={product.name}
+                                className="w-full h-32 object-cover rounded mb-1"
+                              />
+                            )}
+                            <p className="text-xs font-medium truncate">{product.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground text-center">
+                    {products?.length > 0 
+                      ? 'Select a product above to analyze its style' 
+                      : 'No products available. Complete a try-on or video generation first.'}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
