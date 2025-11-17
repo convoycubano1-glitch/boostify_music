@@ -7,7 +7,7 @@ import {
   getDetailedPrompt,
   MusicGenreTemplate
 } from "../components/music/genre-templates/genre-data";
-import { generateMusic, checkGenerationStatus, getRecentGenerations } from "../lib/api/music-generator-service";
+import { generateMusic, checkGenerationStatus, getRecentGenerations, saveGeneratedSongToProfile } from "../lib/api/music-generator-service";
 import { useToast } from "../hooks/use-toast";
 import { Header } from "../components/layout/header";
 import { motion } from "framer-motion";
@@ -158,6 +158,24 @@ export default function MusicGeneratorPage() {
               };
               
               setRecentGenerations(prev => [newGeneration, ...prev]);
+              
+              // Save to artist profile (PostgreSQL)
+              try {
+                await saveGeneratedSongToProfile({
+                  title: musicTitle || 'Untitled Generation',
+                  audioUrl: status.audioUrl,
+                  prompt: musicPrompt,
+                  genre: selectedGenreTemplate,
+                });
+                
+                toast({
+                  title: "Música guardada en tu perfil",
+                  description: "La canción generada se agregó a tu perfil de artista",
+                });
+              } catch (profileError) {
+                console.error('Error guardando en perfil:', profileError);
+                // No bloqueamos la UI si falla, solo registramos
+              }
             }
           } else if (status.status === 'failed') {
             setGenerationError(status.message);

@@ -402,6 +402,58 @@ export async function saveMusicGeneration(generation: {
 }
 
 /**
+ * Guarda una generación de música en el perfil del artista (PostgreSQL)
+ * @param generation Datos de la generación completada
+ * @returns Datos de la canción guardada
+ */
+export async function saveGeneratedSongToProfile(generation: {
+  title: string;
+  audioUrl: string;
+  prompt?: string;
+  genre?: string;
+  duration?: string;
+  coverArt?: string;
+}): Promise<any> {
+  try {
+    const authToken = await getAuthToken();
+    
+    if (!authToken) {
+      console.warn('No hay token de autenticación para guardar en perfil');
+      return null;
+    }
+    
+    const response = await fetch('/api/songs/generated', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        title: generation.title,
+        audioUrl: generation.audioUrl,
+        description: generation.prompt,
+        genre: generation.genre,
+        duration: generation.duration,
+        prompt: generation.prompt,
+        coverArt: generation.coverArt
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error saving to profile');
+    }
+    
+    const data = await response.json();
+    console.log('Música guardada en perfil del artista:', data.song);
+    return data.song;
+  } catch (error) {
+    console.error('Error guardando música en perfil:', error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene un mensaje descriptivo para cada estado
  * @param status Estado de la generación
  * @returns Mensaje descriptivo
