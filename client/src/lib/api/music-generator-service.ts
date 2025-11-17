@@ -532,6 +532,82 @@ export async function checkFALMusicStatus(requestId: string): Promise<MusicGener
 }
 
 /**
+ * Genera música usando FAL AI Stable Audio 2.5 (3 minutos, enterprise-grade)
+ * @param options Opciones de generación
+ * @returns Request ID para polling
+ */
+export async function generateMusicWithStableAudio(options: {
+  prompt: string;
+  duration?: number;
+}): Promise<{ requestId: string }> {
+  try {
+    console.log('Generando música con FAL AI Stable Audio 2.5:', options);
+    
+    const response = await fetch('/api/fal/stable-audio', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: options.prompt,
+        duration: options.duration || 180  // 3 minutos por defecto
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error generating music with Stable Audio');
+    }
+    
+    const data = await response.json();
+    return { requestId: data.requestId };
+  } catch (error) {
+    console.error('Error en generateMusicWithStableAudio:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verifica el estado de una generación de FAL Stable Audio
+ * @param requestId ID de la request de FAL
+ * @returns Estado de la generación
+ */
+export async function checkStableAudioStatus(requestId: string): Promise<MusicGenerationStatus> {
+  try {
+    const response = await fetch(`/api/fal/stable-audio/${requestId}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Stable Audio status check error:', errorText);
+      throw new Error(`Error checking Stable Audio status: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('Stable Audio status response:', data);
+    
+    // Map FAL status to our format
+    let status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
+    if (data.status === 'completed') {
+      status = 'completed';
+    } else if (data.status === 'in_progress' || data.status === 'in_queue' || data.status === 'IN_PROGRESS' || data.status === 'IN_QUEUE') {
+      status = 'processing';
+    } else if (data.status === 'failed' || data.status === 'FAILED') {
+      status = 'failed';
+    }
+    
+    return {
+      id: requestId,
+      status,
+      audioUrl: data.audioUrl,
+      message: getStatusMessage(status)
+    };
+  } catch (error) {
+    console.error('Error en checkStableAudioStatus:', error);
+    throw error;
+  }
+}
+
+/**
  * Obtiene un mensaje descriptivo para cada estado
  * @param status Estado de la generación
  * @returns Mensaje descriptivo
