@@ -63,7 +63,7 @@ import {
 export default function InstagramBoostPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("community");
+  const [activeTab, setActiveTab] = useState("ai-tools");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Caption Generator States
@@ -508,6 +508,14 @@ export default function InstagramBoostPage() {
             <div className="w-full overflow-x-auto">
               <TabsList className="inline-flex w-full sm:w-auto min-w-full sm:min-w-0 p-1 bg-card border border-border">
                 <TabsTrigger 
+                  value="ai-tools" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  data-testid="tab-ai-tools"
+                >
+                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">AI Tools</span>
+                </TabsTrigger>
+                <TabsTrigger 
                   value="community" 
                   className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
                   data-testid="tab-community"
@@ -540,14 +548,6 @@ export default function InstagramBoostPage() {
                   <span className="hidden sm:inline">Reports</span>
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="ai-tools" 
-                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
-                  data-testid="tab-ai-tools"
-                >
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">AI Assistant</span>
-                </TabsTrigger>
-                <TabsTrigger 
                   value="apify-test" 
                   className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
                   data-testid="tab-apify-test"
@@ -557,6 +557,379 @@ export default function InstagramBoostPage() {
                 </TabsTrigger>
               </TabsList>
             </div>
+
+            {/* AI Tools Tab - Contains all 5 AI Tools - FIRST AND MOST VISIBLE */}
+            <TabsContent value="ai-tools">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-2">AI-Powered Instagram Tools</h2>
+                <p className="text-muted-foreground">Generate professional content with our advanced AI assistants</p>
+              </div>
+
+              <Tabs defaultValue="captions" className="space-y-6">
+                <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
+                  <TabsTrigger value="captions" className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Captions
+                  </TabsTrigger>
+                  <TabsTrigger value="hashtags" className="gap-2">
+                    <Hash className="w-4 h-4" />
+                    Hashtags
+                  </TabsTrigger>
+                  <TabsTrigger value="ideas" className="gap-2">
+                    <Lightbulb className="w-4 h-4" />
+                    Ideas
+                  </TabsTrigger>
+                  <TabsTrigger value="timing" className="gap-2">
+                    <Clock className="w-4 h-4" />
+                    Timing
+                  </TabsTrigger>
+                  <TabsTrigger value="bio" className="gap-2">
+                    <User className="w-4 h-4" />
+                    Bio
+                  </TabsTrigger>
+                </TabsList>
+
+            {/* Caption Generator */}
+            <TabsContent value="captions" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="p-6">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-pink-500" />
+                    Generate Captions
+                  </h3>
+                  <div className="space-y-4">
+                    <Input placeholder="Post Topic (e.g., New Product Launch)" value={postTopic} onChange={(e) => setPostTopic(e.target.value)} data-testid="input-post-topic" />
+                    <select className="w-full p-2 rounded border bg-background" value={tone} onChange={(e) => setTone(e.target.value)} data-testid="select-tone">
+                      <option value="professional">Professional</option>
+                      <option value="casual">Casual</option>
+                      <option value="funny">Funny</option>
+                      <option value="inspirational">Inspirational</option>
+                      <option value="educational">Educational</option>
+                    </select>
+                    <Input placeholder="Target Audience (optional)" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} data-testid="input-target-audience" />
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={includeEmojis} onChange={(e) => setIncludeEmojis(e.target.checked)} />
+                        Include Emojis
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={includeHashtags} onChange={(e) => setIncludeHashtags(e.target.checked)} />
+                        Include Hashtags
+                      </label>
+                    </div>
+                    <Button 
+                      className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600" 
+                      onClick={() => captionMutation.mutate({ postTopic, tone, targetAudience, includeEmojis, includeHashtags })} 
+                      disabled={!postTopic || captionMutation.isPending}
+                      data-testid="button-generate-captions"
+                    >
+                      {captionMutation.isPending ? "Generating..." : "Generate Captions"}
+                    </Button>
+                  </div>
+                </Card>
+
+                {captionResults && (
+                  <Card className="p-6 max-h-[600px] overflow-y-auto">
+                    <h3 className="text-lg font-semibold mb-4">Generated Captions ({captionResults.captions?.length || 0})</h3>
+                    <div className="space-y-4">
+                      {captionResults.captions?.map((caption: any, idx: number) => (
+                        <div key={idx} className="p-4 bg-pink-500/5 rounded border relative" data-testid={`caption-result-${idx}`}>
+                          <p className="text-sm mb-2">{caption.text}</p>
+                          {caption.hashtags && caption.hashtags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {caption.hashtags.map((tag: string, i: number) => (
+                                <Badge key={i} variant="secondary" className="text-xs">#{tag}</Badge>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                            <span>{caption.characterCount} chars</span>
+                            <Badge>{caption.engagementScore}/100</Badge>
+                          </div>
+                          <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyToClipboard(caption.text + (caption.hashtags ? '\n\n' + caption.hashtags.map((t: string) => '#' + t).join(' ') : ''), `caption-${idx}`)}>
+                            {copiedId === `caption-${idx}` ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Hashtag Generator */}
+            <TabsContent value="hashtags" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="p-6">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Hash className="w-5 h-5 text-purple-500" />
+                    Generate Hashtags
+                  </h3>
+                  <div className="space-y-4">
+                    <Input placeholder="Niche (e.g., Fitness, Fashion)" value={hashtagNiche} onChange={(e) => setHashtagNiche(e.target.value)} data-testid="input-hashtag-niche" />
+                    <Input placeholder="Content Type (e.g., Reel, Photo)" value={contentType} onChange={(e) => setContentType(e.target.value)} data-testid="input-content-type" />
+                    <select className="w-full p-2 rounded border bg-background" value={targetSize} onChange={(e) => setTargetSize(e.target.value)} data-testid="select-target-size">
+                      <option value="mixed">Mixed Sizes</option>
+                      <option value="high">High Competition</option>
+                      <option value="medium">Medium Competition</option>
+                      <option value="low">Low Competition</option>
+                    </select>
+                    <Button 
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" 
+                      onClick={() => hashtagMutation.mutate({ niche: hashtagNiche, contentType, targetSize })} 
+                      disabled={!hashtagNiche || hashtagMutation.isPending}
+                      data-testid="button-generate-hashtags"
+                    >
+                      {hashtagMutation.isPending ? "Generating..." : "Generate Hashtags"}
+                    </Button>
+                  </div>
+                </Card>
+
+                {hashtagResults && (
+                  <Card className="p-6 max-h-[600px] overflow-y-auto">
+                    <h3 className="text-lg font-semibold mb-4">Hashtag Sets</h3>
+                    <div className="space-y-4">
+                      {hashtagResults.hashtags?.highCompetition && (
+                        <div className="p-4 bg-red-500/5 rounded border">
+                          <p className="font-medium mb-2">🔥 High Competition (1M+)</p>
+                          <div className="flex flex-wrap gap-1">
+                            {hashtagResults.hashtags.highCompetition.map((tag: string, i: number) => (
+                              <Badge key={i} variant="destructive" className="text-xs">#{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {hashtagResults.hashtags?.mediumCompetition && (
+                        <div className="p-4 bg-yellow-500/5 rounded border">
+                          <p className="font-medium mb-2">⚡ Medium Competition (100K-1M)</p>
+                          <div className="flex flex-wrap gap-1">
+                            {hashtagResults.hashtags.mediumCompetition.map((tag: string, i: number) => (
+                              <Badge key={i} variant="secondary" className="text-xs">#{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {hashtagResults.hashtags?.lowCompetition && (
+                        <div className="p-4 bg-green-500/5 rounded border">
+                          <p className="font-medium mb-2">✨ Low Competition (&lt;100K)</p>
+                          <div className="flex flex-wrap gap-1">
+                            {hashtagResults.hashtags.lowCompetition.map((tag: string, i: number) => (
+                              <Badge key={i} className="text-xs bg-green-500">#{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {hashtagResults.hashtags?.trending && (
+                        <div className="p-4 bg-purple-500/5 rounded border">
+                          <p className="font-medium mb-2">📈 Trending Now</p>
+                          <div className="flex flex-wrap gap-1">
+                            {hashtagResults.hashtags.trending.map((tag: string, i: number) => (
+                              <Badge key={i} className="text-xs bg-purple-500">#{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {hashtagResults.hashtags?.bestPractices && (
+                        <div className="p-3 bg-blue-500/5 rounded text-sm">
+                          <p className="font-medium mb-1">💡 Best Practices:</p>
+                          <p className="text-muted-foreground">{hashtagResults.hashtags.bestPractices}</p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Content Ideas */}
+            <TabsContent value="ideas" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="p-6">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5 text-yellow-500" />
+                    Content Ideas
+                  </h3>
+                  <div className="space-y-4">
+                    <Input placeholder="Niche (e.g., Music, Travel)" value={ideasNiche} onChange={(e) => setIdeasNiche(e.target.value)} data-testid="input-ideas-niche" />
+                    <Input placeholder="Goals (e.g., Increase engagement)" value={goals} onChange={(e) => setGoals(e.target.value)} data-testid="input-goals" />
+                    <Input placeholder="Posting Frequency (e.g., 5 times/week)" value={postingFrequency} onChange={(e) => setPostingFrequency(e.target.value)} data-testid="input-posting-frequency" />
+                    <Button 
+                      className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600" 
+                      onClick={() => contentIdeasMutation.mutate({ niche: ideasNiche, goals, postingFrequency })} 
+                      disabled={!ideasNiche || contentIdeasMutation.isPending}
+                      data-testid="button-generate-ideas"
+                    >
+                      {contentIdeasMutation.isPending ? "Generating..." : "Generate Ideas"}
+                    </Button>
+                  </div>
+                </Card>
+
+                {contentIdeas && (
+                  <Card className="p-6 max-h-[600px] overflow-y-auto">
+                    <h3 className="text-lg font-semibold mb-4">Content Ideas ({contentIdeas.ideas?.length || 0})</h3>
+                    <div className="space-y-3">
+                      {contentIdeas.ideas?.map((idea: any, idx: number) => (
+                        <div key={idx} className="p-4 bg-yellow-500/5 rounded border" data-testid={`idea-result-${idx}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <Badge className="bg-orange-500">{idea.contentType}</Badge>
+                            <Badge variant={idea.engagementLevel === 'high' ? 'default' : 'secondary'}>{idea.engagementLevel} engagement</Badge>
+                          </div>
+                          <h4 className="font-medium mb-1">{idea.topic}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">{idea.description}</p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>🕐 {idea.bestTimeToPost}</span>
+                          </div>
+                          {idea.formatTips && <p className="text-xs mt-2 p-2 bg-background rounded">💡 {idea.formatTips}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Best Time Analyzer */}
+            <TabsContent value="timing" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="p-6">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-blue-500" />
+                    Best Time to Post
+                  </h3>
+                  <div className="space-y-4">
+                    <Input placeholder="Niche (e.g., Fitness)" value={timeNiche} onChange={(e) => setTimeNiche(e.target.value)} data-testid="input-time-niche" />
+                    <Input placeholder="Target Audience (e.g., Young adults)" value={timeAudience} onChange={(e) => setTimeAudience(e.target.value)} data-testid="input-time-audience" />
+                    <select className="w-full p-2 rounded border bg-background" value={timezone} onChange={(e) => setTimezone(e.target.value)} data-testid="select-timezone">
+                      <option value="UTC">UTC</option>
+                      <option value="America/New_York">Eastern Time</option>
+                      <option value="America/Chicago">Central Time</option>
+                      <option value="America/Denver">Mountain Time</option>
+                      <option value="America/Los_Angeles">Pacific Time</option>
+                      <option value="Europe/London">London</option>
+                      <option value="Europe/Madrid">Madrid</option>
+                    </select>
+                    <Button 
+                      className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600" 
+                      onClick={() => bestTimeMutation.mutate({ niche: timeNiche, targetAudience: timeAudience, timezone })} 
+                      disabled={!timeNiche || bestTimeMutation.isPending}
+                      data-testid="button-analyze-time"
+                    >
+                      {bestTimeMutation.isPending ? "Analyzing..." : "Analyze Best Times"}
+                    </Button>
+                  </div>
+                </Card>
+
+                {timeAnalysis && (
+                  <Card className="p-6 max-h-[600px] overflow-y-auto">
+                    <h3 className="text-lg font-semibold mb-4">Best Posting Times</h3>
+                    <div className="space-y-4">
+                      {timeAnalysis.weekdaySchedule && (
+                        <div className="p-4 bg-blue-500/5 rounded border">
+                          <p className="font-medium mb-2">📅 Weekday Schedule</p>
+                          <div className="space-y-2 text-sm">
+                            {Object.entries(timeAnalysis.weekdaySchedule).map(([day, times]: [string, any]) => (
+                              <div key={day} className="flex justify-between">
+                                <span className="font-medium capitalize">{day}:</span>
+                                <span className="text-muted-foreground">{times.join(', ')}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {timeAnalysis.peakEngagementHours && (
+                        <div className="p-4 bg-green-500/5 rounded border">
+                          <p className="font-medium mb-2">🔥 Peak Engagement Hours</p>
+                          <div className="flex flex-wrap gap-2">
+                            {timeAnalysis.peakEngagementHours.map((hour: string, i: number) => (
+                              <Badge key={i} className="bg-green-500">{hour}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {timeAnalysis.recommendations && (
+                        <div className="p-3 bg-purple-500/5 rounded text-sm">
+                          <p className="font-medium mb-1">💡 Recommendations:</p>
+                          <p className="text-muted-foreground">{timeAnalysis.recommendations}</p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Bio Optimizer */}
+            <TabsContent value="bio" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card className="p-6">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <User className="w-5 h-5 text-green-500" />
+                    Optimize Bio
+                  </h3>
+                  <div className="space-y-4">
+                    <textarea 
+                      className="w-full p-2 rounded border bg-background min-h-[100px]" 
+                      placeholder="Current Bio (optional)" 
+                      value={currentBio} 
+                      onChange={(e) => setCurrentBio(e.target.value)}
+                      data-testid="textarea-current-bio"
+                    />
+                    <Input placeholder="Niche (e.g., Travel Blogger)" value={bioNiche} onChange={(e) => setBioNiche(e.target.value)} data-testid="input-bio-niche" />
+                    <Input placeholder="Goals (e.g., Drive sales)" value={bioGoals} onChange={(e) => setBioGoals(e.target.value)} data-testid="input-bio-goals" />
+                    <Input placeholder="Website URL (optional)" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} data-testid="input-website-url" />
+                    <Button 
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600" 
+                      onClick={() => bioMutation.mutate({ currentBio, niche: bioNiche, goals: bioGoals, websiteUrl })} 
+                      disabled={!bioNiche || bioMutation.isPending}
+                      data-testid="button-optimize-bio"
+                    >
+                      {bioMutation.isPending ? "Optimizing..." : "Optimize Bio"}
+                    </Button>
+                  </div>
+                </Card>
+
+                {bioResults && (
+                  <Card className="p-6 max-h-[600px] overflow-y-auto">
+                    <h3 className="text-lg font-semibold mb-4">Optimized Bios ({bioResults.optimization?.bios?.length || 0})</h3>
+                    <div className="space-y-4">
+                      {bioResults.optimization?.bios?.map((bio: any, idx: number) => (
+                        <div key={idx} className="p-4 bg-green-500/5 rounded border relative" data-testid={`bio-result-${idx}`}>
+                          <p className="text-sm mb-2">{bio.bio}</p>
+                          {bio.keywords && bio.keywords.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {bio.keywords.map((kw: string, i: number) => (
+                                <Badge key={i} variant="outline" className="text-xs">{kw}</Badge>
+                              ))}
+                            </div>
+                          )}
+                          <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyToClipboard(bio.bio, `bio-${idx}`)}>
+                            {copiedId === `bio-${idx}` ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      ))}
+                      {bioResults.optimization?.linkStrategy && (
+                        <div className="p-3 bg-blue-500/5 rounded text-sm">
+                          <p className="font-medium mb-1">🔗 Link Strategy:</p>
+                          <p className="text-muted-foreground">{bioResults.optimization.linkStrategy}</p>
+                        </div>
+                      )}
+                      {bioResults.optimization?.profileTips && (
+                        <div className="p-3 bg-purple-500/5 rounded text-sm">
+                          <p className="font-medium mb-1">💡 Profile Tips:</p>
+                          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                            {bioResults.optimization.profileTips.map((tip: string, i: number) => (
+                              <li key={i}>{tip}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+              </Tabs>
+            </TabsContent>
 
             {/* Community Tab - Restructured */}
             <TabsContent value="community" className="space-y-6">
@@ -1301,348 +1674,6 @@ export default function InstagramBoostPage() {
               </Card>
             </TabsContent>
 
-            {/* AI Tools Tab - Contains all 5 AI Tools */}
-            <TabsContent value="ai-tools">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-2">AI-Powered Instagram Tools</h2>
-                <p className="text-muted-foreground">Generate professional content with our advanced AI assistants</p>
-              </div>
-
-              <Tabs value={activeTab === "ai-tools" ? "captions" : activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
-                  <TabsTrigger value="captions" className="gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Captions
-                  </TabsTrigger>
-                  <TabsTrigger value="hashtags" className="gap-2">
-                    <Hash className="w-4 h-4" />
-                    Hashtags
-                  </TabsTrigger>
-                  <TabsTrigger value="ideas" className="gap-2">
-                    <Lightbulb className="w-4 h-4" />
-                    Ideas
-                  </TabsTrigger>
-                  <TabsTrigger value="timing" className="gap-2">
-                    <Clock className="w-4 h-4" />
-                    Timing
-                  </TabsTrigger>
-                  <TabsTrigger value="bio" className="gap-2">
-                    <User className="w-4 h-4" />
-                    Bio
-                  </TabsTrigger>
-                </TabsList>
-
-            {/* Caption Generator */}
-            <TabsContent value="captions" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-pink-500" />
-                    Generate Captions
-                  </h3>
-                  <div className="space-y-4">
-                    <Input placeholder="Post Topic (e.g., New Product Launch)" value={postTopic} onChange={(e) => setPostTopic(e.target.value)} />
-                    <select className="w-full p-2 rounded border bg-background" value={tone} onChange={(e) => setTone(e.target.value)}>
-                      <option value="professional">Professional</option>
-                      <option value="casual">Casual</option>
-                      <option value="funny">Funny</option>
-                      <option value="inspirational">Inspirational</option>
-                      <option value="educational">Educational</option>
-                    </select>
-                    <Input placeholder="Target Audience (optional)" value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} />
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={includeEmojis} onChange={(e) => setIncludeEmojis(e.target.checked)} />
-                        Include Emojis
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" checked={includeHashtags} onChange={(e) => setIncludeHashtags(e.target.checked)} />
-                        Include Hashtags
-                      </label>
-                    </div>
-                    <Button className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600" onClick={() => captionMutation.mutate({ postTopic, tone, targetAudience, includeEmojis, includeHashtags })} disabled={!postTopic || captionMutation.isPending}>
-                      {captionMutation.isPending ? "Generating..." : "Generate Captions"}
-                    </Button>
-                  </div>
-                </Card>
-
-                {captionResults && (
-                  <Card className="p-6 max-h-[600px] overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4">Generated Captions ({captionResults.captions?.length || 0})</h3>
-                    <div className="space-y-4">
-                      {captionResults.captions?.map((caption: any, idx: number) => (
-                        <div key={idx} className="p-4 bg-pink-500/5 rounded border relative">
-                          <p className="text-sm mb-2">{caption.text}</p>
-                          {caption.hashtags && caption.hashtags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {caption.hashtags.map((tag: string, i: number) => (
-                                <Badge key={i} variant="secondary" className="text-xs">#{tag}</Badge>
-                              ))}
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                            <span>{caption.characterCount} chars</span>
-                            <Badge>{caption.engagementScore}/100</Badge>
-                          </div>
-                          <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyToClipboard(caption.text + (caption.hashtags ? '\n\n' + caption.hashtags.map((t: string) => '#' + t).join(' ') : ''), `caption-${idx}`)}>
-                            {copiedId === `caption-${idx}` ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* TAB 2: Hashtag Generator */}
-            <TabsContent value="hashtags" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Hash className="w-5 h-5 text-purple-500" />
-                    Generate Hashtags
-                  </h3>
-                  <div className="space-y-4">
-                    <Input placeholder="Niche (e.g., Fitness, Fashion)" value={hashtagNiche} onChange={(e) => setHashtagNiche(e.target.value)} />
-                    <Input placeholder="Content Type (e.g., Reel, Photo)" value={contentType} onChange={(e) => setContentType(e.target.value)} />
-                    <select className="w-full p-2 rounded border bg-background" value={targetSize} onChange={(e) => setTargetSize(e.target.value)}>
-                      <option value="mixed">Mixed Sizes</option>
-                      <option value="high">High Competition</option>
-                      <option value="medium">Medium Competition</option>
-                      <option value="low">Low Competition</option>
-                    </select>
-                    <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" onClick={() => hashtagMutation.mutate({ niche: hashtagNiche, contentType, targetSize })} disabled={!hashtagNiche || hashtagMutation.isPending}>
-                      {hashtagMutation.isPending ? "Generating..." : "Generate Hashtags"}
-                    </Button>
-                  </div>
-                </Card>
-
-                {hashtagResults && (
-                  <Card className="p-6 max-h-[600px] overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4">Hashtag Sets</h3>
-                    <div className="space-y-4">
-                      {hashtagResults.hashtags?.highCompetition && (
-                        <div className="p-4 bg-red-500/5 rounded border">
-                          <p className="font-medium mb-2">🔥 High Competition (1M+)</p>
-                          <div className="flex flex-wrap gap-1">
-                            {hashtagResults.hashtags.highCompetition.map((tag: string, i: number) => (
-                              <Badge key={i} variant="destructive" className="text-xs">#{tag}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {hashtagResults.hashtags?.mediumCompetition && (
-                        <div className="p-4 bg-yellow-500/5 rounded border">
-                          <p className="font-medium mb-2">⚡ Medium Competition (100K-1M)</p>
-                          <div className="flex flex-wrap gap-1">
-                            {hashtagResults.hashtags.mediumCompetition.map((tag: string, i: number) => (
-                              <Badge key={i} variant="secondary" className="text-xs">#{tag}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {hashtagResults.hashtags?.lowCompetition && (
-                        <div className="p-4 bg-green-500/5 rounded border">
-                          <p className="font-medium mb-2">✨ Low Competition (&lt;100K)</p>
-                          <div className="flex flex-wrap gap-1">
-                            {hashtagResults.hashtags.lowCompetition.map((tag: string, i: number) => (
-                              <Badge key={i} className="text-xs bg-green-500">#{tag}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {hashtagResults.hashtags?.trending && (
-                        <div className="p-4 bg-purple-500/5 rounded border">
-                          <p className="font-medium mb-2">📈 Trending Now</p>
-                          <div className="flex flex-wrap gap-1">
-                            {hashtagResults.hashtags.trending.map((tag: string, i: number) => (
-                              <Badge key={i} className="text-xs bg-purple-500">#{tag}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {hashtagResults.hashtags?.bestPractices && (
-                        <div className="p-3 bg-blue-500/5 rounded text-sm">
-                          <p className="font-medium mb-1">💡 Best Practices:</p>
-                          <p className="text-muted-foreground">{hashtagResults.hashtags.bestPractices}</p>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* TAB 3: Content Ideas */}
-            <TabsContent value="ideas" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-yellow-500" />
-                    Content Ideas
-                  </h3>
-                  <div className="space-y-4">
-                    <Input placeholder="Niche (e.g., Music, Travel)" value={ideasNiche} onChange={(e) => setIdeasNiche(e.target.value)} />
-                    <Input placeholder="Goals (e.g., Increase engagement)" value={goals} onChange={(e) => setGoals(e.target.value)} />
-                    <Input placeholder="Posting Frequency (e.g., 5 times/week)" value={postingFrequency} onChange={(e) => setPostingFrequency(e.target.value)} />
-                    <Button className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600" onClick={() => contentIdeasMutation.mutate({ niche: ideasNiche, goals, postingFrequency })} disabled={!ideasNiche || contentIdeasMutation.isPending}>
-                      {contentIdeasMutation.isPending ? "Generating..." : "Generate Ideas"}
-                    </Button>
-                  </div>
-                </Card>
-
-                {contentIdeas && (
-                  <Card className="p-6 max-h-[600px] overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4">Content Ideas ({contentIdeas.ideas?.length || 0})</h3>
-                    <div className="space-y-3">
-                      {contentIdeas.ideas?.map((idea: any, idx: number) => (
-                        <div key={idx} className="p-4 bg-yellow-500/5 rounded border">
-                          <div className="flex items-center justify-between mb-2">
-                            <Badge className="bg-orange-500">{idea.contentType}</Badge>
-                            <Badge variant={idea.engagementLevel === 'high' ? 'default' : 'secondary'}>{idea.engagementLevel} engagement</Badge>
-                          </div>
-                          <h4 className="font-medium mb-1">{idea.topic}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">{idea.description}</p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span>🕐 {idea.bestTimeToPost}</span>
-                          </div>
-                          {idea.formatTips && <p className="text-xs mt-2 p-2 bg-background rounded">💡 {idea.formatTips}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* TAB 4: Best Time Analyzer */}
-            <TabsContent value="timing" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-blue-500" />
-                    Best Time to Post
-                  </h3>
-                  <div className="space-y-4">
-                    <Input placeholder="Niche (e.g., Fitness)" value={timeNiche} onChange={(e) => setTimeNiche(e.target.value)} />
-                    <Input placeholder="Target Audience (e.g., Young adults)" value={timeAudience} onChange={(e) => setTimeAudience(e.target.value)} />
-                    <select className="w-full p-2 rounded border bg-background" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
-                      <option value="UTC">UTC</option>
-                      <option value="America/New_York">Eastern Time</option>
-                      <option value="America/Los_Angeles">Pacific Time</option>
-                      <option value="Europe/London">London</option>
-                      <option value="Europe/Madrid">Madrid</option>
-                    </select>
-                    <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600" onClick={() => bestTimeMutation.mutate({ niche: timeNiche, targetAudience: timeAudience, timezone })} disabled={!timeNiche || bestTimeMutation.isPending}>
-                      {bestTimeMutation.isPending ? "Analyzing..." : "Analyze Best Times"}
-                    </Button>
-                  </div>
-                </Card>
-
-                {timeAnalysis && (
-                  <Card className="p-6 max-h-[600px] overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4">Optimal Posting Schedule</h3>
-                    <div className="space-y-4">
-                      {timeAnalysis.analysis?.bestTimes && Object.entries(timeAnalysis.analysis.bestTimes).map(([day, times]: [string, any]) => (
-                        <div key={day} className="p-3 bg-blue-500/5 rounded border">
-                          <p className="font-medium capitalize mb-2">{day}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {Array.isArray(times) && times.map((time: string, i: number) => (
-                              <Badge key={i} className="bg-blue-500">{time}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                      {timeAnalysis.analysis?.peakHours && (
-                        <div className="p-4 bg-green-500/5 rounded border">
-                          <p className="font-medium mb-2">🔥 Peak Engagement Hours</p>
-                          <div className="flex flex-wrap gap-2">
-                            {timeAnalysis.analysis.peakHours.map((hour: string, i: number) => (
-                              <Badge key={i} className="bg-green-500">{hour}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {timeAnalysis.analysis?.reasoning && (
-                        <div className="p-3 bg-background rounded text-sm">
-                          <p className="font-medium mb-1">💡 Why these times?</p>
-                          <p className="text-muted-foreground">{timeAnalysis.analysis.reasoning}</p>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* TAB 5: Bio Optimizer */}
-            <TabsContent value="bio" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-semibold flex items-center gap-2">
-                      <User className="w-5 h-5 text-green-500" />
-                      Bio Optimizer
-                    </h3>
-                    {artistProfile?.biography && <Badge variant="secondary" className="text-xs">✨ Auto-filled</Badge>}
-                  </div>
-                  <div className="space-y-4">
-                    <textarea className="w-full p-3 rounded border bg-background min-h-[80px]" placeholder="Current Bio (or leave empty)" value={currentBio} onChange={(e) => setCurrentBio(e.target.value)} />
-                    <Input placeholder="Niche/Genre" value={bioNiche} onChange={(e) => setBioNiche(e.target.value)} />
-                    <Input placeholder="Goals (e.g., Get more followers)" value={bioGoals} onChange={(e) => setBioGoals(e.target.value)} />
-                    <Input placeholder="Website URL (optional)" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} />
-                    <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600" onClick={() => bioMutation.mutate({ currentBio, niche: bioNiche, goals: bioGoals, websiteUrl })} disabled={bioMutation.isPending}>
-                      {bioMutation.isPending ? "Optimizing..." : "Optimize Bio"}
-                    </Button>
-                  </div>
-                </Card>
-
-                {bioResults && (
-                  <Card className="p-6 max-h-[600px] overflow-y-auto">
-                    <h3 className="text-lg font-semibold mb-4">Optimized Bios</h3>
-                    <div className="space-y-4">
-                      {bioResults.optimization?.optimizedBios?.map((bio: any, idx: number) => (
-                        <div key={idx} className="p-4 bg-green-500/5 rounded border relative">
-                          <div className="flex items-center justify-between mb-2">
-                            <Badge className="bg-green-500">{bio.version}</Badge>
-                            <span className="text-xs text-muted-foreground">{bio.characterCount} chars</span>
-                          </div>
-                          <p className="text-sm mb-2 whitespace-pre-wrap">{bio.bio}</p>
-                          {bio.keywords && bio.keywords.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {bio.keywords.map((kw: string, i: number) => (
-                                <Badge key={i} variant="outline" className="text-xs">{kw}</Badge>
-                              ))}
-                            </div>
-                          )}
-                          <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyToClipboard(bio.bio, `bio-${idx}`)}>
-                            {copiedId === `bio-${idx}` ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                          </Button>
-                        </div>
-                      ))}
-                      {bioResults.optimization?.linkStrategy && (
-                        <div className="p-3 bg-blue-500/5 rounded text-sm">
-                          <p className="font-medium mb-1">🔗 Link Strategy:</p>
-                          <p className="text-muted-foreground">{bioResults.optimization.linkStrategy}</p>
-                        </div>
-                      )}
-                      {bioResults.optimization?.profileTips && (
-                        <div className="p-3 bg-purple-500/5 rounded text-sm">
-                          <p className="font-medium mb-1">💡 Profile Tips:</p>
-                          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                            {bioResults.optimization.profileTips.map((tip: string, i: number) => (
-                              <li key={i}>{tip}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
             {/* Apify Test Tab */}
             <TabsContent value="apify-test" className="space-y-6">
               <Card className="p-6 bg-gradient-to-br from-orange-500/10 to-primary/5 border-orange-500/20">
@@ -1656,7 +1687,6 @@ export default function InstagramBoostPage() {
                       <p className="text-sm text-muted-foreground">Test real Instagram data fetching with Apify</p>
                     </div>
                   </div>
-
                   <div className="space-y-4">
                     <div className="flex gap-2">
                       <Input
@@ -1777,8 +1807,6 @@ export default function InstagramBoostPage() {
               </Card>
             </TabsContent>
 
-              </Tabs>
-            </TabsContent>
           </Tabs>
         </div>
       </main>
