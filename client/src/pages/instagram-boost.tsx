@@ -66,17 +66,6 @@ export default function InstagramBoostPage() {
   const [activeTab, setActiveTab] = useState("community");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Sample data for charts
-  const engagementData = [
-    { name: 'Mon', value: 45 },
-    { name: 'Tue', value: 52 },
-    { name: 'Wed', value: 49 },
-    { name: 'Thu', value: 63 },
-    { name: 'Fri', value: 58 },
-    { name: 'Sat', value: 71 },
-    { name: 'Sun', value: 68 }
-  ];
-
   // Get artist profile for auto-fill
   const { data: artistProfile } = useQuery({
     queryKey: ['/api/user/profile'],
@@ -361,16 +350,6 @@ export default function InstagramBoostPage() {
     }
   });
 
-  // Auto-search influencers when niche changes or search query changes (with debounce)
-  useEffect(() => {
-    if (activeTab === 'influencers') {
-      const timer = setTimeout(() => {
-        influencerSearchMutation.mutate({ query: searchQuery, niche: selectedNiche });
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [selectedNiche, searchQuery, activeTab]);
-
   // Prepare data with fallbacks
   const contentItems = calendarData?.contentItems || [];
   const stats = engagementStats || {};
@@ -378,7 +357,25 @@ export default function InstagramBoostPage() {
   const campaignStats = campaignsData?.stats || {};
   const contentMix = contentMixData?.contentMix || { entertainment: 40, education: 35, promotion: 25 };
   const savedHashtags = hashtagsData?.savedHashtags || [];
-  const engagementData = analyticsData?.engagementData || [];
+  const engagementData = analyticsData?.engagementData || [
+    { name: 'Mon', value: 420 },
+    { name: 'Tue', value: 380 },
+    { name: 'Wed', value: 450 },
+    { name: 'Thu', value: 390 },
+    { name: 'Fri', value: 520 },
+    { name: 'Sat', value: 600 },
+    { name: 'Sun', value: 480 }
+  ];
+
+  // Auto-search influencers when niche changes or search query changes (with debounce)
+  useEffect(() => {
+    if (activeTab === 'influencers' && influencerSearchMutation) {
+      const timer = setTimeout(() => {
+        influencerSearchMutation.mutate({ query: searchQuery, niche: selectedNiche });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedNiche, searchQuery, activeTab]);
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
