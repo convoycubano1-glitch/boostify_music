@@ -77,7 +77,7 @@ const VideoGenerationTestPage = lazy(() => import("./pages/video-generation-test
 const CameraMovementsTestPage = lazy(() => import("./pages/camera-movements-test"));
 const YoutubeViewsPage = lazy(() => import("./pages/youtube-views"));
 const RealTimeTranslator = lazy(() => import("./pages/real-time-translator"));
-const EducationPage = lazy(() => import("./pages/education"));
+const EducationPage = lazy(() => import("./pages/education-new"));
 const AchievementsPage = lazy(() => import("./pages/achievements-page"));
 const CourseDetailPage = lazy(() => import("./pages/course-detail"));
 const SmartCardsPage = lazy(() => import("./pages/smart-cards"));
