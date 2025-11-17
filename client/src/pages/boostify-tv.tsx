@@ -231,6 +231,69 @@ function VideoPlayer({ video, isOpen, onClose, onNext, onPrevious }: VideoPlayer
   );
 }
 
+const DEMO_VIDEOS: VideoContent[] = [
+  {
+    id: "demo-1",
+    title: "Boostify Music Promo - Platform Features",
+    description: "Discover how Boostify Music helps artists grow their careers with AI-powered tools, tokenization, and more",
+    filePath: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    thumbnailPath: null,
+    duration: "10:34",
+    views: 15420,
+    category: "featured"
+  },
+  {
+    id: "demo-2",
+    title: "Artist Success Stories - Virtual Label Showcase",
+    description: "Real artists sharing their success stories using Boostify's Virtual Record Label platform",
+    filePath: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    thumbnailPath: null,
+    duration: "8:20",
+    views: 12350,
+    category: "featured"
+  },
+  {
+    id: "demo-3",
+    title: "Music Tokenization Tutorial",
+    description: "Learn how to tokenize your music and earn from your fans directly",
+    filePath: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    thumbnailPath: null,
+    duration: "5:15",
+    views: 9840,
+    category: "videos"
+  },
+  {
+    id: "demo-4",
+    title: "AI Tools for Musicians - Complete Guide",
+    description: "Explore all the AI-powered tools available for music promotion and growth",
+    filePath: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    thumbnailPath: null,
+    duration: "12:45",
+    views: 18200,
+    category: "videos"
+  },
+  {
+    id: "demo-5",
+    title: "Live Performance - Featured Artist",
+    description: "Exclusive live performance from one of our featured artists",
+    filePath: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    thumbnailPath: null,
+    duration: "15:30",
+    views: 24500,
+    category: "live"
+  },
+  {
+    id: "demo-6",
+    title: "Music Production Tips & Tricks",
+    description: "Professional music production techniques from industry experts",
+    filePath: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    thumbnailPath: null,
+    duration: "18:20",
+    views: 21000,
+    category: "music"
+  }
+];
+
 export default function BoostifyTvPage() {
   const [selectedTab, setSelectedTab] = useState("featured");
   const [searchTerm, setSearchTerm] = useState("");
@@ -248,12 +311,14 @@ export default function BoostifyTvPage() {
   });
 
   const processedVideos = useMemo(() => {
-    if (!data?.videos) return [];
+    const apiVideos = data?.videos?.filter(v => v.filePath && v.filePath.trim() !== '') || [];
     
-    return data.videos.map((video: VideoContent, index: number) => ({
+    const videosWithCategory = apiVideos.map((video: VideoContent, index: number) => ({
       ...video,
       category: video.category || (index % 2 === 0 ? "featured" : "videos") as "featured" | "live" | "videos" | "music"
     }));
+    
+    return [...DEMO_VIDEOS, ...videosWithCategory];
   }, [data?.videos]);
   
   const filteredVideos = useMemo(() => {
@@ -362,12 +427,13 @@ export default function BoostifyTvPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 space-y-8 p-4 md:p-8 pt-20">
-        {/* Hero Section - Improved */}
-        <div className="relative w-full h-[40vh] md:h-[60vh] overflow-hidden rounded-xl mb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-800 via-orange-700 to-black">
+        {/* Hero Section - Ultra Atractivo */}
+        <div className="relative w-full h-[50vh] md:h-[75vh] overflow-hidden rounded-2xl mb-8 shadow-2xl">
+          {/* Video de fondo con overlay mejorado */}
+          <div className="absolute inset-0">
             {featuredVideo && (
               <video
-                className="absolute inset-0 w-full h-full object-cover opacity-60"
+                className="absolute inset-0 w-full h-full object-cover scale-105"
                 src={featuredVideo.filePath}
                 autoPlay
                 muted
@@ -378,53 +444,187 @@ export default function BoostifyTvPage() {
                 }}
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+            
+            {/* Overlay gradiente dramático */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
+            
+            {/* Efecto de brillo animado */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/10 to-transparent"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+            />
           </div>
           
-          <div className="relative h-full flex items-center justify-start px-4 md:px-12">
-            <div className="max-w-2xl">
+          {/* Contenido */}
+          <div className="relative h-full flex items-center px-4 md:px-16">
+            <div className="max-w-3xl z-10">
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.7 }}
               >
-                <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+                {/* Badge superior */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mb-4"
+                >
+                  <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 text-sm font-semibold shadow-lg">
+                    <Sparkles className="w-4 h-4 mr-2 inline" />
+                    NOW STREAMING
+                  </Badge>
+                </motion.div>
+                
+                {/* Título principal */}
+                <h1 className="text-4xl md:text-7xl font-bold text-white mb-6 leading-tight">
                   Welcome to{" "}
-                  <span className="bg-gradient-to-r from-orange-500 to-orange-400 bg-clip-text text-transparent">
-                    Boostify TV
+                  <span className="relative inline-block">
+                    <span className="bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-400 bg-clip-text text-transparent">
+                      Boostify TV
+                    </span>
+                    <motion.div
+                      className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-yellow-400 rounded-full"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 0.8, delay: 0.5 }}
+                    />
                   </span>
                 </h1>
-                <p className="text-base md:text-xl text-gray-200 mb-6">
-                  Stream exclusive music content, live performances, and behind-the-scenes footage
+                
+                {/* Subtítulo */}
+                <p className="text-lg md:text-2xl text-gray-200 mb-8 font-light">
+                  Stream exclusive music content, live performances, and behind-the-scenes footage from the world's best artists
                 </p>
                 
-                {featuredVideo && (
-                  <motion.div 
-                    className="mt-6 bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/20"
+                {/* Estadísticas rápidas */}
+                <div className="flex flex-wrap gap-6 mb-8">
+                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
+                    transition={{ delay: 0.4 }}
+                    className="flex items-center gap-2 text-white/90"
                   >
-                    <div className="flex items-center mb-2">
-                      <Badge className="bg-orange-500 text-white mr-2">
-                        Featured
-                      </Badge>
-                      <h3 className="text-white font-medium">{featuredVideo.title}</h3>
+                    <div className="w-12 h-12 bg-orange-500/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <Film className="w-6 h-6 text-orange-400" />
                     </div>
-                    <p className="text-gray-300 text-sm mb-3 line-clamp-2">{featuredVideo.description}</p>
-                    <Button 
-                      size="sm" 
-                      className="bg-orange-500 hover:bg-orange-600 text-white"
-                      onClick={() => openVideoPlayer(featuredVideo)}
-                      data-testid="button-watch-featured"
-                    >
-                      <Play className="w-4 h-4 mr-2" /> Watch Now
-                    </Button>
+                    <div>
+                      <div className="text-2xl font-bold">{processedVideos.length}+</div>
+                      <div className="text-sm text-gray-300">Videos</div>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="flex items-center gap-2 text-white/90"
+                  >
+                    <div className="w-12 h-12 bg-purple-500/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <Users className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">10K+</div>
+                      <div className="text-sm text-gray-300">Artists</div>
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="flex items-center gap-2 text-white/90"
+                  >
+                    <div className="w-12 h-12 bg-pink-500/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-pink-400" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">1M+</div>
+                      <div className="text-sm text-gray-300">Views</div>
+                    </div>
+                  </motion.div>
+                </div>
+                
+                {/* Video destacado */}
+                {featuredVideo && (
+                  <motion.div 
+                    className="bg-black/60 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-2xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.7 }}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Thumbnail del video */}
+                      <div className="relative w-32 h-20 rounded-lg overflow-hidden shrink-0 hidden md:block">
+                        <video
+                          className="w-full h-full object-cover"
+                          src={featuredVideo.filePath}
+                          muted
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                            <Play className="w-5 h-5 text-white ml-0.5" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Info del video */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs">
+                            <Star className="w-3 h-3 mr-1" />
+                            FEATURED NOW
+                          </Badge>
+                          <Badge variant="outline" className="border-white/20 text-white text-xs">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {featuredVideo.duration}
+                          </Badge>
+                        </div>
+                        <h3 className="text-white font-semibold text-lg mb-1 line-clamp-1">{featuredVideo.title}</h3>
+                        <p className="text-gray-300 text-sm mb-3 line-clamp-2">{featuredVideo.description}</p>
+                        
+                        {/* Botones de acción */}
+                        <div className="flex gap-3">
+                          <Button 
+                            size="lg" 
+                            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30"
+                            onClick={() => openVideoPlayer(featuredVideo)}
+                            data-testid="button-watch-featured"
+                          >
+                            <Play className="w-5 h-5 mr-2" /> Watch Now
+                          </Button>
+                          <Button 
+                            size="lg" 
+                            variant="outline" 
+                            className="border-white/30 text-white hover:bg-white/10 backdrop-blur-sm"
+                          >
+                            <Info className="w-5 h-5 mr-2" /> More Info
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </motion.div>
             </div>
           </div>
+          
+          {/* Indicador de scroll */}
+          <motion.div
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <div className="w-6 h-10 border-2 border-white/30 rounded-full flex items-start justify-center p-2">
+              <motion.div
+                className="w-1.5 h-1.5 bg-white rounded-full"
+                animate={{ y: [0, 16, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </div>
+          </motion.div>
         </div>
 
         {/* Search Bar - Repositioned */}
