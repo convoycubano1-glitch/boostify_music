@@ -7,7 +7,7 @@ import {
   getDetailedPrompt,
   MusicGenreTemplate
 } from "../components/music/genre-templates/genre-data";
-import { generateMusic, checkGenerationStatus, getRecentGenerations, saveGeneratedSongToProfile } from "../lib/api/music-generator-service";
+import { generateMusic, checkGenerationStatus, getRecentGenerations, saveGeneratedSongToProfile, generateMusicWithFAL, checkFALMusicStatus } from "../lib/api/music-generator-service";
 import { useToast } from "../hooks/use-toast";
 import { Header } from "../components/layout/header";
 import { motion } from "framer-motion";
@@ -72,7 +72,7 @@ export default function MusicGeneratorPage() {
   // Music generator state
   const [musicPrompt, setMusicPrompt] = useState<string>("");
   const [musicTitle, setMusicTitle] = useState<string>("");
-  const [selectedModel, setSelectedModel] = useState<string>("music-s");
+  const [selectedModel, setSelectedModel] = useState<string>("music-fal");
   const [selectedGenreTemplate, setSelectedGenreTemplate] = useState<string>("pop");
   const [isGeneratingMusic, setIsGeneratingMusic] = useState<boolean>(false);
   const [musicGenerationProgress, setMusicGenerationProgress] = useState<number>(0);
@@ -132,7 +132,10 @@ export default function MusicGeneratorPage() {
     if (isGeneratingMusic && currentTaskId) {
       intervalId = setInterval(async () => {
         try {
-          const status = await checkGenerationStatus(currentTaskId);
+          // Use FAL status check if model is music-fal
+          const status = selectedModel === 'music-fal' 
+            ? await checkFALMusicStatus(currentTaskId)
+            : await checkGenerationStatus(currentTaskId);
           
           // Update progress based on status
           if (status.status === 'pending') {
@@ -196,7 +199,7 @@ export default function MusicGeneratorPage() {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isGeneratingMusic, currentTaskId]);
+  }, [isGeneratingMusic, currentTaskId, selectedModel]);
   
   // Manage audio playback
   useEffect(() => {
@@ -320,35 +323,46 @@ export default function MusicGeneratorPage() {
     setMusicGenerationProgress(0);
     
     try {
-      // Prepare generation data based on mode
-      let generationData: any = {
-        prompt: musicPrompt,
-        title: musicTitle || undefined,
-        model: selectedModel,
-        makeInstrumental: advancedParams.makeInstrumental,
-        negativeTags: advancedParams.negativeTags,
-        tags: advancedParams.tags,
-        seed: advancedParams.seed,
-        tempo: advancedParams.tempo,
-        keySignature: advancedParams.keySignature,
-      };
+      let result: { taskId?: string; requestId?: string };
       
-      // Add mode-specific data
-      if (advancedModeType === 'continuation') {
-        generationData.continueClipId = advancedParams.continueClipId;
-        generationData.continueAt = advancedParams.continueAt;
-      } else if (advancedModeType === 'lyrics') {
-        generationData.customLyrics = advancedParams.customLyrics;
-        generationData.generateLyrics = advancedParams.generateLyrics;
-      } else if (advancedModeType === 'upload') {
-        generationData.audioUrl = advancedParams.audioUrl;
-        generationData.uploadAudio = true;
+      // Use FAL AI if model is music-fal
+      if (selectedModel === 'music-fal') {
+        result = await generateMusicWithFAL({
+          prompt: musicPrompt,
+          duration: 30
+        });
+        setCurrentTaskId(result.requestId || '');
+      } else {
+        // Use PiAPI (Suno/Udio) for other models
+        // Prepare generation data based on mode
+        let generationData: any = {
+          prompt: musicPrompt,
+          title: musicTitle || undefined,
+          model: selectedModel,
+          makeInstrumental: advancedParams.makeInstrumental,
+          negativeTags: advancedParams.negativeTags,
+          tags: advancedParams.tags,
+          seed: advancedParams.seed,
+          tempo: advancedParams.tempo,
+          keySignature: advancedParams.keySignature,
+        };
+        
+        // Add mode-specific data
+        if (advancedModeType === 'continuation') {
+          generationData.continueClipId = advancedParams.continueClipId;
+          generationData.continueAt = advancedParams.continueAt;
+        } else if (advancedModeType === 'lyrics') {
+          generationData.customLyrics = advancedParams.customLyrics;
+          generationData.generateLyrics = advancedParams.generateLyrics;
+        } else if (advancedModeType === 'upload') {
+          generationData.audioUrl = advancedParams.audioUrl;
+          generationData.uploadAudio = true;
+        }
+        
+        // Start generation
+        result = await generateMusic(generationData);
+        setCurrentTaskId(result.taskId || '');
       }
-      
-      // Start generation
-      const result = await generateMusic(generationData);
-      
-      setCurrentTaskId(result.taskId);
     } catch (error) {
       console.error('Error generating music:', error);
       

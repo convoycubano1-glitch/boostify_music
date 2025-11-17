@@ -140,19 +140,25 @@ export function MusicGenerationSection({
             onValueChange={setSelectedModel} 
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2 h-9">
-              <TabsTrigger value="music-s" className="text-xs">
+            <TabsList className="grid w-full grid-cols-3 h-9">
+              <TabsTrigger value="music-fal" className="text-xs" data-testid="model-fal">
                 <Sparkles className="h-3.5 w-3.5 mr-1.5" /> 
+                FAL Minimax
+              </TabsTrigger>
+              <TabsTrigger value="music-s" className="text-xs" data-testid="model-suno">
+                <Music className="h-3.5 w-3.5 mr-1.5" /> 
                 Suno
               </TabsTrigger>
-              <TabsTrigger value="music-u" className="text-xs">
+              <TabsTrigger value="music-u" className="text-xs" data-testid="model-udio">
                 <Music className="h-3.5 w-3.5 mr-1.5" /> 
                 Udio
               </TabsTrigger>
             </TabsList>
           </Tabs>
           <p className="text-xs text-muted-foreground">
-            {selectedModel === 'music-s' 
+            {selectedModel === 'music-fal'
+              ? "FAL Minimax v2 - Ultra rápido, genera música de alta calidad en segundos con IA avanzada."
+              : selectedModel === 'music-s' 
               ? "Suno generates high-quality music with a wider range of styles and precise control." 
               : "Udio produces results with more natural vocals and is optimal for pop and modern music."}
           </p>
