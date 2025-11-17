@@ -1226,3 +1226,234 @@ export const insertInstagramConnectionSchema = createInsertSchema(instagramConne
 export const selectInstagramConnectionSchema = createSelectSchema(instagramConnections);
 export type InsertInstagramConnection = z.infer<typeof insertInstagramConnectionSchema>;
 export type SelectInstagramConnection = typeof instagramConnections.$inferSelect;
+
+// ============================================
+// ARTIST FASHION STUDIO TABLES
+// ============================================
+
+// Fashion Sessions - Sesiones de asesoría de moda
+export const fashionSessions = pgTable("fashion_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  sessionType: text("session_type", { 
+    enum: ["tryon", "generation", "analysis", "video", "portfolio"] 
+  }).notNull(),
+  status: text("status", { 
+    enum: ["active", "completed", "cancelled"] 
+  }).default("active").notNull(),
+  metadata: json("metadata").$type<{
+    genre?: string;
+    mood?: string;
+    occasion?: string;
+    references?: string[];
+  }>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Fashion Results - Resultados de try-on, generaciones y análisis
+export const fashionResults = pgTable("fashion_results", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").references(() => fashionSessions.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  resultType: text("result_type", { 
+    enum: ["tryon", "generation", "video", "moodboard"] 
+  }).notNull(),
+  imageUrl: text("image_url"),
+  videoUrl: text("video_url"),
+  metadata: json("metadata").$type<{
+    modelImage?: string;
+    clothingImage?: string;
+    prompt?: string;
+    falModel?: string;
+    duration?: number;
+    tags?: string[];
+  }>(),
+  isFavorite: boolean("is_favorite").default(false).notNull(),
+  isPublished: boolean("is_published").default(false).notNull(),
+  rating: integer("rating"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Fashion Analysis - Análisis y recomendaciones AI con Gemini
+export const fashionAnalysis = pgTable("fashion_analysis", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").references(() => fashionSessions.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  analysisType: text("analysis_type", { 
+    enum: ["style", "color", "body_type", "genre_coherence", "trend"] 
+  }).notNull(),
+  imageUrl: text("image_url"),
+  recommendations: json("recommendations").$type<{
+    styleScore?: number;
+    colorPalette?: string[];
+    bodyType?: string;
+    genreCoherence?: number;
+    suggestions?: string[];
+  }>(),
+  moodBoard: json("mood_board").$type<{
+    references?: string[];
+    keywords?: string[];
+    artistReferences?: string[];
+  }>(),
+  geminiResponse: text("gemini_response"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Fashion Portfolio - Portfolio de looks del artista
+export const fashionPortfolio = pgTable("fashion_portfolio", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  images: text("images").array().notNull(),
+  products: json("products").$type<Array<{
+    merchandiseId?: number;
+    name: string;
+    imageUrl: string;
+  }>>(),
+  category: text("category", { 
+    enum: ["concert", "photoshoot", "casual", "red_carpet", "music_video", "social_media"] 
+  }).notNull(),
+  season: text("season"),
+  tags: text("tags").array(),
+  isPublic: boolean("is_public").default(false).notNull(),
+  likes: integer("likes").default(0).notNull(),
+  views: integer("views").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Product Try-On History - Historial de try-on con productos del artista
+export const productTryOnHistory = pgTable("product_tryon_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  merchandiseId: integer("merchandise_id").references(() => merchandise.id),
+  modelImage: text("model_image").notNull(),
+  resultImage: text("result_image").notNull(),
+  falModel: text("fal_model").default("fal-ai/idm-vton").notNull(),
+  rating: integer("rating"),
+  feedback: text("feedback"),
+  isPublished: boolean("is_published").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Fashion Videos - Videos generados con Kling mostrando al artista modelando ropa
+export const fashionVideos = pgTable("fashion_videos", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  sessionId: integer("session_id").references(() => fashionSessions.id),
+  videoUrl: text("video_url").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  prompt: text("prompt").notNull(),
+  modelImage: text("model_image"),
+  clothingImage: text("clothing_image"),
+  duration: integer("duration"),
+  klingTaskId: text("kling_task_id"),
+  status: text("status", { 
+    enum: ["processing", "completed", "failed"] 
+  }).default("processing").notNull(),
+  metadata: json("metadata").$type<{
+    falModel?: string;
+    style?: string;
+    occasion?: string;
+  }>(),
+  isPublished: boolean("is_published").default(false).notNull(),
+  views: integer("views").default(0).notNull(),
+  likes: integer("likes").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Relations for Fashion Studio tables
+export const fashionSessionsRelations = relations(fashionSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [fashionSessions.userId],
+    references: [users.id],
+  }),
+  results: many(fashionResults),
+  analysis: many(fashionAnalysis),
+  videos: many(fashionVideos),
+}));
+
+export const fashionResultsRelations = relations(fashionResults, ({ one }) => ({
+  session: one(fashionSessions, {
+    fields: [fashionResults.sessionId],
+    references: [fashionSessions.id],
+  }),
+  user: one(users, {
+    fields: [fashionResults.userId],
+    references: [users.id],
+  }),
+}));
+
+export const fashionAnalysisRelations = relations(fashionAnalysis, ({ one }) => ({
+  session: one(fashionSessions, {
+    fields: [fashionAnalysis.sessionId],
+    references: [fashionSessions.id],
+  }),
+  user: one(users, {
+    fields: [fashionAnalysis.userId],
+    references: [users.id],
+  }),
+}));
+
+export const fashionPortfolioRelations = relations(fashionPortfolio, ({ one }) => ({
+  user: one(users, {
+    fields: [fashionPortfolio.userId],
+    references: [users.id],
+  }),
+}));
+
+export const productTryOnHistoryRelations = relations(productTryOnHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [productTryOnHistory.userId],
+    references: [users.id],
+  }),
+  merchandise: one(merchandise, {
+    fields: [productTryOnHistory.merchandiseId],
+    references: [merchandise.id],
+  }),
+}));
+
+export const fashionVideosRelations = relations(fashionVideos, ({ one }) => ({
+  user: one(users, {
+    fields: [fashionVideos.userId],
+    references: [users.id],
+  }),
+  session: one(fashionSessions, {
+    fields: [fashionVideos.sessionId],
+    references: [fashionSessions.id],
+  }),
+}));
+
+// Fashion Studio Schemas
+export const insertFashionSessionSchema = createInsertSchema(fashionSessions).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectFashionSessionSchema = createSelectSchema(fashionSessions);
+export type InsertFashionSession = z.infer<typeof insertFashionSessionSchema>;
+export type SelectFashionSession = typeof fashionSessions.$inferSelect;
+
+export const insertFashionResultSchema = createInsertSchema(fashionResults).omit({ id: true, createdAt: true });
+export const selectFashionResultSchema = createSelectSchema(fashionResults);
+export type InsertFashionResult = z.infer<typeof insertFashionResultSchema>;
+export type SelectFashionResult = typeof fashionResults.$inferSelect;
+
+export const insertFashionAnalysisSchema = createInsertSchema(fashionAnalysis).omit({ id: true, createdAt: true });
+export const selectFashionAnalysisSchema = createSelectSchema(fashionAnalysis);
+export type InsertFashionAnalysis = z.infer<typeof insertFashionAnalysisSchema>;
+export type SelectFashionAnalysis = typeof fashionAnalysis.$inferSelect;
+
+export const insertFashionPortfolioSchema = createInsertSchema(fashionPortfolio).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectFashionPortfolioSchema = createSelectSchema(fashionPortfolio);
+export type InsertFashionPortfolio = z.infer<typeof insertFashionPortfolioSchema>;
+export type SelectFashionPortfolio = typeof fashionPortfolio.$inferSelect;
+
+export const insertProductTryOnHistorySchema = createInsertSchema(productTryOnHistory).omit({ id: true, createdAt: true });
+export const selectProductTryOnHistorySchema = createSelectSchema(productTryOnHistory);
+export type InsertProductTryOnHistory = z.infer<typeof insertProductTryOnHistorySchema>;
+export type SelectProductTryOnHistory = typeof productTryOnHistory.$inferSelect;
+
+export const insertFashionVideoSchema = createInsertSchema(fashionVideos).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectFashionVideoSchema = createSelectSchema(fashionVideos);
+export type InsertFashionVideo = z.infer<typeof insertFashionVideoSchema>;
+export type SelectFashionVideo = typeof fashionVideos.$inferSelect;
