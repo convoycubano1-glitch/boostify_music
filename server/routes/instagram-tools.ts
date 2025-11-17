@@ -94,8 +94,6 @@ router.post("/hashtag-generator", authenticate, async (req, res) => {
 
     await trackUsage(userId, "hashtag_generator");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     const prompt = `As an Instagram growth expert, generate optimized hashtags for:
 
 Niche: ${niche}
@@ -157,8 +155,6 @@ router.post("/content-ideas", authenticate, async (req, res) => {
     }
 
     await trackUsage(userId, "content_ideas");
-
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `As an Instagram content strategist, generate 10 creative content ideas for:
 
@@ -232,8 +228,6 @@ router.post("/best-time-analyzer", authenticate, async (req, res) => {
 
     await trackUsage(userId, "best_time_analyzer");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     const prompt = `As an Instagram analytics expert, analyze the best posting times for:
 
 Niche: ${niche}
@@ -301,8 +295,6 @@ router.post("/bio-optimizer", authenticate, async (req, res) => {
 
     await trackUsage(userId, "bio_optimizer");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     const prompt = `As an Instagram profile optimization expert, optimize this Instagram bio:
 
 Current Bio: ${currentBio || 'No bio provided'}
@@ -369,6 +361,227 @@ Return ONLY a valid JSON object (no markdown, no code blocks):
   } catch (error: any) {
     console.error("Bio optimizer error:", error);
     res.status(500).json({ error: error.message || "Failed to optimize bio" });
+  }
+});
+
+// Community - Get Content Calendar
+router.get("/community/calendar", authenticate, async (req, res) => {
+  try {
+    const userId = req.session?.user?.id || req.user?.id;
+    
+    const contentItems = [
+      { id: '1', title: 'Summer Collection Launch', type: 'reel', status: 'scheduled', date: new Date(Date.now() + 86400000) },
+      { id: '2', title: 'Behind the Scenes', type: 'post', status: 'draft', date: new Date(Date.now() + 172800000) },
+      { id: '3', title: 'Customer Testimonial', type: 'story', status: 'published', date: new Date(Date.now() - 86400000) },
+      { id: '4', title: 'Product Showcase', type: 'post', status: 'scheduled', date: new Date(Date.now() + 259200000) },
+      { id: '5', title: 'Live Q&A Session', type: 'reel', status: 'draft', date: new Date(Date.now() + 345600000) }
+    ];
+    
+    res.json({ contentItems });
+  } catch (error: any) {
+    console.error("Calendar error:", error);
+    res.status(500).json({ error: "Failed to fetch calendar" });
+  }
+});
+
+// Community - Get Engagement Stats
+router.get("/community/engagement", authenticate, async (req, res) => {
+  try {
+    const stats = {
+      postsThisWeek: 12,
+      engagementRate: 8.4,
+      comments: 342,
+      newFollowers: 156,
+      pendingComments: 45,
+      likesToday: 127,
+      topPost: {
+        title: 'Behind the Scenes',
+        likes: 234,
+        comments: 45,
+        shares: 12
+      }
+    };
+    
+    res.json(stats);
+  } catch (error: any) {
+    console.error("Engagement error:", error);
+    res.status(500).json({ error: "Failed to fetch engagement" });
+  }
+});
+
+// Influencers - Search
+router.post("/influencers/search", authenticate, async (req, res) => {
+  try {
+    const { query, niche } = req.body;
+    
+    const influencers = [
+      { id: '1', name: 'Sarah Johnson', niche: 'Fashion & Lifestyle', followers: '125K', engagement: '8.2%', rating: 4.8, posts: 456 },
+      { id: '2', name: 'Mike Stevens', niche: 'Tech & Gaming', followers: '89K', engagement: '6.5%', rating: 4.5, posts: 342 },
+      { id: '3', name: 'Emma Davis', niche: 'Beauty & Makeup', followers: '210K', engagement: '9.1%', rating: 4.9, posts: 678 },
+      { id: '4', name: 'Alex Rodriguez', niche: 'Fitness & Health', followers: '156K', engagement: '7.8%', rating: 4.6, posts: 523 },
+      { id: '5', name: 'Lisa Chen', niche: 'Fashion & Lifestyle', followers: '98K', engagement: '8.9%', rating: 4.7, posts: 389 }
+    ];
+    
+    let filtered = influencers;
+    if (niche && niche !== 'all') {
+      filtered = influencers.filter(inf => inf.niche.toLowerCase().includes(niche.toLowerCase()));
+    }
+    if (query) {
+      filtered = filtered.filter(inf => inf.name.toLowerCase().includes(query.toLowerCase()));
+    }
+    
+    res.json({ influencers: filtered });
+  } catch (error: any) {
+    console.error("Influencer search error:", error);
+    res.status(500).json({ error: "Failed to search influencers" });
+  }
+});
+
+// Influencers - Get Campaigns
+router.get("/influencers/campaigns", authenticate, async (req, res) => {
+  try {
+    const campaigns = [
+      { id: '1', name: 'Summer Collection 2024', influencers: 3, posts: 15, status: 'active', progress: 75, budget: 5000 },
+      { id: '2', name: 'New Product Launch', influencers: 5, posts: 25, status: 'active', progress: 45, budget: 8000 },
+      { id: '3', name: 'Brand Awareness Q1', influencers: 2, posts: 10, status: 'planning', progress: 20, budget: 3000 }
+    ];
+    
+    const stats = {
+      totalReach: '1.2M',
+      engagement: '7.8%',
+      roi: '+342%',
+      totalSpend: '$8,000'
+    };
+    
+    res.json({ campaigns, stats });
+  } catch (error: any) {
+    console.error("Campaigns error:", error);
+    res.status(500).json({ error: "Failed to fetch campaigns" });
+  }
+});
+
+// Strategies - Get Content Mix
+router.get("/strategies/content-mix", authenticate, async (req, res) => {
+  try {
+    const contentMix = {
+      entertainment: 40,
+      education: 35,
+      promotion: 25
+    };
+    
+    const recommendation = {
+      message: "Increase educational content by 5% for better engagement with your target audience.",
+      suggestedMix: {
+        entertainment: 38,
+        education: 40,
+        promotion: 22
+      }
+    };
+    
+    res.json({ contentMix, recommendation });
+  } catch (error: any) {
+    console.error("Content mix error:", error);
+    res.status(500).json({ error: "Failed to fetch content mix" });
+  }
+});
+
+// Strategies - Get Saved Hashtags
+router.get("/strategies/hashtags", authenticate, async (req, res) => {
+  try {
+    const savedHashtags = ['fashion', 'style', 'ootd', 'fashionblogger', 'instafashion', 'trendy', 'streetstyle', 'lookbook'];
+    
+    const performingHashtags = [
+      { tag: 'trending', growth: '+36%' },
+      { tag: 'viral', growth: '+24%' },
+      { tag: 'instagood', growth: '+12%' }
+    ];
+    
+    res.json({ savedHashtags, performingHashtags });
+  } catch (error: any) {
+    console.error("Hashtags error:", error);
+    res.status(500).json({ error: "Failed to fetch hashtags" });
+  }
+});
+
+// Strategies - Get Optimal Times
+router.get("/strategies/optimal-times", authenticate, async (req, res) => {
+  try {
+    const optimalTimes = {
+      bestDays: ['Wednesday', 'Saturday'],
+      bestHours: ['18:00', '14:00'],
+      weeklySchedule: {
+        monday: ['09:00', '14:00', '18:00'],
+        tuesday: ['09:00', '14:00', '18:00'],
+        wednesday: ['09:00', '14:00', '18:00'],
+        thursday: ['09:00', '14:00', '18:00'],
+        friday: ['09:00', '14:00', '18:00'],
+        saturday: ['11:00', '14:00', '19:00'],
+        sunday: ['11:00', '14:00', '19:00']
+      }
+    };
+    
+    res.json(optimalTimes);
+  } catch (error: any) {
+    console.error("Optimal times error:", error);
+    res.status(500).json({ error: "Failed to fetch optimal times" });
+  }
+});
+
+// Reports - Get Analytics Data
+router.get("/reports/analytics", authenticate, async (req, res) => {
+  try {
+    const { range = '7d' } = req.query;
+    
+    const engagementData = [
+      { name: 'Mon', value: 420 },
+      { name: 'Tue', value: 380 },
+      { name: 'Wed', value: 450 },
+      { name: 'Thu', value: 390 },
+      { name: 'Fri', value: 520 },
+      { name: 'Sat', value: 600 },
+      { name: 'Sun', value: 480 }
+    ];
+    
+    const metrics = {
+      totalFollowers: '24.5K',
+      engagementRate: '8.2%',
+      reach: '156K',
+      changes: {
+        followers: '+12.3%',
+        engagement: '+2.1%',
+        reach: '+18.5%'
+      }
+    };
+    
+    const demographics = {
+      age: [
+        { range: '18-24', percentage: 42 },
+        { range: '25-34', percentage: 35 },
+        { range: '35-44', percentage: 15 },
+        { range: '45+', percentage: 8 }
+      ],
+      locations: [
+        { country: '🇺🇸 United States', percentage: 45 },
+        { country: '🇬🇧 United Kingdom', percentage: 22 },
+        { country: '🇨🇦 Canada', percentage: 15 },
+        { country: '🇦🇺 Australia', percentage: 10 }
+      ],
+      gender: {
+        female: 58,
+        male: 42
+      }
+    };
+    
+    const topPosts = [
+      { title: 'Summer Collection Launch', likes: 1234, comments: 89, shares: 45, type: 'reel' },
+      { title: 'Behind the Scenes', likes: 987, comments: 67, shares: 32, type: 'post' },
+      { title: 'Customer Testimonials', likes: 856, comments: 54, shares: 28, type: 'story' }
+    ];
+    
+    res.json({ engagementData, metrics, demographics, topPosts });
+  } catch (error: any) {
+    console.error("Analytics error:", error);
+    res.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
 
