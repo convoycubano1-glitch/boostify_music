@@ -501,18 +501,21 @@ export async function checkFALMusicStatus(requestId: string): Promise<MusicGener
     const response = await fetch(`/api/fal/minimax-music/${requestId}`);
     
     if (!response.ok) {
-      throw new Error('Error checking FAL music status');
+      const errorText = await response.text();
+      console.error('FAL status check error:', errorText);
+      throw new Error(`Error checking FAL music status: ${response.status} - ${errorText}`);
     }
     
     const data = await response.json();
+    console.log('FAL status response:', data);
     
     // Map FAL status to our format
     let status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
     if (data.status === 'completed') {
       status = 'completed';
-    } else if (data.status === 'in_progress' || data.status === 'in_queue') {
+    } else if (data.status === 'in_progress' || data.status === 'in_queue' || data.status === 'IN_PROGRESS' || data.status === 'IN_QUEUE') {
       status = 'processing';
-    } else if (data.status === 'failed') {
+    } else if (data.status === 'failed' || data.status === 'FAILED') {
       status = 'failed';
     }
     
