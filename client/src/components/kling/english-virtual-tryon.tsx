@@ -117,10 +117,10 @@ export function EnglishVirtualTryOn() {
     };
   }, [pollInterval]);
 
-  // Fetch saved results
+  // Fetch saved results from localStorage
   const loadSavedResults = async () => {
     try {
-      const results = await klingService.getResults();
+      const results = JSON.parse(localStorage.getItem('tryonResults') || '[]');
       setSavedResults(results);
     } catch (error) {
       console.error('Error loading saved results:', error);
@@ -842,7 +842,7 @@ export function EnglishVirtualTryOn() {
                     <Button
                       variant="outline"
                       className="gap-2"
-                      onClick={() => handleDownloadImage(result.resultImage)}
+                      onClick={() => result.resultImage && handleDownloadImage(result.resultImage)}
                     >
                       <Download className="h-4 w-4" />
                       Download
@@ -907,7 +907,10 @@ export function EnglishVirtualTryOn() {
               <Button
                 variant="outline"
                 className="mt-4"
-                onClick={() => document.querySelector('[data-value="upload"]')?.click()}
+                onClick={() => {
+                  const uploadTab = document.querySelector('[data-value="upload"]') as HTMLElement;
+                  uploadTab?.click();
+                }}
               >
                 Go to Upload
               </Button>

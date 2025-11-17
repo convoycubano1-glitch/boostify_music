@@ -49,10 +49,10 @@ export function VirtualTryOnComponent() {
     };
   }, [pollInterval]);
 
-  // Fetch saved results
+  // Fetch saved results from localStorage
   const loadSavedResults = async () => {
     try {
-      const results = await klingService.getResults();
+      const results = JSON.parse(localStorage.getItem('tryonResults') || '[]');
       setSavedResults(results);
     } catch (error) {
       console.error("Error loading saved results:", error);
@@ -464,8 +464,8 @@ export function VirtualTryOnComponent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savedResults.map((item) => (
-                <Card key={item.id} className="overflow-hidden border-primary/20">
+              {savedResults.map((item: any, index: number) => (
+                <Card key={item.id || index} className="overflow-hidden border-primary/20">
                   <CardContent className="p-0">
                     {item.resultImage && (
                       <div className="relative">
@@ -484,7 +484,7 @@ export function VirtualTryOnComponent() {
                             <Download className="h-4 w-4" />
                           </Button>
                           <span className="text-xs text-white/90">
-                            {new Date(item.createdAt || Date.now()).toLocaleDateString()}
+                            {new Date(item.timestamp || Date.now()).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
