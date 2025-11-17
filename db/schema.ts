@@ -729,6 +729,35 @@ export const musicianClips = pgTable("musician_clips", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+// Spotify Curators - Saved curators for outreach
+export const spotifyCurators = pgTable("spotify_curators", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // Curator info
+  curatorName: text("curator_name").notNull(),
+  curatorType: text("curator_type").notNull(), // "Independent Curator", "Label Curator", etc.
+  playlistName: text("playlist_name"),
+  playlistFocus: text("playlist_focus"), // Genre/style focus
+  playlistUrl: text("playlist_url"),
+  estimatedFollowers: text("estimated_followers"),
+  
+  // Contact info
+  email: text("email"),
+  instagram: text("instagram"),
+  twitter: text("twitter"),
+  website: text("website"),
+  
+  // Metadata
+  genre: text("genre").notNull(),
+  notes: text("notes"), // Personal notes from artist
+  contacted: boolean("contacted").default(false).notNull(),
+  contactedAt: timestamp("contacted_at"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const artistMediaRelations = relations(artistMedia, ({ one }) => ({
   user: one(users, {
     fields: [artistMedia.userId],
@@ -1163,3 +1192,9 @@ export type TokenPurchase = typeof tokenPurchases.$inferSelect;
 export type NewTokenPurchase = typeof tokenPurchases.$inferInsert;
 export type ArtistTokenEarnings = typeof artistTokenEarnings.$inferSelect;
 export type NewArtistTokenEarnings = typeof artistTokenEarnings.$inferInsert;
+
+// Spotify Curators schemas
+export const insertSpotifyCuratorSchema = createInsertSchema(spotifyCurators).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectSpotifyCuratorSchema = createSelectSchema(spotifyCurators);
+export type InsertSpotifyCurator = z.infer<typeof insertSpotifyCuratorSchema>;
+export type SelectSpotifyCurator = typeof spotifyCurators.$inferSelect;
