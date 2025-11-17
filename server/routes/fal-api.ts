@@ -355,4 +355,147 @@ router.get('/minimax-music/:requestId', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/fal/stable-audio
+ * Genera música usando FAL AI Stable Audio 2.5
+ */
+router.post('/stable-audio', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_KEY not configured on server'
+      });
+    }
+
+    const { prompt, duration } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'prompt is required'
+      });
+    }
+
+    console.log('🎵 [FAL-BACKEND] Starting Stable Audio 2.5 generation...');
+    console.log('📝 Prompt:', prompt.substring(0, 100));
+    console.log('⏱️ Duration:', duration || 180);
+
+    // Submit job a FAL AI Stable Audio 2.5
+    const submitResponse = await fetch('https://queue.fal.run/fal-ai/stable-audio-25/text-to-audio', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        duration: duration || 180  // 3 minutos por defecto
+      })
+    });
+
+    if (!submitResponse.ok) {
+      const errorData = await submitResponse.json().catch(() => ({}));
+      console.error('❌ [FAL-BACKEND] Error submitting Stable Audio job:', errorData);
+      return res.status(500).json({
+        success: false,
+        error: `Error submitting Stable Audio job: ${submitResponse.statusText}`,
+        details: errorData
+      });
+    }
+
+    const submitData = await submitResponse.json();
+    const requestId = submitData.request_id;
+
+    console.log(`⏳ [FAL-BACKEND] Stable Audio job submitted: ${requestId}`);
+
+    // Return request ID immediately for polling
+    res.json({
+      success: true,
+      requestId,
+      message: 'Stable Audio generation started'
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error in stable-audio:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET /api/fal/stable-audio/:requestId
+ * Obtiene el estado de una generación de Stable Audio
+ */
+router.get('/stable-audio/:requestId', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_KEY not configured'
+      });
+    }
+
+    const { requestId } = req.params;
+
+    // Check status first
+    const statusResponse = await fetch(
+      `https://queue.fal.run/fal-ai/stable-audio-25/text-to-audio/requests/${requestId}/status`,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`
+        }
+      }
+    );
+
+    if (!statusResponse.ok) {
+      return res.status(500).json({
+        success: false,
+        error: 'Error checking Stable Audio status'
+      });
+    }
+
+    const statusData = await statusResponse.json();
+
+    // If completed, get the result
+    if (statusData.status === 'COMPLETED') {
+      const resultResponse = await fetch(
+        `https://queue.fal.run/fal-ai/stable-audio-25/text-to-audio/requests/${requestId}`,
+        {
+          headers: {
+            'Authorization': `Key ${FAL_API_KEY}`
+          }
+        }
+      );
+
+      if (resultResponse.ok) {
+        const resultData = await resultResponse.json();
+        return res.json({
+          success: true,
+          status: 'completed',
+          audioUrl: resultData.audio?.url,
+          duration: resultData.duration,
+          data: resultData
+        });
+      }
+    }
+
+    // Return status for in-progress or pending
+    res.json({
+      success: true,
+      status: statusData.status.toLowerCase(),
+      message: statusData.status
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error checking Stable Audio status:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
