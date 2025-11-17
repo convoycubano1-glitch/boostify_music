@@ -8,7 +8,7 @@ import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
 import { users, artistNews } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { generateCinematicImage } from '../services/gemini-image-service';
 import { GoogleGenAI } from "@google/genai";
 
@@ -1016,6 +1016,51 @@ router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, re
     console.error('❌ Error generando noticias:', error);
     res.status(500).json({ 
       error: 'Error al generar noticias',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para obtener las noticias de un artista
+ */
+router.get("/news/:artistId", async (req: Request, res: Response) => {
+  try {
+    const artistIdParam = req.params.artistId;
+
+    console.log(`📰 Obteniendo noticias para artista ${artistIdParam}`);
+
+    let userId: number;
+    const numericId = parseInt(artistIdParam);
+    
+    if (!isNaN(numericId)) {
+      userId = numericId;
+    } else {
+      const [artist] = await pgDb.select().from(users).where(eq(users.firestoreId, artistIdParam)).limit(1);
+      if (!artist) {
+        return res.status(404).json({ error: 'Artista no encontrado' });
+      }
+      userId = artist.id;
+    }
+
+    const news = await pgDb
+      .select()
+      .from(artistNews)
+      .where(eq(artistNews.userId, userId))
+      .orderBy(desc(artistNews.createdAt));
+
+    console.log(`✅ Encontradas ${news.length} noticias para artista ${userId}`);
+
+    res.status(200).json({
+      success: true,
+      news: news,
+      count: news.length
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo noticias:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener noticias',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
