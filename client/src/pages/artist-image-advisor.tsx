@@ -1,20 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "../components/layout/header";
-import { ImageStyleAdvisor } from "../components/image-advisor/image-style-advisor";
-import { VirtualTryOnComponent } from "../components/kling/tryon-component";
-import { ArtistVirtualTryOn } from "../components/kling/artist-virtual-tryon";
-import { EnglishVirtualTryOn } from "../components/kling/english-virtual-tryon";
 import { FluxUploadSection } from "../components/image-generation/sections/flux-upload-section";
 import { FluxStyleSection } from "../components/image-generation/sections/flux-style-section";
 import { motion } from "framer-motion";
-import { Card } from "../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Label } from "../components/ui/label";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Upload, Sparkles, Camera, Palette, Music2, TrendingUp, Image as ImageIcon, Star, ArrowLeft, Shirt } from "lucide-react";
+import { Progress } from "../components/ui/progress";
+import { 
+  Upload, Sparkles, Camera, Palette, Music2, TrendingUp, Star, ArrowLeft, 
+  Shirt, Video, Wand2, Download, Heart, Play, Loader2, User
+} from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../hooks/use-auth";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -37,10 +41,35 @@ export default function ArtistImageAdvisorPage() {
   const [language, setLanguage] = useState<"en" | "es">("en");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
+  // Selected artist state
+  const [selectedArtistId, setSelectedArtistId] = useState<number | null>(null);
+
+  // Fetch artists
+  const { data: artistsData } = useQuery<{
+    success: boolean;
+    artists: any[];
+  }>({
+    queryKey: ["/api/artist-generator/my-artists"],
+    enabled: !!user
+  });
+
+  // Fetch products for selected artist
+  const { data: productsData } = useQuery<{
+    success: boolean;
+    products: any[];
+  }>({
+    queryKey: ["/api/fashion/products", selectedArtistId],
+    enabled: !!selectedArtistId
+  });
+
+  // Auto-select first artist if available
+  useEffect(() => {
+    if (artistsData?.artists && artistsData.artists.length > 0 && !selectedArtistId) {
+      setSelectedArtistId(artistsData.artists[0].id);
+    }
+  }, [artistsData, selectedArtistId]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,6 +81,7 @@ export default function ArtistImageAdvisorPage() {
           variant="ghost" 
           onClick={() => setLocation("/")}
           className="text-muted-foreground hover:text-foreground"
+          data-testid="button-back-home"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Home
@@ -59,7 +89,7 @@ export default function ArtistImageAdvisorPage() {
       </div>
 
       <main className="container mx-auto px-4 py-8 md:py-12">
-        {/* Hero Section with Video Background */}
+        {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -68,7 +98,6 @@ export default function ArtistImageAdvisorPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60 z-10"></div>
           
-          {/* Video Background */}
           <div className="relative h-[350px] md:h-[400px] w-full overflow-hidden">
             <video 
               autoPlay 
@@ -80,25 +109,47 @@ export default function ArtistImageAdvisorPage() {
               <source src="/assets/Standard_Mode_Generated_Video%20(9).mp4" type="video/mp4" />
             </video>
             
-            {/* Content overlay */}
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6">
               <div className="bg-black/50 p-8 rounded-xl backdrop-blur-sm">
                 <h1 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 mb-4">
-                  AI-Powered Image Advisor
+                  AI-Powered Fashion Studio
                 </h1>
                 <p className="text-base md:text-lg text-white max-w-2xl mx-auto">
-                  Transform your artist image with cutting-edge AI technology. Get personalized style recommendations and visualize your perfect look.
+                  Virtual try-on, AI fashion videos, and personalized style advice for artists
                 </p>
-                <Button 
-                  className="mt-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg"
-                >
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Start Your Transformation
-                </Button>
               </div>
             </div>
           </div>
         </motion.div>
+
+        {/* Artist Selector */}
+        {artistsData?.artists && artistsData.artists.length > 0 && (
+          <Card className="mb-6 border-orange-500/20 bg-black/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Select Artist
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select 
+                value={selectedArtistId?.toString()} 
+                onValueChange={(value) => setSelectedArtistId(parseInt(value))}
+              >
+                <SelectTrigger data-testid="select-artist">
+                  <SelectValue placeholder="Choose an artist..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {artistsData.artists.map((artist: any) => (
+                    <SelectItem key={artist.id} value={artist.id.toString()}>
+                      {artist.name || artist.artistName || `Artist ${artist.id}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Features Grid */}
         <motion.div
@@ -111,12 +162,12 @@ export default function ArtistImageAdvisorPage() {
             <Card className="p-6 border-orange-500/20 bg-black/40 backdrop-blur-sm hover:bg-black/50 transition-colors">
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Camera className="h-6 w-6 text-orange-500" />
+                  <Shirt className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">AI Analysis</h3>
+                  <h3 className="font-semibold text-lg mb-2">Virtual Try-On</h3>
                   <p className="text-sm text-muted-foreground">
-                    Get instant style feedback and personalized recommendations
+                    Try your products with AI-powered visualization
                   </p>
                 </div>
               </div>
@@ -127,12 +178,12 @@ export default function ArtistImageAdvisorPage() {
             <Card className="p-6 border-orange-500/20 bg-black/40 backdrop-blur-sm hover:bg-black/50 transition-colors">
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-orange-500" />
+                  <Video className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Style Generation</h3>
+                  <h3 className="font-semibold text-lg mb-2">Fashion Videos</h3>
                   <p className="text-sm text-muted-foreground">
-                    Transform your vision into reality with AI-powered suggestions
+                    Create AI videos modeling your clothing
                   </p>
                 </div>
               </div>
@@ -143,12 +194,12 @@ export default function ArtistImageAdvisorPage() {
             <Card className="p-6 border-orange-500/20 bg-black/40 backdrop-blur-sm hover:bg-black/50 transition-colors">
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-orange-500" />
+                  <Wand2 className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Brand Growth</h3>
+                  <h3 className="font-semibold text-lg mb-2">AI Stylist</h3>
                   <p className="text-sm text-muted-foreground">
-                    Optimize your image impact and grow your audience
+                    Get personalized fashion recommendations
                   </p>
                 </div>
               </div>
@@ -158,12 +209,13 @@ export default function ArtistImageAdvisorPage() {
 
         {/* Main Interface */}
         <Card className="border-orange-500/20 bg-black/40 backdrop-blur-sm overflow-hidden">
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="sticky top-0 z-30 bg-black/60 backdrop-blur-sm border-b border-orange-500/20 px-4 py-2">
-              <TabsList className="w-full grid grid-cols-3 md:grid-cols-5 gap-2 max-w-3xl mx-auto">
+              <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 gap-2 max-w-4xl mx-auto">
                 <TabsTrigger 
                   value="upload" 
                   className="flex items-center gap-2 data-[state=active]:bg-orange-500"
+                  data-testid="tab-upload"
                 >
                   <Upload className="h-4 w-4" />
                   <span className="hidden md:inline">Upload</span>
@@ -171,27 +223,39 @@ export default function ArtistImageAdvisorPage() {
                 <TabsTrigger 
                   value="style" 
                   className="flex items-center gap-2 data-[state=active]:bg-orange-500"
+                  data-testid="tab-style"
                 >
                   <Music2 className="h-4 w-4" />
                   <span className="hidden md:inline">Style</span>
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="virtual-tryon" 
+                  value="tryon" 
                   className="flex items-center gap-2 data-[state=active]:bg-orange-500"
+                  data-testid="tab-tryon"
                 >
                   <Shirt className="h-4 w-4" />
                   <span className="hidden md:inline">Try On</span>
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="generate" 
+                  value="video" 
                   className="flex items-center gap-2 data-[state=active]:bg-orange-500"
+                  data-testid="tab-video"
                 >
-                  <ImageIcon className="h-4 w-4" />
-                  <span className="hidden md:inline">Generate</span>
+                  <Video className="h-4 w-4" />
+                  <span className="hidden md:inline">Video</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="advisor" 
+                  className="flex items-center gap-2 data-[state=active]:bg-orange-500"
+                  data-testid="tab-advisor"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  <span className="hidden md:inline">AI Advisor</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="results" 
                   className="flex items-center gap-2 data-[state=active]:bg-orange-500"
+                  data-testid="tab-results"
                 >
                   <Star className="h-4 w-4" />
                   <span className="hidden md:inline">Results</span>
@@ -220,262 +284,592 @@ export default function ArtistImageAdvisorPage() {
                 </motion.div>
               </TabsContent>
               
-              <TabsContent value="virtual-tryon" className="mt-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="text-center flex-1">
-                        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary/90 to-primary">Virtual Try-On</h2>
-                        <p className="text-muted-foreground max-w-2xl mx-auto">
-                          Try on clothing virtually to visualize your perfect style as an artist. 
-                          Upload your photo and the clothing item you want to try for instant results.
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Label htmlFor="language-selector" className="text-sm mr-2">Language:</Label>
-                        <Select
-                          value={language}
-                          onValueChange={(value) => setLanguage(value as "en" | "es")}
-                        >
-                          <SelectTrigger id="language-selector" className="w-[120px]">
-                            <SelectValue placeholder="Select language" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="es">Español</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    {/* Video Tutorial Background */}
-                    <div className="relative mb-8 rounded-lg overflow-hidden border border-primary/20">
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40 z-10"></div>
-                      <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className="w-full object-cover h-[220px]"
-                        poster="/assets/virtual-tryon/virtual-tryon-poster.svg"
-                      >
-                        <source src="/assets/tv/Welcome to Boostify Music.mp4" type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
-                      <div className="absolute inset-0 z-20 flex items-center justify-center flex-col p-6 text-center">
-                        <h3 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
-                          {language === "en" ? "AI-Powered Virtual Try-On" : "Prueba Virtual con IA"}
-                        </h3>
-                        <p className="text-sm text-white/90 max-w-3xl">
-                          {language === "en" 
-                            ? "Create your perfect artist look with our advanced AI technology. Simply upload your photo and clothing items to see how they look together instantly."
-                            : "Crea tu look artístico perfecto con nuestra tecnología avanzada de IA. Simplemente sube tu foto y las prendas para ver cómo se ven juntas al instante."}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {language === "en" ? <EnglishVirtualTryOn /> : <ArtistVirtualTryOn />}
-                  </div>
-                </motion.div>
+              {/* VIRTUAL TRY-ON with FAL */}
+              <TabsContent value="tryon" className="mt-0">
+                <VirtualTryOnSection 
+                  artistId={selectedArtistId} 
+                  products={productsData?.products || []} 
+                />
               </TabsContent>
               
-              <TabsContent value="generate" className="mt-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="space-y-6">
-                    <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold">Generación de Imagen Artística</h2>
-                      <p className="text-muted-foreground">
-                        Crea nuevas imágenes para tu proyecto artístico basadas en tus preferencias
-                      </p>
-                    </div>
-                    <Card className="p-6 backdrop-blur-sm border-orange-500/20">
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-4">
-                            <Label htmlFor="prompt">Describe tu imagen ideal</Label>
-                            <textarea 
-                              id="prompt" 
-                              className="w-full h-32 p-3 bg-black/40 border border-orange-500/20 rounded-md focus:border-orange-500 focus:ring focus:ring-orange-500/20 focus:outline-none"
-                              placeholder="Describe tu visión artística en detalle. Por ejemplo: Un retrato artístico de un músico en un estudio, con iluminación dramática azul y roja, estilo cyberpunk, fotografía profesional de alta calidad."
-                            ></textarea>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="style">Estilo</Label>
-                                <Select defaultValue="cinematic">
-                                  <SelectTrigger id="style">
-                                    <SelectValue placeholder="Seleccionar estilo" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="cinematic">Cinematográfico</SelectItem>
-                                    <SelectItem value="photorealistic">Fotorealista</SelectItem>
-                                    <SelectItem value="artistic">Artístico</SelectItem>
-                                    <SelectItem value="cyberpunk">Cyberpunk</SelectItem>
-                                    <SelectItem value="vintage">Vintage</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="aspect">Proporción</Label>
-                                <Select defaultValue="square">
-                                  <SelectTrigger id="aspect">
-                                    <SelectValue placeholder="Seleccionar proporción" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="square">Cuadrada (1:1)</SelectItem>
-                                    <SelectItem value="portrait">Vertical (3:4)</SelectItem>
-                                    <SelectItem value="landscape">Horizontal (16:9)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            
-                            <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                              <Sparkles className="h-4 w-4 mr-2" />
-                              Generar Imagen
-                            </Button>
-                          </div>
-                          
-                          <div className="flex flex-col items-center justify-center border-2 border-dashed border-orange-500/20 rounded-md p-4 bg-black/20 h-full min-h-[300px]">
-                            <div className="text-center space-y-3">
-                              <ImageIcon className="h-10 w-10 text-orange-500/50 mx-auto" />
-                              <p className="text-muted-foreground">Tu imagen generada aparecerá aquí</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                </motion.div>
+              {/* FASHION VIDEO with KLING */}
+              <TabsContent value="video" className="mt-0">
+                <FashionVideoSection artistId={selectedArtistId} />
+              </TabsContent>
+              
+              {/* AI FASHION ADVISOR with GEMINI */}
+              <TabsContent value="advisor" className="mt-0">
+                <AIFashionAdvisorSection artistId={selectedArtistId} />
               </TabsContent>
               
               <TabsContent value="results" className="mt-0">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="space-y-6">
-                    <div className="text-center mb-6">
-                      <h2 className="text-2xl font-bold">Results and Recommendations</h2>
-                      <p className="text-muted-foreground">
-                        Analysis summary and personalized recommendations for your artist image
-                      </p>
-                    </div>
-                    
-                    <div className="space-y-6">
-                      <Card className="p-6 backdrop-blur-sm border-orange-500/20">
-                        <div className="space-y-4">
-                          <h3 className="text-xl font-semibold flex items-center gap-2">
-                            <Star className="h-5 w-5 text-orange-500" /> 
-                            Current Image Analysis
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="md:col-span-1">
-                              <div className="aspect-square bg-black/40 rounded-md overflow-hidden">
-                                <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 h-full w-full flex items-center justify-center">
-                                  <Camera className="h-12 w-12 text-orange-500/40" />
-                                </div>
-                              </div>
-                            </div>
-                            <div className="md:col-span-2 space-y-3">
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <span>Genre coherence</span>
-                                  <span>78%</span>
-                                </div>
-                                <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                                  <div className="h-full bg-orange-500 rounded-full" style={{ width: '78%' }}></div>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <span>Professionalism</span>
-                                  <span>65%</span>
-                                </div>
-                                <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                                  <div className="h-full bg-orange-500 rounded-full" style={{ width: '65%' }}></div>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <span>Originality</span>
-                                  <span>82%</span>
-                                </div>
-                                <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                                  <div className="h-full bg-orange-500 rounded-full" style={{ width: '82%' }}></div>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <span>Visual impact</span>
-                                  <span>70%</span>
-                                </div>
-                                <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                                  <div className="h-full bg-orange-500 rounded-full" style={{ width: '70%' }}></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                      
-                      <Card className="p-6 backdrop-blur-sm border-orange-500/20">
-                        <div className="space-y-4">
-                          <h3 className="text-xl font-semibold">Final Recommendations</h3>
-                          <ul className="space-y-3">
-                            <li className="flex items-start gap-3 p-2 rounded-md bg-orange-500/5 border border-orange-500/10">
-                              <div className="mt-0.5 text-orange-500">
-                                <Sparkles className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <p className="font-medium">Improve visual coherence</p>
-                                <p className="text-sm text-muted-foreground">Establish a consistent color palette across all your images and digital platforms.</p>
-                              </div>
-                            </li>
-                            <li className="flex items-start gap-3 p-2 rounded-md bg-orange-500/5 border border-orange-500/10">
-                              <div className="mt-0.5 text-orange-500">
-                                <Shirt className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <p className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Experiment with the Try-On functionality</p>
-                                <p className="text-sm text-muted-foreground">Use the Virtual Try-On tool to explore different clothing styles that enhance your artistic image as a musician. Try various combinations to discover your unique style.</p>
-                              </div>
-                            </li>
-                            <li className="flex items-start gap-3 p-2 rounded-md bg-orange-500/5 border border-orange-500/10">
-                              <div className="mt-0.5 text-orange-500">
-                                <Camera className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <p className="font-medium">Invest in professional photography</p>
-                                <p className="text-sm text-muted-foreground">The analysis suggests that professional photo sessions would significantly improve your visual presence.</p>
-                              </div>
-                            </li>
-                          </ul>
-                        </div>
-                      </Card>
-                      
-                      <div className="flex justify-center">
-                        <Button className="bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90">
-                          Download Complete Report
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+                <ResultsSection artistId={selectedArtistId} />
               </TabsContent>
             </div>
           </Tabs>
         </Card>
       </main>
     </div>
+  );
+}
+
+// ============================================
+// VIRTUAL TRY-ON SECTION (FAL)
+// ============================================
+function VirtualTryOnSection({ artistId, products }: { artistId: number | null, products: any[] }) {
+  const { toast } = useToast();
+  const [modelImage, setModelImage] = useState("");
+  const [clothingImage, setClothingImage] = useState("");
+  const [resultImage, setResultImage] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleTryOn = async () => {
+    if (!modelImage || !clothingImage) {
+      toast({
+        title: "Missing images",
+        description: "Please provide both model and clothing images",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/fashion/tryon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          modelImage,
+          clothingImage,
+          sessionId: null
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setResultImage(data.imageUrl);
+        toast({
+          title: "Success!",
+          description: "Virtual try-on completed"
+        });
+      } else {
+        throw new Error(data.error || 'Try-on failed');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Images</CardTitle>
+          <CardDescription>Upload your photo and clothing to try on</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Your Photo (Model)</Label>
+            <Input
+              type="url"
+              placeholder="Paste image URL..."
+              value={modelImage}
+              onChange={(e) => setModelImage(e.target.value)}
+              data-testid="input-model-image"
+            />
+          </div>
+
+          <div>
+            <Label>Clothing Image</Label>
+            <Input
+              type="url"
+              placeholder="Paste clothing image URL..."
+              value={clothingImage}
+              onChange={(e) => setClothingImage(e.target.value)}
+              data-testid="input-clothing-image"
+            />
+          </div>
+
+          {products && products.length > 0 && (
+            <div>
+              <Label>Or select from your products</Label>
+              <Select onValueChange={(url) => setClothingImage(url)}>
+                <SelectTrigger data-testid="select-product">
+                  <SelectValue placeholder="Select a product..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((product: any) => (
+                    <SelectItem key={product.id} value={product.images?.[0] || ''}>
+                      {product.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <Button
+            onClick={handleTryOn}
+            disabled={isProcessing || !modelImage || !clothingImage}
+            className="w-full bg-orange-500 hover:bg-orange-600"
+            data-testid="button-start-tryon"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Shirt className="mr-2 h-4 w-4" />
+                Start Try-On
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Result</CardTitle>
+          <CardDescription>Your try-on result will appear here</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {resultImage ? (
+            <div className="space-y-4">
+              <img
+                src={resultImage}
+                alt="Try-on result"
+                className="w-full rounded-lg"
+                data-testid="img-tryon-result"
+              />
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => window.open(resultImage, '_blank')}
+                  data-testid="button-download-tryon"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+                <Button variant="outline" className="flex-1" data-testid="button-save-favorite">
+                  <Heart className="mr-2 h-4 w-4" />
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-64 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+              <p className="text-zinc-500">No result yet</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ============================================
+// FASHION VIDEO SECTION (KLING)
+// ============================================
+function FashionVideoSection({ artistId }: { artistId: number | null }) {
+  const { toast } = useToast();
+  const [imageUrl, setImageUrl] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [videoId, setVideoId] = useState<number | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const { data: videoStatus, refetch: refetchVideo } = useQuery<{
+    success: boolean;
+    video: any;
+  }>({
+    queryKey: ["/api/fashion/video-status", videoId],
+    enabled: !!videoId,
+    refetchInterval: (data: any) => {
+      if (!data) return 5000;
+      return data.video?.status === 'processing' ? 5000 : false;
+    }
+  });
+
+  const handleGenerateVideo = async () => {
+    if (!imageUrl || !prompt) {
+      toast({
+        title: "Missing information",
+        description: "Please provide image and prompt",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/fashion/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl,
+          prompt,
+          duration: 5,
+          aspectRatio: '16:9'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setVideoId(data.videoId);
+        toast({
+          title: "Video processing started!",
+          description: "This may take 2-3 minutes. Check back soon."
+        });
+      } else {
+        throw new Error(data.error || 'Video generation failed');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Video className="h-5 w-5 text-orange-500" />
+          Fashion Video Generator (Kling AI)
+        </CardTitle>
+        <CardDescription>
+          Create AI videos showing you modeling your clothing
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label>Your Photo (wearing outfit)</Label>
+          <Input
+            type="url"
+            placeholder="Paste image URL..."
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            data-testid="input-video-image"
+          />
+        </div>
+
+        <div>
+          <Label>Video Prompt</Label>
+          <Textarea
+            placeholder="Describe the movement... e.g., 'Artist confidently walking, showcasing the outfit with professional poses'"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={3}
+            data-testid="textarea-video-prompt"
+          />
+          <p className="text-xs text-zinc-500 mt-1">
+            💡 Tip: Describe natural movements like walking, posing, or turning
+          </p>
+        </div>
+
+        <Button
+          onClick={handleGenerateVideo}
+          disabled={isProcessing || !imageUrl || !prompt}
+          className="w-full bg-orange-500 hover:bg-orange-600"
+          data-testid="button-generate-video"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Starting...
+            </>
+          ) : (
+            <>
+              <Play className="mr-2 h-4 w-4" />
+              Generate Fashion Video
+            </>
+          )}
+        </Button>
+
+        {videoStatus?.video && (
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                Status: {videoStatus.video.status}
+              </span>
+              {videoStatus.video.status === 'processing' && (
+                <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+              )}
+            </div>
+
+            {videoStatus.video.status === 'processing' && (
+              <Progress value={66} className="w-full" />
+            )}
+
+            {videoStatus.video.status === 'completed' && videoStatus.video.videoUrl && (
+              <div className="space-y-2">
+                <video
+                  src={videoStatus.video.videoUrl}
+                  controls
+                  className="w-full rounded-lg"
+                  data-testid="video-result"
+                />
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => window.open(videoStatus.video.videoUrl, '_blank')}
+                  data-testid="button-download-video"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Video
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============================================
+// AI FASHION ADVISOR SECTION (GEMINI)
+// ============================================
+function AIFashionAdvisorSection({ artistId }: { artistId: number | null }) {
+  const { toast } = useToast();
+  const [imageUrl, setImageUrl] = useState("");
+  const [genre, setGenre] = useState("");
+  const [occasion, setOccasion] = useState("");
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleAnalyze = async () => {
+    if (!imageUrl) {
+      toast({
+        title: "Missing image",
+        description: "Please provide an image to analyze",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const prompt = `Analyze this artist's fashion image and provide style recommendations for a ${genre || 'music'} artist for ${occasion || 'general occasions'}.`;
+      
+      const response = await fetch('/api/fashion/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl,
+          prompt,
+          genre,
+          occasion
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setAnalysis(data.analysis);
+        toast({
+          title: "Analysis complete!",
+          description: "Fashion recommendations ready"
+        });
+      } else {
+        throw new Error(data.error || 'Analysis failed');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Fashion Analysis</CardTitle>
+          <CardDescription>Get personalized fashion advice powered by Gemini AI</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Image URL</Label>
+            <Input
+              type="url"
+              placeholder="Paste image URL..."
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              data-testid="input-analysis-image"
+            />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label>Music Genre</Label>
+              <Select value={genre} onValueChange={setGenre}>
+                <SelectTrigger data-testid="select-genre">
+                  <SelectValue placeholder="Select genre..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rock">Rock</SelectItem>
+                  <SelectItem value="pop">Pop</SelectItem>
+                  <SelectItem value="hip-hop">Hip-Hop</SelectItem>
+                  <SelectItem value="electronic">Electronic</SelectItem>
+                  <SelectItem value="latin">Latin</SelectItem>
+                  <SelectItem value="indie">Indie</SelectItem>
+                  <SelectItem value="country">Country</SelectItem>
+                  <SelectItem value="jazz">Jazz</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Occasion</Label>
+              <Select value={occasion} onValueChange={setOccasion}>
+                <SelectTrigger data-testid="select-occasion">
+                  <SelectValue placeholder="Select occasion..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="concert">Concert</SelectItem>
+                  <SelectItem value="photoshoot">Photoshoot</SelectItem>
+                  <SelectItem value="red_carpet">Red Carpet</SelectItem>
+                  <SelectItem value="music_video">Music Video</SelectItem>
+                  <SelectItem value="social_media">Social Media</SelectItem>
+                  <SelectItem value="casual">Casual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing || !imageUrl}
+            className="w-full bg-orange-500 hover:bg-orange-600"
+            data-testid="button-analyze"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Wand2 className="mr-2 h-4 w-4" />
+                Analyze Style
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {analysis && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recommendations</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label>Style Score</Label>
+                <div className="flex items-center gap-2">
+                  <Progress value={analysis.styleScore || 0} className="flex-1" />
+                  <span className="text-sm font-medium">{analysis.styleScore || 0}%</span>
+                </div>
+              </div>
+              <div>
+                <Label>Genre Coherence</Label>
+                <div className="flex items-center gap-2">
+                  <Progress value={analysis.genreCoherence || 0} className="flex-1" />
+                  <span className="text-sm font-medium">{analysis.genreCoherence || 0}%</span>
+                </div>
+              </div>
+            </div>
+
+            {analysis.colorPalette && analysis.colorPalette.length > 0 && (
+              <div>
+                <Label>Recommended Color Palette</Label>
+                <div className="flex gap-2 mt-2">
+                  {analysis.colorPalette.map((color: string, i: number) => (
+                    <div
+                      key={i}
+                      className="h-12 w-12 rounded-md border"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {analysis.suggestions && analysis.suggestions.length > 0 && (
+              <div>
+                <Label>Style Suggestions</Label>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                  {analysis.suggestions.map((suggestion: string, i: number) => (
+                    <li key={i} className="text-sm text-muted-foreground">{suggestion}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// RESULTS SECTION
+// ============================================
+function ResultsSection({ artistId }: { artistId: number | null }) {
+  const { data: portfolio } = useQuery<{
+    success: boolean;
+    portfolio: any[];
+  }>({
+    queryKey: ["/api/fashion/portfolio", artistId],
+    enabled: !!artistId
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Fashion Portfolio</CardTitle>
+        <CardDescription>Your saved looks and creations</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {portfolio && portfolio.portfolio && portfolio.portfolio.length > 0 ? (
+          <div className="grid md:grid-cols-3 gap-4">
+            {portfolio.portfolio.map((item: any) => (
+              <div key={item.id} className="border rounded-lg overflow-hidden">
+                <img src={item.images[0]} alt={item.title} className="w-full h-48 object-cover" />
+                <div className="p-3">
+                  <h3 className="font-semibold">{item.title}</h3>
+                  <p className="text-xs text-zinc-500">{item.category}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-zinc-500">
+            No portfolio items yet. Create your first look!
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

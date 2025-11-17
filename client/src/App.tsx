@@ -36,7 +36,6 @@ const AnalyticsPage = lazy(() => import("./pages/analytics"));
 const ArtistDashboard = lazy(() => import("./pages/artist-dashboard"));
 const ArtistImageAdvisor = lazy(() => import("./pages/artist-image-advisor"));
 const ArtistImageAdvisorImproved = lazy(() => import("./pages/artist-image-advisor-improved"));
-const ArtistFashionStudio = lazy(() => import("./pages/artist-fashion-studio"));
 const ArtistGeneratorPage = lazy(() => import("./pages/artist-generator"));
 const BlogPage = lazy(() => import("./pages/blog"));
 const BoostifyInternationalPage = lazy(() => import("./pages/boostify-international"));
@@ -246,7 +245,6 @@ const Router = () => {
   const WrappedAIAdvisorsPageV2 = withPageWrapper(AIAdvisorsPageV2);
   const WrappedArtistImageAdvisor = withPageWrapper(ArtistImageAdvisor);
   const WrappedArtistImageAdvisorImproved = withPageWrapper(ArtistImageAdvisorImproved);
-  const WrappedArtistFashionStudio = withPageWrapper(ArtistFashionStudio);
   const WrappedArtistGeneratorPage = withPageWrapper(ArtistGeneratorPage);
   const WrappedMerchandisePage = withPageWrapper(MerchandisePage);
   const WrappedEcosystemPage = withPageWrapper(EcosystemPage);
@@ -357,7 +355,6 @@ const Router = () => {
           {getRouteComponent("/producer-tools", WrappedProducerToolsPage, 'pro')}
           {getRouteComponent("/music-generator", WrappedMusicGeneratorPage, 'pro')}
           {getRouteComponent("/artist-image-advisor", WrappedArtistImageAdvisor, 'pro')}
-          {getRouteComponent("/artist-fashion-studio", WrappedArtistFashionStudio, 'pro')}
           {getRouteComponent("/merchandise", WrappedMerchandisePage, 'pro')}
           {getRouteComponent("/translator", WrappedRealTimeTranslator, 'pro')}
           {getRouteComponent("/achievements", WrappedAchievementsPage, 'pro')}
