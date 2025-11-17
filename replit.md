@@ -5,6 +5,14 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 **URL de Producción**: https://boostify.replit.app
 
+## 👑 ADMIN ACCESS
+
+**ADMIN EMAIL**: `convoycubano@gmail.com` - Acceso ilimitado a todas las features
+- Sin límites en YouTube Tools
+- Sin límites en generación de imágenes
+- Acceso total a funciones Enterprise
+- **SIEMPRE RECORDAR**: Este email tiene privilegios admin automáticos
+
 ## ⚠️ AUTHENTICATION ARCHITECTURE
 
 **IMPORTANTE**: Este proyecto usa **Replit Auth** (OpenID Connect), NO Firebase Auth.

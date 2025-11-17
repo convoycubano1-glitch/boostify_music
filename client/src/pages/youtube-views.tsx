@@ -18,7 +18,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Textarea } from "../components/ui/textarea";
 import { Users2 } from "lucide-react";
 import { Header } from "../components/layout/header";
-import { getAuthToken } from "../lib/firebase";
 import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
 
@@ -249,13 +248,12 @@ export default function YoutubeViewsPage() {
     setPreLaunchResult(null);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/pre-launch-score', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: preLaunchTitle,
           description: preLaunchDescription,
@@ -302,13 +300,12 @@ export default function YoutubeViewsPage() {
     setGeneratedKeywords([]);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/generate-keywords', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           topic: keywordTopic,
           niche: keywordNiche
@@ -354,13 +351,12 @@ export default function YoutubeViewsPage() {
     setTitleResult(null);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/analyze-title', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: titleToAnalyze,
           niche: titleNiche
@@ -405,13 +401,12 @@ export default function YoutubeViewsPage() {
     setVideoIdeas([]);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/content-ideas', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           niche: contentNiche,
           count: contentIdeasCount
@@ -460,13 +455,12 @@ export default function YoutubeViewsPage() {
     setThumbnails([]);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/generate-thumbnail', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           title: thumbnailTitle,
           style: thumbnailStyle,
@@ -512,13 +506,12 @@ export default function YoutubeViewsPage() {
     setCompetitorData(null);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/analyze-competitor', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           channelName: competitorChannel
         })
@@ -562,13 +555,12 @@ export default function YoutubeViewsPage() {
     setTrends([]);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/predict-trends', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           niche: trendNiche
         })
@@ -612,13 +604,12 @@ export default function YoutubeViewsPage() {
     setShortClips([]);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/extract-transcript', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           videoUrl: transcriptUrl
         })
@@ -663,13 +654,12 @@ export default function YoutubeViewsPage() {
     setChannelsLoading(true);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/track-channel', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'add',
           channelUrl: newChannelUrl,
@@ -704,13 +694,12 @@ export default function YoutubeViewsPage() {
 
   const loadTrackedChannels = async () => {
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/track-channel', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ action: 'list' })
       });
 
@@ -725,12 +714,12 @@ export default function YoutubeViewsPage() {
 
   const loadChannelAnalytics = async () => {
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/multi-channel-analytics', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -757,13 +746,12 @@ export default function YoutubeViewsPage() {
     setCalendarWeeks([]);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/generate-calendar', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           niche: calendarNiche,
           goals: calendarGoals,
@@ -809,13 +797,12 @@ export default function YoutubeViewsPage() {
     setOptResult(null);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/check-optimization', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           videoUrl: optVideoUrl
         })
@@ -849,13 +836,12 @@ export default function YoutubeViewsPage() {
     setApiLoading(true);
 
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/api-key/generate', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -883,12 +869,12 @@ export default function YoutubeViewsPage() {
 
   const loadApiKeys = async () => {
     try {
-      const token = await getAuthToken();
       const response = await fetch('/api/youtube/api-keys', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
 
       const data = await response.json();

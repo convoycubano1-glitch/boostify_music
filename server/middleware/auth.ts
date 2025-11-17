@@ -261,7 +261,7 @@ export function requireSubscription(requiredPlan: SubscriptionPlan) {
     }
 
     // Obtener niveles numéricos para comparación
-    const userLevel = SUBSCRIPTION_LEVELS[userSubscription.plan];
+    const userLevel = SUBSCRIPTION_LEVELS[userSubscription.plan as SubscriptionPlan];
     const requiredLevel = SUBSCRIPTION_LEVELS[requiredPlan];
 
     // Verificar si el nivel de suscripción del usuario es suficiente

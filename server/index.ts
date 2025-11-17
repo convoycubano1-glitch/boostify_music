@@ -137,7 +137,7 @@ app.use((req, res, next) => {
 
     // IMPORTANT: Register API routes BEFORE static file serving
     const server = registerRoutes(app);
-    
+    log('✅ API routes registered successfully');
 
     // Register /api/auth/user FIRST before anything else
     // This MUST be before setupAuth() and setupVite() to avoid interception
@@ -267,6 +267,7 @@ app.use((req, res, next) => {
       log('🛠 Setting up Vite development server');
       log('📌 Configuring Vite to handle frontend routes like "/"');
       await setupVite(app, server);
+      log('✅ Vite development server configured');
       app.use('*', (req, res, next) => {
         if (!req.path.startsWith('/api/') && !req.path.startsWith('/@') && !req.path.startsWith('/src/')) {
           log(`⚠️ Route not handled by Vite: ${req.method} ${req.path}`);

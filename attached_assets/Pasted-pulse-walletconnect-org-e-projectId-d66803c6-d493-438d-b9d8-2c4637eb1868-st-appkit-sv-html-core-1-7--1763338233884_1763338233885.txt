@@ -1,0 +1,374 @@
+pulse.walletconnect.org/e?projectId=d66803c6-d493-438d-b9d8-2c4637eb1868&st=appkit&sv=html-core-1.7.8:1  Failed to load resource: the server responded with a status of 400 ()
+api.web3modal.org/appkit/v1/config?projectId=d66803c6-d493-438d-b9d8-2c4637eb1868&st=appkit&sv=html-core-1.7.8:1  Failed to load resource: the server responded with a status of 403 ()
+chunk-Z2GUPSCO.js?v=7fba1a35:521 Warning: Connect(Droppable): Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.
+    at Provider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=7fba1a35:666:20)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=7fba1a35:7183:25)
+    at ErrorBoundary2 (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=7fba1a35:1680:35)
+    at DragDropContext (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=7fba1a35:7303:19)
+    at section
+    at main
+    at div
+    at div
+    at ArtistProfileCard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/components/artist/artist-profile-card.tsx:906:37)
+    at div
+    at ArtistProfilePage (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/pages/artist-profile.tsx:28:20)
+    at div
+    at PageWrapper (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=Dzlq_RQJEhzyRFXhyCfK7:266:24)
+    at Route (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7fba1a35:206:16)
+    at Switch (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=7fba1a35:262:17)
+    at Suspense
+    at Router (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=Dzlq_RQJEhzyRFXhyCfK7:308:37)
+    at EditorProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/editor-context.tsx:56:34)
+    at GlobalAuthGuard (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/global-auth-guard.tsx:45:35)
+    at SubscriptionProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/lib/context/subscription-context.tsx:32:40)
+    at div
+    at ModalProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=7fba1a35:27094:26)
+    at ShowBalanceProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=7fba1a35:22214:32)
+    at TransactionStoreProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=7fba1a35:22652:3)
+    at ModalSizeProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=7fba1a35:22803:3)
+    at I18nProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=7fba1a35:21915:23)
+    at WalletButtonProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=7fba1a35:22779:33)
+    at RainbowKitChainProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=7fba1a35:22179:3)
+    at RainbowKitProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@rainbow-me_rainbowkit.js?v=7fba1a35:23584:3)
+    at QueryClientProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WJPGYOZ7.js?v=7fba1a35:3093:3)
+    at Hydrate (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JABL64TF.js?v=7fba1a35:3552:11)
+    at WagmiProvider (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JABL64TF.js?v=7fba1a35:3576:11)
+    at div
+    at ErrorBoundary (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=Dzlq_RQJEhzyRFXhyCfK7:215:5)
+    at App (https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/src/App.tsx?v=Dzlq_RQJEhzyRFXhyCfK7:544:37)
+printWarning @ chunk-Z2GUPSCO.js?v=7fba1a35:521
+chunk-Z2GUPSCO.js?v=7fba1a35:521 Warning: Using UNSAFE_componentWillMount in strict mode is not recommended and may indicate bugs in your code. See https://reactjs.org/link/unsafe-component-lifecycles for details.
+
+* Move code with side effects to componentDidMount, and set initial state in the constructor.
+
+Please update the following components: SideEffect(NullComponent2)
+printWarning @ chunk-Z2GUPSCO.js?v=7fba1a35:521
+api/crowdfunding/contributions/1:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+api/crowdfunding/contributions/1:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+api/youtube/pre-launch-score:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+youtube-views.tsx:279 Pre-launch error: Error: Failed to analyze video concept
+    at handlePreLaunchScore (youtube-views.tsx:270:15)
+handlePreLaunchScore @ youtube-views.tsx:279
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/pre-launch-score 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+handlePreLaunchScore @ youtube-views.tsx:253
+await in handlePreLaunchScore
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+youtube-views.tsx:279 Pre-launch error: Error: Failed to analyze video concept
+    at handlePreLaunchScore (youtube-views.tsx:270:15)
+handlePreLaunchScore @ youtube-views.tsx:279
+await in handlePreLaunchScore
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/generate-keywords 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+handleGenerateKeywords @ youtube-views.tsx:306
+await in handleGenerateKeywords
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+youtube-views.tsx:331 Keywords error: Error: Failed to generate keywords
+    at handleGenerateKeywords (youtube-views.tsx:321:15)
+handleGenerateKeywords @ youtube-views.tsx:331
+await in handleGenerateKeywords
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/analyze-title 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+handleAnalyzeTitle @ youtube-views.tsx:358
+await in handleAnalyzeTitle
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+youtube-views.tsx:382 Title analysis error: Error: Failed to analyze title
+    at handleAnalyzeTitle (youtube-views.tsx:373:15)
+handleAnalyzeTitle @ youtube-views.tsx:382
+await in handleAnalyzeTitle
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/content-ideas 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+handleGenerateContentIdeas @ youtube-views.tsx:409
+await in handleGenerateContentIdeas
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+youtube-views.tsx:435 Content ideas error: Error: Failed to generate content ideas
+    at handleGenerateContentIdeas (youtube-views.tsx:424:15)
+handleGenerateContentIdeas @ youtube-views.tsx:435
+await in handleGenerateContentIdeas
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/analyze-competitor 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+handleCompetitorAnalysis @ youtube-views.tsx:516
+await in handleCompetitorAnalysis
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+youtube-views.tsx:539 Competitor analysis error: Error: Failed to analyze competitor
+    at handleCompetitorAnalysis (youtube-views.tsx:530:15)
+handleCompetitorAnalysis @ youtube-views.tsx:539
+await in handleCompetitorAnalysis
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/predict-trends 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+handlePredictTrends @ youtube-views.tsx:566
+await in handlePredictTrends
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+youtube-views.tsx:589 Trend prediction error: Error: Failed to predict trends
+    at handlePredictTrends (youtube-views.tsx:580:15)
+handlePredictTrends @ youtube-views.tsx:589
+await in handlePredictTrends
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/track-channel 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+loadTrackedChannels @ youtube-views.tsx:708
+await in loadTrackedChannels
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/generate-calendar 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+handleGenerateCalendar @ youtube-views.tsx:761
+await in handleGenerateCalendar
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+youtube-views.tsx:786 Calendar generation error: Error: Failed to generate content calendar
+    at handleGenerateCalendar (youtube-views.tsx:777:15)
+handleGenerateCalendar @ youtube-views.tsx:786
+await in handleGenerateCalendar
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+hmr-error-handler.ts:15  POST https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev/api/youtube/api-key/generate 500 (Internal Server Error)
+window.fetch @ hmr-error-handler.ts:15
+handleGenerateApiKey @ youtube-views.tsx:853
+await in handleGenerateApiKey
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449
+youtube-views.tsx:873 API key generation error: Error: Failed to generate API key
+    at handleGenerateApiKey (youtube-views.tsx:864:15)
+handleGenerateApiKey @ youtube-views.tsx:873
+await in handleGenerateApiKey
+callCallback2 @ chunk-Z2GUPSCO.js?v=7fba1a35:3674
+invokeGuardedCallbackDev @ chunk-Z2GUPSCO.js?v=7fba1a35:3699
+invokeGuardedCallback @ chunk-Z2GUPSCO.js?v=7fba1a35:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-Z2GUPSCO.js?v=7fba1a35:3736
+executeDispatch @ chunk-Z2GUPSCO.js?v=7fba1a35:7014
+processDispatchQueueItemsInOrder @ chunk-Z2GUPSCO.js?v=7fba1a35:7034
+processDispatchQueue @ chunk-Z2GUPSCO.js?v=7fba1a35:7043
+dispatchEventsForPlugins @ chunk-Z2GUPSCO.js?v=7fba1a35:7051
+(anonymous) @ chunk-Z2GUPSCO.js?v=7fba1a35:7174
+batchedUpdates$1 @ chunk-Z2GUPSCO.js?v=7fba1a35:18913
+batchedUpdates @ chunk-Z2GUPSCO.js?v=7fba1a35:3579
+dispatchEventForPluginEventSystem @ chunk-Z2GUPSCO.js?v=7fba1a35:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-Z2GUPSCO.js?v=7fba1a35:5478
+dispatchEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5472
+dispatchDiscreteEvent @ chunk-Z2GUPSCO.js?v=7fba1a35:5449

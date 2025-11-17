@@ -36,24 +36,24 @@ const ai = new GoogleGenAI({
 // Subscription limits per plan
 const PLAN_LIMITS = {
   free: {
-    preLaunchScore: 50,
-    keywords: 50,
-    titleAnalyzer: 50,
-    contentIdeas: 20,
-    thumbnailGenerator: 10,
-    competitorAnalysis: 10,
-    trendPredictor: 5,
-    transcriptExtractor: 20
+    preLaunchScore: 5,
+    keywords: 5,
+    titleAnalyzer: 5,
+    contentIdeas: 0,
+    thumbnailGenerator: 0,
+    competitorAnalysis: 0,
+    trendPredictor: 0,
+    transcriptExtractor: 0
   },
   basic: {
-    preLaunchScore: 100,
-    keywords: 200,
-    titleAnalyzer: 100,
-    contentIdeas: 50,
-    thumbnailGenerator: 30,
-    competitorAnalysis: 20,
-    trendPredictor: 10,
-    transcriptExtractor: 50
+    preLaunchScore: 20,
+    keywords: 50,
+    titleAnalyzer: 20,
+    contentIdeas: 20,
+    thumbnailGenerator: 0,
+    competitorAnalysis: 0,
+    trendPredictor: 0,
+    transcriptExtractor: 0
   },
   pro: {
     preLaunchScore: 100,
@@ -95,35 +95,14 @@ function isEnterprisePlan(plan: string): boolean {
 }
 
 /**
- * Check if user is admin (unlimited access)
- */
-function isAdmin(user: any): boolean {
-  // Platform owner: convoycubano@gmail.com
-  const ADMIN_EMAIL = 'convoycubano@gmail.com';
-  
-  // Check if user is the platform owner or has admin role
-  return user?.email === ADMIN_EMAIL || 
-         user?.role === 'admin' || 
-         user?.isAdmin === true || 
-         user?.subscriptionTier === 'admin';
-}
-
-/**
  * Check user's usage limits for a specific feature
  */
 async function checkUsageLimit(
   userId: string, 
   feature: string, 
-  userPlan: string = 'free',
-  user?: any
+  userPlan: string = 'free'
 ): Promise<{ allowed: boolean; remaining: number; limit: number }> {
   try {
-    // Admins have unlimited access
-    if (user && isAdmin(user)) {
-      console.log('👑 [ADMIN] Unlimited access granted');
-      return { allowed: true, remaining: -1, limit: -1 };
-    }
-    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -184,12 +163,8 @@ async function logUsage(userId: string, feature: string, metadata?: any): Promis
  */
 router.post('/pre-launch-score', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
-    
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
-      console.error('❌ No user ID found in session');
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
@@ -199,13 +174,11 @@ router.post('/pre-launch-score', authenticate, async (req: Request, res: Respons
       return res.status(400).json({ error: 'Title and niche are required' });
     }
     
-    console.log(`✅ User authenticated: ${userId}`);
+    // Check usage limits
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
-    
-    const usageCheck = await checkUsageLimit(userId, 'preLaunchScore', userPlan, user);
+    const usageCheck = await checkUsageLimit(userId, 'preLaunchScore', userPlan);
     if (!usageCheck.allowed) {
       return res.status(429).json({ 
         error: 'Usage limit reached',
@@ -269,8 +242,8 @@ Return JSON:
   }
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     // Extract JSON from response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -321,9 +294,7 @@ Return JSON:
  */
 router.post('/generate-keywords', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -335,11 +306,10 @@ router.post('/generate-keywords', authenticate, async (req: Request, res: Respon
     }
     
     // Check usage limits
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
-    const usageCheck = await checkUsageLimit(userId, 'keywords', userPlan, user);
+    const usageCheck = await checkUsageLimit(userId, 'keywords', userPlan);
     if (!usageCheck.allowed) {
       return res.status(429).json({ 
         error: 'Usage limit reached',
@@ -403,8 +373,8 @@ Return JSON:
   ]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const keywordData = jsonMatch ? JSON.parse(jsonMatch[0]) : { keywords: [] };
@@ -442,9 +412,7 @@ Return JSON:
  */
 router.post('/analyze-title', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -456,11 +424,10 @@ router.post('/analyze-title', authenticate, async (req: Request, res: Response) 
     }
     
     // Check usage limits
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
-    const usageCheck = await checkUsageLimit(userId, 'titleAnalyzer', userPlan, user);
+    const usageCheck = await checkUsageLimit(userId, 'titleAnalyzer', userPlan);
     if (!usageCheck.allowed) {
       return res.status(429).json({ 
         error: 'Usage limit reached',
@@ -516,8 +483,8 @@ Return JSON:
   "improvedTitles": ["alternative 1", "alternative 2", "alternative 3"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {
@@ -564,9 +531,7 @@ Return JSON:
  */
 router.post('/content-ideas', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -578,11 +543,10 @@ router.post('/content-ideas', authenticate, async (req: Request, res: Response) 
     }
     
     // Check usage limits
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
-    const usageCheck = await checkUsageLimit(userId, 'contentIdeas', userPlan, user);
+    const usageCheck = await checkUsageLimit(userId, 'contentIdeas', userPlan);
     if (!usageCheck.allowed) {
       return res.status(429).json({ 
         error: 'Usage limit reached',
@@ -654,8 +618,8 @@ Return JSON:
   ]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const ideas = jsonMatch ? JSON.parse(jsonMatch[0]) : {
@@ -696,9 +660,7 @@ Return JSON:
  */
 router.post('/generate-thumbnail', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -710,11 +672,10 @@ router.post('/generate-thumbnail', authenticate, async (req: Request, res: Respo
     }
     
     // Check usage limits
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
-    const usageCheck = await checkUsageLimit(userId, 'thumbnailGenerator', userPlan, user);
+    const usageCheck = await checkUsageLimit(userId, 'thumbnailGenerator', userPlan);
     if (!usageCheck.allowed) {
       return res.status(429).json({ 
         error: 'Thumbnail Generator is a PRO feature',
@@ -757,8 +718,8 @@ Return JSON:
   ]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const aiSuggestions = jsonMatch ? JSON.parse(jsonMatch[0]) : { thumbnails: [] };
@@ -831,9 +792,7 @@ Return JSON:
  */
 router.post('/analyze-competitor', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -845,11 +804,10 @@ router.post('/analyze-competitor', authenticate, async (req: Request, res: Respo
     }
     
     // Check usage limits
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
-    const usageCheck = await checkUsageLimit(userId, 'competitorAnalysis', userPlan, user);
+    const usageCheck = await checkUsageLimit(userId, 'competitorAnalysis', userPlan);
     if (!usageCheck.allowed) {
       return res.status(429).json({ 
         error: 'Competitor Analysis is a PRO feature',
@@ -920,8 +878,8 @@ Return JSON:
   "weaknesses": ["weakness 1", "weakness 2"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
@@ -959,9 +917,7 @@ Return JSON:
  */
 router.post('/predict-trends', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -973,11 +929,10 @@ router.post('/predict-trends', authenticate, async (req: Request, res: Response)
     }
     
     // Check usage limits
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
-    const usageCheck = await checkUsageLimit(userId, 'trendPredictor', userPlan, user);
+    const usageCheck = await checkUsageLimit(userId, 'trendPredictor', userPlan);
     if (!usageCheck.allowed) {
       return res.status(429).json({ 
         error: 'Trend Predictor is a PRO feature',
@@ -1046,8 +1001,8 @@ Return JSON:
   "urgentOpportunities": ["opportunity 1", "opportunity 2"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const predictions = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
@@ -1086,9 +1041,7 @@ Return JSON:
  */
 router.post('/extract-transcript', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -1100,11 +1053,10 @@ router.post('/extract-transcript', authenticate, async (req: Request, res: Respo
     }
     
     // Check usage limits
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
-    const usageCheck = await checkUsageLimit(userId, 'transcriptExtractor', userPlan, user);
+    const usageCheck = await checkUsageLimit(userId, 'transcriptExtractor', userPlan);
     if (!usageCheck.allowed) {
       return res.status(429).json({ 
         error: 'Transcript Extractor is a PRO feature',
@@ -1157,8 +1109,8 @@ Return JSON:
   "bestMoment": "which clip to create first"
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {
@@ -1201,9 +1153,7 @@ Return JSON:
  */
 router.post('/track-channel', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -1211,9 +1161,8 @@ router.post('/track-channel', authenticate, async (req: Request, res: Response) 
     const { channelUrl, channelName, action = 'add' } = req.body;
     
     // Check if user has Enterprise plan
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
     if (!isEnterprisePlan(userPlan)) {
       return res.status(403).json({ 
@@ -1286,16 +1235,13 @@ router.post('/track-channel', authenticate, async (req: Request, res: Response) 
  */
 router.get('/multi-channel-analytics', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
     if (!isEnterprisePlan(userPlan)) {
       return res.status(403).json({ 
@@ -1337,8 +1283,8 @@ Return JSON:
   "crossPromotionIdeas": ["idea 1", "idea 2"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analytics = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
@@ -1369,9 +1315,7 @@ Return JSON:
  */
 router.post('/generate-calendar', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -1383,9 +1327,8 @@ router.post('/generate-calendar', authenticate, async (req: Request, res: Respon
     }
     
     // Check if user has Enterprise plan
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
     if (!isEnterprisePlan(userPlan)) {
       return res.status(403).json({ 
@@ -1456,8 +1399,8 @@ Return JSON:
   "notes": ["tip 1", "tip 2"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const calendar = jsonMatch ? JSON.parse(jsonMatch[0]) : {
@@ -1503,9 +1446,7 @@ Return JSON:
  */
 router.post('/setup-auto-optimization', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -1513,9 +1454,8 @@ router.post('/setup-auto-optimization', authenticate, async (req: Request, res: 
     const { videoUrl, alertThreshold = 'low' } = req.body;
     
     // Check if user has Enterprise plan
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
     if (!isEnterprisePlan(userPlan)) {
       return res.status(403).json({ 
@@ -1564,18 +1504,15 @@ router.post('/setup-auto-optimization', authenticate, async (req: Request, res: 
  */
 router.post('/check-optimization', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
     const { videoUrl } = req.body;
     
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
     if (!isEnterprisePlan(userPlan)) {
       return res.status(403).json({ 
@@ -1625,8 +1562,8 @@ Return JSON:
   "predictedImprovement": "X% increase in views"
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
@@ -1654,17 +1591,14 @@ Return JSON:
  */
 router.post('/api-key/generate', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
     // Check if user has Enterprise plan
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
     if (!isEnterprisePlan(userPlan)) {
       return res.status(403).json({ 
@@ -1720,16 +1654,13 @@ router.post('/api-key/generate', authenticate, async (req: Request, res: Respons
  */
 router.get('/api-keys', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
     if (!isEnterprisePlan(userPlan)) {
       return res.status(403).json({ 
@@ -1772,16 +1703,13 @@ router.get('/api-keys', authenticate, async (req: Request, res: Response) => {
  */
 router.get('/usage-stats', authenticate, async (req: Request, res: Response) => {
   try {
-    // Get user from Replit Auth session
-    const user = req.session?.user || req.user;
-    const userId = user?.id || user?.replitId;
+    const userId = req.user?.uid || req.user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
-    // Get user plan from session or default to free
-    const userPlan = user?.subscriptionTier || 'free';
-    console.log(`📊 User plan: ${userPlan}`);
+    const userDoc = await firebaseDb.collection('users').doc(userId).get();
+    const userPlan = userDoc.data()?.subscriptionTier || 'free';
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
