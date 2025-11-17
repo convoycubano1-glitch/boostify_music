@@ -54,7 +54,8 @@ import {
   Tag,
   Settings,
   Download,
-  RefreshCw
+  RefreshCw,
+  Newspaper
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -694,6 +695,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   const allSections = {
     'songs': { name: 'Música', icon: Music, isOwnerOnly: false },
     'videos': { name: 'Videos', icon: VideoIcon, isOwnerOnly: false },
+    'news': { name: 'Noticias', icon: Newspaper, isOwnerOnly: false },
     'social-hub': { name: 'Redes Sociales', icon: Share2, isOwnerOnly: false },
     'merchandise': { name: 'Merchandising', icon: ShoppingBag, isOwnerOnly: false },
     'galleries': { name: 'Galerías de Imágenes', icon: Image, isOwnerOnly: false },
@@ -703,10 +705,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     'crowdfunding': { name: 'Crowdfunding', icon: Target, isOwnerOnly: true },
   };
   
-  const defaultOrder = ['songs', 'videos', 'social-hub', 'merchandise', 'galleries', 'monetize-cta', 'analytics', 'earnings', 'crowdfunding'];
+  const defaultOrder = ['songs', 'videos', 'news', 'social-hub', 'merchandise', 'galleries', 'monetize-cta', 'analytics', 'earnings', 'crowdfunding'];
   const defaultVisibility: Record<string, boolean> = {
     'songs': true,
     'videos': true,
+    'news': true,
     'social-hub': true,
     'merchandise': true,
     'galleries': true,
@@ -1257,6 +1260,46 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
         return showsData;
       } catch (error) {
         console.error("❌ Error fetching shows:", error);
+        return [];
+      }
+    },
+    enabled: !!artistId
+  });
+
+  // Query para noticias
+  interface NewsArticle {
+    id: number;
+    title: string;
+    content: string;
+    summary: string;
+    imageUrl: string;
+    category: 'release' | 'performance' | 'collaboration' | 'achievement' | 'lifestyle';
+    views: number;
+    createdAt: Date;
+  }
+
+  const { data: newsArticles = [] as NewsArticle[], refetch: refetchNews } = useQuery<NewsArticle[]>({
+    queryKey: ['/api/artist-generator/news', artistId],
+    queryFn: async () => {
+      try {
+        console.log(`📰 Fetching news for artist: ${artistId}`);
+        const response = await fetch(`/api/artist-generator/news/${artistId}`);
+        
+        if (!response.ok) {
+          console.warn('⚠️ News API returned non-OK status:', response.status);
+          return [];
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.news) {
+          console.log(`✅ Successfully loaded ${result.news.length} news articles`);
+          return result.news;
+        }
+        
+        return [];
+      } catch (error) {
+        console.error("❌ Error fetching news:", error);
         return [];
       }
     },
@@ -2704,6 +2747,94 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   );
                   })}
                 </div>
+              </div>
+                        );
+                      } else if (sectionId === 'news' && (newsArticles.length > 0 || isOwnProfile)) {
+                        sectionElement = (
+            <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                <div className="flex justify-between items-center mb-4">
+                  <div 
+                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
+                    style={{ color: colors.hexAccent }}
+                  >
+                    <Newspaper className="h-5 w-5" />
+                    Noticias ({newsArticles.length})
+                  </div>
+                </div>
+
+                {newsArticles.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <Newspaper className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No hay noticias disponibles aún</p>
+                    {isOwnProfile && (
+                      <p className="text-sm mt-2">
+                        Usa el botón "Generar Noticias con IA" en editar perfil
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto pb-4 -mx-4 px-4">
+                    <div className="flex gap-4 min-w-max">
+                      {newsArticles.map((article) => {
+                        const categoryColors = {
+                          release: { bg: '#10B981', text: 'Lanzamiento' },
+                          performance: { bg: '#8B5CF6', text: 'Performance' },
+                          collaboration: { bg: '#F59E0B', text: 'Colaboración' },
+                          achievement: { bg: '#EF4444', text: 'Logro' },
+                          lifestyle: { bg: '#3B82F6', text: 'Lifestyle' }
+                        };
+                        
+                        const categoryInfo = categoryColors[article.category] || { bg: colors.hexPrimary, text: article.category };
+                        
+                        return (
+                          <div
+                            key={article.id}
+                            className="w-80 flex-shrink-0 bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300"
+                          >
+                            <div className="relative h-48 overflow-hidden">
+                              <img
+                                src={article.imageUrl}
+                                alt={article.title}
+                                className="w-full h-full object-cover"
+                              />
+                              <div 
+                                className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                                style={{ backgroundColor: categoryInfo.bg }}
+                              >
+                                {categoryInfo.text}
+                              </div>
+                            </div>
+                            
+                            <div className="p-4 space-y-3">
+                              <h3 className="font-semibold text-white line-clamp-2 leading-tight">
+                                {article.title}
+                              </h3>
+                              
+                              <p className="text-sm text-gray-400 line-clamp-3 leading-relaxed">
+                                {article.summary || article.content}
+                              </p>
+                              
+                              <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <Eye className="h-3 w-3" />
+                                  {article.views || 0} vistas
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-xs h-7"
+                                  style={{ color: colors.hexAccent }}
+                                >
+                                  Leer más →
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
                         );
                       } else if (sectionId === 'social-hub') {
