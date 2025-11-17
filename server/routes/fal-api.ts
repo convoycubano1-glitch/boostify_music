@@ -210,4 +210,149 @@ router.get('/status/:requestId', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/fal/minimax-music
+ * Genera música usando FAL AI minimax-music/v2
+ */
+router.post('/minimax-music', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_API_KEY not configured on server'
+      });
+    }
+
+    const { prompt, duration, reference_audio_url } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'prompt is required'
+      });
+    }
+
+    console.log('🎵 [FAL-BACKEND] Starting minimax-music/v2 generation...');
+    console.log('📝 Prompt:', prompt.substring(0, 100));
+
+    const startTime = Date.now();
+
+    // Submit job a FAL AI minimax-music/v2
+    const submitResponse = await fetch('https://queue.fal.run/fal-ai/minimax-music/v2', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        duration: duration || 30,
+        reference_audio_url: reference_audio_url || undefined
+      })
+    });
+
+    if (!submitResponse.ok) {
+      const errorData = await submitResponse.json().catch(() => ({}));
+      console.error('❌ [FAL-BACKEND] Error submitting music job:', errorData);
+      return res.status(500).json({
+        success: false,
+        error: `Error submitting music job: ${submitResponse.statusText}`,
+        details: errorData
+      });
+    }
+
+    const submitData = await submitResponse.json();
+    const requestId = submitData.request_id;
+
+    console.log(`⏳ [FAL-BACKEND] Music job submitted: ${requestId}`);
+
+    // Return request ID immediately for polling
+    res.json({
+      success: true,
+      requestId,
+      message: 'Music generation started'
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error in minimax-music:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET /api/fal/minimax-music/:requestId
+ * Obtiene el estado de una generación de música
+ */
+router.get('/minimax-music/:requestId', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_API_KEY not configured'
+      });
+    }
+
+    const { requestId } = req.params;
+
+    // Check status first
+    const statusResponse = await fetch(
+      `https://queue.fal.run/fal-ai/minimax-music/v2/requests/${requestId}/status`,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`
+        }
+      }
+    );
+
+    if (!statusResponse.ok) {
+      return res.status(500).json({
+        success: false,
+        error: 'Error checking music status'
+      });
+    }
+
+    const statusData = await statusResponse.json();
+
+    // If completed, get the result
+    if (statusData.status === 'COMPLETED') {
+      const resultResponse = await fetch(
+        `https://queue.fal.run/fal-ai/minimax-music/v2/requests/${requestId}`,
+        {
+          headers: {
+            'Authorization': `Key ${FAL_API_KEY}`
+          }
+        }
+      );
+
+      if (resultResponse.ok) {
+        const resultData = await resultResponse.json();
+        return res.json({
+          success: true,
+          status: 'completed',
+          audioUrl: resultData.audio?.url,
+          duration: resultData.duration,
+          data: resultData
+        });
+      }
+    }
+
+    // Return status for in-progress or pending
+    res.json({
+      success: true,
+      status: statusData.status.toLowerCase(),
+      message: statusData.status
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error checking music status:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
