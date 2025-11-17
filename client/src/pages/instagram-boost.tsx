@@ -361,12 +361,15 @@ export default function InstagramBoostPage() {
     }
   });
 
-  // Auto-search influencers when niche changes
+  // Auto-search influencers when niche changes or search query changes (with debounce)
   useEffect(() => {
     if (activeTab === 'influencers') {
-      influencerSearchMutation.mutate({ query: searchQuery, niche: selectedNiche });
+      const timer = setTimeout(() => {
+        influencerSearchMutation.mutate({ query: searchQuery, niche: selectedNiche });
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [selectedNiche, activeTab]);
+  }, [selectedNiche, searchQuery, activeTab]);
 
   // Prepare data with fallbacks
   const contentItems = calendarData?.contentItems || [];
@@ -690,14 +693,16 @@ export default function InstagramBoostPage() {
                 <div className="lg:col-span-2 space-y-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold">Recommended Influencers</h3>
-                    <Badge variant="outline">24 Results</Badge>
+                    <Badge variant="outline">{influencerResults?.influencers?.length || 0} Results</Badge>
                   </div>
 
-                  {[
-                    { name: 'Sarah Johnson', niche: 'Fashion & Lifestyle', followers: '125K', engagement: '8.2%', rating: 4.8, posts: 456 },
-                    { name: 'Mike Stevens', niche: 'Tech & Gaming', followers: '89K', engagement: '6.5%', rating: 4.5, posts: 342 },
-                    { name: 'Emma Davis', niche: 'Beauty & Makeup', followers: '210K', engagement: '9.1%', rating: 4.9, posts: 678 }
-                  ].map((influencer, idx) => (
+                  {influencerSearchMutation.isPending ? (
+                    <div className="text-center py-8">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                      <p className="text-muted-foreground mt-2">Searching influencers...</p>
+                    </div>
+                  ) : influencerResults?.influencers?.length > 0 ? (
+                    influencerResults.influencers.map((influencer: any, idx: number) => (
                     <motion.div
                       key={idx}
                       initial={{ opacity: 0, y: 20 }}
@@ -753,7 +758,13 @@ export default function InstagramBoostPage() {
                         </div>
                       </Card>
                     </motion.div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground">No influencers found. Try adjusting your filters.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Campaign Management */}
