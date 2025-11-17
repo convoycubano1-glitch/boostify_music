@@ -23,6 +23,16 @@
   animation: gradient-x 8s ease infinite;
 }
 
+/* Animación de pulso sutil para el nombre del artista */
+@keyframes subtle-pulse {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 20px currentColor);
+  }
+  50% {
+    filter: brightness(1.1) drop-shadow(0 0 30px currentColor);
+  }
+}
+
 @keyframes gradient {
   0%, 100% {
     background-position: 0% 50%;

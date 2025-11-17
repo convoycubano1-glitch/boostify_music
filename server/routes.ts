@@ -1629,6 +1629,44 @@ export function registerRoutes(app: Express): HttpServer {
   });
 
   /**
+   * Save Artist Profile Layout
+   */
+  app.post('/api/profile/:artistId/layout', async (req, res) => {
+    try {
+      const { artistId } = req.params;
+      const { order, visibility } = req.body;
+
+      if (!order || !visibility) {
+        return res.status(400).json({
+          success: false,
+          error: 'Order and visibility are required'
+        });
+      }
+
+      // Update layout in PostgreSQL
+      await db.update(users)
+        .set({
+          profileLayout: { order, visibility },
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, parseInt(artistId)));
+
+      console.log('✅ Profile layout saved for artist:', artistId);
+
+      return res.json({
+        success: true,
+        message: 'Layout saved successfully'
+      });
+    } catch (error: any) {
+      console.error('❌ Error saving profile layout:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to save layout'
+      });
+    }
+  });
+
+  /**
    * Early Access Signup - Send to Make.com webhook
    */
   app.post('/api/early-access/signup', async (req, res) => {

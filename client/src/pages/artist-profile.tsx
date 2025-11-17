@@ -129,33 +129,33 @@ export default function ArtistProfilePage() {
     return `${window.location.origin}${imageUrl}`;
   };
 
-  // Preferir banner sobre profile image para compartir (es más visual y llamativo)
-  const shareImage = getAbsoluteImageUrl(
-    artistData?.bannerImage || artistData?.profileImage || artistData?.photoURL
-  );
+  // Determinar la mejor imagen para compartir en redes sociales
+  // Prioridad: 1. Banner (más visual), 2. Profile Image, 3. PhotoURL
+  const bannerImage = artistData?.bannerImage;
+  const profileImage = artistData?.profileImage || artistData?.photoURL;
+  
+  // Si hay banner, usarlo. Si no, usar profile image. Si ninguno, usar default
+  const shareImage = getAbsoluteImageUrl(bannerImage || profileImage);
   
   const artistName = artistData?.displayName || artistData?.name || 'Artist';
   const biography = artistData?.biography || '';
   const genre = artistData?.genre || '';
   const location = artistData?.location || '';
 
-  // Título optimizado para SEO y redes sociales (sin emojis que pueden causar problemas)
+  // Título optimizado para SEO y redes sociales
   const title = `${artistName}${genre ? ` - ${genre}` : ''} | Boostify Music`;
   
-  // Descripción optimizada con más contexto y sin emojis problemáticos
+  // Descripción optimizada con información del artista
   let description = '';
   if (biography && biography.trim().length > 0) {
-    description = `${biography.slice(0, 140)}${biography.length > 140 ? '...' : ''}`;
+    // Usar la biografía completa del artista, truncada si es necesaria
+    description = biography.length > 155 ? `${biography.slice(0, 152)}...` : biography;
   } else {
+    // Crear descripción automática con la información disponible
     const parts = [`Descubre la música de ${artistName}`];
     if (genre) parts.push(`artista de ${genre}`);
     if (location) parts.push(`desde ${location}`);
-    description = parts.join(', ') + '. Escucha sus canciones, mira sus videos y conecta directamente.';
-  }
-  
-  // Agregar call-to-action al final (limitado para no exceder 200 caracteres)
-  if (description.length < 170) {
-    description += ' | Únete a Boostify Music';
+    description = parts.join(', ') + '. Escucha canciones, mira videos y conecta directamente en Boostify Music.';
   }
 
   return (

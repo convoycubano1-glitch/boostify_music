@@ -30,6 +30,11 @@ export function Head({
       : `${window.location.origin}/${finalImage}`;
   }
 
+  // Forzar HTTPS si la imagen lo soporta (requerido por algunas redes sociales)
+  if (absoluteImageUrl.startsWith('http://') && !absoluteImageUrl.includes('localhost')) {
+    absoluteImageUrl = absoluteImageUrl.replace('http://', 'https://');
+  }
+
   // Asegurar que la descripción no sea demasiado larga (ideal 155-160 caracteres para SEO)
   const truncatedDescription = description.length > 155 
     ? `${description.slice(0, 152)}...` 
@@ -44,50 +49,38 @@ export function Head({
       <link rel="icon" type="image/png" href={defaultImage} />
       <link rel="apple-touch-icon" href={defaultImage} />
 
-      {/* OpenGraph / Facebook */}
+      {/* OpenGraph / Facebook / WhatsApp / LinkedIn */}
       <meta property="og:type" content={type} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={truncatedDescription} />
       <meta property="og:image" content={absoluteImageUrl} />
       <meta property="og:image:secure_url" content={absoluteImageUrl} />
+      <meta property="og:image:type" content="image/jpeg" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={title} />
       <meta property="og:url" content={url} />
       <meta property="og:site_name" content={siteName} />
+      <meta property="og:locale" content="es_ES" />
+      <meta property="og:locale:alternate" content="en_US" />
 
-      {/* Twitter */}
+      {/* Twitter / X */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content={twitterUsername} />
       <meta name="twitter:creator" content={twitterUsername} />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={truncatedDescription} />
       <meta name="twitter:image" content={absoluteImageUrl} />
-
-      {/* Additional metadata for better sharing */}
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-      <meta property="og:image:alt" content={title} />
-      <meta property="og:locale" content="es_ES" />
-      <meta property="og:locale:alternate" content="en_US" />
-      
-      {/* WhatsApp optimizations - Prefiere JPG/PNG de alta calidad */}
-      <meta property="og:image:type" content="image/png" />
-      
-      {/* Additional Twitter optimizations */}
       <meta name="twitter:image:alt" content={title} />
-      <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:image:width" content="1200" />
       <meta name="twitter:image:height" content="630" />
-      
-      {/* LinkedIn optimizations */}
-      <meta property="article:author" content={siteName} />
-      
-      {/* Instagram & Facebook Story optimizations */}
-      <meta property="og:image:secure_url" content={absoluteImageUrl} />
-      
-      {/* Telegram optimizations */}
+
+      {/* Discord / Telegram optimizations */}
+      <meta name="theme-color" content="#ea580c" />
       <meta property="telegram:channel" content={siteName} />
       
-      {/* Discord optimizations */}
-      <meta name="theme-color" content="#ea580c" />
+      {/* LinkedIn optimizations */}
+      {type === "profile" && <meta property="article:author" content={siteName} />}
       
       {/* Additional SEO */}
       <meta name="robots" content="index, follow" />

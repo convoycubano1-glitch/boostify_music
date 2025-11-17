@@ -1627,126 +1627,208 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     <div className={`min-h-screen ${colors.bgGradient} text-white transition-colors duration-500`}>
       <audio ref={audioRef} onEnded={() => setPlayingSongId(null)} />
       
-      {/* Hero Header */}
-      <header className="relative h-64 sm:h-80 md:h-96 lg:h-[450px] xl:h-[500px] w-full mb-4 sm:mb-6 md:mb-8 overflow-hidden">
-        {(() => {
-          // Detectar si es video (por extensión o por metadata)
-          const isVideo = artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i) || 
-                         artist.bannerImage?.includes('video') ||
-                         artist.bannerImage?.includes('.mp4') ||
-                         artist.bannerImage?.includes('.webm') ||
-                         artist.bannerImage?.includes('.mov');
-          
-          const videoUrl = artist.loopVideoUrl || (isVideo ? artist.bannerImage : null);
-          
-          const bannerPos = artist.bannerPosition || "50";
-          const objectPositionStyle = `center ${bannerPos}%`;
-          
-          if (videoUrl) {
+      {/* Hero Header - Diseño Premium Modernizado */}
+      <header className="relative h-[70vh] sm:h-[75vh] md:h-[80vh] lg:h-[85vh] xl:h-screen w-full mb-4 sm:mb-6 md:mb-8 overflow-hidden">
+        {/* Background con efecto parallax */}
+        <div className="absolute inset-0">
+          {(() => {
+            const isVideo = artist.bannerImage?.match(/\.(mp4|mov|avi|webm)$/i) || 
+                           artist.bannerImage?.includes('video') ||
+                           artist.bannerImage?.includes('.mp4') ||
+                           artist.bannerImage?.includes('.webm') ||
+                           artist.bannerImage?.includes('.mov');
+            
+            const videoUrl = artist.loopVideoUrl || (isVideo ? artist.bannerImage : null);
+            const bannerPos = artist.bannerPosition || "50";
+            const objectPositionStyle = `center ${bannerPos}%`;
+            
+            if (videoUrl) {
+              return (
+                <video
+                  key={videoUrl}
+                  src={videoUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover filter brightness-50 scale-105 transition-all duration-700 hover:scale-100"
+                  style={{ objectPosition: objectPositionStyle }}
+                  onError={(e) => console.error('❌ Hero video error:', e)}
+                />
+              );
+            }
+            
             return (
-              <video
-                key={videoUrl}
-                src={videoUrl}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
+              <img
+                src={artist.bannerImage}
+                alt={`${artist.name} Cover`}
+                className="absolute inset-0 w-full h-full object-cover filter brightness-50 scale-105 transition-all duration-700 hover:scale-100"
                 style={{ objectPosition: objectPositionStyle }}
-                onError={(e) => console.error('❌ Hero video error:', e)}
+                onError={(e) => { 
+                  e.currentTarget.style.display = 'none';
+                  if (e.currentTarget.parentElement) {
+                    e.currentTarget.parentElement.style.background = 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)';
+                  }
+                }}
               />
             );
-          }
-          
-          return (
-            <img
-              src={artist.bannerImage}
-              alt={`${artist.name} Cover`}
-              className="absolute inset-0 w-full h-full object-cover filter brightness-75 transition-all duration-500"
-              style={{ objectPosition: objectPositionStyle }}
-              onError={(e) => { 
-                e.currentTarget.style.display = 'none';
-                if (e.currentTarget.parentElement) {
-                  e.currentTarget.parentElement.style.background = 'black';
-                }
-              }}
-            />
-          );
-        })()}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+          })()}
+        </div>
+
+        {/* Gradientes mejorados en capas */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40"></div>
         
-        {/* Barra superior */}
-        <div className="absolute top-0 left-0 right-0 p-3 md:p-4 flex justify-between items-center z-10">
-          <div className="flex items-center gap-1.5 md:gap-2">
-            <img 
-              src="/assets/boostify-logo.svg" 
-              alt="Boostify Logo"
-              className="w-8 h-8 md:w-9 md:h-9 transition-all duration-500"
-            />
-            <div className="hidden sm:block">
-              <div className="text-xs uppercase tracking-widest text-white/80">Boostify Music</div>
+        {/* Efecto de partículas/puntos flotantes */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-20 left-10 w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: colors.hexAccent }}></div>
+          <div className="absolute top-40 right-20 w-3 h-3 rounded-full animate-pulse delay-100" style={{ backgroundColor: colors.hexAccent }}></div>
+          <div className="absolute bottom-32 left-1/4 w-2 h-2 rounded-full animate-pulse delay-200" style={{ backgroundColor: colors.hexAccent }}></div>
+          <div className="absolute bottom-48 right-1/3 w-2 h-2 rounded-full animate-pulse delay-300" style={{ backgroundColor: colors.hexAccent }}></div>
+        </div>
+        
+        {/* Barra superior con glassmorphism */}
+        <div className="absolute top-0 left-0 right-0 p-4 md:p-6 z-30">
+          <div className="max-w-7xl mx-auto flex justify-between items-center">
+            <div className="flex items-center gap-2 md:gap-3 backdrop-blur-xl bg-black/30 px-4 py-2.5 rounded-2xl border border-white/10">
+              <img 
+                src="/assets/boostify-logo.svg" 
+                alt="Boostify Logo"
+                className="w-7 h-7 md:w-8 md:h-8"
+              />
+              <div className="hidden sm:block">
+                <div className="text-xs font-bold uppercase tracking-wider text-white">Boostify Music</div>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-1.5 md:gap-2">
-            <button 
-              className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-semibold transition duration-200 bg-black/50 hover:bg-gray-800 backdrop-blur-sm"
-              style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
-              onClick={handleShare}
-              data-testid="button-share"
-            >
-              <Share2 className="h-3 w-3 md:h-4 md:w-4 inline md:mr-2" />
-              <span className="hidden md:inline">{t('profile.share')}</span>
-            </button>
-            {isOwnProfile && (
-              <Link href="/dashboard">
-                <button 
-                  className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-semibold transition duration-200 bg-black/50 hover:bg-gray-800 backdrop-blur-sm"
-                  style={{ borderColor: colors.hexBorder, borderWidth: '1px', color: colors.hexAccent }}
-                  data-testid="button-dashboard"
-                >
-                  <span className="hidden md:inline">Ir al dashboard</span>
-                  <span className="md:hidden">Dashboard</span>
-                </button>
-              </Link>
-            )}
+            <div className="flex gap-2 md:gap-3">
+              <button 
+                className="px-4 md:px-6 py-2.5 md:py-3 rounded-2xl text-sm md:text-base font-semibold transition-all duration-300 backdrop-blur-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 transform hover:scale-105 active:scale-95"
+                style={{ color: colors.hexAccent }}
+                onClick={handleShare}
+                data-testid="button-share"
+              >
+                <Share2 className="h-4 w-4 md:h-5 md:w-5 inline mr-0 md:mr-2" />
+                <span className="hidden md:inline">Compartir</span>
+              </button>
+              {isOwnProfile && (
+                <Link href="/dashboard">
+                  <button 
+                    className="px-4 md:px-6 py-2.5 md:py-3 rounded-2xl text-sm md:text-base font-bold transition-all duration-300 transform hover:scale-105 active:scale-95"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${colors.hexAccent} 0%, ${colors.hexPrimary} 100%)`,
+                      boxShadow: `0 8px 24px ${colors.hexAccent}40`
+                    }}
+                    data-testid="button-dashboard"
+                  >
+                    Dashboard
+                  </button>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Contenido del artista en el hero */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8 lg:p-10 z-10">
-          <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold mb-2 text-white drop-shadow-lg leading-tight" data-testid="text-artist-name">
-            {artist.name}
-          </div>
-          <div className="text-base sm:text-lg md:text-xl transition-colors duration-500" style={{ color: colors.hexAccent }}>
-            {artist.genre} {artist.location && `· ${artist.location}`}
-          </div>
-          <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
-            {artist.instagram && (
-              <span 
-                className="text-xs rounded-full py-1 px-3 bg-black/50 backdrop-blur-sm border transition-colors duration-500"
-                style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
-              >
-                📸 @{artist.instagram}
-              </span>
-            )}
-            {videos.length > 0 && (
-              <span 
-                className="text-xs rounded-full py-1 px-3 bg-black/50 backdrop-blur-sm border transition-colors duration-500"
-                style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
-              >
-                🎬 {videos.length} Video{videos.length > 1 ? 's' : ''}
-              </span>
-            )}
-            {songs.length > 0 && (
-              <span 
-                className="text-xs rounded-full py-1 px-3 bg-black/50 backdrop-blur-sm border transition-colors duration-500"
-                style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
-              >
-                🎵 {songs.length} {songs.length === 1 ? 'Canción' : 'Canciones'}
-              </span>
-            )}
+        {/* Contenido principal del hero */}
+        <div className="absolute inset-0 flex items-end z-20">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-8 md:pb-12 lg:pb-16">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:gap-8 items-end">
+              
+              {/* Información del artista */}
+              <div className="space-y-4 md:space-y-6">
+                {/* Badge de verificación flotante */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-xl bg-white/10 border border-white/20">
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                  <span className="text-sm font-semibold text-white">Artista Verificado</span>
+                </div>
+
+                {/* Nombre del artista */}
+                <h1 
+                  className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-none tracking-tighter"
+                  style={{
+                    background: `linear-gradient(135deg, #FFFFFF 0%, ${colors.hexAccent} 40%, ${colors.hexPrimary} 60%, #FFFFFF 100%)`,
+                    backgroundSize: '200% 200%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    filter: `drop-shadow(0 0 30px ${colors.hexAccent}90) drop-shadow(0 8px 16px rgba(0,0,0,0.8))`,
+                    animation: 'gradient-x 8s ease infinite, subtle-pulse 3s ease-in-out infinite'
+                  }}
+                  data-testid="text-artist-name"
+                >
+                  {artist.name}
+                </h1>
+
+                {/* Género y ubicación */}
+                <div className="flex flex-wrap items-center gap-3 text-lg md:text-xl lg:text-2xl font-bold">
+                  <span className="text-white drop-shadow-lg">{artist.genre}</span>
+                  {artist.location && (
+                    <>
+                      <span className="text-white/40">•</span>
+                      <span className="text-white/90 drop-shadow-lg">{artist.location}</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Estadísticas del artista */}
+                <div className="flex flex-wrap gap-3 md:gap-4">
+                  {songs.length > 0 && (
+                    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-4 md:px-6 py-3 md:py-4 transform hover:scale-105 transition-all duration-300">
+                      <div className="text-2xl md:text-3xl font-black" style={{ color: colors.hexAccent }}>{songs.length}</div>
+                      <div className="text-xs md:text-sm text-white/80 font-semibold">Canciones</div>
+                    </div>
+                  )}
+                  {videos.length > 0 && (
+                    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-4 md:px-6 py-3 md:py-4 transform hover:scale-105 transition-all duration-300">
+                      <div className="text-2xl md:text-3xl font-black" style={{ color: colors.hexAccent }}>{videos.length}</div>
+                      <div className="text-xs md:text-sm text-white/80 font-semibold">Videos</div>
+                    </div>
+                  )}
+                  {artist.instagram && (
+                    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-4 md:px-6 py-3 md:py-4 flex items-center gap-2 transform hover:scale-105 transition-all duration-300">
+                      <Instagram className="h-4 w-4 md:h-5 md:w-5" style={{ color: colors.hexAccent }} />
+                      <span className="text-sm md:text-base font-bold text-white">@{artist.instagram}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Imagen de perfil con efecto premium */}
+              <div className="hidden lg:block relative">
+                <div 
+                  className="absolute -inset-4 rounded-3xl blur-2xl opacity-50 animate-pulse"
+                  style={{ backgroundColor: colors.hexAccent }}
+                ></div>
+                <img
+                  src={artist.profileImage}
+                  alt={`${artist.name} Avatar`}
+                  className="relative w-48 h-48 xl:w-56 xl:h-56 rounded-3xl object-cover border-4 shadow-2xl transform hover:scale-105 transition-all duration-500"
+                  style={{ 
+                    borderColor: colors.hexAccent,
+                    boxShadow: `0 20px 60px ${colors.hexAccent}60, 0 0 40px ${colors.hexAccent}40`
+                  }}
+                  data-testid="img-profile"
+                />
+                <div className="absolute -bottom-2 -right-2 px-4 py-2 rounded-2xl font-black text-sm"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${colors.hexAccent} 0%, ${colors.hexPrimary} 100%)`,
+                    boxShadow: `0 8px 24px ${colors.hexAccent}60`
+                  }}
+                >
+                  ✓ Verificado
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Borde inferior decorativo */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-1"
+          style={{
+            background: `linear-gradient(90deg, transparent 0%, ${colors.hexAccent} 50%, transparent 100%)`,
+            boxShadow: `0 0 20px ${colors.hexAccent}80`
+          }}
+        ></div>
       </header>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 pt-0 pb-20 md:pb-8">
