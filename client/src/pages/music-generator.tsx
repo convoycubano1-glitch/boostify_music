@@ -53,6 +53,8 @@ import {
   Wand2,
   Headphones,
   Share2,
+  Zap,
+  Star,
   Sparkles,
 } from "lucide-react";
 
@@ -519,11 +521,34 @@ export default function MusicGeneratorPage() {
         
         {/* Main Content */}
         <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
-          <div className="flex flex-col items-center mb-6 text-center">
-            <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-4">Create Your Own Music</h2>
-            <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-2xl mb-4 px-2 sm:px-4">
-              Use our advanced AI models to create original music in any style. Choose from ready-made templates or customize your generation with detailed parameters.
+          <div className="flex flex-col items-center mb-8 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">4 Modelos de IA Disponibles</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Crea Tu Propia Música con IA
+            </h2>
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-3xl mb-2 px-2 sm:px-4">
+              Usa nuestros modelos avanzados de IA para crear música original en cualquier estilo. 
+              Desde demos ultra-rápidas hasta canciones completas de calidad profesional.
             </p>
+            <div className="flex flex-wrap justify-center gap-2 mt-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Zap className="h-3 w-3 text-primary" />
+                <span>Minimax 30s</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3 text-primary" />
+                <span>Stable 2.5 3min</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <Music className="h-3 w-3 text-primary" />
+                <span>Suno + Udio</span>
+              </div>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-[1200px] mx-auto mb-8">
@@ -595,15 +620,21 @@ export default function MusicGeneratorPage() {
             <TabsContent value="generator" className="space-y-6">
               <div className="grid grid-cols-1 gap-6">
                 {/* Generation Panel */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Disc3 className="h-5 w-5 mr-2" />
-                      Music Generation
-                    </CardTitle>
-                    <CardDescription>
-                      Describe the music you want to generate or select a genre template
-                    </CardDescription>
+                <Card className="border-2 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/3 to-transparent pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-md">
+                        <Disc3 className="h-6 w-6 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl">
+                          Generador de Música IA
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                          Describe la música que quieres crear o selecciona una plantilla
+                        </CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {/* Main Generation Component */}
@@ -646,26 +677,31 @@ export default function MusicGeneratorPage() {
             
             {/* History Tab */}
             <TabsContent value="history" className="space-y-6">
-              <Card>
-                <CardHeader className="pb-3">
+              <Card className="border-2">
+                <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="flex items-center">
-                      <History className="h-5 w-5 mr-2" />
-                      Recent Generations
-                    </CardTitle>
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-xl">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <History className="h-5 w-5 text-primary" />
+                        </div>
+                        Tus Generaciones Recientes
+                      </CardTitle>
+                      <CardDescription className="mt-2">
+                        Escucha y descarga tus creaciones anteriores
+                      </CardDescription>
+                    </div>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={loadRecentGenerations}
                       disabled={isLoadingHistory}
+                      className="gap-2"
                     >
-                      <Loader2 className={`h-3.5 w-3.5 mr-1.5 ${isLoadingHistory ? 'animate-spin' : 'opacity-0'}`} />
-                      Refresh
+                      <Loader2 className={`h-3.5 w-3.5 ${isLoadingHistory ? 'animate-spin' : ''}`} />
+                      Actualizar
                     </Button>
                   </div>
-                  <CardDescription>
-                    Listen to and download your previous generations
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[calc(100vh-28rem)] md:pr-4">
@@ -684,40 +720,58 @@ export default function MusicGeneratorPage() {
                       </div>
                     ) : recentGenerations.length === 0 ? (
                       // Message when no generations
-                      <div className="text-center py-6">
-                        <Music2 className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                        <p className="text-muted-foreground">
-                          You don't have any recent generations
+                      <div className="text-center py-12">
+                        <div className="inline-flex p-4 rounded-full bg-primary/10 mb-4">
+                          <Music2 className="h-10 w-10 text-primary/50" />
+                        </div>
+                        <h3 className="font-medium mb-2">
+                          No tienes generaciones aún
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Crea tu primera composición en la pestaña Generar
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Create your first composition in the Generate tab
-                        </p>
+                        <Button variant="outline" onClick={() => {
+                          const tabs = document.querySelector('[value="generator"]');
+                          if (tabs instanceof HTMLElement) tabs.click();
+                        }}>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Ir a Generar
+                        </Button>
                       </div>
                     ) : (
                       // List of generations
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {recentGenerations.map((generation) => (
-                          <Card key={generation.id} className="overflow-hidden">
-                            <div className="p-3 sm:p-4">
-                              <div className="flex items-start justify-between">
+                          <Card key={generation.id} className="overflow-hidden hover:shadow-md transition-shadow border-l-4 border-l-primary/50">
+                            <div className="p-4">
+                              <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="font-medium truncate">
-                                    {generation.title}
-                                  </h3>
-                                  <p className="text-muted-foreground text-xs mt-1 line-clamp-2">
-                                    {generation.prompt}
-                                  </p>
-                                  <div className="flex items-center mt-1.5 space-x-2">
-                                    <Badge variant="outline" className="text-xs py-0 h-5">
-                                      {generation.model === 'music-s' ? 'Suno' : 'Udio'}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground flex items-center">
-                                      <Clock className="h-3 w-3 mr-1" /> 
-                                      {formatDate(generation.createdAt)}
-                                    </span>
+                                  <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                                      <Music className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="font-semibold truncate mb-1">
+                                        {generation.title}
+                                      </h3>
+                                      <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
+                                        {generation.prompt}
+                                      </p>
+                                      <div className="flex flex-wrap items-center mt-2 gap-2">
+                                        <Badge variant="secondary" className="text-xs">
+                                          {generation.model === 'music-fal' ? '⚡ Minimax' :
+                                           generation.model === 'music-stable' ? '🌟 Stable 2.5' :
+                                           generation.model === 'music-s' ? '🎵 Suno' : '🎤 Udio'}
+                                        </Badge>
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                          <Clock className="h-3 w-3" /> 
+                                          {formatDate(generation.createdAt)}
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center space-x-1 ml-2">
+                                <div className="flex items-center space-x-1">
                                   <Button
                                     size="icon"
                                     variant="ghost"
