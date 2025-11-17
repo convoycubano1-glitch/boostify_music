@@ -8,10 +8,10 @@ import { Music2, Target, ListMusic, Mail, Search, TrendingUp, Sparkles, Copy, Ch
 import { useAuth } from "../hooks/use-auth";
 import { useState } from "react";
 import { useToast } from "../hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { SiSpotify } from "react-icons/si";
 import { Link } from "wouter";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { queryClient } from "../lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 export default function SpotifyPage() {
@@ -54,10 +54,17 @@ export default function SpotifyPage() {
   // Mutation: Monthly Listeners Prediction
   const predictionMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('/api/spotify/monthly-listeners-prediction', {
+      const response = await fetch('/api/spotify/monthly-listeners-prediction', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate prediction');
+      }
+      return response.json();
     },
     onSuccess: (data) => {
       setPredictionResult(data);
@@ -79,10 +86,17 @@ export default function SpotifyPage() {
   // Mutation: Playlist Match
   const playlistMatchMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('/api/spotify/playlist-match', {
+      const response = await fetch('/api/spotify/playlist-match', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to find playlist matches');
+      }
+      return response.json();
     },
     onSuccess: (data) => {
       setPlaylistMatches(data);
@@ -104,10 +118,17 @@ export default function SpotifyPage() {
   // Mutation: Curator Contact Finder
   const curatorFinderMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('/api/spotify/curator-contact-finder', {
+      const response = await fetch('/api/spotify/curator-contact-finder', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to find curator contacts');
+      }
+      return response.json();
     },
     onSuccess: (data) => {
       setCuratorData(data);
@@ -129,10 +150,17 @@ export default function SpotifyPage() {
   // Mutation: SEO Optimizer
   const seoOptimizerMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('/api/spotify/seo-optimizer', {
+      const response = await fetch('/api/spotify/seo-optimizer', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to optimize content');
+      }
+      return response.json();
     },
     onSuccess: (data) => {
       setSeoOptimization(data);
