@@ -1469,6 +1469,23 @@ export const fashionVideos = pgTable("fashion_videos", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+// Artist News - Noticias generadas con IA (Gemini + Nano Banana)
+export const artistNews = pgTable("artist_news", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  summary: text("summary").notNull(),
+  imageUrl: text("image_url").notNull(),
+  category: text("category", { 
+    enum: ["release", "performance", "collaboration", "achievement", "lifestyle"] 
+  }).notNull(),
+  isPublished: boolean("is_published").default(true).notNull(),
+  views: integer("views").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 // Relations for Fashion Studio tables
 export const fashionSessionsRelations = relations(fashionSessions, ({ one, many }) => ({
   user: one(users, {
@@ -1561,3 +1578,17 @@ export const insertFashionVideoSchema = createInsertSchema(fashionVideos).omit({
 export const selectFashionVideoSchema = createSelectSchema(fashionVideos);
 export type InsertFashionVideo = z.infer<typeof insertFashionVideoSchema>;
 export type SelectFashionVideo = typeof fashionVideos.$inferSelect;
+
+// Artist News Relations
+export const artistNewsRelations = relations(artistNews, ({ one }) => ({
+  user: one(users, {
+    fields: [artistNews.userId],
+    references: [users.id],
+  }),
+}));
+
+// Artist News Schemas
+export const insertArtistNewsSchema = createInsertSchema(artistNews).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectArtistNewsSchema = createSelectSchema(artistNews);
+export type InsertArtistNews = z.infer<typeof insertArtistNewsSchema>;
+export type SelectArtistNews = typeof artistNews.$inferSelect;
