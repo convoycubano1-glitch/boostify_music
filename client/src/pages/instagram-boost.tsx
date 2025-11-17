@@ -581,92 +581,179 @@ export default function InstagramBoostPage() {
               </div>
             </TabsContent>
 
-            {/* Influencers Tab */}
-            <TabsContent value="influencers">
-              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <UserPlus className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold">Influencer Discovery</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Find and connect with relevant influencers
-                      </p>
-                    </div>
+            {/* Influencers Tab - Restructured */}
+            <TabsContent value="influencers" className="space-y-6">
+              {/* Search and Filters */}
+              <Card className="p-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search influencers by name or niche..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <select
+                    value={selectedNiche}
+                    onChange={(e) => setSelectedNiche(e.target.value)}
+                    className="px-4 py-2 rounded-md border bg-background"
+                  >
+                    <option value="all">All Niches</option>
+                    <option value="fashion">Fashion & Lifestyle</option>
+                    <option value="tech">Tech & Gaming</option>
+                    <option value="beauty">Beauty & Makeup</option>
+                    <option value="fitness">Fitness & Health</option>
+                  </select>
+                  <Button variant="outline">
+                    <Filter className="h-4 w-4 mr-2" />
+                    More Filters
+                  </Button>
+                </div>
+              </Card>
+
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* Influencer Cards */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Recommended Influencers</h3>
+                    <Badge variant="outline">24 Results</Badge>
                   </div>
 
-                  <div className="space-y-4 mb-6">
-                    <Input
-                      placeholder="Search influencers by niche..."
-                      className="bg-background border-orange-500/20 focus:border-orange-500"
-                    />
-                    <div className="space-y-4">
-                      {[
-                        { name: 'Sarah Johnson', niche: 'Fashion & Lifestyle' },
-                        { name: 'Mike Stevens', niche: 'Tech & Gaming' }
-                      ].map((influencer, index) => (
-                        <motion.div
-                          key={influencer.name}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5, delay: index * 0.1 }}
-                          className="p-4 rounded-xl border border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-orange-500/20" />
-                            <div>
-                              <h4 className="font-medium">{influencer.name}</h4>
-                              <p className="text-sm text-muted-foreground">{influencer.niche}</p>
-                            </div>
-                            <Button className="ml-auto" variant="outline">
-                              Connect
-                            </Button>
+                  {[
+                    { name: 'Sarah Johnson', niche: 'Fashion & Lifestyle', followers: '125K', engagement: '8.2%', rating: 4.8, posts: 456 },
+                    { name: 'Mike Stevens', niche: 'Tech & Gaming', followers: '89K', engagement: '6.5%', rating: 4.5, posts: 342 },
+                    { name: 'Emma Davis', niche: 'Beauty & Makeup', followers: '210K', engagement: '9.1%', rating: 4.9, posts: 678 }
+                  ].map((influencer, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                    >
+                      <Card className="p-5 hover:shadow-lg transition-all">
+                        <div className="flex gap-4">
+                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500/20 to-pink-500/20 flex items-center justify-center">
+                            <User className="h-8 w-8 text-orange-500" />
                           </div>
-                        </motion.div>
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h4 className="font-semibold text-lg">{influencer.name}</h4>
+                                <p className="text-sm text-muted-foreground">{influencer.niche}</p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                <span className="text-sm font-medium">{influencer.rating}</span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4 mb-4">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Followers</p>
+                                <p className="font-semibold">{influencer.followers}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Engagement</p>
+                                <p className="font-semibold text-green-500">{influencer.engagement}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Posts</p>
+                                <p className="font-semibold">{influencer.posts}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Connect
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Profile
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <MessageCircle className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Campaign Management */}
+                <div className="space-y-4">
+                  <Card className="p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold">Active Campaigns</h3>
+                      <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {campaigns.map((campaign) => (
+                        <div key={campaign.id} className="p-4 rounded-lg border border-orange-500/20 bg-orange-500/5">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm mb-1">{campaign.name}</h4>
+                              <p className="text-xs text-muted-foreground">
+                                {campaign.influencers} influencers • {campaign.posts} posts
+                              </p>
+                            </div>
+                            <Badge variant={campaign.status === 'active' ? 'default' : 'outline'} className="text-xs">
+                              {campaign.status}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">Progress</span>
+                              <span className="font-medium">{campaign.progress}%</span>
+                            </div>
+                            <Progress value={campaign.progress} className="h-2" />
+
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                              <div className="flex items-center gap-1 text-xs">
+                                <DollarSign className="h-3 w-3 text-green-500" />
+                                <span className="font-medium">${campaign.budget.toLocaleString()}</span>
+                              </div>
+                              <Button size="sm" variant="ghost">
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
-                  </div>
+                  </Card>
 
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    View All Influencers
-                  </Button>
-                </Card>
-
-                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Share2 className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold">Active Collaborations</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Manage your influencer partnerships
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 mb-6">
-                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h4 className="font-medium">Summer Collection Campaign</h4>
-                          <p className="text-sm text-muted-foreground">3 Influencers • 15 Posts</p>
-                        </div>
-                        <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                          Active
-                        </Badge>
+                  {/* Quick Stats */}
+                  <Card className="p-5">
+                    <h3 className="font-semibold mb-4">Campaign Stats</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Total Reach</span>
+                        <span className="font-semibold">1.2M</span>
                       </div>
-                      <Progress value={75} className="bg-orange-500/20 h-2 rounded-full" />
-                      <p className="text-sm text-muted-foreground mt-2">75% Complete</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Engagement</span>
+                        <span className="font-semibold text-green-500">7.8%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">ROI</span>
+                        <span className="font-semibold text-green-500">+342%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Total Spend</span>
+                        <span className="font-semibold">$8,000</span>
+                      </div>
                     </div>
-                  </div>
-
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Create New Campaign
-                  </Button>
-                </Card>
+                  </Card>
+                </div>
               </div>
             </TabsContent>
 
