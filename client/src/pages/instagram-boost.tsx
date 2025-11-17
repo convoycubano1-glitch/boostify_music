@@ -757,179 +757,403 @@ export default function InstagramBoostPage() {
               </div>
             </TabsContent>
 
-            {/* Strategies Tab */}
-            <TabsContent value="strategies">
-              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Sparkles className="h-6 w-6 text-orange-500" />
-                    </div>
+            {/* Strategies Tab - Restructured */}
+            <TabsContent value="strategies" className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Content Mix Strategy */}
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold">Growth Strategies</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Optimize your Instagram presence
-                      </p>
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-orange-500" />
+                        Content Mix Strategy
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">Optimal balance for growth</p>
                     </div>
+                    <Badge variant="outline">Optimized</Badge>
                   </div>
 
-                  <div className="space-y-4 mb-6">
-                    <div className="p-4 rounded-xl border border-orange-500/20 bg-background/50">
-                      <h4 className="font-medium mb-2">Content Mix Strategy</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Optimal content distribution for maximum engagement
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="p-2 bg-orange-500/10 rounded text-center">
-                          <div className="text-lg font-bold text-orange-500">40%</div>
-                          <div className="text-xs">Entertainment</div>
+                  <div className="space-y-6">
+                    {/* Interactive Sliders */}
+                    <div className="space-y-4">
+                      {[
+                        { name: 'Entertainment', value: contentMix.entertainment, color: 'bg-orange-500' },
+                        { name: 'Education', value: contentMix.education, color: 'bg-blue-500' },
+                        { name: 'Promotion', value: contentMix.promotion, color: 'bg-green-500' }
+                      ].map((type) => (
+                        <div key={type.name} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{type.name}</span>
+                            <span className="text-sm font-bold">{type.value}%</span>
+                          </div>
+                          <div className="relative">
+                            <div className="h-3 bg-muted rounded-full overflow-hidden">
+                              <div className={`h-full ${type.color} transition-all`} style={{ width: `${type.value}%` }} />
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-2 bg-orange-600/10 rounded text-center">
-                          <div className="text-lg font-bold text-orange-600">35%</div>
-                          <div className="text-xs">Education</div>
-                        </div>
-                        <div className="p-2 bg-orange-700/10 rounded text-center">
-                          <div className="text-lg font-bold text-orange-700">25%</div>
-                          <div className="text-xs">Promotion</div>
+                      ))}
+                    </div>
+
+                    {/* Recommendations */}
+                    <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="flex items-start gap-3">
+                        <Zap className="h-5 w-5 text-blue-500 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">AI Recommendation</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Increase educational content by 5% for better engagement with your target audience.
+                          </p>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Get Custom Strategy
-                  </Button>
+                    <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                      <Target className="h-4 w-4 mr-2" />
+                      Apply Recommendations
+                    </Button>
+                  </div>
                 </Card>
 
-                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Target className="h-6 w-6 text-orange-500" />
-                    </div>
+                {/* Hashtag Strategy */}
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold">Hashtag Strategy</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Optimize your hashtag usage
-                      </p>
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <Hash className="h-5 w-5 text-orange-500" />
+                        Hashtag Library
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">Manage your hashtag sets</p>
                     </div>
+                    <Button size="sm" variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Set
+                    </Button>
                   </div>
 
-                  <div className="space-y-4 mb-6">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">#fashion</span>
-                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">#style</span>
-                      <span className="px-3 py-1 bg-orange-500/10 rounded-full text-sm">#beauty</span>
+                  <div className="space-y-4">
+                    {/* Search Bar */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search hashtags..."
+                        value={hashtagSearch}
+                        onChange={(e) => setHashtagSearch(e.target.value)}
+                        className="pl-10"
+                      />
                     </div>
-                    <Input
-                      placeholder="Search hashtags..."
-                      className="bg-background border-orange-500/20 focus:border-orange-500"
-                    />
-                  </div>
 
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                    Generate Hashtags
-                  </Button>
+                    {/* Saved Hashtags */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Saved Sets</span>
+                        <Badge variant="outline">{savedHashtags.length} tags</Badge>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {savedHashtags.map((tag, idx) => (
+                          <Badge
+                            key={idx}
+                            variant="secondary"
+                            className="px-3 py-1.5 hover:bg-orange-500/10 cursor-pointer group"
+                          >
+                            #{tag}
+                            <XCircle className="ml-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Hashtag Performance */}
+                    <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <h4 className="font-medium text-sm mb-3">Top Performing Tags</h4>
+                      <div className="space-y-2">
+                        {['trending', 'viral', 'instagood'].map((tag, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span>#{tag}</span>
+                            <div className="flex items-center gap-2">
+                              <ArrowUpRight className="h-3 w-3 text-green-500" />
+                              <span className="font-medium text-green-500">+{(idx + 1) * 12}%</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button className="w-full" variant="outline">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generate New Set
+                    </Button>
+                  </div>
                 </Card>
               </div>
+
+              {/* Best Posting Times */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-semibold flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-orange-500" />
+                      Optimal Posting Times
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">Based on your audience activity</p>
+                  </div>
+                  <select className="px-4 py-2 rounded-md border bg-background text-sm">
+                    <option>This Week</option>
+                    <option>Last 30 Days</option>
+                    <option>All Time</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-7 gap-3">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
+                    <div key={day} className="text-center">
+                      <div className="text-xs font-medium text-muted-foreground mb-2">{day}</div>
+                      <div className="space-y-1">
+                        {[9, 14, 18].map((hour) => {
+                          const isOptimal = (idx === 2 && hour === 18) || (idx === 5 && hour === 14);
+                          return (
+                            <div
+                              key={hour}
+                              className={`p-2 rounded text-xs font-medium transition-colors ${
+                                isOptimal
+                                  ? 'bg-green-500/20 border border-green-500 text-green-500'
+                                  : 'bg-muted hover:bg-muted/70'
+                              }`}
+                            >
+                              {hour}:00
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-4 mt-6 p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                  <Award className="h-5 w-5 text-orange-500" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Best Time to Post</p>
+                    <p className="text-xs text-muted-foreground">Wednesday at 6:00 PM & Saturday at 2:00 PM</p>
+                  </div>
+                </div>
+              </Card>
             </TabsContent>
 
-            {/* Reports Tab */}
-            <TabsContent value="reports">
-              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <BarChart2 className="h-6 w-6 text-orange-500" />
+            {/* Reports Tab - Restructured */}
+            <TabsContent value="reports" className="space-y-6">
+              {/* Date Range Selector */}
+              <Card className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <h3 className="font-semibold">Analytics Overview</h3>
+                    <Badge variant="outline">{dateRange === '7d' ? 'Last 7 Days' : 'Last 30 Days'}</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={dateRange === '7d' ? 'default' : 'outline'}
+                      onClick={() => setDateRange('7d')}
+                    >
+                      7 Days
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={dateRange === '30d' ? 'default' : 'outline'}
+                      onClick={() => setDateRange('30d')}
+                    >
+                      30 Days
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={dateRange === '90d' ? 'default' : 'outline'}
+                      onClick={() => setDateRange('90d')}
+                    >
+                      90 Days
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: 'Total Followers', value: '24.5K', change: '+12.3%', icon: Users, isPositive: true },
+                  { label: 'Avg Engagement Rate', value: '8.2%', change: '+2.1%', icon: Heart, isPositive: true },
+                  { label: 'Reach', value: '156K', change: '+18.5%', icon: TrendingUp, isPositive: true }
+                ].map((metric, idx) => (
+                  <Card key={idx} className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="p-2 rounded-lg bg-orange-500/10">
+                        <metric.icon className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={metric.isPositive ? 'text-green-500 border-green-500' : 'text-red-500 border-red-500'}
+                      >
+                        {metric.isPositive ? <ArrowUpRight className="h-3 w-3 inline mr-1" /> : <ArrowDownRight className="h-3 w-3 inline mr-1" />}
+                        {metric.change}
+                      </Badge>
                     </div>
+                    <div className="text-2xl font-bold mb-1">{metric.value}</div>
+                    <p className="text-sm text-muted-foreground">{metric.label}</p>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Growth Chart */}
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h3 className="text-xl font-semibold">Growth Analytics</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Track your Instagram growth
-                      </p>
+                      <h3 className="text-lg font-semibold">Growth Analytics</h3>
+                      <p className="text-sm text-muted-foreground">Track your Instagram growth</p>
                     </div>
+                    <select
+                      value={selectedMetric}
+                      onChange={(e) => setSelectedMetric(e.target.value)}
+                      className="px-3 py-1.5 rounded-md border bg-background text-sm"
+                    >
+                      <option value="engagement">Engagement</option>
+                      <option value="followers">Followers</option>
+                      <option value="reach">Reach</option>
+                    </select>
                   </div>
 
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={engagementData}>
                         <defs>
-                          <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
+                          <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
                             <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.1} />
+                        <XAxis dataKey="name" stroke="#888" fontSize={12} />
+                        <YAxis stroke="#888" fontSize={12} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
+                          labelStyle={{ color: '#fff' }}
+                        />
                         <Area
                           type="monotone"
                           dataKey="value"
                           stroke="#f97316"
+                          strokeWidth={2}
                           fillOpacity={1}
-                          fill="url(#colorEngagement)"
+                          fill="url(#colorGrowth)"
                         />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 </Card>
 
-                <Card className="p-4 sm:p-6 hover:bg-orange-500/5 transition-colors bg-gradient-to-br from-background to-orange-500/5">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="p-3 bg-orange-500/10 rounded-lg">
-                      <Users className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold">Audience Insights</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Understand your followers
-                      </p>
-                    </div>
-                  </div>
+                {/* Audience Insights */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-6">Audience Demographics</h3>
 
                   <div className="space-y-6">
+                    {/* Age Distribution */}
                     <div>
-                      <h4 className="font-medium mb-4">Demographics</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Age 18-24</span>
-                          <div className="w-32 h-2 bg-orange-500/20 rounded-full overflow-hidden">
-                            <div className="w-3/4 h-full bg-orange-500" />
+                      <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <Users className="h-4 w-4 text-orange-500" />
+                        Age Distribution
+                      </h4>
+                      <div className="space-y-3">
+                        {[
+                          { age: '18-24', percentage: 42, color: 'bg-orange-500' },
+                          { age: '25-34', percentage: 35, color: 'bg-blue-500' },
+                          { age: '35-44', percentage: 15, color: 'bg-green-500' },
+                          { age: '45+', percentage: 8, color: 'bg-purple-500' }
+                        ].map((demo) => (
+                          <div key={demo.age} className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>{demo.age} years</span>
+                              <span className="font-medium">{demo.percentage}%</span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div className={`h-full ${demo.color}`} style={{ width: `${demo.percentage}%` }} />
+                            </div>
                           </div>
-                          <span className="text-sm">75%</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Age 25-34</span>
-                          <div className="w-32 h-2 bg-orange-500/20 rounded-full overflow-hidden">
-                            <div className="w-1/2 h-full bg-orange-500" />
-                          </div>
-                          <span className="text-sm">50%</span>
-                        </div>
+                        ))}
                       </div>
                     </div>
 
+                    {/* Top Locations */}
                     <div>
-                      <h4 className="font-medium mb-4">Top Locations</h4>
+                      <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-orange-500" />
+                        Top Locations
+                      </h4>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">United States</span>
-                          <div className="w-32 h-2 bg-orange-500/20 rounded-full overflow-hidden">
-                            <div className="w-4/5 h-full bg-orange-500" />
+                        {[
+                          { country: '🇺🇸 United States', percentage: 45 },
+                          { country: '🇬🇧 United Kingdom', percentage: 22 },
+                          { country: '🇨🇦 Canada', percentage: 15 },
+                          { country: '🇦🇺 Australia', percentage: 10 }
+                        ].map((location, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 rounded hover:bg-muted/50">
+                            <span className="text-sm">{location.country}</span>
+                            <span className="text-sm font-medium">{location.percentage}%</span>
                           </div>
-                          <span className="text-sm">80%</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Gender Split */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-3">Gender Distribution</h4>
+                      <div className="flex gap-2">
+                        <div className="flex-1 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                          <div className="text-2xl font-bold text-blue-500">58%</div>
+                          <div className="text-xs text-muted-foreground">Female</div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">United Kingdom</span>
-                          <div className="w-32 h-2 bg-orange-500/20 rounded-full overflow-hidden">
-                            <div className="w-2/5 h-full bg-orange-500" />
-                          </div>
-                          <span className="text-sm">40%</span>
+                        <div className="flex-1 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 text-center">
+                          <div className="text-2xl font-bold text-orange-500">42%</div>
+                          <div className="text-xs text-muted-foreground">Male</div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </Card>
               </div>
+
+              {/* Top Performing Content */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Top Performing Posts</h3>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {[
+                    { title: 'Summer Collection Launch', likes: 1234, comments: 89, shares: 45, type: 'reel' },
+                    { title: 'Behind the Scenes', likes: 987, comments: 67, shares: 32, type: 'post' },
+                    { title: 'Customer Testimonials', likes: 856, comments: 54, shares: 28, type: 'story' }
+                  ].map((post, idx) => (
+                    <div key={idx} className="p-4 rounded-lg border bg-card hover:shadow-lg transition-all">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <Badge variant="outline" className="mb-2">{post.type}</Badge>
+                          <h4 className="font-medium text-sm">{post.title}</h4>
+                        </div>
+                        <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="text-center">
+                          <div className="font-semibold">{post.likes}</div>
+                          <div className="text-muted-foreground">Likes</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-semibold">{post.comments}</div>
+                          <div className="text-muted-foreground">Comments</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-semibold">{post.shares}</div>
+                          <div className="text-muted-foreground">Shares</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </TabsContent>
 
             {/* AI Tools Tab - Contains all 5 AI Tools */}
