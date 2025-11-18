@@ -95,6 +95,7 @@ const VirtualRecordLabelPage = lazy(() => import("./pages/virtual-record-label")
 const TestProgressPage = lazy(() => import("./pages/test-progress"));
 const PluginsPage = lazy(() => import("./pages/plugins"));
 const PricingPage = lazy(() => import("./pages/pricing"));
+const MusicVideoPricing = lazy(() => import("./pages/music-video-pricing"));
 const AccountPage = lazy(() => import("./pages/account"));
 const SubscriptionSuccessPage = lazy(() => import("./pages/subscription-success"));
 const SubscriptionCancelledPage = lazy(() => import("./pages/subscription-cancelled"));
@@ -276,6 +277,7 @@ const Router = () => {
   const WrappedPluginsPage = withPageWrapper(PluginsPage);
   const WrappedTryOnPage = withPageWrapper(TryOnPage);
   const WrappedPricingPage = withPageWrapper(PricingPage);
+  const WrappedMusicVideoPricing = withPageWrapper(MusicVideoPricing);
   const WrappedAccountPage = withPageWrapper(AccountPage);
   const WrappedSubscriptionSuccessPage = withPageWrapper(SubscriptionSuccessPage);
   const WrappedSubscriptionCancelledPage = withPageWrapper(SubscriptionCancelledPage);
@@ -315,6 +317,7 @@ const Router = () => {
           {getRouteComponent("/my-artist", WrappedMyArtistPage, 'free')}
           {getRouteComponent("/my-artists", WrappedMyArtistsPage, 'free')}
           {getRouteComponent("/pricing", WrappedPricingPage, null)}
+          {getRouteComponent("/music-video-pricing", WrappedMusicVideoPricing, null)}
           {getRouteComponent("/boostify-explicit", WrappedBoostifyExplicitPage, null)}
           
           {/* Rutas de ejemplo básicas - requieren autenticación pero no suscripción */}

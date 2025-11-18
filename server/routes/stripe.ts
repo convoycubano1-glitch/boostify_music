@@ -49,6 +49,156 @@ const BASE_URL = getBaseUrl();
 console.log('🔗 Stripe BASE_URL configurada:', BASE_URL);
 
 /**
+ * MUSIC VIDEO BUNDLES - Video + First Month Subscription Included
+ * Each tier includes video generation + 1 month free subscription to Boostify tools
+ */
+interface TierConfig {
+  name: string;
+  price: number;
+  videoModel: string;
+  resolution: string;
+  images: number;
+  videos: number;
+  lipsyncClips: number;
+  regenerations: number;
+  subscriptionTier: string;
+  subscriptionValue: number;
+  features: string[];
+}
+
+const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
+  essential: {
+    name: 'ESSENTIAL',
+    price: 99,
+    videoModel: 'standard',
+    resolution: '720p',
+    images: 40,
+    videos: 40,
+    lipsyncClips: 15,
+    regenerations: 1,
+    subscriptionTier: 'starter',
+    subscriptionValue: 19.99,
+    features: [
+      '40 unique AI-generated scenes',
+      '720p HD quality',
+      'Lip-sync on 15 close-up shots',
+      'No watermark',
+      'MP4 download',
+      '1 free regeneration',
+      '🎁 First month Boostify STARTER free ($19.99 value)',
+      'Artist profile page',
+      '500 contact database',
+      'Instagram tools (20/month)',
+      'YouTube tools (10/month)',
+      'Spotify tools (10/month)'
+    ]
+  },
+  gold: {
+    name: 'GOLD',
+    price: 149,
+    videoModel: 'professional',
+    resolution: '1080p',
+    images: 40,
+    videos: 40,
+    lipsyncClips: 15,
+    regenerations: 2,
+    subscriptionTier: 'creator',
+    subscriptionValue: 59.99,
+    features: [
+      '40 unique AI-generated scenes',
+      '1080p Full HD quality',
+      'Professional-grade video model',
+      'Lip-sync on 15 close-up shots',
+      'No watermark',
+      'HD download',
+      '2 free regenerations',
+      'Email support',
+      '🎁 First month Boostify CREATOR free ($59.99 value)',
+      'PRO artist profile with analytics',
+      '2,000 contact database',
+      'Digital smart cards',
+      'Instagram tools (50/month)',
+      'YouTube tools (50/month)',
+      'Spotify tools (30/month)',
+      'Email campaigns (2/month)'
+    ]
+  },
+  platinum: {
+    name: 'PLATINUM',
+    price: 249,
+    videoModel: 'professional_plus',
+    resolution: '1080p',
+    images: 40,
+    videos: 40,
+    lipsyncClips: 40,
+    regenerations: 3,
+    subscriptionTier: 'pro',
+    subscriptionValue: 99.99,
+    features: [
+      '40 unique AI-generated scenes',
+      '1080p Full HD quality',
+      'Premium video model',
+      'Lip-sync on ALL 40 clips',
+      'No watermark',
+      'HD download',
+      'Automatic color grading',
+      '3 free regenerations',
+      'Priority chat support',
+      '🎁 First month Boostify PRO free ($99.99 value)',
+      'PRO profile with video background',
+      '5,000 contact database',
+      'NFC smart cards',
+      'Booking calendar',
+      'Basic merchandise store',
+      'Instagram tools (100/month)',
+      'YouTube PRO tools (100/month + thumbnails)',
+      'Spotify tools (100/month)',
+      'Email campaigns (10/month)',
+      'SMS campaigns (5/month)',
+      'A/B testing tools'
+    ]
+  },
+  diamond: {
+    name: 'DIAMOND',
+    price: 399,
+    videoModel: 'premium_4k',
+    resolution: '4K',
+    images: 60,
+    videos: 60,
+    lipsyncClips: 60,
+    regenerations: -1, // unlimited for 30 days
+    subscriptionTier: 'enterprise',
+    subscriptionValue: 149.99,
+    features: [
+      '60 unique AI-generated scenes (extended video)',
+      '4K Ultra HD quality',
+      'Premium video model + 4K upscaling',
+      'Lip-sync on ALL 60 clips',
+      '3 alternative visual concepts',
+      'Director AI: 5 cinematic styles',
+      'Professional color grading',
+      'UNLIMITED regenerations (30 days)',
+      'Multi-format export',
+      '10x priority generation',
+      'Dedicated account manager',
+      '24/7 support',
+      '🎁 First month Boostify ENTERPRISE free ($149.99 value)',
+      'ENTERPRISE profile with custom domain',
+      'UNLIMITED contact database',
+      'Premium smart cards with analytics',
+      'PRO booking calendar with payments',
+      'Full merchandise store + fulfillment',
+      'ALL tools UNLIMITED',
+      'Multi-channel tracking',
+      'Content Calendar AI',
+      'Auto-optimization engine',
+      'API access',
+      'White-label options'
+    ]
+  }
+};
+
+/**
  * Mapeo de planes a IDs de precio en Stripe
  * Estos IDs deben coincidir con los configurados en el dashboard de Stripe
  */
@@ -68,9 +218,25 @@ const PRICE_ID_TO_PLAN = {
 };
 
 /**
- * ID del precio para la compra del video musical completo
+ * Music Video Bundle Price IDs (to be created in Stripe)
+ * These are one-time payment bundles that include video + 1 month free subscription
  */
-const MUSIC_VIDEO_PRICE_ID = 'price_1Rx28w2LyFplWimfQKxDIuZ3'; // Este ID se debe crear en Stripe
+const MUSIC_VIDEO_BUNDLE_PRICE_IDS = {
+  'essential': 'price_music_video_essential_99',
+  'gold': 'price_music_video_gold_149',
+  'platinum': 'price_music_video_platinum_249',
+  'diamond': 'price_music_video_diamond_399'
+};
+
+/**
+ * Subscription-only Price IDs (recurring monthly, for after free trial)
+ */
+const SUBSCRIPTION_PRICE_IDS = {
+  'starter': 'price_subscription_starter_1999',
+  'creator': 'price_subscription_creator_5999',
+  'pro': 'price_subscription_pro_9999',
+  'enterprise': 'price_subscription_enterprise_14999'
+};
 
 /**
  * Colección donde se guardan los productos disponibles
@@ -1181,5 +1347,123 @@ async function handleCancelledSubscription(subscription: any) {
     console.error('Error al procesar cancelación de suscripción:', error);
   }
 }
+
+/**
+ * Get available music video tiers
+ * Returns tier configurations for pricing page
+ */
+router.get('/music-video-tiers', (req: Request, res: Response) => {
+  try {
+    res.json({
+      success: true,
+      tiers: MUSIC_VIDEO_TIERS
+    });
+  } catch (error: any) {
+    console.error('Error getting music video tiers:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error getting music video tiers'
+    });
+  }
+});
+
+/**
+ * Create checkout session for music video bundle
+ * Bundle includes: video generation + 1 month free subscription
+ */
+router.post('/create-music-video-bundle-checkout', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { tier, songName, duration } = req.body;
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    if (!tier || !MUSIC_VIDEO_TIERS[tier]) {
+      return res.status(400).json({ success: false, message: 'Invalid tier selected' });
+    }
+
+    const tierConfig = MUSIC_VIDEO_TIERS[tier];
+    const userEmail = req.user?.email;
+    const emailToUse = userEmail || `${userId}@placeholder.artistboost.app`;
+
+    // Find or create Stripe customer
+    const existingCustomers = await stripe.customers.list({
+      email: emailToUse,
+      limit: 1
+    });
+
+    let customerId: string;
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+    } else {
+      const customersByMetadata = await stripe.customers.search({
+        query: `metadata['firebaseUserId']:'${userId}'`,
+        limit: 1
+      });
+
+      if (customersByMetadata.data.length > 0) {
+        customerId = customersByMetadata.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email: emailToUse,
+          metadata: { firebaseUserId: userId }
+        });
+        customerId = customer.id;
+      }
+    }
+
+    // Create checkout session
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${tierConfig.name} Music Video Bundle`,
+              description: `${tierConfig.resolution} music video + ${tierConfig.subscriptionTier.toUpperCase()} subscription (first month free)`,
+              metadata: {
+                tier,
+                songName: songName || 'Music Video',
+                duration: duration?.toString() || '0',
+                videoModel: tierConfig.videoModel,
+                subscriptionTier: tierConfig.subscriptionTier
+              }
+            },
+            unit_amount: tierConfig.price * 100 // Convert to cents
+          },
+          quantity: 1
+        }
+      ],
+      mode: 'payment',
+      success_url: `${BASE_URL}/music-video/success?session_id={CHECKOUT_SESSION_ID}&tier=${tier}`,
+      cancel_url: `${BASE_URL}/music-video/cancelled`,
+      metadata: {
+        userId,
+        tier,
+        songName: songName || 'Music Video',
+        duration: duration?.toString() || '0',
+        bundleType: 'music_video',
+        subscriptionTier: tierConfig.subscriptionTier,
+        subscriptionValue: tierConfig.subscriptionValue.toString()
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      url: session.url,
+      sessionId: session.id
+    });
+  } catch (error: any) {
+    console.error('Error creating music video bundle checkout:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error creating checkout session'
+    });
+  }
+});
 
 export default router;
