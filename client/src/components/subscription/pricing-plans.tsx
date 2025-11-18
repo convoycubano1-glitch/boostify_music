@@ -18,6 +18,7 @@ import { toast } from '../../hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '../ui/badge';
 import { motion } from 'framer-motion';
+import { SUBSCRIPTION_PLANS, getStripePriceId, getYearlySavings, type PlanTier } from '@/../../shared/pricing-config';
 
 interface ProcessedPlan {
   name: string;
@@ -37,32 +38,15 @@ interface ProcessedPlan {
   features: { name: string; included: boolean }[];
 }
 
-// Mapping del API a nuestro formato de planes
+// Mapping del API a nuestro formato de planes (LEGACY - Mantener por compatibilidad)
 const planKeyMap: Record<string, string> = {
   'Free': 'free',
-  'Basic': 'basic',
-  'Pro': 'pro',
-  'Premium': 'premium'
-};
-
-// Mapping de precios a priceIds de Stripe (actualizados marzo 2025)
-const priceIdMap: Record<string, { monthly: string; yearly: string }> = {
-  'free': {
-    monthly: '',
-    yearly: ''
-  },
-  'basic': {
-    monthly: 'price_1R0lay2LyFplWimfQxUL6Hn0',
-    yearly: 'price_1R0lay2LyFplWimfQxUL6Hn0'
-  },
-  'pro': {
-    monthly: 'price_1R0laz2LyFplWimfsBd5ASoa',
-    yearly: 'price_1R0laz2LyFplWimfsBd5ASoa'
-  },
-  'premium': {
-    monthly: 'price_1R0lb12LyFplWimf7JpMynKA',
-    yearly: 'price_1R0lb12LyFplWimf7JpMynKA'
-  }
+  'Basic': 'creator', // UNIFICADO: basic → creator
+  'Creator': 'creator',
+  'Pro': 'professional', // UNIFICADO: pro → professional
+  'Professional': 'professional',
+  'Premium': 'enterprise', // UNIFICADO: premium → enterprise
+  'Enterprise': 'enterprise'
 };
 
 interface PricingPlansProps {
@@ -113,64 +97,32 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
     }
   }, [user, authLoading]);
 
-  // Planes mejorados y adaptados a los servicios reales de la plataforma
+  // ✅ USAR CONFIGURACIÓN CENTRALIZADA desde shared/pricing-config.ts
+  // Esto elimina duplicación y asegura consistencia
   const pricingPlans: ProcessedPlan[] = [
     {
-      name: 'Free',
-      key: 'free',
-      description: 'Explore the basics',
-      highlight: 'Try it free',
+      ...SUBSCRIPTION_PLANS.free,
       icon: <Music className="h-6 w-6" />,
-      price: { monthly: 0, yearly: 0 },
-      priceId: { monthly: '', yearly: '' },
-      features: [
-        { name: 'Profile (Basic)', included: true },
-        { name: 'Contacts (Limited)', included: true },
-        { name: 'Education Hub (View only)', included: true },
-        { name: 'Boostify TV (Limited access)', included: true },
-        { name: 'Community forum access', included: true },
-        { name: 'Music Generator', included: false },
-        { name: 'Music Videos', included: false },
-        { name: 'AI Agents', included: false },
-        { name: 'Artist Image', included: false },
-        { name: 'Analytics', included: false },
-        { name: 'Merchandise', included: false },
-        { name: 'Social Media Boost', included: false }
-      ]
+      priceId: {
+        monthly: SUBSCRIPTION_PLANS.free.stripeIds.monthly,
+        yearly: SUBSCRIPTION_PLANS.free.stripeIds.yearly
+      }
     },
     {
-      name: 'Creator',
-      key: 'basic',
-      description: 'For emerging artists',
-      highlight: 'Most popular',
+      ...SUBSCRIPTION_PLANS.creator,
       icon: <Video className="h-6 w-6" />,
-      price: { monthly: 59.99, yearly: 599.90 },
-      priceId: priceIdMap['basic'],
-      popular: true,
-      features: [
-        { name: 'Everything in Free', included: true },
-        { name: 'Profile (Complete)', included: true },
-        { name: 'Contacts (Full access)', included: true },
-        { name: 'Music Generator (Basic)', included: true },
-        { name: 'Music Videos (Standard)', included: true },
-        { name: 'AI Agents (Basic)', included: true },
-        { name: 'Artist Image (Basic)', included: true },
-        { name: 'Analytics (Basic)', included: true },
-        { name: 'Merchandise (Basic)', included: true },
-        { name: 'Education Hub (Full access)', included: true },
-        { name: 'YouTube Boost', included: false },
-        { name: 'Instagram Boost', included: false },
-        { name: 'Spotify Boost', included: false }
-      ]
+      priceId: {
+        monthly: SUBSCRIPTION_PLANS.creator.stripeIds.monthly,
+        yearly: SUBSCRIPTION_PLANS.creator.stripeIds.yearly
+      }
     },
     {
-      name: 'Professional',
-      key: 'pro',
-      description: 'For serious creators',
-      highlight: 'Best value',
+      ...SUBSCRIPTION_PLANS.professional,
       icon: <Zap className="h-6 w-6" />,
-      price: { monthly: 99.99, yearly: 999.90 },
-      priceId: priceIdMap['pro'],
+      priceId: {
+        monthly: SUBSCRIPTION_PLANS.professional.stripeIds.monthly,
+        yearly: SUBSCRIPTION_PLANS.professional.stripeIds.yearly
+      },
       features: [
         { name: 'Everything in Creator', included: true },
         { name: 'Music Generator (Advanced)', included: true },
