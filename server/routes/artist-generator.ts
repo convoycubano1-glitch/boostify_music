@@ -1066,4 +1066,260 @@ router.get("/news/:artistId", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Endpoint para editar una noticia individual
+ */
+router.patch("/news/:newsId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const newsId = parseInt(req.params.newsId);
+    const userId = req.user?.id;
+    const { title, content, summary, category } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    console.log(`📝 Editando noticia ${newsId}`);
+
+    // Verificar que la noticia existe y pertenece al usuario
+    const [existingNews] = await pgDb
+      .select()
+      .from(artistNews)
+      .where(eq(artistNews.id, newsId))
+      .limit(1);
+
+    if (!existingNews) {
+      return res.status(404).json({ error: 'Noticia no encontrada' });
+    }
+
+    // Verificar propiedad
+    const [artist] = await pgDb
+      .select()
+      .from(users)
+      .where(eq(users.id, existingNews.userId))
+      .limit(1);
+
+    if (!artist || (artist.id !== userId && artist.generatedBy !== userId)) {
+      return res.status(403).json({ error: 'No tienes permiso para editar esta noticia' });
+    }
+
+    // Actualizar noticia
+    const updateData: any = {
+      updatedAt: new Date()
+    };
+
+    if (title) updateData.title = title;
+    if (content) updateData.content = content;
+    if (summary) updateData.summary = summary;
+    if (category) updateData.category = category;
+
+    await pgDb
+      .update(artistNews)
+      .set(updateData)
+      .where(eq(artistNews.id, newsId));
+
+    console.log(`✅ Noticia ${newsId} actualizada exitosamente`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Noticia actualizada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('❌ Error editando noticia:', error);
+    res.status(500).json({ 
+      error: 'Error al editar noticia',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para eliminar una noticia individual
+ */
+router.delete("/news/:newsId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const newsId = parseInt(req.params.newsId);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    console.log(`🗑️ Eliminando noticia ${newsId}`);
+
+    // Verificar que la noticia existe y pertenece al usuario
+    const [existingNews] = await pgDb
+      .select()
+      .from(artistNews)
+      .where(eq(artistNews.id, newsId))
+      .limit(1);
+
+    if (!existingNews) {
+      return res.status(404).json({ error: 'Noticia no encontrada' });
+    }
+
+    // Verificar propiedad
+    const [artist] = await pgDb
+      .select()
+      .from(users)
+      .where(eq(users.id, existingNews.userId))
+      .limit(1);
+
+    if (!artist || (artist.id !== userId && artist.generatedBy !== userId)) {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar esta noticia' });
+    }
+
+    // Eliminar noticia
+    await pgDb
+      .delete(artistNews)
+      .where(eq(artistNews.id, newsId));
+
+    console.log(`✅ Noticia ${newsId} eliminada exitosamente`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Noticia eliminada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('❌ Error eliminando noticia:', error);
+    res.status(500).json({ 
+      error: 'Error al eliminar noticia',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para regenerar una noticia individual con IA
+ */
+router.post("/news/:newsId/regenerate", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const newsId = parseInt(req.params.newsId);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    console.log(`🔄 Regenerando noticia ${newsId}`);
+
+    // Verificar que la noticia existe y pertenece al usuario
+    const [existingNews] = await pgDb
+      .select()
+      .from(artistNews)
+      .where(eq(artistNews.id, newsId))
+      .limit(1);
+
+    if (!existingNews) {
+      return res.status(404).json({ error: 'Noticia no encontrada' });
+    }
+
+    // Verificar propiedad y obtener datos del artista
+    const [artist] = await pgDb
+      .select()
+      .from(users)
+      .where(eq(users.id, existingNews.userId))
+      .limit(1);
+
+    if (!artist || (artist.id !== userId && artist.generatedBy !== userId)) {
+      return res.status(403).json({ error: 'No tienes permiso para regenerar esta noticia' });
+    }
+
+    const artistName = artist.artistName || artist.firstName || 'Unknown Artist';
+    const genre = artist.genres?.[0] || artist.genre || 'music';
+    const biography = artist.biography || 'Emerging artist';
+
+    // Configurar Gemini
+    const apiKeys = [
+      process.env.GEMINI_API_KEY,
+      process.env.GEMINI_API_KEY2
+    ].filter(key => key && key.length > 0);
+
+    if (apiKeys.length === 0) {
+      throw new Error('No hay API keys de Gemini configuradas');
+    }
+
+    const geminiClient = new GoogleGenAI({ apiKey: apiKeys[0] || "" });
+
+    // Prompts según categoría
+    const categoryPrompts: Record<string, string> = {
+      release: `Write a compelling news article about ${artistName}, a ${genre} artist, announcing their latest single or album release. Make it exciting and professional, as if written by a music journalist. Include specific release details and what makes this music special. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`,
+      performance: `Write a news article about ${artistName}'s upcoming or recent live performance. Describe the venue, the energy, fan reactions, and what made this show memorable. Make it vivid and engaging. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`,
+      collaboration: `Write a news article about ${artistName} collaborating with another artist or brand. Describe the partnership, what it means for fans, and what to expect from this collaboration. Make it exciting and newsworthy. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`,
+      achievement: `Write a news article about ${artistName} achieving a major milestone (awards, chart success, streaming records, etc). Celebrate their success while maintaining journalistic objectivity. Make it inspiring and compelling. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`,
+      lifestyle: `Write a news article about ${artistName}'s lifestyle, creative process, or personal journey as an artist. Give fans insight into who they are beyond the music. Make it personal yet professional. Write in a journalistic style with a catchy headline and 2-3 paragraphs. Format: {"title": "...", "content": "...", "summary": "..."}`
+    };
+
+    const prompt = categoryPrompts[existingNews.category] || categoryPrompts.release;
+
+    console.log(`🤖 Generando nuevo contenido con Gemini para categoría: ${existingNews.category}`);
+
+    // Generar nuevo contenido
+    const response = await geminiClient.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+      config: {
+        temperature: 0.9,
+        topP: 0.95,
+        maxOutputTokens: 1024
+      }
+    });
+
+    let newsData;
+    try {
+      const cleanedResponse = response.text
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      newsData = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      console.error('Error parseando respuesta de Gemini:', parseError);
+      throw new Error('Error parseando contenido generado');
+    }
+
+    // Generar nueva imagen con contexto del artista
+    console.log('🎨 Generando nueva imagen...');
+    const imagePrompt = `Professional music journalism photo: ${newsData.title}, ${artistName} ${genre} artist, high quality, cinematic lighting, photorealistic`;
+    
+    const imageResult = await generateCinematicImage(imagePrompt);
+    const newImageUrl = imageResult.success ? imageResult.imageUrl : existingNews.imageUrl;
+
+    // Actualizar noticia
+    await pgDb
+      .update(artistNews)
+      .set({
+        title: newsData.title,
+        content: newsData.content,
+        summary: newsData.summary,
+        imageUrl: newImageUrl,
+        updatedAt: new Date()
+      })
+      .where(eq(artistNews.id, newsId));
+
+    console.log(`✅ Noticia ${newsId} regenerada exitosamente`);
+
+    // Obtener noticia actualizada
+    const [updatedNews] = await pgDb
+      .select()
+      .from(artistNews)
+      .where(eq(artistNews.id, newsId))
+      .limit(1);
+
+    res.status(200).json({
+      success: true,
+      message: 'Noticia regenerada exitosamente',
+      news: updatedNews
+    });
+
+  } catch (error) {
+    console.error('❌ Error regenerando noticia:', error);
+    res.status(500).json({ 
+      error: 'Error al regenerar noticia',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
 export default router;
