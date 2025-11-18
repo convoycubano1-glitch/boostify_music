@@ -73,6 +73,7 @@ import { awardCourseCompletionAchievement } from './achievements';
 import apiProxySecure from './routes/api-proxy-secure';
 import firebaseTokenRouter from './routes/firebase-token'; // Import Firebase token generator
 import artistWalletRouter from './routes/artist-wallet'; // Import Artist Wallet for earnings and credits
+import motionDnaImagesRouter from './routes/motion-dna-images'; // Import MotionDNA images router
 import printfulRouter from './routes/printful'; // Import Printful integration router
 import crowdfundingRouter from './routes/crowdfunding'; // Import Crowdfunding router
 import tokenizationRouter from './routes/tokenization'; // Import Tokenization (Web3/Blockchain) router
@@ -285,6 +286,9 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Registrar el router para Gemini Image Generation (Nano Banana)
   app.use('/api/gemini-image', geminiImageRouter);
+  
+  // MotionDNA images router
+  app.use('/api/images', motionDnaImagesRouter);
   
   // Registrar el router para Face Analysis con Gemini Vision
   app.use('/api/gemini', faceAnalysisRouter);

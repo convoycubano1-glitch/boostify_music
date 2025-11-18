@@ -5,9 +5,10 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Sparkles, Video, Users, Zap, TrendingUp, CheckCircle2, Database, Cpu, Activity, Network, Brain, Play } from "lucide-react";
+import { Sparkles, Video, Users, Zap, TrendingUp, CheckCircle2, Database, Cpu, Activity, Network, Brain, Play, X } from "lucide-react";
 import aiMotionVizImage from "../../../../attached_assets/generated_images/AI_motion_capture_visualization_c0ac82f5.png";
 import aiTrainingImage from "../../../../attached_assets/generated_images/AI_training_process_diagram_b2342b3f.png";
 import danceAnalysisImage from "../../../../attached_assets/generated_images/Dance_movement_analysis_visualization_ea1514ba.png";
@@ -20,24 +21,61 @@ export function MotionDNASection() {
     role: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const { toast } = useToast();
   const { scrollYProgress } = useScroll();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    toast({
-      title: "Application Submitted!",
-      description: "We'll contact you soon with more information about Boostify MotionDNA.",
-    });
+    try {
+      const webhookData = {
+        type: 'motion_dna_beta_request',
+        name: formData.name,
+        email: formData.email,
+        city: formData.city,
+        role: formData.role,
+        message: formData.message,
+        timestamp: new Date().toISOString(),
+        source: 'music_video_creator_section'
+      };
 
-    setFormData({
-      name: '',
-      email: '',
-      city: '',
-      role: '',
-      message: ''
-    });
+      const response = await fetch('https://hook.us2.make.com/vie6k5f6ryrv7fk5d51qqiu1msr49e0a', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Application Submitted!",
+          description: "We'll contact you soon with more information about Boostify MotionDNA.",
+        });
+
+        setFormData({
+          name: '',
+          email: '',
+          city: '',
+          role: '',
+          message: ''
+        });
+      } else {
+        throw new Error('Failed to submit application');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem submitting your application. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -166,6 +204,7 @@ export function MotionDNASection() {
                 size="lg"
                 variant="outline"
                 className="border-2 border-orange-600 text-orange-500 hover:bg-orange-600/10 text-lg px-8 py-6"
+                onClick={() => setShowVideoModal(true)}
                 data-testid="button-view-demo"
               >
                 <Play className="h-5 w-5 mr-2" />
@@ -530,11 +569,12 @@ export function MotionDNASection() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-white text-lg py-7 shadow-lg shadow-orange-600/50 hover:shadow-xl hover:shadow-orange-600/70 transition-all"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-white text-lg py-7 shadow-lg shadow-orange-600/50 hover:shadow-xl hover:shadow-orange-600/70 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 data-testid="button-submit-beta"
               >
-                <Sparkles className="h-5 w-5 mr-2" />
-                Request Beta Access
+                <Sparkles className={`h-5 w-5 mr-2 ${isSubmitting ? 'animate-spin' : ''}`} />
+                {isSubmitting ? 'Submitting...' : 'Request Beta Access'}
               </Button>
               
               <p className="text-sm text-gray-500 text-center pt-2">
@@ -560,6 +600,35 @@ export function MotionDNASection() {
           </p>
         </motion.div>
       </div>
+
+      {/* Video Demo Modal */}
+      <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
+        <DialogContent className="max-w-2xl w-full bg-black border-orange-600/50 p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Boostify MotionDNA Demo Video</DialogTitle>
+          </DialogHeader>
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              onClick={() => setShowVideoModal(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <div className="w-full bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '9/16' }}>
+              <iframe
+                className="w-full h-full"
+                src="https://app.heygen.com/embedded-player/7bddaadc9d474b65b77d97d781f7429a"
+                title="HeyGen video player"
+                frameBorder="0"
+                allow="encrypted-media; fullscreen;"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
