@@ -1,5 +1,7 @@
 import { env } from "../../env";
+import { logger } from "../logger";
 import { 
+import { logger } from "../logger";
   ShotType, 
   SceneRole, 
   CameraMovement, 
@@ -14,6 +16,7 @@ import {
   generateVariedShotSequence
 } from "../../types/music-video-scene";
 import type { DirectorProfile } from "../../data/directors/director-schema";
+import { logger } from "../logger";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -94,13 +97,13 @@ const backoff = async (retryCount: number) => {
   const baseDelay = 3000;
   const maxDelay = 60000;
   const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
-  console.log(`Backing off for ${delay}ms before retry #${retryCount + 1}`);
+  logger.info(`Backing off for ${delay}ms before retry #${retryCount + 1}`);
   await wait(delay);
 };
 
 // Function to create a fallback course structure when API calls fail
 function createFallbackCourseContent(prompt: string) {
-  console.log("Creating fallback course content from prompt:", prompt.substring(0, 100) + "...");
+  logger.info("Creating fallback course content from prompt:", prompt.substring(0, 100) + "...");
   
   // Extract course title and category from the prompt if possible
   const titleMatch = prompt.match(/Title: "([^"]+)"/i);
@@ -168,19 +171,19 @@ function createFallbackCourseContent(prompt: string) {
 // Función para generar contenido del curso
 export async function generateCourseContent(prompt: string) {
   try {
-    console.log("Starting course content generation with OpenRouter (Gemini 2.0)...");
-    console.log("Prompt:", prompt.substring(0, 150) + "...");
+    logger.info("Starting course content generation with OpenRouter (Gemini 2.0)...");
+    logger.info("Prompt:", prompt.substring(0, 150) + "...");
 
     // Verificar la presencia de la API key y crear una estructura de respaldo si no está disponible
     if (!env.VITE_OPENROUTER_API_KEY) {
-      console.error("OpenRouter API key is missing - using fallback content structure");
+      logger.error("OpenRouter API key is missing - using fallback content structure");
       return createFallbackCourseContent(prompt);
     }
 
     // Obtener la clave API para el curso
     const apiKey = env.VITE_OPENROUTER_API_KEY;
     if (!apiKey) {
-      console.error("OpenRouter API key is empty or undefined - using fallback content structure");
+      logger.error("OpenRouter API key is empty or undefined - using fallback content structure");
       return createFallbackCourseContent(prompt);
     }
     
@@ -193,14 +196,14 @@ export async function generateCourseContent(prompt: string) {
     };
     
     // Log para debugging (sin exponer la clave completa)
-    console.log("OpenRouter course generation headers:", {
+    logger.info("OpenRouter course generation headers:", {
       Authorization: `Bearer ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`,
       "HTTP-Referer": headers["HTTP-Referer"],
       "X-Title": headers["X-Title"]
     });
     
     // Usar el modelo Gemini 2.0 Flash según lo solicitado por el usuario
-    console.log("Using Gemini 2.0 Flash model for course content generation");
+    logger.info("Using Gemini 2.0 Flash model for course content generation");
     
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -237,7 +240,7 @@ export async function generateCourseContent(prompt: string) {
       })
     });
 
-    console.log("OpenRouter API response status:", response.status);
+    logger.info("OpenRouter API response status:", response.status);
 
     // Manejo mejorado de respuestas de la API
     const contentType = response.headers.get('content-type') || '';
@@ -251,10 +254,10 @@ export async function generateCourseContent(prompt: string) {
           const errorText = await response.text().catch(() => "Unknown error");
           return { error: { message: errorText } };
         });
-        console.error("OpenRouter API error:", errorData);
+        logger.error("OpenRouter API error:", errorData);
         throw new Error(`Error generating course content: ${response.statusText}. Status: ${response.status}`);
       } catch (parseError) {
-        console.error("Error parsing error response:", parseError);
+        logger.error("Error parsing error response:", parseError);
         throw new Error(`API error (${response.status}): Could not parse error response`);
       }
     }
@@ -263,22 +266,22 @@ export async function generateCourseContent(prompt: string) {
     if (!contentType.includes('application/json')) {
       try {
         responseText = await response.text();
-        console.log("Non-JSON response received:", responseText.substring(0, 100) + "...");
+        logger.info("Non-JSON response received:", responseText.substring(0, 100) + "...");
         
         // Comprobar si es realmente JSON a pesar del tipo de contenido incorrecto
         if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
           try {
             data = JSON.parse(responseText);
-            console.log("Successfully parsed response as JSON despite incorrect content-type");
+            logger.info("Successfully parsed response as JSON despite incorrect content-type");
           } catch (parseError) {
-            console.error("Failed to parse as JSON even though it looked like JSON:", parseError);
+            logger.error("Failed to parse as JSON even though it looked like JSON:", parseError);
             throw new Error("API returned invalid JSON response");
           }
         } else {
           throw new Error("API returned non-JSON response: " + responseText.substring(0, 100) + "...");
         }
       } catch (textError) {
-        console.error("Error reading response:", textError);
+        logger.error("Error reading response:", textError);
         throw new Error(`Unable to read API response: ${(textError as Error).message}`);
       }
     } else {
@@ -286,19 +289,19 @@ export async function generateCourseContent(prompt: string) {
       try {
         data = await response.json();
       } catch (jsonError) {
-        console.error("Error parsing API JSON response:", jsonError);
+        logger.error("Error parsing API JSON response:", jsonError);
         throw new Error(`Unable to parse API response as JSON: ${(jsonError as Error).message}`);
       }
     }
 
-    console.log("OpenRouter raw response:", data);
+    logger.info("OpenRouter raw response:", data);
 
     // Validación de estructura de respuesta con manejo de errores mejorado
     if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-      console.error("Invalid API response structure (missing/empty choices array):", data);
+      logger.error("Invalid API response structure (missing/empty choices array):", data);
       
       // Crear una estructura de respuesta de respaldo en lugar de fallar
-      console.log("Generating fallback course content structure");
+      logger.info("Generating fallback course content structure");
       return createFallbackCourseContent(prompt);
     }
 
@@ -316,29 +319,29 @@ export async function generateCourseContent(prompt: string) {
       } else if (typeof firstChoice === 'string') {
         content = firstChoice;
       } else {
-        console.error("Cannot extract content from API response:", firstChoice);
+        logger.error("Cannot extract content from API response:", firstChoice);
         throw new Error("Cannot extract content from API response");
       }
 
-      console.log("Raw content received (first 200 chars):", content.substring(0, 200) + "...");
+      logger.info("Raw content received (first 200 chars):", content.substring(0, 200) + "...");
 
       // Procesar el contenido - intentar parsear JSON
       let parsed;
       try {
         parsed = typeof content === 'string' ? JSON.parse(content) : content;
       } catch (parseError) {
-        console.error("Error parsing JSON content:", parseError);
-        console.log("Content that failed parsing (sample):", content.substring(0, 200));
+        logger.error("Error parsing JSON content:", parseError);
+        logger.info("Content that failed parsing (sample):", content.substring(0, 200));
         
         // Intentar extraer JSON del texto si hay { } en el contenido
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           try {
-            console.log("Attempting to extract JSON from text content");
+            logger.info("Attempting to extract JSON from text content");
             parsed = JSON.parse(jsonMatch[0]);
-            console.log("Successfully extracted JSON");
+            logger.info("Successfully extracted JSON");
           } catch (extractError) {
-            console.error("Failed to extract JSON from content:", extractError);
+            logger.error("Failed to extract JSON from content:", extractError);
             throw new Error("Could not parse JSON response: " + (parseError as Error).message);
           }
         } else {
@@ -384,16 +387,16 @@ export async function generateCourseContent(prompt: string) {
           : ["Professional Portfolio Development", "Industry Implementation"]
       };
       
-      console.log("Validated course content structure with curriculum length:", validatedContent.curriculum.length);
+      logger.info("Validated course content structure with curriculum length:", validatedContent.curriculum.length);
       return validatedContent;
     } catch (parseError) {
-      console.error("JSON parsing/validation error:", parseError);
-      console.error("Content that failed validation:", content);
+      logger.error("JSON parsing/validation error:", parseError);
+      logger.error("Content that failed validation:", content);
       throw new Error(`Validation error: ${(parseError as Error).message}`);
     }
   } catch (error) {
-    console.error("Course generation error:", error);
-    console.log("Using fallback course content generation due to error");
+    logger.error("Course generation error:", error);
+    logger.info("Using fallback course content generation due to error");
     return createFallbackCourseContent(prompt);
   }
 }
@@ -415,14 +418,14 @@ export async function chatWithAI(messages: Message[]) {
     };
     
     // Log para debugging (sin exponer la clave completa)
-    console.log("OpenRouter chat headers:", {
+    logger.info("OpenRouter chat headers:", {
       Authorization: `Bearer ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`,
       "HTTP-Referer": headers["HTTP-Referer"],
       "X-Title": headers["X-Title"]
     });
     
     // Usar el modelo Gemini 2.0 Flash según lo solicitado por el usuario
-    console.log("Using Gemini 2.0 Flash model for chat completion");
+    logger.info("Using Gemini 2.0 Flash model for chat completion");
     
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -447,10 +450,10 @@ export async function chatWithAI(messages: Message[]) {
           const errorText = await response.text().catch(() => "Unknown error");
           return { error: { message: errorText } };
         });
-        console.error("OpenRouter API error:", errorData);
+        logger.error("OpenRouter API error:", errorData);
         throw new Error(`Error in AI chat: ${response.statusText}. Status: ${response.status}`);
       } catch (parseError) {
-        console.error("Error parsing error response:", parseError);
+        logger.error("Error parsing error response:", parseError);
         throw new Error(`API error (${response.status}): Could not parse error response`);
       }
     }
@@ -459,15 +462,15 @@ export async function chatWithAI(messages: Message[]) {
     if (!contentType.includes('application/json')) {
       try {
         responseText = await response.text();
-        console.log("Non-JSON response received from chat API:", responseText.substring(0, 100) + "...");
+        logger.info("Non-JSON response received from chat API:", responseText.substring(0, 100) + "...");
         
         // Comprobar si es realmente JSON a pesar del tipo de contenido incorrecto
         if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
           try {
             data = JSON.parse(responseText);
-            console.log("Successfully parsed chat response as JSON despite incorrect content-type");
+            logger.info("Successfully parsed chat response as JSON despite incorrect content-type");
           } catch (parseError) {
-            console.error("Failed to parse chat response as JSON:", parseError);
+            logger.error("Failed to parse chat response as JSON:", parseError);
             // Si no se puede analizar como JSON pero la respuesta se ve bien, usamos el texto como respuesta
             return responseText;
           }
@@ -476,7 +479,7 @@ export async function chatWithAI(messages: Message[]) {
           return responseText;
         }
       } catch (textError) {
-        console.error("Error reading chat response:", textError);
+        logger.error("Error reading chat response:", textError);
         throw new Error(`Unable to read API response: ${(textError as Error).message}`);
       }
     } else {
@@ -484,14 +487,14 @@ export async function chatWithAI(messages: Message[]) {
       try {
         data = await response.json();
       } catch (jsonError) {
-        console.error("Error parsing chat JSON response:", jsonError);
+        logger.error("Error parsing chat JSON response:", jsonError);
         throw new Error(`Unable to parse API response as JSON: ${(jsonError as Error).message}`);
       }
     }
 
     // Extraer el contenido con manejo de diferentes estructuras posibles
     if (!data || !data.choices || data.choices.length === 0) {
-      console.error("Invalid chat API response structure:", data);
+      logger.error("Invalid chat API response structure:", data);
       
       // Si tenemos texto de respuesta, usémoslo como último recurso
       if (responseText) {
@@ -513,10 +516,10 @@ export async function chatWithAI(messages: Message[]) {
       return firstChoice;
     }
     
-    console.error("Unexpected chat response format:", firstChoice);
+    logger.error("Unexpected chat response format:", firstChoice);
     throw new Error("Cannot extract content from API response");
   } catch (error) {
-    console.error('Error in AI chat:', error);
+    logger.error('Error in AI chat:', error);
     return `Lo siento, no puedo procesar tu solicitud en este momento debido a un error: ${error instanceof Error ? error.message : 'Error desconocido'}. Por favor, intenta nuevamente más tarde.`;
   }
 }
@@ -535,18 +538,18 @@ export async function generateVideoScript(prompt: string): Promise<string> {
   // Verificar si la API key está presente antes de realizar cualquier solicitud
   const apiKey = env.VITE_OPENROUTER_API_KEY;
   if (!apiKey) {
-    console.error("OpenRouter API key is missing or undefined. Using fallback script generation.");
+    logger.error("OpenRouter API key is missing or undefined. Using fallback script generation.");
     return generateFallbackVideoScript(prompt);
   }
 
-  console.log("OpenRouter API key availability check:", !!apiKey);
+  logger.info("OpenRouter API key availability check:", !!apiKey);
 
   const maxRetries = 3;
   let retryCount = 0;
 
   while (retryCount < maxRetries) {
     try {
-      console.log(`Intento ${retryCount + 1}/${maxRetries} para generar guion de video`);
+      logger.info(`Intento ${retryCount + 1}/${maxRetries} para generar guion de video`);
 
       // Preparar headers con formato exacto para OpenRouter
       const headers = {
@@ -557,7 +560,7 @@ export async function generateVideoScript(prompt: string): Promise<string> {
       };
 
       // Log para debugging (sin exponer la clave completa)
-      console.log("OpenRouter script headers:", {
+      logger.info("OpenRouter script headers:", {
         Authorization: `Bearer ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`,
         "HTTP-Referer": headers["HTTP-Referer"],
         "X-Title": headers["X-Title"]
@@ -569,7 +572,7 @@ export async function generateVideoScript(prompt: string): Promise<string> {
       }
 
       // Usar el modelo Gemini 2.0 Flash según lo solicitado por el usuario
-      console.log("Using Gemini 2.0 Flash model for video script generation");
+      logger.info("Using Gemini 2.0 Flash model for video script generation");
       
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST", 
@@ -638,15 +641,15 @@ FORMATO DE RESPUESTA (JSON):
         } catch (e) {
           errorData = { error: { message: "Failed to parse error response" } };
         }
-        console.error("Script generation API Error:", errorData);
+        logger.error("Script generation API Error:", errorData);
 
         if (response.status === 401 || response.status === 403) {
-          console.error("Authentication error with OpenRouter API. Check your API key.");
+          logger.error("Authentication error with OpenRouter API. Check your API key.");
           return generateFallbackVideoScript(prompt);
         }
 
         if (response.status === 429) {
-          console.log("Rate limit hit, implementing backoff...");
+          logger.info("Rate limit hit, implementing backoff...");
           await backoff(retryCount);
           retryCount++;
           continue;
@@ -659,11 +662,11 @@ FORMATO DE RESPUESTA (JSON):
       try {
         data = await response.json();
       } catch (error) {
-        console.error("Error parsing API response:", error as Error);
+        logger.error("Error parsing API response:", error as Error);
         throw new Error(`Unable to parse API response: ${(error as Error).message}`);
       }
       
-      console.log("Script generation response:", data);
+      logger.info("Script generation response:", data);
 
       if (!data.choices?.[0]?.message?.content) {
         throw new Error("Invalid API response format");
@@ -688,12 +691,12 @@ FORMATO DE RESPUESTA (JSON):
         return content;
 
       } catch (parseError) {
-        console.error("JSON parsing/validation error:", parseError);
+        logger.error("JSON parsing/validation error:", parseError);
         throw new Error("Invalid script format");
       }
 
     } catch (error) {
-      console.error(`Error in attempt ${retryCount + 1}:`, error);
+      logger.error(`Error in attempt ${retryCount + 1}:`, error);
 
       if (retryCount === maxRetries - 1) {
         if (error instanceof Error && error.message.includes("API key")) {
@@ -708,7 +711,7 @@ FORMATO DE RESPUESTA (JSON):
   }
 
   // Si todos los intentos fallan, usar la generación de respaldo
-  console.warn("Failed all attempts to generate script - using fallback");
+  logger.warn("Failed all attempts to generate script - using fallback");
   return generateFallbackVideoScript(prompt);
 }
 
@@ -718,7 +721,7 @@ FORMATO DE RESPUESTA (JSON):
  * @returns Un JSON string con una estructura básica de guion
  */
 function generateFallbackVideoScript(prompt: string): string {
-  console.log("Generating fallback video script for:", prompt.substring(0, 100) + "...");
+  logger.info("Generating fallback video script for:", prompt.substring(0, 100) + "...");
   
   // Extraer posibles líneas de letras del prompt
   const lines = prompt.split('\n');
@@ -759,7 +762,7 @@ function generateFallbackVideoScript(prompt: string): string {
 // Additional utility functions
 export async function generateVideoPromptWithRetry(params: VideoPromptParams): Promise<string> {
   try {
-    console.log("🎨 Mejorando prompt cinematográfico con Gemini backend...");
+    logger.info("🎨 Mejorando prompt cinematográfico con Gemini backend...");
     
     // Basic validation
     if (!params.shotType || !params.mood || !params.visualStyle) {
@@ -785,22 +788,22 @@ export async function generateVideoPromptWithRetry(params: VideoPromptParams): P
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.warn('Backend prompt enhancement failed, using base prompt:', errorData);
+      logger.warn('Backend prompt enhancement failed, using base prompt:', errorData);
       return basePrompt;
     }
 
     const data = await response.json();
     
     if (!data.success || !data.enhancedPrompt) {
-      console.warn("No enhanced prompt received, using base prompt");
+      logger.warn("No enhanced prompt received, using base prompt");
       return basePrompt;
     }
 
-    console.log(`✅ Prompt mejorado con Gemini`);
+    logger.info(`✅ Prompt mejorado con Gemini`);
     return data.enhancedPrompt;
     
   } catch (error) {
-    console.error("Error enhancing prompt:", error);
+    logger.error("Error enhancing prompt:", error);
     // Fallback to base prompt
     return generateVideoPrompt(params);
   }
@@ -813,7 +816,7 @@ export async function generateThreeConceptProposals(
   audioDuration?: number
 ): Promise<MusicVideoConcept[]> {
   try {
-    console.log("🎨 Generando 3 propuestas de concepto visual con Gemini...");
+    logger.info("🎨 Generando 3 propuestas de concepto visual con Gemini...");
     
     // Llamar al endpoint del backend que usa Gemini
     const response = await fetch("/api/music-video/generate-concepts", {
@@ -840,11 +843,11 @@ export async function generateThreeConceptProposals(
       throw new Error("No concept data received from backend");
     }
     
-    console.log("✅ 3 conceptos visuales generados exitosamente con Gemini");
+    logger.info("✅ 3 conceptos visuales generados exitosamente con Gemini");
     return data.concepts;
     
   } catch (error) {
-    console.error("Error generating concept proposals:", error);
+    logger.error("Error generating concept proposals:", error);
     throw error;
   }
 }
@@ -864,11 +867,11 @@ export async function generateMusicVideoConcept(
   audioDuration?: number
 ): Promise<MusicVideoConcept | null> {
   try {
-    console.log("🎨 Generando concepto visual y narrativo del video...");
+    logger.info("🎨 Generando concepto visual y narrativo del video...");
     
     const apiKey = env.VITE_OPENROUTER_API_KEY;
     if (!apiKey) {
-      console.warn("OpenRouter API key missing - skipping concept generation");
+      logger.warn("OpenRouter API key missing - skipping concept generation");
       return null;
     }
     
@@ -952,7 +955,7 @@ Return ONLY valid JSON matching this structure:
     });
     
     if (!response.ok) {
-      console.error("Error generating concept:", response.status);
+      logger.error("Error generating concept:", response.status);
       return null;
     }
     
@@ -960,16 +963,16 @@ Return ONLY valid JSON matching this structure:
     const conceptContent = data.choices?.[0]?.message?.content;
     
     if (!conceptContent) {
-      console.error("No concept content received");
+      logger.error("No concept content received");
       return null;
     }
     
     const concept: MusicVideoConcept = JSON.parse(conceptContent);
-    console.log("✅ Concepto visual generado exitosamente");
+    logger.info("✅ Concepto visual generado exitosamente");
     return concept;
     
   } catch (error) {
-    console.error("Error generating music video concept:", error);
+    logger.error("Error generating music video concept:", error);
     return null;
   }
 }
@@ -999,7 +1002,7 @@ export async function generateMusicVideoScript(
       throw new Error("No lyrics provided for script generation");
     }
     
-    console.log("🎬 Generando script completo del video con Gemini backend...");
+    logger.info("🎬 Generando script completo del video con Gemini backend...");
     
     // Usar estilo de edición para calcular escenas y duraciones
     const minDuration = editingStyle?.duration.min || 2;
@@ -1011,9 +1014,9 @@ export async function generateMusicVideoScript(
     const maxScenes = 40; // Generate 40 scenes for full video
     const targetSceneCount = Math.min(calculatedScenes, maxScenes);
     
-    console.log(`🎬 Estilo de edición: ${editingStyle?.name || 'Phrase-based'}`);
-    console.log(`⏱️ Duraciones: ${minDuration}s - ${maxDuration}s por escena`);
-    console.log(`📊 Escenas calculadas: ${targetSceneCount}`);
+    logger.info(`🎬 Estilo de edición: ${editingStyle?.name || 'Phrase-based'}`);
+    logger.info(`⏱️ Duraciones: ${minDuration}s - ${maxDuration}s por escena`);
+    logger.info(`📊 Escenas calculadas: ${targetSceneCount}`);
     
     // Llamar al endpoint del backend que usa Gemini
     const response = await fetch("/api/music-video/generate-script", {
@@ -1033,22 +1036,22 @@ export async function generateMusicVideoScript(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error('Error generando script:', errorData);
+      logger.error('Error generando script:', errorData);
       return generarGuionFallback(lyrics, targetSceneCount, audioDuration);
     }
 
     const data = await response.json();
     
     if (!data.success || !data.script) {
-      console.error("No script data received from backend");
+      logger.error("No script data received from backend");
       return generarGuionFallback(lyrics, targetSceneCount, audioDuration);
     }
 
-    console.log(`✅ Script generado con ${data.script.scenes?.length || 0} escenas`);
+    logger.info(`✅ Script generado con ${data.script.scenes?.length || 0} escenas`);
     return JSON.stringify(data.script);
     
   } catch (error) {
-    console.error("Error generating music video script:", error);
+    logger.error("Error generating music video script:", error);
     const calculatedScenes = Math.ceil((audioDuration || 40) / 4);
     const maxScenes = 40;
     return generarGuionFallback(lyrics, Math.min(calculatedScenes, maxScenes), audioDuration);
@@ -1068,7 +1071,7 @@ function generarGuionFallback(
   sceneCount: number = 10, 
   audioDuration?: number
 ): string {
-  console.log(`🎬 Generando guión fallback con ${sceneCount} escenas (nuevo schema MusicVideoScene)`);
+  logger.info(`🎬 Generando guión fallback con ${sceneCount} escenas (nuevo schema MusicVideoScene)`);
   
   // Dividir las letras en líneas
   const lines = lyrics.split('\n').filter(line => line.trim().length > 0);
@@ -1087,7 +1090,7 @@ function generarGuionFallback(
     adjustedDurations.push(duration);
   }
   
-  console.log(`🎬 Duraciones VARIADAS: min=${Math.min(...adjustedDurations).toFixed(2)}s, max=${Math.max(...adjustedDurations).toFixed(2)}s, promedio=${(adjustedDurations.reduce((s, d) => s + d, 0) / sceneCount).toFixed(2)}s, total=${adjustedDurations.reduce((s, d) => s + d, 0).toFixed(2)}s`);
+  logger.info(`🎬 Duraciones VARIADAS: min=${Math.min(...adjustedDurations).toFixed(2)}s, max=${Math.max(...adjustedDurations).toFixed(2)}s, promedio=${(adjustedDurations.reduce((s, d) => s + d, 0) / sceneCount).toFixed(2)}s, total=${adjustedDurations.reduce((s, d) => s + d, 0).toFixed(2)}s`);
   
   // Generar exactamente sceneCount escenas
   const scenes: MusicVideoScene[] = [];
@@ -1174,7 +1177,7 @@ function generarGuionFallback(
   
   // Validar balance 50/50
   const balance = validateSceneBalance(scenes);
-  console.log(`✅ Balance de escenas: ${balance.message}`);
+  logger.info(`✅ Balance de escenas: ${balance.message}`);
   
   // Crear script completo con estadísticas
   const totalDuration = audioDuration || adjustedDurations.reduce((sum, d) => sum + d, 0);
@@ -1272,11 +1275,11 @@ export async function analyzeImage(imageUrl: string) {
     try {
       return JSON.parse(content);
     } catch (error) {
-      console.error("Error parsing analysis JSON:", error);
+      logger.error("Error parsing analysis JSON:", error);
       throw new Error("Invalid JSON format in analysis response");
     }
   } catch (error) {
-    console.error("Error analyzing image:", error);
+    logger.error("Error analyzing image:", error);
     return {
       style: "Unable to analyze image",
       colors: ["N/A"],
@@ -1333,7 +1336,7 @@ export async function transcribeWithAI(audioBase64: string) {
     
     return data.choices[0].message.content;
   } catch (error) {
-    console.error("Error during audio transcription:", error);
+    logger.error("Error during audio transcription:", error);
     return "Error transcribing audio: " + (error instanceof Error ? error.message : "Unknown error");
   }
 }

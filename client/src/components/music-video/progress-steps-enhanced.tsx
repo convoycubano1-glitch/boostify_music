@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../lib/utils";
 import { useEditor } from "../../hooks/use-editor";

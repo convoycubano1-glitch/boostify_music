@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * UI Motion components for animation
  * 
  * This file provides motion-enhanced versions of common UI components

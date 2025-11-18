@@ -1,5 +1,7 @@
 import axios from 'axios';
+import { logger } from "../logger";
 import { 
+import { logger } from "../logger";
   freepikService, 
   FreepikModel, 
   FreepikAspectRatio, 
@@ -13,12 +15,16 @@ import {
 
 // Import Freepik storage service
 import { freepikStorageService } from './freepik-storage-service';
+import { logger } from "../logger";
 
 // Import Flux service and storage
 import { fluxService, FluxModel, FluxTaskType, FluxLoraType, FluxControlNetType } from './flux/flux-service';
+import { logger } from "../logger";
 import { fluxStorageService } from './flux/flux-storage-service';
+import { logger } from "../logger";
 
 import { 
+import { logger } from "../logger";
   GenerateImageParams,
   VideoGenerationParams,
   ImageResult as ImportedImageResult,
@@ -105,10 +111,10 @@ async function generateWithFal(params: Omit<GenerateImageParams, 'apiProvider'>)
 
     throw new Error('Failed to generate image with Fal.ai');
   } catch (error) {
-    console.error('Error generating image with Fal.ai:', error);
+    logger.error('Error generating image with Fal.ai:', error);
     
     // No usamos fallback automático, solo informamos del error
-    console.log('Error en la generación de imagen con Fal.ai, se recomienda usar Freepik directamente');
+    logger.info('Error en la generación de imagen con Fal.ai, se recomienda usar Freepik directamente');
     throw new Error('Image generation with Fal.ai failed. Please try again with Freepik.');
   }
 }
@@ -127,7 +133,7 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
   // Si tenemos la clave API y está configurado para usar API directo
   if (shouldUseDirectApi) {
     try {
-      console.log('Using direct Freepik API integration');
+      logger.info('Using direct Freepik API integration');
       
       // Convertir el aspect_ratio a formato de Freepik
       let aspect_ratio: 'square_1_1' | 'classic_4_3' | 'traditional_3_4' | 'widescreen_16_9' | 
@@ -258,7 +264,7 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
         // Check if we already have this task ID in Firestore
         const existingImage = await freepikStorageService.findImageByTaskId(response.data.task_id);
         if (existingImage && existingImage.url) {
-          console.log('Found existing Freepik image in Firestore for task ID:', response.data.task_id);
+          logger.info('Found existing Freepik image in Firestore for task ID:', response.data.task_id);
           return existingImage;
         }
         
@@ -270,16 +276,16 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
             firestoreId
           };
         } catch (storageError) {
-          console.error('Error saving Freepik task to Firestore:', storageError);
+          logger.error('Error saving Freepik task to Firestore:', storageError);
           return imageResult;
         }
       }
 
       throw new Error(`Failed to start image generation with Freepik (${freepikModel})`);
     } catch (error) {
-      console.error('Error generating image with direct Freepik API:', error);
+      logger.error('Error generating image with direct Freepik API:', error);
       // Si falla la API directa, intentamos con el proxy del servidor
-      console.log('Falling back to server proxy for Freepik');
+      logger.info('Falling back to server proxy for Freepik');
     }
   }
 
@@ -319,7 +325,7 @@ async function generateWithFreepik(params: Omit<GenerateImageParams, 'apiProvide
 
     throw new Error('Failed to generate image with Freepik');
   } catch (error) {
-    console.error('Error generating image with Freepik server proxy:', error);
+    logger.error('Error generating image with Freepik server proxy:', error);
     // Throw error - no fallback to Unsplash
     throw new Error('Image generation with Freepik failed. Please try again later.');
   }
@@ -366,7 +372,7 @@ async function generateWithKling(params: Omit<GenerateImageParams, 'apiProvider'
 
     throw new Error('Failed to generate image with Kling');
   } catch (error) {
-    console.error('Error generating image with Kling:', error);
+    logger.error('Error generating image with Kling:', error);
     // No usamos fallback automático, solo informamos del error
     throw new Error('Image generation with Kling failed. Please use Freepik directly for better results.');
   }
@@ -413,7 +419,7 @@ async function generateVideoWithLuma(params: Omit<VideoGenerationParams, 'apiPro
 
     throw new Error('Failed to generate video with Luma');
   } catch (error) {
-    console.error('Error generating video with Luma:', error);
+    logger.error('Error generating video with Luma:', error);
     // Fallback garantizado para demos
     return {
       url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
@@ -469,7 +475,7 @@ async function generateWithFlux(params: Omit<GenerateImageParams, 'apiProvider'>
           firestoreId
         };
       } catch (storageError) {
-        console.error('Error saving Flux task to Firestore:', storageError);
+        logger.error('Error saving Flux task to Firestore:', storageError);
         return imageResult;
       }
     }
@@ -487,7 +493,7 @@ async function generateWithFlux(params: Omit<GenerateImageParams, 'apiProvider'>
 
     throw new Error('Failed to generate image with Flux');
   } catch (error) {
-    console.error('Error generating image with Flux:', error);
+    logger.error('Error generating image with Flux:', error);
     // No usamos fallback automático, solo informamos del error
     throw new Error('Image generation with Flux failed. Please try again later or use a different provider.');
   }
@@ -533,7 +539,7 @@ async function generateVideoWithKling(params: Omit<VideoGenerationParams, 'apiPr
 
     throw new Error('Failed to generate video with Kling');
   } catch (error) {
-    console.error('Error generating video with Kling:', error);
+    logger.error('Error generating video with Kling:', error);
     // Fallback garantizado para demos
     return {
       url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
@@ -573,7 +579,7 @@ function enhancePrompt(originalPrompt: string): string {
 export async function generateImage(params: GenerateImageParams): Promise<ImageResult> {
   // Determine provider to use based on params.apiProvider
   const apiProvider = params.apiProvider || 'freepik';
-  console.log(`Using ${apiProvider} for image generation`);
+  logger.info(`Using ${apiProvider} for image generation`);
   
   // First check if we already have similar images in Firestore for the same prompt
   try {
@@ -588,11 +594,11 @@ export async function generateImage(params: GenerateImageParams): Promise<ImageR
     );
     
     if (similarImage) {
-      console.log(`Found similar existing image in Firestore: ${similarImage.provider}`, similarImage);
+      logger.info(`Found similar existing image in Firestore: ${similarImage.provider}`, similarImage);
       return similarImage;
     }
   } catch (error) {
-    console.error('Error searching existing images in Firestore:', error);
+    logger.error('Error searching existing images in Firestore:', error);
     // Continue with generation if search fails
   }
   
@@ -647,7 +653,7 @@ async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiPr
       
       // Si incluye Static shot, no debería tener otros movimientos
       if (cameraMovements.includes('Static shot' as any) && cameraMovements.length > 1) {
-        console.warn('Static shot es mutuamente exclusivo con otros movimientos de cámara. Solo se usará Static shot.');
+        logger.warn('Static shot es mutuamente exclusivo con otros movimientos de cámara. Solo se usará Static shot.');
         requestParams.camera_movement = ['Static shot'];
       } else {
         // Ahora pasamos el array directamente, la API se encargará de formatearlo
@@ -661,7 +667,7 @@ async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiPr
     }
     
     // Llamar al endpoint de generación directa con el modelo axios simplificado
-    console.log('Llamando al nuevo endpoint directo de video con parámetros:', requestParams);
+    logger.info('Llamando al nuevo endpoint directo de video con parámetros:', requestParams);
     const response = await axios.post(
       '/api/video-generation/generate',
       requestParams
@@ -671,7 +677,7 @@ async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiPr
     if (response.data && response.data.success && response.data.taskId) {
       const taskId = response.data.taskId;
       
-      console.log('✅ Generación iniciada correctamente con el endpoint directo. TaskId:', taskId);
+      logger.info('✅ Generación iniciada correctamente con el endpoint directo. TaskId:', taskId);
       
       // Devolver el resultado inicial (sin URL todavía)
       return {
@@ -686,7 +692,7 @@ async function generateVideoWithPiAPI(params: Omit<VideoGenerationParams, 'apiPr
     
     throw new Error('Failed to start video generation with direct PiAPI endpoint');
   } catch (error) {
-    console.error('Error en generación de video con endpoint directo:', error);
+    logger.error('Error en generación de video con endpoint directo:', error);
     
     // Fallback para demos
     return {
@@ -715,7 +721,7 @@ export async function checkPiapiVideoStatus(taskId: string): Promise<VideoResult
     // Llamar al nuevo endpoint directo de status
     const response = await axios.get(`/api/video-generation/status/${taskId}`);
     
-    console.log('Respuesta del endpoint directo de status:', response.data);
+    logger.info('Respuesta del endpoint directo de status:', response.data);
     
     // Si la tarea se completó correctamente
     if (response.data && response.data.success && response.data.status === 'completed') {
@@ -750,7 +756,7 @@ export async function checkPiapiVideoStatus(taskId: string): Promise<VideoResult
     // Si no se pudo determinar el estado, devolvemos null para seguir intentando
     return null;
   } catch (error) {
-    console.error('Error checking PiAPI direct video status:', error);
+    logger.error('Error checking PiAPI direct video status:', error);
     return null;
   }
 }
@@ -797,11 +803,11 @@ export async function saveGeneratedContent(
       // Check if this is a Freepik image
       if (result.provider === 'freepik' || result.provider?.startsWith('freepik-')) {
         // Use our specialized Freepik storage service
-        console.log('Using dedicated Freepik storage service for image');
+        logger.info('Using dedicated Freepik storage service for image');
         return await freepikStorageService.saveImage(result as ImageResult);
       } else {
         // Use general storage for non-Freepik images (should not happen with our implementation)
-        console.warn('Using general storage for non-Freepik image');
+        logger.warn('Using general storage for non-Freepik image');
         const { saveGeneratedImage } = await import('./generated-images-service');
         return await saveGeneratedImage(result as ImageResult);
       }
@@ -811,7 +817,7 @@ export async function saveGeneratedContent(
       return await saveGeneratedVideo(result as VideoResult);
     }
   } catch (error) {
-    console.error(`Error saving generated ${contentType}:`, error);
+    logger.error(`Error saving generated ${contentType}:`, error);
     // Devolvemos un ID temporal en caso de error para que la UI siga funcionando
     return `generated-${contentType}-${Date.now()}`;
   }
@@ -832,7 +838,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
       
       // If the image is already completed in Firestore, return it directly
       if (existingImage && existingImage.url && existingImage.status === 'COMPLETED') {
-        console.log('Found completed Freepik image in Firestore:', existingImage);
+        logger.info('Found completed Freepik image in Firestore:', existingImage);
         return existingImage;
       }
     } else if (provider === 'flux' || provider.startsWith('flux-')) {
@@ -841,7 +847,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
       
       // If the image is already completed in Firestore, return it directly
       if (existingImage && existingImage.url && existingImage.status === 'COMPLETED') {
-        console.log('Found completed Flux image in Firestore:', existingImage);
+        logger.info('Found completed Flux image in Firestore:', existingImage);
         return existingImage;
       }
     }
@@ -863,7 +869,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
             imageUrl = response.data.generated[0].url;
           }
           
-          console.log("Freepik direct API URL:", imageUrl);
+          logger.info("Freepik direct API URL:", imageUrl);
           
           const completedImage: ImageResult = {
             url: imageUrl,
@@ -882,7 +888,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
               firestoreId
             };
           } catch (storageError) {
-            console.error('Error saving completed Freepik image to Firestore:', storageError);
+            logger.error('Error saving completed Freepik image to Firestore:', storageError);
             return completedImage;
           }
         } else if (response.data.status === 'FAILED') {
@@ -914,7 +920,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
       } else {
         endpoint = `/api/proxy/${provider}/task-status/${taskId}`;
       }
-      console.log(`Verificando estado de tarea con ${provider} usando: ${endpoint}`);
+      logger.info(`Verificando estado de tarea con ${provider} usando: ${endpoint}`);
       const response = await axios.get(endpoint);
       
       if (response.data) {
@@ -946,7 +952,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
               else if (freepikData.generated[0]) {
                 result.url = freepikData.generated[0];
               }
-              console.log("Freepik image URL:", result.url);
+              logger.info("Freepik image URL:", result.url);
               
               // If we have a URL, store in Firestore
               if (result.url) {
@@ -958,7 +964,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
                   const firestoreId = await freepikStorageService.saveImage(result);
                   result.firestoreId = firestoreId;
                 } catch (storageError) {
-                  console.error('Error saving Freepik proxy image to Firestore:', storageError);
+                  logger.error('Error saving Freepik proxy image to Firestore:', storageError);
                 }
               }
             }
@@ -970,7 +976,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
             // Manejo específico para el endpoint directo de PiAPI
             if (response.data.result && response.data.result.url) {
               result.url = response.data.result.url;
-              console.log("PiAPI Direct video URL:", result.url);
+              logger.info("PiAPI Direct video URL:", result.url);
             }
           } else if (provider === 'flux' || provider.startsWith('flux-')) {
             // Manejo especial para PiAPI Flux
@@ -995,7 +1001,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
                 const firestoreId = await fluxStorageService.saveImage(result);
                 result.firestoreId = firestoreId;
               } catch (storageError) {
-                console.error('Error saving Flux image to Firestore:', storageError);
+                logger.error('Error saving Flux image to Firestore:', storageError);
               }
             }
           }
@@ -1019,7 +1025,7 @@ export async function checkTaskStatus(taskId: string, provider: string): Promise
     
     return null;
   } catch (error) {
-    console.error(`Error checking task status for ${provider}:`, error);
+    logger.error(`Error checking task status for ${provider}:`, error);
     return null;
   }
 }

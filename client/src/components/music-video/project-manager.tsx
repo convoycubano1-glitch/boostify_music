@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -76,7 +77,7 @@ export function ProjectManager({
       const userProjects = await musicVideoProjectServicePostgres.getUserProjects(userId);
       setProjects(userProjects);
     } catch (error) {
-      console.error('Error loading projects:', error);
+      logger.error('Error loading projects:', error);
       toast({
         title: "Error loading projects",
         description: "Could not load your saved projects",
@@ -98,7 +99,7 @@ export function ProjectManager({
       });
       await loadProjects();
     } catch (error) {
-      console.error('Error deleting project:', error);
+      logger.error('Error deleting project:', error);
       toast({
         title: "Error deleting project",
         description: "Could not delete the project",
@@ -160,7 +161,7 @@ export function ProjectManager({
       setRenameDialogProject(null);
       setNewProjectName("");
     } catch (error: any) {
-      console.error('Error renaming project:', error);
+      logger.error('Error renaming project:', error);
       toast({
         title: "Error renaming project",
         description: error.message || "Could not rename the project",

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -106,7 +107,7 @@ export function KlingEffects({ className }: KlingEffectsProps) {
         throw new Error(response.data.error || "Error al iniciar el proceso de efectos");
       }
     } catch (error: any) {
-      console.error("Error al iniciar Kling Effects:", error);
+      logger.error("Error al iniciar Kling Effects:", error);
       toast({
         title: "Error",
         description: error.message || "Ocurrió un error al iniciar el proceso",
@@ -158,7 +159,7 @@ export function KlingEffects({ className }: KlingEffectsProps) {
         setProgress(response.data.progress || 50);
       }
     } catch (error: any) {
-      console.error("Error al verificar estado:", error);
+      logger.error("Error al verificar estado:", error);
       
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);

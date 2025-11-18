@@ -7,8 +7,11 @@
  */
 
 import { auth, db } from '../firebase';
+import { logger } from "./logger";
 import { collection, addDoc, getDocs, query, where, orderBy, Timestamp, DocumentData } from 'firebase/firestore';
+import { logger } from "./logger";
 import { ImageResult } from '../types/model-types';
+import { logger } from "./logger";
 
 // Nombre de la colección específica para imágenes de Freepik
 const FREEPIK_IMAGES_COLLECTION = 'freepik_images';
@@ -69,10 +72,10 @@ export async function saveFreepikImage(image: ImageResult): Promise<string> {
     const firestoreData = adaptFreepikImageForFirestore(image);
     
     const docRef = await addDoc(imagesCollection, firestoreData);
-    console.log('Freepik image saved to Firestore:', docRef.id);
+    logger.info('Freepik image saved to Firestore:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('Error saving Freepik image to Firestore:', error);
+    logger.error('Error saving Freepik image to Firestore:', error);
     throw error;
   }
 }
@@ -96,10 +99,10 @@ export async function getFreepikImages(): Promise<ImageResult[]> {
     const querySnapshot = await getDocs(q);
     const images = querySnapshot.docs.map(convertFreepikFirestoreToImage);
     
-    console.log(`Retrieved ${images.length} Freepik images from Firestore`);
+    logger.info(`Retrieved ${images.length} Freepik images from Firestore`);
     return images;
   } catch (error) {
-    console.error('Error getting Freepik images from Firestore:', error);
+    logger.error('Error getting Freepik images from Firestore:', error);
     return [];
   }
 }
@@ -124,14 +127,14 @@ export async function findFreepikImageByTaskId(taskId: string): Promise<ImageRes
     const querySnapshot = await getDocs(q);
     
     if (querySnapshot.empty) {
-      console.log(`No Freepik image found with taskId: ${taskId}`);
+      logger.info(`No Freepik image found with taskId: ${taskId}`);
       return null;
     }
     
     // Devolver el primer resultado (debería ser único)
     return convertFreepikFirestoreToImage(querySnapshot.docs[0]);
   } catch (error) {
-    console.error(`Error finding Freepik image with taskId ${taskId}:`, error);
+    logger.error(`Error finding Freepik image with taskId ${taskId}:`, error);
     return null;
   }
 }
@@ -156,7 +159,7 @@ export async function isFreepikImageSaved(url: string): Promise<boolean> {
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
   } catch (error) {
-    console.error(`Error checking if Freepik image is saved:`, error);
+    logger.error(`Error checking if Freepik image is saved:`, error);
     return false;
   }
 }

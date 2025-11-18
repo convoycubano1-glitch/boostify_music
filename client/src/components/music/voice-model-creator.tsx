@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Componente de Creación de Modelos de Voz
  * 
  * Este componente permite a los usuarios:
@@ -85,7 +86,7 @@ export function VoiceModelCreator({ className, onModelCreated }: VoiceModelCreat
       }, 1000);
       
     } catch (error) {
-      console.error('Error al iniciar grabación:', error);
+      logger.error('Error al iniciar grabación:', error);
       toast({
         title: 'Error de grabación',
         description: 'No se pudo acceder al micrófono. Verifica los permisos.',

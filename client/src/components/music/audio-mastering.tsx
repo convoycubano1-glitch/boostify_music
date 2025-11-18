@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -118,7 +119,7 @@ export function AudioMastering() {
   // Load user voice conversions from Firebase when authenticated
   useEffect(() => {
     if (user?.uid) {
-      console.log("Loading user voice conversions from Firebase");
+      logger.info("Loading user voice conversions from Firebase");
       const loadUserConversions = async () => {
         try {
           setIsLoading(true);
@@ -153,9 +154,9 @@ export function AudioMastering() {
           });
           
           setVoiceConversions(formattedConversions);
-          console.log("Loaded voice conversions:", formattedConversions);
+          logger.info("Loaded voice conversions:", formattedConversions);
         } catch (error) {
-          console.error("Error loading user conversions:", error);
+          logger.error("Error loading user conversions:", error);
           // Crear datos simulados si hay un error
           createSimulatedData();
         } finally {
@@ -314,7 +315,7 @@ export function AudioMastering() {
       setVoiceConversions(mappedConversions);
       
     } catch (error) {
-      console.error("Error fetching voice conversions:", error);
+      logger.error("Error fetching voice conversions:", error);
       toast({
         title: "Error",
         description: "Failed to fetch voice conversions",
@@ -340,7 +341,7 @@ export function AudioMastering() {
       
       // Si estamos en entorno de desarrollo, usamos los datos simulados
       if (isDev) {
-        console.log("Development environment detected - using mock conversion data for ID:", id);
+        logger.info("Development environment detected - using mock conversion data for ID:", id);
         
         // Obtenemos todos los datos simulados - manejamos la promesa que devuelve getMockVoiceConversions
         const allMockConversions: VoiceConversionRecord[] = fbConversions.length > 0 
@@ -354,13 +355,13 @@ export function AudioMastering() {
         );
         
         if (mockConversion) {
-          console.log("Found mock conversion:", mockConversion);
+          logger.info("Found mock conversion:", mockConversion);
           setSelectedFbConversion(mockConversion);
           
           // No mostramos toasts en modo desarrollo al seleccionar
           // para no interrumpir la experiencia del usuario
         } else {
-          console.log("No mock conversion found with ID:", id);
+          logger.info("No mock conversion found with ID:", id);
           // Usar la primera conversión como fallback si no encontramos la específica
           setSelectedFbConversion(allMockConversions[0]);
         }
@@ -371,7 +372,7 @@ export function AudioMastering() {
       
       // Si no hay usuario autenticado, terminamos aquí
       if (!user?.uid) {
-        console.log("User not authenticated, using local conversion data only");
+        logger.info("User not authenticated, using local conversion data only");
         setIsLoading(false);
         return;
       }
@@ -380,7 +381,7 @@ export function AudioMastering() {
       const fbConversion = fbConversions.find(c => c.id === id.toString()) || null;
       if (fbConversion) {
         setSelectedFbConversion(fbConversion);
-        console.log("Found Firebase conversion:", fbConversion);
+        logger.info("Found Firebase conversion:", fbConversion);
         
         // Si está en Firebase, actualizar la UI según el estado real
         if (fbConversion.status === "completed") {
@@ -404,10 +405,10 @@ export function AudioMastering() {
           });
         }
       } else {
-        console.log("No Firebase conversion found with ID:", id);
+        logger.info("No Firebase conversion found with ID:", id);
       }
     } catch (error) {
-      console.error("Error fetching voice conversion:", error);
+      logger.error("Error fetching voice conversion:", error);
       toast({
         title: "Error",
         description: "Failed to fetch voice conversion details",
@@ -433,7 +434,7 @@ export function AudioMastering() {
       // Devolver la URL
       return fileUrl;
     } catch (error) {
-      console.error("Error uploading file:", error);
+      logger.error("Error uploading file:", error);
       toast({
         title: "Error",
         description: "Failed to upload file to storage",
@@ -584,13 +585,13 @@ export function AudioMastering() {
               setFbConversions(updatedConversions);
             }
           } catch (error) {
-            console.error("Error updating conversion:", error);
+            logger.error("Error updating conversion:", error);
           }
         }
       }, 5000);
       
     } catch (error) {
-      console.error("Error creating voice conversion:", error);
+      logger.error("Error creating voice conversion:", error);
       toast({
         title: "Error",
         description: "Failed to start voice conversion. Please try again.",
@@ -623,7 +624,7 @@ export function AudioMastering() {
       });
 
     } catch (error) {
-      console.error("Error mastering audio:", error);
+      logger.error("Error mastering audio:", error);
       toast({
         title: "Error",
         description: "Failed to master audio. Please try again.",
@@ -1416,7 +1417,7 @@ export function AudioMastering() {
                                         throw new Error("No URL available for download");
                                       }
                                     } catch (error) {
-                                      console.error("Download error:", error);
+                                      logger.error("Download error:", error);
                                       toast({
                                         title: "Error",
                                         description: "Could not download the file",
@@ -1538,7 +1539,7 @@ export function AudioMastering() {
                               throw new Error("No URL available for download");
                             }
                           } catch (error) {
-                            console.error("Download error:", error);
+                            logger.error("Download error:", error);
                             toast({
                               title: "Error",
                               description: "Could not download the file",

@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * Auto-Profile Service - Manages automatic artist profile creation and updates
  * 
@@ -59,7 +60,7 @@ export async function ensureArtistProfile(genre?: string): Promise<EnsureProfile
 
     return data;
   } catch (error: any) {
-    console.error('❌ Error ensuring artist profile:', error);
+    logger.error('❌ Error ensuring artist profile:', error);
     return {
       success: false,
       message: error.message || 'Error creando perfil'
@@ -95,7 +96,7 @@ export async function saveSongToProfile(options: {
 
     return data;
   } catch (error: any) {
-    console.error('❌ Error saving song:', error);
+    logger.error('❌ Error saving song:', error);
     return {
       success: false,
       message: error.message || 'Error guardando canción'
@@ -130,7 +131,7 @@ export async function saveVideoToProfile(options: {
 
     return data;
   } catch (error: any) {
-    console.error('❌ Error saving video:', error);
+    logger.error('❌ Error saving video:', error);
     return {
       success: false,
       message: error.message || 'Error guardando video'
@@ -166,7 +167,7 @@ export async function updateProfileImages(options: {
 
     return data;
   } catch (error: any) {
-    console.error('❌ Error updating profile images:', error);
+    logger.error('❌ Error updating profile images:', error);
     return {
       success: false,
       message: error.message || 'Error actualizando imágenes'

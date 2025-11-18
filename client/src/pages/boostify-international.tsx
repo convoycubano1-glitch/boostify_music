@@ -1,4 +1,5 @@
 import { Header } from "../components/layout/header";
+import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -158,7 +159,7 @@ export default function BoostifyInternational() {
       title: "Application Submitted",
       description: "Your application has been received. We'll be in touch soon.",
     });
-    console.log(values);
+    logger.info(values);
   };
 
   return (

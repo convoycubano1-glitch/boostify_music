@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -80,7 +81,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   // Actualizar formData cuando se abre el diálogo
   useEffect(() => {
     if (isOpen) {
-      console.log('🔄 Dialog opened, setting formData from currentData');
+      logger.info('🔄 Dialog opened, setting formData from currentData');
       setFormData(currentData);
       setImageUpdateKey(0);
     }
@@ -108,7 +109,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       showsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       setShows(showsData);
     } catch (error) {
-      console.error("Error loading shows:", error);
+      logger.error("Error loading shows:", error);
     }
   };
 
@@ -142,7 +143,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       setNewShow({ venue: '', date: '', location: '', ticketUrl: '' });
       await loadShows();
     } catch (error) {
-      console.error("Error adding show:", error);
+      logger.error("Error adding show:", error);
       toast({
         title: "Error",
         description: "No se pudo agregar el show.",
@@ -165,7 +166,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
 
       await loadShows();
     } catch (error) {
-      console.error("Error deleting show:", error);
+      logger.error("Error deleting show:", error);
       toast({
         title: "Error",
         description: "No se pudo eliminar el show.",
@@ -213,7 +214,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
 
       // Generar productos con imágenes únicas
       for (const productDef of productTypes) {
-        console.log(`🎨 Generating image for ${productDef.type}...`);
+        logger.info(`🎨 Generating image for ${productDef.type}...`);
         
         let productImage = brandImage;
         try {
@@ -228,15 +229,15 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             })
           });
           
-          console.log(`📡 Response status for ${productDef.type}:`, imageResponse.status);
+          logger.info(`📡 Response status for ${productDef.type}:`, imageResponse.status);
           
           const imageResult = await imageResponse.json();
-          console.log(`📦 Response data for ${productDef.type}:`, imageResult);
+          logger.info(`📦 Response data for ${productDef.type}:`, imageResult);
           
           if (imageResult.success && imageResult.imageUrl) {
             // Si la imagen es base64, subirla a Firebase Storage
             if (imageResult.imageUrl.startsWith('data:')) {
-              console.log(`📤 Uploading base64 image to Firebase Storage for ${productDef.type}...`);
+              logger.info(`📤 Uploading base64 image to Firebase Storage for ${productDef.type}...`);
               try {
                 // Convertir base64 a blob
                 const base64Response = await fetch(imageResult.imageUrl);
@@ -249,20 +250,20 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 const downloadURL = await getDownloadURL(storageRef);
                 
                 productImage = downloadURL;
-                console.log(`✅ Image uploaded to Storage for ${productDef.type}`);
+                logger.info(`✅ Image uploaded to Storage for ${productDef.type}`);
               } catch (uploadError) {
-                console.error(`❌ Error uploading image for ${productDef.type}:`, uploadError);
+                logger.error(`❌ Error uploading image for ${productDef.type}:`, uploadError);
                 productImage = brandImage; // Usar imagen por defecto si falla la subida
               }
             } else {
               productImage = imageResult.imageUrl;
             }
-            console.log(`✅ Image ready for ${productDef.type}`);
+            logger.info(`✅ Image ready for ${productDef.type}`);
           } else {
-            console.warn(`⚠️ Could not generate image for ${productDef.type}. Error:`, imageResult.error || 'No error message');
+            logger.warn(`⚠️ Could not generate image for ${productDef.type}. Error:`, imageResult.error || 'No error message');
           }
         } catch (error) {
-          console.error(`❌ Exception generating image for ${productDef.type}:`, error);
+          logger.error(`❌ Exception generating image for ${productDef.type}:`, error);
         }
         
         // Guardar producto en Firebase
@@ -284,7 +285,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         description: `Se han creado ${productTypes.length} productos con imágenes únicas.`,
       });
     } catch (error) {
-      console.error("Error generating products:", error);
+      logger.error("Error generating products:", error);
       toast({
         title: "Error",
         description: "No se pudieron generar los productos. Intenta de nuevo.",
@@ -331,7 +332,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         throw new Error(result.error || 'Error generando noticias');
       }
     } catch (error) {
-      console.error("Error generating news:", error);
+      logger.error("Error generating news:", error);
       toast({
         title: "Error",
         description: "No se pudieron generar las noticias. Intenta de nuevo.",
@@ -393,7 +394,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         description: "Ahora puedes generar tu perfil y banner con esta imagen de referencia.",
       });
     } catch (error) {
-      console.error("Error uploading reference image:", error);
+      logger.error("Error uploading reference image:", error);
       toast({
         title: "Error",
         description: "No se pudo cargar la imagen de referencia.",
@@ -431,7 +432,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         description: "Tu imagen de perfil ha sido subida exitosamente.",
       });
     } catch (error) {
-      console.error("Error uploading profile image:", error);
+      logger.error("Error uploading profile image:", error);
       toast({
         title: "Error",
         description: "No se pudo cargar la imagen de perfil.",
@@ -483,7 +484,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
           : `Tu ${fileType} de banner ha sido subida exitosamente.`,
       });
     } catch (error) {
-      console.error("Error uploading banner media:", error);
+      logger.error("Error uploading banner media:", error);
       toast({
         title: "Error",
         description: "No se pudo cargar el archivo de banner.",
@@ -520,7 +521,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       const data = await response.json();
 
       if (data.success && data.biography) {
-        console.log('✅ Biografía generada exitosamente:', data.biography);
+        logger.info('✅ Biografía generada exitosamente:', data.biography);
         // Actualizar el estado directamente
         setFormData(prev => ({
           ...prev,
@@ -534,7 +535,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         throw new Error(data.error || 'Failed to generate biography');
       }
     } catch (error: any) {
-      console.error("Error generating biography:", error);
+      logger.error("Error generating biography:", error);
       toast({
         title: "Error",
         description: "No se pudo generar la biografía. Intenta de nuevo.",
@@ -572,11 +573,11 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       const data = await response.json();
 
       if (data.success && data.imageUrl) {
-        console.log('✅ Imagen de perfil generada exitosamente');
-        console.log('🖼️ Nueva URL de imagen de perfil:', data.imageUrl.substring(0, 100));
+        logger.info('✅ Imagen de perfil generada exitosamente');
+        logger.info('🖼️ Nueva URL de imagen de perfil:', data.imageUrl.substring(0, 100));
         // Actualizar el estado directamente y forzar re-render
         setFormData(prev => {
-          console.log('📝 Actualizando formData.profileImage');
+          logger.info('📝 Actualizando formData.profileImage');
           return {
             ...prev,
             profileImage: data.imageUrl
@@ -584,7 +585,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         });
         setImageUpdateKey(prev => {
           const newKey = prev + 1;
-          console.log('🔑 Image update key:', prev, '->', newKey);
+          logger.info('🔑 Image update key:', prev, '->', newKey);
           return newKey;
         });
         toast({
@@ -595,7 +596,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         throw new Error(data.error || 'Failed to generate profile image');
       }
     } catch (error: any) {
-      console.error("Error generating profile image:", error);
+      logger.error("Error generating profile image:", error);
       toast({
         title: "Error",
         description: "No se pudo generar la imagen de perfil. Intenta de nuevo.",
@@ -638,11 +639,11 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       const data = await response.json();
 
       if (data.success && data.imageUrl) {
-        console.log('✅ Banner generado exitosamente');
-        console.log('🖼️ Nueva URL de banner:', data.imageUrl.substring(0, 100));
+        logger.info('✅ Banner generado exitosamente');
+        logger.info('🖼️ Nueva URL de banner:', data.imageUrl.substring(0, 100));
         // Actualizar el estado directamente y forzar re-render
         setFormData(prev => {
-          console.log('📝 Actualizando formData.bannerImage');
+          logger.info('📝 Actualizando formData.bannerImage');
           return {
             ...prev,
             bannerImage: data.imageUrl
@@ -650,7 +651,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         });
         setImageUpdateKey(prev => {
           const newKey = prev + 1;
-          console.log('🔑 Image update key:', prev, '->', newKey);
+          logger.info('🔑 Image update key:', prev, '->', newKey);
           return newKey;
         });
         toast({
@@ -661,7 +662,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         throw new Error(data.error || 'Failed to generate banner image');
       }
     } catch (error: any) {
-      console.error("Error generating banner image:", error);
+      logger.error("Error generating banner image:", error);
       toast({
         title: "Error",
         description: "No se pudo generar la imagen de banner. Intenta de nuevo.",
@@ -697,7 +698,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     await uploadBytes(storageRef, blob);
     const downloadURL = await getDownloadURL(storageRef);
     
-    console.log('☁️ Imagen base64 subida a Storage:', downloadURL);
+    logger.info('☁️ Imagen base64 subida a Storage:', downloadURL);
     return downloadURL;
   };
 
@@ -714,7 +715,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     setIsSaving(true);
 
     try {
-      console.log('💾 Guardando perfil del artista', artistId);
+      logger.info('💾 Guardando perfil del artista', artistId);
 
       // Llamar al endpoint del backend que actualiza AMBAS bases de datos
       const response = await fetch(`/api/artist-generator/update-artist/${artistId}`, {
@@ -748,7 +749,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         throw new Error(data.error || 'Error al actualizar perfil');
       }
 
-      console.log('✅ Perfil actualizado exitosamente en PostgreSQL y Firebase');
+      logger.info('✅ Perfil actualizado exitosamente en PostgreSQL y Firebase');
 
       // Invalidar TODAS las queryKeys relevantes para forzar actualización en el UI
       await Promise.all([
@@ -762,7 +763,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       
       // 🔔 Enviar datos al webhook de Make.com para automatización
       try {
-        console.log('📡 Enviando datos de perfil al webhook de Make.com...');
+        logger.info('📡 Enviando datos de perfil al webhook de Make.com...');
         const webhookUrl = 'https://hook.us2.make.com/jeo56r778isvcxe4q7ntg3n9f3ykbsnf';
         
         const webhookData = {
@@ -799,13 +800,13 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         });
 
         if (webhookResponse.ok) {
-          console.log('✅ Datos enviados exitosamente al webhook de Make.com');
+          logger.info('✅ Datos enviados exitosamente al webhook de Make.com');
         } else {
-          console.warn('⚠️ El webhook respondió con status:', webhookResponse.status);
+          logger.warn('⚠️ El webhook respondió con status:', webhookResponse.status);
         }
       } catch (webhookError) {
         // No bloqueamos el flujo si el webhook falla
-        console.error('❌ Error enviando datos al webhook (no crítico):', webhookError);
+        logger.error('❌ Error enviando datos al webhook (no crítico):', webhookError);
       }
       
       toast({
@@ -816,7 +817,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       setIsOpen(false);
       onUpdate();
     } catch (error) {
-      console.error("Error saving profile:", error);
+      logger.error("Error saving profile:", error);
       toast({
         title: "Error",
         description: "No se pudo guardar el perfil. Intenta de nuevo.",

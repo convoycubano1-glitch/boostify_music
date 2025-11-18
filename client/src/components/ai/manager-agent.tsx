@@ -1,4 +1,5 @@
 // src/components/ai/manager-agent.tsx
+import { logger } from "@/lib/logger";
 
 import { UserCog, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
@@ -67,9 +68,9 @@ export function ManagerAgent() {
         }
       );
 
-      console.log('✅ Career advice saved to Firestore with Gemini integration');
+      logger.info('✅ Career advice saved to Firestore with Gemini integration');
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       // Don't throw - continue even if save fails
     }
   };
@@ -143,7 +144,7 @@ export function ManagerAgent() {
           const errorMessage = error?.message || "Failed to complete analysis. Please try again.";
           const errorStack = error?.stack || "No stack trace";
           
-          console.error("Detailed error analyzing performance:", {
+          logger.error("Detailed error analyzing performance:", {
             message: errorMessage,
             stack: errorStack,
           });
@@ -206,7 +207,7 @@ export function ManagerAgent() {
           const errorMessage = error?.message || "Failed to complete plan. Please try again.";
           const errorStack = error?.stack || "No stack trace";
           
-          console.error("Detailed error planning strategy:", {
+          logger.error("Detailed error planning strategy:", {
             message: errorMessage,
             stack: errorStack,
           });
@@ -269,7 +270,7 @@ export function ManagerAgent() {
           const errorMessage = error?.message || "Failed to coordinate activities. Please try again.";
           const errorStack = error?.stack || "No stack trace";
           
-          console.error("Detailed error coordinating activities:", {
+          logger.error("Detailed error coordinating activities:", {
             message: errorMessage,
             stack: errorStack,
           });

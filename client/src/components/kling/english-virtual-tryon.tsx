@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { logger } from "@/lib/logger";
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import {
@@ -123,7 +124,7 @@ export function EnglishVirtualTryOn() {
       const results = JSON.parse(localStorage.getItem('tryonResults') || '[]');
       setSavedResults(results);
     } catch (error) {
-      console.error('Error loading saved results:', error);
+      logger.error('Error loading saved results:', error);
     }
   };
 
@@ -224,7 +225,7 @@ export function EnglishVirtualTryOn() {
               }
             }
           } catch (error) {
-            console.error('Error in polling interval:', error);
+            logger.error('Error in polling interval:', error);
           }
         }, 2000); // Check every 2 seconds
 
@@ -356,7 +357,7 @@ export function EnglishVirtualTryOn() {
           reader.readAsDataURL(blob);
         })
         .catch(error => {
-          console.error('Error loading sample image:', error);
+          logger.error('Error loading sample image:', error);
           toast({
             title: "Error",
             description: "Failed to load sample image. Please try uploading your own image.",
@@ -377,7 +378,7 @@ export function EnglishVirtualTryOn() {
           reader.readAsDataURL(blob);
         })
         .catch(error => {
-          console.error('Error loading sample image:', error);
+          logger.error('Error loading sample image:', error);
           toast({
             title: "Error",
             description: "Failed to load sample clothing image. Please try uploading your own image.",

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import QRCode from "react-qr-code";
@@ -88,7 +89,7 @@ export default function SmartCardsPage() {
           displayName: user.displayName || "Artist Name",
         };
       } catch (error) {
-        console.error("Error fetching artist data:", error);
+        logger.error("Error fetching artist data:", error);
         return {
           name: user.displayName || "Artist Name",
           displayName: user.displayName || "Artist Name",

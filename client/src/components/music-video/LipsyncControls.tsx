@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Lip-Sync Controls Component
  * Permite regenerar y previsualizar videos de lip-sync
  */
@@ -40,7 +41,7 @@ export function LipsyncControls({
         description: `El video para "${clipTitle}" ha sido regenerado exitosamente`,
       });
     } catch (error) {
-      console.error('Error regenerating lip-sync:', error);
+      logger.error('Error regenerating lip-sync:', error);
       toast({
         title: "❌ Error",
         description: "No se pudo regenerar el lip-sync",

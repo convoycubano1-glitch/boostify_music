@@ -5,9 +5,13 @@
  */
 
 import { FAL_VIDEO_MODELS } from '../api/fal-video-service';
+import { logger } from "../logger";
 import { generateVideoFromImage as generateMinimaxVideo, waitForVideoCompletion } from '../api/minimax-video';
+import { logger } from "../logger";
 import type { MinimaxVideoRequest } from '../api/minimax-video';
+import { logger } from "../logger";
 import type { TimelineClip } from '../../components/professional-editor/EnhancedTimeline';
+import { logger } from "../logger";
 
 export type VideoModel = 
   | 'kling-2.5-pro-i2v'
@@ -251,7 +255,7 @@ export async function generateBatchVideosFromClips(
       results.push(result);
 
     } catch (error: any) {
-      console.error(`Error generando video para clip ${clip.id}:`, error);
+      logger.error(`Error generando video para clip ${clip.id}:`, error);
       results.push({
         clipId: clip.id,
         status: 'failed',

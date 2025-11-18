@@ -1,4 +1,5 @@
 import { cn } from "../../lib/utils";
+import { logger } from "../lib/logger";
 import { Card } from "./card";
 import { Badge } from "lucide-react";
 

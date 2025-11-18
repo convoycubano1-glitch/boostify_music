@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from "@/lib/logger";
 import { 
   Card, 
   CardContent, 
@@ -24,7 +25,7 @@ const getStripe = async () => {
     const { loadStripe } = await import('@stripe/stripe-js');
     return await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
   } catch (error) {
-    console.error('Error loading Stripe:', error);
+    logger.error('Error loading Stripe:', error);
     return null;
   }
 };
@@ -118,7 +119,7 @@ export function PluginPricingPlans() {
 
     // Verificar configuración de Stripe
     getStripe().catch((error) => {
-      console.error('Error initializing Stripe:', error);
+      logger.error('Error initializing Stripe:', error);
       setStripeError(error.message);
       toast({
         title: "Configuration Notice",
@@ -183,7 +184,7 @@ export function PluginPricingPlans() {
       */
       
     } catch (error: any) {
-      console.error('Error in subscription process:', error);
+      logger.error('Error in subscription process:', error);
       toast({
         title: "Subscription Error",
         description: error.message || "There was an error processing your subscription",

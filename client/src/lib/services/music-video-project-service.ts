@@ -1,8 +1,13 @@
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { logger } from "../logger";
 import { db } from '../firebase';
+import { logger } from "../logger";
 import type { TimelineItem } from '../../components/timeline/TimelineClipUnified';
+import { logger } from "../logger";
 import type { TimelineClip } from '../../interfaces/timeline';
+import { logger } from "../logger";
 import { ClipType } from '../../interfaces/timeline';
+import { logger } from "../logger";
 
 /**
  * Interface for Music Video Project
@@ -83,10 +88,10 @@ class MusicVideoProjectService {
         updatedAt: Timestamp.fromDate(project.updatedAt)
       });
 
-      console.log(`✅ Project saved: ${projectName} (${id})`);
+      logger.info(`✅ Project saved: ${projectName} (${id})`);
       return id;
     } catch (error) {
-      console.error('Error saving project:', error);
+      logger.error('Error saving project:', error);
       throw error;
     }
   }
@@ -110,7 +115,7 @@ class MusicVideoProjectService {
         updatedAt: data.updatedAt?.toDate() || new Date()
       } as MusicVideoProject;
     } catch (error) {
-      console.error('Error loading project:', error);
+      logger.error('Error loading project:', error);
       throw error;
     }
   }
@@ -136,7 +141,7 @@ class MusicVideoProjectService {
         } as MusicVideoProject;
       });
     } catch (error) {
-      console.error('Error getting user projects:', error);
+      logger.error('Error getting user projects:', error);
       throw error;
     }
   }
@@ -147,9 +152,9 @@ class MusicVideoProjectService {
   async deleteProject(projectId: string): Promise<void> {
     try {
       await deleteDoc(doc(db, this.collectionName, projectId));
-      console.log(`✅ Project deleted: ${projectId}`);
+      logger.info(`✅ Project deleted: ${projectId}`);
     } catch (error) {
-      console.error('Error deleting project:', error);
+      logger.error('Error deleting project:', error);
       throw error;
     }
   }
@@ -176,8 +181,8 @@ class MusicVideoProjectService {
     // Set new timer
     const timer = setTimeout(() => {
       this.saveProject(userId, projectName, projectData, projectId)
-        .then(() => console.log('✅ Auto-saved project'))
-        .catch(err => console.error('Error auto-saving:', err));
+        .then(() => logger.info('✅ Auto-saved project'))
+        .catch(err => logger.error('Error auto-saving:', err));
       this.autoSaveTimers.delete(key);
     }, delay);
 

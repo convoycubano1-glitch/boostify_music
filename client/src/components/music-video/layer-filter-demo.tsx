@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { 
   Card, 
   CardContent, 
@@ -393,7 +394,7 @@ export function LayerFilterDemo() {
                               // Modificar la duración del clip seleccionado
                               // Esta implementación solo muestra la interacción
                               const newDuration = parseFloat(e.target.value);
-                              console.log(`Duración cambiada a: ${newDuration}s`);
+                              logger.info(`Duración cambiada a: ${newDuration}s`);
                             }}
                           />
                           <span className="text-xs">{formatTime(selectedClip.duration)}</span>
@@ -420,7 +421,7 @@ export function LayerFilterDemo() {
                         onClick={() => {
                           // En la implementación completa, esto eliminaría el clip del arreglo
                           setSelectedClipId(null);
-                          console.log(`Eliminar clip: ${selectedClip.id}`);
+                          logger.info(`Eliminar clip: ${selectedClip.id}`);
                         }}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />

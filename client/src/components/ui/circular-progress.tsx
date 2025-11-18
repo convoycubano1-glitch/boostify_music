@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from "../lib/logger";
 
 interface CircularProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value: number;

@@ -7,6 +7,7 @@
  */
 
 import { apiRequest } from "../queryClient";
+import { logger } from "../logger";
 
 // Tipos relacionados con Stripe
 export interface StripeCheckoutResponse {
@@ -50,11 +51,11 @@ export async function fetchStripePublicKey(): Promise<string> {
     if (data.success && data.key) {
       return data.key;
     } else {
-      console.error('Error fetching Stripe public key:', data);
+      logger.error('Error fetching Stripe public key:', data);
       throw new Error('Failed to get Stripe public key');
     }
   } catch (error) {
-    console.error('Error fetching Stripe public key:', error);
+    logger.error('Error fetching Stripe public key:', error);
     throw error;
   }
 }
@@ -78,7 +79,7 @@ export async function createCheckoutSession(priceId: string): Promise<string> {
     // Si se pasó una clave de plan en lugar de un ID, convertirla
     const actualPriceId = priceIdMapping[priceId] || priceId;
     
-    console.log(`Creando sesión de checkout para: ${actualPriceId}`);
+    logger.info(`Creando sesión de checkout para: ${actualPriceId}`);
     
     // Crear una sesión dinámica con la API de Stripe
     // Usar la forma correcta de apiRequest que espera un objeto con url, method y data
@@ -88,7 +89,7 @@ export async function createCheckoutSession(priceId: string): Promise<string> {
       data: { priceId: actualPriceId }
     });
     
-    console.log('Respuesta de API de Stripe:', response);
+    logger.info('Respuesta de API de Stripe:', response);
     
     if (response.success && response.url) {
       return response.url;
@@ -96,9 +97,9 @@ export async function createCheckoutSession(priceId: string): Promise<string> {
       throw new Error(response.message || 'No se pudo crear la sesión de checkout')
     }
   } catch (error) {
-    console.error('Error creating checkout session:', error);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    logger.error('Error creating checkout session:', error);
+    logger.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     throw error instanceof Error ? error : new Error('No se pudo crear la sesión de pago. Por favor, contacta al soporte.');
   }
 }
@@ -117,7 +118,7 @@ export async function cancelSubscription(): Promise<{success: boolean; message?:
     
     return response as {success: boolean; message?: string};
   } catch (error) {
-    console.error('Error cancelling subscription:', error);
+    logger.error('Error cancelling subscription:', error);
     return {
       success: false,
       message: 'No se pudo cancelar la suscripción'
@@ -141,7 +142,7 @@ export async function updateSubscription(priceId: string): Promise<{success: boo
     
     return response as {success: boolean; message?: string; url?: string};
   } catch (error) {
-    console.error('Error updating subscription:', error);
+    logger.error('Error updating subscription:', error);
     throw new Error('No se pudo actualizar la suscripción');
   }
 }
@@ -161,11 +162,11 @@ export async function fetchSubscriptionPlans(): Promise<SubscriptionPlansRespons
     if (data.success && data.plans) {
       return data as SubscriptionPlansResponse;
     } else {
-      console.error('Error fetching subscription plans:', data);
+      logger.error('Error fetching subscription plans:', data);
       throw new Error('Failed to get subscription plans');
     }
   } catch (error) {
-    console.error('Error fetching subscription plans:', error);
+    logger.error('Error fetching subscription plans:', error);
     throw error;
   }
 }

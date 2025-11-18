@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from "./logger";
 
 // Definición de esquema para las respuestas de ElevenLabs
 export const ElevenLabsResponseSchema = z.object({
@@ -52,7 +53,7 @@ export const elevenLabsService = {
         })
       };
 
-      console.log(`Generating speech for text of length ${text.length}`);
+      logger.info(`Generating speech for text of length ${text.length}`);
       const response = await fetch(`${BASE_URL}/text-to-speech/${voiceId}`, options);
 
       if (!response.ok) {
@@ -77,7 +78,7 @@ export const elevenLabsService = {
         }
       };
     } catch (error) {
-      console.error('Error in textToSpeech:', error);
+      logger.error('Error in textToSpeech:', error);
       throw error;
     }
   },
@@ -103,7 +104,7 @@ export const elevenLabsService = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching available voices:', error);
+      logger.error('Error fetching available voices:', error);
       throw error;
     }
   }

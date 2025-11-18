@@ -1,4 +1,5 @@
 import * as React from "react"
+import { logger } from "../lib/logger";
 import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import { ChevronDown } from "lucide-react"
 

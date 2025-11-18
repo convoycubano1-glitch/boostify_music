@@ -9,6 +9,7 @@
  */
 
 import { apiRequest } from "../queryClient";
+import { logger } from "../logger";
 
 export interface HailuoVideoOptions {
   // Opciones comunes
@@ -236,7 +237,7 @@ export async function generateVideo(options: HailuoVideoOptions): Promise<VideoG
       requestData.image_url = options.imageUrl;
     }
     
-    console.log('Enviando solicitud de generación de video:', requestData);
+    logger.info('Enviando solicitud de generación de video:', requestData);
     
     // Realizar la solicitud al endpoint proxy
     const response = await apiRequest('/api/proxy/piapi/video/start', {
@@ -256,7 +257,7 @@ export async function generateVideo(options: HailuoVideoOptions): Promise<VideoG
       };
     }
   } catch (error) {
-    console.error('Error en generación de video con Hailuo:', error);
+    logger.error('Error en generación de video con Hailuo:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error inesperado en la generación de video'
@@ -285,7 +286,7 @@ export async function checkVideoStatus(taskId: string): Promise<VideoStatusResul
       progress: calculateProgress(response.status)
     };
   } catch (error) {
-    console.error('Error verificando estado de video:', error);
+    logger.error('Error verificando estado de video:', error);
     return {
       id: taskId,
       status: 'failed',
@@ -328,7 +329,7 @@ export async function saveGeneratedVideo(
       error: response.error
     };
   } catch (error) {
-    console.error('Error guardando video generado:', error);
+    logger.error('Error guardando video generado:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error inesperado al guardar video'

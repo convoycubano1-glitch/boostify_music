@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Workspace Completo para Creación de Videos Musicales con IA
  * Sistema profesional con timeline sincronizado, generación automática y referencias faciales
  */
@@ -214,7 +215,7 @@ export function MusicVideoWorkspaceComplete({
       });
 
     } catch (error) {
-      console.error('Error al cargar audio:', error);
+      logger.error('Error al cargar audio:', error);
       toast({
         title: "Error",
         description: "No se pudo cargar el archivo de audio.",
@@ -262,7 +263,7 @@ export function MusicVideoWorkspaceComplete({
         throw new Error(data.error || 'Error al transcribir el audio');
       }
 
-      console.log('Transcripción completa:', data.transcription);
+      logger.info('Transcripción completa:', data.transcription);
 
       toast({
         title: "Transcripción completa",
@@ -273,7 +274,7 @@ export function MusicVideoWorkspaceComplete({
       // Por ejemplo: setTranscription(data.transcription.text);
 
     } catch (error: any) {
-      console.error('Error al transcribir:', error);
+      logger.error('Error al transcribir:', error);
       toast({
         title: "Error en transcripción",
         description: error.message || "No se pudo transcribir el audio. Intente nuevamente.",
@@ -400,7 +401,7 @@ export function MusicVideoWorkspaceComplete({
         throw new Error(data.error || 'Error al generar imágenes');
       }
     } catch (error: any) {
-      console.error('Error generando video:', error);
+      logger.error('Error generando video:', error);
       toast({
         title: "Error",
         description: "No se pudo generar el video. Intente nuevamente.",
@@ -488,7 +489,7 @@ export function MusicVideoWorkspaceComplete({
       }, 500);
 
     } catch (error) {
-      console.error('Error saving project:', error);
+      logger.error('Error saving project:', error);
       toast({
         title: "Error",
         description: "No se pudo guardar el proyecto",

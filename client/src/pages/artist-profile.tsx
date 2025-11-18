@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { logger } from "../lib/logger";
 import { useParams } from "wouter";
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { CrowdfundingButton } from "../components/crowdfunding/crowdfunding-button";
@@ -24,7 +25,7 @@ export default function ArtistProfilePage() {
 
       try {
         setIsLoading(true);
-        console.log(`🔍 Looking for artist with slug: ${slug}`);
+        logger.info(`🔍 Looking for artist with slug: ${slug}`);
         
         // Primero intentar buscar en PostgreSQL
         try {
@@ -33,7 +34,7 @@ export default function ArtistProfilePage() {
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.artist) {
-              console.log(`✅ Artist found in PostgreSQL:`, data.artist);
+              logger.info(`✅ Artist found in PostgreSQL:`, data.artist);
               
               // Usar el firestoreId o el id como artistId
               const artistIdToUse = data.artist.firestoreId || String(data.artist.id);
@@ -66,18 +67,18 @@ export default function ArtistProfilePage() {
             }
           }
         } catch (pgError) {
-          console.log(`⚠️ PostgreSQL lookup failed, trying Firestore:`, pgError);
+          logger.info(`⚠️ PostgreSQL lookup failed, trying Firestore:`, pgError);
         }
         
         // Si no se encuentra en PostgreSQL, buscar en Firestore (fallback)
-        console.log(`🔍 Searching in Firestore for slug: ${slug}`);
+        logger.info(`🔍 Searching in Firestore for slug: ${slug}`);
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("slug", "==", slug));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
-          console.log(`✅ Artist found in Firestore:`, {
+          logger.info(`✅ Artist found in Firestore:`, {
             uid: userData.uid,
             name: userData.displayName || userData.name,
             slug: userData.slug
@@ -86,11 +87,11 @@ export default function ArtistProfilePage() {
           setArtistData(userData);
           setError(false);
         } else {
-          console.warn(`⚠️ No artist found with slug: ${slug}`);
+          logger.warn(`⚠️ No artist found with slug: ${slug}`);
           setError(true);
         }
       } catch (err) {
-        console.error("❌ Error finding artist by slug:", err);
+        logger.error("❌ Error finding artist by slug:", err);
         setError(true);
       } finally {
         setIsLoading(false);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { logger } from "../lib/logger";
 import { useAuth } from "../hooks/use-auth";
 import { Redirect } from "wouter";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -18,7 +19,7 @@ export default function MyArtistPage() {
 
       try {
         const firebaseUid = String(user.id);
-        console.log('🔍 [My Artist] Looking for user with Firebase UID:', firebaseUid);
+        logger.info('🔍 [My Artist] Looking for user with Firebase UID:', firebaseUid);
         
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("uid", "==", firebaseUid));
@@ -26,14 +27,14 @@ export default function MyArtistPage() {
 
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
-          console.log('✅ [My Artist] User found:', { slug: userData.slug, name: userData.displayName || userData.name });
+          logger.info('✅ [My Artist] User found:', { slug: userData.slug, name: userData.displayName || userData.name });
           setArtistSlug(userData.slug);
         } else {
-          console.warn('⚠️ [My Artist] No Firestore user found for UID:', firebaseUid);
+          logger.warn('⚠️ [My Artist] No Firestore user found for UID:', firebaseUid);
           setArtistSlug(null);
         }
       } catch (error) {
-        console.error('❌ [My Artist] Error fetching user slug:', error);
+        logger.error('❌ [My Artist] Error fetching user slug:', error);
         setArtistSlug(null);
       } finally {
         setChecking(false);

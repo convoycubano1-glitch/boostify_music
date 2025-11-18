@@ -4,6 +4,7 @@
  */
 
 import type { TimelineClip } from '../../components/professional-editor/EnhancedTimeline';
+import { logger } from "../logger";
 
 export interface Beat {
   time: number;
@@ -41,7 +42,7 @@ export async function detectBeats(audioUrl: string): Promise<BeatAnalysis> {
     
     return analysis;
   } catch (error) {
-    console.error('Error detectando beats:', error);
+    logger.error('Error detectando beats:', error);
     
     // Fallback: generar beats sintéticos a 120 BPM
     return generateSyntheticBeats(120, 120);

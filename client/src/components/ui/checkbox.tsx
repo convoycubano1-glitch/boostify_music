@@ -1,4 +1,5 @@
 import * as React from "react"
+import { logger } from "../lib/logger";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import { Check } from "lucide-react"
 

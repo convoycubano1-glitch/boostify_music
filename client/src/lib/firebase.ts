@@ -3,7 +3,9 @@
  * This adapter ensures we don't initialize Firebase multiple times
  */
 import { getIdToken } from 'firebase/auth';
+import { logger } from "../logger";
 import { app, db, auth, storage } from '../firebase';
+import { logger } from "../logger";
 
 /**
  * Gets the current user's authentication token
@@ -17,7 +19,7 @@ export async function getAuthToken(): Promise<string | null> {
   try {
     return await getIdToken(user);
   } catch (error) {
-    console.error('Error getting auth token:', error);
+    logger.error('Error getting auth token:', error);
     return null;
   }
 }

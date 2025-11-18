@@ -9,9 +9,13 @@
  */
 
 import { LucideIcon } from 'lucide-react';
+import { logger } from "../logger";
 import { db } from '../firebase';
+import { logger } from "../logger";
 import { getAuth } from 'firebase/auth';
+import { logger } from "../logger";
 import {
+import { logger } from "../logger";
   collection,
   addDoc,
   query,
@@ -25,7 +29,9 @@ import {
   FirestoreError
 } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
+import { logger } from "../logger";
 import { getUserId } from '../auth-helpers';
+import { logger } from "../logger";
 
 // Persistence is now handled in main firebase.ts configuration
 // This prevents "failed-precondition" errors when accessing Firestore data
@@ -92,13 +98,13 @@ class AdvisorCallService {
       // Verificar autenticación
       const userId = getUserId();
       if (!userId) {
-        console.error('No authenticated user found to register call');
+        logger.error('No authenticated user found to register call');
         return null;
       }
       
       // Validar los datos del asesor antes de continuar
       if (!advisor || !advisor.id || !advisor.name) {
-        console.error('Invalid advisor data provided:', advisor);
+        logger.error('Invalid advisor data provided:', advisor);
         return null;
       }
       
@@ -126,7 +132,7 @@ class AdvisorCallService {
         timestamp: serverTimestamp() as Timestamp,
       };
       
-      console.log('Saving call data to Firestore:', callData);
+      logger.info('Saving call data to Firestore:', callData);
       
       // Intentar guardar en Firestore con reintentos en caso de error
       let attempt = 0;
@@ -135,11 +141,11 @@ class AdvisorCallService {
       while (attempt < 3) {
         try {
           docRef = await addDoc(collection(db, 'advisor_calls'), callData);
-          console.log('Call successfully registered in Firestore with ID:', docRef.id);
+          logger.info('Call successfully registered in Firestore with ID:', docRef.id);
           return docRef.id;
         } catch (saveError) {
           attempt++;
-          console.error(`Error saving call data (attempt ${attempt}/3):`, saveError);
+          logger.error(`Error saving call data (attempt ${attempt}/3):`, saveError);
           
           if (attempt >= 3) {
             throw saveError;
@@ -152,7 +158,7 @@ class AdvisorCallService {
       
       return docRef?.id || null;
     } catch (error) {
-      console.error('Fatal error registering call:', error);
+      logger.error('Fatal error registering call:', error);
       
       // Intentar capturar más información sobre el error
       const errorDetails = {
@@ -161,7 +167,7 @@ class AdvisorCallService {
         advisor: advisor?.id || 'unknown',
         timestamp: new Date().toISOString()
       };
-      console.error('Error details:', errorDetails);
+      logger.error('Error details:', errorDetails);
       
       throw error;
     }
@@ -181,7 +187,7 @@ class AdvisorCallService {
       // Verificar autenticación
       const userId = getUserId();
       if (!userId) {
-        console.error('No authenticated user found to get call history');
+        logger.error('No authenticated user found to get call history');
         return { calls: [], totalCalls: 0, totalDuration: 0 };
       }
       
@@ -205,14 +211,14 @@ class AdvisorCallService {
       
       // Intentar obtener datos reales de Firestore
       try {
-        console.log('Fetching call history from Firestore for user:', userId);
+        logger.info('Fetching call history from Firestore for user:', userId);
         
         // Ejecutar consulta con manejo de errores mejorado para problemas de índice
         let calls: AdvisorCall[] = [];
         let totalDuration = 0;
         
         try {
-          console.log('Attempting to execute query without __name__ field');
+          logger.info('Attempting to execute query without __name__ field');
           // Primer intento: Usar consulta básica que no requiere índice compuesto con __name__
           const q = query(
             collection(db, 'advisor_calls'),
@@ -222,7 +228,7 @@ class AdvisorCallService {
           );
           
           const querySnapshot = await getDocs(q);
-          console.log(`Found ${querySnapshot.size} calls in history using simple query`);
+          logger.info(`Found ${querySnapshot.size} calls in history using simple query`);
           
           // Ordenar manualmente los resultados después de obtenerlos
           calls = querySnapshot.docs
@@ -231,7 +237,7 @@ class AdvisorCallService {
               
               // Validar campos obligatorios
               if (!data.advisorId || !data.advisorName) {
-                console.warn('Skipping invalid call record:', doc.id);
+                logger.warn('Skipping invalid call record:', doc.id);
                 return null;
               }
               
@@ -261,17 +267,17 @@ class AdvisorCallService {
           totalDuration = calls.reduce((total, call) => 
             call.status === 'completed' ? total + call.duration : total, 0);
         } catch (queryError: any) {
-          console.error('Error executing Firestore query:', queryError);
+          logger.error('Error executing Firestore query:', queryError);
           
           // Registrar el error para diagnóstico
           if (queryError?.code === 'failed-precondition' || 
               (queryError?.message && queryError.message.includes('requires an index'))) {
-            console.warn('Index error detected, but this should not happen with the current query');
-            console.warn('Error details:', queryError);
+            logger.warn('Index error detected, but this should not happen with the current query');
+            logger.warn('Error details:', queryError);
             
             // Si hay URL de creación de índice, mostrarla para referencia
             if (queryError.message && queryError.message.includes('https://console.firebase.google.com')) {
-              console.warn('Index creation URL:', 
+              logger.warn('Index creation URL:', 
                 queryError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]+/)?.[0] || 'not found');
             }
           }
@@ -281,7 +287,7 @@ class AdvisorCallService {
         }
         
         if (calls.length > 0) {
-          console.log(`Returning ${calls.length} call records`);
+          logger.info(`Returning ${calls.length} call records`);
           return {
             calls,
             totalCalls: calls.length,
@@ -289,7 +295,7 @@ class AdvisorCallService {
           };
         }
         
-        console.log('No call history found, returning initial sample data');
+        logger.info('No call history found, returning initial sample data');
         
         // Si no hay resultados, devolver datos iniciales
         return {
@@ -300,14 +306,14 @@ class AdvisorCallService {
         };
         
       } catch (firestoreError) {
-        console.error('Firestore error getting call history:', firestoreError);
+        logger.error('Firestore error getting call history:', firestoreError);
         
         // Mostrar mensaje de creación de índice si es ese el error
         if (firestoreError instanceof FirebaseError && 
             firestoreError.message && 
             firestoreError.message.includes('requires an index')) {
-          console.warn('This query requires a composite index. You need to add it to your Firebase project.');
-          console.warn('Index creation URL from error:', 
+          logger.warn('This query requires a composite index. You need to add it to your Firebase project.');
+          logger.warn('Index creation URL from error:', 
             firestoreError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]+/)?.[0] || 'not found');
         }
         
@@ -320,7 +326,7 @@ class AdvisorCallService {
         };
       }
     } catch (error) {
-      console.error('Fatal error getting call history:', error);
+      logger.error('Fatal error getting call history:', error);
       
       // En caso de error crítico, devolver objeto vacío pero válido
       return { 
@@ -348,7 +354,7 @@ class AdvisorCallService {
       
       // Obtener límite según plan
       const callLimit = this.getMonthlyCallLimit(normalizedPlan);
-      console.log(`Checking call limits for plan: ${normalizedPlan}, limit: ${callLimit}`);
+      logger.info(`Checking call limits for plan: ${normalizedPlan}, limit: ${callLimit}`);
       
       try {
         // Intentar obtener historial de llamadas recientes
@@ -359,14 +365,14 @@ class AdvisorCallService {
         if (typeof history.totalCalls === 'number') {
           callsUsed = history.totalCalls;
         } else {
-          console.warn('Invalid totalCalls from history, using 0 as default');
+          logger.warn('Invalid totalCalls from history, using 0 as default');
         }
         
         // Verificar si ha alcanzado el límite, con validación
         const hasReachedLimit = callsUsed >= callLimit;
         const callsRemaining = Math.max(0, callLimit - callsUsed);
         
-        console.log(`Call usage: ${callsUsed}/${callLimit}, remaining: ${callsRemaining}`);
+        logger.info(`Call usage: ${callsUsed}/${callLimit}, remaining: ${callsRemaining}`);
         
         return {
           hasReachedLimit,
@@ -375,7 +381,7 @@ class AdvisorCallService {
           callsRemaining,
         };
       } catch (innerError) {
-        console.error('Error checking call limits, using safe defaults:', innerError);
+        logger.error('Error checking call limits, using safe defaults:', innerError);
         
         // En caso de error, usar valores por defecto seguros
         return {
@@ -386,7 +392,7 @@ class AdvisorCallService {
         };
       }
     } catch (error) {
-      console.error('Fatal error checking call limits:', error);
+      logger.error('Fatal error checking call limits:', error);
       
       // Capturar detalles adicionales del error
       const errorDetails = {
@@ -395,7 +401,7 @@ class AdvisorCallService {
         plan: plan || 'unknown',
         timestamp: new Date().toISOString()
       };
-      console.error('Error details:', errorDetails);
+      logger.error('Error details:', errorDetails);
       
       // Proporcionar valores predeterminados seguros
       const fallbackLimit = 3; // Valor mínimo seguro (plan free)

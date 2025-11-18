@@ -1,4 +1,5 @@
 import { Card } from "../components/ui/card";
+import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -63,7 +64,7 @@ export default function PRPage() {
       const contacts = await getSavedContacts(user!);
       setSavedContacts(contacts);
     } catch (error) {
-      console.error('Error loading saved contacts:', error);
+      logger.error('Error loading saved contacts:', error);
     }
   };
 
@@ -107,7 +108,7 @@ export default function PRPage() {
       setContacts(results);
       setCurrentPage(1);
     } catch (error) {
-      console.error('Search error:', error);
+      logger.error('Search error:', error);
       toast({
         title: "Search error",
         description: "Could not retrieve contacts. Please try again.",

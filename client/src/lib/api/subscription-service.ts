@@ -1,4 +1,5 @@
 import { apiRequest } from '../query-client';
+import { logger } from "../logger";
 
 /**
  * Tipos de planes de suscripción disponibles
@@ -43,7 +44,7 @@ export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
     const response = await apiRequest('/api/stripe/subscription-status', {
       signal: controller.signal
     }).catch(e => {
-      console.warn('Falló la solicitud de suscripción', e);
+      logger.warn('Falló la solicitud de suscripción', e);
       return null;
     });
     
@@ -53,11 +54,11 @@ export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
     if (response && response.currentPlan) {
       return response;
     } else {
-      console.warn('La respuesta de suscripción no es válida, usando estado predeterminado');
+      logger.warn('La respuesta de suscripción no es válida, usando estado predeterminado');
       return getDefaultSubscriptionStatus();
     }
   } catch (error) {
-    console.error('Error al obtener el estado de la suscripción:', error);
+    logger.error('Error al obtener el estado de la suscripción:', error);
     return getDefaultSubscriptionStatus();
   }
 }

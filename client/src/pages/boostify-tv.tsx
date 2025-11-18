@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { logger } from "../lib/logger";
 import axios from "axios";
 import { Header } from "../components/layout/header";
 import { Card } from "../components/ui/card";
@@ -441,7 +442,7 @@ export default function BoostifyTvPage() {
                 loop
                 playsInline
                 onError={(e) => {
-                  console.error('Error loading featured video:', featuredVideo.filePath);
+                  logger.error('Error loading featured video:', featuredVideo.filePath);
                 }}
               />
             )}

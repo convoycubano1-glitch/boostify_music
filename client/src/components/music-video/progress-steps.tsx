@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente ProgressSteps Mejorado
  * 
  * Este componente muestra un indicador visual de progreso para el flujo de trabajo de 9 pasos

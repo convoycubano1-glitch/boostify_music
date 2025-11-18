@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -216,7 +217,7 @@ export default function VideosPage() {
         });
       }
     } catch (error) {
-      console.error('Error fetching YouTube metadata:', error);
+      logger.error('Error fetching YouTube metadata:', error);
       let errorMessage = "Error retrieving video information";
 
       if (axios.isAxiosError(error)) {

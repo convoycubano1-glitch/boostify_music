@@ -1,4 +1,5 @@
 import { createApi } from 'unsplash-js';
+import { logger } from "../logger";
 
 const unsplash = createApi({
   accessKey: import.meta.env.VITE_UNSPLASH_ACCESS_KEY || ''
@@ -35,7 +36,7 @@ export async function getRelevantImage(query: string): Promise<string> {
 
     // Enrich the query with random keyword and specific context
     const enrichedQuery = `${query} ${randomKeyword}`;
-    console.log('Enriched image query:', enrichedQuery);
+    logger.info('Enriched image query:', enrichedQuery);
 
     const result = await unsplash.photos.getRandom({
       query: enrichedQuery,
@@ -62,7 +63,7 @@ export async function getRelevantImage(query: string): Promise<string> {
     return `${fallbackImages[timestamp % fallbackImages.length]}?auto=format&fit=crop&w=1200&timestamp=${timestamp}`;
 
   } catch (error) {
-    console.error('Error fetching image from Unsplash:', error);
+    logger.error('Error fetching image from Unsplash:', error);
     // Return a different fallback image based on timestamp to avoid repetition
     const timestamp = Date.now();
     return `https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1200&timestamp=${timestamp}`;

@@ -5,6 +5,7 @@
  */
 
 import type { TimelineClip, TimelineTrack } from '../../components/professional-editor/EnhancedTimeline';
+import { logger } from "../logger";
 
 export interface ExportOptions {
   clips: TimelineClip[];
@@ -140,7 +141,7 @@ export async function exportTimelineToMP4(
     throw new Error(finalResult.error || 'Error desconocido durante la exportación');
 
   } catch (error: any) {
-    console.error('Error exportando timeline:', error);
+    logger.error('Error exportando timeline:', error);
 
     const errorProgress: ExportProgress = {
       stage: 'failed',
@@ -264,7 +265,7 @@ async function pollExportStatus(
       await new Promise(resolve => setTimeout(resolve, pollInterval));
 
     } catch (error: any) {
-      console.error('Error en polling:', error);
+      logger.error('Error en polling:', error);
       // Continuar intentando a menos que sea el último intento
       if (attempt === maxAttempts - 1) {
         return {

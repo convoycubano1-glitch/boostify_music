@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Enhanced Music Video Workflow
  * Flujo completo integrado con EnhancedTimeline
  * 
@@ -231,7 +232,7 @@ export function MusicVideoWorkflowEnhanced() {
       });
 
     } catch (error: any) {
-      console.error('Error generando contenido:', error);
+      logger.error('Error generando contenido:', error);
       toast({
         title: "Error generando contenido",
         description: error.message,

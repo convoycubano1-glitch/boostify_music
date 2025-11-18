@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Editor de línea de tiempo para música
  * Componente principal que integra gestión de capas, clips y reproducción de audio
  * @export TimelineEditor - Componente principal del editor
@@ -174,7 +175,7 @@ export function TimelineEditor({
   useEffect(() => {
     // Solo inicializar desde contexto si hay un proyecto activo
     if (editor.state?.project) {
-      console.log("📋 Inicializando TimelineEditor desde EditorContext");
+      logger.info("📋 Inicializando TimelineEditor desde EditorContext");
       
       // Extraer clips de todas las pistas del proyecto
       const projectClips: TimelineClip[] = [];
@@ -211,7 +212,7 @@ export function TimelineEditor({
             }
           });
         } catch (error) {
-          console.error("Error al procesar clips de pistas:", error);
+          logger.error("Error al procesar clips de pistas:", error);
         }
       }
       
@@ -223,7 +224,7 @@ export function TimelineEditor({
         const maxId = Math.max(...projectClips.map(c => typeof c.id === 'number' ? c.id : parseInt(String(c.id), 10)), 0);
         setNextClipId(maxId + 1);
         
-        console.log(`📋 Cargados ${projectClips.length} clips desde el EditorContext`);
+        logger.info(`📋 Cargados ${projectClips.length} clips desde el EditorContext`);
       }
       
       // Sincronizar el tiempo actual y estado de reproducción
@@ -254,7 +255,7 @@ export function TimelineEditor({
     if (!editor.state?.project || !editor.state.project.tracks || editor.state.project.tracks.length === 0) {
       setClips(initialClips);
       setNextClipId(Math.max(...initialClips.map(c => c.id), 0) + 1);
-      console.log("📋 Inicializando TimelineEditor desde props iniciales");
+      logger.info("📋 Inicializando TimelineEditor desde props iniciales");
     }
   }, [JSON.stringify(initialClips), editor.state?.project]);
 
@@ -273,11 +274,11 @@ export function TimelineEditor({
           playPromise
             .then(() => {
               // La reproducción comenzó con éxito
-              console.log("Reproducción iniciada correctamente");
+              logger.info("Reproducción iniciada correctamente");
             })
             .catch(error => {
               // La reproducción falló, probablemente debido a políticas de interacción del usuario
-              console.error("Error al iniciar reproducción:", error);
+              logger.error("Error al iniciar reproducción:", error);
               // Reintentar con un control más explícito para móviles
               if (error.name === 'NotAllowedError') {
                 toast({
@@ -309,7 +310,7 @@ export function TimelineEditor({
     let isMounted = true;
     
     if (isPlaying) {
-      console.log("▶️ Iniciando control de reproducción y animación de timeline");
+      logger.info("▶️ Iniciando control de reproducción y animación de timeline");
       
       // Definimos el sistema de loops de animación para actualización de tiempo
       const updateTimeFromAudio = () => {
@@ -326,7 +327,7 @@ export function TimelineEditor({
             
             // Comprobar si hemos llegado al final
             if (currentAudioTime >= duration) {
-              console.log("🔚 Final de reproducción alcanzado");
+              logger.info("🔚 Final de reproducción alcanzado");
               setIsPlaying(false);
               
               // Reiniciar a tiempo cero o quizás al inicio si implementamos loop
@@ -341,7 +342,7 @@ export function TimelineEditor({
             // Verificar si el audio y el video de vista previa están sincronizados
             // Si la diferencia es mayor que 100ms, sincronizamos manualmente
             if (previewVideoRef.current && Math.abs(previewVideoRef.current.currentTime - currentAudioTime) > 0.1) {
-              console.log("⚠️ Resincronizando video de vista previa, desviación detectada");
+              logger.info("⚠️ Resincronizando video de vista previa, desviación detectada");
               previewVideoRef.current.currentTime = currentAudioTime;
             }
           }
@@ -351,7 +352,7 @@ export function TimelineEditor({
             animationFrameRef.current = requestAnimationFrame(updateTimeFromAudio);
           }
         } catch (error) {
-          console.error("Error en bucle de animación:", error);
+          logger.error("Error en bucle de animación:", error);
           
           // En caso de error, intentamos continuar con la animación para evitar congelación
           if (isPlaying && isMounted) {
@@ -372,7 +373,7 @@ export function TimelineEditor({
           cancelAnimationFrame(animationFrameRef.current);
         }
         
-        console.log("🛑 Bucle de animación de timeline detenido");
+        logger.info("🛑 Bucle de animación de timeline detenido");
       };
     }
     
@@ -417,12 +418,12 @@ export function TimelineEditor({
     
     // Manejar eventos de video
     const handleVideoCanPlay = () => {
-      console.log("Video de referencia listo para reproducción");
+      logger.info("Video de referencia listo para reproducción");
       setPreviewLoaded(true);
     };
     
     const handleVideoError = (e: any) => {
-      console.error("Error en elemento de video:", e);
+      logger.error("Error en elemento de video:", e);
       setPreviewLoaded(false);
     };
     
@@ -435,7 +436,7 @@ export function TimelineEditor({
       const playPromise = videoElement.play();
       if (playPromise !== undefined) {
         playPromise.catch(error => {
-          console.error("Error al iniciar reproducción de video:", error);
+          logger.error("Error al iniciar reproducción de video:", error);
         });
       }
     } else {
@@ -457,12 +458,12 @@ export function TimelineEditor({
     
     // Manejar eventos de video de vista previa
     const handlePreviewCanPlay = () => {
-      console.log("Vista previa de video lista para reproducción");
+      logger.info("Vista previa de video lista para reproducción");
       setPreviewLoaded(true);
     };
     
     const handlePreviewError = (e: any) => {
-      console.error("Error en vista previa de video:", e);
+      logger.error("Error en vista previa de video:", e);
       setPreviewLoaded(false);
     };
     
@@ -472,11 +473,11 @@ export function TimelineEditor({
     
     // Sincronizar reproducción
     if (isPlaying && previewLoaded) {
-      console.log("Intentando reproducir vista previa de video");
+      logger.info("Intentando reproducir vista previa de video");
       const playPromise = previewElement.play();
       if (playPromise !== undefined) {
         playPromise.catch(error => {
-          console.error("Error al reproducir vista previa:", error);
+          logger.error("Error al reproducir vista previa:", error);
         });
       }
     } else {
@@ -556,12 +557,12 @@ export function TimelineEditor({
                     createdAt: new Date()   // Fecha de creación actual
                   });
                 } catch (clipError) {
-                  console.error('Error al añadir clip individual:', clipError);
+                  logger.error('Error al añadir clip individual:', clipError);
                 }
               }
             });
           } catch (error) {
-            console.error('Error al sincronizar clips con el editor:', error);
+            logger.error('Error al sincronizar clips con el editor:', error);
           }
         }
       });
@@ -576,7 +577,7 @@ export function TimelineEditor({
     try {
       // Control de reproducción global con manejo preciso de errores
       if (newPlayState) {
-        console.log("▶️ Iniciando reproducción sincronizada");
+        logger.info("▶️ Iniciando reproducción sincronizada");
         
         // Array para controlar promesas de reproducción
         const playPromises = [];
@@ -586,7 +587,7 @@ export function TimelineEditor({
           playPromises.push(
             audioRef.current.play()
               .catch(err => {
-                console.error("Error al reproducir audio:", err);
+                logger.error("Error al reproducir audio:", err);
                 // Si falla el audio, revertimos el estado
                 setIsPlaying(false);
                 throw new Error("No se pudo reproducir el audio");
@@ -599,7 +600,7 @@ export function TimelineEditor({
           playPromises.push(
             videoRef.current.play()
               .catch(err => {
-                console.error("Error al reproducir video de referencia:", err);
+                logger.error("Error al reproducir video de referencia:", err);
                 // No revertimos el estado aquí, solo registramos
               })
           );
@@ -610,7 +611,7 @@ export function TimelineEditor({
           playPromises.push(
             previewVideoRef.current.play()
               .catch(err => {
-                console.error("Error al reproducir vista previa:", err);
+                logger.error("Error al reproducir vista previa:", err);
                 // Error crítico, notificar al usuario
                 toast({
                   title: "Error de reproducción",
@@ -623,14 +624,14 @@ export function TimelineEditor({
         
         // Verificar si todo se reprodujo correctamente
         Promise.all(playPromises).then(() => {
-          console.log("✅ Todos los elementos multimedia sincronizados y reproduciendo");
+          logger.info("✅ Todos los elementos multimedia sincronizados y reproduciendo");
         }).catch(() => {
-          console.log("⚠️ Algunos elementos no pudieron sincronizarse");
+          logger.info("⚠️ Algunos elementos no pudieron sincronizarse");
         });
         
       } else {
         // Pausar todos los elementos
-        console.log("⏸️ Pausando todos los elementos");
+        logger.info("⏸️ Pausando todos los elementos");
         
         if (audioRef.current) audioRef.current.pause();
         if (videoRef.current) videoRef.current.pause();
@@ -638,7 +639,7 @@ export function TimelineEditor({
       }
     } catch (error) {
       // Error inesperado, revertir estado
-      console.error("Error fatal al controlar reproducción:", error);
+      logger.error("Error fatal al controlar reproducción:", error);
       setIsPlaying(false);
       toast({
         title: "Error de reproducción",
@@ -657,25 +658,25 @@ export function TimelineEditor({
     setCurrentTime(clampedTime);
     
     // Log para debug de sincronización
-    console.log(`⏱️ Buscando tiempo: ${clampedTime.toFixed(2)}s de ${duration.toFixed(2)}s`);
+    logger.info(`⏱️ Buscando tiempo: ${clampedTime.toFixed(2)}s de ${duration.toFixed(2)}s`);
     
     try {
       // Actualizar tiempo de audio - prioridad alta
       if (audioRef.current) {
         audioRef.current.currentTime = clampedTime;
-        console.log(`🔊 Audio sincronizado a ${clampedTime.toFixed(2)}s`);
+        logger.info(`🔊 Audio sincronizado a ${clampedTime.toFixed(2)}s`);
       }
       
       // Actualizar tiempo de video de referencia
       if (videoRef.current) {
         videoRef.current.currentTime = clampedTime;
-        console.log(`🎬 Video de referencia sincronizado`);
+        logger.info(`🎬 Video de referencia sincronizado`);
       }
       
       // Actualizar tiempo del video de vista previa específico 
       if (previewVideoRef.current) {
         previewVideoRef.current.currentTime = clampedTime;
-        console.log(`👁️ Video de vista previa sincronizado`);
+        logger.info(`👁️ Video de vista previa sincronizado`);
       }
       
       // Actualizar cualquier otro video que pueda estar en el panel
@@ -686,7 +687,7 @@ export function TimelineEditor({
         }
       });
     } catch (error) {
-      console.error('Error al sincronizar medios:', error);
+      logger.error('Error al sincronizar medios:', error);
       toast({
         title: "Error de sincronización",
         description: "No se pudieron sincronizar todos los elementos multimedia",
@@ -700,7 +701,7 @@ export function TimelineEditor({
     // Detener reproducción
     setIsPlaying(false);
     
-    console.log("⏹️ Deteniendo y reiniciando todos los elementos multimedia");
+    logger.info("⏹️ Deteniendo y reiniciando todos los elementos multimedia");
     
     try {
       // Usar seekToTime(0) para la sincronización de tiempo
@@ -710,17 +711,17 @@ export function TimelineEditor({
       // Asegurarnos de pausar explícitamente todos los elementos
       if (audioRef.current) {
         audioRef.current.pause();
-        console.log("🔊 Audio detenido y reiniciado");
+        logger.info("🔊 Audio detenido y reiniciado");
       }
       
       if (videoRef.current) {
         videoRef.current.pause();
-        console.log("🎬 Video de referencia detenido y reiniciado");
+        logger.info("🎬 Video de referencia detenido y reiniciado");
       }
       
       if (previewVideoRef.current) {
         previewVideoRef.current.pause();
-        console.log("👁️ Vista previa detenida y reiniciada");
+        logger.info("👁️ Vista previa detenida y reiniciada");
       }
       
       // Reiniciar cualquier otro video que pueda estar en el panel
@@ -731,7 +732,7 @@ export function TimelineEditor({
         }
       });
     } catch (error) {
-      console.error("Error al detener reproducción:", error);
+      logger.error("Error al detener reproducción:", error);
       toast({
         title: "Error al detener",
         description: "No se pudieron detener todos los elementos multimedia correctamente",
@@ -1055,7 +1056,7 @@ export function TimelineEditor({
     seekToTime(validClickTime);
     
     // Log para debug de sincronización
-    console.log(`Timeline click: posición ${clickX.toFixed(0)}px, tiempo ${validClickTime.toFixed(2)}s`);
+    logger.info(`Timeline click: posición ${clickX.toFixed(0)}px, tiempo ${validClickTime.toFixed(2)}s`);
   }, [activeOperation, zoom, seekToTime, duration]);
   
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -1119,8 +1120,8 @@ export function TimelineEditor({
         muted={isMuted} // Para manejar mejor el estado de silencio
         loop={false}
         style={{ display: 'none' }}
-        onCanPlay={() => console.log("Audio listo para reproducción")}
-        onError={(e) => console.error("Error en elemento de audio:", e)}
+        onCanPlay={() => logger.info("Audio listo para reproducción")}
+        onError={(e) => logger.error("Error en elemento de audio:", e)}
       />
       
       {/* Video player para vista previa (versión oculta para referencia) */}
@@ -1133,8 +1134,8 @@ export function TimelineEditor({
           muted={isMuted}
           loop={false}
           className="hidden" // Oculto ya que usaremos una versión más grande en el panel principal
-          onCanPlay={() => console.log("Video listo para reproducción")}
-          onError={(e) => console.error("Error en elemento de video:", e)}
+          onCanPlay={() => logger.info("Video listo para reproducción")}
+          onError={(e) => logger.error("Error en elemento de video:", e)}
         />
       )}
       
@@ -1327,7 +1328,7 @@ export function TimelineEditor({
                     onClick={togglePlay}
                     style={{ width: "100%" }}
                     onCanPlay={(e) => {
-                      console.log("Video preview listo para reproducción");
+                      logger.info("Video preview listo para reproducción");
                       // Sincronizar el tiempo con el video de referencia
                       if (videoRef.current) {
                         e.currentTarget.currentTime = videoRef.current.currentTime;

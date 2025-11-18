@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
@@ -89,7 +90,7 @@ export default function FinanceDashboard() {
         setSubscriptionData(subscriptionTimeData);
         setLoading(false);
       } catch (error) {
-        console.error("Error al cargar datos financieros:", error);
+        logger.error("Error al cargar datos financieros:", error);
         setLoading(false);
       }
     }

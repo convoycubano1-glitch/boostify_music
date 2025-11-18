@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { logger } from "./logger";
 import { db } from '../firebase';
+import { logger } from "./logger";
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
+import { logger } from "./logger";
 
 // Definición de tipos para las respuestas de agentes
 export const AgentResponseSchema = z.object({
@@ -29,7 +32,7 @@ const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || import.met
 const BASE_URL = 'https://openrouter.ai/api/v1';
 
 // Debug para identificar problemas con la clave API
-console.log("OpenRouter API key availability check:", !!OPENROUTER_API_KEY);
+logger.info("OpenRouter API key availability check:", !!OPENROUTER_API_KEY);
 
 // Funciones de utilidad para los agentes
 export const openRouterService = {
@@ -77,7 +80,7 @@ export const openRouterService = {
       }
       
       // Log what we're doing to help debug
-      console.log('Making request to OpenRouter with prompt:', prompt.slice(0, 50) + '...');
+      logger.info('Making request to OpenRouter with prompt:', prompt.slice(0, 50) + '...');
       
       // Log the full headers information for debugging
       const headers = {
@@ -88,7 +91,7 @@ export const openRouterService = {
         'X-Auth-Key': OPENROUTER_API_KEY // Algunas APIs usan este formato también
       };
       
-      console.log('Using OpenRouter API key format:', 
+      logger.info('Using OpenRouter API key format:', 
                  `Bearer ${OPENROUTER_API_KEY.substring(0, 5)}...${OPENROUTER_API_KEY.substring(OPENROUTER_API_KEY.length - 3)}`);
       
       // Usar nuestra ruta de backend en lugar de llamar directamente a OpenRouter
@@ -105,7 +108,7 @@ export const openRouterService = {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('OpenRouter API error details:', {
+        logger.error('OpenRouter API error details:', {
           status: response.status,
           statusText: response.statusText,
           errorText
@@ -117,7 +120,7 @@ export const openRouterService = {
       
       // Validate the expected structure of the response
       if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
-        console.error('Invalid response structure:', data);
+        logger.error('Invalid response structure:', data);
         throw new Error('Invalid response structure from OpenRouter API');
       }
 
@@ -139,13 +142,13 @@ export const openRouterService = {
       try {
         await saveAgentResponse(agentResponse);
       } catch (firestoreError) {
-        console.warn('Could not save response to Firestore, but continuing:', firestoreError);
+        logger.warn('Could not save response to Firestore, but continuing:', firestoreError);
         // No hacemos throw aquí para que el chat siga funcionando
       }
 
       return agentResponse;
     } catch (error) {
-      console.error('Error in chatWithAgent:', error);
+      logger.error('Error in chatWithAgent:', error);
       
       // Provide a fallback response in case of errors
       const fallbackResponse: AgentResponse = {
@@ -171,7 +174,7 @@ export const openRouterService = {
           }
         });
       } catch (firestoreError) {
-        console.error('Could not save error to Firestore:', firestoreError);
+        logger.error('Could not save error to Firestore:', firestoreError);
       }
       
       // Return the fallback response so the UI doesn't break
@@ -210,7 +213,7 @@ export const openRouterService = {
         timestamp: doc.data().timestamp.toDate()
       })) as AgentResponse[];
     } catch (error) {
-      console.error('Error fetching agent history:', error);
+      logger.error('Error fetching agent history:', error);
       throw error;
     }
   }
@@ -219,7 +222,7 @@ export const openRouterService = {
 // Función auxiliar para guardar respuestas en Firestore
 async function saveAgentResponse(response: AgentResponse): Promise<void> {
   try {
-    console.log('Firestore saving is temporarily disabled for testing');
+    logger.info('Firestore saving is temporarily disabled for testing');
     // NOTA: Hemos deshabilitado temporalmente el guardado en Firestore 
     // hasta que se resuelvan los problemas de permisos
     return;
@@ -227,7 +230,7 @@ async function saveAgentResponse(response: AgentResponse): Promise<void> {
     /*
     // Verificar que tenemos una conexión a Firestore antes de intentar guardar
     if (!db) {
-      console.warn('Firestore not initialized, skipping save operation');
+      logger.warn('Firestore not initialized, skipping save operation');
       return;
     }
     
@@ -244,10 +247,10 @@ async function saveAgentResponse(response: AgentResponse): Promise<void> {
     
     const agentResponsesRef = collection(db, 'agentResponses');
     await addDoc(agentResponsesRef, sanitizedResponse);
-    console.log('Agent response saved to Firestore successfully');
+    logger.info('Agent response saved to Firestore successfully');
     */
   } catch (error) {
-    console.error('Error saving agent response:', error);
+    logger.error('Error saving agent response:', error);
     // No rethrow para que esto no rompa la experiencia del usuario
     // solo logueamos el error
   }

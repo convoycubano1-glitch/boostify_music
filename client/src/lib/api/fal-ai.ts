@@ -3,6 +3,7 @@
  */
 
 import axios from 'axios';
+import { logger } from "../logger";
 
 /**
  * Interfaz para los parámetros de generación de imágenes con Fal AI
@@ -113,7 +114,7 @@ export async function generateImageWithFal(params: GenerateImageParams): Promise
       };
     }
   } catch (error) {
-    console.error('Error al generar imágenes con Fal AI:', error);
+    logger.error('Error al generar imágenes con Fal AI:', error);
     
     // Extraer mensaje de error
     let errorMessage = 'Error desconocido al generar imágenes';
@@ -160,7 +161,7 @@ export async function generateAudioWithFal(params: GenerateAudioParams): Promise
       };
     }
   } catch (error) {
-    console.error('Error al generar audio con Fal AI:', error);
+    logger.error('Error al generar audio con Fal AI:', error);
     
     // Extraer mensaje de error
     let errorMessage = 'Error desconocido al generar audio';

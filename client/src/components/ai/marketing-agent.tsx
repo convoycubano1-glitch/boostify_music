@@ -1,4 +1,5 @@
 // src/components/ai/marketing-agent.tsx
+import { logger } from "@/lib/logger";
 
 import { Megaphone, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
@@ -68,9 +69,9 @@ export function MarketingAgent() {
         }
       );
 
-      console.log('✅ Marketing strategy saved to Firestore with Gemini integration');
+      logger.info('✅ Marketing strategy saved to Firestore with Gemini integration');
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       // Don't throw - continue even if save fails
     }
   };
@@ -150,7 +151,7 @@ export function MarketingAgent() {
 
           return strategy;
         } catch (error) {
-          console.error("Detailed error generating marketing plan:", {
+          logger.error("Detailed error generating marketing plan:", {
             message: error.message,
             stack: error.stack,
           });
@@ -225,7 +226,7 @@ export function MarketingAgent() {
           });
           return response;
         } catch (error) {
-          console.error("Detailed error scheduling content:", {
+          logger.error("Detailed error scheduling content:", {
             message: error.message,
             stack: error.stack,
           });
@@ -300,7 +301,7 @@ export function MarketingAgent() {
           });
           return response;
         } catch (error) {
-          console.error("Detailed error analyzing results:", {
+          logger.error("Detailed error analyzing results:", {
             message: error.message,
             stack: error.stack,
           });

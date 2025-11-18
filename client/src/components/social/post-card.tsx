@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { logger } from "@/lib/logger";
 import { 
   Card, 
   CardContent, 
@@ -104,7 +105,7 @@ export function PostCard({ post }: PostCardProps) {
         description: "No se pudo dar like a la publicación",
         variant: "destructive",
       });
-      console.error(error);
+      logger.error(error);
     },
   });
 
@@ -131,7 +132,7 @@ export function PostCard({ post }: PostCardProps) {
         description: "No se pudo publicar el comentario",
         variant: "destructive",
       });
-      console.error(error);
+      logger.error(error);
     },
   });
 

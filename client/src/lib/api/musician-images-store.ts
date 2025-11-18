@@ -1,5 +1,7 @@
 import { collection, addDoc, getDocs, query, where, orderBy } from "firebase/firestore";
+import { logger } from "./logger";
 import { db } from "../firebase";
+import { logger } from "./logger";
 
 export interface MusicianImage {
   id?: string;
@@ -18,7 +20,7 @@ export async function saveMusicianImage(image: Omit<MusicianImage, "id">) {
     });
     return docRef.id;
   } catch (error) {
-    console.error("Error saving musician image:", error);
+    logger.error("Error saving musician image:", error);
     throw error;
   }
 }
@@ -34,7 +36,7 @@ export async function getMusicianImages() {
       ...doc.data()
     })) as MusicianImage[];
   } catch (error) {
-    console.error("Error getting musician images:", error);
+    logger.error("Error getting musician images:", error);
     throw error;
   }
 }

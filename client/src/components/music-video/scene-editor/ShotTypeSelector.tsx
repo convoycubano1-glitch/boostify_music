@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente ShotTypeSelector
  * Permite seleccionar el tipo de plano para una escena
  */

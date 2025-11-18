@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -103,7 +104,7 @@ export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
             );
 
             if (!jsonDirector) {
-              console.warn(`⚠️ Director "${firestoreDirector.name}" en Firestore pero sin datos JSON completos`);
+              logger.warn(`⚠️ Director "${firestoreDirector.name}" en Firestore pero sin datos JSON completos`);
               return null;
             }
 
@@ -120,9 +121,9 @@ export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
           .filter((director): director is Director => director !== null);
         
         setDirectors(directorsWithFullData);
-        console.log(`✅ Cargados ${directorsWithFullData.length} directores con detalles completos`);
+        logger.info(`✅ Cargados ${directorsWithFullData.length} directores con detalles completos`);
       } catch (error) {
-        console.error("Error loading directors:", error);
+        logger.error("Error loading directors:", error);
         toast({
           title: "Error",
           description: "Failed to load directors. Please try again later.",
@@ -148,7 +149,7 @@ export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
         })) as MusicVideoRequest[];
         setRequests(requestsData);
       } catch (error) {
-        console.error("Error fetching requests:", error);
+        logger.error("Error fetching requests:", error);
         // Si es un error de permisos, no mostrar toast para evitar spam
         if (!(error instanceof Error && error.name === "FirebaseError" && error.toString().includes("permission-denied"))) {
           toast({
@@ -180,9 +181,9 @@ export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
     if (fullDirector) {
       setSelectedDirectorForDetails(fullDirector);
       setShowDetailsModal(true);
-      console.log(`✅ Detalles del director cargados:`, fullDirector.name);
+      logger.info(`✅ Detalles del director cargados:`, fullDirector.name);
     } else {
-      console.error(`❌ Director no encontrado en JSON:`, director.name);
+      logger.error(`❌ Director no encontrado en JSON:`, director.name);
       toast({
         title: "Información no disponible",
         description: "No se encontraron los detalles completos para este director",

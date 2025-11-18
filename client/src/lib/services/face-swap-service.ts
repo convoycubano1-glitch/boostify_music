@@ -1,6 +1,9 @@
 import { getAuthToken } from "../auth";
+import { logger } from "../logger";
 import type { FaceSwapResult } from "../components/face-swap/face-swap";
+import { logger } from "../logger";
 import axios from "axios";
+import { logger } from "../logger";
 
 /**
  * Servicio para la funcionalidad de Face Swap
@@ -27,7 +30,7 @@ export class FaceSwapService {
       
       return imageDataUrl;
     } catch (error) {
-      console.error("Error al procesar la imagen:", error);
+      logger.error("Error al procesar la imagen:", error);
       // Si hay error, devolver la imagen original
       return imageDataUrl;
     }
@@ -77,7 +80,7 @@ export class FaceSwapService {
       
       throw new Error(result.error || "Face swap no completado");
     } catch (error) {
-      console.error("Error al iniciar el proceso de Face Swap:", error);
+      logger.error("Error al iniciar el proceso de Face Swap:", error);
       
       // Para pruebas, devolvemos un resultado simulado
       return [
@@ -132,7 +135,7 @@ export class FaceSwapService {
       
       return response.data.taskId;
     } catch (error) {
-      console.error("Error al iniciar el proceso de Face Swap para imagen:", error);
+      logger.error("Error al iniciar el proceso de Face Swap para imagen:", error);
       // Para pruebas generamos un ID simulado
       return `simulated-face-swap-${Date.now()}`;
     }
@@ -228,7 +231,7 @@ export class FaceSwapService {
         status: status as 'pending' | 'processing'
       };
     } catch (error) {
-      console.error("Error al verificar el estado del Face Swap:", error);
+      logger.error("Error al verificar el estado del Face Swap:", error);
       
       // Para pruebas, simulamos un estado completado
       return {
@@ -272,7 +275,7 @@ export class FaceSwapService {
       
       return response.data.id || 'saved-document-id';
     } catch (error) {
-      console.error("Error al guardar los resultados de Face Swap:", error);
+      logger.error("Error al guardar los resultados de Face Swap:", error);
       return 'simulated-document-id';
     }
   }
@@ -307,7 +310,7 @@ export class FaceSwapService {
         createdAt: new Date(item.createdAt || Date.now())
       }));
     } catch (error) {
-      console.error("Error al obtener el historial de Face Swap:", error);
+      logger.error("Error al obtener el historial de Face Swap:", error);
       return [];
     }
   }

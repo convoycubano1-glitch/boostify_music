@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -46,7 +47,7 @@ export function MessagingPanel() {
       const conversationList = await messagingService.getConversations();
       setConversations(conversationList);
     } catch (error) {
-      console.error("Error loading conversations:", error);
+      logger.error("Error loading conversations:", error);
       toast({
         title: "Error",
         description: "Could not load conversations",
@@ -68,7 +69,7 @@ export function MessagingPanel() {
         loadConversations();
       }
     } catch (error) {
-      console.error("Error sending message:", error);
+      logger.error("Error sending message:", error);
       toast({
         title: "Error",
         description: "Could not send message",

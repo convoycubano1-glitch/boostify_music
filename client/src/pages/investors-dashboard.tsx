@@ -1,4 +1,5 @@
 import { Header } from "../components/layout/header";
+import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Button } from "../components/ui/button";
@@ -101,7 +102,7 @@ function InvestmentCalculator() {
       }
 
     } catch (error: any) {
-      console.error("Error creating checkout session:", error);
+      logger.error("Error creating checkout session:", error);
       
       const errorMessage = error.response?.data?.message || "Error processing payment. Please try again.";
       
@@ -664,7 +665,7 @@ function InvestorRegistrationForm() {
       // Save to Firestore
       const docRef = await addDoc(collection(db, 'investors'), investorData);
       
-      console.log("Investor registered with ID:", docRef.id);
+      logger.info("Investor registered with ID:", docRef.id);
       
       // Send webhook notification to Make.com
       try {
@@ -683,9 +684,9 @@ function InvestorRegistrationForm() {
           status: "pending",
           registrationDate: new Date().toISOString()
         });
-        console.log("Webhook sent to Make.com successfully");
+        logger.info("Webhook sent to Make.com successfully");
       } catch (webhookError) {
-        console.error("Failed to send webhook to Make.com:", webhookError);
+        logger.error("Failed to send webhook to Make.com:", webhookError);
         // Continue even if webhook fails
       }
       
@@ -701,7 +702,7 @@ function InvestorRegistrationForm() {
       window.location.reload();
       
     } catch (error: any) {
-      console.error("Error submitting investor registration:", error);
+      logger.error("Error submitting investor registration:", error);
       
       const errorMessage = error.message || "There was an unexpected error. Please try again.";
       
@@ -1033,7 +1034,7 @@ export default function InvestorsDashboard() {
 
   // Handle investment button click - Directs the user to the registration form
   const handleInvestNow = () => {
-    console.log("Directing to investment registration form");
+    logger.info("Directing to investment registration form");
     // Switch to the register tab
     setSelectedTab("register");
     // Scroll to the form
@@ -1047,7 +1048,7 @@ export default function InvestorsDashboard() {
 
   // Handle contract download - Opens the investment contract
   const handleDownloadContract = () => {
-    console.log("Opening investment contract...");
+    logger.info("Opening investment contract...");
     // Open the contract in a new tab
     window.open("/investment-contract.html", "_blank");
   };

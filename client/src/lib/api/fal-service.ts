@@ -1,8 +1,13 @@
 import { fal } from "@fal-ai/client";
+import { logger } from "./logger";
 import { z } from "zod";
+import { logger } from "./logger";
 import { db } from '../firebase';
+import { logger } from "./logger";
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { logger } from "./logger";
 import { env } from '../../env';
+import { logger } from "./logger";
 
 // Schema validation for FAL.AI responses
 export const FalResponseSchema = z.object({
@@ -38,7 +43,7 @@ export const falService = {
     prompt: string
   ): Promise<FalResponse> => {
     try {
-      console.log('Iniciando generación de música con FAL.AI:', {
+      logger.info('Iniciando generación de música con FAL.AI:', {
         ...params,
         userId,
         prompt
@@ -49,7 +54,7 @@ export const falService = {
         prompt.substring(0, 590) + '##' : 
         prompt;
 
-      console.log('Prompt truncado:', truncatedPrompt);
+      logger.info('Prompt truncado:', truncatedPrompt);
 
       const result = await fal.subscribe("fal-ai/minimax-music", {
         input: {
@@ -64,7 +69,7 @@ export const falService = {
         },
       });
 
-      console.log('Respuesta de FAL.AI:', result);
+      logger.info('Respuesta de FAL.AI:', result);
 
       if (!result.data?.audio?.url) {
         throw new Error('No se recibió URL de audio en la respuesta');
@@ -101,15 +106,15 @@ export const falService = {
             audioFormat: result.data.audio.content_type
           }
         });
-        console.log('Composición guardada en AI_Music_Composer collection');
+        logger.info('Composición guardada en AI_Music_Composer collection');
       } catch (error) {
-        console.error('Error guardando en Firestore:', error);
+        logger.error('Error guardando en Firestore:', error);
         // No propagamos el error para que no afecte la funcionalidad principal
       }
 
       return response;
     } catch (error) {
-      console.error('Error en generateMusic:', error);
+      logger.error('Error en generateMusic:', error);
       throw error;
     }
   }

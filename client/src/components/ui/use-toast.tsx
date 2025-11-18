@@ -1,4 +1,5 @@
 // Adaptado de: https://ui.shadcn.com
+import { logger } from "../lib/logger";
 import * as React from "react"
 
 import type {

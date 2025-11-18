@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -69,7 +70,7 @@ export function CharacterCustomization({ onCharacterGenerated }: CharacterCustom
         });
       }
     } catch (error) {
-      console.error("Error generating character:", error);
+      logger.error("Error generating character:", error);
       toast({
         title: "Error",
         description: "Error al generar el personaje",

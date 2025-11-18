@@ -21,6 +21,7 @@ import { getRelevantImage } from "../lib/unsplash-service";
 import { generateImageWithFal } from "../lib/api/fal-ai";
 import { createCheckoutSession } from "../lib/api/stripe-service";
 import MasterclassSection from "../components/education/MasterclassSection";
+import { logger } from "../lib/logger";
 
 interface CourseFormData {
   title: string;
@@ -113,7 +114,7 @@ export default function EducationPage() {
         return JSON.parse(cachedData);
       }
     } catch (error) {
-      console.warn("Error al recuperar caché de imágenes:", error);
+      logger.warn("Error al recuperar caché de imágenes:", error);
     }
     return {};
   };
@@ -127,7 +128,7 @@ export default function EducationPage() {
       imageCache[key] = url;
       sessionStorage.setItem('imageCache', JSON.stringify(imageCache));
     } catch (error) {
-      console.warn("Error al guardar en caché de imágenes:", error);
+      logger.warn("Error al guardar en caché de imágenes:", error);
     }
   };
   
@@ -145,11 +146,11 @@ export default function EducationPage() {
     category?: string
   }): Promise<string> => {
     try {
-      console.log(`SOLICITUD DE IMAGEN: ${key}`);
+      logger.info(`SOLICITUD DE IMAGEN: ${key}`);
       
       // 1. PASO 1: Verificar caché LOCAL PERSISTENTE primero
       if (imageCache[key] && !options?.forceRegenerate) {
-        console.log(`✅ Imagen recuperada de caché persistente: ${key}`);
+        logger.info(`✅ Imagen recuperada de caché persistente: ${key}`);
         return imageCache[key];
       }
       
@@ -167,7 +168,7 @@ export default function EducationPage() {
         // Usar la imagen predefinida para esta categoría
         if (key.includes('category_') || key.includes('course_')) {
           const categoryImage = defaultCategoryImages[options.category] || defaultCategoryImages.default;
-          console.log(`🖼️ Usando imagen predefinida para categoría (${options.category}): ${key}`);
+          logger.info(`🖼️ Usando imagen predefinida para categoría (${options.category}): ${key}`);
           
           // Guardar en caché persistente
           saveToImageCache(key, categoryImage);
@@ -183,7 +184,7 @@ export default function EducationPage() {
               source: 'predefined'
             });
           } catch (error: any) {
-            console.warn(`⚠️ No se pudo guardar en Firestore: ${error.message || "Error desconocido"}`);
+            logger.warn(`⚠️ No se pudo guardar en Firestore: ${error.message || "Error desconocido"}`);
           }
           
           return categoryImage;
@@ -197,18 +198,18 @@ export default function EducationPage() {
         if (cachedDoc.exists() && !options?.forceRegenerate) {
           const data = cachedDoc.data();
           if (data.imageUrl && !data.imageUrl.includes('unsplash.com')) {
-            console.log(`✅ Imagen recuperada de Firestore: ${key}`);
+            logger.info(`✅ Imagen recuperada de Firestore: ${key}`);
             // Guardamos en caché persistente
             saveToImageCache(key, data.imageUrl);
             return data.imageUrl;
           }
         }
       } catch (error: any) {
-        console.log(`⚠️ No se pudo verificar en Firestore: ${error.message || "Error desconocido"}`);
+        logger.info(`⚠️ No se pudo verificar en Firestore: ${error.message || "Error desconocido"}`);
       }
       
       // 4. PASO 4: No generamos nuevas imágenes, usamos placeholders definitivos
-      console.log(`⚠️ No se encontró imagen para ${key}, usando placeholder permanente`);
+      logger.info(`⚠️ No se encontró imagen para ${key}, usando placeholder permanente`);
       const placeholderUrl = `https://placehold.co/800x800/1A1A2E/FFFFFF?text=${encodeURIComponent(key.replace(/_/g, ' '))}`;
       
       // Guardar en caché persistente
@@ -216,7 +217,7 @@ export default function EducationPage() {
       
       return placeholderUrl;
     } catch (error: any) {
-      console.error(`❌ Error crítico en sistema de imágenes: ${error.message || "Error desconocido"}`);
+      logger.error(`❌ Error crítico en sistema de imágenes: ${error.message || "Error desconocido"}`);
       const fallbackUrl = `https://placehold.co/800x800/1A1A2E/FFFFFF?text=Error`;
       return fallbackUrl;
     }
@@ -257,7 +258,7 @@ export default function EducationPage() {
             description: `Imagen para categoría ${level} lista (${i+1}/${levels.length})`
           });
         } catch (error) {
-          console.error(`Error procesando imagen para categoría ${level}:`, error);
+          logger.error(`Error procesando imagen para categoría ${level}:`, error);
         }
       }
       
@@ -274,7 +275,7 @@ export default function EducationPage() {
         description: "Imágenes de categorías cargadas correctamente"
       });
     } catch (error) {
-      console.error("Error procesando imágenes de categorías:", error);
+      logger.error("Error procesando imágenes de categorías:", error);
       toast({
         title: "Error",
         description: "Error al procesar imágenes de categorías",
@@ -291,7 +292,7 @@ export default function EducationPage() {
       // Verificar si el usuario es administrador (convoycubano@gmail.com)
       if (user && user.email === "convoycubano@gmail.com") {
         setIsAdmin(true);
-        console.log("Usuario administrador autenticado");
+        logger.info("Usuario administrador autenticado");
       } else {
         setIsAdmin(false);
       }
@@ -314,7 +315,7 @@ export default function EducationPage() {
   useEffect(() => {
     const loadImagesFromFirestore = async () => {
       try {
-        console.log("Verificando y precargando imágenes de categorías...");
+        logger.info("Verificando y precargando imágenes de categorías...");
         const levels = ['Beginner', 'Intermediate', 'Advanced'];
         let needsUpdate = false;
         const newImages: Record<string, string> = { ...levelImages };
@@ -329,7 +330,7 @@ export default function EducationPage() {
         try {
           // Precargar imágenes en paralelo
           await Promise.all(imagesToPreload.map(url => preloadImage(url)));
-          console.log("✅ Todas las imágenes predefinidas han sido precargadas correctamente");
+          logger.info("✅ Todas las imágenes predefinidas han sido precargadas correctamente");
           
           // Guardar en caché para uso futuro
           saveToImageCache('category_Beginner', levelImages.Beginner);
@@ -346,10 +347,10 @@ export default function EducationPage() {
               timestamp: Timestamp.now(),
               category: level,
               source: 'predefined'
-            }).catch(err => console.warn(`No se pudo guardar imagen en Firestore: ${err.message}`));
+            }).catch(err => logger.warn(`No se pudo guardar imagen en Firestore: ${err.message}`));
           });
         } catch (preloadError) {
-          console.warn("⚠️ Error al precargar algunas imágenes:", preloadError);
+          logger.warn("⚠️ Error al precargar algunas imágenes:", preloadError);
           needsUpdate = true;
         }
         
@@ -360,7 +361,7 @@ export default function EducationPage() {
           Advanced: levelImages.Advanced
         });
       } catch (error) {
-        console.error("Error en el proceso de carga de imágenes:", error);
+        logger.error("Error en el proceso de carga de imágenes:", error);
         toast({
           title: "Error",
           description: "No se pudieron cargar algunas imágenes. Usando versiones predeterminadas."
@@ -396,7 +397,7 @@ export default function EducationPage() {
         });
         
         if (coursesToProcess.length > 0) {
-          console.log(`Detectados ${coursesToProcess.length} cursos con imágenes que necesitan procesamiento. Verificando caché...`);
+          logger.info(`Detectados ${coursesToProcess.length} cursos con imágenes que necesitan procesamiento. Verificando caché...`);
           
           // Indicador visual para el usuario
           toast({
@@ -417,7 +418,7 @@ export default function EducationPage() {
               // Prompt específico para este curso
               const imagePrompt = `professional ${course.level.toLowerCase()} level ${course.category.toLowerCase()} music education course cover titled "${course.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image`;
               
-              console.log(`Procesando imagen para curso: ${course.title} (${i+1}/${coursesToProcess.length})`);
+              logger.info(`Procesando imagen para curso: ${course.title} (${i+1}/${coursesToProcess.length})`);
               
               // Obtener imagen del caché o generar nueva si es necesario
               const imageUrl = await getOrGenerateImage(cacheKey, imagePrompt, {
@@ -430,7 +431,7 @@ export default function EducationPage() {
               // Solo actualizamos en Firestore si la URL es diferente a la actual
               // y no es una URL de placeholder (para casos donde fal-ai falló)
               if (imageUrl !== course.thumbnail && !imageUrl.includes('placehold.co')) {
-                console.log(`Actualizando imagen para curso: ${course.title}`);
+                logger.info(`Actualizando imagen para curso: ${course.title}`);
                 
                 // Guardar en Firestore
                 const courseRef = doc(db, 'courses', course.id);
@@ -450,10 +451,10 @@ export default function EducationPage() {
                   });
                 }
               } else {
-                console.log(`La imagen para ${course.title} ya está actualizada o se usó un placeholder`);
+                logger.info(`La imagen para ${course.title} ya está actualizada o se usó un placeholder`);
               }
             } catch (error) {
-              console.error(`Error procesando imagen para curso ${course.title}:`, error);
+              logger.error(`Error procesando imagen para curso ${course.title}:`, error);
             }
           }
           
@@ -465,7 +466,7 @@ export default function EducationPage() {
           });
         }
       } catch (error) {
-        console.error('Error fetching courses:', error);
+        logger.error('Error fetching courses:', error);
         toast({
           title: "Error",
           description: "No se pudieron cargar los cursos",
@@ -488,8 +489,8 @@ export default function EducationPage() {
   };
 
   const handleCreateCourse = async () => {
-    console.log("Authentication status:", isAuthenticated ? "Authenticated" : "Not authenticated");
-    console.log("Admin status:", isAdmin ? "Admin" : "Not admin");
+    logger.info("Authentication status:", isAuthenticated ? "Authenticated" : "Not authenticated");
+    logger.info("Admin status:", isAdmin ? "Admin" : "Not admin");
     
     if (!isAuthenticated) {
       toast({
@@ -521,11 +522,11 @@ export default function EducationPage() {
     try {
       setIsGenerating(true);
       
-      console.log("Starting course creation process...");
+      logger.info("Starting course creation process...");
 
       // Crear un prompt específico para la generación de la imagen
       const imagePrompt = `professional ${newCourse.level.toLowerCase()} level ${newCourse.category.toLowerCase()} music education course cover titled "${newCourse.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image for music industry education`;
-      console.log("Obteniendo imagen para el nuevo curso:", newCourse.title);
+      logger.info("Obteniendo imagen para el nuevo curso:", newCourse.title);
       
       // Crear una clave única para este curso en la base de datos
       // Usamos un ID temporal ya que aún no tenemos el ID real del curso
@@ -542,7 +543,7 @@ export default function EducationPage() {
       
       // Si obtenemos un placeholder, usamos una imagen predefinida según la categoría
       if (thumbnailUrl.includes('placehold.co')) {
-        console.log("Usando imagen predefinida para el curso por categoría");
+        logger.info("Usando imagen predefinida para el curso por categoría");
         
         // Mapa de imágenes predefinidas por categoría
         const defaultCategoryImages: Record<string, string> = {
@@ -557,7 +558,7 @@ export default function EducationPage() {
         // Si tenemos una imagen predefinida para esta categoría, la usamos
         const categoryImage = defaultCategoryImages[newCourse.category] || defaultCategoryImages.default;
         thumbnailUrl = categoryImage;
-        console.log("🔄 Usando imagen predefinida para categoría:", newCourse.category);
+        logger.info("🔄 Usando imagen predefinida para categoría:", newCourse.category);
         
         // Guardamos esta asociación en la caché local
         imageCache[cacheKey] = thumbnailUrl;
@@ -572,20 +573,20 @@ export default function EducationPage() {
         The course should be detailed and practical, focused on the current music industry.
         Create a comprehensive course with clear structure, practical lessons, and actionable content.`;
 
-      console.log("Calling generateCourseContent with prompt:", prompt.substring(0, 100) + "...");
+      logger.info("Calling generateCourseContent with prompt:", prompt.substring(0, 100) + "...");
       toast({
         title: "Creating course",
         description: "Generating course content with AI... This might take a moment."
       });
       
       const courseContent = await generateCourseContent(prompt);
-      console.log("Course content generated successfully:", typeof courseContent, Object.keys(courseContent));
+      logger.info("Course content generated successfully:", typeof courseContent, Object.keys(courseContent));
       
       if (!courseContent || !courseContent.curriculum || !Array.isArray(courseContent.curriculum)) {
         throw new Error("Invalid course content structure received from AI. Please try again.");
       }
       
-      console.log(`Generated curriculum with ${courseContent.curriculum.length} lessons`);
+      logger.info(`Generated curriculum with ${courseContent.curriculum.length} lessons`);
       const randomData = generateRandomCourseData();
 
       const courseData = {
@@ -621,7 +622,7 @@ export default function EducationPage() {
         level: "Beginner"
       });
     } catch (error: any) {
-      console.error('Error creating course:', error);
+      logger.error('Error creating course:', error);
       toast({
         title: "Error creating course",
         description: error.message || "Failed to create course. Please try again.",
@@ -671,8 +672,8 @@ export default function EducationPage() {
   ];
 
   const createSampleCourses = async () => {
-    console.log("Authentication status for sample courses:", isAuthenticated ? "Authenticated" : "Not authenticated");
-    console.log("Admin status for sample courses:", isAdmin ? "Admin" : "Not admin");
+    logger.info("Authentication status for sample courses:", isAuthenticated ? "Authenticated" : "Not authenticated");
+    logger.info("Admin status for sample courses:", isAdmin ? "Admin" : "Not admin");
     
     if (!isAuthenticated) {
       toast({
@@ -696,14 +697,14 @@ export default function EducationPage() {
     let createdCount = 0;
 
     try {
-      console.log("Starting sample courses creation process...");
+      logger.info("Starting sample courses creation process...");
       
       for (const course of sampleCourses) {
-        console.log(`Creating sample course: ${course.title}`);
+        logger.info(`Creating sample course: ${course.title}`);
         
         // Crear un prompt más específico para la imagen de curso de muestra
         const imagePrompt = `professional ${course.level.toLowerCase()} level ${course.category.toLowerCase()} music education course cover titled "${course.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image for music industry education`;
-        console.log("Generating image with fal-ai for sample course:", course.title);
+        logger.info("Generating image with fal-ai for sample course:", course.title);
         
         // Usar nuestro sistema mejorado para la generación de imágenes
         const cacheKey = `course_sample_${Date.now()}_${course.title.substring(0, 20).replace(/\s+/g, '_').toLowerCase()}`;
@@ -720,7 +721,7 @@ export default function EducationPage() {
         
         // Usamos directamente la imagen predefinida por categoría
         let thumbnailUrl = defaultCategoryImages[course.category] || defaultCategoryImages.default;
-        console.log(`Using predefined image for sample course "${course.title}" (${course.category})`);
+        logger.info(`Using predefined image for sample course "${course.title}" (${course.category})`);
         
         // Guardamos en caché local para futuras referencias
         imageCache[cacheKey] = thumbnailUrl;
@@ -735,21 +736,21 @@ export default function EducationPage() {
           Include specific actionable steps and real-world examples.
           Create a comprehensive curriculum with clear structure and practical lessons.`;
 
-        console.log("Calling generateCourseContent with prompt:", prompt.substring(0, 100) + "...");
+        logger.info("Calling generateCourseContent with prompt:", prompt.substring(0, 100) + "...");
         toast({
           title: "Creating course sample",
           description: `Generating content for "${course.title}"... This might take a moment.`
         });
         
         const courseContent = await generateCourseContent(prompt);
-        console.log("Course content generated successfully:", typeof courseContent, Object.keys(courseContent));
+        logger.info("Course content generated successfully:", typeof courseContent, Object.keys(courseContent));
         
         if (!courseContent || !courseContent.curriculum || !Array.isArray(courseContent.curriculum)) {
-          console.error("Invalid content structure:", courseContent);
+          logger.error("Invalid content structure:", courseContent);
           throw new Error(`Invalid course content structure for "${course.title}". Please try again.`);
         }
         
-        console.log(`Generated curriculum with ${courseContent.curriculum.length} lessons`);
+        logger.info(`Generated curriculum with ${courseContent.curriculum.length} lessons`);
         const randomData = generateRandomCourseData();
 
         const courseData = {
@@ -784,7 +785,7 @@ export default function EducationPage() {
         description: `Created ${createdCount} new courses successfully`
       });
     } catch (error: any) {
-      console.error('Error creating sample courses:', error);
+      logger.error('Error creating sample courses:', error);
       toast({
         title: "Error creating courses",
         description: error.message || "Failed to create sample courses. Please try again.",
@@ -825,7 +826,7 @@ export default function EducationPage() {
         description: "Curso eliminado correctamente",
       });
     } catch (error: any) {
-      console.error('Error eliminando curso:', error);
+      logger.error('Error eliminando curso:', error);
       toast({
         title: "Error",
         description: error.message || "Error al eliminar el curso. Por favor intenta de nuevo.",
@@ -847,7 +848,7 @@ export default function EducationPage() {
     setIsExtendingCourse(true);
 
     try {
-      console.log("Iniciando extensión de curso:", selectedCourse.title);
+      logger.info("Iniciando extensión de curso:", selectedCourse.title);
       toast({
         title: "Generando contenido adicional",
         description: `Ampliando el curso "${selectedCourse.title}" con nuevo contenido...`
@@ -863,7 +864,7 @@ export default function EducationPage() {
         selectedCourse.content
       );
 
-      console.log("Contenido adicional generado:", additionalContent);
+      logger.info("Contenido adicional generado:", additionalContent);
 
       // Si el curso ya tiene contenido adicional, agregamos al existente
       const existingAdditionalContent = selectedCourse.additionalContent || [];
@@ -893,7 +894,7 @@ export default function EducationPage() {
 
       setShowExtendDialog(false);
     } catch (error: any) {
-      console.error('Error al extender el curso:', error);
+      logger.error('Error al extender el curso:', error);
       toast({
         title: "Error",
         description: error.message || "Error al generar contenido adicional. Por favor intenta de nuevo.",
@@ -916,7 +917,7 @@ export default function EducationPage() {
 
     try {
       setIsLoading(true);
-      console.log('Enrolling in course:', course);
+      logger.info('Enrolling in course:', course);
 
       // Obtener token del usuario autenticado
       const token = await auth.currentUser?.getIdToken();
@@ -935,7 +936,7 @@ export default function EducationPage() {
         description: `Successfully enrolled in ${course.title}`
       });
     } catch (error: any) {
-      console.error('Error enrolling in course:', error);
+      logger.error('Error enrolling in course:', error);
       toast({
         title: "Error",
         description: error.message || "Error al inscribirse en el curso. Por favor intenta de nuevo.",
@@ -971,7 +972,7 @@ export default function EducationPage() {
           urls={criticalImageUrls}
           timeout={5000} // Reducimos el tiempo de espera para evitar bloqueos
           onComplete={(success, failure) => {
-            console.log(`✅ Precarga de imágenes críticas completada. Éxito: ${success}, Fallos: ${failure}`);
+            logger.info(`✅ Precarga de imágenes críticas completada. Éxito: ${success}, Fallos: ${failure}`);
             setCriticalAssetsLoaded(true);
             if (failure > 0) {
               toast({

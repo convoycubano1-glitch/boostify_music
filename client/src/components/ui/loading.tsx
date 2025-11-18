@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente de carga con una transición suave
  * Muestra un indicador de carga con animación y mensaje personalizable
  */

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { logger } from "@/lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -191,7 +192,7 @@ export function KlingLipsync({
             setProgress(calculatedProgress);
             
             // Actualizar el estado de progreso con mensaje descriptivo
-            console.log(`LipSync progreso: ${calculatedProgress.toFixed(0)}%, próxima verificación en ${checkInterval/1000}s`);
+            logger.info(`LipSync progreso: ${calculatedProgress.toFixed(0)}%, próxima verificación en ${checkInterval/1000}s`);
             
             // Aumentar gradualmente el intervalo para no sobrecargar el servidor
             checkInterval = Math.min(checkInterval * 1.1, maxInterval);
@@ -205,7 +206,7 @@ export function KlingLipsync({
                   // Procesar respuesta como antes
                   // (Este código nunca se ejecutará porque setTimeout creará una nueva verificación)
                 } catch (innerError) {
-                  console.error("Error en verificación interna:", innerError);
+                  logger.error("Error en verificación interna:", innerError);
                 }
               }, checkInterval);
             }, checkInterval);
@@ -216,7 +217,7 @@ export function KlingLipsync({
             setResultUrl(statusResponse.videoUrl);
             
             // Registrar en consola para depuración
-            console.log(`LipSync completado con éxito: ${statusResponse.videoUrl}`);
+            logger.info(`LipSync completado con éxito: ${statusResponse.videoUrl}`);
             
             toast({
               title: "LipSync completado",
@@ -246,7 +247,7 @@ export function KlingLipsync({
             // Guardar historial en Firestore para referencias futuras
             try {              
               if (user?.uid) {
-                console.log("Guardando resultado de LipSync en historial...");
+                logger.info("Guardando resultado de LipSync en historial...");
                 // Esta funcionalidad requeriría implementación adicional
                 // Por ejemplo, guardar en una colección de historial:
                 // await addDoc(collection(db, "lipsync_history"), {
@@ -257,14 +258,14 @@ export function KlingLipsync({
                 // });
               }
             } catch (saveError) {
-              console.error("Error al guardar historial:", saveError);
+              logger.error("Error al guardar historial:", saveError);
               // No afecta al flujo principal
             }
             
             setLoading(false);
           } else if (statusResponse.status === "failed") {
             clearInterval(pollingInterval);
-            console.error("Error en LipSync:", statusResponse.error);
+            logger.error("Error en LipSync:", statusResponse.error);
             toast({
               title: "Error en proceso de LipSync",
               description: statusResponse.error || "Se produjo un error durante la sincronización",

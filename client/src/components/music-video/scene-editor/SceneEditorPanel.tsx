@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente SceneEditorPanel
  * Panel principal que integra el editor de escenas con la API de generación de imágenes
  */
@@ -59,7 +60,7 @@ export function SceneEditorPanel({
         await generateImageWithServerProxy(clipToUpdate, clipId);
       }
     } catch (error) {
-      console.error("Error al generar imagen:", error);
+      logger.error("Error al generar imagen:", error);
       toast({
         title: "Error en la generación",
         description: "No se pudo generar la imagen. Verifique la consola para más detalles.",
@@ -82,7 +83,7 @@ export function SceneEditorPanel({
       });
 
       const prompt = clip.imagePrompt || '';
-      console.log("Generando imagen con fal.ai:", prompt.substring(0, 50) + "...");
+      logger.info("Generando imagen con fal.ai:", prompt.substring(0, 50) + "...");
 
       // Usar el modelo stable-diffusion de fal.ai
       const result = await fal.subscribe('fal-ai/stable-diffusion', {
@@ -114,7 +115,7 @@ export function SceneEditorPanel({
         throw new Error("No se recibió una imagen válida de fal.ai");
       }
     } catch (error) {
-      console.error("Error con fal.ai:", error);
+      logger.error("Error con fal.ai:", error);
       throw error;
     }
   };
@@ -131,7 +132,7 @@ export function SceneEditorPanel({
       });
 
       const prompt = clip.imagePrompt || '';
-      console.log("Generando imagen con API proxy:", prompt.substring(0, 50) + "...");
+      logger.info("Generando imagen con API proxy:", prompt.substring(0, 50) + "...");
 
       // Llamar a nuestra API proxy para generación de imágenes
       const response = await axios.post('/api/proxy/generate-image', {
@@ -159,7 +160,7 @@ export function SceneEditorPanel({
         throw new Error("No se recibió una imagen válida del servidor");
       }
     } catch (error) {
-      console.error("Error con API proxy:", error);
+      logger.error("Error con API proxy:", error);
       throw error;
     }
   };

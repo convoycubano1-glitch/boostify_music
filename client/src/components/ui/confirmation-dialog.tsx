@@ -1,4 +1,5 @@
 import {
+import { logger } from "../lib/logger";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

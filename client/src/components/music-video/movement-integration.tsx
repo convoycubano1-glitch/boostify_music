@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -88,7 +89,7 @@ export function MovementIntegration({ onApplyMovements, isLoading = false, initi
         setIsSuccess(false);
       }, 3000);
     } catch (error) {
-      console.error("Error al aplicar movimientos:", error);
+      logger.error("Error al aplicar movimientos:", error);
       
       toast({
         title: "Error",

@@ -4,6 +4,7 @@
  */
 
 import type { TimelineClip } from '../../components/professional-editor/EnhancedTimeline';
+import { logger } from "../logger";
 
 export interface ColorGradingSettings {
   brightness: number; // -100 to 100
@@ -243,7 +244,7 @@ export function applyColorGradingPreset(
   const preset = COLOR_GRADING_PRESETS.find(p => p.id === presetId);
   
   if (!preset) {
-    console.warn(`Preset "${presetId}" no encontrado`);
+    logger.warn(`Preset "${presetId}" no encontrado`);
     return clips;
   }
 

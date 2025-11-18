@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * Servicio para crear perfiles de artista automáticamente desde proyectos de videos musicales
  */
@@ -38,7 +39,7 @@ export async function createArtistProfileFromVideo(
   data: CreateArtistProfileRequest
 ): Promise<{ success: boolean; profile?: any; isNew?: boolean; error?: string }> {
   try {
-    console.log('🎨 [Artist Profile Service] Creando perfil automático para:', data.artistName);
+    logger.info('🎨 [Artist Profile Service] Creando perfil automático para:', data.artistName);
     
     const response = await fetch('/api/artist-profiles/create-from-video', {
       method: 'POST',
@@ -54,11 +55,11 @@ export async function createArtistProfileFromVideo(
     }
 
     const result = await response.json();
-    console.log('✅ [Artist Profile Service] Perfil creado:', result.profile?.id);
+    logger.info('✅ [Artist Profile Service] Perfil creado:', result.profile?.id);
     
     return result;
   } catch (error) {
-    console.error('❌ [Artist Profile Service] Error:', error);
+    logger.error('❌ [Artist Profile Service] Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -73,7 +74,7 @@ export async function addSceneImagesToProfile(
   data: AddSceneImagesRequest
 ): Promise<{ success: boolean; imagesAdded?: number; error?: string }> {
   try {
-    console.log(`📸 [Artist Profile Service] Agregando ${data.sceneImages.length} imágenes de escenas...`);
+    logger.info(`📸 [Artist Profile Service] Agregando ${data.sceneImages.length} imágenes de escenas...`);
     
     const response = await fetch('/api/artist-profiles/add-scene-images', {
       method: 'POST',
@@ -89,11 +90,11 @@ export async function addSceneImagesToProfile(
     }
 
     const result = await response.json();
-    console.log(`✅ [Artist Profile Service] ${result.imagesAdded} imágenes agregadas a la galería`);
+    logger.info(`✅ [Artist Profile Service] ${result.imagesAdded} imágenes agregadas a la galería`);
     
     return result;
   } catch (error) {
-    console.error('❌ [Artist Profile Service] Error:', error);
+    logger.error('❌ [Artist Profile Service] Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -118,7 +119,7 @@ export async function getArtistProfileGallery(
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error('❌ [Artist Profile Service] Error:', error);
+    logger.error('❌ [Artist Profile Service] Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -134,7 +135,7 @@ export async function fixGeneratedByForUserArtists(
   userEmail: string
 ): Promise<{ success: boolean; updated?: number; message?: string; error?: string }> {
   try {
-    console.log('🔧 [Artist Profile Service] Actualizando artistas AI del usuario...');
+    logger.info('🔧 [Artist Profile Service] Actualizando artistas AI del usuario...');
     
     const response = await fetch('/api/artist-profiles/fix-generated-by', {
       method: 'POST',
@@ -150,11 +151,11 @@ export async function fixGeneratedByForUserArtists(
     }
 
     const result = await response.json();
-    console.log(`✅ [Artist Profile Service] ${result.updated || 0} perfiles actualizados`);
+    logger.info(`✅ [Artist Profile Service] ${result.updated || 0} perfiles actualizados`);
     
     return result;
   } catch (error) {
-    console.error('❌ [Artist Profile Service] Error:', error);
+    logger.error('❌ [Artist Profile Service] Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

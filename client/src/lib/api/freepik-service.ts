@@ -6,6 +6,7 @@
  */
 
 import axios from 'axios';
+import { logger } from "./logger";
 
 /**
  * Enum for supported Freepik AI models
@@ -141,7 +142,7 @@ class FreepikService {
         }
       });
     } catch (error) {
-      console.error(`Error generating image with Freepik ${model}:`, error);
+      logger.error(`Error generating image with Freepik ${model}:`, error);
       throw error;
     }
   }
@@ -161,7 +162,7 @@ class FreepikService {
         }
       });
     } catch (error) {
-      console.error('Error checking task status with Freepik:', error);
+      logger.error('Error checking task status with Freepik:', error);
       throw error;
     }
   }

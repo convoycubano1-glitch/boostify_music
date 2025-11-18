@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -60,10 +61,10 @@ async function saveMusicianImage(data: ImageData) {
       ...data,
       createdAt: serverTimestamp()
     });
-    console.log("Document written with ID: ", docRef.id);
+    logger.info("Document written with ID: ", docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error("Error adding document: ", error);
+    logger.error("Error adding document: ", error);
     throw error;
   }
 }
@@ -74,10 +75,10 @@ async function saveGeneratedMusic(data: AudioData) {
       ...data,
       createdAt: serverTimestamp()
     });
-    console.log("Music document written with ID: ", docRef.id);
+    logger.info("Music document written with ID: ", docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error("Error adding music document: ", error);
+    logger.error("Error adding music document: ", error);
     throw error;
   }
 }
@@ -456,7 +457,7 @@ export function MusicAIGenerator() {
       
       setRecentCovers(coversData);
     } catch (error) {
-      console.error("Error loading recent generations:", error);
+      logger.error("Error loading recent generations:", error);
     }
   };
   
@@ -498,7 +499,7 @@ export function MusicAIGenerator() {
         
         if (playPromise !== undefined) {
           playPromise.catch(error => {
-            console.error("Error playing audio:", error);
+            logger.error("Error playing audio:", error);
             toast({
               title: "Error de reproducción",
               description: `No se pudo reproducir el audio: ${error.message || 'Error desconocido'}`,
@@ -591,7 +592,7 @@ export function MusicAIGenerator() {
       });
 
     } catch (error) {
-      console.error("Error procesando el audio:", error);
+      logger.error("Error procesando el audio:", error);
       toast({
         title: "Error",
         description: `No se pudo procesar el audio. ${error instanceof Error ? error.message : 'Inténtalo de nuevo más tarde.'}`,
@@ -787,7 +788,7 @@ export function MusicAIGenerator() {
               await loadRecentGenerations();
               
             } catch (saveError) {
-              console.error("Error al guardar la música generada:", saveError);
+              logger.error("Error al guardar la música generada:", saveError);
             }
             
             toast({
@@ -819,7 +820,7 @@ export function MusicAIGenerator() {
       setTimeout(checkStatus, 3000);
 
     } catch (error) {
-      console.error("Error generando música:", error);
+      logger.error("Error generando música:", error);
       setMusicGenerationProgress(0);
       toast({
         title: "Error",
@@ -875,7 +876,7 @@ export function MusicAIGenerator() {
       }
 
     } catch (error) {
-      console.error("Error generando portada:", error);
+      logger.error("Error generando portada:", error);
       setCoverGenerationProgress(0);
       toast({
         title: "Error",
@@ -940,7 +941,7 @@ export function MusicAIGenerator() {
         description: `Descargando ${title}`
       });
     } catch (error) {
-      console.error("Error en la descarga de audio:", error);
+      logger.error("Error en la descarga de audio:", error);
       toast({
         title: "Error",
         description: "No se pudo descargar el audio. URL inválida.",
@@ -989,7 +990,7 @@ export function MusicAIGenerator() {
         description: "Tu imagen se está descargando...",
       });
     } catch (error) {
-      console.error("Error en la descarga de imagen:", error);
+      logger.error("Error en la descarga de imagen:", error);
       toast({
         title: "Error",
         description: "No se pudo descargar la imagen. La URL no es válida o no se puede acceder al recurso.",
@@ -1159,7 +1160,7 @@ export function MusicAIGenerator() {
                       className="w-full mt-2"
                       preload="metadata"
                       onError={(e) => {
-                        console.error("Error loading audio:", e);
+                        logger.error("Error loading audio:", e);
                         toast({
                           title: "Error de reproducción",
                           description: "No se pudo cargar el audio procesado. Intenta descargar el archivo directamente.",
@@ -1167,7 +1168,7 @@ export function MusicAIGenerator() {
                         });
                       }}
                       onLoadedData={() => {
-                        console.log("Audio cargado correctamente");
+                        logger.info("Audio cargado correctamente");
                       }}
                     >
                       {processedAudioUrl && (
@@ -1511,7 +1512,7 @@ export function MusicAIGenerator() {
                     onEnded={() => setIsPlaying(false)}
                     preload="metadata"
                     onError={(e) => {
-                      console.error("Error en reproducción de audio:", e);
+                      logger.error("Error en reproducción de audio:", e);
                       toast({
                         title: "Error de reproducción",
                         description: "No se pudo reproducir el audio generado. Intenta descargar el archivo directamente.",
@@ -1519,7 +1520,7 @@ export function MusicAIGenerator() {
                       });
                       setIsPlaying(false);
                     }}
-                    onLoadedData={() => console.log("Audio generado cargado correctamente")}
+                    onLoadedData={() => logger.info("Audio generado cargado correctamente")}
                     className="hidden"
                   >
                     {generatedMusicUrl && (

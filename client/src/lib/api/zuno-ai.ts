@@ -6,6 +6,7 @@
  * el historial de generaciones.
  */
 import { getAuthToken } from '../auth';
+import { logger } from "../logger";
 
 /**
  * Interfaz para las opciones de generación de música
@@ -63,7 +64,7 @@ export async function generateMusic(options: MusicGenerationOptions): Promise<{ 
   try {
     // Simular generación para pruebas sin backend
     if (process.env.NODE_ENV === 'development' && false) {
-      console.log('Generación simulada:', options);
+      logger.info('Generación simulada:', options);
       return { taskId: `sim_${Date.now()}` };
     }
 
@@ -88,7 +89,7 @@ export async function generateMusic(options: MusicGenerationOptions): Promise<{ 
     });
 
     if (!response.ok) {
-      console.error('Error en la generación de música:', response.status, response.statusText);
+      logger.error('Error en la generación de música:', response.status, response.statusText);
       
       // Manejar específicamente los errores de autenticación
       if (response.status === 401) {
@@ -109,7 +110,7 @@ export async function generateMusic(options: MusicGenerationOptions): Promise<{ 
     const data = await response.json();
     return { taskId: data.taskId };
   } catch (error) {
-    console.error('Error en la generación de música:', error);
+    logger.error('Error en la generación de música:', error);
     // Propagar el error original para mantener la información detallada
     if (error instanceof Error) {
       throw error;
@@ -128,7 +129,7 @@ export async function checkGenerationStatus(taskId: string): Promise<MusicGenera
   try {
     // Simular estado para pruebas sin backend
     if (process.env.NODE_ENV === 'development' && false) {
-      console.log('Verificación simulada de estado:', taskId);
+      logger.info('Verificación simulada de estado:', taskId);
       
       // Para simular diferentes estados basados en el tiempo
       const now = Date.now();
@@ -171,7 +172,7 @@ export async function checkGenerationStatus(taskId: string): Promise<MusicGenera
     });
     
     if (!response.ok) {
-      console.error('Error verificando estado:', response.status, response.statusText);
+      logger.error('Error verificando estado:', response.status, response.statusText);
       
       // Manejar específicamente los errores de autenticación
       if (response.status === 401) {
@@ -193,7 +194,7 @@ export async function checkGenerationStatus(taskId: string): Promise<MusicGenera
     
     return await response.json();
   } catch (error) {
-    console.error('Error verificando estado:', error);
+    logger.error('Error verificando estado:', error);
     
     // Propagar el error original para mantener la información detallada
     if (error instanceof Error) {
@@ -213,7 +214,7 @@ export async function getRecentGenerations(): Promise<MusicGenerationHistoryItem
   try {
     // Simular historial para pruebas sin backend
     if (process.env.NODE_ENV === 'development' && false) {
-      console.log('Obteniendo historial simulado');
+      logger.info('Obteniendo historial simulado');
       return [
         {
           id: 'sim_1',
@@ -255,7 +256,7 @@ export async function getRecentGenerations(): Promise<MusicGenerationHistoryItem
     });
     
     if (!response.ok) {
-      console.error('Error obteniendo historial:', response.status, response.statusText);
+      logger.error('Error obteniendo historial:', response.status, response.statusText);
       
       // Manejar específicamente los errores de autenticación
       if (response.status === 401) {
@@ -269,7 +270,7 @@ export async function getRecentGenerations(): Promise<MusicGenerationHistoryItem
     
     return await response.json();
   } catch (error) {
-    console.error('Error obteniendo historial:', error);
+    logger.error('Error obteniendo historial:', error);
     
     // Propagar errores específicos de autenticación
     if (error instanceof Error && 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { 

@@ -1,4 +1,5 @@
 // src/components/ai/merchandise-agent.tsx
+import { logger } from "@/lib/logger";
 
 import { ShoppingBag, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
@@ -37,9 +38,9 @@ export function MerchandiseAgent() {
         }
       );
 
-      console.log('✅ Merchandise ideas saved to Firestore with Gemini integration');
+      logger.info('✅ Merchandise ideas saved to Firestore with Gemini integration');
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       // Don't throw - continue even if save fails
     }
   };
@@ -105,7 +106,7 @@ export function MerchandiseAgent() {
           });
           return ideas;
         } catch (error) {
-          console.error("Detailed error designing products:", {
+          logger.error("Detailed error designing products:", {
             message: error.message,
             stack: error.stack,
           });
@@ -160,7 +161,7 @@ export function MerchandiseAgent() {
           });
           return response;
         } catch (error) {
-          console.error("Detailed error analyzing trends:", {
+          logger.error("Detailed error analyzing trends:", {
             message: error.message,
             stack: error.stack,
           });
@@ -215,7 +216,7 @@ export function MerchandiseAgent() {
           });
           return response;
         } catch (error) {
-          console.error("Detailed error optimizing prices:", {
+          logger.error("Detailed error optimizing prices:", {
             message: error.message,
             stack: error.stack,
           });

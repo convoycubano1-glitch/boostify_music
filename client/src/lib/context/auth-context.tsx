@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { logger } from "../logger";
 
 export interface User {
   uid: string;
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoURL: null,
       });
     } catch (error) {
-      console.error("Error al iniciar sesión:", error);
+      logger.error("Error al iniciar sesión:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -59,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Simular logout
       setUser(null);
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+      logger.error("Error al cerrar sesión:", error);
       throw error;
     } finally {
       setIsLoading(false);

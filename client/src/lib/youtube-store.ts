@@ -1,6 +1,9 @@
 import { db } from './firebase';
+import { logger } from "./logger";
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { logger } from "./logger";
 import { User } from 'firebase/auth';
+import { logger } from "./logger";
 
 export interface YouTubeViewsData {
   id?: string;
@@ -61,7 +64,7 @@ export async function getYouTubeViewsOrders(userId: string): Promise<YouTubeView
 
     return [orderDoc.data() as YouTubeViewsData];
   } catch (error) {
-    console.error('Error fetching YouTube views orders:', error);
+    logger.error('Error fetching YouTube views orders:', error);
     throw error;
   }
 }

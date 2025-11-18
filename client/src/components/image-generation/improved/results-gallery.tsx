@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Componente para la galería de resultados finales
  * 
  * Este componente muestra todas las imágenes generadas y permite
@@ -50,7 +51,7 @@ export function ResultsGallery() {
         setTimeout(() => setCopied(false), 2000);
       })
       .catch(err => {
-        console.error('No se pudo copiar la URL:', err);
+        logger.error('No se pudo copiar la URL:', err);
       });
   };
 

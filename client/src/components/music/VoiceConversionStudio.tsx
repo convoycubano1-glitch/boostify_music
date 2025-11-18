@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { logger } from "@/lib/logger";
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Loader2, Upload, Play, Pause, Download, 
@@ -375,7 +376,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
       // Caso 3: Es un string ISO o timestamp numérico
       return new Date(dateOrTimestamp).toLocaleDateString();
     } catch (error) {
-      console.error('Error formatting date:', error);
+      logger.error('Error formatting date:', error);
       return 'Fecha inválida';
     }
   };
@@ -475,7 +476,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                   preload="metadata"
                   onEnded={() => setIsPlaying(false)}
                   onError={(e) => {
-                    console.error('Error loading audio file:', e);
+                    logger.error('Error loading audio file:', e);
                     toast({
                       title: 'Error de audio',
                       description: 'No se pudo cargar el archivo de audio.',
@@ -894,7 +895,7 @@ export function VoiceConversionStudio({ className }: VoiceConversionStudioProps)
                       className="w-full"
                       src={conversionStatus.result.url}
                       onError={(e) => {
-                        console.error('Error loading processed audio:', e);
+                        logger.error('Error loading processed audio:', e);
                         toast({
                           title: 'Error de reproducción',
                           description: 'No se pudo cargar el audio procesado. Intenta descargar el archivo directamente.',

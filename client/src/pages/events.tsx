@@ -1,4 +1,5 @@
 import { Card } from "../components/ui/card";
+import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Header } from "../components/layout/header";
@@ -337,7 +338,7 @@ export default function EventsPage() {
   // Create event mutation
   const createEventMutation = useMutation({
     mutationFn: async (eventData: typeof newEvent) => {
-      console.log('Creating event with data:', eventData);
+      logger.info('Creating event with data:', eventData);
       try {
         const response = await fetch('/api/events', {
           method: 'POST',
@@ -357,7 +358,7 @@ export default function EventsPage() {
         const data = await response.json();
         return data;
       } catch (error) {
-        console.error('Event creation error:', error);
+        logger.error('Event creation error:', error);
         throw error;
       }
     },
@@ -379,7 +380,7 @@ export default function EventsPage() {
       });
     },
     onError: (error: Error) => {
-      console.error('Error creating event:', error);
+      logger.error('Error creating event:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create event. Please try again.",
@@ -426,7 +427,7 @@ export default function EventsPage() {
     try {
       await createEventMutation.mutateAsync(newEvent);
     } catch (error) {
-      console.error('Error in handleCreateEvent:', error);
+      logger.error('Error in handleCreateEvent:', error);
     }
   };
 

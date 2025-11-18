@@ -1,4 +1,5 @@
 import { auth } from "../firebase";
+import { logger } from "../logger";
 
 /**
  * Implements exponential backoff for retrying network requests
@@ -43,7 +44,7 @@ export async function getAuthToken(): Promise<string | null> {
       return token;
     });
   } catch (error) {
-    console.error("Error getting auth token:", error);
+    logger.error("Error getting auth token:", error);
     return null;
   }
 }

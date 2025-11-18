@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { apiRequest } from "../lib/queryClient";
@@ -191,7 +192,7 @@ export default function ArtistGeneratorPage() {
   useEffect(() => {
     const loadSavedArtists = async () => {
       try {
-        console.log("Cargando artistas desde Firestore...");
+        logger.info("Cargando artistas desde Firestore...");
         const artistsRef = collection(db, "generated_artists");
         
         // Primero obtenemos el conteo total de artistas en Firestore
@@ -199,13 +200,13 @@ export default function ArtistGeneratorPage() {
         const countSnapshot = await getDocs(countQuery);
         const totalCount = countSnapshot.size;
         setTotalArtistsCount(totalCount);
-        console.log(`Total de artistas en Firestore: ${totalCount}`);
+        logger.info(`Total de artistas en Firestore: ${totalCount}`);
         
         // Luego obtenemos solo los 10 más recientes para mostrar en la lista
         const q = query(artistsRef, orderBy("createdAt", "desc"), limit(10));
         const querySnapshot = await getDocs(q);
         
-        console.log(`Cargados ${querySnapshot.size} artistas recientes de un total de ${totalCount}`);
+        logger.info(`Cargados ${querySnapshot.size} artistas recientes de un total de ${totalCount}`);
         
         const artists: ArtistData[] = [];
         querySnapshot.forEach((doc) => {
@@ -254,25 +255,25 @@ export default function ArtistGeneratorPage() {
             
             artists.push(artist);
           } catch (err) {
-            console.error(`Error procesando documento ${doc.id}:`, err);
+            logger.error(`Error procesando documento ${doc.id}:`, err);
           }
         });
         
-        console.log(`Procesados ${artists.length} artistas correctamente`);
+        logger.info(`Procesados ${artists.length} artistas correctamente`);
         
         setSavedArtists(artists);
         
         // Si hay artistas, establecer el primero como actual
         if (artists.length > 0) {
-          console.log("Estableciendo artista actual:", artists[0].name);
+          logger.info("Estableciendo artista actual:", artists[0].name);
           setCurrentArtist(artists[0]);
         } else {
           // Si no hay artistas, usar un placeholder
-          console.log("No hay artistas guardados, usando placeholder");
+          logger.info("No hay artistas guardados, usando placeholder");
           setCurrentArtist(createEmptyArtist());
         }
       } catch (error) {
-        console.error("Error loading saved artists:", error);
+        logger.error("Error loading saved artists:", error);
         toast({
           title: "Error",
           description: "No se pudieron cargar los artistas guardados.",
@@ -303,15 +304,15 @@ export default function ArtistGeneratorPage() {
         }
         
         const data = await response.json();
-        console.log("API response:", data);
+        logger.info("API response:", data);
         return data;
       } catch (error) {
-        console.error("Error en fetch:", error);
+        logger.error("Error en fetch:", error);
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log("Mutation success, data:", data);
+      logger.info("Mutation success, data:", data);
       // Asegurarse de que tenemos datos y son del tipo correcto
       if (data && data.name) {
         const newArtist = data as ArtistData;
@@ -360,7 +361,7 @@ export default function ArtistGeneratorPage() {
           description: `${newArtist.name} ha sido creado y guardado en Firestore con ID: ${newArtist.firestoreId || 'N/A'}.`
         });
       } else {
-        console.error("La respuesta no contiene datos de artista:", data);
+        logger.error("La respuesta no contiene datos de artista:", data);
         toast({
           title: "Error de datos",
           description: "La respuesta no contiene un artista válido",
@@ -370,7 +371,7 @@ export default function ArtistGeneratorPage() {
       setIsLoading(false);
     },
     onError: (error) => {
-      console.error("Error al generar artista:", error);
+      logger.error("Error al generar artista:", error);
       
       let errorMessage = "No se pudo generar el artista aleatorio. Por favor, intenta nuevamente.";
       
@@ -463,7 +464,7 @@ export default function ArtistGeneratorPage() {
         const data = await response.json();
         return { field, data };
       } catch (error) {
-        console.error(`Error regenerando ${field}:`, error);
+        logger.error(`Error regenerando ${field}:`, error);
         throw error;
       }
     },
@@ -602,7 +603,7 @@ export default function ArtistGeneratorPage() {
           }
           break;
         default:
-          console.log(`Campo desconocido: ${field}`);
+          logger.info(`Campo desconocido: ${field}`);
       }
       
       // Actualizar el artista en el estado y en el array de artistas guardados
@@ -619,7 +620,7 @@ export default function ArtistGeneratorPage() {
       setIsRegenerating(null);
     },
     onError: (error, variables) => {
-      console.error(`Error en regeneración de campo ${variables.field}:`, error);
+      logger.error(`Error en regeneración de campo ${variables.field}:`, error);
       
       let errorMessage = `No se pudo regenerar el campo "${variables.field}". Por favor, intenta nuevamente.`;
       
@@ -692,7 +693,7 @@ export default function ArtistGeneratorPage() {
       setIsDeleting(false);
     },
     onError: (error) => {
-      console.error("Error al eliminar artista:", error);
+      logger.error("Error al eliminar artista:", error);
       
       toast({
         title: "Error",
@@ -740,7 +741,7 @@ export default function ArtistGeneratorPage() {
       setIsDeletingAll(false);
     },
     onError: (error) => {
-      console.error("Error al eliminar todos los artistas:", error);
+      logger.error("Error al eliminar todos los artistas:", error);
       
       toast({
         title: "Error",

@@ -1,4 +1,5 @@
 import { Card } from "../components/ui/card";
+import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Header } from "../components/layout/header";
@@ -161,7 +162,7 @@ export default function BlogPage() {
       if (!user) return [];
 
       try {
-        console.log("Intentando obtener posts para usuario:", user.uid);
+        logger.info("Intentando obtener posts para usuario:", user.uid);
         const postsRef = collection(db, "blog-posts");
 
         // Primero intentar sin ordenamiento para debug
@@ -170,19 +171,19 @@ export default function BlogPage() {
           where("userId", "==", user.uid)
         );
 
-        console.log("Ejecutando consulta de Firestore");
+        logger.info("Ejecutando consulta de Firestore");
         const querySnapshot = await getDocs(q);
-        console.log("Resultado de la consulta:", querySnapshot.size, "documentos");
+        logger.info("Resultado de la consulta:", querySnapshot.size, "documentos");
 
         const results = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as BlogPost[];
 
-        console.log("Posts recuperados:", results);
+        logger.info("Posts recuperados:", results);
         return results;
       } catch (error) {
-        console.error("Error detallado al obtener posts:", error);
+        logger.error("Error detallado al obtener posts:", error);
         toast({
           title: "Error",
           description: "No se pudieron cargar los posts. Por favor, intenta de nuevo.",
@@ -199,7 +200,7 @@ export default function BlogPage() {
     mutationFn: async (newBlogPost: Partial<BlogPost>) => {
       if (!user) throw new Error("Usuario no autenticado");
 
-      console.log("Intentando crear nuevo post:", newBlogPost);
+      logger.info("Intentando crear nuevo post:", newBlogPost);
       const postsRef = collection(db, "blog-posts");
       try {
         const now = Timestamp.now();
@@ -214,10 +215,10 @@ export default function BlogPage() {
           createdAt: now,
           updatedAt: now,
         });
-        console.log("Post creado exitosamente con ID:", docRef.id);
+        logger.info("Post creado exitosamente con ID:", docRef.id);
         return docRef;
       } catch (error) {
-        console.error("Error al crear post:", error);
+        logger.error("Error al crear post:", error);
         throw error;
       }
     },
@@ -238,7 +239,7 @@ export default function BlogPage() {
       });
     },
     onError: (error) => {
-      console.error("Error en mutation al crear post:", error);
+      logger.error("Error en mutation al crear post:", error);
       toast({
         title: "Error",
         description: "No se pudo crear el post. Por favor, intenta de nuevo.",

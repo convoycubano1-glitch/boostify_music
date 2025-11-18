@@ -1,4 +1,5 @@
 import { 
+import { logger } from "../logger";
   collection, 
   doc, 
   addDoc, 
@@ -13,6 +14,7 @@ import {
   Timestamp 
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { logger } from "../logger";
 
 // Interfaces
 export interface ProductionProject {
@@ -127,7 +129,7 @@ class ProductionProgressService {
       
       return projects;
     } catch (error) {
-      console.error("Error getting projects:", error);
+      logger.error("Error getting projects:", error);
       throw error;
     }
   }
@@ -163,7 +165,7 @@ class ProductionProgressService {
       
       return project;
     } catch (error) {
-      console.error(`Error getting project with ID ${projectId}:`, error);
+      logger.error(`Error getting project with ID ${projectId}:`, error);
       throw error;
     }
   }
@@ -180,7 +182,7 @@ class ProductionProgressService {
       const docRef = await addDoc(collection(db, this.projectsCollection), projectToCreate);
       return docRef.id;
     } catch (error) {
-      console.error("Error creating project:", error);
+      logger.error("Error creating project:", error);
       throw error;
     }
   }
@@ -197,7 +199,7 @@ class ProductionProgressService {
       
       await updateDoc(projectRef, updatedData);
     } catch (error) {
-      console.error(`Error updating project with ID ${projectId}:`, error);
+      logger.error(`Error updating project with ID ${projectId}:`, error);
       throw error;
     }
   }
@@ -211,7 +213,7 @@ class ProductionProgressService {
       const projectRef = doc(db, this.projectsCollection, projectId);
       await deleteDoc(projectRef);
     } catch (error) {
-      console.error(`Error deleting project with ID ${projectId}:`, error);
+      logger.error(`Error deleting project with ID ${projectId}:`, error);
       throw error;
     }
   }
@@ -255,7 +257,7 @@ class ProductionProgressService {
       const collaboratorPromises = collaboratorsSnapshot.docs.map(doc => deleteDoc(doc.ref));
       await Promise.all(collaboratorPromises);
     } catch (error) {
-      console.error(`Error deleting related data for project ${projectId}:`, error);
+      logger.error(`Error deleting related data for project ${projectId}:`, error);
       throw error;
     }
   }
@@ -299,7 +301,7 @@ class ProductionProgressService {
       
       return phases;
     } catch (error) {
-      console.error(`Error getting phases for project ${projectId}:`, error);
+      logger.error(`Error getting phases for project ${projectId}:`, error);
       throw error;
     }
   }
@@ -316,7 +318,7 @@ class ProductionProgressService {
       const docRef = await addDoc(collection(db, this.phasesCollection), phaseToCreate);
       return docRef.id;
     } catch (error) {
-      console.error("Error creating phase:", error);
+      logger.error("Error creating phase:", error);
       throw error;
     }
   }
@@ -333,7 +335,7 @@ class ProductionProgressService {
       
       await updateDoc(phaseRef, updatedData);
     } catch (error) {
-      console.error(`Error updating phase with ID ${phaseId}:`, error);
+      logger.error(`Error updating phase with ID ${phaseId}:`, error);
       throw error;
     }
   }
@@ -347,7 +349,7 @@ class ProductionProgressService {
       const phaseRef = doc(db, this.phasesCollection, phaseId);
       await deleteDoc(phaseRef);
     } catch (error) {
-      console.error(`Error deleting phase with ID ${phaseId}:`, error);
+      logger.error(`Error deleting phase with ID ${phaseId}:`, error);
       throw error;
     }
   }
@@ -372,7 +374,7 @@ class ProductionProgressService {
       const notesPromises = notesSnapshot.docs.map(doc => deleteDoc(doc.ref));
       await Promise.all(notesPromises);
     } catch (error) {
-      console.error(`Error deleting tasks and notes for phase ${phaseId}:`, error);
+      logger.error(`Error deleting tasks and notes for phase ${phaseId}:`, error);
       throw error;
     }
   }
@@ -411,7 +413,7 @@ class ProductionProgressService {
       
       return tasks;
     } catch (error) {
-      console.error(`Error getting tasks for phase ${phaseId}:`, error);
+      logger.error(`Error getting tasks for phase ${phaseId}:`, error);
       throw error;
     }
   }
@@ -428,7 +430,7 @@ class ProductionProgressService {
       const docRef = await addDoc(collection(db, this.tasksCollection), taskToCreate);
       return docRef.id;
     } catch (error) {
-      console.error("Error creating task:", error);
+      logger.error("Error creating task:", error);
       throw error;
     }
   }
@@ -445,7 +447,7 @@ class ProductionProgressService {
       
       await updateDoc(taskRef, updatedData);
     } catch (error) {
-      console.error(`Error updating task with ID ${taskId}:`, error);
+      logger.error(`Error updating task with ID ${taskId}:`, error);
       throw error;
     }
   }
@@ -455,7 +457,7 @@ class ProductionProgressService {
       const taskRef = doc(db, this.tasksCollection, taskId);
       await deleteDoc(taskRef);
     } catch (error) {
-      console.error(`Error deleting task with ID ${taskId}:`, error);
+      logger.error(`Error deleting task with ID ${taskId}:`, error);
       throw error;
     }
   }
@@ -489,7 +491,7 @@ class ProductionProgressService {
       
       return notes;
     } catch (error) {
-      console.error(`Error getting notes for phase ${phaseId}:`, error);
+      logger.error(`Error getting notes for phase ${phaseId}:`, error);
       throw error;
     }
   }
@@ -504,7 +506,7 @@ class ProductionProgressService {
       const docRef = await addDoc(collection(db, this.notesCollection), noteToCreate);
       return docRef.id;
     } catch (error) {
-      console.error("Error creating note:", error);
+      logger.error("Error creating note:", error);
       throw error;
     }
   }
@@ -514,7 +516,7 @@ class ProductionProgressService {
       const noteRef = doc(db, this.notesCollection, noteId);
       await deleteDoc(noteRef);
     } catch (error) {
-      console.error(`Error deleting note with ID ${noteId}:`, error);
+      logger.error(`Error deleting note with ID ${noteId}:`, error);
       throw error;
     }
   }
@@ -548,7 +550,7 @@ class ProductionProgressService {
       
       return collaborators;
     } catch (error) {
-      console.error(`Error getting collaborators for project ${projectId}:`, error);
+      logger.error(`Error getting collaborators for project ${projectId}:`, error);
       throw error;
     }
   }
@@ -563,7 +565,7 @@ class ProductionProgressService {
       const docRef = await addDoc(collection(db, this.collaboratorsCollection), collaboratorToCreate);
       return docRef.id;
     } catch (error) {
-      console.error("Error adding collaborator:", error);
+      logger.error("Error adding collaborator:", error);
       throw error;
     }
   }
@@ -581,7 +583,7 @@ class ProductionProgressService {
       const collaboratorRef = doc(db, this.collaboratorsCollection, collaboratorId);
       await deleteDoc(collaboratorRef);
     } catch (error) {
-      console.error(`Error removing collaborator with ID ${collaboratorId}:`, error);
+      logger.error(`Error removing collaborator with ID ${collaboratorId}:`, error);
       throw error;
     }
   }

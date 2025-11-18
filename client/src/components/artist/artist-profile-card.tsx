@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { EditProfileDialog } from "./edit-profile-dialog";
@@ -239,7 +240,7 @@ function ArtistCard({ artist, colors, profileUrl }: { artist: any, colors: any, 
         description: "Tu Artist Card ha sido descargada exitosamente",
       });
     } catch (error) {
-      console.error('Error downloading card:', error);
+      logger.error('Error downloading card:', error);
       toast({
         title: "Error",
         description: "No se pudo descargar la tarjeta",
@@ -520,7 +521,7 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
     try {
       setIsProcessing(true);
       
-      console.log('💳 Iniciando checkout de Stripe para:', product.name);
+      logger.info('💳 Iniciando checkout de Stripe para:', product.name);
       
       const response = await fetch('/api/artist-profile/create-checkout-session', {
         method: 'POST',
@@ -538,14 +539,14 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
       const result = await response.json();
       
       if (result.success && result.url) {
-        console.log('✅ Checkout session creada, redirigiendo...');
+        logger.info('✅ Checkout session creada, redirigiendo...');
         // Redirigir a Stripe Checkout
         window.location.href = result.url;
       } else {
         throw new Error(result.error || 'Error al crear sesión de checkout');
       }
     } catch (error: any) {
-      console.error('❌ Error al procesar checkout:', error);
+      logger.error('❌ Error al procesar checkout:', error);
       toast({
         title: "Error al procesar la compra",
         description: error.message || "Intenta de nuevo más tarde",
@@ -767,7 +768,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       setIsEditingLayout(false);
       setShowLayoutConfig(false);
     } catch (error) {
-      console.error('Error saving layout:', error);
+      logger.error('Error saving layout:', error);
       toast({
         title: "❌ Error",
         description: "No se pudo guardar el layout",
@@ -811,7 +812,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       queryClient.invalidateQueries({ queryKey: ['/api/artist-generator/news', artistId] });
       setIsNewsModalOpen(false);
     } catch (error: any) {
-      console.error('Error deleting news:', error);
+      logger.error('Error deleting news:', error);
       toast({
         title: "❌ Error",
         description: error.message || "No se pudo eliminar la noticia",
@@ -851,7 +852,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       queryClient.invalidateQueries({ queryKey: ['/api/artist-generator/news', artistId] });
       setIsNewsModalOpen(false);
     } catch (error: any) {
-      console.error('Error regenerating news:', error);
+      logger.error('Error regenerating news:', error);
       toast({
         title: "❌ Error",
         description: error.message || "No se pudo regenerar la noticia",
@@ -865,7 +866,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   // Helper function to extract Spotify Artist ID from URL
   const getSpotifyEmbedUrl = (spotifyUrl: string): string | null => {
     if (!spotifyUrl) {
-      console.log('🎵 Spotify URL is empty');
+      logger.info('🎵 Spotify URL is empty');
       return null;
     }
     
@@ -876,11 +877,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     
     if (artistMatch && artistMatch[1]) {
       const embedUrl = `https://open.spotify.com/embed/artist/${artistMatch[1]}?utm_source=generator`;
-      console.log('🎵 Spotify embed URL generated:', embedUrl);
+      logger.info('🎵 Spotify embed URL generated:', embedUrl);
       return embedUrl;
     }
     
-    console.log('🎵 Spotify URL did not match pattern:', spotifyUrl);
+    logger.info('🎵 Spotify URL did not match pattern:', spotifyUrl);
     return null;
   };
 
@@ -920,7 +921,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             postgresData = await response.json();
           }
         } catch (pgError) {
-          console.log("Artist not found in PostgreSQL by slug/id, trying Firestore");
+          logger.info("Artist not found in PostgreSQL by slug/id, trying Firestore");
         }
         
         // Buscar en Firestore usando el artistId (que puede ser el UID)
@@ -930,15 +931,15 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
         
         if (!userDocByUid.empty) {
           firestoreData = userDocByUid.docs[0].data();
-          console.log('✅ Found user in Firestore by uid:', artistId);
+          logger.info('✅ Found user in Firestore by uid:', artistId);
         } else {
           // Si no se encuentra por uid, intentar por el ID como string
           const userDocById = await getDocs(query(collection(db, "users"), where("id", "==", artistId)));
           if (!userDocById.empty) {
             firestoreData = userDocById.docs[0].data();
-            console.log('✅ Found user in Firestore by id field:', artistId);
+            logger.info('✅ Found user in Firestore by id field:', artistId);
           } else {
-            console.log('⚠️ User not found in Firestore for artistId:', artistId);
+            logger.info('⚠️ User not found in Firestore for artistId:', artistId);
           }
         }
         
@@ -968,7 +969,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           })
         };
       } catch (error) {
-        console.error("Error fetching user profile:", error);
+        logger.error("Error fetching user profile:", error);
         return null;
       }
     },
@@ -982,21 +983,21 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     queryKey: ["songs", artistId],
     queryFn: async () => {
       try {
-        console.log(`🎵 Fetching songs for artist: ${artistId}`);
+        logger.info(`🎵 Fetching songs for artist: ${artistId}`);
         const songsRef = collection(db, "songs");
         const q = query(songsRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
-        console.log(`📊 Songs query returned ${querySnapshot.size} documents`);
+        logger.info(`📊 Songs query returned ${querySnapshot.size} documents`);
 
         if (querySnapshot.empty) {
-          console.log('⚠️ No songs found for this artist');
+          logger.info('⚠️ No songs found for this artist');
           return [];
         }
 
         const songsData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
-          console.log('🎵 Song data:', { id: doc.id, name: data.name, audioUrl: data.audioUrl });
+          logger.info('🎵 Song data:', { id: doc.id, name: data.name, audioUrl: data.audioUrl });
           return {
             id: doc.id,
             name: data.name,
@@ -1010,10 +1011,10 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           };
         });
         
-        console.log(`✅ Successfully loaded ${songsData.length} songs`);
+        logger.info(`✅ Successfully loaded ${songsData.length} songs`);
         return songsData;
       } catch (error) {
-        console.error("❌ Error fetching songs:", error);
+        logger.error("❌ Error fetching songs:", error);
         return [];
       }
     },
@@ -1025,15 +1026,15 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     queryKey: ["videos", artistId],
     queryFn: async () => {
       try {
-        console.log(`📹 Fetching videos for artist: ${artistId}`);
+        logger.info(`📹 Fetching videos for artist: ${artistId}`);
         const videosRef = collection(db, "videos");
         const q = query(videosRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
-        console.log(`📊 Videos query returned ${querySnapshot.size} documents`);
+        logger.info(`📊 Videos query returned ${querySnapshot.size} documents`);
 
         if (querySnapshot.empty) {
-          console.log('⚠️ No videos found for this artist');
+          logger.info('⚠️ No videos found for this artist');
           return [];
         }
 
@@ -1053,7 +1054,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             }
           }
           
-          console.log('📹 Video data:', { 
+          logger.info('📹 Video data:', { 
             id: doc.id, 
             title: data.title, 
             url: data.url,
@@ -1073,10 +1074,10 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           };
         });
         
-        console.log(`✅ Successfully loaded ${videosData.length} videos`);
+        logger.info(`✅ Successfully loaded ${videosData.length} videos`);
         return videosData;
       } catch (error) {
-        console.error("❌ Error fetching videos:", error);
+        logger.error("❌ Error fetching videos:", error);
         return [];
       }
     },
@@ -1088,23 +1089,23 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     queryKey: ["merchandise", artistId],
     queryFn: async () => {
       try {
-        console.log(`🛍️ Fetching merchandise for artist: ${artistId}`);
-        console.log(`👤 User profile loaded:`, userProfile ? 'YES' : 'NO');
-        console.log(`🔍 DEBUG - Artist ID being used for query:`, artistId);
-        console.log(`🔍 DEBUG - Artist ID type:`, typeof artistId);
+        logger.info(`🛍️ Fetching merchandise for artist: ${artistId}`);
+        logger.info(`👤 User profile loaded:`, userProfile ? 'YES' : 'NO');
+        logger.info(`🔍 DEBUG - Artist ID being used for query:`, artistId);
+        logger.info(`🔍 DEBUG - Artist ID type:`, typeof artistId);
         
         const merchRef = collection(db, "merchandise");
         const q = query(merchRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
-        console.log(`📊 Merchandise query returned ${querySnapshot.size} documents`);
+        logger.info(`📊 Merchandise query returned ${querySnapshot.size} documents`);
         
         // Log todos los productos en Firestore con este userId
         if (!querySnapshot.empty) {
-          console.log(`📦 Products found in Firestore:`);
+          logger.info(`📦 Products found in Firestore:`);
           querySnapshot.forEach((doc) => {
             const data = doc.data();
-            console.log(`  - Product ID: ${doc.id}`, {
+            logger.info(`  - Product ID: ${doc.id}`, {
               name: data.name,
               userId: data.userId,
               hasImage: !!data.imageUrl,
@@ -1112,7 +1113,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             });
           });
         } else {
-          console.log(`⚠️ No products found for userId: ${artistId}`);
+          logger.info(`⚠️ No products found for userId: ${artistId}`);
         }
 
         if (!querySnapshot.empty) {
@@ -1124,7 +1125,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             // Cargar productos actualizados con tallas
             const productsData = querySnapshot.docs.map((doc) => {
               const data = doc.data();
-              console.log('🛍️ Product data:', { id: doc.id, name: data.name, price: data.price, sizes: data.sizes });
+              logger.info('🛍️ Product data:', { id: doc.id, name: data.name, price: data.price, sizes: data.sizes });
               return {
                 id: doc.id,
                 name: data.name,
@@ -1137,14 +1138,14 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 createdAt: data.createdAt?.toDate(),
               };
             });
-            console.log(`✅ Successfully loaded ${productsData.length} existing products with sizes`);
+            logger.info(`✅ Successfully loaded ${productsData.length} existing products with sizes`);
             return productsData;
           } else {
             // Productos viejos sin tallas - borrarlos y regenerar
-            console.log('🗑️ Deleting old products without sizes...');
+            logger.info('🗑️ Deleting old products without sizes...');
             const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
             await Promise.all(deletePromises);
-            console.log('✅ Old products deleted, will regenerate new ones');
+            logger.info('✅ Old products deleted, will regenerate new ones');
             // Continuar con la generación de nuevos productos
           }
           
@@ -1153,11 +1154,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             const allImages = querySnapshot.docs.map(doc => doc.data().imageUrl);
             const uniqueImages = new Set(allImages);
             if (uniqueImages.size === 1 && allImages[0] !== undefined) {
-              console.log('⚠️ [PRODUCTION] All products have the SAME image - This is a generation error!');
-              console.log('🗑️ [PRODUCTION] Deleting products with duplicate images and regenerating...');
+              logger.info('⚠️ [PRODUCTION] All products have the SAME image - This is a generation error!');
+              logger.info('🗑️ [PRODUCTION] Deleting products with duplicate images and regenerating...');
               const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
               await Promise.all(deletePromises);
-              console.log('✅ [PRODUCTION] Old products with duplicate images deleted');
+              logger.info('✅ [PRODUCTION] Old products with duplicate images deleted');
               // Continuar con la generación de nuevos productos
             }
           }
@@ -1218,15 +1219,15 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           },
         ];
 
-        console.log(`🏭 Generating ${productTypes.length} products with unique images for ${artistName}...`);
+        logger.info(`🏭 Generating ${productTypes.length} products with unique images for ${artistName}...`);
         const savedProducts: Product[] = [];
         
         for (const productDef of productTypes) {
-          console.log(`🎨 [PRODUCTION] Generating image for ${productDef.type}...`);
+          logger.info(`🎨 [PRODUCTION] Generating image for ${productDef.type}...`);
           
           let productImage = brandImage;
           try {
-            console.log(`📡 [PRODUCTION] Calling API: /api/artist-profile/generate-product-image`);
+            logger.info(`📡 [PRODUCTION] Calling API: /api/artist-profile/generate-product-image`);
             const imageResponse = await fetch('/api/artist-profile/generate-product-image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1237,10 +1238,10 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               })
             });
             
-            console.log(`📊 [PRODUCTION] API Response Status: ${imageResponse.status} ${imageResponse.statusText}`);
+            logger.info(`📊 [PRODUCTION] API Response Status: ${imageResponse.status} ${imageResponse.statusText}`);
             
             const imageResult = await imageResponse.json();
-            console.log(`🔍 [PRODUCTION] API Result for ${productDef.type}:`, {
+            logger.info(`🔍 [PRODUCTION] API Result for ${productDef.type}:`, {
               success: imageResult.success,
               hasImageUrl: !!imageResult.imageUrl,
               imageUrlPreview: imageResult.imageUrl?.substring(0, 100),
@@ -1250,18 +1251,18 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             
             if (imageResult.success && imageResult.imageUrl) {
               productImage = imageResult.imageUrl;
-              console.log(`✅ [PRODUCTION] Generated unique image for ${productDef.type} via ${imageResult.provider || 'Gemini'}`);
+              logger.info(`✅ [PRODUCTION] Generated unique image for ${productDef.type} via ${imageResult.provider || 'Gemini'}`);
             } else {
-              console.warn(`⚠️ [PRODUCTION] Failed to generate image for ${productDef.type}:`, imageResult.error || 'Unknown error');
-              console.warn(`⚠️ [PRODUCTION] Using fallback brand image for ${productDef.type}`);
+              logger.warn(`⚠️ [PRODUCTION] Failed to generate image for ${productDef.type}:`, imageResult.error || 'Unknown error');
+              logger.warn(`⚠️ [PRODUCTION] Using fallback brand image for ${productDef.type}`);
             }
           } catch (error) {
-            console.error(`❌ [PRODUCTION] Error generating image for ${productDef.type}:`, error);
-            console.error(`❌ [PRODUCTION] Error details:`, {
+            logger.error(`❌ [PRODUCTION] Error generating image for ${productDef.type}:`, error);
+            logger.error(`❌ [PRODUCTION] Error details:`, {
               message: error instanceof Error ? error.message : 'Unknown',
               name: error instanceof Error ? error.name : 'Unknown'
             });
-            console.warn(`⚠️ [PRODUCTION] Using fallback brand image for ${productDef.type}`);
+            logger.warn(`⚠️ [PRODUCTION] Using fallback brand image for ${productDef.type}`);
           }
           
           const product = {
@@ -1278,13 +1279,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           const newDocRef = doc(collection(db, "merchandise"));
           await setDoc(newDocRef, product);
           savedProducts.push({ ...product, id: newDocRef.id });
-          console.log(`✅ Product created: ${product.name}`);
+          logger.info(`✅ Product created: ${product.name}`);
         }
 
-        console.log(`🎉 Successfully created ${savedProducts.length} products`);
+        logger.info(`🎉 Successfully created ${savedProducts.length} products`);
         return savedProducts;
       } catch (error) {
-        console.error("❌ Error fetching/creating merchandise:", error);
+        logger.error("❌ Error fetching/creating merchandise:", error);
         return [];
       }
     },
@@ -1293,11 +1294,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Log cuando products cambie
   useEffect(() => {
-    console.log(`🛍️ Products state updated: ${products.length} products`);
+    logger.info(`🛍️ Products state updated: ${products.length} products`);
     if (products.length > 0) {
-      console.log('✅ MERCHANDISE SECTION SHOULD BE VISIBLE');
+      logger.info('✅ MERCHANDISE SECTION SHOULD BE VISIBLE');
     } else {
-      console.log('⚠️ MERCHANDISE SECTION IS HIDDEN (no products)');
+      logger.info('⚠️ MERCHANDISE SECTION IS HIDDEN (no products)');
     }
   }, [products]);
 
@@ -1309,7 +1310,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   
   // Debug logging para verificar autenticación
   useEffect(() => {
-    console.log('🔍 [Artist Profile] Debug info:', {
+    logger.info('🔍 [Artist Profile] Debug info:', {
       userId: user?.id,
       userIdAsString: user?.id ? String(user.id) : null,
       artistId,
@@ -1325,21 +1326,21 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     queryKey: ["shows", artistId],
     queryFn: async () => {
       try {
-        console.log(`🎤 Fetching shows for artist: ${artistId}`);
+        logger.info(`🎤 Fetching shows for artist: ${artistId}`);
         const showsRef = collection(db, "shows");
         const q = query(showsRef, where("userId", "==", artistId));
         const querySnapshot = await getDocs(q);
 
-        console.log(`📊 Shows query returned ${querySnapshot.size} documents`);
+        logger.info(`📊 Shows query returned ${querySnapshot.size} documents`);
 
         if (querySnapshot.empty) {
-          console.log('⚠️ No shows found for this artist');
+          logger.info('⚠️ No shows found for this artist');
           return [];
         }
 
         const showsData = querySnapshot.docs.map((doc) => {
           const data = doc.data();
-          console.log('🎤 Show data:', { id: doc.id, venue: data.venue, date: data.date });
+          logger.info('🎤 Show data:', { id: doc.id, venue: data.venue, date: data.date });
           return {
             id: doc.id,
             venue: data.venue,
@@ -1352,10 +1353,10 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
         // Ordenar por fecha (más próximos primero)
         showsData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
-        console.log(`✅ Successfully loaded ${showsData.length} shows`);
+        logger.info(`✅ Successfully loaded ${showsData.length} shows`);
         return showsData;
       } catch (error) {
-        console.error("❌ Error fetching shows:", error);
+        logger.error("❌ Error fetching shows:", error);
         return [];
       }
     },
@@ -1378,24 +1379,24 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     queryKey: ['/api/artist-generator/news', artistId],
     queryFn: async () => {
       try {
-        console.log(`📰 Fetching news for artist: ${artistId}`);
+        logger.info(`📰 Fetching news for artist: ${artistId}`);
         const response = await fetch(`/api/artist-generator/news/${artistId}`);
         
         if (!response.ok) {
-          console.warn('⚠️ News API returned non-OK status:', response.status);
+          logger.warn('⚠️ News API returned non-OK status:', response.status);
           return [];
         }
 
         const result = await response.json();
         
         if (result.success && result.news) {
-          console.log(`✅ Successfully loaded ${result.news.length} news articles`);
+          logger.info(`✅ Successfully loaded ${result.news.length} news articles`);
           return result.news;
         }
         
         return [];
       } catch (error) {
-        console.error("❌ Error fetching news:", error);
+        logger.error("❌ Error fetching news:", error);
         return [];
       }
     },
@@ -1429,9 +1430,9 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   }, [artist?.profileLayout]);
 
   // DEBUG: Log completo del perfil de usuario y spotify
-  console.log('🔍 DEBUG - userProfile completo:', userProfile);
-  console.log('🔍 DEBUG - artist.spotify:', artist.spotify);
-  console.log('🔍 DEBUG - getSpotifyEmbedUrl result:', artist.spotify ? getSpotifyEmbedUrl(artist.spotify) : 'NO SPOTIFY URL');
+  logger.info('🔍 DEBUG - userProfile completo:', userProfile);
+  logger.info('🔍 DEBUG - artist.spotify:', artist.spotify);
+  logger.info('🔍 DEBUG - getSpotifyEmbedUrl result:', artist.spotify ? getSpotifyEmbedUrl(artist.spotify) : 'NO SPOTIFY URL');
 
   const handlePlayPause = (song: Song) => {
     if (playingSongId === song.id) {
@@ -1456,7 +1457,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           url: shareUrl,
         });
       } catch (err) {
-        console.error('Error sharing:', err);
+        logger.error('Error sharing:', err);
       }
     } else {
       navigator.clipboard.writeText(shareUrl);
@@ -1489,7 +1490,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
             setSongUploadProgress(Math.round(progress));
-            console.log(`📤 Upload progress: ${progress}%`);
+            logger.info(`📤 Upload progress: ${progress}%`);
           },
           (error) => reject(error),
           () => resolve(uploadTask.snapshot)
@@ -1517,7 +1518,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       setSongUploadProgress(0);
       refetchSongs();
     } catch (error) {
-      console.error("Error uploading song:", error);
+      logger.error("Error uploading song:", error);
       toast({
         title: "Upload failed",
         description: "Could not upload the song. Please try again.",
@@ -1540,7 +1541,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           const storageRef = ref(storage, song.storageRef);
           await deleteObject(storageRef);
         } catch (err) {
-          console.error("Error deleting file from storage:", err);
+          logger.error("Error deleting file from storage:", err);
         }
       }
 
@@ -1551,7 +1552,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
       refetchSongs();
     } catch (error) {
-      console.error("Error deleting song:", error);
+      logger.error("Error deleting song:", error);
       toast({
         title: "Delete failed",
         description: "Could not delete the song. Please try again.",
@@ -1621,7 +1622,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             (snapshot) => {
               const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               setVideoUploadProgress(Math.round(progress));
-              console.log(`📹 Video upload progress: ${progress}%`);
+              logger.info(`📹 Video upload progress: ${progress}%`);
             },
             (error) => reject(error),
             () => resolve(uploadTask.snapshot)
@@ -1659,7 +1660,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       setVideoUploadProgress(0);
       refetchVideos();
     } catch (error) {
-      console.error("Error uploading video:", error);
+      logger.error("Error uploading video:", error);
       toast({
         title: "Error al subir",
         description: "No se pudo agregar el video. Por favor intenta de nuevo.",
@@ -1682,7 +1683,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           const storageRef = ref(storage, video.storagePath);
           await deleteObject(storageRef);
         } catch (err) {
-          console.error("Error deleting file from storage:", err);
+          logger.error("Error deleting file from storage:", err);
         }
       }
 
@@ -1693,7 +1694,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
       refetchVideos();
     } catch (error) {
-      console.error("Error deleting video:", error);
+      logger.error("Error deleting video:", error);
       toast({
         title: "Error al eliminar",
         description: "No se pudo eliminar el video. Por favor intenta de nuevo.",
@@ -1747,7 +1748,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       setDownloadVideoId(null);
       setDownloadPasswordInput('');
     } catch (error) {
-      console.error("Error downloading video:", error);
+      logger.error("Error downloading video:", error);
       toast({
         title: "Error al descargar",
         description: "No se pudo descargar el video. Por favor intenta de nuevo.",
@@ -1792,7 +1793,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   playsInline
                   className="absolute inset-0 w-full h-full object-cover filter brightness-40 contrast-110 saturate-110 scale-110 transition-all duration-1000 hover:scale-105 hover:brightness-45"
                   style={{ objectPosition: objectPositionStyle }}
-                  onError={(e) => console.error('❌ Hero video error:', e)}
+                  onError={(e) => logger.error('❌ Hero video error:', e)}
                 />
               );
             }
@@ -2172,7 +2173,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                             refetchProfile();
                           }}
                           onGalleryCreated={() => {
-                            console.log('🎨 onGalleryCreated callback - Refrescando galerías...');
+                            logger.info('🎨 onGalleryCreated callback - Refrescando galerías...');
                             setGalleriesRefreshKey(prev => prev + 1);
                           }}
                         />
@@ -2733,7 +2734,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {videos.map((video, index) => {
-                    console.log('🎥 Rendering video card:', { 
+                    logger.info('🎥 Rendering video card:', { 
                       title: video.title, 
                       url: video.url, 
                       thumbnailUrl: video.thumbnailUrl,
@@ -2767,7 +2768,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                               playsInline
                               preload="metadata"
                               onLoadedData={(e) => {
-                                console.log('✅ Video thumbnail loaded for:', video.title);
+                                logger.info('✅ Video thumbnail loaded for:', video.title);
                               }}
                             />
                           </div>
@@ -4744,11 +4745,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 x-webkit-airplay="allow"
                 title={playingVideo.title}
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                onLoadStart={() => console.log('📱 Video load started (mobile-friendly)')}
-                onCanPlay={() => console.log('✅ Video ready to play')}
+                onLoadStart={() => logger.info('📱 Video load started (mobile-friendly)')}
+                onCanPlay={() => logger.info('✅ Video ready to play')}
                 onError={(e) => {
                   const videoEl = e.currentTarget;
-                  console.error('❌ Error reproduciendo video móvil:', {
+                  logger.error('❌ Error reproduciendo video móvil:', {
                     url: playingVideo.url,
                     error: videoEl.error?.code,
                     message: videoEl.error?.message,

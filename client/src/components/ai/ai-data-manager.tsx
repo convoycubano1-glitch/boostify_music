@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
@@ -170,7 +171,7 @@ ${item.script || item.strategy || item.content || item.design || item.advice || 
         description: "PDF downloaded successfully",
       });
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast({
         title: "Error",
         description: "Failed to generate PDF. Please try again.",

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { logger } from "../lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -59,7 +60,7 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
     setIsSubmitting(true);
 
     try {
-      console.log('Starting booking process with data:', {
+      logger.info('Starting booking process with data:', {
         musicianId: musician.id,
         price: musician.price,
         formData
@@ -122,7 +123,7 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
       }
 
     } catch (error) {
-      console.error('Error in booking process:', error);
+      logger.error('Error in booking process:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to start checkout process. Please try again.",
@@ -167,7 +168,7 @@ export function MusicianBookingForm({ musician, onClose }: BookingFormProps) {
         throw new Error("No audio URL in response");
       }
     } catch (error) {
-      console.error("Error generating demo:", error);
+      logger.error("Error generating demo:", error);
       toast({
         title: "Generation Failed",
         description: "Failed to generate audio demo. Please try again.",

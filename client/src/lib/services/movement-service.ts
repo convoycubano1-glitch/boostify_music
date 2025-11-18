@@ -5,6 +5,7 @@
  */
 
 import { apiRequest } from "../queryClient";
+import { logger } from "../logger";
 
 export interface MovementPattern {
   name: string;
@@ -154,7 +155,7 @@ export async function processImageWithMovement(
       throw new Error(response.error || 'Error al iniciar el procesamiento de movimiento');
     }
   } catch (error: any) {
-    console.error('Error en processImageWithMovement:', error);
+    logger.error('Error en processImageWithMovement:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido al procesar la imagen'
@@ -187,7 +188,7 @@ export async function checkMovementProcessingStatus(taskId: string): Promise<Mov
       };
     }
   } catch (error: any) {
-    console.error('Error en checkMovementProcessingStatus:', error);
+    logger.error('Error en checkMovementProcessingStatus:', error);
     return {
       success: false,
       taskId,
@@ -233,7 +234,7 @@ export async function saveMovementResult(
       error: response.error
     };
   } catch (error: any) {
-    console.error('Error en saveMovementResult:', error);
+    logger.error('Error en saveMovementResult:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido al guardar el resultado'

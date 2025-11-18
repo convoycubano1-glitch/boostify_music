@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * FAL AI MuseTalk Service
  * Genera videos de animación facial (talking head) desde imagen + audio
@@ -28,9 +29,9 @@ interface MuseTalkResult {
  */
 export async function generateTalkingHead(options: MuseTalkOptions): Promise<MuseTalkResult> {
   try {
-    console.log('🎭 Iniciando MuseTalk (Image-to-Video Lip-Sync via Backend)...');
-    console.log('🖼️ Imagen:', options.imageUrl.substring(0, 60));
-    console.log('🎵 Audio:', options.audioUrl.substring(0, 60));
+    logger.info('🎭 Iniciando MuseTalk (Image-to-Video Lip-Sync via Backend)...');
+    logger.info('🖼️ Imagen:', options.imageUrl.substring(0, 60));
+    logger.info('🎵 Audio:', options.audioUrl.substring(0, 60));
     
     const startTime = Date.now();
     
@@ -49,7 +50,7 @@ export async function generateTalkingHead(options: MuseTalkOptions): Promise<Mus
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error('❌ Error from backend:', errorData);
+      logger.error('❌ Error from backend:', errorData);
       return {
         success: false,
         error: errorData.error || 'Error from backend'
@@ -60,13 +61,13 @@ export async function generateTalkingHead(options: MuseTalkOptions): Promise<Mus
     const processingTime = (Date.now() - startTime) / 1000;
     
     if (result.success) {
-      console.log(`✅ MuseTalk completado en ${processingTime.toFixed(1)}s!`);
+      logger.info(`✅ MuseTalk completado en ${processingTime.toFixed(1)}s!`);
     }
     
     return result;
     
   } catch (error) {
-    console.error('❌ Error en generateTalkingHead:', error);
+    logger.error('❌ Error en generateTalkingHead:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -85,13 +86,13 @@ export async function batchGenerateTalkingHeads(
     audioUrl: string;
   }>
 ): Promise<Map<string, MuseTalkResult>> {
-  console.log(`🎬 Generando ${segments.length} talking heads...`);
+  logger.info(`🎬 Generando ${segments.length} talking heads...`);
   
   const results = new Map<string, MuseTalkResult>();
   
   // Procesar secuencialmente para no sobrecargar la API
   for (const segment of segments) {
-    console.log(`🎭 Procesando segmento ${segment.id}...`);
+    logger.info(`🎭 Procesando segmento ${segment.id}...`);
     
     const result = await generateTalkingHead({
       imageUrl: segment.imageUrl,
@@ -101,16 +102,16 @@ export async function batchGenerateTalkingHeads(
     results.set(segment.id, result);
     
     if (result.success) {
-      console.log(`✅ Segmento ${segment.id} completado`);
+      logger.info(`✅ Segmento ${segment.id} completado`);
     } else {
-      console.error(`❌ Error en segmento ${segment.id}:`, result.error);
+      logger.error(`❌ Error en segmento ${segment.id}:`, result.error);
     }
     
     // Pequeño delay entre requests
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
-  console.log(`🎉 Batch completado: ${results.size} segmentos procesados`);
+  logger.info(`🎉 Batch completado: ${results.size} segmentos procesados`);
   
   return results;
 }

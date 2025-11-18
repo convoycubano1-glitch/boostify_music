@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { logger } from "@/lib/logger";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -199,7 +200,7 @@ export function AffiliateLinks({ affiliateData }: AffiliateLinksProps) {
   // Función para copiar un enlace al portapapeles
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).catch((err) => {
-      console.error("No se pudo copiar el enlace:", err);
+      logger.error("No se pudo copiar el enlace:", err);
     });
   };
 

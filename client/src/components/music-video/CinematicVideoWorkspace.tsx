@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Workspace para Creación de Videos Musicales con IA
  * Integra el editor de escenas cinematográficas con sistema de exportación JSON
  */
@@ -167,7 +168,7 @@ export function CinematicVideoWorkspace({
           description: `Se han importado ${importedScenes.length} escenas correctamente.`
         });
       } catch (error: any) {
-        console.error('Error importando JSON:', error);
+        logger.error('Error importando JSON:', error);
         toast({
           title: "Error al importar",
           description: error.message || "El archivo JSON no es válido.",
@@ -208,7 +209,7 @@ export function CinematicVideoWorkspace({
         description: `${successCount} de ${scenes.length} imágenes generadas exitosamente.`
       });
     } catch (error: any) {
-      console.error('Error generando imágenes:', error);
+      logger.error('Error generando imágenes:', error);
       toast({
         title: "Error",
         description: "No se pudieron generar todas las imágenes. Intente nuevamente.",
@@ -300,9 +301,9 @@ export function CinematicVideoWorkspace({
         description: `${saveProjectName} ha sido guardado exitosamente con ${scenesWithImages.length} escenas.`
       });
 
-      console.log("Proyecto guardado:", { projectId, project });
+      logger.info("Proyecto guardado:", { projectId, project });
     } catch (error: any) {
-      console.error('Error guardando proyecto:', error);
+      logger.error('Error guardando proyecto:', error);
       toast({
         title: "Error al guardar",
         description: error.message || "No se pudo guardar el proyecto. Intente nuevamente.",

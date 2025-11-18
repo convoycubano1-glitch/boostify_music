@@ -8,6 +8,7 @@
  */
 
 import {
+import { logger } from "../logger";
   generateMusicWithUdio,
   generateMusicWithSuno,
   checkMusicGenerationStatus,
@@ -16,9 +17,13 @@ import {
   SunoMusicParams
 } from './piapi-music';
 import { getAuthToken } from '../auth';
+import { logger } from "../logger";
 import { db, auth, storage } from '../../firebase';
+import { logger } from "../logger";
 import { collection, addDoc, Timestamp, query, where, orderBy, getDocs, updateDoc } from 'firebase/firestore';
+import { logger } from "../logger";
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { logger } from "../logger";
 
 /**
  * Interfaz para las opciones de generación de música
@@ -75,7 +80,7 @@ export interface MusicGenerationHistoryItem {
  */
 export async function generateMusic(options: MusicGenerationOptions): Promise<{ taskId: string }> {
   try {
-    console.log('Generando música con opciones:', options);
+    logger.info('Generando música con opciones:', options);
     
     // Determinar el modelo a utilizar
     const model = options.model as MusicModel;
@@ -146,19 +151,19 @@ export async function generateMusic(options: MusicGenerationOptions): Promise<{ 
           };
           
           await addDoc(collection(db, 'music_generations'), generationData);
-          console.log('Generación guardada en Firestore:', taskId);
+          logger.info('Generación guardada en Firestore:', taskId);
         } catch (innerError) {
-          console.warn('No se pudo guardar en Firestore, se omitirá el historial:', innerError);
+          logger.warn('No se pudo guardar en Firestore, se omitirá el historial:', innerError);
         }
       }
     } catch (firestoreError) {
       // Si hay un error al guardar en Firestore, solo lo registramos pero continuamos
-      console.error('Error al guardar la generación en Firestore:', firestoreError);
+      logger.error('Error al guardar la generación en Firestore:', firestoreError);
     }
     
     return { taskId };
   } catch (error) {
-    console.error('Error en la generación de música:', error);
+    logger.error('Error en la generación de música:', error);
     
     // Propagar el error original para mantener la información detallada
     if (error instanceof Error) {
@@ -176,7 +181,7 @@ export async function generateMusic(options: MusicGenerationOptions): Promise<{ 
  */
 export async function checkGenerationStatus(taskId: string): Promise<MusicGenerationStatus> {
   try {
-    console.log('Verificando estado de generación:', taskId);
+    logger.info('Verificando estado de generación:', taskId);
     
     // Si es un ID de tarea local (no de PiAPI), buscamos en Firestore
     if (taskId.startsWith('local_')) {
@@ -231,7 +236,7 @@ export async function checkGenerationStatus(taskId: string): Promise<MusicGenera
           
           // Si no hay documentos, no hay problema
           if (querySnapshot.empty) {
-            console.log('No se encontraron registros para actualizar en Firestore');
+            logger.info('No se encontraron registros para actualizar en Firestore');
           } else {
             // Actualizar cada documento encontrado
             for (const doc of querySnapshot.docs) {
@@ -252,20 +257,20 @@ export async function checkGenerationStatus(taskId: string): Promise<MusicGenera
                   }
                   
                   await updateDoc(doc.ref, updateData);
-                  console.log('Documento actualizado en Firestore:', doc.id);
+                  logger.info('Documento actualizado en Firestore:', doc.id);
                 } catch (updateError) {
-                  console.error('Error al actualizar documento:', updateError);
+                  logger.error('Error al actualizar documento:', updateError);
                 }
               }
             }
           }
         } catch (innerError) {
-          console.warn('Error en la consulta a Firestore:', innerError);
+          logger.warn('Error en la consulta a Firestore:', innerError);
         }
       }
     } catch (firestoreError) {
       // Si hay un error al actualizar Firestore, solo lo registramos
-      console.error('Error al actualizar el estado en Firestore:', firestoreError);
+      logger.error('Error al actualizar el estado en Firestore:', firestoreError);
     }
     
     return {
@@ -277,7 +282,7 @@ export async function checkGenerationStatus(taskId: string): Promise<MusicGenera
       error: status.error
     };
   } catch (error) {
-    console.error('Error verificando estado:', error);
+    logger.error('Error verificando estado:', error);
     
     // Propagar el error original para mantener la información detallada
     if (error instanceof Error) {
@@ -297,7 +302,7 @@ export async function getRecentGenerations(): Promise<MusicGenerationHistoryItem
     const user = auth.currentUser;
     
     if (!user) {
-      console.warn('No hay usuario autenticado para obtener historial');
+      logger.warn('No hay usuario autenticado para obtener historial');
       return [];
     }
     
@@ -335,28 +340,28 @@ export async function getRecentGenerations(): Promise<MusicGenerationHistoryItem
               status: data.status || 'completed'
             });
           } catch (docError) {
-            console.warn('Error procesando documento:', docError);
+            logger.warn('Error procesando documento:', docError);
             // Continuar con el siguiente documento
           }
         });
         
         return generations;
       } catch (queryError: any) {
-        console.error('Error en la consulta:', queryError);
+        logger.error('Error en la consulta:', queryError);
         
         // Si el error es por índices no existentes, mostrar mensaje específico
         if (queryError.code === 'failed-precondition') {
-          console.log('Se requiere configurar índices en Firestore. Devolviendo lista vacía por ahora.');
+          logger.info('Se requiere configurar índices en Firestore. Devolviendo lista vacía por ahora.');
         }
         
         return [];
       }
     } catch (innerError) {
-      console.error('Error interno obteniendo historial:', innerError);
+      logger.error('Error interno obteniendo historial:', innerError);
       return [];
     }
   } catch (error) {
-    console.error('Error externo obteniendo historial:', error);
+    logger.error('Error externo obteniendo historial:', error);
     
     // Para cualquier error, devolver array vacío
     return [];
@@ -396,7 +401,7 @@ export async function saveMusicGeneration(generation: {
     
     return docRef.id;
   } catch (error) {
-    console.error('Error al guardar la generación:', error);
+    logger.error('Error al guardar la generación:', error);
     throw error;
   }
 }
@@ -425,13 +430,13 @@ export async function saveGeneratedSongToProfile(generation: {
     
     if (authToken) {
       headers['Authorization'] = `Bearer ${authToken}`;
-      console.log('✅ Usando Firebase Auth para guardar canción');
+      logger.info('✅ Usando Firebase Auth para guardar canción');
     } else {
-      console.log('⚠️ No hay token de Firebase Auth, intentando guardar con sesión de Replit');
+      logger.info('⚠️ No hay token de Firebase Auth, intentando guardar con sesión de Replit');
       // Las cookies de sesión de Replit Auth se envían automáticamente
     }
     
-    console.log('📤 Guardando canción en perfil:', {
+    logger.info('📤 Guardando canción en perfil:', {
       title: generation.title,
       audioUrl: generation.audioUrl.substring(0, 50),
       genre: generation.genre
@@ -454,15 +459,15 @@ export async function saveGeneratedSongToProfile(generation: {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('❌ Error al guardar canción:', response.status, errorData);
+      logger.error('❌ Error al guardar canción:', response.status, errorData);
       throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
     }
     
     const data = await response.json();
-    console.log('✅ Música guardada en perfil del artista:', data.song);
+    logger.info('✅ Música guardada en perfil del artista:', data.song);
     return data.song;
   } catch (error) {
-    console.error('Error guardando música en perfil:', error);
+    logger.error('Error guardando música en perfil:', error);
     throw error;
   }
 }
@@ -478,7 +483,7 @@ export async function generateMusicWithFAL(options: {
   reference_audio_url?: string;
 }): Promise<{ requestId: string }> {
   try {
-    console.log('Generando música con FAL AI minimax-music/v2:', options);
+    logger.info('Generando música con FAL AI minimax-music/v2:', options);
     
     const response = await fetch('/api/fal/minimax-music', {
       method: 'POST',
@@ -500,7 +505,7 @@ export async function generateMusicWithFAL(options: {
     const data = await response.json();
     return { requestId: data.requestId };
   } catch (error) {
-    console.error('Error en generateMusicWithFAL:', error);
+    logger.error('Error en generateMusicWithFAL:', error);
     throw error;
   }
 }
@@ -516,12 +521,12 @@ export async function checkFALMusicStatus(requestId: string): Promise<MusicGener
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('FAL status check error:', errorText);
+      logger.error('FAL status check error:', errorText);
       throw new Error(`Error checking FAL music status: ${response.status} - ${errorText}`);
     }
     
     const data = await response.json();
-    console.log('FAL status response:', data);
+    logger.info('FAL status response:', data);
     
     // Map FAL status to our format
     let status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
@@ -540,7 +545,7 @@ export async function checkFALMusicStatus(requestId: string): Promise<MusicGener
       message: getStatusMessage(status)
     };
   } catch (error) {
-    console.error('Error en checkFALMusicStatus:', error);
+    logger.error('Error en checkFALMusicStatus:', error);
     throw error;
   }
 }
@@ -555,7 +560,7 @@ export async function generateMusicWithStableAudio(options: {
   duration?: number;
 }): Promise<{ requestId: string }> {
   try {
-    console.log('Generando música con FAL AI Stable Audio 2.5:', options);
+    logger.info('Generando música con FAL AI Stable Audio 2.5:', options);
     
     const response = await fetch('/api/fal/stable-audio', {
       method: 'POST',
@@ -576,7 +581,7 @@ export async function generateMusicWithStableAudio(options: {
     const data = await response.json();
     return { requestId: data.requestId };
   } catch (error) {
-    console.error('Error en generateMusicWithStableAudio:', error);
+    logger.error('Error en generateMusicWithStableAudio:', error);
     throw error;
   }
 }
@@ -592,12 +597,12 @@ export async function checkStableAudioStatus(requestId: string): Promise<MusicGe
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Stable Audio status check error:', errorText);
+      logger.error('Stable Audio status check error:', errorText);
       throw new Error(`Error checking Stable Audio status: ${response.status} - ${errorText}`);
     }
     
     const data = await response.json();
-    console.log('Stable Audio status response:', data);
+    logger.info('Stable Audio status response:', data);
     
     // Map FAL status to our format
     let status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending';
@@ -616,7 +621,7 @@ export async function checkStableAudioStatus(requestId: string): Promise<MusicGe
       message: getStatusMessage(status)
     };
   } catch (error) {
-    console.error('Error en checkStableAudioStatus:', error);
+    logger.error('Error en checkStableAudioStatus:', error);
     throw error;
   }
 }

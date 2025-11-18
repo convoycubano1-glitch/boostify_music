@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { collection, getDocs } from 'firebase/firestore';
@@ -114,7 +115,7 @@ export default function ArtistAnalyticsTab() {
         setOverviewData(summaryChartData);
         setLoading(false);
       } catch (error) {
-        console.error("Error al cargar datos de resumen:", error);
+        logger.error("Error al cargar datos de resumen:", error);
         setLoading(false);
       }
     }

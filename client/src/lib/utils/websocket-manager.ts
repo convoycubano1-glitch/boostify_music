@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * WebSocket Manager
  * 
@@ -68,7 +69,7 @@ class WebSocketManager {
       // Restablecer el contador de intentos de reconexión si se conecta con éxito
       this.manuallyDisconnected = false;
     } catch (error) {
-      console.error('Error al crear la conexión WebSocket:', error);
+      logger.error('Error al crear la conexión WebSocket:', error);
       this.scheduleReconnect();
     }
   }
@@ -80,7 +81,7 @@ class WebSocketManager {
    */
   public send(data: string | ArrayBufferLike | Blob | ArrayBufferView): boolean {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('Intento de envío en una conexión WebSocket cerrada o no inicializada');
+      logger.warn('Intento de envío en una conexión WebSocket cerrada o no inicializada');
       return false;
     }
     
@@ -88,7 +89,7 @@ class WebSocketManager {
       this.ws.send(data);
       return true;
     } catch (error) {
-      console.error('Error al enviar datos por WebSocket:', error);
+      logger.error('Error al enviar datos por WebSocket:', error);
       return false;
     }
   }
@@ -132,7 +133,7 @@ class WebSocketManager {
         this.ws.close(1000, 'Closed by client');
       }
     } catch (error) {
-      console.warn('Error al limpiar la conexión WebSocket:', error);
+      logger.warn('Error al limpiar la conexión WebSocket:', error);
     } finally {
       this.ws = null;
     }
@@ -143,7 +144,7 @@ class WebSocketManager {
    */
   private scheduleReconnect(): void {
     if (this.manuallyDisconnected || this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.warn(
+      logger.warn(
         this.manuallyDisconnected
           ? 'Reconexión no programada: desconexión manual'
           : `Reconexión abandonada después de ${this.reconnectAttempts} intentos`
@@ -162,10 +163,10 @@ class WebSocketManager {
     // Programar reconexión con retroceso exponencial
     const delay = Math.min(this.reconnectInterval * Math.pow(1.5, this.reconnectAttempts - 1), 30000);
     
-    console.log(`Programando reconexión WebSocket en ${delay}ms (intento ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    logger.info(`Programando reconexión WebSocket en ${delay}ms (intento ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
     
     this.reconnectTimer = window.setTimeout(() => {
-      console.log(`Intentando reconexión WebSocket (intento ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+      logger.info(`Intentando reconexión WebSocket (intento ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
       this.connect();
     }, delay);
   }
@@ -178,7 +179,7 @@ class WebSocketManager {
       try {
         this.onOpenHandler(event);
       } catch (error) {
-        console.error('Error en el manejador onOpen:', error);
+        logger.error('Error en el manejador onOpen:', error);
       }
     }
   };
@@ -188,7 +189,7 @@ class WebSocketManager {
       try {
         this.onMessageHandler(event);
       } catch (error) {
-        console.error('Error en el manejador onMessage:', error);
+        logger.error('Error en el manejador onMessage:', error);
       }
     }
   };
@@ -198,25 +199,25 @@ class WebSocketManager {
       try {
         this.onCloseHandler(event);
       } catch (error) {
-        console.error('Error en el manejador onClose:', error);
+        logger.error('Error en el manejador onClose:', error);
       }
     }
     
     // Solo intentar reconectar para cierres no limpios o si no fue manual
     if ((!event.wasClean || event.code !== 1000) && !this.manuallyDisconnected) {
-      console.warn(`Conexión WebSocket cerrada con código ${event.code}. Motivo: ${event.reason || 'Sin motivo específico'}`);
+      logger.warn(`Conexión WebSocket cerrada con código ${event.code}. Motivo: ${event.reason || 'Sin motivo específico'}`);
       this.scheduleReconnect();
     }
   };
   
   private handleError = (event: Event): void => {
-    console.error('Error de WebSocket:', event);
+    logger.error('Error de WebSocket:', event);
     
     if (this.onErrorHandler) {
       try {
         this.onErrorHandler(event);
       } catch (error) {
-        console.error('Error en el manejador onError:', error);
+        logger.error('Error en el manejador onError:', error);
       }
     }
     

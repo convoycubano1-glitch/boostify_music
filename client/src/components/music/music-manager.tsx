@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { useAuth } from "../../hooks/use-auth";
 import { useToast } from "../../hooks/use-toast";
 import { db, storage } from "../../lib/firebase";
@@ -52,7 +53,7 @@ export function MusicManager() {
 
       setSongs(loadedSongs);
     } catch (error) {
-      console.error('Error loading songs:', error);
+      logger.error('Error loading songs:', error);
       toast({
         title: "Error",
         description: "Could not load your songs. Please try again.",
@@ -105,7 +106,7 @@ export function MusicManager() {
           setUploadProgress(progress);
         },
         (error: any) => {
-          console.error('Error uploading file:', error);
+          logger.error('Error uploading file:', error);
           toast({
             title: "Upload Failed",
             description: "There was an error uploading your song. Please try again.",
@@ -140,7 +141,7 @@ export function MusicManager() {
         }
       );
     } catch (error) {
-      console.error('Error uploading file:', error);
+      logger.error('Error uploading file:', error);
       toast({
         title: "Upload Failed",
         description: "There was an error uploading your song. Please try again.",
@@ -172,7 +173,7 @@ export function MusicManager() {
           setAudioElement(null);
         });
       } catch (error) {
-        console.error('Error playing audio:', error);
+        logger.error('Error playing audio:', error);
         toast({
           title: "Playback Error",
           description: "Could not play the audio file. Please try again.",
@@ -207,7 +208,7 @@ export function MusicManager() {
 
       await loadSongs();
     } catch (error) {
-      console.error('Error deleting song:', error);
+      logger.error('Error deleting song:', error);
       toast({
         title: "Error",
         description: "Failed to delete the song. Please try again.",

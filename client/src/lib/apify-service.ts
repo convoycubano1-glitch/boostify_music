@@ -1,7 +1,11 @@
 import { z } from 'zod';
+import { logger } from "./logger";
 import { db } from './firebase';
+import { logger } from "./logger";
 import { doc, getDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { logger } from "./logger";
 import { User } from 'firebase/auth';
+import { logger } from "./logger";
 
 // Define the expected data structure from the Apollo API
 interface ApolloResult {
@@ -179,7 +183,7 @@ export async function searchContacts(category: string, query: string): Promise<C
     );
 
   } catch (error) {
-    console.error('Error searching contacts:', error);
+    logger.error('Error searching contacts:', error);
     // In case of error, return only filtered local results
     return localContacts.filter(contact => 
       (category === 'All' || contact.category === category) &&

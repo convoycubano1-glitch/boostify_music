@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * FAL AI Lip-Sync Service
  * Sincroniza videos generados con audio para crear movimiento de labios realista
@@ -27,14 +28,14 @@ interface LipSyncResult {
  */
 export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResult> {
   try {
-    console.log('🎤 Iniciando lip-sync con Sync Lipsync 2.0...');
-    console.log('📹 Video:', options.videoUrl.substring(0, 50));
-    console.log('🎵 Audio:', options.audioUrl.substring(0, 50));
+    logger.info('🎤 Iniciando lip-sync con Sync Lipsync 2.0...');
+    logger.info('📹 Video:', options.videoUrl.substring(0, 50));
+    logger.info('🎵 Audio:', options.audioUrl.substring(0, 50));
     
     const FAL_API_KEY = import.meta.env.VITE_FAL_API_KEY;
     
     if (!FAL_API_KEY) {
-      console.error('❌ FAL_API_KEY no configurada');
+      logger.error('❌ FAL_API_KEY no configurada');
       return {
         success: false,
         error: 'FAL_API_KEY no está configurada. Por favor configura la API key en las variables de entorno.'
@@ -57,7 +58,7 @@ export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResu
     
     if (!submitResponse.ok) {
       const errorData = await submitResponse.json().catch(() => ({}));
-      console.error('❌ Error submitting lip-sync job:', errorData);
+      logger.error('❌ Error submitting lip-sync job:', errorData);
       return {
         success: false,
         error: `Error submitting lip-sync: ${submitResponse.statusText}`
@@ -67,8 +68,8 @@ export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResu
     const submitData = await submitResponse.json();
     const requestId = submitData.request_id;
     
-    console.log(`⏳ Lip-sync job submitted: ${requestId}`);
-    console.log('🔄 Esperando resultado...');
+    logger.info(`⏳ Lip-sync job submitted: ${requestId}`);
+    logger.info('🔄 Esperando resultado...');
     
     // Poll para obtener el resultado
     let attempts = 0;
@@ -87,7 +88,7 @@ export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResu
       );
       
       if (!statusResponse.ok) {
-        console.error('❌ Error checking status');
+        logger.error('❌ Error checking status');
         attempts++;
         continue;
       }
@@ -114,7 +115,7 @@ export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResu
         
         const resultData = await resultResponse.json();
         
-        console.log('✅ Lip-sync completado exitosamente!');
+        logger.info('✅ Lip-sync completado exitosamente!');
         
         return {
           success: true,
@@ -124,7 +125,7 @@ export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResu
       }
       
       if (statusData.status === 'FAILED') {
-        console.error('❌ Lip-sync job failed:', statusData.error);
+        logger.error('❌ Lip-sync job failed:', statusData.error);
         return {
           success: false,
           error: statusData.error || 'Lip-sync processing failed'
@@ -132,7 +133,7 @@ export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResu
       }
       
       // IN_QUEUE o IN_PROGRESS
-      console.log(`⏳ Status: ${statusData.status} (attempt ${attempts + 1}/${maxAttempts})`);
+      logger.info(`⏳ Status: ${statusData.status} (attempt ${attempts + 1}/${maxAttempts})`);
       attempts++;
     }
     
@@ -142,7 +143,7 @@ export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResu
     };
     
   } catch (error) {
-    console.error('❌ Error en applyLipSync:', error);
+    logger.error('❌ Error en applyLipSync:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error applying lip-sync'
@@ -157,13 +158,13 @@ export async function applyLipSync(options: LipSyncOptions): Promise<LipSyncResu
 export async function batchLipSync(
   videos: Array<{ videoUrl: string; audioUrl: string; sceneId: string }>
 ): Promise<Map<string, LipSyncResult>> {
-  console.log(`🎬 Procesando ${videos.length} videos con lip-sync...`);
+  logger.info(`🎬 Procesando ${videos.length} videos con lip-sync...`);
   
   const results = new Map<string, LipSyncResult>();
   
   // Procesar videos secuencialmente para no sobrecargar la API
   for (const video of videos) {
-    console.log(`🎤 Procesando escena ${video.sceneId}...`);
+    logger.info(`🎤 Procesando escena ${video.sceneId}...`);
     
     const result = await applyLipSync({
       videoUrl: video.videoUrl,
@@ -174,16 +175,16 @@ export async function batchLipSync(
     results.set(video.sceneId, result);
     
     if (result.success) {
-      console.log(`✅ Escena ${video.sceneId} sincronizada`);
+      logger.info(`✅ Escena ${video.sceneId} sincronizada`);
     } else {
-      console.error(`❌ Error en escena ${video.sceneId}:`, result.error);
+      logger.error(`❌ Error en escena ${video.sceneId}:`, result.error);
     }
     
     // Pequeño delay entre requests
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
   
-  console.log(`🎉 Batch lip-sync completado: ${results.size} escenas procesadas`);
+  logger.info(`🎉 Batch lip-sync completado: ${results.size} escenas procesadas`);
   
   return results;
 }

@@ -6,7 +6,9 @@
  */
 
 import axios from 'axios';
+import { logger } from "./logger";
 import { fluxLocalStorageService } from './flux-local-storage-service';
+import { logger } from "./logger";
 
 // Modelos disponibles en Flux
 export enum FluxModel {
@@ -93,12 +95,12 @@ export const fluxService = {
    */
   async generateImage(params: FluxGenerationParams): Promise<FluxTaskResult> {
     try {
-      console.log('Enviando solicitud a Flux API:', params);
+      logger.info('Enviando solicitud a Flux API:', params);
       
       // Ruta del endpoint en el servidor - verifique que coincida con server/routes/flux-api-proxy.ts
       const response = await axios.post('/api/flux/generate-image', params);
       
-      console.log('Respuesta de Flux API:', response.data);
+      logger.info('Respuesta de Flux API:', response.data);
       
       // La respuesta puede venir en dos formatos diferentes dependiendo del endpoint
       // 1. Formato antiguo: { code: 200, message: "success", data: { task_id: "..." } }
@@ -143,7 +145,7 @@ export const fluxService = {
         code: response.data.code
       };
     } catch (error: any) {
-      console.error('Error al generar imagen con Flux:', error);
+      logger.error('Error al generar imagen con Flux:', error);
       return {
         success: false,
         error: error.message || 'Error en la generación de imagen'
@@ -159,11 +161,11 @@ export const fluxService = {
    */
   async generateImageFromImage(params: FluxImageToImageParams): Promise<FluxTaskResult> {
     try {
-      console.log('Enviando solicitud img2img a Flux API:', params);
+      logger.info('Enviando solicitud img2img a Flux API:', params);
       
       const response = await axios.post('/api/flux/image-to-image', params);
       
-      console.log('Respuesta de Flux API (img2img):', response.data);
+      logger.info('Respuesta de Flux API (img2img):', response.data);
       
       // La respuesta puede venir en dos formatos diferentes dependiendo del endpoint
       // 1. Formato antiguo: { code: 200, message: "success", data: { task_id: "..." } }
@@ -208,7 +210,7 @@ export const fluxService = {
         code: response.data.code
       };
     } catch (error: any) {
-      console.error('Error al generar imagen con Flux (img2img):', error);
+      logger.error('Error al generar imagen con Flux (img2img):', error);
       return {
         success: false,
         error: error.message || 'Error en la generación de imagen desde imagen'
@@ -224,11 +226,11 @@ export const fluxService = {
    */
   async checkTaskStatus(taskId: string): Promise<FluxTaskResult> {
     try {
-      console.log('Verificando estado de tarea Flux:', taskId);
+      logger.info('Verificando estado de tarea Flux:', taskId);
       
       const response = await axios.get(`/api/flux/status?taskId=${taskId}`);
       
-      console.log('Respuesta de verificación de estado:', response.data);
+      logger.info('Respuesta de verificación de estado:', response.data);
       
       // Procesar y normalizar la respuesta
       // Puede venir en formato antiguo o directo desde PiAPI
@@ -250,12 +252,12 @@ export const fluxService = {
             // Nueva estructura de respuesta en el ejemplo proporcionado
             url = taskData.output.image_url;
             images = [taskData.output.image_url];
-            console.log('Imagen encontrada en output.image_url (formato antiguo):', url);
+            logger.info('Imagen encontrada en output.image_url (formato antiguo):', url);
           } else if (typeof taskData.output === 'string') {
             // Caso donde output es directamente la URL como string
             url = taskData.output;
             images = [taskData.output];
-            console.log('Imagen encontrada directamente en output como string:', url);
+            logger.info('Imagen encontrada directamente en output como string:', url);
           }
         }
         
@@ -290,12 +292,12 @@ export const fluxService = {
             // Nueva estructura de respuesta en el ejemplo proporcionado
             url = response.data.output.image_url;
             images = [response.data.output.image_url];
-            console.log('Imagen encontrada en output.image_url:', url);
+            logger.info('Imagen encontrada en output.image_url:', url);
           } else if (typeof response.data.output === 'string') {
             // Caso donde output es directamente la URL como string
             url = response.data.output;
             images = [response.data.output];
-            console.log('Imagen encontrada directamente en output como string:', url);
+            logger.info('Imagen encontrada directamente en output como string:', url);
           }
         }
         
@@ -321,7 +323,7 @@ export const fluxService = {
         code: response.data.code
       };
     } catch (error: any) {
-      console.error('Error al verificar estado de tarea Flux:', error);
+      logger.error('Error al verificar estado de tarea Flux:', error);
       return {
         success: false,
         taskId,

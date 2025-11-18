@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Nuevo Flux Image Generator Component
  * 
  * Este componente proporciona una interfaz dedicada para generar imágenes con PiAPI Flux,
@@ -68,7 +69,7 @@ export function FluxGenerator({
         
         // Filtrar imágenes sin URLs
         const completedImages = images.filter(img => img.url && img.url.length > 0);
-        console.log(`Loaded ${completedImages.length} saved Flux images from localStorage`);
+        logger.info(`Loaded ${completedImages.length} saved Flux images from localStorage`);
         
         // Si no hay imágenes, mostrar una imagen de muestra para mejor UX
         if (completedImages.length === 0) {
@@ -90,7 +91,7 @@ export function FluxGenerator({
           setSavedImages(completedImages);
         }
       } catch (error) {
-        console.error('Error loading saved Flux images:', error);
+        logger.error('Error loading saved Flux images:', error);
         toast({
           title: 'Error al cargar imágenes',
           description: 'No se pudieron cargar las imágenes guardadas',
@@ -112,13 +113,13 @@ export function FluxGenerator({
       // Determinar el intervalo de verificación (más rápido para tareas simuladas)
       const checkInterval = pendingTaskId.startsWith('simulated-') ? 1000 : 3000;
       
-      console.log(`Configurando verificación de estado para tarea ${pendingTaskId} cada ${checkInterval}ms`);
+      logger.info(`Configurando verificación de estado para tarea ${pendingTaskId} cada ${checkInterval}ms`);
       
       interval = setInterval(async () => {
         try {
           // Verificar estado de la tarea en el servidor
           const result = await axios.get(`/api/flux/status?taskId=${pendingTaskId}`);
-          console.log('Flux task status update:', result.data);
+          logger.info('Flux task status update:', result.data);
           
           // Verificar si la tarea está completada
           if (result.data.data && result.data.data.status === 'completed') {
@@ -133,7 +134,7 @@ export function FluxGenerator({
             }
             
             if (imageUrl) {
-              console.log('URL de imagen encontrada:', imageUrl);
+              logger.info('URL de imagen encontrada:', imageUrl);
               
               // Marcar la imagen como simulada si viene de una respuesta simulada
               const providerSuffix = result.data.simulated ? '-simulado' : model;
@@ -171,7 +172,7 @@ export function FluxGenerator({
                 description: 'Tu imagen ha sido generada exitosamente',
               });
             } else {
-              console.error('Tarea completada pero no se encontró URL de imagen:', result.data);
+              logger.error('Tarea completada pero no se encontró URL de imagen:', result.data);
               setIsGenerating(false);
               setPendingTaskId(null);
               
@@ -194,7 +195,7 @@ export function FluxGenerator({
             });
           }
         } catch (error) {
-          console.error('Error checking Flux task status:', error);
+          logger.error('Error checking Flux task status:', error);
         }
       }, checkInterval);
     }
@@ -240,7 +241,7 @@ export function FluxGenerator({
       );
       
       if (similarImage) {
-        console.log('Found similar existing Flux image:', similarImage);
+        logger.info('Found similar existing Flux image:', similarImage);
         setGeneratedImage(similarImage);
         setIsGenerating(false);
         
@@ -268,7 +269,7 @@ export function FluxGenerator({
         taskType: taskType
       });
       
-      console.log('Flux API response:', response.data);
+      logger.info('Flux API response:', response.data);
       
       if (response.data && response.data.task_id) {
         // Guardar el ID de tarea para verificaciones periódicas
@@ -276,7 +277,7 @@ export function FluxGenerator({
         
         // Si la respuesta está marcada como simulada, mostrar toast informativo
         if (response.data.simulated) {
-          console.log('Respuesta simulada detectada, usando imágenes de muestra');
+          logger.info('Respuesta simulada detectada, usando imágenes de muestra');
           toast({
             title: 'Modo Simulación',
             description: 'Ejecutando en modo de simulación debido a la configuración del API_KEY',
@@ -291,7 +292,7 @@ export function FluxGenerator({
         throw new Error('No se recibió ID de tarea de Flux');
       }
     } catch (error) {
-      console.error('Error generating image with Flux:', error);
+      logger.error('Error generating image with Flux:', error);
       setIsGenerating(false);
       
       toast({
@@ -371,7 +372,7 @@ export function FluxGenerator({
         });
       }, 1500);
     } catch (error) {
-      console.error('Error generating sample image:', error);
+      logger.error('Error generating sample image:', error);
       setIsGenerating(false);
       
       toast({

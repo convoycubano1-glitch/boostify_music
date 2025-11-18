@@ -1,7 +1,11 @@
 import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { logger } from "../logger";
 import { db } from "../firebase";
+import { logger } from "../logger";
 import { generateCourseContent } from "./api/openrouter";
+import { logger } from "../logger";
 import { getRelevantImage } from "./unsplash-service";
+import { logger } from "../logger";
 
 const sampleCourses = [
   {
@@ -58,20 +62,20 @@ export async function createSampleCourses(userId: string) {
       throw new Error("Firebase database not initialized");
     }
 
-    console.log("Starting sample course creation...");
+    logger.info("Starting sample course creation...");
 
     for (const course of sampleCourses) {
       try {
-        console.log(`Creating course ${createdCount + 1}/5: ${course.title}`);
+        logger.info(`Creating course ${createdCount + 1}/5: ${course.title}`);
 
         // Generate course thumbnail
         let thumbnailUrl: string;
         try {
           const imagePrompt = `professional education ${course.title} ${course.category} music industry course cover, modern design, minimalist`;
           thumbnailUrl = await getRelevantImage(imagePrompt);
-          console.log("Generated thumbnail URL:", thumbnailUrl);
+          logger.info("Generated thumbnail URL:", thumbnailUrl);
         } catch (imageError) {
-          console.error(`Error generating thumbnail for ${course.title}:`, imageError);
+          logger.error(`Error generating thumbnail for ${course.title}:`, imageError);
           thumbnailUrl = "https://images.unsplash.com/photo-1511379938547-c1f69419868d"; // Fallback image
         }
 
@@ -83,9 +87,9 @@ export async function createSampleCourses(userId: string) {
 
           The course should be detailed and practical, focused on the current music industry. Include specific actionable steps and real-world examples.`;
 
-        console.log(`Generating course content for: ${course.title}`);
+        logger.info(`Generating course content for: ${course.title}`);
         const courseContent = await generateCourseContent(prompt);
-        console.log("Course content generated successfully");
+        logger.info("Course content generated successfully");
 
         const randomData = generateRandomCourseData();
 
@@ -102,9 +106,9 @@ export async function createSampleCourses(userId: string) {
 
         await addDoc(collection(db, 'courses'), courseData);
         createdCount++;
-        console.log(`Successfully created course: ${course.title}`);
+        logger.info(`Successfully created course: ${course.title}`);
       } catch (courseError) {
-        console.error(`Error creating course ${course.title}:`, courseError);
+        logger.error(`Error creating course ${course.title}:`, courseError);
         errors.push({
           course: course.title,
           error: courseError instanceof Error ? courseError.message : 'Unknown error'
@@ -114,16 +118,16 @@ export async function createSampleCourses(userId: string) {
     }
 
     if (errors.length > 0) {
-      console.warn(`Completed with ${errors.length} errors:`, errors);
+      logger.warn(`Completed with ${errors.length} errors:`, errors);
       if (createdCount === 0) {
         throw new Error(`Failed to create any courses. Errors: ${JSON.stringify(errors)}`);
       }
     }
 
-    console.log(`Successfully created ${createdCount} courses`);
+    logger.info(`Successfully created ${createdCount} courses`);
     return { createdCount, errors };
   } catch (error) {
-    console.error('Error in createSampleCourses:', error);
+    logger.error('Error in createSampleCourses:', error);
     throw error;
   }
 }

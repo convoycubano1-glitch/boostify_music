@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";

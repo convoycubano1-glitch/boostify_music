@@ -3,9 +3,13 @@
  * Maneja el almacenamiento en Firebase Storage y Firestore
  */
 import { db, storage } from '../firebase';
+import { logger } from "../logger";
 import { collection, addDoc, doc, getDoc, getDocs, query, where, orderBy, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { logger } from "../logger";
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
+import { logger } from "../logger";
 import type { MusicVideoScene } from '../../types/music-video-scene';
+import { logger } from "../logger";
 
 export interface VideoProject {
   id: string;
@@ -43,7 +47,7 @@ export async function uploadImageToStorage(
   userId: string
 ): Promise<{ storageUrl: string; publicUrl: string }> {
   try {
-    console.log(`📤 Subiendo imagen para escena ${sceneId} al proyecto ${projectId}`);
+    logger.info(`📤 Subiendo imagen para escena ${sceneId} al proyecto ${projectId}`);
 
     let imageBlob: Blob;
 
@@ -86,11 +90,11 @@ export async function uploadImageToStorage(
     const publicUrl = await getDownloadURL(storageRef);
     const storageUrl = `gs://${storage.app.options.storageBucket}/${fileName}`;
 
-    console.log(`✅ Imagen subida exitosamente: ${publicUrl}`);
+    logger.info(`✅ Imagen subida exitosamente: ${publicUrl}`);
 
     return { storageUrl, publicUrl };
   } catch (error) {
-    console.error('Error subiendo imagen a Storage:', error);
+    logger.error('Error subiendo imagen a Storage:', error);
     throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -104,7 +108,7 @@ export async function uploadMultipleImages(
   userId: string,
   onProgress?: (progress: number) => void
 ): Promise<{ sceneId: string; storageUrl: string; publicUrl: string }[]> {
-  console.log(`📤 Subiendo ${images.length} imágenes en batch...`);
+  logger.info(`📤 Subiendo ${images.length} imágenes en batch...`);
 
   const results: { sceneId: string; storageUrl: string; publicUrl: string }[] = [];
   
@@ -118,7 +122,7 @@ export async function uploadMultipleImages(
     }
   }
 
-  console.log(`✅ ${results.length} imágenes subidas exitosamente`);
+  logger.info(`✅ ${results.length} imágenes subidas exitosamente`);
   return results;
 }
 
@@ -132,7 +136,7 @@ export async function createVideoProject(
   metadata?: any
 ): Promise<string> {
   try {
-    console.log(`📝 Creando proyecto de video: ${name}`);
+    logger.info(`📝 Creando proyecto de video: ${name}`);
 
     const projectData = {
       name,
@@ -146,11 +150,11 @@ export async function createVideoProject(
     };
 
     const docRef = await addDoc(collection(db, 'videoProjects'), projectData);
-    console.log(`✅ Proyecto creado con ID: ${docRef.id}`);
+    logger.info(`✅ Proyecto creado con ID: ${docRef.id}`);
 
     return docRef.id;
   } catch (error) {
-    console.error('Error creando proyecto:', error);
+    logger.error('Error creando proyecto:', error);
     throw new Error(`Failed to create project: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -163,7 +167,7 @@ export async function updateProjectImages(
   images: { sceneId: string; storageUrl: string; publicUrl: string }[]
 ): Promise<void> {
   try {
-    console.log(`🔄 Actualizando ${images.length} imágenes en proyecto ${projectId}`);
+    logger.info(`🔄 Actualizando ${images.length} imágenes en proyecto ${projectId}`);
 
     const imageRecords = images.map(img => ({
       ...img,
@@ -177,9 +181,9 @@ export async function updateProjectImages(
       status: 'completed'
     });
 
-    console.log(`✅ Imágenes actualizadas en proyecto ${projectId}`);
+    logger.info(`✅ Imágenes actualizadas en proyecto ${projectId}`);
   } catch (error) {
-    console.error('Error actualizando imágenes del proyecto:', error);
+    logger.error('Error actualizando imágenes del proyecto:', error);
     throw new Error(`Failed to update project images: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -208,7 +212,7 @@ export async function getVideoProject(projectId: string): Promise<VideoProject |
       })) || []
     } as VideoProject;
   } catch (error) {
-    console.error('Error obteniendo proyecto:', error);
+    logger.error('Error obteniendo proyecto:', error);
     throw new Error(`Failed to get project: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -240,7 +244,7 @@ export async function getUserProjects(userId: string): Promise<VideoProject[]> {
       } as VideoProject;
     });
   } catch (error) {
-    console.error('Error obteniendo proyectos del usuario:', error);
+    logger.error('Error obteniendo proyectos del usuario:', error);
     throw new Error(`Failed to get user projects: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -259,9 +263,9 @@ export async function updateProjectScript(
       updatedAt: serverTimestamp()
     });
 
-    console.log(`✅ Script actualizado en proyecto ${projectId}`);
+    logger.info(`✅ Script actualizado en proyecto ${projectId}`);
   } catch (error) {
-    console.error('Error actualizando script:', error);
+    logger.error('Error actualizando script:', error);
     throw new Error(`Failed to update script: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -271,7 +275,7 @@ export async function updateProjectScript(
  */
 export async function deleteVideoProject(projectId: string, userId: string): Promise<void> {
   try {
-    console.log(`🗑️ Eliminando proyecto ${projectId}`);
+    logger.info(`🗑️ Eliminando proyecto ${projectId}`);
 
     // Verificar que el proyecto pertenece al usuario
     const project = await getVideoProject(projectId);
@@ -285,15 +289,15 @@ export async function deleteVideoProject(projectId: string, userId: string): Pro
       const fileList = await listAll(folderRef);
       await Promise.all(fileList.items.map(item => deleteObject(item)));
     } catch (error) {
-      console.warn('No hay archivos para eliminar o error eliminando:', error);
+      logger.warn('No hay archivos para eliminar o error eliminando:', error);
     }
 
     // Eliminar documento de Firestore
     await deleteDoc(doc(db, 'videoProjects', projectId));
 
-    console.log(`✅ Proyecto ${projectId} eliminado completamente`);
+    logger.info(`✅ Proyecto ${projectId} eliminado completamente`);
   } catch (error) {
-    console.error('Error eliminando proyecto:', error);
+    logger.error('Error eliminando proyecto:', error);
     throw new Error(`Failed to delete project: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -310,7 +314,7 @@ export async function createProjectWithImages(
   onProgress?: (progress: number, status: string) => void
 ): Promise<{ projectId: string; project: VideoProject }> {
   try {
-    console.log(`🎬 Creando proyecto completo: ${name}`);
+    logger.info(`🎬 Creando proyecto completo: ${name}`);
 
     // 1. Crear el proyecto
     onProgress?.(10, 'Creando proyecto...');
@@ -341,11 +345,11 @@ export async function createProjectWithImages(
     }
 
     onProgress?.(100, 'Proyecto creado exitosamente');
-    console.log(`✅ Proyecto completo creado: ${projectId}`);
+    logger.info(`✅ Proyecto completo creado: ${projectId}`);
 
     return { projectId, project };
   } catch (error) {
-    console.error('Error en flujo completo de creación:', error);
+    logger.error('Error en flujo completo de creación:', error);
     throw new Error(`Failed to create project with images: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

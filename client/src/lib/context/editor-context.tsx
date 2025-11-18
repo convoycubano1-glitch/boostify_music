@@ -1,4 +1,5 @@
 import React, { 
+import { logger } from "../logger";
   createContext, 
   useContext, 
   useState, 
@@ -7,7 +8,9 @@ import React, {
   useEffect 
 } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from "../logger";
 import { 
+import { logger } from "../logger";
   Project,
   Track,
   Clip,
@@ -351,7 +354,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       
       return loadedProject;
     } catch (error) {
-      console.error('Error al cargar el proyecto:', error);
+      logger.error('Error al cargar el proyecto:', error);
       
       addError({
         code: 'LOAD_PROJECT_ERROR',
@@ -404,7 +407,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       
       return true;
     } catch (error) {
-      console.error('Error al guardar el proyecto:', error);
+      logger.error('Error al guardar el proyecto:', error);
       
       // Actualizar el estado para indicar que ha habido un error
       updateState({
@@ -438,7 +441,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       
       return exportedUrl;
     } catch (error) {
-      console.error('Error al exportar el proyecto:', error);
+      logger.error('Error al exportar el proyecto:', error);
       
       addError({
         code: 'EXPORT_PROJECT_ERROR',
@@ -1235,7 +1238,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         ...data
       };
       
-      console.log("WorkflowData actualizado:", updatedData);
+      logger.info("WorkflowData actualizado:", updatedData);
       
       // Si hay pasos en los datos nuevos, asegurarnos de mantener el formato correcto
       if (data.steps) {

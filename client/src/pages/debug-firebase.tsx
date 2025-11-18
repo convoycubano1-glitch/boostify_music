@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { Card } from "../components/ui/card";
@@ -37,7 +38,7 @@ export default function DebugFirebase() {
         currentUserId: user?.uid
       });
     } catch (error) {
-      console.error("Error fetching data:", error);
+      logger.error("Error fetching data:", error);
     }
     setLoading(false);
   };

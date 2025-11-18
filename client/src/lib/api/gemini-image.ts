@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * Cliente para la API de Gemini Image Generation
  */
@@ -34,7 +35,7 @@ export async function generateImageFromPrompt(prompt: string): Promise<ImageGene
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error('Error generando imagen:', error);
+    logger.error('Error generando imagen:', error);
     return {
       success: false,
       error: error.message || 'Error al generar imagen'
@@ -58,7 +59,7 @@ export async function generateImageFromScene(scene: CinematicScene): Promise<Ima
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error('Error generando imagen desde escena:', error);
+    logger.error('Error generando imagen desde escena:', error);
     return {
       success: false,
       error: error.message || 'Error al generar imagen'
@@ -87,7 +88,7 @@ export async function generateBatchImages(scenes: CinematicScene[]): Promise<Rec
       throw new Error(data.error || 'Error al generar imágenes en lote');
     }
   } catch (error: any) {
-    console.error('Error generando imágenes en lote:', error);
+    logger.error('Error generando imágenes en lote:', error);
     throw error;
   }
 }

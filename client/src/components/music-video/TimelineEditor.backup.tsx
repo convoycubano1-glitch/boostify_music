@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Enhanced Timeline Editor for Music Videos
  * Professional-grade multi-track editor with advanced features:
  * - Synchronized video preview viewer
@@ -556,7 +557,7 @@ export function TimelineEditor({
         const offsetX = e.clientX - rect.left + scrollLeft;
         const clickTime = pixelsToTime(offsetX);
         
-        console.log('🔪 Razor Tool:', {
+        logger.info('🔪 Razor Tool:', {
           clientX: e.clientX,
           rectLeft: rect.left,
           scrollLeft,

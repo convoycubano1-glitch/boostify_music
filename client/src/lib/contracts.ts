@@ -1,6 +1,9 @@
 import { db } from '../firebase';
+import { logger } from "../logger";
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, updateDoc, getDoc, Timestamp } from 'firebase/firestore';
+import { logger } from "../logger";
 import { getAuth } from 'firebase/auth';
+import { logger } from "../logger";
 
 const auth = getAuth();
 
@@ -47,7 +50,7 @@ export async function saveContract(contract: Omit<Contract, 'id'>): Promise<stri
     
     return docRef.id;
   } catch (error) {
-    console.error('Error saving contract:', error);
+    logger.error('Error saving contract:', error);
     throw error;
   }
 }
@@ -84,7 +87,7 @@ export async function getUserContracts(): Promise<Contract[]> {
       } as Contract;
     });
   } catch (error) {
-    console.error('Error getting user contracts:', error);
+    logger.error('Error getting user contracts:', error);
     throw error;
   }
 }
@@ -121,7 +124,7 @@ export async function updateContract(contractId: string, updates: Partial<Contra
       updatedAt: new Date()
     });
   } catch (error) {
-    console.error('Error updating contract:', error);
+    logger.error('Error updating contract:', error);
     throw error;
   }
 }
@@ -154,7 +157,7 @@ export async function deleteContract(contractId: string): Promise<void> {
     
     await deleteDoc(contractRef);
   } catch (error) {
-    console.error('Error deleting contract:', error);
+    logger.error('Error deleting contract:', error);
     throw error;
   }
 }

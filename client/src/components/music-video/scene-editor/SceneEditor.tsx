@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente SceneEditor
  * Editor principal para escenas individuales en la producción de videos musicales AI.
  * Permite edición de prompts, tipos de plano, composición y diálogo.

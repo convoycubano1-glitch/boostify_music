@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { MusicGenerationSection } from "../components/music/genre-templates/music-generation-section";
 import { MusicGenerationAdvancedParams } from "../components/music/genre-templates/advanced-music-params";
 import { 
@@ -183,7 +184,7 @@ export default function MusicGeneratorPage() {
                   description: "La canción generada se agregó a tu perfil de artista",
                 });
               } catch (profileError) {
-                console.error('Error guardando en perfil:', profileError);
+                logger.error('Error guardando en perfil:', profileError);
                 // No bloqueamos la UI si falla, solo registramos
               }
             }
@@ -194,7 +195,7 @@ export default function MusicGeneratorPage() {
             clearInterval(intervalId);
           }
         } catch (error) {
-          console.error('Error checking generation status:', error);
+          logger.error('Error checking generation status:', error);
           setGenerationError('Error checking generation status');
           setIsGeneratingMusic(false);
           setMusicGenerationProgress(0);
@@ -229,7 +230,7 @@ export default function MusicGeneratorPage() {
       setRecentGenerations(generations);
       // If we get here, the auth token was valid
     } catch (error) {
-      console.error('Error loading recent generations:', error);
+      logger.error('Error loading recent generations:', error);
       // If there's a 401 (Unauthorized) error, show appropriate message
       if (error instanceof Error && error.message.includes('401')) {
         toast({
@@ -275,7 +276,7 @@ export default function MusicGeneratorPage() {
     audio.onerror = () => {
       setIsPlaying(false);
       setCurrentPlayingId(null);
-      console.error('Error playing audio:', audioUrl);
+      logger.error('Error playing audio:', audioUrl);
     };
     
     // Play audio
@@ -286,7 +287,7 @@ export default function MusicGeneratorPage() {
         setCurrentPlayingId(id);
       })
       .catch(error => {
-        console.error('Error playing audio:', error);
+        logger.error('Error playing audio:', error);
         setIsPlaying(false);
         setCurrentPlayingId(null);
       });
@@ -379,7 +380,7 @@ export default function MusicGeneratorPage() {
         setCurrentTaskId(result.taskId || '');
       }
     } catch (error) {
-      console.error('Error generating music:', error);
+      logger.error('Error generating music:', error);
       
       // Check if it's an authentication error
       if (error instanceof Error && error.message.includes('401')) {
@@ -406,7 +407,7 @@ export default function MusicGeneratorPage() {
     
     // Only proceed if we have a valid template
     if (!template) {
-      console.error(`Template with ID ${templateId} not found`);
+      logger.error(`Template with ID ${templateId} not found`);
       return;
     }
     

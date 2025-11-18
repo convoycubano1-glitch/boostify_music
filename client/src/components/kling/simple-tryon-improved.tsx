@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
@@ -135,7 +136,7 @@ export function SimpleTryOnComponent() {
               }
             }
           } catch (error) {
-            console.error("Error in polling interval:", error);
+            logger.error("Error in polling interval:", error);
           }
         }, 2000); // Check every 2 seconds
 

@@ -1,4 +1,5 @@
       // src/components/ai/base-agent.tsx
+import { logger } from "@/lib/logger";
 
       import { useState } from "react";
       import { Card } from "../ui/card";
@@ -129,7 +130,7 @@
             const errorMessage = error?.message || `Error al ejecutar ${action.name}. Por favor, intente nuevamente.`;
             const errorStack = error?.stack || 'No stack trace';
             
-            console.error(`Detailed error in ${action.name}:`, {
+            logger.error(`Detailed error in ${action.name}:`, {
               message: errorMessage,
               stack: errorStack,
             });

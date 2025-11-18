@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -68,7 +69,7 @@ export function ModernAudioSuite() {
       });
 
     } catch (error) {
-      console.error("Error procesando audio:", error);
+      logger.error("Error procesando audio:", error);
       toast({
         title: "Error",
         description: "Error al procesar el audio. Por favor intenta de nuevo.",

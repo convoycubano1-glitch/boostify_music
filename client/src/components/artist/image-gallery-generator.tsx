@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { logger } from "@/lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -96,7 +97,7 @@ export function ImageGalleryGenerator({
     await uploadBytes(storageRef, blob);
     const downloadURL = await getDownloadURL(storageRef);
     
-    console.log('☁️ Imagen de referencia subida a Storage:', downloadURL);
+    logger.info('☁️ Imagen de referencia subida a Storage:', downloadURL);
     return downloadURL;
   };
 
@@ -124,8 +125,8 @@ export function ImageGalleryGenerator({
     
     try {
       // NO subir a Firebase Storage - enviar directamente en base64
-      console.log('🎨 Iniciando generación de galería con imágenes en base64...');
-      console.log('📸 Número de imágenes de referencia:', referenceImages.length);
+      logger.info('🎨 Iniciando generación de galería con imágenes en base64...');
+      logger.info('📸 Número de imágenes de referencia:', referenceImages.length);
       
       // Crear AbortController con timeout de 10 minutos (600 segundos)
       const controller = new AbortController();
@@ -152,13 +153,13 @@ export function ImageGalleryGenerator({
         }
 
         const data = await response.json();
-        console.log('✅ Respuesta del servidor:', data);
+        logger.info('✅ Respuesta del servidor:', data);
 
         if (!data.success) {
           throw new Error(data.error || 'Error al generar galería');
         }
 
-        console.log('✅ Galería generada con éxito:', data.gallery.generatedImages.length, 'imágenes');
+        logger.info('✅ Galería generada con éxito:', data.gallery.generatedImages.length, 'imágenes');
         
         // Primero: Subir imágenes de referencia a Firebase Storage
         setGenerationStatus("Subiendo imágenes de referencia a Firebase Storage...");
@@ -166,15 +167,15 @@ export function ImageGalleryGenerator({
         
         for (let i = 0; i < referenceImages.length; i++) {
           try {
-            console.log(`📤 Subiendo imagen de referencia ${i + 1}/${referenceImages.length} a Storage...`);
+            logger.info(`📤 Subiendo imagen de referencia ${i + 1}/${referenceImages.length} a Storage...`);
             const url = await uploadBase64ToStorage(
               referenceImages[i],
               `ref-${Date.now()}-${i}.jpg`
             );
             uploadedReferenceUrls.push(url);
-            console.log(`✅ Imagen de referencia ${i + 1} subida: ${url}`);
+            logger.info(`✅ Imagen de referencia ${i + 1} subida: ${url}`);
           } catch (uploadError: any) {
-            console.error(`❌ Error subiendo imagen de referencia ${i + 1}:`, uploadError);
+            logger.error(`❌ Error subiendo imagen de referencia ${i + 1}:`, uploadError);
             throw new Error(`No se pudo subir la imagen de referencia ${i + 1}`);
           }
         }
@@ -186,7 +187,7 @@ export function ImageGalleryGenerator({
         for (let i = 0; i < data.gallery.generatedImages.length; i++) {
           const img = data.gallery.generatedImages[i];
           try {
-            console.log(`📤 Subiendo imagen generada ${i + 1}/${data.gallery.generatedImages.length} a Storage...`);
+            logger.info(`📤 Subiendo imagen generada ${i + 1}/${data.gallery.generatedImages.length} a Storage...`);
             
             const imagePath = `galleries/${artistId}/${Date.now()}-gen-${i}.jpg`;
             const imageRef = ref(storage, imagePath);
@@ -199,9 +200,9 @@ export function ImageGalleryGenerator({
             const url = await getDownloadURL(imageRef);
             
             uploadedImageUrls.push(url);
-            console.log(`✅ Imagen generada ${i + 1} subida: ${url}`);
+            logger.info(`✅ Imagen generada ${i + 1} subida: ${url}`);
           } catch (uploadError: any) {
-            console.error(`❌ Error subiendo imagen generada ${i + 1}:`, uploadError);
+            logger.error(`❌ Error subiendo imagen generada ${i + 1}:`, uploadError);
             // Si falla, usar la data URL original como fallback
             uploadedImageUrls.push(img.url);
           }
@@ -209,11 +210,11 @@ export function ImageGalleryGenerator({
 
         // Guardar la galería en Firestore con las URLs de Storage
         try {
-          console.log('🔍 [DEBUG] Iniciando guardado en Firestore');
-          console.log('🔍 [DEBUG] DB config:', db);
+          logger.info('🔍 [DEBUG] Iniciando guardado en Firestore');
+          logger.info('🔍 [DEBUG] DB config:', db);
           
           const galleryRef = doc(collection(db, "image_galleries"));
-          console.log('✅ [DEBUG] Referencia creada con ID:', galleryRef.id);
+          logger.info('✅ [DEBUG] Referencia creada con ID:', galleryRef.id);
           
           // Actualizar las URLs en las imágenes generadas
           const generatedImagesWithUrls = data.gallery.generatedImages.map((img: any, index: number) => ({
@@ -236,17 +237,17 @@ export function ImageGalleryGenerator({
           };
           
           setGenerationStatus("Guardando galería en tu perfil...");
-          console.log('💾 [DEBUG] Guardando en Firestore:', galleryData);
-          console.log('💾 [DEBUG] Collection: image_galleries, Doc ID:', galleryRef.id);
+          logger.info('💾 [DEBUG] Guardando en Firestore:', galleryData);
+          logger.info('💾 [DEBUG] Collection: image_galleries, Doc ID:', galleryRef.id);
           
           await setDoc(galleryRef, galleryData);
-          console.log('✅ [DEBUG] setDoc completado exitosamente');
-          console.log('✅ Galería guardada en Firestore con ID:', galleryRef.id);
+          logger.info('✅ [DEBUG] setDoc completado exitosamente');
+          logger.info('✅ Galería guardada en Firestore con ID:', galleryRef.id);
         } catch (firestoreError: any) {
-          console.error('❌ [FIRESTORE ERROR] Error guardando galería:', firestoreError);
-          console.error('❌ [FIRESTORE ERROR] Código:', firestoreError.code);
-          console.error('❌ [FIRESTORE ERROR] Mensaje:', firestoreError.message);
-          console.error('❌ [FIRESTORE ERROR] Stack:', firestoreError.stack);
+          logger.error('❌ [FIRESTORE ERROR] Error guardando galería:', firestoreError);
+          logger.error('❌ [FIRESTORE ERROR] Código:', firestoreError.code);
+          logger.error('❌ [FIRESTORE ERROR] Mensaje:', firestoreError.message);
+          logger.error('❌ [FIRESTORE ERROR] Stack:', firestoreError.stack);
           throw new Error(`Error al guardar en Firestore: ${firestoreError.message}`);
         }
 
@@ -266,7 +267,7 @@ export function ImageGalleryGenerator({
         // Esperar un poco antes de recargar para que Firestore se sincronice
         setTimeout(() => {
           if (onGalleryCreated) {
-            console.log('🔄 Llamando a onGalleryCreated callback');
+            logger.info('🔄 Llamando a onGalleryCreated callback');
             onGalleryCreated();
           }
         }, 1000);
@@ -280,7 +281,7 @@ export function ImageGalleryGenerator({
       }
 
     } catch (error: any) {
-      console.error('Error generating gallery:', error);
+      logger.error('Error generating gallery:', error);
       toast({
         title: "Error",
         description: error.message || "No se pudo generar la galería",

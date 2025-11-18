@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { logger } from "../lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +32,7 @@ export function WaitlistModal() {
     }
 
     // Simulación de envío al backend
-    console.log("Submitting email:", email);
+    logger.info("Submitting email:", email);
     
     // Mostrar estado de éxito
     setSubmitted(true);

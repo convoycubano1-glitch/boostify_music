@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Página de AI Video Creation
  * Interfaz principal para la creación de videos musicales con IA
  */
@@ -74,7 +75,7 @@ export default function AIVideoCreationPage() {
         
         setIsLoading(false);
       } catch (error) {
-        console.error("Error al cargar el proyecto:", error);
+        logger.error("Error al cargar el proyecto:", error);
         toast({
           title: "Error",
           description: "No se pudo cargar el proyecto. Intente nuevamente.",

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from "@/lib/logger";
 
 /**
  * Componente que verifica la conectividad con los servicios de Google antes
@@ -24,7 +25,7 @@ export function useGoogleConnectionCheck() {
       const promises = domains.map(domain => {
         return new Promise<boolean>(resolve => {
           const timeout = setTimeout(() => {
-            console.log(`Timeout connecting to ${domain}`);
+            logger.info(`Timeout connecting to ${domain}`);
             resolve(false);
           }, 5000);
           
@@ -37,7 +38,7 @@ export function useGoogleConnectionCheck() {
               resolve(true);
             })
             .catch(error => {
-              console.error(`Error connecting to ${domain}:`, error);
+              logger.error(`Error connecting to ${domain}:`, error);
               clearTimeout(timeout);
               resolve(false);
             });
@@ -49,11 +50,11 @@ export function useGoogleConnectionCheck() {
       
       setCanConnect(canConnect);
       setLastChecked(new Date());
-      console.log(`Google connectivity check: ${canConnect ? 'Success' : 'Failed'}`);
+      logger.info(`Google connectivity check: ${canConnect ? 'Success' : 'Failed'}`);
       
       return canConnect;
     } catch (error) {
-      console.error('Error checking Google connectivity:', error);
+      logger.error('Error checking Google connectivity:', error);
       setCanConnect(false);
       setLastChecked(new Date());
       return false;

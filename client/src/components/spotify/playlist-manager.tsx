@@ -1,4 +1,5 @@
 import { Button } from "../ui/button";
+import { logger } from "../lib/logger";
 import { SiSpotify } from "react-icons/si";
 import { Card } from "../ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
@@ -23,7 +24,7 @@ export function PlaylistManager() {
     enabled: !!user,
     retry: 1,
     onError: (error: any) => {
-      console.error("Error fetching Spotify data:", error);
+      logger.error("Error fetching Spotify data:", error);
       if (error.code === "permission-denied") {
         toast({
           title: "Error de permisos",
@@ -48,7 +49,7 @@ export function PlaylistManager() {
       // Redirigir al usuario al flujo de OAuth de Spotify
       window.location.href = `/api/spotify/auth`;
     } catch (error) {
-      console.error("Error connecting to Spotify:", error);
+      logger.error("Error connecting to Spotify:", error);
       toast({
         title: "Error",
         description: "No se pudo conectar con Spotify. Por favor, inténtalo de nuevo.",

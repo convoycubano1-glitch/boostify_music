@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { useToast } from '../hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -145,11 +146,11 @@ export default function ImageGeneratorPage() {
         imageCount: values.imageCount,
       });
 
-      console.log('Resultado de generación:', result);
+      logger.info('Resultado de generación:', result);
       
       // Verificar si es una tarea asíncrona (como en el caso de Freepik)
       if (result.taskId && (!result.url || result.url === '') && result.status !== 'FAILED') {
-        console.log('Tarea de generación iniciada, esperando resultados...', result);
+        logger.info('Tarea de generación iniciada, esperando resultados...', result);
         
         // Es una tarea pendiente, actualizar el mensaje de estado
         setProgressMessage(`Generando imagen con ${result.provider}. Esto puede tardar unos segundos...`);
@@ -175,11 +176,11 @@ export default function ImageGeneratorPage() {
       
       // Si no tenemos URL (pero no es una tarea pendiente), es un error
       if (!result || !result.url) {
-        console.error('Error en generación de imagen:', result);
+        logger.error('Error en generación de imagen:', result);
         throw new Error('La URL de la imagen generada no está disponible');
       }
       
-      console.log('Imagen generada con éxito:', result);
+      logger.info('Imagen generada con éxito:', result);
 
       // Actualizar inmediatamente el estado con la nueva imagen para mostrarla
       setGeneratedImages(prev => [result, ...prev]);
@@ -199,7 +200,7 @@ export default function ImageGeneratorPage() {
           );
         }
       } catch (saveError) {
-        console.error('Error saving image to storage:', saveError);
+        logger.error('Error saving image to storage:', saveError);
         // No mostramos error aquí para no interrumpir la experiencia del usuario
         // La imagen ya está en la pantalla
       }
@@ -214,7 +215,7 @@ export default function ImageGeneratorPage() {
       // Reset the progress message
       setProgressMessage('');
     } catch (error) {
-      console.error('Error generating image:', error);
+      logger.error('Error generating image:', error);
       toast({
         title: 'Generation failed',
         description: 'Could not generate the image. Please try again.',
@@ -331,7 +332,7 @@ export default function ImageGeneratorPage() {
       if (values.apiProvider === 'piapi' && values.cameraMovements && values.cameraMovements.length > 0) {
         // Convertir el array de movimientos a string delimitado por comas
         cameraMovementsString = values.cameraMovements.join(',');
-        console.log('Camera movements formatted:', cameraMovementsString);
+        logger.info('Camera movements formatted:', cameraMovementsString);
       }
       
       // Call the API to generate the video
@@ -351,11 +352,11 @@ export default function ImageGeneratorPage() {
 
       // Verificar que la URL exista
       if (!result || !result.url) {
-        console.error('Video generation returned invalid result:', result);
+        logger.error('Video generation returned invalid result:', result);
         throw new Error('Generated video URL is missing');
       }
       
-      console.log('Video generated successfully:', result);
+      logger.info('Video generated successfully:', result);
 
       // Actualizar inmediatamente el estado con el nuevo video para mostrarlo
       setGeneratedVideos(prev => [result, ...prev]);
@@ -375,7 +376,7 @@ export default function ImageGeneratorPage() {
           );
         }
       } catch (saveError) {
-        console.error('Error saving video to storage:', saveError);
+        logger.error('Error saving video to storage:', saveError);
         // No mostramos error aquí para no interrumpir la experiencia del usuario
         // El video ya está en la pantalla
       }
@@ -390,7 +391,7 @@ export default function ImageGeneratorPage() {
       // Reset the progress message
       setProgressMessage('');
     } catch (error) {
-      console.error('Error generating video:', error);
+      logger.error('Error generating video:', error);
       toast({
         title: 'Generation failed',
         description: 'Could not generate the video. Please try again.',
@@ -412,7 +413,7 @@ export default function ImageGeneratorPage() {
         (typeof img.provider === 'string' && img.provider.includes('processing')));
       
       if (pendingImages.length > 0) {
-        console.log(`Verificando ${pendingImages.length} tareas pendientes...`);
+        logger.info(`Verificando ${pendingImages.length} tareas pendientes...`);
         
         for (const pendingImg of pendingImages) {
           if (pendingImg.taskId) {
@@ -422,7 +423,7 @@ export default function ImageGeneratorPage() {
                 ? 'kling' 
                 : 'fal';
               
-              console.log(`Verificando tarea ${pendingImg.taskId} de ${provider}...`);
+              logger.info(`Verificando tarea ${pendingImg.taskId} de ${provider}...`);
               
               // Verificar estado actual
               const result = await checkTaskStatus(
@@ -431,7 +432,7 @@ export default function ImageGeneratorPage() {
               );
               
               if (result && result.url) {
-                console.log('Imagen generada con éxito:', result);
+                logger.info('Imagen generada con éxito:', result);
                 
                 // Actualizar en el estado
                 setGeneratedImages(prev => 
@@ -463,7 +464,7 @@ export default function ImageGeneratorPage() {
                 saveMediaToLocalStorage('image', [updatedImage]);
               } 
               else if (result && (result.status === 'FAILED' || result.status === 'failed')) {
-                console.error('La generación falló:', pendingImg.taskId);
+                logger.error('La generación falló:', pendingImg.taskId);
                 
                 // Marcar como fallida
                 setGeneratedImages(prev => 
@@ -478,7 +479,7 @@ export default function ImageGeneratorPage() {
                 );
               }
             } catch (error) {
-              console.error('Error al verificar tarea:', error);
+              logger.error('Error al verificar tarea:', error);
             }
           }
         }
@@ -500,8 +501,8 @@ export default function ImageGeneratorPage() {
       try {
         const savedImages = await getGeneratedImages();
         if (savedImages.length > 0) {
-          console.log(`Cargadas ${savedImages.length} imágenes guardadas`);
-          console.log('Imágenes obtenidas:', savedImages);
+          logger.info(`Cargadas ${savedImages.length} imágenes guardadas`);
+          logger.info('Imágenes obtenidas:', savedImages);
           
           // Actualizar el estado directamente con todas las imágenes para evitar problemas de sincronización
           setGeneratedImages(savedImages);
@@ -516,7 +517,7 @@ export default function ImageGeneratorPage() {
           }
         }
       } catch (error) {
-        console.error('Error getting generated images:', error);
+        logger.error('Error getting generated images:', error);
         // No mostrar notificación de error para evitar abrumar al usuario
       }
 
@@ -524,7 +525,7 @@ export default function ImageGeneratorPage() {
       try {
         const savedVideos = await getGeneratedVideos();
         if (savedVideos.length > 0) {
-          console.log(`Cargados ${savedVideos.length} videos guardados`);
+          logger.info(`Cargados ${savedVideos.length} videos guardados`);
           
           setGeneratedVideos(prev => {
             // Combine with any existing videos, avoiding duplicates by URL
@@ -543,7 +544,7 @@ export default function ImageGeneratorPage() {
           }
         }
       } catch (error) {
-        console.error('Error getting generated videos:', error);
+        logger.error('Error getting generated videos:', error);
         // No mostrar notificación de error para evitar abrumar al usuario
       }
     }
@@ -621,10 +622,10 @@ export default function ImageGeneratorPage() {
       
       // Mensaje adicional si se usó almacenamiento local
       if (storageLocation === 'device') {
-        console.log(`${type} saved to localStorage instead of Firestore due to permission issues`);
+        logger.info(`${type} saved to localStorage instead of Firestore due to permission issues`);
       }
     } catch (error) {
-      console.error(`Error saving ${type}:`, error);
+      logger.error(`Error saving ${type}:`, error);
       
       // Mensaje de error más específico
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -1331,7 +1332,7 @@ export default function ImageGeneratorPage() {
                               alt={`Generated image ${index + 1}`} 
                               className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
                               onError={(e) => {
-                                console.error(`Error loading image: ${image.url}`);
+                                logger.error(`Error loading image: ${image.url}`);
                                 // Establecer una imagen de fallback local
                                 e.currentTarget.src = '/assets/boostify_music_icon.png';
                               }}
@@ -1481,7 +1482,7 @@ export default function ImageGeneratorPage() {
                   alt="Generated image" 
                   className="max-w-full max-h-[400px] rounded-lg object-contain"
                   onError={(e) => {
-                    console.error(`Error loading detail image: ${selectedImage.url}`);
+                    logger.error(`Error loading detail image: ${selectedImage.url}`);
                     e.currentTarget.src = '/assets/boostify_music_icon.png';
                   }}
                 />

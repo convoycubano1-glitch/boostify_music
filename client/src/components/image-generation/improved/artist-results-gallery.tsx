@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Artist Results Gallery Component
  * 
  * Este componente muestra todos los resultados guardados del proceso de creación
@@ -104,7 +105,7 @@ export function ArtistResultsGallery({ language = 'en', onRestart }: ArtistResul
         description: t.shareSuccess,
       });
     }).catch((err) => {
-      console.error('Error sharing image URL:', err);
+      logger.error('Error sharing image URL:', err);
       toast({
         title: "Error",
         description: "Could not copy image URL to clipboard",

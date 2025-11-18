@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * Face Analysis Service - Analiza fotos del artista para extraer rasgos faciales detallados
  * Usa Gemini Vision para análisis preciso de características faciales
@@ -65,7 +66,7 @@ export interface FaceAnalysis {
  */
 export async function analyzeFaceFeatures(photos: string[]): Promise<FaceAnalysis> {
   try {
-    console.log(`🔍 Analizando ${photos.length} fotos del artista...`);
+    logger.info(`🔍 Analizando ${photos.length} fotos del artista...`);
     
     // Usar Gemini Vision para análisis detallado
     const response = await fetch('/api/gemini/analyze-face', {
@@ -83,11 +84,11 @@ export async function analyzeFaceFeatures(photos: string[]): Promise<FaceAnalysi
     }
 
     const data = await response.json();
-    console.log('✅ Análisis facial completado');
+    logger.info('✅ Análisis facial completado');
     
     return data.analysis;
   } catch (error) {
-    console.error('Error en análisis facial:', error);
+    logger.error('Error en análisis facial:', error);
     throw error;
   }
 }

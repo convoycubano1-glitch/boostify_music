@@ -1,4 +1,5 @@
 import { Card } from "../ui/card";
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -95,13 +96,13 @@ export function SocialSyncPlugin() {
   };
 
   const handlePublishNow = () => {
-    console.log("Publishing to platforms:", selectedPlatforms);
-    console.log("Content:", newPostContent);
+    logger.info("Publishing to platforms:", selectedPlatforms);
+    logger.info("Content:", newPostContent);
     setNewPostContent("");
   };
 
   const handleSchedule = () => {
-    console.log("Scheduling post for platforms:", selectedPlatforms);
+    logger.info("Scheduling post for platforms:", selectedPlatforms);
   };
 
   // Format date function
@@ -184,7 +185,7 @@ export function SocialSyncPlugin() {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => console.log("Sync all platforms")}
+                onClick={() => logger.info("Sync all platforms")}
               >
                 <RefreshCcw className="h-4 w-4 mr-2" />
                 Sync All Platforms

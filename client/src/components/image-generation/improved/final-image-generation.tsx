@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Componente para la generación final de imágenes artísticas
  * 
  * Este componente utiliza toda la información recopilada en los pasos anteriores
@@ -161,7 +162,7 @@ export function FinalImageGeneration({ onComplete }: FinalImageGenerationProps) 
         setError('No se pudo iniciar la generación');
       }
     } catch (err: any) {
-      console.error('Error al generar imagen:', err);
+      logger.error('Error al generar imagen:', err);
       setIsGenerating(false);
       setError(err.message || 'Error al generar la imagen');
     }
@@ -200,7 +201,7 @@ export function FinalImageGeneration({ onComplete }: FinalImageGenerationProps) 
         }
       }
     } catch (err) {
-      console.error('Error al verificar estado:', err);
+      logger.error('Error al verificar estado:', err);
       setIsGenerating(false);
       setError('Error al verificar el estado de la generación');
     }

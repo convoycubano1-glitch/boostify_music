@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente CharacterDialogueEditor
  * Editor para gestionar diálogos de personajes en la escena
  */

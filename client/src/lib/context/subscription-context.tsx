@@ -3,9 +3,13 @@
  */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { logger } from "../logger";
 import { useAuth } from '../../hooks/use-auth';
+import { logger } from "../logger";
 import { db } from '../firebase';
+import { logger } from "../logger";
 import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { logger } from "../logger";
 
 // Tipos de planes disponibles
 export type PlanType = 'free' | 'basic' | 'pro' | 'premium';
@@ -135,7 +139,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
                 setIsLoading(false);
               },
               (err) => {
-                console.error('Error al suscribirse a actualizaciones de suscripción:', err);
+                logger.error('Error al suscribirse a actualizaciones de suscripción:', err);
                 setError('Error al cargar datos de suscripción');
                 setIsLoading(false);
               }
@@ -151,7 +155,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           setIsLoading(false);
         }
       } catch (err: any) {
-        console.error('Error al cargar suscripción:', err);
+        logger.error('Error al cargar suscripción:', err);
         setError(err.message || 'Error al cargar datos de suscripción');
         setIsLoading(false);
       }
@@ -212,7 +216,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setSubscription(null);
       }
     } catch (err: any) {
-      console.error('Error al recargar suscripción:', err);
+      logger.error('Error al recargar suscripción:', err);
       setError(err.message || 'Error al recargar datos de suscripción');
     } finally {
       setIsLoading(false);

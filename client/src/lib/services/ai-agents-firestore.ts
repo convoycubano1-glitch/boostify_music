@@ -1,5 +1,7 @@
 import { collection, addDoc, serverTimestamp, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { logger } from "../logger";
 import { db } from '../firebase';
+import { logger } from "../logger";
 
 // Firestore collections for each agent type
 export const AGENT_FIRESTORE_COLLECTIONS = {
@@ -98,10 +100,10 @@ class AIAgentsFirestoreService {
 
       const docRef = await addDoc(collection(db, collectionName), docData);
       
-      console.log(`✅ ${result.agentType} result saved to Firestore:`, docRef.id);
+      logger.info(`✅ ${result.agentType} result saved to Firestore:`, docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error(`Error saving ${result.agentType} result to Firestore:`, error);
+      logger.error(`Error saving ${result.agentType} result to Firestore:`, error);
       throw error;
     }
   }
@@ -132,7 +134,7 @@ class AIAgentsFirestoreService {
 
       return results;
     } catch (error) {
-      console.error(`Error getting recent ${agentType} results:`, error);
+      logger.error(`Error getting recent ${agentType} results:`, error);
       return [];
     }
   }

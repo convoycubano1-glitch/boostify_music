@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';

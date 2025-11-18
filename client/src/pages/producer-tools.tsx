@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -34,17 +35,17 @@ import { ModernAudioSuite } from "../components/music/modern-audio-suite";
 
 async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
   try {
-    console.log("Starting to fetch musician images from musician_images collection...");
+    logger.info("Starting to fetch musician images from musician_images collection...");
     const imagesRef = collection(db, "musician_images");
     const querySnapshot = await getDocs(imagesRef);
 
-    console.log("Total documents found:", querySnapshot.size);
+    logger.info("Total documents found:", querySnapshot.size);
 
     const images: { url: string; category: string; }[] = [];
 
     querySnapshot.forEach(doc => {
       const data = doc.data();
-      console.log("Document data:", data);
+      logger.info("Document data:", data);
 
       // Verificar que los campos necesarios existen y usar 'url' en lugar de 'imageUrl'
       if (data && data.url && data.category) {
@@ -55,10 +56,10 @@ async function getStoredMusicianImages(): Promise<{ url: string; category: strin
       }
     });
 
-    console.log("Retrieved stored images:", images);
+    logger.info("Retrieved stored images:", images);
     return images;
   } catch (error) {
-    console.error("Error fetching musician images:", error);
+    logger.error("Error fetching musician images:", error);
     return [];
   }
 }
@@ -286,24 +287,24 @@ export default function ProducerToolsPage() {
 
   const loadFirestoreMusicians = async () => {
     try {
-      console.log("Fetching from Firestore collections (musicians and musician_images)...");
+      logger.info("Fetching from Firestore collections (musicians and musician_images)...");
       
       // Load from musicians collection
       const musiciansRef = collection(db, "musicians");
       const musiciansSnapshot = await getDocs(musiciansRef);
-      console.log(`Found ${musiciansSnapshot.size} documents in Firestore musicians collection`);
+      logger.info(`Found ${musiciansSnapshot.size} documents in Firestore musicians collection`);
       
       // Load from musician_images collection
       const imagesRef = collection(db, "musician_images");
       const imagesSnapshot = await getDocs(imagesRef);
-      console.log(`Found ${imagesSnapshot.size} documents in Firestore musician_images collection`);
+      logger.info(`Found ${imagesSnapshot.size} documents in Firestore musician_images collection`);
       
       const firestoreMusicians: MusicianService[] = [];
       
       // Process musicians collection
       musiciansSnapshot.forEach(doc => {
         const data = doc.data();
-        console.log("Firestore musician doc:", doc.id, data);
+        logger.info("Firestore musician doc:", doc.id, data);
         
         firestoreMusicians.push({
           id: `firestore-${doc.id}`,
@@ -323,7 +324,7 @@ export default function ProducerToolsPage() {
       // Process musician_images collection (reference images)
       imagesSnapshot.forEach(doc => {
         const data = doc.data();
-        console.log("Firestore musician image doc:", doc.id, data);
+        logger.info("Firestore musician image doc:", doc.id, data);
         
         // Create a musician from the image data
         firestoreMusicians.push({
@@ -341,17 +342,17 @@ export default function ProducerToolsPage() {
         });
       });
       
-      console.log(`Loaded ${firestoreMusicians.length} total musicians from Firestore`);
+      logger.info(`Loaded ${firestoreMusicians.length} total musicians from Firestore`);
       return firestoreMusicians;
     } catch (error) {
-      console.error("Error loading Firestore musicians:", error);
+      logger.error("Error loading Firestore musicians:", error);
       return [];
     }
   };
 
   const loadMusicianImages = async () => {
     try {
-      console.log("Loading musicians from PostgreSQL and Firestore...");
+      logger.info("Loading musicians from PostgreSQL and Firestore...");
       setIsLoadingImages(true);
 
       const [postgresResponse, firestoreMusicians] = await Promise.all([
@@ -376,24 +377,24 @@ export default function ProducerToolsPage() {
           genres: m.genres || []
         }));
 
-        console.log(`Loaded ${dbMusicians.length} musicians from PostgreSQL`);
+        logger.info(`Loaded ${dbMusicians.length} musicians from PostgreSQL`);
         allMusicians = [...dbMusicians];
       }
 
       if (firestoreMusicians.length > 0) {
-        console.log(`Loaded ${firestoreMusicians.length} musicians from Firestore`);
+        logger.info(`Loaded ${firestoreMusicians.length} musicians from Firestore`);
         allMusicians = [...allMusicians, ...firestoreMusicians];
       }
 
       if (allMusicians.length > 0) {
-        console.log(`Total musicians loaded: ${allMusicians.length}`);
+        logger.info(`Total musicians loaded: ${allMusicians.length}`);
         setMusiciansState(allMusicians);
       } else {
-        console.log("No musicians found, using defaults");
+        logger.info("No musicians found, using defaults");
         setMusiciansState(musicians);
       }
     } catch (error) {
-      console.error("Error loading musicians:", error);
+      logger.error("Error loading musicians:", error);
       toast({
         title: "Error",
         description: "Failed to load musicians",
@@ -447,7 +448,7 @@ export default function ProducerToolsPage() {
       // Could save to Firebase or provide download link
 
     } catch (error) {
-      console.error("Error mastering track:", error);
+      logger.error("Error mastering track:", error);
       toast({
         title: "Error",
         description: "Failed to master track. Please try again.",
@@ -492,7 +493,7 @@ export default function ProducerToolsPage() {
       }, 5000);
 
     } catch (error) {
-      console.error("Error generating music:", error);
+      logger.error("Error generating music:", error);
       toast({
         title: "Error",
         description: "Failed to generate music. Please try again.",
@@ -542,7 +543,7 @@ export default function ProducerToolsPage() {
       }
 
     } catch (error) {
-      console.error("Error generating cover:", error);
+      logger.error("Error generating cover:", error);
       toast({
         title: "Error",
         description: "Failed to generate cover art. Please try again.",
@@ -1002,7 +1003,7 @@ async function saveMusicianImage(data: ImageData) {
       createdAt: serverTimestamp()
     });
   } catch (error) {
-    console.error("Error saving image to Firestore:", error);
+    logger.error("Error saving image to Firestore:", error);
     //Handle the error appropriately, perhaps display a toast message.
   }
 }

@@ -1,4 +1,5 @@
 import { Card } from "../ui/card";
+import { logger } from "../lib/logger";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Lightbulb, RefreshCw, Wand2, Sparkles, TrendingUp } from "lucide-react";

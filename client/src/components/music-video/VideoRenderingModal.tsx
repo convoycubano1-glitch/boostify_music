@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -85,7 +86,7 @@ export function VideoRenderingModal({
             }
           }
         } catch (err: any) {
-          console.error('Error verificando estado:', err);
+          logger.error('Error verificando estado:', err);
           setError(err.message);
           clearInterval(interval);
         }
@@ -108,7 +109,7 @@ export function VideoRenderingModal({
         }),
       });
     } catch (err) {
-      console.error('Error actualizando proyecto:', err);
+      logger.error('Error actualizando proyecto:', err);
     }
   };
 
@@ -162,7 +163,7 @@ export function VideoRenderingModal({
         description: "Tu video está siendo procesado...",
       });
     } catch (err: any) {
-      console.error('Error iniciando renderizado:', err);
+      logger.error('Error iniciando renderizado:', err);
       setError(err.message);
       setStatus('failed');
       toast({

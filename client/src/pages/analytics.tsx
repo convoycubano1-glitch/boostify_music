@@ -1,4 +1,5 @@
 import { Card } from "../components/ui/card";
+import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Header } from "../components/layout/header";
@@ -156,7 +157,7 @@ export default function AnalyticsPage() {
         description: "The report has been generated and downloaded successfully.",
       });
     } catch (error) {
-      console.error('Error exporting report:', error);
+      logger.error('Error exporting report:', error);
       toast({
         title: "Error",
         description: "Could not generate the report. Please try again.",

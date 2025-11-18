@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { logger } from "../lib/logger";
 
 interface ImagePreloaderProps {
   urls: string[];
@@ -55,7 +56,7 @@ export function ImagePreloader({
       const allCached = urls.every(url => cachedImages[url]);
       
       if (allCached) {
-        console.log('✅ Todas las imágenes ya están en caché, omitiendo precarga');
+        logger.info('✅ Todas las imágenes ya están en caché, omitiendo precarga');
         successCountRef.current = urls.length;
         setLoaded(urls.length);
         onComplete?.(urls.length, 0);
@@ -71,7 +72,7 @@ export function ImagePreloader({
       if (!isMountedRef.current) return;
       
       if (successCountRef.current + failureCountRef.current >= totalImagesRef.current) {
-        console.log(`✅ Precarga completada: ${successCountRef.current} éxitos, ${failureCountRef.current} fallos`);
+        logger.info(`✅ Precarga completada: ${successCountRef.current} éxitos, ${failureCountRef.current} fallos`);
         onComplete?.(successCountRef.current, failureCountRef.current);
         setIsComplete(true);
       }
@@ -81,7 +82,7 @@ export function ImagePreloader({
     urls.forEach((url, index) => {
       // Saltamos URLs vacías o inválidas
       if (!url || url === 'undefined' || url === 'null') {
-        console.warn(`URL inválida en índice ${index}`);
+        logger.warn(`URL inválida en índice ${index}`);
         failureCountRef.current++;
         setFailed(prev => prev + 1);
         checkComplete();
@@ -92,7 +93,7 @@ export function ImagePreloader({
       try {
         const cachedImages = JSON.parse(sessionStorage.getItem('cachedImages') || '{}');
         if (cachedImages[url]) {
-          console.log(`🔄 Imagen ya cargada previamente: ${url.substring(0, 30)}...`);
+          logger.info(`🔄 Imagen ya cargada previamente: ${url.substring(0, 30)}...`);
           successCountRef.current++;
           setLoaded(prev => prev + 1);
           checkComplete();
@@ -132,7 +133,7 @@ export function ImagePreloader({
         if (!isMountedRef.current) return;
         failureCountRef.current++;
         setFailed(prev => prev + 1);
-        console.warn(`Error al precargar imagen: ${url}`);
+        logger.warn(`Error al precargar imagen: ${url}`);
         checkComplete();
       };
       
@@ -147,7 +148,7 @@ export function ImagePreloader({
       if (!isComplete) {
         const remainingImages = totalImagesRef.current - (successCountRef.current + failureCountRef.current);
         if (remainingImages > 0) {
-          console.warn(`⚠️ Timeout de precarga para ${remainingImages} imágenes`);
+          logger.warn(`⚠️ Timeout de precarga para ${remainingImages} imágenes`);
           failureCountRef.current += remainingImages;
           onComplete?.(successCountRef.current, failureCountRef.current);
           setIsComplete(true);

@@ -4,6 +4,7 @@
  */
 
 import { analyzeFaceFeatures, generateMasterCharacterPrompt, type FaceAnalysis } from './face-analyzer';
+import { logger } from "../logger";
 
 export interface MasterCharacter {
   imageUrl: string;
@@ -22,17 +23,17 @@ export async function generateMasterCharacter(
   onProgress?: (stage: string, progress: number) => void
 ): Promise<MasterCharacter> {
   try {
-    console.log('🎭 Iniciando generación de Master Character con Nano Banana...');
+    logger.info('🎭 Iniciando generación de Master Character con Nano Banana...');
     
     // Paso 1: Analizar características faciales (20%)
     onProgress?.('Analizando rasgos faciales con IA...', 20);
     const analysis = await analyzeFaceFeatures(artistPhotos);
-    console.log('✅ Análisis facial completado');
+    logger.info('✅ Análisis facial completado');
     
     // Paso 2: Generar prompt optimizado (30%)
     onProgress?.('Creando prompt de generación optimizado...', 30);
     const characterPrompt = generateMasterCharacterPrompt(analysis, directorStyle);
-    console.log('📝 Prompt generado:', characterPrompt.substring(0, 100) + '...');
+    logger.info('📝 Prompt generado:', characterPrompt.substring(0, 100) + '...');
     
     // Paso 3: Generar imagen con Nano Banana (40% - 90%)
     onProgress?.('Generando personaje consistente con Nano Banana...', 40);
@@ -70,12 +71,12 @@ export async function generateMasterCharacter(
     };
     
     onProgress?.('Master Character generado exitosamente', 100);
-    console.log('✅ Master Character generado con Nano Banana:', masterCharacter.imageUrl.substring(0, 100) + '...');
+    logger.info('✅ Master Character generado con Nano Banana:', masterCharacter.imageUrl.substring(0, 100) + '...');
     
     return masterCharacter;
     
   } catch (error) {
-    console.error('❌ Error generando Master Character:', error);
+    logger.error('❌ Error generando Master Character:', error);
     throw error;
   }
 }
@@ -123,7 +124,7 @@ Maintain the exact same person with all their facial features, just adapt to the
         }
       }
     } catch (error) {
-      console.error('Error generando variante:', error);
+      logger.error('Error generando variante:', error);
     }
   }
   

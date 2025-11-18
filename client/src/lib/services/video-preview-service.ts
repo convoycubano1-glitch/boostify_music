@@ -4,6 +4,7 @@
  */
 
 import type { TimelineClip } from '../../components/professional-editor/EnhancedTimeline';
+import { logger } from "../logger";
 
 export interface PreviewFrame {
   time: number;
@@ -153,7 +154,7 @@ export async function generateTimelineThumbnails(
         thumbnails.push(frame);
       }
     } catch (error) {
-      console.error(`Error generando thumbnail en ${time}s:`, error);
+      logger.error(`Error generando thumbnail en ${time}s:`, error);
     }
   }
 

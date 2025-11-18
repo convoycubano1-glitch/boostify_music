@@ -1,19 +1,21 @@
 import { auth } from "../firebase";
+import { logger } from "../logger";
 import { createSampleCourses } from "./create-sample-courses";
+import { logger } from "../logger";
 
 async function createCourses() {
   try {
     // User ID from the logs
     const userId = "coqofMnNMQUmnqU39h5EEO05Lwi1";
     
-    console.log("Starting course creation...");
+    logger.info("Starting course creation...");
     await createSampleCourses(userId);
-    console.log("Course creation completed!");
+    logger.info("Course creation completed!");
     
     // Reload the page to see the new courses
     window.location.reload();
   } catch (error) {
-    console.error("Failed to create courses:", error);
+    logger.error("Failed to create courses:", error);
   }
 }
 

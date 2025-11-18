@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { logger } from "@/lib/logger";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -52,7 +53,7 @@ export function ImageStyleAdvisor() {
         const results = await imageAdvisorService.getSavedResults();
         return results;
       } catch (err) {
-        console.error("Error retrieving saved results:", err);
+        logger.error("Error retrieving saved results:", err);
         // No mostramos toast aquí para evitar errores en la carga inicial
         return [];
       }
@@ -95,7 +96,7 @@ export function ImageStyleAdvisor() {
     },
     onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : 'Error al analizar la imagen';
-      console.error("Error analyzing image:", error);
+      logger.error("Error analyzing image:", error);
       
       toast({
         title: "Error",
@@ -139,7 +140,7 @@ export function ImageStyleAdvisor() {
     },
     onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : 'Error al generar recomendaciones';
-      console.error("Error generating style recommendations:", error);
+      logger.error("Error generating style recommendations:", error);
       
       toast({
         title: "Error",
@@ -188,7 +189,7 @@ export function ImageStyleAdvisor() {
         genre: artistStyle.genre
       });
     } catch (error) {
-      console.error("Error generating style recommendations:", error);
+      logger.error("Error generating style recommendations:", error);
     } finally {
       setIsGenerating(false);
     }
@@ -252,7 +253,7 @@ export function ImageStyleAdvisor() {
     try {
       return new Date(date).toLocaleString();
     } catch (error) {
-      console.error("Error formatting date:", error);
+      logger.error("Error formatting date:", error);
       return "Invalid date";
     }
   };

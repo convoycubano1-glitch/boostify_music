@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { logger } from "@/lib/logger";
 import { PostCard } from "./post-card";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
@@ -54,7 +55,7 @@ export function PostFeed() {
         description: "No se pudo crear la publicación",
         variant: "destructive",
       });
-      console.error(error);
+      logger.error(error);
     },
   });
 

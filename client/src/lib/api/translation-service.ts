@@ -1,5 +1,7 @@
 import { openai } from "../openai";
+import { logger } from "./logger";
 import { getAuthToken } from "../firebase";
+import { logger } from "./logger";
 
 interface TranslationRequest {
   text: string;
@@ -39,7 +41,7 @@ export async function translateText({ text, targetLanguage, sourceLanguage }: Tr
         return await response.json();
       }
     } catch (error) {
-      console.warn('Backend translation failed, falling back to OpenAI:', error);
+      logger.warn('Backend translation failed, falling back to OpenAI:', error);
     }
 
     // Fallback to OpenAI for translation
@@ -65,7 +67,7 @@ export async function translateText({ text, targetLanguage, sourceLanguage }: Tr
       confidence: 0.9
     };
   } catch (error: any) {
-    console.error('Translation error:', error);
+    logger.error('Translation error:', error);
     throw new Error(error.message || 'Failed to translate text');
   }
 }
@@ -93,7 +95,7 @@ export async function detectLanguage(text: string): Promise<string> {
         return language;
       }
     } catch (error) {
-      console.warn('Backend language detection failed, falling back to OpenAI:', error);
+      logger.warn('Backend language detection failed, falling back to OpenAI:', error);
     }
 
     // Fallback to OpenAI for language detection
@@ -115,7 +117,7 @@ export async function detectLanguage(text: string): Promise<string> {
     return detectedLanguage;
 
   } catch (error: any) {
-    console.error('Language detection error:', error);
+    logger.error('Language detection error:', error);
     throw new Error(error.message || 'Failed to detect language');
   }
 }

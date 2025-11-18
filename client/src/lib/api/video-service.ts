@@ -1,5 +1,7 @@
 import axios from 'axios';
+import { logger } from "../logger";
 import { UpscaleOptions } from '../../components/music-video/final-rendering';
+import { logger } from "../logger";
 
 /**
  * Interfaz para los resultados de las operaciones de video
@@ -79,7 +81,7 @@ export async function upscaleVideo(
     return checkStatus();
     
   } catch (error) {
-    console.error('Error en upscaleVideo:', error);
+    logger.error('Error en upscaleVideo:', error);
     
     return {
       success: false,
@@ -124,7 +126,7 @@ export async function saveEnhancedVideo(
     };
     
   } catch (error) {
-    console.error('Error guardando video mejorado:', error);
+    logger.error('Error guardando video mejorado:', error);
     
     return {
       success: false,
@@ -160,7 +162,7 @@ export async function getEnhancedVideos(userId: string): Promise<{
     };
     
   } catch (error) {
-    console.error('Error obteniendo videos mejorados:', error);
+    logger.error('Error obteniendo videos mejorados:', error);
     
     return {
       success: false,
@@ -187,7 +189,7 @@ export async function checkVideoStatus(taskId: string): Promise<VideoOperationRe
       error: response.data.error
     };
   } catch (error) {
-    console.error('Error verificando estado del video:', error);
+    logger.error('Error verificando estado del video:', error);
     
     return {
       success: false,
@@ -231,7 +233,7 @@ export async function generateVideo(options: VideoGenerationOptions): Promise<Vi
       status: 'pending'
     };
   } catch (error) {
-    console.error('Error generando video:', error);
+    logger.error('Error generando video:', error);
     
     return {
       success: false,

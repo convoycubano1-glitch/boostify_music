@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -148,7 +149,7 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
       strategies.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       setSavedStrategies(strategies);
     } catch (error) {
-      console.error("Error fetching strategies:", error);
+      logger.error("Error fetching strategies:", error);
     }
   };
 
@@ -187,7 +188,7 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
       const data = await response.json();
       setGeneratedFocus(data.strategy);
     } catch (error) {
-      console.error('Error generating strategy:', error);
+      logger.error('Error generating strategy:', error);
       toast({
         title: "Error",
         description: "Could not generate strategy. Please try again.",
@@ -231,7 +232,7 @@ export function StrategyDialog({ open, onOpenChange, onStrategyUpdate }: Strateg
       onOpenChange(false);
       onStrategyUpdate();
     } catch (error) {
-      console.error('Error saving strategy:', error);
+      logger.error('Error saving strategy:', error);
       toast({
         title: "Error",
         description: "Could not save strategy. Please try again.",

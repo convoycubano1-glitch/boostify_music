@@ -1,6 +1,9 @@
 import { db } from "@db";
+import { logger } from "./logger";
 import { bookings, audioDemos } from "@db/schema";
+import { logger } from "./logger";
 import { auth } from "../firebase";
+import { logger } from "./logger";
 
 export async function createBooking(bookingData: {
   musicianId: string;
@@ -51,7 +54,7 @@ export async function createBooking(bookingData: {
 
     return booking;
   } catch (error) {
-    console.error("Error creating booking:", error);
+    logger.error("Error creating booking:", error);
     throw error;
   }
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { logger } from "../lib/logger";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -42,7 +43,7 @@ export default function AffiliateRedirectPage() {
         const response = await axios.get(`/api/affiliate/track/${linkIdOrSlug}`);
         return response.data;
       } catch (error: any) {
-        console.error("Error fetching affiliate link:", error);
+        logger.error("Error fetching affiliate link:", error);
         if (error?.response?.status === 404) {
           setLinkError("El enlace no existe o ha sido desactivado.");
         } else {

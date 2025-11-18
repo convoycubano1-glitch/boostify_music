@@ -1,4 +1,5 @@
 import { Button } from "../components/ui/button";
+import { logger } from "../lib/logger";
 import { Input } from "../components/ui/input";
 import { Card } from "../components/ui/card";
 import { useState } from "react";
@@ -274,7 +275,7 @@ export default function YoutubeViewsPage() {
         description: `Your video scored ${data.score}/100`,
       });
     } catch (error: any) {
-      console.error('Pre-launch error:', error);
+      logger.error('Pre-launch error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to analyze video concept",
@@ -325,7 +326,7 @@ export default function YoutubeViewsPage() {
         description: `Found ${data.keywords.length} optimized keywords`,
       });
     } catch (error: any) {
-      console.error('Keywords error:', error);
+      logger.error('Keywords error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate keywords",
@@ -375,7 +376,7 @@ export default function YoutubeViewsPage() {
         description: `Your title scored ${data.score}/100`,
       });
     } catch (error: any) {
-      console.error('Title analysis error:', error);
+      logger.error('Title analysis error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to analyze title",
@@ -427,7 +428,7 @@ export default function YoutubeViewsPage() {
         description: `Found ${data.videoIdeas.length} video ideas`,
       });
     } catch (error: any) {
-      console.error('Content ideas error:', error);
+      logger.error('Content ideas error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate content ideas",
@@ -480,7 +481,7 @@ export default function YoutubeViewsPage() {
         description: `Created ${data.thumbnails.length} AI thumbnails`,
       });
     } catch (error: any) {
-      console.error('Thumbnail generation error:', error);
+      logger.error('Thumbnail generation error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate thumbnails",
@@ -529,7 +530,7 @@ export default function YoutubeViewsPage() {
         description: `Analyzed ${data.channelName}'s strategy`,
       });
     } catch (error: any) {
-      console.error('Competitor analysis error:', error);
+      logger.error('Competitor analysis error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to analyze competitor",
@@ -578,7 +579,7 @@ export default function YoutubeViewsPage() {
         description: `Found ${data.trends.length} emerging trends`,
       });
     } catch (error: any) {
-      console.error('Trend prediction error:', error);
+      logger.error('Trend prediction error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to predict trends",
@@ -627,7 +628,7 @@ export default function YoutubeViewsPage() {
         description: `Identified ${data.shortsOpportunities.length} viral moments`,
       });
     } catch (error: any) {
-      console.error('Transcript extraction error:', error);
+      logger.error('Transcript extraction error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to extract transcript",
@@ -681,7 +682,7 @@ export default function YoutubeViewsPage() {
       setNewChannelName("");
       loadTrackedChannels();
     } catch (error: any) {
-      console.error('Add channel error:', error);
+      logger.error('Add channel error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to add channel",
@@ -708,7 +709,7 @@ export default function YoutubeViewsPage() {
         setTrackedChannels(data.channels || []);
       }
     } catch (error) {
-      console.error('Load channels error:', error);
+      logger.error('Load channels error:', error);
     }
   };
 
@@ -727,7 +728,7 @@ export default function YoutubeViewsPage() {
         setChannelAnalytics(data);
       }
     } catch (error) {
-      console.error('Load analytics error:', error);
+      logger.error('Load analytics error:', error);
     }
   };
 
@@ -771,7 +772,7 @@ export default function YoutubeViewsPage() {
         description: `Created ${data.totalVideos} video plan`,
       });
     } catch (error: any) {
-      console.error('Calendar generation error:', error);
+      logger.error('Calendar generation error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate calendar",
@@ -820,7 +821,7 @@ export default function YoutubeViewsPage() {
         description: `Performance score: ${data.performanceScore}/100`,
       });
     } catch (error: any) {
-      console.error('Optimization check error:', error);
+      logger.error('Optimization check error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to check optimization",
@@ -856,7 +857,7 @@ export default function YoutubeViewsPage() {
       });
       loadApiKeys();
     } catch (error: any) {
-      console.error('API key generation error:', error);
+      logger.error('API key generation error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate API key",
@@ -882,7 +883,7 @@ export default function YoutubeViewsPage() {
         setApiKeys(data.keys || []);
       }
     } catch (error) {
-      console.error('Load API keys error:', error);
+      logger.error('Load API keys error:', error);
     }
   };
 

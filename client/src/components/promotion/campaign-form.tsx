@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -75,7 +76,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
       const data = await response.json();
       setAiSuggestion(data.suggestion);
     } catch (error) {
-      console.error("Error getting AI suggestion:", error);
+      logger.error("Error getting AI suggestion:", error);
       toast({
         title: "Error",
         description: "Failed to get AI suggestions",
@@ -92,7 +93,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
         throw new Error("User not authenticated");
       }
 
-      console.log('Attempting to save campaign:', { ...data, userId: user.uid });
+      logger.info('Attempting to save campaign:', { ...data, userId: user.uid });
 
       // Reference to the campaigns collection
       const campaignsRef = collection(db, "campaigns");
@@ -106,7 +107,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
         aiSuggestion: aiSuggestion || null
       });
 
-      console.log('Campaign saved with ID:', docRef.id);
+      logger.info('Campaign saved with ID:', docRef.id);
 
       toast({
         title: "Success",
@@ -119,7 +120,7 @@ export function CampaignForm({ onSuccess }: CampaignFormProps) {
 
       form.reset();
     } catch (error: any) {
-      console.error("Error creating campaign:", error);
+      logger.error("Error creating campaign:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create campaign",

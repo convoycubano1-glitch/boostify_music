@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { useAuth } from "../hooks/use-auth";
 import { Button } from "../components/ui/button";
 import { SiGoogle } from "react-icons/si";
@@ -32,18 +33,18 @@ export default function AuthPage() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     
-    console.log('🔐 [AUTH PAGE] Diagnóstico de inicio:');
-    console.log('  - Es móvil:', isMobile);
-    console.log('  - Es iOS:', isIOS);
-    console.log('  - User Agent:', navigator.userAgent);
-    console.log('  - localStorage disponible:', typeof localStorage !== 'undefined');
-    console.log('  - sessionStorage disponible:', typeof sessionStorage !== 'undefined');
+    logger.info('🔐 [AUTH PAGE] Diagnóstico de inicio:');
+    logger.info('  - Es móvil:', isMobile);
+    logger.info('  - Es iOS:', isIOS);
+    logger.info('  - User Agent:', navigator.userAgent);
+    logger.info('  - localStorage disponible:', typeof localStorage !== 'undefined');
+    logger.info('  - sessionStorage disponible:', typeof sessionStorage !== 'undefined');
     
     // Verificar si hay flags de redirección pendientes
     if (localStorage.getItem('auth_redirect_attempt')) {
-      console.log('🔐 [AUTH PAGE] ⚠️ Hay un intento de redirección pendiente!');
-      console.log('  - Timestamp:', localStorage.getItem('auth_redirect_timestamp'));
-      console.log('  - Redirect path:', localStorage.getItem('auth_redirect_path'));
+      logger.info('🔐 [AUTH PAGE] ⚠️ Hay un intento de redirección pendiente!');
+      logger.info('  - Timestamp:', localStorage.getItem('auth_redirect_timestamp'));
+      logger.info('  - Redirect path:', localStorage.getItem('auth_redirect_path'));
     }
   }, []);
   
@@ -103,7 +104,7 @@ export default function AuthPage() {
         description: "Has iniciado sesión en modo de vista previa. Ten en cuenta que todas las funciones están en desarrollo.",
       });
     } catch (error) {
-      console.error("Error en autenticación anónima:", error);
+      logger.error("Error en autenticación anónima:", error);
       setIsAnonLoading(false);
       
       toast({
@@ -155,7 +156,7 @@ export default function AuthPage() {
           setIsLoading(false);
         }, 3000);
       } catch (error: any) {
-        console.log("Error detallado en página de autenticación:", error);
+        logger.info("Error detallado en página de autenticación:", error);
         
         // Manejar específicamente el error interno
         if (error.code === 'auth/internal-error') {
@@ -166,7 +167,7 @@ export default function AuthPage() {
           
           // Opcional: intentar método de redirección como último recurso
           try {
-            console.log("Intentando autenticación con método de respaldo...");
+            logger.info("Intentando autenticación con método de respaldo...");
             await authService.clearAuthState();
             
             // Retrasamos un momento antes de intentar la autenticación directa como último recurso
@@ -175,14 +176,14 @@ export default function AuthPage() {
                 // Aquí usamos el signInWithGoogle original como último recurso
                 await signInWithGoogle();
               } catch (lastError) {
-                console.error("Error en método final de respaldo:", lastError);
+                logger.error("Error en método final de respaldo:", lastError);
                 setIsLoading(false);
               }
             }, 1000);
             
             return; // Salimos para evitar mostrar el error ya que estamos usando un método alternativo
           } catch (backupError) {
-            console.error("Error en método de respaldo:", backupError);
+            logger.error("Error en método de respaldo:", backupError);
           }
         }
         
@@ -206,7 +207,7 @@ export default function AuthPage() {
         setIsLoading(false);
       }
     } catch (error: any) {
-      console.error("Error crítico en manejo de autenticación:", error);
+      logger.error("Error crítico en manejo de autenticación:", error);
       setIsLoading(false);
       
       toast({

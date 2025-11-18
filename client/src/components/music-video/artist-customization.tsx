@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Label } from "../ui/label";
 import { TimelineClip } from "./timeline-editor";
 import FaceSwap, { FaceSwapResult } from "../face-swap/face-swap";
@@ -152,7 +153,7 @@ export function ArtistCustomization({
         
         // Solo procesar si el clip tiene una imagen generada
         if (!clip.imageUrl && !clip.thumbnail) {
-          console.log(`Clip ${clip.id} no tiene imagen, omitiendo`);
+          logger.info(`Clip ${clip.id} no tiene imagen, omitiendo`);
           continue;
         }
         
@@ -160,7 +161,7 @@ export function ArtistCustomization({
         const targetImageUrl = clip.imageUrl || clip.thumbnail;
         
         if (!targetImageUrl) {
-          console.log(`Clip ${clip.id} no tiene imagen válida, omitiendo`);
+          logger.info(`Clip ${clip.id} no tiene imagen válida, omitiendo`);
           continue;
         }
         
@@ -193,7 +194,7 @@ export function ArtistCustomization({
             setProcessedClips(prev => [...prev, clip.id]);
           }
         } catch (error) {
-          console.error(`Error procesando clip ${clip.id}:`, error);
+          logger.error(`Error procesando clip ${clip.id}:`, error);
           // Continuamos con el siguiente clip aunque uno falle
         }
       }

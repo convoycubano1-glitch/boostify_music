@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Componente mejorado para Virtual Try-On
  * 
  * Este componente permite a los usuarios probar virtualmente prendas de vestir
@@ -93,7 +94,7 @@ export function VirtualTryonImproved({ onComplete }: VirtualTryonImprovedProps) 
             setError(result.errorMessage || 'Ocurrió un error al procesar la imagen');
           }
         } catch (err) {
-          console.error('Error verificando el estado del try-on:', err);
+          logger.error('Error verificando el estado del try-on:', err);
           setIsProcessing(false);
           setError('Error al verificar el estado del proceso');
         }
@@ -132,7 +133,7 @@ export function VirtualTryonImproved({ onComplete }: VirtualTryonImprovedProps) 
         setError(result.errorMessage || 'No se pudo iniciar el proceso');
       }
     } catch (err: any) {
-      console.error('Error en el try-on:', err);
+      logger.error('Error en el try-on:', err);
       setIsProcessing(false);
       setError(err.message || 'Error al procesar las imágenes');
     }

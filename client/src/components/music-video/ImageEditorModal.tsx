@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from "../lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -80,7 +81,7 @@ export function ImageEditorModal({
         description: 'Preview your edited image below',
       });
     } catch (error) {
-      console.error('Error editing image:', error);
+      logger.error('Error editing image:', error);
       toast({
         title: 'Error editing image',
         description: error instanceof Error ? error.message : 'Unknown error',

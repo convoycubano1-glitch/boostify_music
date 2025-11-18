@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente TimelineLayers - Gestiona y muestra las capas del timeline
  * 
  * Este componente es responsable de renderizar las diferentes capas del timeline

@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { logger } from "../logger";
 import OpenAI from 'openai';
+import { logger } from "../logger";
 
 const examQuestionSchema = z.object({
   question: z.string(),
@@ -47,7 +49,7 @@ export type LessonContent = z.infer<typeof lessonContentSchema>;
 
 export async function generateLessonContent(lessonTitle: string, lessonDescription: string): Promise<LessonContent> {
   try {
-    console.log('Getting OpenRouter API key...');
+    logger.info('Getting OpenRouter API key...');
     // Get the API key securely from the server instead of using it directly from env
     const apiKeyResponse = await fetch("/api/get-openrouter-key");
     if (!apiKeyResponse.ok) {
@@ -59,7 +61,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       throw new Error("OpenRouter API key not found on server");
     }
 
-    console.log('Initializing OpenRouter API client...');
+    logger.info('Initializing OpenRouter API client...');
     const openai = new OpenAI({
       apiKey: key,
       baseURL: 'https://openrouter.ai/api/v1',
@@ -120,7 +122,7 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       }
     }`;
 
-    console.log('Making API request to OpenRouter with model: google/gemini-2.0-flash-lite-preview-02-05:free');
+    logger.info('Making API request to OpenRouter with model: google/gemini-2.0-flash-lite-preview-02-05:free');
     const completion = await openai.chat.completions.create({
       model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
       messages: [
@@ -132,36 +134,36 @@ export async function generateLessonContent(lessonTitle: string, lessonDescripti
       response_format: { type: "json_object" }
     });
 
-    console.log('Received API response:', completion);
+    logger.info('Received API response:', completion);
 
     if (!completion.choices?.[0]?.message?.content) {
-      console.error('Invalid API response structure:', completion);
+      logger.error('Invalid API response structure:', completion);
       throw new Error('Invalid API response structure');
     }
 
     const content = completion.choices[0].message.content.trim();
-    console.log('Raw content:', content);
+    logger.info('Raw content:', content);
 
     try {
       const parsedContent = JSON.parse(content);
-      console.log('Successfully parsed JSON content');
+      logger.info('Successfully parsed JSON content');
 
       const validatedContent = lessonContentSchema.parse(parsedContent);
-      console.log('Successfully validated content schema');
+      logger.info('Successfully validated content schema');
 
       return validatedContent;
     } catch (parseError) {
-      console.error('Error parsing/validating content:', parseError);
-      console.error('Raw content that failed:', content);
+      logger.error('Error parsing/validating content:', parseError);
+      logger.error('Raw content that failed:', content);
       throw new Error('Failed to parse or validate lesson content');
     }
 
   } catch (error) {
-    console.error('Error in generateLessonContent:', error);
+    logger.error('Error in generateLessonContent:', error);
     
     // Create a basic fallback content if API call fails
     if (error instanceof Error && (error.message.includes('401') || error.message.includes('auth'))) {
-      console.warn('Authentication error with OpenRouter API. Using fallback content.');
+      logger.warn('Authentication error with OpenRouter API. Using fallback content.');
       
       // Generate a simple fallback lesson content
       const fallbackContent: LessonContent = {

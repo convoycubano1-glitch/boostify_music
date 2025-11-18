@@ -7,7 +7,9 @@
  */
 
 import { auth } from '../firebase';
+import { logger } from "../logger";
 import { signInWithCustomToken } from 'firebase/auth';
+import { logger } from "../logger";
 
 let authInitialized = false;
 
@@ -28,14 +30,14 @@ export async function authenticateWithFirebase(): Promise<boolean> {
     });
 
     if (!response.ok) {
-      console.error('Failed to get Firebase token:', response.status);
+      logger.error('Failed to get Firebase token:', response.status);
       return false;
     }
 
     const data = await response.json();
     
     if (!data.success || !data.token) {
-      console.error('Invalid token response:', data);
+      logger.error('Invalid token response:', data);
       return false;
     }
 
@@ -43,11 +45,11 @@ export async function authenticateWithFirebase(): Promise<boolean> {
     await signInWithCustomToken(auth, data.token);
     authInitialized = true;
     
-    console.log('✅ Authenticated with Firebase using Replit Auth');
+    logger.info('✅ Authenticated with Firebase using Replit Auth');
     return true;
 
   } catch (error) {
-    console.error('Error authenticating with Firebase:', error);
+    logger.error('Error authenticating with Firebase:', error);
     return false;
   }
 }
@@ -59,14 +61,14 @@ export async function authenticateWithFirebase(): Promise<boolean> {
  */
 export async function ensureFirebaseAuth(): Promise<boolean> {
   if (authInitialized && auth.currentUser) {
-    console.log('✅ Firebase ya autenticado');
+    logger.info('✅ Firebase ya autenticado');
     return true;
   }
 
   const success = await authenticateWithFirebase();
   
   if (!success) {
-    console.error('❌ Firebase authentication failed - some features may not work');
+    logger.error('❌ Firebase authentication failed - some features may not work');
   }
   
   return success;

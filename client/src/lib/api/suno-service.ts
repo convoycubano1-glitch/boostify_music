@@ -1,8 +1,13 @@
 import { z } from "zod";
+import { logger } from "./logger";
 import { db } from '../firebase';
+import { logger } from "./logger";
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
+import { logger } from "./logger";
 import { env } from '../../env';
+import { logger } from "./logger";
 import { generateMusicWithSuno, checkMusicGenerationStatus } from './piapi-music';
+import { logger } from "./logger";
 
 /**
  * AVISO: Este servicio ahora funciona exclusivamente a través de PiAPI
@@ -38,7 +43,7 @@ export const sunoService = {
     userId: string
   ): Promise<AgentResponse> => {
     try {
-      console.log('Iniciando generación de música con PiAPI:', {
+      logger.info('Iniciando generación de música con PiAPI:', {
         ...params,
         userId
       });
@@ -54,7 +59,7 @@ export const sunoService = {
         tags: params.genre
       });
 
-      console.log('Tarea de generación de música iniciada con PiAPI:', result);
+      logger.info('Tarea de generación de música iniciada con PiAPI:', result);
 
       // Esperar hasta que la música esté generada
       let status;
@@ -64,7 +69,7 @@ export const sunoService = {
       do {
         await new Promise(resolve => setTimeout(resolve, 10000)); // Esperar 10 segundos entre verificaciones
         status = await checkMusicGenerationStatus(result.taskId);
-        console.log(`Verificación ${++retries}/${maxRetries}:`, status);
+        logger.info(`Verificación ${++retries}/${maxRetries}:`, status);
         
         if (status.status === 'failed') {
           throw new Error(`La generación de música falló: ${status.error || 'Error desconocido'}`);
@@ -96,15 +101,15 @@ export const sunoService = {
           ...sunoResponse,
           timestamp: serverTimestamp()
         });
-        console.log('Respuesta guardada en Firestore exitosamente');
+        logger.info('Respuesta guardada en Firestore exitosamente');
       } catch (error) {
-        console.error('Error guardando en Firestore:', error);
+        logger.error('Error guardando en Firestore:', error);
         // No propagamos el error para que no afecte la funcionalidad principal
       }
 
       return sunoResponse;
     } catch (error) {
-      console.error('Error en generateMusic:', error);
+      logger.error('Error en generateMusic:', error);
       
       // Proporcionar respuesta de fallback para no romper la UI
       return {

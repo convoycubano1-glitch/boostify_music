@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -111,7 +112,7 @@ export default function ContractsPage() {
         }
         return await getUserContracts();
       } catch (error) {
-        console.error('Error fetching contracts:', error);
+        logger.error('Error fetching contracts:', error);
         toast({
           title: "Error",
           description: "No se pudieron cargar los contratos. Por favor, intente nuevamente.",
@@ -212,7 +213,7 @@ export default function ContractsPage() {
       await html2pdf().set(opt).from(element).save();
       document.body.removeChild(element);
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast({
         title: "Error",
         description: "Failed to generate PDF. Please try again.",
@@ -244,7 +245,7 @@ export default function ContractsPage() {
         throw new Error('Usuario no autenticado');
       }
       
-      console.log('Saving contract with data:', contractData);
+      logger.info('Saving contract with data:', contractData);
       return await saveContract({
         title: contractData.title,
         content: contractData.content,
@@ -260,7 +261,7 @@ export default function ContractsPage() {
       });
     },
     onError: (error: Error) => {
-      console.error('Error in saveContractMutation:', error);
+      logger.error('Error in saveContractMutation:', error);
       toast({
         title: "Error",
         description: error.message || "Error saving the contract. Please try again.",
@@ -286,7 +287,7 @@ export default function ContractsPage() {
         description: "Your contract has been generated successfully.",
       });
     } catch (error) {
-      console.error('Error generating contract:', error);
+      logger.error('Error generating contract:', error);
       toast({
         title: "Error",
         description: "Failed to generate the contract. Please try again.",
@@ -317,7 +318,7 @@ export default function ContractsPage() {
     }
 
     try {
-      console.log('Attempting to save contract...');
+      logger.info('Attempting to save contract...');
       await saveContractMutation.mutateAsync({
         title: contractTitle,
         type: "legal",
@@ -329,7 +330,7 @@ export default function ContractsPage() {
       setShowNewContractDialog(false);
       setContractTitle("");
     } catch (error) {
-      console.error('Error saving contract:', error);
+      logger.error('Error saving contract:', error);
     }
   };
 
@@ -355,7 +356,7 @@ ${analysis.keyTerms.map((term, i) => `${i + 1}. ${term.term}: ${term.description
       
       setAnalysisResult(formattedAnalysis);
     } catch (error) {
-      console.error('Error analyzing contract:', error);
+      logger.error('Error analyzing contract:', error);
       toast({
         title: "Error",
         description: "Failed to analyze the contract. Please try again.",

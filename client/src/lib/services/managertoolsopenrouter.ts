@@ -1,11 +1,14 @@
 import { db } from "../firebase";
+import { logger } from "../logger";
 import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import { logger } from "../logger";
 import { env } from "../../env";
+import { logger } from "../logger";
 
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {
     try {
-      console.log('📄 Making request to Gemini API with prompt:', prompt);
+      logger.info('📄 Making request to Gemini API with prompt:', prompt);
       
       // Map old types to new Gemini types
       const typeMapping: Record<string, string> = {
@@ -35,22 +38,22 @@ export const managerToolsService = {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Error response from server:', errorData);
+        logger.error('Error response from server:', errorData);
         throw new Error(errorData.error || `Failed to generate content: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ Response received from Gemini');
+      logger.info('✅ Response received from Gemini');
       
       if (!data.content) {
-        console.error('Invalid response format from server');
+        logger.error('Invalid response format from server');
         throw new Error('Invalid API response format');
       }
 
       return data.content;
 
     } catch (error: any) {
-      console.error('Error in generateWithAI:', error);
+      logger.error('Error in generateWithAI:', error);
       if (error.status === 401) {
         throw new Error('Authentication failed. Please check your API key configuration.');
       } else if (error.status === 429) {
@@ -67,7 +70,7 @@ export const managerToolsService = {
       const content = await this.generateWithAI(prompt, 'technical');
       return content;
     } catch (error) {
-      console.error('Error generating technical rider preview:', error);
+      logger.error('Error generating technical rider preview:', error);
       throw error;
     }
   },
@@ -109,7 +112,7 @@ export const managerToolsService = {
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       throw error;
     }
   },
@@ -154,7 +157,7 @@ export const managerToolsService = {
         ...doc.data()
       }));
     } catch (error) {
-      console.error('Error fetching from Firestore:', error);
+      logger.error('Error fetching from Firestore:', error);
       throw error;
     }
   },
@@ -202,7 +205,7 @@ export const managerToolsService = {
         prompt: prompt // Save the prompt for reference
       });
     } catch (error) {
-      console.error(`Error generating ${type} content:`, error);
+      logger.error(`Error generating ${type} content:`, error);
       throw error;
     }
   },
@@ -238,9 +241,9 @@ export const managerToolsService = {
       }
 
       await deleteDoc(doc(db, collectionName, docId));
-      console.log(`Document ${docId} deleted from ${collectionName}`);
+      logger.info(`Document ${docId} deleted from ${collectionName}`);
     } catch (error) {
-      console.error('Error deleting document:', error);
+      logger.error('Error deleting document:', error);
       throw error;
     }
   },
@@ -279,9 +282,9 @@ export const managerToolsService = {
         ...updates,
         updatedAt: serverTimestamp()
       });
-      console.log(`Document ${docId} updated in ${collectionName}`);
+      logger.info(`Document ${docId} updated in ${collectionName}`);
     } catch (error) {
-      console.error('Error updating document:', error);
+      logger.error('Error updating document:', error);
       throw error;
     }
   }

@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { logger } from "../lib/logger";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Loader2, Check, Camera } from "lucide-react";
@@ -93,7 +94,7 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
         throw new Error('Invalid response from server');
       }
     } catch (error: any) {
-      console.error('Error generating camera angles:', error);
+      logger.error('Error generating camera angles:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to generate camera angles. Please try again.",

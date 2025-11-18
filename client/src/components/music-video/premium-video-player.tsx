@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardFooter } from "../ui/card";
 import { useToast } from "../../hooks/use-toast";
@@ -111,7 +112,7 @@ export function PremiumVideoPlayer({
         throw new Error("No se pudo crear la sesión de pago");
       }
     } catch (error) {
-      console.error("Error al iniciar el proceso de pago:", error);
+      logger.error("Error al iniciar el proceso de pago:", error);
       toast({
         title: "Error",
         description: "Hubo un problema al procesar tu pago. Por favor intenta de nuevo.",

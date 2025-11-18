@@ -8,7 +8,9 @@
  */
 
 import { AudioEffect } from '../../types/voice-model-types';
+import { logger } from "../logger";
 import axios from 'axios';
+import { logger } from "../logger";
 
 /**
  * Opciones para el procesamiento de audio
@@ -35,7 +37,7 @@ class KitsAIAPI {
     // Intentar cargar la clave de API desde las variables de entorno si está disponible
     if (import.meta.env.VITE_KITS_AI_API_KEY) {
       this.apiKey = import.meta.env.VITE_KITS_AI_API_KEY;
-      console.log('KITS AI API key initialized from environment variables');
+      logger.info('KITS AI API key initialized from environment variables');
     }
   }
   
@@ -109,7 +111,7 @@ class KitsAIAPI {
       
       return response.data;
     } catch (error) {
-      console.error('KITS AI API request error:', error);
+      logger.error('KITS AI API request error:', error);
       
       // Si es un error de Axios, extraemos el mensaje de error de la respuesta
       if (axios.isAxiosError(error) && error.response?.data) {
@@ -169,7 +171,7 @@ class KitsAIAPI {
       const response = await this.request('/audio/process', 'POST', formData, 'multipart/form-data');
       return response.task_id;
     } catch (error) {
-      console.error('Error applying audio effects:', error);
+      logger.error('Error applying audio effects:', error);
       
       // En ambiente de desarrollo, devolver un mock ID de tarea
       if (import.meta.env.DEV) {
@@ -201,7 +203,7 @@ class KitsAIAPI {
         error: response.error
       };
     } catch (error) {
-      console.error('Error checking processing status:', error);
+      logger.error('Error checking processing status:', error);
       
       // En desarrollo, simular una respuesta después de un tiempo
       if (import.meta.env.DEV && taskId.startsWith('mock-task-')) {
@@ -240,7 +242,7 @@ class KitsAIAPI {
       const response = await this.request('/audio/effects');
       return response.effects;
     } catch (error) {
-      console.error('Error fetching available effects:', error);
+      logger.error('Error fetching available effects:', error);
       
       // En ambiente de desarrollo, devolver efectos predefinidos
       if (import.meta.env.DEV) {

@@ -1,4 +1,5 @@
 import type { TimelineItem } from '../../components/timeline/TimelineClipUnified';
+import { logger } from "../logger";
 
 /**
  * Interface for Music Video Project (PostgreSQL version)
@@ -84,7 +85,7 @@ class MusicVideoProjectServicePostgres {
     tags?: string[];
   }): Promise<{ success: boolean; project: MusicVideoProjectPostgres; isNew: boolean }> {
     try {
-      console.log('💾 Guardando proyecto:', projectData.projectName);
+      logger.info('💾 Guardando proyecto:', projectData.projectName);
       
       const response = await fetch(`${this.baseUrl}/save`, {
         method: 'POST',
@@ -99,11 +100,11 @@ class MusicVideoProjectServicePostgres {
       }
 
       const result = await response.json();
-      console.log('✅ Proyecto guardado:', result.project.id);
+      logger.info('✅ Proyecto guardado:', result.project.id);
       
       return result;
     } catch (error) {
-      console.error('❌ Error guardando proyecto:', error);
+      logger.error('❌ Error guardando proyecto:', error);
       throw error;
     }
   }
@@ -113,7 +114,7 @@ class MusicVideoProjectServicePostgres {
    */
   async getUserProjects(userEmail: string): Promise<MusicVideoProjectPostgres[]> {
     try {
-      console.log('📋 Cargando proyectos para userEmail:', userEmail);
+      logger.info('📋 Cargando proyectos para userEmail:', userEmail);
       
       const response = await fetch(`${this.baseUrl}/list/${userEmail}`);
 
@@ -122,11 +123,11 @@ class MusicVideoProjectServicePostgres {
       }
 
       const result = await response.json();
-      console.log(`✅ Encontrados ${result.projects.length} proyectos`);
+      logger.info(`✅ Encontrados ${result.projects.length} proyectos`);
       
       return result.projects;
     } catch (error) {
-      console.error('❌ Error cargando proyectos:', error);
+      logger.error('❌ Error cargando proyectos:', error);
       throw error;
     }
   }
@@ -136,7 +137,7 @@ class MusicVideoProjectServicePostgres {
    */
   async getProject(projectId: number): Promise<MusicVideoProjectPostgres | null> {
     try {
-      console.log('📂 Cargando proyecto:', projectId);
+      logger.info('📂 Cargando proyecto:', projectId);
       
       const response = await fetch(`${this.baseUrl}/load/${projectId}`);
 
@@ -149,11 +150,11 @@ class MusicVideoProjectServicePostgres {
       }
 
       const result = await response.json();
-      console.log('✅ Proyecto cargado:', result.project.projectName);
+      logger.info('✅ Proyecto cargado:', result.project.projectName);
       
       return result.project;
     } catch (error) {
-      console.error('❌ Error cargando proyecto:', error);
+      logger.error('❌ Error cargando proyecto:', error);
       throw error;
     }
   }
@@ -163,7 +164,7 @@ class MusicVideoProjectServicePostgres {
    */
   async deleteProject(projectId: number): Promise<void> {
     try {
-      console.log('🗑️ Eliminando proyecto:', projectId);
+      logger.info('🗑️ Eliminando proyecto:', projectId);
       
       const response = await fetch(`${this.baseUrl}/delete/${projectId}`, {
         method: 'DELETE',
@@ -173,9 +174,9 @@ class MusicVideoProjectServicePostgres {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      console.log('✅ Proyecto eliminado');
+      logger.info('✅ Proyecto eliminado');
     } catch (error) {
-      console.error('❌ Error eliminando proyecto:', error);
+      logger.error('❌ Error eliminando proyecto:', error);
       throw error;
     }
   }
@@ -189,7 +190,7 @@ class MusicVideoProjectServicePostgres {
     userEmail: string
   ): Promise<{ success: boolean; project: MusicVideoProjectPostgres }> {
     try {
-      console.log('✏️ Renombrando proyecto:', projectId, 'a:', newName);
+      logger.info('✏️ Renombrando proyecto:', projectId, 'a:', newName);
       
       const response = await fetch(`${this.baseUrl}/rename`, {
         method: 'POST',
@@ -209,11 +210,11 @@ class MusicVideoProjectServicePostgres {
       }
 
       const result = await response.json();
-      console.log('✅ Proyecto renombrado exitosamente');
+      logger.info('✅ Proyecto renombrado exitosamente');
       
       return result;
     } catch (error) {
-      console.error('❌ Error renombrando proyecto:', error);
+      logger.error('❌ Error renombrando proyecto:', error);
       throw error;
     }
   }
@@ -237,8 +238,8 @@ class MusicVideoProjectServicePostgres {
     // Set new timer
     const timer = setTimeout(() => {
       this.saveProject(projectData)
-        .then(() => console.log('✅ Auto-guardado exitoso:', projectData.projectName))
-        .catch(err => console.error('❌ Error en auto-guardado:', err));
+        .then(() => logger.info('✅ Auto-guardado exitoso:', projectData.projectName))
+        .catch(err => logger.error('❌ Error en auto-guardado:', err));
       this.autoSaveTimers.delete(key);
     }, delay);
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from "../lib/logger";
 import { useAuth } from '../../hooks/use-auth';
 import { useSubscription } from '../../lib/context/subscription-context';
 import { createCheckoutSession } from '../../lib/api/stripe-service';
@@ -186,7 +187,7 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
         throw new Error('No checkout URL returned');
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      logger.error('Error creating checkout session:', error);
       toast({
         title: "Subscription Error",
         description: "There was an error setting up your subscription. Please try again.",

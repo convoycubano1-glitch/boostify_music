@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { logger } from "../lib/logger";
 import { Button } from "../ui/button";
 import { Link } from "wouter";
 import { Video, Wand2 } from "lucide-react";

@@ -1,4 +1,5 @@
 import { getAuthToken } from "../auth";
+import { logger } from "./logger";
 
 interface CourseContent {
   overview: string;
@@ -17,7 +18,7 @@ interface CourseContent {
  * Creates fallback course content when API calls fail
  */
 function createFallbackCourseContent(prompt: string): CourseContent {
-  console.log("Creating fallback course content from prompt:", prompt.substring(0, 100) + "...");
+  logger.info("Creating fallback course content from prompt:", prompt.substring(0, 100) + "...");
   
   // Extract course title and category from the prompt if possible
   const titleMatch = prompt.match(/Title: "([^"]+)"/i);
@@ -88,20 +89,20 @@ function createFallbackCourseContent(prompt: string): CourseContent {
  */
 export async function generateCourseContent(prompt: string): Promise<CourseContent> {
   try {
-    console.log("Starting course content generation...");
+    logger.info("Starting course content generation...");
     
     try {
       // First attempt: Try to use the direct API call to OpenRouter
-      console.log("Attempting direct OpenRouter API call...");
+      logger.info("Attempting direct OpenRouter API call...");
       const content = await generateCourseContentDirect(prompt);
-      console.log("Successfully generated course content with OpenRouter API");
+      logger.info("Successfully generated course content with OpenRouter API");
       return content;
     } catch (directError) {
-      console.warn("Direct OpenRouter API call failed:", directError);
+      logger.warn("Direct OpenRouter API call failed:", directError);
       
       try {
         // Second attempt: Try the backend API route
-        console.log("Attempting backend API route...");
+        logger.info("Attempting backend API route...");
         const response = await fetch('/api/education/generate-course', {
           method: 'POST',
           headers: {
@@ -116,17 +117,17 @@ export async function generateCourseContent(prompt: string): Promise<CourseConte
         }
         
         const data = await response.json();
-        console.log("Successfully generated course content with backend API");
+        logger.info("Successfully generated course content with backend API");
         return data;
       } catch (backendError) {
-        console.warn("Backend API route failed:", backendError);
+        logger.warn("Backend API route failed:", backendError);
         // Both attempts failed, use fallback
         throw new Error("Both API attempts failed, using fallback");
       }
     }
   } catch (error) {
-    console.error("Course generation error:", error);
-    console.log("Using fallback course content generation due to error");
+    logger.error("Course generation error:", error);
+    logger.info("Using fallback course content generation due to error");
     return createFallbackCourseContent(prompt);
   }
 }
@@ -137,7 +138,7 @@ export async function generateCourseContent(prompt: string): Promise<CourseConte
  */
 export async function generateCourseContentDirect(prompt: string): Promise<CourseContent> {
   try {
-    console.log("Starting direct course content generation with OpenRouter...");
+    logger.info("Starting direct course content generation with OpenRouter...");
 
     // Get OPENROUTER_API_KEY from the server
     const apiKeyResponse = await fetch("/api/get-openrouter-key");
@@ -227,11 +228,11 @@ export async function generateCourseContentDirect(prompt: string): Promise<Cours
 
       return validatedContent;
     } catch (parseError) {
-      console.error('Error parsing JSON from API response:', parseError);
+      logger.error('Error parsing JSON from API response:', parseError);
       throw new Error(`Failed to parse course content: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
     }
   } catch (error) {
-    console.error('Direct OpenRouter API call failed:', error);
+    logger.error('Direct OpenRouter API call failed:', error);
     throw error; // Rethrow to allow fallback in the caller function
   }
 }
@@ -263,20 +264,20 @@ export async function extendCourseContent(
   existingContent?: any
 ): Promise<AdditionalCourseContent> {
   try {
-    console.log("Iniciando generación de contenido adicional para curso:", courseTitle);
+    logger.info("Iniciando generación de contenido adicional para curso:", courseTitle);
     
     try {
       // Primer intento: usar llamada directa a la API de OpenRouter
-      console.log("Intentando llamada directa a OpenRouter API...");
+      logger.info("Intentando llamada directa a OpenRouter API...");
       const additionalContent = await extendCourseContentDirect(courseId, courseTitle, courseDescription, existingContent);
-      console.log("Contenido adicional generado con éxito usando OpenRouter API");
+      logger.info("Contenido adicional generado con éxito usando OpenRouter API");
       return additionalContent;
     } catch (directError) {
-      console.warn("Error en llamada directa a OpenRouter:", directError);
+      logger.warn("Error en llamada directa a OpenRouter:", directError);
       
       try {
         // Segundo intento: usar la ruta API del backend
-        console.log("Intentando ruta API del backend...");
+        logger.info("Intentando ruta API del backend...");
         const response = await fetch('/api/education/extend-course', {
           method: 'POST',
           headers: {
@@ -296,17 +297,17 @@ export async function extendCourseContent(
         }
         
         const data = await response.json();
-        console.log("Contenido adicional generado con éxito usando API del backend");
+        logger.info("Contenido adicional generado con éxito usando API del backend");
         return data;
       } catch (backendError) {
-        console.warn("Error en la ruta API del backend:", backendError);
+        logger.warn("Error en la ruta API del backend:", backendError);
         // Ambos intentos fallaron, usar contenido de respaldo
         throw new Error("Ambos intentos de API fallaron, usando contenido de respaldo");
       }
     }
   } catch (error) {
-    console.error("Error en generación de contenido adicional:", error);
-    console.log("Usando generación de contenido adicional de respaldo debido a error");
+    logger.error("Error en generación de contenido adicional:", error);
+    logger.info("Usando generación de contenido adicional de respaldo debido a error");
     return createFallbackAdditionalContent(courseTitle, courseDescription);
   }
 }
@@ -315,7 +316,7 @@ export async function extendCourseContent(
  * Función de respaldo para crear contenido adicional cuando falla la API
  */
 function createFallbackAdditionalContent(courseTitle: string, courseDescription: string): AdditionalCourseContent {
-  console.log("Creando contenido adicional de respaldo para:", courseTitle);
+  logger.info("Creando contenido adicional de respaldo para:", courseTitle);
   
   // Extraer palabras clave de la descripción para crear contenido relevante
   const keywords = courseDescription
@@ -412,7 +413,7 @@ export async function extendCourseContentDirect(
   existingContent?: any
 ): Promise<AdditionalCourseContent> {
   try {
-    console.log("Iniciando generación directa de contenido adicional con OpenRouter...");
+    logger.info("Iniciando generación directa de contenido adicional con OpenRouter...");
 
     // Obtener OPENROUTER_API_KEY del entorno
     // La obtendremos del servidor para mantenerla segura
@@ -527,11 +528,11 @@ export async function extendCourseContentDirect(
       
       return validatedContent;
     } catch (parseError) {
-      console.error("Error al parsear JSON:", parseError);
+      logger.error("Error al parsear JSON:", parseError);
       throw new Error("Error al parsear respuesta JSON");
     }
   } catch (error) {
-    console.error("Error en generación directa de contenido adicional:", error);
+    logger.error("Error en generación directa de contenido adicional:", error);
     return createFallbackAdditionalContent(courseTitle, courseDescription);
   }
 }

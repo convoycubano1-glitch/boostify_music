@@ -1,4 +1,5 @@
 import { Card } from "../ui/card";
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -75,7 +76,7 @@ export function BeatNewsPlugin() {
 
   const handleRefresh = () => {
     // Simular carga de noticias
-    console.log("Refreshing news...");
+    logger.info("Refreshing news...");
   };
 
   // Format date function

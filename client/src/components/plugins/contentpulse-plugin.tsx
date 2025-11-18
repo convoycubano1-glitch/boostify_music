@@ -1,4 +1,5 @@
 import { Card } from "../ui/card";
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -70,7 +71,7 @@ export function ContentPulsePlugin() {
 
   // Simulate functions
   const handleRefresh = () => {
-    console.log("Refreshing content...");
+    logger.info("Refreshing content...");
   };
 
   const handleAddSource = () => {

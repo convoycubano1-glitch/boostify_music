@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { logger } from "../lib/logger";
 import { useLocation } from "wouter";
 import { apiRequest } from "../lib/queryClient";
 import { useToast } from "../hooks/use-toast";
@@ -61,7 +62,7 @@ export default function MusicVideoSuccess() {
           });
         }
       } catch (error) {
-        console.error("Error verificando la compra:", error);
+        logger.error("Error verificando la compra:", error);
         toast({
           title: "Error",
           description: "No pudimos verificar el estado de tu compra",

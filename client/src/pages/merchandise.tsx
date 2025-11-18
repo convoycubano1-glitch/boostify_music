@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Header } from "../components/layout/header";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -330,9 +331,9 @@ export default function MerchandisePage() {
         });
         
         setUserProducts(productsData);
-        console.log('📦 Productos cargados desde Firestore:', productsData.length);
+        logger.info('📦 Productos cargados desde Firestore:', productsData.length);
       } catch (error) {
-        console.error('Error loading user data:', error);
+        logger.error('Error loading user data:', error);
       } finally {
         setLoadingProducts(false);
       }

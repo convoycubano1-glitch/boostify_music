@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -83,7 +84,7 @@ export default function PromotionPage() {
       if (!user) return [];
 
       try {
-        console.log("Intentando obtener campañas para usuario:", user.uid);
+        logger.info("Intentando obtener campañas para usuario:", user.uid);
         const campaignsRef = collection(db, "campaigns");
 
         // Simplificar la consulta para debug
@@ -92,19 +93,19 @@ export default function PromotionPage() {
           where("userId", "==", user.uid)
         );
 
-        console.log("Ejecutando consulta de Firestore");
+        logger.info("Ejecutando consulta de Firestore");
         const querySnapshot = await getDocs(q);
-        console.log("Resultado de la consulta:", querySnapshot.size, "documentos");
+        logger.info("Resultado de la consulta:", querySnapshot.size, "documentos");
 
         const results = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Campaign[];
 
-        console.log("Campañas recuperadas:", results);
+        logger.info("Campañas recuperadas:", results);
         return results;
       } catch (error) {
-        console.error("Error detallado al obtener campañas:", error);
+        logger.error("Error detallado al obtener campañas:", error);
         toast({
           title: "Error",
           description: "No se pudieron cargar las campañas. Por favor, intenta de nuevo.",
@@ -138,7 +139,7 @@ export default function PromotionPage() {
 
         return statsDoc.data() as CampaignStats;
       } catch (error) {
-        console.error("Error fetching stats:", error);
+        logger.error("Error fetching stats:", error);
         return null;
       }
     },
@@ -148,7 +149,7 @@ export default function PromotionPage() {
   // Mutations
   const createCampaignMutation = useMutation({
     mutationFn: async (newCampaign: Omit<Campaign, 'id'>) => {
-      console.log("Intentando crear nueva campaña:", newCampaign);
+      logger.info("Intentando crear nueva campaña:", newCampaign);
       const campaignsRef = collection(db, "campaigns");
       try {
         // Convertir las fechas a Timestamp
@@ -159,10 +160,10 @@ export default function PromotionPage() {
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now()
         });
-        console.log("Campaña creada exitosamente con ID:", docRef.id);
+        logger.info("Campaña creada exitosamente con ID:", docRef.id);
         return docRef;
       } catch (error) {
-        console.error("Error al crear campaña:", error);
+        logger.error("Error al crear campaña:", error);
         throw error;
       }
     },
@@ -175,7 +176,7 @@ export default function PromotionPage() {
       setShowNewCampaignDialog(false);
     },
     onError: (error) => {
-      console.error("Error en mutation al crear campaña:", error);
+      logger.error("Error en mutation al crear campaña:", error);
       toast({
         title: "Error",
         description: "No se pudo crear la campaña. Por favor, intenta de nuevo.",

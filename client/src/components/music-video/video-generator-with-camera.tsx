@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Video Generator With Camera Movements Component
  * 
  * Este componente integra la generación de video con los movimientos de cámara

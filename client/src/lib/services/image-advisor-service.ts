@@ -1,7 +1,11 @@
 import { env } from "../../env";
+import { logger } from "../logger";
 import { apiRequest } from "../queryClient";
+import { logger } from "../logger";
 import { auth, db } from "../../firebase";
+import { logger } from "../logger";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, orderBy, Timestamp, serverTimestamp } from "firebase/firestore";
+import { logger } from "../logger";
 
 interface ImageAdvice {
   styleAnalysis: string;
@@ -94,14 +98,14 @@ export const imageAdvisorService = {
             referenceImage: imageUrl
           });
         } catch (saveError) {
-          console.warn("Analysis completed but could not save results:", saveError);
+          logger.warn("Analysis completed but could not save results:", saveError);
           // No lanzamos error aquí para que el análisis se muestre aunque el guardado falle
         }
       }
       
       return analysis;
     } catch (error) {
-      console.error("Error analyzing image:", error);
+      logger.error("Error analyzing image:", error);
       throw error;
     }
   },
@@ -179,14 +183,14 @@ export const imageAdvisorService = {
             style
           });
         } catch (saveError) {
-          console.warn("Recommendations generated but could not save results:", saveError);
+          logger.warn("Recommendations generated but could not save results:", saveError);
           // No lanzamos error aquí para que las recomendaciones se muestren aunque el guardado falle
         }
       }
       
       return recommendations;
     } catch (error) {
-      console.error("Error generating recommendations:", error);
+      logger.error("Error generating recommendations:", error);
       throw error;
     }
   },
@@ -208,10 +212,10 @@ export const imageAdvisorService = {
       // Save to Firestore using Firebase v9 syntax
       const resultsCollection = collection(db, 'image_advisor_results');
       const docRef = await addDoc(resultsCollection, adviceData);
-      console.log("Image advice saved with ID:", docRef.id);
+      logger.info("Image advice saved with ID:", docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error("Error saving image advice:", error);
+      logger.error("Error saving image advice:", error);
       // Return an empty string instead of throwing to prevent cascading failures
       return "";
     }
@@ -267,7 +271,7 @@ export const imageAdvisorService = {
         return dateB - dateA;
       });
     } catch (error) {
-      console.error("Error retrieving saved results:", error);
+      logger.error("Error retrieving saved results:", error);
       return [];
     }
   },
@@ -307,7 +311,7 @@ export const imageAdvisorService = {
         userId: data?.userId
       };
     } catch (error) {
-      console.error("Error retrieving result by ID:", error);
+      logger.error("Error retrieving result by ID:", error);
       return null;
     }
   }

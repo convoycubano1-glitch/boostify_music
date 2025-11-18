@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente para visualizar y gestionar proyectos de video guardados
  */
 import { useEffect, useState } from 'react';
@@ -57,7 +58,7 @@ export function SavedProjectsList({ onSelectProject }: SavedProjectsListProps) {
       const userProjects = await getUserProjects(user.uid);
       setProjects(userProjects);
     } catch (error: any) {
-      console.error('Error cargando proyectos:', error);
+      logger.error('Error cargando proyectos:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los proyectos",
@@ -86,7 +87,7 @@ export function SavedProjectsList({ onSelectProject }: SavedProjectsListProps) {
         description: `${deleteDialogProject.name} ha sido eliminado exitosamente.`
       });
     } catch (error: any) {
-      console.error('Error eliminando proyecto:', error);
+      logger.error('Error eliminando proyecto:', error);
       toast({
         title: "Error",
         description: "No se pudo eliminar el proyecto. Intente nuevamente.",

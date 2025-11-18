@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { logger } from "@/lib/logger";
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Progress } from '../ui/progress';
@@ -145,7 +146,7 @@ export function ArtistVirtualTryOn() {
               }
             }
           } catch (error) {
-            console.error("Error in polling interval:", error);
+            logger.error("Error in polling interval:", error);
           }
         }, 2000); // Check every 2 seconds
 

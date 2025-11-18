@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
@@ -79,7 +80,7 @@ export default function AdminDashboard() {
           col.setter(data);
           results[col.name] = data;
         } catch (e) {
-          console.log(`${col.name} not found`);
+          logger.info(`${col.name} not found`);
           results[col.name] = [];
         }
       }
@@ -130,7 +131,7 @@ export default function AdminDashboard() {
 
       setLoading(false);
     } catch (error) {
-      console.error("Error loading admin data:", error);
+      logger.error("Error loading admin data:", error);
       toast({ title: "Error", description: "Failed to load dashboard data", variant: "destructive" });
       setLoading(false);
     }
@@ -143,7 +144,7 @@ export default function AdminDashboard() {
       toast({ title: "Success", description: `Item deleted from ${collectionName}` });
       loadAllData();
     } catch (error) {
-      console.error("Error deleting:", error);
+      logger.error("Error deleting:", error);
       toast({ title: "Error", description: "Failed to delete item", variant: "destructive" });
     }
   };
@@ -422,7 +423,7 @@ export default function AdminDashboard() {
                               <td className="p-3 text-sm text-green-400">${artist.subscription?.price || 0}</td>
                               <td className="p-3 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                  <Button size="sm" variant="ghost" onClick={() => {console.log('Artist:', artist); toast({title: "Check console"})}} className="text-cyan-400 hover:bg-cyan-500/10">
+                                  <Button size="sm" variant="ghost" onClick={() => {logger.info('Artist:', artist); toast({title: "Check console"})}} className="text-cyan-400 hover:bg-cyan-500/10">
                                     <Eye className="h-4 w-4" />
                                   </Button>
                                   <Button size="sm" variant="ghost" onClick={() => handleDelete('generated_artists', artist.id)} className="text-red-400 hover:bg-red-500/10">
@@ -475,7 +476,7 @@ export default function AdminDashboard() {
                               </td>
                               <td className="p-3 text-right">
                                 <div className="flex gap-2 justify-end">
-                                  <Button size="sm" variant="ghost" onClick={() => {console.log(inv); toast({title: "Check console"})}} className="text-cyan-400">
+                                  <Button size="sm" variant="ghost" onClick={() => {logger.info(inv); toast({title: "Check console"})}} className="text-cyan-400">
                                     <Eye className="h-4 w-4" />
                                   </Button>
                                   <Button size="sm" variant="ghost" onClick={() => handleDelete('investors', inv.id)} className="text-red-400">

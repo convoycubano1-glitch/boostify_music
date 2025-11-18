@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Music Video Workflow Complete
  * Mantiene el flujo anterior completo + agrega timeline profesional
  * 
@@ -105,7 +106,7 @@ export function MusicVideoWorkflowComplete() {
 
   // Handler cuando el workflow anterior completa
   const handleWorkflowComplete = (result: any) => {
-    console.log('Workflow completado:', result);
+    logger.info('Workflow completado:', result);
     setVideoResult(result);
     setWorkflowComplete(true);
   };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { logger } from "../lib/logger";
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { CheckCircle2, Loader2 } from 'lucide-react';
@@ -25,13 +26,13 @@ export default function SubscriptionSuccessPage() {
         const sessionId = params.get('session_id');
         
         if (!sessionId) {
-          console.error('No session_id en URL');
+          logger.error('No session_id en URL');
           setError('No se encontró información de pago');
           setActivating(false);
           return;
         }
         
-        console.log('Activando suscripción con sessionId:', sessionId);
+        logger.info('Activando suscripción con sessionId:', sessionId);
         
         // Llamar al endpoint para activar la suscripción
         await apiRequest('/api/stripe/activate-subscription', {
@@ -39,7 +40,7 @@ export default function SubscriptionSuccessPage() {
           body: { sessionId }
         });
         
-        console.log('Suscripción activada, refrescando datos...');
+        logger.info('Suscripción activada, refrescando datos...');
         
         // Esperar un momento para que Firestore se actualice
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -51,7 +52,7 @@ export default function SubscriptionSuccessPage() {
         setActivating(false);
         
       } catch (err: any) {
-        console.error('Error al activar suscripción:', err);
+        logger.error('Error al activar suscripción:', err);
         setError(err.message || 'Error al activar la suscripción');
         setActivating(false);
       }

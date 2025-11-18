@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { useToast } from '../hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
@@ -32,7 +33,7 @@ interface AsyncTaskStatus {
 // Función para iniciar generación de imágenes 
 const startImageGeneration = async (prompt: string, provider: string): Promise<AsyncTaskStatus> => {
   try {
-    console.log(`Iniciando generación de imagen con prompt: "${prompt}" usando ${provider}`);
+    logger.info(`Iniciando generación de imagen con prompt: "${prompt}" usando ${provider}`);
     
     // Llamamos a la API real que hemos implementado en el backend
     const endpoint = `/api/proxy/${provider}/generate-image`;
@@ -49,7 +50,7 @@ const startImageGeneration = async (prompt: string, provider: string): Promise<A
     }
     
     const data = await response.json();
-    console.log('API response:', data);
+    logger.info('API response:', data);
     
     // Verificar si estamos recibiendo una respuesta fallback del servidor
     const isFallback = data.fallback === true;
@@ -117,7 +118,7 @@ const startImageGeneration = async (prompt: string, provider: string): Promise<A
       startTime: new Date()
     };
   } catch (error) {
-    console.error('Error iniciando generación de imagen:', error);
+    logger.error('Error iniciando generación de imagen:', error);
     
     // Fallback garantizado en caso de error
     return {
@@ -142,7 +143,7 @@ const startImageGeneration = async (prompt: string, provider: string): Promise<A
 // Función para iniciar generación de videos
 const startVideoGeneration = async (prompt: string, provider: string): Promise<AsyncTaskStatus> => {
   try {
-    console.log(`Iniciando generación de video con prompt: "${prompt}" usando ${provider}`);
+    logger.info(`Iniciando generación de video con prompt: "${prompt}" usando ${provider}`);
     
     // Llamamos a la API real que hemos implementado en el backend
     const endpoint = `/api/proxy/${provider}/generate-video`;
@@ -159,7 +160,7 @@ const startVideoGeneration = async (prompt: string, provider: string): Promise<A
     }
     
     const data = await response.json();
-    console.log('API response for video:', data);
+    logger.info('API response for video:', data);
     
     // Verificar si estamos recibiendo una respuesta fallback del servidor
     const isFallback = data.fallback === true;
@@ -217,7 +218,7 @@ const startVideoGeneration = async (prompt: string, provider: string): Promise<A
       startTime: new Date()
     };
   } catch (error) {
-    console.error('Error iniciando generación de video:', error);
+    logger.error('Error iniciando generación de video:', error);
     
     // Fallback garantizado en caso de error
     return {
@@ -247,7 +248,7 @@ const checkImageTaskStatus = async (taskId: string, provider: string): Promise<{
   error?: string;
 }> => {
   try {
-    console.log(`Verificando estado de tarea de imagen ${taskId} en ${provider}`);
+    logger.info(`Verificando estado de tarea de imagen ${taskId} en ${provider}`);
     
     const endpoint = `/api/proxy/${provider}/task/${taskId}`;
     const response = await fetch(endpoint);
@@ -257,7 +258,7 @@ const checkImageTaskStatus = async (taskId: string, provider: string): Promise<{
     }
     
     const data = await response.json();
-    console.log(`Estado de tarea ${taskId}:`, data);
+    logger.info(`Estado de tarea ${taskId}:`, data);
     
     // Verificar si es una respuesta fallback
     const isFallback = data.fallback === true;
@@ -325,7 +326,7 @@ const checkImageTaskStatus = async (taskId: string, provider: string): Promise<{
       error: errorInfo
     };
   } catch (error) {
-    console.error(`Error verificando estado de tarea ${taskId}:`, error);
+    logger.error(`Error verificando estado de tarea ${taskId}:`, error);
     return {
       status: 'failed',
       progress: 0,
@@ -342,7 +343,7 @@ const checkVideoTaskStatus = async (taskId: string, provider: string): Promise<{
   error?: string;
 }> => {
   try {
-    console.log(`Verificando estado de tarea de video ${taskId} en ${provider}`);
+    logger.info(`Verificando estado de tarea de video ${taskId} en ${provider}`);
     
     const endpoint = `/api/proxy/${provider}/video/${taskId}`;
     const response = await fetch(endpoint);
@@ -352,7 +353,7 @@ const checkVideoTaskStatus = async (taskId: string, provider: string): Promise<{
     }
     
     const data = await response.json();
-    console.log(`Estado de tarea de video ${taskId}:`, data);
+    logger.info(`Estado de tarea de video ${taskId}:`, data);
     
     // Verificar si es una respuesta fallback
     const isFallback = data.fallback === true;
@@ -418,7 +419,7 @@ const checkVideoTaskStatus = async (taskId: string, provider: string): Promise<{
       error: errorInfo
     };
   } catch (error) {
-    console.error(`Error verificando estado de tarea de video ${taskId}:`, error);
+    logger.error(`Error verificando estado de tarea de video ${taskId}:`, error);
     return {
       status: 'failed',
       progress: 0,
@@ -588,7 +589,7 @@ export default function ImageGeneratorSimplePage() {
           setTasks(updatedTasks);
         }
       } catch (error) {
-        console.error('Error checking task status:', error);
+        logger.error('Error checking task status:', error);
       } finally {
         setIsCheckingStatus(false);
       }
@@ -607,21 +608,21 @@ export default function ImageGeneratorSimplePage() {
     if (generatedImages.length === 0) {
       const loadInitialImage = async () => {
         try {
-          console.log("Cargando imagen inicial...");
+          logger.info("Cargando imagen inicial...");
           // Usar freepik como proveedor por defecto para el ejemplo inicial
           const task = await startImageGeneration("perro jugando en la playa", "freepik");
           
           // Si la tarea ya está completada (fallback), agregar la imagen directamente
           if (task.status === 'completed' && task.result) {
             setGeneratedImages([task.result as ImageResult]);
-            console.log("Imagen inicial cargada:", task.result);
+            logger.info("Imagen inicial cargada:", task.result);
           } else {
             // De lo contrario, agregar la tarea para monitoreo
             setTasks(prev => [...prev, task]);
-            console.log("Tarea de imagen inicial iniciada:", task);
+            logger.info("Tarea de imagen inicial iniciada:", task);
           }
         } catch (error) {
-          console.error("Error al cargar imagen inicial:", error);
+          logger.error("Error al cargar imagen inicial:", error);
         }
       };
       
@@ -669,7 +670,7 @@ export default function ImageGeneratorSimplePage() {
         });
       }
     } catch (error) {
-      console.error('Error generating image:', error);
+      logger.error('Error generating image:', error);
       toast({
         title: 'Generation failed',
         description: 'Could not generate the image. Please try again.',
@@ -720,7 +721,7 @@ export default function ImageGeneratorSimplePage() {
         });
       }
     } catch (error) {
-      console.error('Error generating video:', error);
+      logger.error('Error generating video:', error);
       toast({
         title: 'Generation failed',
         description: 'Could not generate the video. Please try again.',

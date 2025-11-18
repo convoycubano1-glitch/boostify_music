@@ -1,10 +1,14 @@
 import OpenAI from 'openai';
+import { logger } from "../logger";
 import { env } from "../../env";
+import { logger } from "../logger";
 import { db } from "../firebase";
+import { logger } from "../logger";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { logger } from "../logger";
 
 if (!env.VITE_OPENROUTER_API_KEY) {
-  console.error('OpenRouter API key is not configured');
+  logger.error('OpenRouter API key is not configured');
   throw new Error('OpenRouter API key is not configured');
 }
 
@@ -54,7 +58,7 @@ export const recordLabelService = {
       });
 
     } catch (error) {
-      console.error('Error generating remix:', error);
+      logger.error('Error generating remix:', error);
       throw error;
     }
   },
@@ -94,7 +98,7 @@ export const recordLabelService = {
       });
 
     } catch (error) {
-      console.error('Error generating mastering instructions:', error);
+      logger.error('Error generating mastering instructions:', error);
       throw error;
     }
   },
@@ -134,7 +138,7 @@ export const recordLabelService = {
       });
 
     } catch (error) {
-      console.error('Error generating video concept:', error);
+      logger.error('Error generating video concept:', error);
       throw error;
     }
   },
@@ -147,7 +151,7 @@ export const recordLabelService = {
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       throw error;
     }
   },
@@ -169,7 +173,7 @@ export const recordLabelService = {
         ...doc.data()
       }));
     } catch (error) {
-      console.error('Error fetching services:', error);
+      logger.error('Error fetching services:', error);
       throw error;
     }
   }

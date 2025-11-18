@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Header } from "../components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -477,9 +478,9 @@ function VirtualTryOnView({ artistId, artist, products, sessionId, onBack, onNex
 
   // Debug products
   useEffect(() => {
-    console.log('🛍️ Products loaded:', products);
-    console.log('🎨 Artist:', artist);
-    console.log('🆔 Artist ID:', artistId);
+    logger.info('🛍️ Products loaded:', products);
+    logger.info('🎨 Artist:', artist);
+    logger.info('🆔 Artist ID:', artistId);
   }, [products, artist, artistId]);
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -523,7 +524,7 @@ function VirtualTryOnView({ artistId, artist, products, sessionId, onBack, onNex
       setModelImage(url);
       toast({ title: "Image uploaded!", description: "Model photo ready" });
     } catch (error: any) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast({ 
         title: "Upload failed", 
         description: error.message || "Please try again",
@@ -544,7 +545,7 @@ function VirtualTryOnView({ artistId, artist, products, sessionId, onBack, onNex
       setClothingImage(url);
       toast({ title: "Image uploaded!", description: "Clothing photo ready" });
     } catch (error: any) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast({ 
         title: "Upload failed",
         description: error.message || "Please try again",

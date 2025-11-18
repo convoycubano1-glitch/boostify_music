@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,7 +84,7 @@ export default function MusicVideoPricing() {
         window.location.href = response.url;
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      logger.error('Error creating checkout:', error);
       toast({
         title: "Error",
         description: "Could not create checkout session. Please try again.",

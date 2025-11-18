@@ -1,12 +1,17 @@
 import { doc, collection, addDoc, updateDoc, getDoc, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
+import { logger } from "../logger";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { logger } from "../logger";
 import { db, storage } from "../firebase";
+import { logger } from "../logger";
 import { User } from "firebase/auth";
+import { logger } from "../logger";
 
 /**
  * Importamos directamente los tipos necesarios
  */
 import type { 
+import { logger } from "../logger";
   VoiceConversionRecord,
   VoiceSettings,
   ConversionStatus,
@@ -32,7 +37,7 @@ export async function uploadAudioFile(file: File, path: string, userId: string):
     
     // En entorno de pruebas, no intentamos subir a Firebase Storage
     if (isDev) {
-      console.log("Development environment detected - using local blob URLs");
+      logger.info("Development environment detected - using local blob URLs");
       // Simular una URL para desarrollo
       return URL.createObjectURL(file);
     }
@@ -48,29 +53,29 @@ export async function uploadAudioFile(file: File, path: string, userId: string):
     const storageRef = ref(storage, filePath);
     
     // Registrar el intento de subida
-    console.log("Attempting to upload file to:", filePath);
+    logger.info("Attempting to upload file to:", filePath);
     
     // Subir el archivo
     const snapshot = await uploadBytes(storageRef, file);
     
     // Obtener y devolver la URL del archivo subido
     const downloadUrl = await getDownloadURL(snapshot.ref);
-    console.log("File uploaded successfully, download URL:", downloadUrl);
+    logger.info("File uploaded successfully, download URL:", downloadUrl);
     
     return downloadUrl;
   } catch (error: any) {
-    console.error("Error in uploadAudioFile:", error);
+    logger.error("Error in uploadAudioFile:", error);
     
     // Si hay un error de permisos, intentar usar almacenamiento temporal
     if (error?.code === "storage/unauthorized") {
-      console.log("Using fallback storage method due to permission error");
+      logger.info("Using fallback storage method due to permission error");
       
       // Simular una URL para desarrollo/pruebas
       return URL.createObjectURL(file);
     }
     
     // Para cualquier error, devolver una URL simulada para poder seguir con el flujo
-    console.log("Using general fallback for error:", error?.message || "Unknown error");
+    logger.info("Using general fallback for error:", error?.message || "Unknown error");
     return URL.createObjectURL(file);
   }
 }
@@ -112,7 +117,7 @@ export async function getUserVoiceConversions(userId: string): Promise<VoiceConv
     
     // En entorno de pruebas, devolvemos datos simulados
     if (isDev) {
-      console.log("Development environment detected - using mock voice conversion data");
+      logger.info("Development environment detected - using mock voice conversion data");
       return getMockVoiceConversions();
     }
     
@@ -131,7 +136,7 @@ export async function getUserVoiceConversions(userId: string): Promise<VoiceConv
       return { ...data, id: doc.id };
     });
   } catch (error) {
-    console.error("Error loading user conversions:", error);
+    logger.error("Error loading user conversions:", error);
     // En caso de error, devolver datos simulados como fallback
     return getMockVoiceConversions();
   }
@@ -144,7 +149,7 @@ export async function getMockVoiceConversions(): Promise<VoiceConversionRecord[]
     const mockModule = await import('./mock-voice-data');
     return mockModule.getMockVoiceData();
   } catch (error) {
-    console.error("Error importing mock data:", error);
+    logger.error("Error importing mock data:", error);
     // Devolver array vacío en caso de error
     return [];
   }
@@ -159,7 +164,7 @@ export async function getMockVoiceConversions(): Promise<VoiceConversionRecord[]
  */
 export async function uploadImageFromUrl(imageUrl: string, userId: string, projectName?: string): Promise<string> {
   try {
-    console.log("📤 Uploading image to Firebase Storage from URL:", imageUrl.substring(0, 100));
+    logger.info("📤 Uploading image to Firebase Storage from URL:", imageUrl.substring(0, 100));
     
     // Descargar la imagen desde la URL temporal
     const response = await fetch(imageUrl);
@@ -168,7 +173,7 @@ export async function uploadImageFromUrl(imageUrl: string, userId: string, proje
     }
     
     const blob = await response.blob();
-    console.log("📥 Image downloaded, size:", blob.size, "bytes");
+    logger.info("📥 Image downloaded, size:", blob.size, "bytes");
     
     // Crear un nombre único para el archivo
     const timestamp = Date.now();
@@ -178,7 +183,7 @@ export async function uploadImageFromUrl(imageUrl: string, userId: string, proje
     const projectPath = projectName ? `/${projectName.replace(/\s+/g, '_')}` : '';
     const filePath = `music-video-images/${userId}${projectPath}/${fileName}`;
     
-    console.log("📁 Uploading to path:", filePath);
+    logger.info("📁 Uploading to path:", filePath);
     
     // Referencia al archivo en Storage
     const storageRef = ref(storage, filePath);
@@ -197,15 +202,15 @@ export async function uploadImageFromUrl(imageUrl: string, userId: string, proje
     
     // Obtener la URL permanente
     const permanentUrl = await getDownloadURL(snapshot.ref);
-    console.log("✅ Image uploaded successfully to Firebase Storage");
-    console.log("🔗 Permanent URL:", permanentUrl.substring(0, 100));
+    logger.info("✅ Image uploaded successfully to Firebase Storage");
+    logger.info("🔗 Permanent URL:", permanentUrl.substring(0, 100));
     
     return permanentUrl;
   } catch (error: any) {
-    console.error("❌ Error uploading image to Firebase Storage:", error);
+    logger.error("❌ Error uploading image to Firebase Storage:", error);
     
     // Si falla la subida, devolver la URL original como fallback
-    console.log("⚠️ Fallback: Using original temporary URL");
+    logger.info("⚠️ Fallback: Using original temporary URL");
     return imageUrl;
   }
 }
@@ -226,10 +231,10 @@ export async function deleteStorageFile(fileUrl: string): Promise<void> {
       const storageRef = ref(storage, filePath);
       await deleteObject(storageRef);
     } else {
-      console.warn("URL de archivo inválida para eliminar:", fileUrl);
+      logger.warn("URL de archivo inválida para eliminar:", fileUrl);
     }
   } catch (error: any) {
-    console.error("Error al eliminar archivo:", error?.message || error);
+    logger.error("Error al eliminar archivo:", error?.message || error);
     // No lanzamos error para no interrumpir el flujo
   }
 }
@@ -242,7 +247,7 @@ export async function deleteStorageFile(fileUrl: string): Promise<void> {
  */
 export async function downloadFileFromStorage(fileUrl: string, fileName: string): Promise<void> {
   try {
-    console.log("Iniciando descarga de:", fileUrl);
+    logger.info("Iniciando descarga de:", fileUrl);
     
     // Verificar si es una URL blob temporal (para modo offline/desarrollo)
     if (fileUrl.startsWith('blob:')) {
@@ -310,7 +315,7 @@ export async function downloadFileFromStorage(fileUrl: string, fileName: string)
         return;
       }
     } catch (urlError) {
-      console.warn("Error procesando URL de Firebase:", urlError);
+      logger.warn("Error procesando URL de Firebase:", urlError);
       // Continuar intentando descargar directamente
     }
     
@@ -318,7 +323,7 @@ export async function downloadFileFromStorage(fileUrl: string, fileName: string)
     window.open(fileUrl, '_blank');
     
   } catch (error: any) {
-    console.error("Error descargando archivo:", error?.message || error);
+    logger.error("Error descargando archivo:", error?.message || error);
     throw new Error("No se pudo descargar el archivo. " + (error?.message || ""));
   }
 }

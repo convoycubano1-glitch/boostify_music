@@ -9,6 +9,7 @@
  */
 
 import { 
+import { logger } from "../logger";
   VoiceModel, 
   AudioEffect, 
   TrainingStatus, 
@@ -17,13 +18,17 @@ import {
   VoiceConversionRequest 
 } from '../types/voice-model-types';
 import { voiceProcessingService } from './voice-processing-service';
+import { logger } from "../logger";
 import { revocalizeAPI } from './api/revocalize-api';
+import { logger } from "../logger";
 import { kitsAIAPI } from './api/kits-ai-api';
+import { logger } from "../logger";
 import { toast } from '../../hooks/use-toast';
+import { logger } from "../logger";
 
 class VoiceModelService {
   constructor() {
-    console.log('Voice Model Service initialized with synchronized API integration');
+    logger.info('Voice Model Service initialized with synchronized API integration');
   }
   
   /**
@@ -61,7 +66,7 @@ class VoiceModelService {
     try {
       return await revocalizeAPI.getAvailableModels();
     } catch (error) {
-      console.error('Error fetching voice models:', error);
+      logger.error('Error fetching voice models:', error);
       toast({
         title: 'Error al obtener modelos',
         description: 'No se pudieron cargar los modelos de voz disponibles.',
@@ -90,7 +95,7 @@ class VoiceModelService {
     try {
       return await revocalizeAPI.createVoiceModel(name, samples, options);
     } catch (error) {
-      console.error('Error creating custom voice model:', error);
+      logger.error('Error creating custom voice model:', error);
       toast({
         title: 'Error al crear modelo',
         description: 'No se pudo crear el modelo de voz personalizado.',
@@ -115,7 +120,7 @@ class VoiceModelService {
         error: status.error
       };
     } catch (error) {
-      console.error('Error checking training status:', error);
+      logger.error('Error checking training status:', error);
       return {
         status: 'failed',
         model_id: modelId,
@@ -156,7 +161,7 @@ class VoiceModelService {
         recordId: result.id || ''  // Usamos el ID del documento como recordId
       };
     } catch (error) {
-      console.error('Error converting audio:', error);
+      logger.error('Error converting audio:', error);
       toast({
         title: 'Error en conversión',
         description: 'No se pudo iniciar la conversión de voz.',
@@ -207,7 +212,7 @@ class VoiceModelService {
     try {
       return await kitsAIAPI.getAvailableEffects();
     } catch (error) {
-      console.error('Error fetching audio effects:', error);
+      logger.error('Error fetching audio effects:', error);
       toast({
         title: 'Error al obtener efectos',
         description: 'No se pudieron cargar los efectos de audio disponibles.',

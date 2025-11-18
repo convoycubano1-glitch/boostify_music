@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet";
+import { logger } from "../lib/logger";
 
 interface HeadProps {
   title: string;

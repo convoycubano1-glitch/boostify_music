@@ -1,4 +1,5 @@
 import { useState, memo } from "react";
+import { logger } from "../lib/logger";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
@@ -46,7 +47,7 @@ export const PaymentSection = memo(function PaymentSection({
         throw new Error('Payment URL not received');
       }
     } catch (error) {
-      console.error('Error al crear sesión de pago:', error);
+      logger.error('Error al crear sesión de pago:', error);
       toast({
         title: t('payment.paymentError'),
         description: error instanceof Error ? error.message : t('payment.couldNotInitiate'),

@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Camera Movements Component
  * 
  * Este componente permite al usuario configurar y aplicar movimientos de cámara

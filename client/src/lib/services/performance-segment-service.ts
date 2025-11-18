@@ -4,8 +4,11 @@
  */
 
 import { cutAudioSegment, cutAudioSegments } from './audio-segmentation';
+import { logger } from "../logger";
 import { generateTalkingHead, batchGenerateTalkingHeads } from '../api/fal-musetalk';
+import { logger } from "../logger";
 import { uploadImageFromUrl } from '../firebase-storage';
+import { logger } from "../logger";
 
 export interface PerformanceSegmentData {
   projectId: number;
@@ -111,7 +114,7 @@ export function detectPerformanceClips(script: any): DetectedPerformanceClip[] {
       );
       
       if (isExcludedShot) {
-        console.log(`⛔ [LIP-SYNC] Clip ${scene.scene_id || scene.id} EXCLUIDO: Shot type "${shotType}" no válido para lip-sync`);
+        logger.info(`⛔ [LIP-SYNC] Clip ${scene.scene_id || scene.id} EXCLUIDO: Shot type "${shotType}" no válido para lip-sync`);
         return false;
       }
       
@@ -131,9 +134,9 @@ export function detectPerformanceClips(script: any): DetectedPerformanceClip[] {
       const shouldInclude = isValidShot && isPerformanceScene;
       
       if (shouldInclude) {
-        console.log(`✅ [LIP-SYNC] Clip ${scene.scene_id || scene.id} INCLUIDO: Shot type "${shotType}" + Performance scene`);
+        logger.info(`✅ [LIP-SYNC] Clip ${scene.scene_id || scene.id} INCLUIDO: Shot type "${shotType}" + Performance scene`);
       } else if (isValidShot && !isPerformanceScene) {
-        console.log(`⚠️ [LIP-SYNC] Clip ${scene.scene_id || scene.id} OMITIDO: Shot válido "${shotType}" pero NO es escena de performance`);
+        logger.info(`⚠️ [LIP-SYNC] Clip ${scene.scene_id || scene.id} OMITIDO: Shot válido "${shotType}" pero NO es escena de performance`);
       }
       
       return shouldInclude;
@@ -182,7 +185,7 @@ export async function processPerformanceClips(
       }))
     );
     
-    console.log(`✂️ ${audioSegments.size} segmentos de audio cortados`);
+    logger.info(`✂️ ${audioSegments.size} segmentos de audio cortados`);
     
     // Paso 2: Subir segmentos a Firebase y crear registros
     let current = 0;
@@ -194,7 +197,7 @@ export async function processPerformanceClips(
       
       const audioSegment = audioSegments.get(String(clip.id));
       if (!audioSegment) {
-        console.warn(`⚠️ No se encontró segmento de audio para clip ${clip.id}`);
+        logger.warn(`⚠️ No se encontró segmento de audio para clip ${clip.id}`);
         continue;
       }
       
@@ -244,7 +247,7 @@ export async function processPerformanceClips(
         });
         
       } catch (error) {
-        console.error(`❌ Error procesando clip ${clip.id}:`, error);
+        logger.error(`❌ Error procesando clip ${clip.id}:`, error);
       }
     }
     
@@ -291,11 +294,11 @@ export async function processPerformanceClips(
       }
     }
     
-    console.log(`🎉 Procesamiento completado: ${results.size} segmentos`);
+    logger.info(`🎉 Procesamiento completado: ${results.size} segmentos`);
     return results;
     
   } catch (error) {
-    console.error('❌ Error en processPerformanceClips:', error);
+    logger.error('❌ Error en processPerformanceClips:', error);
     throw error;
   }
 }
@@ -313,7 +316,7 @@ export async function getPerformanceSegments(projectId: number): Promise<Perform
     const { segments } = await response.json();
     return segments;
   } catch (error) {
-    console.error('Error getting performance segments:', error);
+    logger.error('Error getting performance segments:', error);
     return [];
   }
 }
@@ -363,7 +366,7 @@ export async function regenerateLipSync(
       return false;
     }
   } catch (error) {
-    console.error('Error regenerating lip-sync:', error);
+    logger.error('Error regenerating lip-sync:', error);
     return false;
   }
 }

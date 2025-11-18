@@ -1,4 +1,5 @@
 import { StreamingService, StreamingTrack, StreamingError } from './streaming-service';
+import { logger } from "../logger";
 
 export class SpotifyStreamingService implements StreamingService {
   private accessToken: string | null = null;
@@ -7,10 +8,10 @@ export class SpotifyStreamingService implements StreamingService {
 
   constructor() {
     // Add check for debugging
-    console.log("Spotify Client ID available:", !!import.meta.env.VITE_SPOTIFY_CLIENT_ID);
+    logger.info("Spotify Client ID available:", !!import.meta.env.VITE_SPOTIFY_CLIENT_ID);
 
     if (!import.meta.env.VITE_SPOTIFY_CLIENT_ID) {
-      console.error('Spotify client ID is not configured');
+      logger.error('Spotify client ID is not configured');
     }
   }
 
@@ -21,7 +22,7 @@ export class SpotifyStreamingService implements StreamingService {
       this.isAuthenticated = true;
       return true;
     } catch (error) {
-      console.error('Error connecting to Spotify:', error);
+      logger.error('Error connecting to Spotify:', error);
       this.isAuthenticated = false;
       return false;
     }
@@ -47,15 +48,15 @@ export class SpotifyStreamingService implements StreamingService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Token error:', errorData);
+        logger.error('Token error:', errorData);
         throw new Error(`Failed to get access token: ${errorData.error || 'Unknown error'}`);
       }
 
       const data = await response.json();
-      console.log('Token response:', { ...data, access_token: '[REDACTED]' });
+      logger.info('Token response:', { ...data, access_token: '[REDACTED]' });
       return data.access_token;
     } catch (error) {
-      console.error('Error getting Spotify token:', error);
+      logger.error('Error getting Spotify token:', error);
       throw new StreamingError(
         'Failed to authenticate with Spotify',
         'spotify',
@@ -75,7 +76,7 @@ export class SpotifyStreamingService implements StreamingService {
     }
 
     try {
-      console.log('Searching Spotify for:', query);
+      logger.info('Searching Spotify for:', query);
       const response = await fetch(
         `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=50`, 
         {
@@ -87,18 +88,18 @@ export class SpotifyStreamingService implements StreamingService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Spotify API error:', errorData);
+        logger.error('Spotify API error:', errorData);
         throw new Error(`Failed to search tracks: ${errorData.error?.message || 'Unknown error'}`);
       }
 
       const data = await response.json();
 
       // Log raw track data for debugging
-      console.log('First track raw data:', JSON.stringify(data.tracks.items[0], null, 2));
+      logger.info('First track raw data:', JSON.stringify(data.tracks.items[0], null, 2));
 
       const tracks = data.tracks.items.map((track: any) => {
         // Log individual track processing
-        console.log('Processing track:', {
+        logger.info('Processing track:', {
           id: track.id,
           name: track.name,
           preview_url: track.preview_url,
@@ -119,10 +120,10 @@ export class SpotifyStreamingService implements StreamingService {
 
       // Log track statistics
       const tracksWithPreviews = tracks.filter(t => t.streamUrl).length;
-      console.log(`Found ${tracks.length} tracks, ${tracksWithPreviews} with previews available`);
+      logger.info(`Found ${tracks.length} tracks, ${tracksWithPreviews} with previews available`);
 
       if (tracksWithPreviews === 0) {
-        console.log('First 3 tracks details:', 
+        logger.info('First 3 tracks details:', 
           tracks.slice(0, 3).map(t => ({
             name: t.title,
             artist: t.artist,
@@ -136,7 +137,7 @@ export class SpotifyStreamingService implements StreamingService {
 
       return tracks;
     } catch (error) {
-      console.error('Error searching tracks:', error);
+      logger.error('Error searching tracks:', error);
       return [];
     }
   }
@@ -169,7 +170,7 @@ export class SpotifyStreamingService implements StreamingService {
         externalUrl: track.external_urls.spotify
       }));
     } catch (error) {
-      console.error('Error getting recommendations:', error);
+      logger.error('Error getting recommendations:', error);
       return [];
     }
   }

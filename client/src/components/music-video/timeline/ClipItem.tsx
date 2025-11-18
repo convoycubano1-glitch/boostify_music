@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente ClipItem para el editor de timeline
  * Representa un clip individual en la línea de tiempo
  */

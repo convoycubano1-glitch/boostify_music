@@ -1,4 +1,5 @@
 // src/components/ai/composer-agent.tsx
+import { logger } from "@/lib/logger";
 import { Music2, Download, Save } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { falService } from "../../lib/api/fal-service";
@@ -77,7 +78,7 @@ export function ComposerAgent() {
       
       return lyrics;
     } catch (error) {
-      console.error('Error generating lyrics:', error);
+      logger.error('Error generating lyrics:', error);
       throw new Error('No se pudo generar la letra. Por favor, intenta de nuevo.');
     }
   };
@@ -103,9 +104,9 @@ export function ComposerAgent() {
         }
       );
 
-      console.log('✅ Composer lyrics saved to Firestore with Gemini integration');
+      logger.info('✅ Composer lyrics saved to Firestore with Gemini integration');
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       // Don't throw - allow the music generation to continue even if save fails
     }
   };
@@ -214,7 +215,7 @@ ${firstVerseAndChorus}
           }
 
           // Primero generamos la letra
-          console.log('Generando letras...');
+          logger.info('Generando letras...');
           const lyrics = await generateLyrics(params);
           setGeneratedLyrics(lyrics);
 
@@ -227,7 +228,7 @@ ${firstVerseAndChorus}
           ]);
 
           const musicPrompt = createMusicPrompt(params, lyrics);
-          console.log('Prompt para música:', musicPrompt);
+          logger.info('Prompt para música:', musicPrompt);
 
           const response = await falService.generateMusic(
             {
@@ -242,7 +243,7 @@ ${firstVerseAndChorus}
             musicPrompt
           );
 
-          console.log('Respuesta de FAL.AI:', response);
+          logger.info('Respuesta de FAL.AI:', response);
 
           if (response?.musicUrl) {
             setGeneratedMusicUrl(response.musicUrl);
@@ -263,7 +264,7 @@ ${firstVerseAndChorus}
           }
 
         } catch (error) {
-          console.error("Error in composition process:", error);
+          logger.error("Error in composition process:", error);
           toast({
             title: "Error",
             description: "Failed to complete the composition process. Please try again.",

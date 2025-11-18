@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { 
@@ -91,7 +92,7 @@ export default function UserGrowthDashboard() {
         setUserGrowth(userGrowthData);
         setLoading(false);
       } catch (error) {
-        console.error("Error al cargar datos de usuarios:", error);
+        logger.error("Error al cargar datos de usuarios:", error);
         setLoading(false);
       }
     }

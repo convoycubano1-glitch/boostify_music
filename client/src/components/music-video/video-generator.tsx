@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -124,7 +125,7 @@ export function VideoGenerator({ onGenerateVideo, isLoading, scenesCount = 0, cl
     try {
       localStorage.setItem('last-video-generation-settings', JSON.stringify(settings));
     } catch (e) {
-      console.log('Error guardando configuración de video:', e);
+      logger.info('Error guardando configuración de video:', e);
     }
     
     await onGenerateVideo(settings);

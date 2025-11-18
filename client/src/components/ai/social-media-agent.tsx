@@ -1,4 +1,5 @@
 // src/components/ai/social-media-agent.tsx
+import { logger } from "@/lib/logger";
 
 import { Share2, Save, Download } from "lucide-react";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
@@ -38,9 +39,9 @@ export function SocialMediaAgent() {
         }
       );
 
-      console.log('✅ Social media content saved to Firestore with Gemini integration');
+      logger.info('✅ Social media content saved to Firestore with Gemini integration');
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       // Don't throw - continue even if save fails
     }
   };
@@ -107,7 +108,7 @@ export function SocialMediaAgent() {
           });
           return content;
         } catch (error) {
-          console.error("Detailed error planning content:", {
+          logger.error("Detailed error planning content:", {
             message: error.message,
             stack: error.stack,
           });
@@ -163,7 +164,7 @@ export function SocialMediaAgent() {
           });
           return response;
         } catch (error) {
-          console.error("Detailed error analyzing engagement:", {
+          logger.error("Detailed error analyzing engagement:", {
             message: error.message,
             stack: error.stack,
           });
@@ -220,7 +221,7 @@ export function SocialMediaAgent() {
           });
           return response;
         } catch (error) {
-          console.error("Detailed error generating hashtags:", {
+          logger.error("Detailed error generating hashtags:", {
             message: error.message,
             stack: error.stack,
           });

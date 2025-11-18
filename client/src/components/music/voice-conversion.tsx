@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { logger } from "@/lib/logger";
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Loader2, Upload, Play, Pause, Download, Music2, Music } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
@@ -285,7 +286,7 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
           description: 'No se pudo descargar el archivo de audio. La URL no es válida o no se puede acceder al recurso.',
           variant: 'destructive'
         });
-        console.error('Error al descargar audio:', error);
+        logger.error('Error al descargar audio:', error);
       }
     } else {
       toast({
@@ -345,7 +346,7 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                 preload="metadata"
                 onEnded={() => setIsPlaying(false)}
                 onError={(e) => {
-                  console.error('Error loading source audio:', e);
+                  logger.error('Error loading source audio:', e);
                   toast({
                     title: 'Error de audio',
                     description: 'No se pudo cargar el audio original. El formato podría no ser compatible.',
@@ -546,7 +547,7 @@ export function VoiceConversion({ className }: VoiceConversionProps) {
                       preload="metadata"
                       onEnded={() => setIsPlaying(false)}
                       onError={(e) => {
-                        console.error('Error loading converted audio:', e);
+                        logger.error('Error loading converted audio:', e);
                         toast({
                           title: 'Error de reproducción',
                           description: 'No se pudo cargar el audio convertido. Intenta descargar el archivo directamente.',

@@ -3,8 +3,11 @@
  * Proporciona funciones para guardar, recuperar y gestionar contenido multimedia generado
  */
 import { auth, db } from '../firebase';
+import { logger } from "./logger";
 import { collection, addDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { logger } from "./logger";
 import { ImageResult, VideoResult } from '../types/model-types';
+import { logger } from "./logger";
 
 // Nombres de colecciones en Firestore
 const IMAGES_COLLECTION = 'generated_images';
@@ -114,7 +117,7 @@ export async function saveGeneratedImage(image: ImageResult): Promise<string> {
     const docRef = await addDoc(imagesCollection, firestoreData);
     return docRef.id;
   } catch (error) {
-    console.error('Error saving image to Firestore:', error);
+    logger.error('Error saving image to Firestore:', error);
     
     // Como alternativa, guardar en localStorage
     try {
@@ -137,10 +140,10 @@ export async function saveGeneratedImage(image: ImageResult): Promise<string> {
       // Guardar en localStorage
       localStorage.setItem(LOCAL_STORAGE_IMAGES_KEY, JSON.stringify(savedImages));
       
-      console.log('Image saved to localStorage instead of Firestore');
+      logger.info('Image saved to localStorage instead of Firestore');
       return localId;
     } catch (localError) {
-      console.error('Error saving to localStorage:', localError);
+      logger.error('Error saving to localStorage:', localError);
       // Devolvemos un ID simulado en el peor caso para que la UI funcione
       return 'temp_' + Date.now();
     }
@@ -166,7 +169,7 @@ export async function saveGeneratedVideo(video: VideoResult): Promise<string> {
     const docRef = await addDoc(videosCollection, firestoreData);
     return docRef.id;
   } catch (error) {
-    console.error('Error saving video to Firestore:', error);
+    logger.error('Error saving video to Firestore:', error);
     
     // Como alternativa, guardar en localStorage
     try {
@@ -189,10 +192,10 @@ export async function saveGeneratedVideo(video: VideoResult): Promise<string> {
       // Guardar en localStorage
       localStorage.setItem(LOCAL_STORAGE_VIDEOS_KEY, JSON.stringify(savedVideos));
       
-      console.log('Video saved to localStorage instead of Firestore');
+      logger.info('Video saved to localStorage instead of Firestore');
       return localId;
     } catch (localError) {
-      console.error('Error saving to localStorage:', localError);
+      logger.error('Error saving to localStorage:', localError);
       // Devolvemos un ID simulado en el peor caso para que la UI funcione
       return 'temp_' + Date.now();
     }
@@ -221,7 +224,7 @@ export async function getGeneratedImages(): Promise<ImageResult[]> {
     const querySnapshot = await getDocs(q);
     firestoreImages = querySnapshot.docs.map(convertFirestoreToImage);
   } catch (error) {
-    console.error('Error getting generated images from Firestore:', error);
+    logger.error('Error getting generated images from Firestore:', error);
   }
   
   // Obtener imágenes de localStorage
@@ -231,7 +234,7 @@ export async function getGeneratedImages(): Promise<ImageResult[]> {
       localImages = JSON.parse(savedImagesStr);
     }
   } catch (localError) {
-    console.error('Error getting images from localStorage:', localError);
+    logger.error('Error getting images from localStorage:', localError);
   }
   
   // Combinar imágenes de ambas fuentes (filtrando duplicados por URL)
@@ -275,7 +278,7 @@ export async function getGeneratedVideos(): Promise<VideoResult[]> {
     const querySnapshot = await getDocs(q);
     firestoreVideos = querySnapshot.docs.map(convertFirestoreToVideo);
   } catch (error) {
-    console.error('Error getting generated videos from Firestore:', error);
+    logger.error('Error getting generated videos from Firestore:', error);
   }
   
   // Obtener videos de localStorage
@@ -285,7 +288,7 @@ export async function getGeneratedVideos(): Promise<VideoResult[]> {
       localVideos = JSON.parse(savedVideosStr);
     }
   } catch (localError) {
-    console.error('Error getting videos from localStorage:', localError);
+    logger.error('Error getting videos from localStorage:', localError);
   }
   
   // Combinar videos de ambas fuentes (filtrando duplicados por URL)
@@ -355,7 +358,7 @@ export function saveMediaToLocalStorage(type: 'image' | 'video', items: (ImageRe
     localStorage.setItem(storageKey, JSON.stringify(savedItems));
     return true;
   } catch (error) {
-    console.error(`Error saving ${type} to localStorage:`, error);
+    logger.error(`Error saving ${type} to localStorage:`, error);
     return false;
   }
 }
@@ -374,7 +377,7 @@ export async function saveGeneratedContent(content: ImageResult | VideoResult, t
       return await saveGeneratedVideo(content as VideoResult);
     }
   } catch (error) {
-    console.error(`Error saving ${type}:`, error);
+    logger.error(`Error saving ${type}:`, error);
     
     // Fallback a localStorage en caso de error
     const success = saveMediaToLocalStorage(type, [content]);

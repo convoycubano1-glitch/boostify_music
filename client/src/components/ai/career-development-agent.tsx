@@ -1,4 +1,5 @@
 import { Briefcase, Brain, Sparkles, Target, Trophy, TrendingUp } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -110,7 +111,7 @@ export function CareerDevelopmentAgent() {
       ],
       action: async (params) => {
         await simulateThinking();
-        console.log("Analyzing career path:", params);
+        logger.info("Analyzing career path:", params);
       }
     },
     {
@@ -133,7 +134,7 @@ export function CareerDevelopmentAgent() {
       ],
       action: async (params) => {
         await simulateThinking();
-        console.log("Creating skill development plan:", params);
+        logger.info("Creating skill development plan:", params);
       }
     }
   ];

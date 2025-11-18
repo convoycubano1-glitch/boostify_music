@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { logger } from "../lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -91,16 +92,16 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
     reader.onloadend = () => {
       const base64String = reader.result as string;
       setReferenceImagePreview(base64String);
-      console.log("✅ Reference image loaded successfully");
-      console.log("   - File size:", (file.size / 1024).toFixed(2), "KB");
-      console.log("   - Base64 length:", base64String.length);
+      logger.info("✅ Reference image loaded successfully");
+      logger.info("   - File size:", (file.size / 1024).toFixed(2), "KB");
+      logger.info("   - Base64 length:", base64String.length);
       toast({
         title: "Reference Image Uploaded ✓",
         description: "Ready to generate professional photo with Gemini AI",
       });
     };
     reader.onerror = () => {
-      console.error("❌ Error reading file:", reader.error);
+      logger.error("❌ Error reading file:", reader.error);
       toast({
         title: "Upload Failed",
         description: "Failed to read the image file. Please try again.",
@@ -116,7 +117,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-    console.log("Reference image cleared");
+    logger.info("Reference image cleared");
     toast({
       title: "Reference Removed",
       description: "Reference photo has been cleared",
@@ -157,7 +158,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
           ? referenceImagePreview.split(',')[1] 
           : referenceImagePreview;
         
-        console.log("Sending reference image to Gemini, base64 length:", base64Data.length);
+        logger.info("Sending reference image to Gemini, base64 length:", base64Data.length);
         
         const response = await fetch('/api/gemini-image/generate-with-face', {
           method: 'POST',
@@ -176,7 +177,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         }
         
         result = await response.json();
-        console.log("Gemini response received, success:", result.success);
+        logger.info("Gemini response received, success:", result.success);
       } else {
         // Generate without reference image
         toast({
@@ -191,7 +192,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         // Convert base64 to data URL for display
         const imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
         setGeneratedImageUrl(imageDataUrl);
-        console.log("Generated image set successfully, length:", result.imageBase64.length);
+        logger.info("Generated image set successfully, length:", result.imageBase64.length);
         toast({
           title: "Success!",
           description: `Professional ${formData.category} photo generated with Gemini Imagen 3`,
@@ -200,7 +201,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         throw new Error(result.error || "No image data in response");
       }
     } catch (error) {
-      console.error("Error generating image with Gemini:", error);
+      logger.error("Error generating image with Gemini:", error);
       toast({
         title: "Generation Failed",
         description: error instanceof Error ? error.message : "Failed to generate profile image. Please try again.",
@@ -257,13 +258,13 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
       // 🎨 AUTO-PERFIL: Crear/verificar perfil de artista antes de guardar músico
       let profileSlug = null;
       try {
-        console.log('🎨 Creando/verificando perfil de artista para músico...');
+        logger.info('🎨 Creando/verificando perfil de artista para músico...');
         
         const profileResult = await ensureArtistProfile(genresList[0] || formData.instrument);
         
         if (profileResult.success && profileResult.profile) {
           profileSlug = profileResult.profile.slug;
-          console.log('✅ Perfil verificado/creado:', profileSlug);
+          logger.info('✅ Perfil verificado/creado:', profileSlug);
           
           // Actualizar imagen de perfil con foto profesional generada
           const imageUpdateResult = await updateProfileImages({
@@ -272,7 +273,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
           });
           
           if (imageUpdateResult.success) {
-            console.log('✅ Imagen de perfil actualizada con foto profesional');
+            logger.info('✅ Imagen de perfil actualizada con foto profesional');
             toast({
               title: "Perfil de Artista Creado",
               description: `Tu perfil público está disponible en /artist/${profileSlug}`,
@@ -281,7 +282,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         }
       } catch (profileError) {
         // No bloqueamos el registro del músico si falla el auto-perfil
-        console.warn('⚠️ Error creando perfil automático (no crítico):', profileError);
+        logger.warn('⚠️ Error creando perfil automático (no crítico):', profileError);
       }
 
       const musicianData = {
@@ -298,7 +299,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         isActive: true,
       };
 
-      console.log("Submitting musician data to database:", {
+      logger.info("Submitting musician data to database:", {
         ...musicianData,
         photo: `[base64 ${generatedImageUrl?.length} chars]`,
         referencePhoto: referenceImagePreview ? `[base64 ${referenceImagePreview.length} chars]` : null
@@ -319,7 +320,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
 
       const savedMusician = await response.json();
 
-      console.log("Musician saved to database successfully:", savedMusician);
+      logger.info("Musician saved to database successfully:", savedMusician);
 
       await queryClient.invalidateQueries({ queryKey: ['/api/musicians'] });
 
@@ -334,7 +335,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         try {
           await onSuccess();
         } catch (callbackError) {
-          console.error("Error in onSuccess callback:", callbackError);
+          logger.error("Error in onSuccess callback:", callbackError);
         }
       }
       
@@ -342,7 +343,7 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         onClose();
       }
     } catch (error) {
-      console.error("Error adding musician:", error instanceof Error ? error.message : error, error);
+      logger.error("Error adding musician:", error instanceof Error ? error.message : error, error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to add musician",

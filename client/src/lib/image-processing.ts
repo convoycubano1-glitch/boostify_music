@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * Utilidades para procesamiento de imágenes específicamente para la API de Kling
  * Versión para el lado del cliente (browser)
@@ -21,7 +22,7 @@ export interface ImageConversionResult {
  */
 export async function convertToKlingFormatJpeg(dataUrl: string): Promise<ImageConversionResult> {
   try {
-    console.log('Procesando imagen para máxima compatibilidad con Kling API');
+    logger.info('Procesando imagen para máxima compatibilidad con Kling API');
     
     // Si no hay imagen, no es válido
     if (!dataUrl) {
@@ -60,7 +61,7 @@ export async function convertToKlingFormatJpeg(dataUrl: string): Promise<ImageCo
     
     // Registrar el formato original
     const originalFormat = mimeType.split('/')[1] || 'desconocido';
-    console.log(`Formato original: ${originalFormat}`);
+    logger.info(`Formato original: ${originalFormat}`);
     
     // Estimación aproximada del tamaño
     const estimatedSizeInBytes = (base64Data.length * 3) / 4;
@@ -82,7 +83,7 @@ export async function convertToKlingFormatJpeg(dataUrl: string): Promise<ImageCo
       img.onload = () => {
         try {
           const { width, height } = img;
-          console.log(`Dimensiones de imagen: ${width}x${height}`);
+          logger.info(`Dimensiones de imagen: ${width}x${height}`);
           
           // Validación de dimensiones según requisitos de Kling
           const shortSide = Math.min(width, height);
@@ -156,7 +157,7 @@ export async function convertToKlingFormatJpeg(dataUrl: string): Promise<ImageCo
             const newSizeInBytes = (jpegBase64.length * 3) / 4;
             const newSizeInMB = newSizeInBytes / (1024 * 1024);
             
-            console.log(`✅ Conversión exitosa a JPEG puro: ${width}x${height}, ${newSizeInMB.toFixed(2)}MB`);
+            logger.info(`✅ Conversión exitosa a JPEG puro: ${width}x${height}, ${newSizeInMB.toFixed(2)}MB`);
             
             // Éxito - devolver la imagen convertida
             resolve({
@@ -168,7 +169,7 @@ export async function convertToKlingFormatJpeg(dataUrl: string): Promise<ImageCo
               originalFormat
             });
           } catch (conversionError: any) {
-            console.error('Error durante la conversión a JPEG:', conversionError);
+            logger.error('Error durante la conversión a JPEG:', conversionError);
             resolve({
               isValid: false,
               errorMessage: `Error al convertir a JPEG: ${conversionError.message}`,
@@ -179,7 +180,7 @@ export async function convertToKlingFormatJpeg(dataUrl: string): Promise<ImageCo
             });
           }
         } catch (imgError: any) {
-          console.error('Error al procesar la imagen cargada:', imgError);
+          logger.error('Error al procesar la imagen cargada:', imgError);
           resolve({
             isValid: false,
             errorMessage: `Error al procesar la imagen: ${imgError.message}`,
@@ -190,7 +191,7 @@ export async function convertToKlingFormatJpeg(dataUrl: string): Promise<ImageCo
       };
       
       img.onerror = (error) => {
-        console.error('Error al cargar la imagen:', error);
+        logger.error('Error al cargar la imagen:', error);
         resolve({
           isValid: false,
           errorMessage: 'Error al cargar la imagen. Podría estar dañada o ser un formato no soportado.',
@@ -206,7 +207,7 @@ export async function convertToKlingFormatJpeg(dataUrl: string): Promise<ImageCo
     // Esperar y devolver resultado
     return await imagePromise;
   } catch (error: any) {
-    console.error('Error general en procesamiento de imagen:', error);
+    logger.error('Error general en procesamiento de imagen:', error);
     return {
       isValid: false,
       errorMessage: `Error general en procesamiento: ${error.message}`
@@ -303,7 +304,7 @@ export async function validateKlingImageFormat(dataUrl: string): Promise<ImageCo
         };
       }
     } catch (binaryError) {
-      console.warn('Error al verificar firma binaria JPEG:', binaryError);
+      logger.warn('Error al verificar firma binaria JPEG:', binaryError);
       // Continuamos porque esta verificación es adicional
     }
     
@@ -337,7 +338,7 @@ export async function validateKlingImageFormat(dataUrl: string): Promise<ImageCo
       img.src = dataUrl;
     });
   } catch (error) {
-    console.error('Error al validar la imagen:', error);
+    logger.error('Error al validar la imagen:', error);
     // Devolver promesa resuelta con error para mantener consistencia en el tipo de retorno
     return Promise.resolve({ 
       isValid: false,

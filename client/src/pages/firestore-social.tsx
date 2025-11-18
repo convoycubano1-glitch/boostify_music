@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { logger } from "../lib/logger";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -81,7 +82,7 @@ export default function FirestoreSocialPage() {
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play().catch(error => {
-        console.error("Video autoplay failed:", error);
+        logger.error("Video autoplay failed:", error);
       });
     }
   }, []);
@@ -110,7 +111,7 @@ export default function FirestoreSocialPage() {
         }
       });
     } catch (error) {
-      console.error("Error syncing user:", error);
+      logger.error("Error syncing user:", error);
     }
   };
 
@@ -211,7 +212,7 @@ export default function FirestoreSocialPage() {
         description: "An error occurred while updating your profile. Please try again.",
         variant: "destructive",
       });
-      console.error("Error updating profile:", error);
+      logger.error("Error updating profile:", error);
     }
   });
 
@@ -242,7 +243,7 @@ export default function FirestoreSocialPage() {
         description: "An error occurred while publishing your post. Please try again.",
         variant: "destructive",
       });
-      console.error("Error creating post:", error);
+      logger.error("Error creating post:", error);
     }
   });
 
@@ -268,7 +269,7 @@ export default function FirestoreSocialPage() {
         description: "An error occurred while liking the post. Please try again.",
         variant: "destructive",
       });
-      console.error("Error liking post:", error);
+      logger.error("Error liking post:", error);
     }
   });
   
@@ -301,7 +302,7 @@ export default function FirestoreSocialPage() {
         description: "An error occurred while saving the post. Please try again.",
         variant: "destructive",
       });
-      console.error("Error saving post:", error);
+      logger.error("Error saving post:", error);
     }
   });
 

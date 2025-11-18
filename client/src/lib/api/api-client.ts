@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * API client for making requests to the server
  * Wraps fetch with common options and error handling
@@ -45,7 +46,7 @@ export async function apiRequest<T>(
     
     return data as T;
   } catch (error) {
-    console.error('API request error:', error);
+    logger.error('API request error:', error);
     throw error;
   }
 }

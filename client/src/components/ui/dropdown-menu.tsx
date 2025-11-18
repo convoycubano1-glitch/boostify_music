@@ -1,4 +1,5 @@
 import * as React from "react"
+import { logger } from "../lib/logger";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
 

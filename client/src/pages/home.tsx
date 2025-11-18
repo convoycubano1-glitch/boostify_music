@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -377,10 +378,10 @@ export default function HomePage() {
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log('Video playing successfully');
+            logger.info('Video playing successfully');
           })
           .catch(() => {
-            console.log('Autoplay blocked by browser');
+            logger.info('Autoplay blocked by browser');
           });
       }
     };
@@ -667,21 +668,21 @@ export default function HomePage() {
                         playsInline
                         preload="auto"
                         onError={(e) => {
-                          console.error('Error loading intro video:', e);
+                          logger.error('Error loading intro video:', e);
                         }}
                         onLoadedMetadata={() => {
-                          console.log('Video metadata loaded');
+                          logger.info('Video metadata loaded');
                           if (introVideoRef.current) {
                             introVideoRef.current.play().catch(e => {
-                              console.log('Autoplay prevented, will play on interaction');
+                              logger.info('Autoplay prevented, will play on interaction');
                             });
                           }
                         }}
                         onCanPlay={() => {
-                          console.log('Video can play');
+                          logger.info('Video can play');
                           if (introVideoRef.current) {
                             introVideoRef.current.play().catch(e => {
-                              console.log('Play attempt failed:', e);
+                              logger.info('Play attempt failed:', e);
                             });
                           }
                         }}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { motion } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
 import { Shield, Calendar, Mail, Zap, Home, Music2 } from "lucide-react";
@@ -86,7 +87,7 @@ export default function TestProgressPage() {
       setIsUnderReview(true);
       
     } catch (error) {
-      console.error("Error in simulation:", error);
+      logger.error("Error in simulation:", error);
       toast({
         title: "Error",
         description: "Could not complete the simulation. Please try again.",

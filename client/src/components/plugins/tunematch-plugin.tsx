@@ -1,4 +1,5 @@
 import { Card } from "../ui/card";
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -356,7 +357,7 @@ export function TuneMatchPlugin() {
               <Label htmlFor="content-type">Content Type Priority</Label>
               <Select 
                 defaultValue="balanced"
-                onValueChange={(value) => console.log("Content type changed:", value)}
+                onValueChange={(value) => logger.info("Content type changed:", value)}
               >
                 <SelectTrigger id="content-type">
                   <SelectValue placeholder="Select content type priority" />
@@ -374,7 +375,7 @@ export function TuneMatchPlugin() {
               <Label htmlFor="algo-mode">Algorithm Mode</Label>
               <Select 
                 defaultValue="smart"
-                onValueChange={(value) => console.log("Algorithm mode changed:", value)}
+                onValueChange={(value) => logger.info("Algorithm mode changed:", value)}
               >
                 <SelectTrigger id="algo-mode">
                   <SelectValue placeholder="Select algorithm mode" />

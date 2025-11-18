@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from "@/lib/logger";
 import { Check, X, Loader2, Sparkles, Music, Video, Zap, Crown, Mic, Camera, Wand2, TrendingUp } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
@@ -105,7 +106,7 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
             handleSubscribe(planKey, savedYearly);
           }, 500);
         } catch (error) {
-          console.error('Error procesando plan guardado:', error);
+          logger.error('Error procesando plan guardado:', error);
           localStorage.removeItem('selectedPlan');
         }
       }
@@ -211,12 +212,12 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
   ];
 
   const handleSubscribe = async (planKey: string, yearly: boolean) => {
-    console.log('handleSubscribe called:', { planKey, yearly, user });
+    logger.info('handleSubscribe called:', { planKey, yearly, user });
     
     if (!user) {
       localStorage.setItem('selectedPlan', JSON.stringify({ planKey, yearly }));
       
-      console.log('User not authenticated, redirecting to /auth');
+      logger.info('User not authenticated, redirecting to /auth');
       toast({
         title: "Inicia sesión para continuar",
         description: `Has seleccionado el plan ${planKey.toUpperCase()}. Por favor inicia sesión para completar tu suscripción.`,
@@ -253,7 +254,7 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
       if (priceId) {
         try {
           const sessionUrl = await createCheckoutSession(priceId);
-          console.log("URL de sesión de checkout:", sessionUrl);
+          logger.info("URL de sesión de checkout:", sessionUrl);
           
           if (typeof sessionUrl === 'string') {
             window.location.href = sessionUrl;
@@ -262,14 +263,14 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
           }
           return;
         } catch (error) {
-          console.error("Error al crear sesión de checkout:", error);
+          logger.error("Error al crear sesión de checkout:", error);
           throw error;
         }
       } else {
         throw new Error("ID de precio no disponible para el plan seleccionado");
       }
     } catch (error) {
-      console.error('Error starting checkout:', error);
+      logger.error('Error starting checkout:', error);
       toast({
         title: "Error",
         description: "No se pudo iniciar el proceso de suscripción. Por favor, inténtalo de nuevo más tarde.",

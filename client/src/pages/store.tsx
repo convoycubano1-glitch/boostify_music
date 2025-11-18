@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Header } from "../components/layout/header";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -484,14 +485,14 @@ export default function StorePage() {
                 purchasedStatusMap[product.id] = true;
               }
             } catch (error) {
-              console.error(`Error checking purchase status for product ${product.id}:`, error);
+              logger.error(`Error checking purchase status for product ${product.id}:`, error);
             }
           });
           
           await Promise.all(productPromises);
           setPurchasedProducts(purchasedStatusMap);
         } catch (error) {
-          console.error("Error checking purchased products:", error);
+          logger.error("Error checking purchased products:", error);
         }
       };
       
@@ -508,14 +509,14 @@ export default function StorePage() {
                 purchasedStatusMap[app.id] = true;
               }
             } catch (error) {
-              console.error(`Error checking purchase status for app ${app.id}:`, error);
+              logger.error(`Error checking purchase status for app ${app.id}:`, error);
             }
           });
           
           await Promise.all(appPromises);
           setPurchasedApps(purchasedStatusMap);
         } catch (error) {
-          console.error("Error checking purchased apps:", error);
+          logger.error("Error checking purchased apps:", error);
         }
       };
       
@@ -576,7 +577,7 @@ export default function StorePage() {
         throw new Error("No se pudo iniciar el proceso de pago");
       }
     } catch (error) {
-      console.error("Error al iniciar el pago:", error);
+      logger.error("Error al iniciar el pago:", error);
       toast({
         title: "Error de pago",
         description: "No se pudo iniciar el proceso de pago. Inténtalo nuevamente.",
@@ -638,7 +639,7 @@ export default function StorePage() {
         throw new Error("No se pudo iniciar el proceso de pago");
       }
     } catch (error) {
-      console.error("Error al iniciar el pago:", error);
+      logger.error("Error al iniciar el pago:", error);
       toast({
         title: "Error de pago",
         description: "No se pudo iniciar el proceso de pago. Inténtalo nuevamente.",

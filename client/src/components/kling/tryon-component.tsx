@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -55,7 +56,7 @@ export function VirtualTryOnComponent() {
       const results = JSON.parse(localStorage.getItem('tryonResults') || '[]');
       setSavedResults(results);
     } catch (error) {
-      console.error("Error loading saved results:", error);
+      logger.error("Error loading saved results:", error);
     }
   };
 
@@ -162,7 +163,7 @@ export function VirtualTryOnComponent() {
               }
             }
           } catch (error) {
-            console.error("Error in polling interval:", error);
+            logger.error("Error in polling interval:", error);
           }
         }, 2000); // Check every 2 seconds
 

@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * Utility function to download text content as a file
  * 
@@ -17,7 +18,7 @@ export async function downloadTextFile(content: string, filename: string): Promi
     window.document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   } catch (error) {
-    console.error("Error downloading file:", error);
+    logger.error("Error downloading file:", error);
     throw error;
   }
 }

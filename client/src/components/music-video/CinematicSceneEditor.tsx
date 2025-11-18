@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Editor de Escenas Cinematográficas
  * Permite editar todos los parámetros cinematográficos para cada corte del video musical
  * Estructura: scene, camera, lighting, style, movement
@@ -79,7 +80,7 @@ export function CinematicSceneEditor({
         throw new Error(result.error || 'Error al generar imagen');
       }
     } catch (error: any) {
-      console.error('Error generando imagen:', error);
+      logger.error('Error generando imagen:', error);
       toast({
         title: "Error",
         description: error.message || "No se pudo generar la imagen. Intente nuevamente.",

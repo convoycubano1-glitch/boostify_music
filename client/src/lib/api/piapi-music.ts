@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from "../logger";
 
 /**
  * Cliente principal para interactuar con la API de PiAPI
@@ -18,7 +19,7 @@ const PIAPI_KEY = import.meta.env.VITE_PIAPI_API_KEY || '';
 
 // Validar que la API key está configurada
 if (!PIAPI_KEY) {
-  console.warn('⚠️ VITE_PIAPI_API_KEY no está configurada. La generación de música puede fallar.');
+  logger.warn('⚠️ VITE_PIAPI_API_KEY no está configurada. La generación de música puede fallar.');
 }
 
 // Cliente de axios con la clave API y manejo mejorado de errores
@@ -34,16 +35,16 @@ const piapiClient = axios.create({
 piapiClient.interceptors.response.use(
   response => response,
   async error => {
-    console.error('Error en solicitud a PiAPI:', error.message);
+    logger.error('Error en solicitud a PiAPI:', error.message);
     
     // Si es un error de timeout o de conexión, reintentamos la solicitud
     if (error.code === 'ECONNABORTED' || error.message.includes('Network Error')) {
-      console.log('Reintentando solicitud...');
+      logger.info('Reintentando solicitud...');
       try {
         await new Promise(resolve => setTimeout(resolve, 2000)); // Esperar 2 segundos
         return await axios(error.config); // Reintentar con la misma configuración
       } catch (retryError) {
-        console.error('Error en reintento:', retryError);
+        logger.error('Error en reintento:', retryError);
         throw retryError;
       }
     }
@@ -98,7 +99,7 @@ export interface TaskResult {
  */
 export async function generateMusicWithUdio(params: UdioMusicParams): Promise<TaskResult> {
   try {
-    console.log('Generando música con Udio - opciones:', params);
+    logger.info('Generando música con Udio - opciones:', params);
     
     // Validamos que haya una descripción
     if (!params?.description) {
@@ -136,7 +137,7 @@ export async function generateMusicWithUdio(params: UdioMusicParams): Promise<Ta
       status: 'pending'
     };
   } catch (error) {
-    console.error('Error generating music with Udio:', error);
+    logger.error('Error generating music with Udio:', error);
     
     // En caso de error, proporcionamos una respuesta simulada para evitar que la UI se rompa
     return {
@@ -154,7 +155,7 @@ export async function generateMusicWithUdio(params: UdioMusicParams): Promise<Ta
  */
 export async function generateMusicWithSuno(params: SunoMusicParams): Promise<TaskResult> {
   try {
-    console.log('Generando música con opciones:', params);
+    logger.info('Generando música con opciones:', params);
     
     // Validamos que haya una descripción
     if (!params?.description) {
@@ -207,7 +208,7 @@ export async function generateMusicWithSuno(params: SunoMusicParams): Promise<Ta
       status: 'pending'
     };
   } catch (error) {
-    console.error('Error generating music with Suno:', error);
+    logger.error('Error generating music with Suno:', error);
     
     // En caso de error, proporcionamos una respuesta simulada para evitar que la UI se rompa
     return {
@@ -229,7 +230,7 @@ export async function checkMusicGenerationStatus(taskId: string): Promise<{
   error?: string;
 }> {
   try {
-    console.log('Verificando estado de generación:', taskId);
+    logger.info('Verificando estado de generación:', taskId);
     
     // Si el ID comienza con "fallback-", simulamos una respuesta completada
     if (taskId.startsWith('fallback-')) {
@@ -243,7 +244,7 @@ export async function checkMusicGenerationStatus(taskId: string): Promise<{
     const response = await piapiClient.get(`${PIAPI_ENDPOINT}/${taskId}`);
     
     // Registrar la respuesta para depuración
-    console.log(`Respuesta de API para taskId ${taskId}:`, JSON.stringify(response.data, null, 2));
+    logger.info(`Respuesta de API para taskId ${taskId}:`, JSON.stringify(response.data, null, 2));
     
     // Verificar que la respuesta y sus propiedades existan
     if (!response?.data?.data) {
@@ -253,7 +254,7 @@ export async function checkMusicGenerationStatus(taskId: string): Promise<{
     const data = response.data.data;
     
     // Registrar la estructura de datos para depuración
-    console.log(`Datos extraídos para taskId ${taskId}:`, {
+    logger.info(`Datos extraídos para taskId ${taskId}:`, {
       status: data.status,
       model: data.model,
       hasOutput: Boolean(data.output),
@@ -268,45 +269,45 @@ export async function checkMusicGenerationStatus(taskId: string): Promise<{
         // Para Udio
         try {
           // Registrar los datos para depuración
-          console.log('Datos de output para Udio:', JSON.stringify(data.output, null, 2));
+          logger.info('Datos de output para Udio:', JSON.stringify(data.output, null, 2));
           
           audioUrl = data.output?.audio_url || '';
           
           if (!audioUrl) {
-            console.warn('No se encontró audio_url en la respuesta de Udio');
+            logger.warn('No se encontró audio_url en la respuesta de Udio');
           }
         } catch (error) {
-          console.error('Error extrayendo audio_url para Udio:', error);
+          logger.error('Error extrayendo audio_url para Udio:', error);
         }
       } else if (data.model === 'music-s') {
         // Para Suno, extraemos el primer clip con validación cuidadosa
         try {
           // Registrar los datos para depuración
-          console.log('Datos de clips para Suno:', JSON.stringify(data.output?.clips, null, 2));
+          logger.info('Datos de clips para Suno:', JSON.stringify(data.output?.clips, null, 2));
           
           const clips = data.output?.clips || {};
           const clipIds = Object.keys(clips);
           
-          console.log('IDs de clips disponibles:', clipIds);
+          logger.info('IDs de clips disponibles:', clipIds);
           
           if (clipIds.length > 0) {
             if (clips[clipIds[0]] && clips[clipIds[0]].audio_url) {
               audioUrl = clips[clipIds[0]].audio_url;
-              console.log('URL de audio extraída:', audioUrl);
+              logger.info('URL de audio extraída:', audioUrl);
             } else {
-              console.warn('Primer clip no tiene audio_url válida');
+              logger.warn('Primer clip no tiene audio_url válida');
             }
           } else {
-            console.warn('No se encontraron clips en la respuesta');
+            logger.warn('No se encontraron clips en la respuesta');
           }
         } catch (error) {
-          console.error('Error extrayendo audio_url de clips:', error);
+          logger.error('Error extrayendo audio_url de clips:', error);
         }
       }
       
       // Verificar si tenemos una URL válida
       if (!audioUrl) {
-        console.warn('URL de audio no encontrada en la respuesta. Usando fallback.');
+        logger.warn('URL de audio no encontrada en la respuesta. Usando fallback.');
         // Usar la URL de un video existente como fallback
         audioUrl = '/assets/indications/Welcome%20to%20Boostify%20Music%201.mp4';
       }
@@ -326,7 +327,7 @@ export async function checkMusicGenerationStatus(taskId: string): Promise<{
       };
     }
   } catch (error) {
-    console.error('Error checking music generation status:', error);
+    logger.error('Error checking music generation status:', error);
     
     // Si no podemos verificar el estado, proporcionamos una respuesta de fallback
     // para evitar que la aplicación se bloquee

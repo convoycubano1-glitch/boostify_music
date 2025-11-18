@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * Audio Segmentation Service
  * Corta audio en segmentos específicos basados en timestamps del guión
@@ -26,7 +27,7 @@ export async function cutAudioSegment(
   endTime: number,
   audioContext?: AudioContext
 ): Promise<AudioSegment> {
-  console.log(`✂️ Cortando audio: ${startTime}s - ${endTime}s`);
+  logger.info(`✂️ Cortando audio: ${startTime}s - ${endTime}s`);
   
   const ctx = audioContext || new AudioContext();
   const sampleRate = audioBuffer.sampleRate;
@@ -58,7 +59,7 @@ export async function cutAudioSegment(
   const blob = await audioBufferToWav(segmentBuffer);
   const url = URL.createObjectURL(blob);
   
-  console.log(`✅ Segmento creado: ${(blob.size / 1024).toFixed(2)}KB`);
+  logger.info(`✅ Segmento creado: ${(blob.size / 1024).toFixed(2)}KB`);
   
   return {
     startTime,
@@ -77,7 +78,7 @@ export async function cutAudioSegments(
   audioBuffer: AudioBuffer,
   segments: Array<{ startTime: number; endTime: number; id: string }>
 ): Promise<Map<string, AudioSegment>> {
-  console.log(`📦 Cortando ${segments.length} segmentos de audio...`);
+  logger.info(`📦 Cortando ${segments.length} segmentos de audio...`);
   
   const ctx = new AudioContext();
   const results = new Map<string, AudioSegment>();
@@ -92,13 +93,13 @@ export async function cutAudioSegments(
       );
       
       results.set(segment.id, audioSegment);
-      console.log(`✅ Segmento ${segment.id} procesado`);
+      logger.info(`✅ Segmento ${segment.id} procesado`);
     } catch (error) {
-      console.error(`❌ Error cortando segmento ${segment.id}:`, error);
+      logger.error(`❌ Error cortando segmento ${segment.id}:`, error);
     }
   }
   
-  console.log(`🎉 ${results.size}/${segments.length} segmentos cortados exitosamente`);
+  logger.info(`🎉 ${results.size}/${segments.length} segmentos cortados exitosamente`);
   
   return results;
 }

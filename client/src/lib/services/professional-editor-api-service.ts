@@ -6,7 +6,9 @@
  */
 
 import { apiRequest } from '../queryClient';
+import { logger } from "../logger";
 import { EditorState } from '../professional-editor-types';
+import { logger } from "../logger";
 
 // Interfaz para compatibilidad con la API del servidor
 interface ProjectResponse {
@@ -27,9 +29,9 @@ export async function fetchUserProjects(): Promise<any[]> {
     const response = await apiRequest(`${API_BASE_URL}/projects`);
     return response.projects || [];
   } catch (error) {
-    console.error('Error fetching user projects:', error);
+    logger.error('Error fetching user projects:', error);
     // Intentar obtener desde el cliente Firebase como fallback
-    console.log('Attempting to fetch projects from Firestore client as fallback');
+    logger.info('Attempting to fetch projects from Firestore client as fallback');
     const { getUserProjects } = await import('./professional-editor-service');
     // @ts-ignore - Ignoramos error de tipo porque sabemos que el usuario está autenticado
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -47,9 +49,9 @@ export async function fetchProject(projectId: string): Promise<any | null> {
     const response = await apiRequest(`${API_BASE_URL}/projects/${projectId}`);
     return response.project || null;
   } catch (error) {
-    console.error('Error fetching project:', error);
+    logger.error('Error fetching project:', error);
     // Intentar obtener desde el cliente Firebase como fallback
-    console.log('Attempting to fetch project from Firestore client as fallback');
+    logger.info('Attempting to fetch project from Firestore client as fallback');
     const { getProject } = await import('./professional-editor-service');
     return await getProject(projectId);
   }
@@ -66,7 +68,7 @@ export async function saveProjectToServer(project: any): Promise<any> {
     const method = project.id.startsWith('project-') ? 'POST' : 'PUT';
     const endpoint = method === 'PUT' ? `${API_BASE_URL}/projects/${project.id}` : `${API_BASE_URL}/projects`;
     
-    console.log(`Saving project with ${method} to ${endpoint}`);
+    logger.info(`Saving project with ${method} to ${endpoint}`);
     
     const response = await apiRequest(endpoint, method, {
       data: project
@@ -74,9 +76,9 @@ export async function saveProjectToServer(project: any): Promise<any> {
     
     return response.project || project;
   } catch (error) {
-    console.error('Error saving project to server:', error);
+    logger.error('Error saving project to server:', error);
     // Intentar guardar mediante cliente Firebase como fallback
-    console.log('Attempting to save project using Firestore client as fallback');
+    logger.info('Attempting to save project using Firestore client as fallback');
     const { saveProject } = await import('./professional-editor-service');
     const savedId = await saveProject(project);
     return { ...project, id: savedId };
@@ -93,9 +95,9 @@ export async function deleteProjectFromServer(projectId: string): Promise<boolea
     await apiRequest(`${API_BASE_URL}/projects/${projectId}`, 'DELETE');
     return true;
   } catch (error) {
-    console.error('Error deleting project from server:', error);
+    logger.error('Error deleting project from server:', error);
     // Intentar eliminar mediante cliente Firebase como fallback
-    console.log('Attempting to delete project using Firestore client as fallback');
+    logger.info('Attempting to delete project using Firestore client as fallback');
     const { deleteProject } = await import('./professional-editor-service');
     await deleteProject(projectId);
     return true;
@@ -115,9 +117,9 @@ export async function shareProjectApi(projectId: string, isPublic: boolean): Pro
     });
     return true;
   } catch (error) {
-    console.error('Error sharing project:', error);
+    logger.error('Error sharing project:', error);
     // Intentar mediante cliente Firebase como fallback
-    console.log('Attempting to share project using Firestore client as fallback');
+    logger.info('Attempting to share project using Firestore client as fallback');
     const { shareProject } = await import('./professional-editor-service');
     await shareProject(projectId, isPublic);
     return true;
@@ -134,9 +136,9 @@ export async function fetchPublicProjects(limit: number = 10): Promise<any[]> {
     const response = await apiRequest(`${API_BASE_URL}/projects/public/list?limit=${limit}`);
     return response.projects || [];
   } catch (error) {
-    console.error('Error fetching public projects:', error);
+    logger.error('Error fetching public projects:', error);
     // Intentar mediante cliente Firebase como fallback
-    console.log('Attempting to fetch public projects using Firestore client as fallback');
+    logger.info('Attempting to fetch public projects using Firestore client as fallback');
     const { getPublicProjects } = await import('./professional-editor-service');
     return await getPublicProjects(limit);
   }
@@ -171,7 +173,7 @@ export async function exportProject(projectId: string): Promise<any> {
     
     return exportData;
   } catch (error) {
-    console.error('Error exporting project:', error);
+    logger.error('Error exporting project:', error);
     throw new Error('Error al exportar el proyecto');
   }
 }
@@ -189,7 +191,7 @@ export async function importProject(importData: any): Promise<any> {
     
     // Validar versión para compatibilidad
     const version = importData.version || '1.0.0';
-    console.log(`Importando proyecto versión ${version}`);
+    logger.info(`Importando proyecto versión ${version}`);
     
     // Preparar datos para guardar
     const projectData = {
@@ -203,7 +205,7 @@ export async function importProject(importData: any): Promise<any> {
     // Guardar como nuevo proyecto
     return await saveProjectToServer(projectData);
   } catch (error) {
-    console.error('Error importing project:', error);
+    logger.error('Error importing project:', error);
     throw new Error('Error al importar el proyecto');
   }
 }
@@ -246,7 +248,7 @@ export async function saveProject(projectData: any): Promise<{success: boolean, 
       project: savedProject
     };
   } catch (error) {
-    console.error('Error al guardar el proyecto:', error);
+    logger.error('Error al guardar el proyecto:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido al guardar'
@@ -287,7 +289,7 @@ export async function uploadMediaFile(
     const data = await response.json();
     return data.url;
   } catch (error) {
-    console.error('Error uploading media file:', error);
+    logger.error('Error uploading media file:', error);
     throw new Error('Error al subir el archivo multimedia');
   }
 }
@@ -313,10 +315,10 @@ export async function updateProjectThumbnail(
     // Usar la función uploadMediaFile para subir la miniatura
     return await uploadMediaFile(projectId, file, 'image');
   } catch (error) {
-    console.error('Error updating project thumbnail:', error);
+    logger.error('Error updating project thumbnail:', error);
     
     // Intentar mediante cliente Firebase como fallback
-    console.log('Attempting to update thumbnail using Firestore client as fallback');
+    logger.info('Attempting to update thumbnail using Firestore client as fallback');
     const { uploadProjectThumbnail } = await import('./professional-editor-service');
     return await uploadProjectThumbnail(projectId, thumbnailDataUrl);
   }

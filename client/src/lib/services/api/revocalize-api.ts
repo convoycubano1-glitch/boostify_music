@@ -8,7 +8,9 @@
  */
 
 import { VoiceModel, AudioEffect, VoiceConversionResponse } from '../../types/voice-model-types';
+import { logger } from "../logger";
 import axios from 'axios';
+import { logger } from "../logger";
 
 /**
  * Opciones para la conversión de audio
@@ -33,7 +35,7 @@ class RevocalizeAPI {
     // Intentar cargar la clave de API desde las variables de entorno si está disponible
     if (import.meta.env.VITE_REVOCALIZE_API_KEY) {
       this.apiKey = import.meta.env.VITE_REVOCALIZE_API_KEY;
-      console.log('Revocalize API key initialized from environment variables');
+      logger.info('Revocalize API key initialized from environment variables');
     }
   }
   
@@ -107,7 +109,7 @@ class RevocalizeAPI {
       
       return response.data;
     } catch (error) {
-      console.error('Revocalize API request error:', error);
+      logger.error('Revocalize API request error:', error);
       
       // Si es un error de Axios, extraemos el mensaje de error de la respuesta
       if (axios.isAxiosError(error) && error.response?.data) {
@@ -142,7 +144,7 @@ class RevocalizeAPI {
     } catch (error) {
       // Si estamos en desarrollo y no hay clave de API, devolver datos de ejemplo
       if ((error as Error).message.includes('API key') && process.env.NODE_ENV === 'development') {
-        console.log('Using mock models data for development');
+        logger.info('Using mock models data for development');
         return this.getMockModels();
       }
       
@@ -263,7 +265,7 @@ class RevocalizeAPI {
         error: response.error
       };
     } catch (error) {
-      console.error('Error checking conversion status:', error);
+      logger.error('Error checking conversion status:', error);
       
       // En desarrollo, simular una respuesta después de un tiempo
       if (process.env.NODE_ENV === 'development') {

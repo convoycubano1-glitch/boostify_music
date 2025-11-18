@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente Uploader
  * 
  * Un componente reutilizable para cargar archivos con arrastrar y soltar

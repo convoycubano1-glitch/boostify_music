@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Flux Style Section
  * 
  * Este componente integra la generación de imágenes de Flux con PiAPI 
@@ -225,7 +226,7 @@ export function FluxStyleSection({ onImageGenerated, language = 'en' }: FluxStyl
         throw new Error('No task ID returned from Flux API');
       }
     } catch (err: any) {
-      console.error('Error generating image:', err);
+      logger.error('Error generating image:', err);
       setError(err.message || t.errorGeneric);
       toast({
         title: "Error",
@@ -284,7 +285,7 @@ export function FluxStyleSection({ onImageGenerated, language = 'en' }: FluxStyl
         setTimeout(() => checkTaskStatus(taskId, promptText), 5000);
       }
     } catch (err: any) {
-      console.error('Error checking task status:', err);
+      logger.error('Error checking task status:', err);
       setError(err.message || t.errorGeneric);
       toast({
         title: "Error",

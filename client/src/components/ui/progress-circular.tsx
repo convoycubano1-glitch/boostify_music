@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from "../lib/logger";
 import { cn } from "../../lib/utils";
 
 export interface ProgressCircularProps extends React.HTMLAttributes<HTMLDivElement> {

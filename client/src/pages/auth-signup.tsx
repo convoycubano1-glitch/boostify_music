@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -147,7 +148,7 @@ export default function AuthSignupPage() {
       // Redirigir al login - después del login exitoso se procesará el plan
       window.location.href = "/api/login";
     } catch (error) {
-      console.error("Error al procesar signup:", error);
+      logger.error("Error al procesar signup:", error);
       toast({
         title: "Error",
         description: "Hubo un problema al procesar tu solicitud. Por favor, intenta de nuevo.",

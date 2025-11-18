@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { Card } from "../ui/card";
@@ -105,7 +106,7 @@ export function FinalRendering({
       }, 1500);
       
     } catch (error) {
-      console.error("Error upscaling video:", error);
+      logger.error("Error upscaling video:", error);
       setIsUpscaling(false);
       setProgress(0);
       

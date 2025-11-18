@@ -1,9 +1,15 @@
 import { z } from "zod";
+import { logger } from "./logger";
 import { db, auth } from "../../firebase";
+import { logger } from "./logger";
 import { collection, addDoc, getDocs, query, where, serverTimestamp, DocumentData } from "firebase/firestore";
+import { logger } from "./logger";
 import { User } from "firebase/auth";
+import { logger } from "./logger";
 import { getAuthToken } from "../../lib/auth";
+import { logger } from "./logger";
 import { ApifyClient } from "apify-client";
+import { logger } from "./logger";
 
 /**
  * Extract an email address from a text string
@@ -111,7 +117,7 @@ export async function getExtractionLimits(): Promise<{
       isAdmin: data.isAdmin || false
     };
   } catch (error) {
-    console.error("Error getting extraction limits:", error);
+    logger.error("Error getting extraction limits:", error);
     return {
       remaining: 0,
       limitReached: true,
@@ -137,7 +143,7 @@ const APIFY_TOKEN = process.env.APIFY_API_TOKEN || import.meta.env.VITE_APIFY_AP
  */
 function getApifyClient() {
   if (!APIFY_TOKEN) {
-    console.warn("No Apify token found. Direct API calls will not work.");
+    logger.warn("No Apify token found. Direct API calls will not work.");
     return null;
   }
   return new ApifyClient({
@@ -167,7 +173,7 @@ export async function extractContactsWithApify(
       throw new Error("Apify API token not available");
     }
     
-    console.log(`Extracting contacts using Apify for "${searchTerm} ${category}" in ${locality}`);
+    logger.info(`Extracting contacts using Apify for "${searchTerm} ${category}" in ${locality}`);
     
     // Start an actor run with a Google SERP scraper actor
     // First try the Google Maps With Contact Details actor
@@ -190,11 +196,11 @@ export async function extractContactsWithApify(
         includeStatistics: true
       });
       
-      console.log(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
+      logger.info(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
       
       // Get the dataset items
       const { items } = await apifyClient.dataset(runInfo.defaultDatasetId).listItems();
-      console.log(`Retrieved ${items.length} contacts from Apify`);
+      logger.info(`Retrieved ${items.length} contacts from Apify`);
       
       if (items.length > 0) {
         // Process and format the contacts
@@ -236,9 +242,9 @@ export async function extractContactsWithApify(
       }
       
       // If no items were found, try the Google Search Scraper actor
-      console.log("No places found. Trying alternate actor...");
+      logger.info("No places found. Trying alternate actor...");
     } catch (error) {
-      console.error("Error with Google Maps Scraper actor, trying fallback:", error);
+      logger.error("Error with Google Maps Scraper actor, trying fallback:", error);
     }
     
     // Fallback to a basic Google Search scraper if the Google Maps actor fails
@@ -255,11 +261,11 @@ export async function extractContactsWithApify(
       saveHtmlToKeyValueStore: false
     });
     
-    console.log(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
+    logger.info(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
     
     // Get the dataset items
     const { items } = await apifyClient.dataset(runInfo.defaultDatasetId).listItems();
-    console.log(`Retrieved ${items.length} contacts from Apify`);
+    logger.info(`Retrieved ${items.length} contacts from Apify`);
     
     // Process and format the contacts
     const contacts: Contact[] = items.map((item: any) => {
@@ -284,7 +290,7 @@ export async function extractContactsWithApify(
     
     return contacts;
   } catch (error) {
-    console.error("Error extracting contacts with Apify:", error);
+    logger.error("Error extracting contacts with Apify:", error);
     throw error;
   }
 }
@@ -311,7 +317,7 @@ export async function extractContacts(
         const maxResults = maxPages * 20; // Each "page" counts as 20 results
         return await extractContactsWithApify(searchTerm, locality, category, maxResults);
       } catch (apiError) {
-        console.warn("Direct Apify API call failed, falling back to server API:", apiError);
+        logger.warn("Direct Apify API call failed, falling back to server API:", apiError);
         // Fall back to server API
       }
     }
@@ -337,7 +343,7 @@ export async function extractContacts(
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`API error (${response.status}): ${errorText}`);
+      logger.error(`API error (${response.status}): ${errorText}`);
       throw new Error(response.status === 429 
         ? "Extraction limit reached" 
         : `Error extracting contacts: ${response.status}`);
@@ -354,7 +360,7 @@ export async function extractContacts(
       extractedAt: new Date(contact.extractedAt)
     }));
   } catch (error) {
-    console.error("Error extracting contacts:", error);
+    logger.error("Error extracting contacts:", error);
     throw error;
   }
 }
@@ -387,7 +393,7 @@ export async function searchContacts(category: string, query: string): Promise<C
       extractedAt: new Date(contact.extractedAt)
     }));
   } catch (error) {
-    console.error("Error searching contacts:", error);
+    logger.error("Error searching contacts:", error);
     
     // Fallback to local mock data if the API fails
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -435,7 +441,7 @@ export async function saveContact(user: User, contact: Contact): Promise<void> {
       createdAt: serverTimestamp()
     });
   } catch (error) {
-    console.error("Error saving contact:", error);
+    logger.error("Error saving contact:", error);
     throw new Error("Failed to save contact");
   }
 }
@@ -480,7 +486,7 @@ export async function getSavedContacts(user: User, category?: string): Promise<C
       return contact;
     });
   } catch (error) {
-    console.error("Error getting saved contacts:", error);
+    logger.error("Error getting saved contacts:", error);
     throw new Error("Failed to get saved contacts");
   }
 }
@@ -511,7 +517,7 @@ export async function checkApifyRun(runId: string): Promise<any> {
     
     return await response.json();
   } catch (error) {
-    console.error("Error checking Apify run:", error);
+    logger.error("Error checking Apify run:", error);
     throw error;
   }
 }
@@ -542,7 +548,7 @@ export async function resetExtractionLimits(userId?: string): Promise<boolean> {
     const data = await response.json();
     return data.success || false;
   } catch (error) {
-    console.error("Error resetting extraction limits:", error);
+    logger.error("Error resetting extraction limits:", error);
     return false;
   }
 }

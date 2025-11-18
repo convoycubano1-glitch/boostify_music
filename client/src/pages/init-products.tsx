@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
@@ -154,7 +155,7 @@ export default function InitProductsPage() {
       });
       
     } catch (error) {
-      console.error('Error initializing products:', error);
+      logger.error('Error initializing products:', error);
       toast({
         title: "Error",
         description: "No se pudieron inicializar los productos",

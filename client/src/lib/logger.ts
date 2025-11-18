@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 type LogLevel = 'log' | 'warn' | 'error' | 'info' | 'debug';
 
 interface Logger {
@@ -29,18 +30,18 @@ const createLogger = (): Logger => {
 
   return {
     log: (...args: any[]) => {
-      if (shouldLog('log')) console.log(...formatMessage('log', ...args));
+      if (shouldLog('log')) logger.info(...formatMessage('log', ...args));
     },
     
     warn: (...args: any[]) => {
-      if (shouldLog('warn')) console.warn(...formatMessage('warn', ...args));
+      if (shouldLog('warn')) logger.warn(...formatMessage('warn', ...args));
     },
     
     error: (...args: any[]) => {
       if (shouldLog('error')) {
-        console.error(...formatMessage('error', ...args));
+        logger.error(...formatMessage('error', ...args));
         if (args[0] instanceof Error) {
-          console.error('Stack trace:', args[0].stack);
+          logger.error('Stack trace:', args[0].stack);
         }
       }
     },

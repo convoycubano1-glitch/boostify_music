@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import { useAuth } from "../../hooks/use-auth";
 import { db } from "../../lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -75,7 +76,7 @@ export function AffiliateSupport() {
         setSubmitSuccess(false);
       }, 5000);
     } catch (err) {
-      console.error("Error al enviar ticket:", err);
+      logger.error("Error al enviar ticket:", err);
       setSubmitError("Ha ocurrido un error al enviar tu mensaje. Por favor, intenta nuevamente.");
     } finally {
       setIsSubmitting(false);

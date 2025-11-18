@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/use-auth";
@@ -160,9 +161,9 @@ export default function VirtualRecordLabelPage() {
   // Log de artistas para debugging
   useEffect(() => {
     if (myVirtualArtists) {
-      console.log('👥 Artistas virtuales cargados:', myVirtualArtists);
+      logger.info('👥 Artistas virtuales cargados:', myVirtualArtists);
       myVirtualArtists.forEach((artist: any, index: number) => {
-        console.log(`Artista ${index + 1}:`, {
+        logger.info(`Artista ${index + 1}:`, {
           name: artist.artistName,
           profileImage: artist.profileImage,
           hasImage: !!artist.profileImage
@@ -173,7 +174,7 @@ export default function VirtualRecordLabelPage() {
   
   // Console log para depuración
   useEffect(() => {
-    console.log("isUnderReview state:", isUnderReview);
+    logger.info("isUnderReview state:", isUnderReview);
   }, [isUnderReview]);
   
   // Stages for creation process
@@ -493,7 +494,7 @@ export default function VirtualRecordLabelPage() {
         description: "Your professional record label logo has been created with AI."
       });
     } catch (error) {
-      console.error("Error generating logo:", error);
+      logger.error("Error generating logo:", error);
       toast({
         title: "Error",
         description: "Could not generate logo with AI. Please try again.",
@@ -593,10 +594,10 @@ export default function VirtualRecordLabelPage() {
             if (response.ok) {
               const artistData = await response.json();
               generatedArtistIds.push(artistData.postgresId);
-              console.log(`✅ Generated artist: ${artistConfig.name}`, artistData);
+              logger.info(`✅ Generated artist: ${artistConfig.name}`, artistData);
             }
           } catch (error) {
-            console.error(`Error generating artist ${artistConfig.name}:`, error);
+            logger.error(`Error generating artist ${artistConfig.name}:`, error);
           }
         }
         
@@ -634,7 +635,7 @@ export default function VirtualRecordLabelPage() {
       setIsUnderReview(true);
       
     } catch (error) {
-      console.error("Error creating record label:", error);
+      logger.error("Error creating record label:", error);
       toast({
         title: "Error",
         description: "Could not create your record label. Please try again.",

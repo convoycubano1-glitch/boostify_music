@@ -1,6 +1,9 @@
 import { generateImageWithFal } from "./fal-ai";
+import { logger } from "./logger";
 import { saveMusicianImage } from "./musician-images-store";
+import { logger } from "./logger";
 import {db, collection, getDocs, query, orderBy} from "./firebase";
+import { logger } from "./logger";
 
 const musicianImagePrompts = [
   // Guitarristas
@@ -76,7 +79,7 @@ export async function generateMusicianImages() {
 
   for (const { prompt, category } of musicianImagePrompts) {
     try {
-      console.log(`Generating image for ${category} with prompt: ${prompt.substring(0, 50)}...`);
+      logger.info(`Generating image for ${category} with prompt: ${prompt.substring(0, 50)}...`);
 
       const result = await generateImageWithFal({
         prompt,
@@ -86,7 +89,7 @@ export async function generateMusicianImages() {
 
       if (result.data && result.data.images && result.data.images[0]) {
         const imageUrl = result.data.images[0].url;
-        console.log(`Successfully generated image for ${category}: ${imageUrl}`);
+        logger.info(`Successfully generated image for ${category}: ${imageUrl}`);
 
         // Save to Firestore with category information
         await saveMusicianImage({
@@ -96,7 +99,7 @@ export async function generateMusicianImages() {
           category,
           createdAt: new Date()
         });
-        console.log(`Saved ${category} image to Firestore`);
+        logger.info(`Saved ${category} image to Firestore`);
 
         images.push({
           url: imageUrl,
@@ -106,14 +109,14 @@ export async function generateMusicianImages() {
         // Wait between requests to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 2000));
       } else {
-        console.error(`Invalid response format from Fal.ai for ${category}:`, result);
+        logger.error(`Invalid response format from Fal.ai for ${category}:`, result);
         images.push({
           url: "/assets/musician-placeholder.jpg",
           category
         });
       }
     } catch (error) {
-      console.error(`Error generating image for ${category}:`, error);
+      logger.error(`Error generating image for ${category}:`, error);
       images.push({
         url: "/assets/musician-placeholder.jpg",
         category
@@ -134,12 +137,12 @@ export interface MusicianImage {
 
 export async function getStoredMusicianImages(): Promise<MusicianImage[]> {
   try {
-    console.log("Starting to fetch musician images from Firestore...");
+    logger.info("Starting to fetch musician images from Firestore...");
     const imagesRef = collection(db, "musicianImages");
     const querySnapshot = await getDocs(query(imagesRef, orderBy("createdAt", "desc")));
 
     if (querySnapshot.empty) {
-      console.log("No images found in Firestore");
+      logger.info("No images found in Firestore");
       return [];
     }
 
@@ -154,10 +157,10 @@ export async function getStoredMusicianImages(): Promise<MusicianImage[]> {
       };
     }).filter(img => img.url && img.category);
 
-    console.log("Successfully retrieved images:", images.length);
+    logger.info("Successfully retrieved images:", images.length);
     return images;
   } catch (error) {
-    console.error("Error fetching stored images:", error);
+    logger.error("Error fetching stored images:", error);
     return [];
   }
 }
@@ -171,10 +174,10 @@ export async function testMusicianImageGeneration() {
       imageSize: "portrait_9_16"
     });
 
-    console.log("Test successful, result:", result);
+    logger.info("Test successful, result:", result);
     return result;
   } catch (error) {
-    console.error("Test musician image generation failed:", error);
+    logger.error("Test musician image generation failed:", error);
     throw error;
   }
 }

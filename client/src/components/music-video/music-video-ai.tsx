@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { logger } from "@/lib/logger";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -96,7 +97,7 @@ async function transcribeAudio(file: File) {
     const formData = new FormData();
     formData.append('audio', file);
 
-    console.log('🌐 Fetching /api/audio/transcribe...');
+    logger.info('🌐 Fetching /api/audio/transcribe...');
     
     // Crear AbortController para timeout de 15 minutos (para archivos grandes)
     const controller = new AbortController();
@@ -111,20 +112,20 @@ async function transcribeAudio(file: File) {
       });
       
       clearTimeout(timeoutId);
-      console.log('📊 Server response:', response.status, response.statusText);
+      logger.info('📊 Server response:', response.status, response.statusText);
 
       let data;
       try {
         data = await response.json();
-        console.log('📦 Data received:', data);
+        logger.info('📦 Data received:', data);
       } catch (parseError) {
-        console.error('❌ Error parsing response JSON:', parseError);
+        logger.error('❌ Error parsing response JSON:', parseError);
         throw new Error('El servidor no respondió correctamente. Por favor, intenta de nuevo.');
       }
 
       if (!response.ok || !data.success) {
         const errorMsg = data.error || `Error del servidor: ${response.status}`;
-        console.error('❌ Error in server response:', errorMsg);
+        logger.error('❌ Error in server response:', errorMsg);
         
         // Mejorar mensajes de error para el usuario
         if (errorMsg.includes('Connection error') || errorMsg.includes('ECONNRESET')) {
@@ -137,7 +138,7 @@ async function transcribeAudio(file: File) {
       }
 
       if (!data.transcription || !data.transcription.text) {
-        console.error('❌ Server response does not contain transcription');
+        logger.error('❌ Server response does not contain transcription');
         throw new Error('Transcription was not generated correctly');
       }
 
@@ -149,7 +150,7 @@ async function transcribeAudio(file: File) {
       throw fetchError;
     }
   } catch (error) {
-    console.error("❌ Error in transcribeAudio:", error);
+    logger.error("❌ Error in transcribeAudio:", error);
     if (error instanceof Error) {
       throw error;
     }
@@ -306,9 +307,9 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   
   // DEBUG: Monitor timeline changes
   useEffect(() => {
-    console.log(`🔍 [TIMELINE STATE] Timeline updated: ${timelineItems.length} items`);
+    logger.info(`🔍 [TIMELINE STATE] Timeline updated: ${timelineItems.length} items`);
     if (timelineItems.length > 0) {
-      console.log('🔍 [TIMELINE STATE] Timeline items:', timelineItems);
+      logger.info('🔍 [TIMELINE STATE] Timeline items:', timelineItems);
     }
   }, [timelineItems]);
   
@@ -318,7 +319,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       musicVideoProjectServicePostgres.getUserProjects(user.uid)
         .then(projects => setSavedProjects(projects))
         .catch(error => {
-          console.error('Error loading projects:', error);
+          logger.error('Error loading projects:', error);
           toast({
             title: "Error",
             description: "Could not load projects",
@@ -333,7 +334,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   // El usuario debe pasar por todos los pasos (música, imágenes, director)
   useEffect(() => {
     if (preSelectedDirector) {
-      console.log('🎬 [DIRECTOR PRE-SELECTED]', preSelectedDirector.name);
+      logger.info('🎬 [DIRECTOR PRE-SELECTED]', preSelectedDirector.name);
       
       // Convertir DirectorProfile a Director para compatibilidad con el estado existente
       const directorForState: Director = {
@@ -515,8 +516,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     setProgressMessage("🎬 Generating 3 creative proposals based on your song's lyrics...");
 
     try {
-      console.log("🎨 [CONCEPTOS] Generando 3 propuestas CON contexto de letra...");
-      console.log("📝 [LYRICS] Transcripción disponible:", transcription.substring(0, 100) + '...');
+      logger.info("🎨 [CONCEPTOS] Generando 3 propuestas CON contexto de letra...");
+      logger.info("📝 [LYRICS] Transcripción disponible:", transcription.substring(0, 100) + '...');
       
       const audioDurationInSeconds = audioBuffer?.duration || undefined;
       
@@ -526,7 +527,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
         audioDurationInSeconds
       );
-      console.log("✅ [CONCEPTOS] 3 propuestas generadas con contexto completo");
+      logger.info("✅ [CONCEPTOS] 3 propuestas generadas con contexto completo");
 
       setConceptProposals(concepts);
       setProgressPercentage(100);
@@ -540,7 +541,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       });
 
     } catch (error) {
-      console.error("Error generando conceptos:", error);
+      logger.error("Error generando conceptos:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error generando conceptos",
@@ -556,18 +557,18 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Función auxiliar para ejecutar la generación del script automáticamente
   const executeScriptGeneration = async (transcriptionText: string, buffer: AudioBuffer) => {
-    console.log('🔵 [EXEC SCRIPT] Función executeScriptGeneration iniciada');
-    console.log('🔵 [EXEC SCRIPT] transcriptionText length:', transcriptionText.length);
-    console.log('🔵 [EXEC SCRIPT] buffer duration:', buffer.duration);
+    logger.info('🔵 [EXEC SCRIPT] Función executeScriptGeneration iniciada');
+    logger.info('🔵 [EXEC SCRIPT] transcriptionText length:', transcriptionText.length);
+    logger.info('🔵 [EXEC SCRIPT] buffer duration:', buffer.duration);
     
     try {
-      console.log('📝 [EXEC SCRIPT] Entrando en try block...');
+      logger.info('📝 [EXEC SCRIPT] Entrando en try block...');
       setIsTranscribing(false);
       setIsGeneratingScript(true);
       setShowProgress(true);  // ACTIVAR MODAL
       setCurrentProgressStage("script");
       setProgressPercentage(0);
-      console.log('📊 [EXEC SCRIPT] Estados actualizados: showProgress=true, isGeneratingScript=true, stage=script');
+      logger.info('📊 [EXEC SCRIPT] Estados actualizados: showProgress=true, isGeneratingScript=true, stage=script');
       
       // Progreso realista para generación de script
       const startTime = Date.now();
@@ -584,27 +585,27 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       if (videoStyle.selectedDirector) {
         directorProfile = getDirectorByName(videoStyle.selectedDirector.name);
         if (directorProfile) {
-          console.log(`🎬 [DIRECTOR] Perfil completo cargado: ${directorProfile.name}`);
-          console.log(`📋 [DIRECTOR] Estilo: ${directorProfile.visual_style.description}`);
+          logger.info(`🎬 [DIRECTOR] Perfil completo cargado: ${directorProfile.name}`);
+          logger.info(`📋 [DIRECTOR] Estilo: ${directorProfile.visual_style.description}`);
         } else {
-          console.log(`⚠️ [DIRECTOR] No se encontró perfil JSON para ${videoStyle.selectedDirector.name}, usando datos básicos`);
+          logger.info(`⚠️ [DIRECTOR] No se encontró perfil JSON para ${videoStyle.selectedDirector.name}, usando datos básicos`);
         }
       }
       
       const audioDurationInSeconds = buffer.duration;
       
       // 🆕 Usar el concepto seleccionado por el usuario
-      console.log('🎨 [CONCEPTO] Usando concepto seleccionado por el usuario...');
+      logger.info('🎨 [CONCEPTO] Usando concepto seleccionado por el usuario...');
       const concept = selectedConcept;
       
       if (concept) {
-        console.log('✅ [CONCEPTO] Concepto seleccionado:', concept);
+        logger.info('✅ [CONCEPTO] Concepto seleccionado:', concept);
       } else {
-        console.log('⚠️ [CONCEPTO] No hay concepto seleccionado, continuando sin él');
+        logger.info('⚠️ [CONCEPTO] No hay concepto seleccionado, continuando sin él');
       }
       
       // PASO 2: Generar script usando el concepto como base Y perfil completo del director
-      console.log('📝 [SCRIPT] Generando script con concepto y perfil del director...');
+      logger.info('📝 [SCRIPT] Generando script con concepto y perfil del director...');
       const scriptResponse = await generateMusicVideoScript(
         transcriptionText, 
         undefined, 
@@ -627,16 +628,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       
       setCurrentStep(3);
       setIsGeneratingScript(false);
-      console.log('✅ [EXEC SCRIPT] Script generado exitosamente, currentStep=3');
+      logger.info('✅ [EXEC SCRIPT] Script generado exitosamente, currentStep=3');
       
       // Continuar automáticamente con la sincronización y generación de imágenes
-      console.log('🚀 [FLUJO AUTOMÁTICO] Paso 3: Sincronización de timeline');
-      console.log('🎯 [SIGUIENTE] Llamando executeSyncAndImageGeneration...');
+      logger.info('🚀 [FLUJO AUTOMÁTICO] Paso 3: Sincronización de timeline');
+      logger.info('🎯 [SIGUIENTE] Llamando executeSyncAndImageGeneration...');
       await executeSyncAndImageGeneration(scriptResponse, buffer);
-      console.log('✅ [FLUJO AUTOMÁTICO] executeSyncAndImageGeneration completado');
+      logger.info('✅ [FLUJO AUTOMÁTICO] executeSyncAndImageGeneration completado');
       
     } catch (error) {
-      console.error("❌ [EXEC SCRIPT] Error generating script:", error);
+      logger.error("❌ [EXEC SCRIPT] Error generating script:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error generating music video script",
@@ -651,13 +652,13 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Función auxiliar para sincronizar timeline y generar imágenes automáticamente
   const executeSyncAndImageGeneration = async (script: string, buffer: AudioBuffer) => {
-    console.log('🔵 [SYNC] Función executeSyncAndImageGeneration iniciada');
+    logger.info('🔵 [SYNC] Función executeSyncAndImageGeneration iniciada');
     
     try {
-      console.log('⏱️ [SYNC] Sincronizando timeline...');
+      logger.info('⏱️ [SYNC] Sincronizando timeline...');
       setCurrentProgressStage("timeline-prep");
       setProgressPercentage(0);
-      console.log('📊 [SYNC] Estados actualizados: stage=timeline-prep');
+      logger.info('📊 [SYNC] Estados actualizados: stage=timeline-prep');
       
       // Sincronizar con timeline
       const parsedScript = JSON.parse(script);
@@ -668,16 +669,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         scenes = parsedScript;
       }
       
-      console.log(`🔍 [SYNC DEBUG] Scenes count: ${scenes.length}`);
-      console.log('🔍 [SYNC DEBUG] Scenes data:', scenes);
+      logger.info(`🔍 [SYNC DEBUG] Scenes count: ${scenes.length}`);
+      logger.info('🔍 [SYNC DEBUG] Scenes data:', scenes);
       
       if (scenes.length > 0) {
         const segments = createSegmentsFromScenes(scenes, buffer.duration);
-        console.log(`🔍 [SYNC DEBUG] Segments created: ${segments.length}`);
-        console.log('🔍 [SYNC DEBUG] Segments data:', segments);
+        logger.info(`🔍 [SYNC DEBUG] Segments created: ${segments.length}`);
+        logger.info('🔍 [SYNC DEBUG] Segments data:', segments);
         
         setTimelineItems(segments);
-        console.log('✅ [SYNC DEBUG] setTimelineItems called with', segments.length, 'items');
+        logger.info('✅ [SYNC DEBUG] setTimelineItems called with', segments.length, 'items');
         
         setCurrentStep(4);
         
@@ -689,16 +690,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           });
         }, 500);
       } else {
-        console.error('❌ [SYNC DEBUG] NO SCENES FOUND IN SCRIPT!');
+        logger.error('❌ [SYNC DEBUG] NO SCENES FOUND IN SCRIPT!');
       }
       
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('✅ [SYNC] Timeline sincronizado exitosamente');
+      logger.info('✅ [SYNC] Timeline sincronizado exitosamente');
       
       // 🚀 CONTINUAR AUTOMÁTICAMENTE CON GENERACIÓN DE IMÁGENES
       // El estilo y director ya están en el JSON del script, no necesita selección manual
-      console.log('🚀 [FLUJO AUTOMÁTICO] Disparando generación de imágenes automáticamente...');
+      logger.info('🚀 [FLUJO AUTOMÁTICO] Disparando generación de imágenes automáticamente...');
       toast({
         title: "Timeline sincronizado",
         description: "Generando imágenes automáticamente con los datos del guion...",
@@ -707,10 +708,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       // Llamar a executeImageGeneration pasando el script
       await executeImageGeneration(script);
       
-      console.log('✅ [FLUJO AUTOMÁTICO] Script → Timeline → Imágenes completado');
+      logger.info('✅ [FLUJO AUTOMÁTICO] Script → Timeline → Imágenes completado');
       
     } catch (error) {
-      console.error("❌ [SYNC] Error in sync and image generation:", error);
+      logger.error("❌ [SYNC] Error in sync and image generation:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error synchronizing timeline",
@@ -723,7 +724,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Función auxiliar para procesar lip-sync automáticamente en clips de performance
   const executePerformanceLipSync = async (script: string, buffer: AudioBuffer) => {
-    console.log('🎤 [LIP-SYNC] Iniciando procesamiento de lip-sync');
+    logger.info('🎤 [LIP-SYNC] Iniciando procesamiento de lip-sync');
     
     try {
       setIsProcessingLipSync(true);
@@ -742,10 +743,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       // Detectar clips de performance
       const performanceClips = detectPerformanceClips({ scenes });
       
-      console.log(`🎤 [LIP-SYNC] Detectados ${performanceClips.length} clips de performance`);
+      logger.info(`🎤 [LIP-SYNC] Detectados ${performanceClips.length} clips de performance`);
       
       if (performanceClips.length === 0) {
-        console.log('ℹ️ [LIP-SYNC] No hay clips de performance, omitiendo lip-sync');
+        logger.info('ℹ️ [LIP-SYNC] No hay clips de performance, omitiendo lip-sync');
         setIsProcessingLipSync(false);
         return;
       }
@@ -770,12 +771,12 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       }
       
       if (!artistImageUrl) {
-        console.warn('⚠️ [LIP-SYNC] No hay imagen del artista disponible');
+        logger.warn('⚠️ [LIP-SYNC] No hay imagen del artista disponible');
         setIsProcessingLipSync(false);
         return;
       }
       
-      console.log(`🎭 [LIP-SYNC] Usando imagen: ${masterCharacter ? 'Master Character' : 'Timeline image'}`);
+      logger.info(`🎭 [LIP-SYNC] Usando imagen: ${masterCharacter ? 'Master Character' : 'Timeline image'}`);
       
       // Procesar clips de performance
       const projectId = currentProjectId ? parseInt(currentProjectId) : Date.now();
@@ -790,14 +791,14 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         userId,
         projectName || 'untitled',
         (current, total, message) => {
-          console.log(`🎤 [LIP-SYNC Progress] ${current}/${total}: ${message}`);
+          logger.info(`🎤 [LIP-SYNC Progress] ${current}/${total}: ${message}`);
           setLipSyncProgress({ current, total, message });
           const progress = (current / total) * 100;
           setProgressPercentage(Math.round(progress));
         }
       );
       
-      console.log(`✅ [LIP-SYNC] Procesados ${results.size} segmentos de performance`);
+      logger.info(`✅ [LIP-SYNC] Procesados ${results.size} segmentos de performance`);
       
       // Actualizar timeline con videos generados
       setTimelineItems(prevItems => {
@@ -806,7 +807,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           const segment = results.get(sceneId);
           
           if (segment && segment.lipsyncVideoUrl) {
-            console.log(`🎥 [LIP-SYNC] Actualizando clip ${sceneId} con video lip-sync`);
+            logger.info(`🎥 [LIP-SYNC] Actualizando clip ${sceneId} con video lip-sync`);
             return {
               ...item,
               videoUrl: segment.lipsyncVideoUrl,
@@ -837,7 +838,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       setShowProgress(false);
       
     } catch (error) {
-      console.error('❌ [LIP-SYNC] Error:', error);
+      logger.error('❌ [LIP-SYNC] Error:', error);
       toast({
         title: "Error en Lip-Sync",
         description: error instanceof Error ? error.message : "Error procesando lip-sync",
@@ -851,7 +852,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   // Helper function to save project state to PostgreSQL
   const saveProjectState = async () => {
     if (!user?.email) {
-      console.warn('⚠️ No user email, cannot save project');
+      logger.warn('⚠️ No user email, cannot save project');
       return null;
     }
 
@@ -881,10 +882,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
       const savedProject = await response.json();
       setCurrentProjectId(savedProject.id.toString());
-      console.log('✅ Project saved:', savedProject.id);
+      logger.info('✅ Project saved:', savedProject.id);
       return savedProject;
     } catch (error) {
-      console.error('❌ Error saving project:', error);
+      logger.error('❌ Error saving project:', error);
       toast({
         title: "Warning",
         description: "Could not save project state",
@@ -896,23 +897,23 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Función auxiliar para generar imágenes automáticamente
   const executeImageGeneration = async (script?: string, startFrom: number = 1) => {
-    console.log(`🔵 [IMG] Función executeImageGeneration iniciada (startFrom: ${startFrom})`);
+    logger.info(`🔵 [IMG] Función executeImageGeneration iniciada (startFrom: ${startFrom})`);
     
     try {
-      console.log('🎨 [IMG] Generando imágenes con IA...');
+      logger.info('🎨 [IMG] Generando imágenes con IA...');
       setIsGeneratingImages(true);
       setIsGeneratingShots(true); // Activar modal de visualización en tiempo real
       setShowProgress(false); // Usar el modal de galería en vez del progress modal
       setCurrentProgressStage("images");
       setProgressPercentage(0);
-      console.log('📊 [IMG] Estados actualizados: isGeneratingShots=true (galería en tiempo real activada)');
+      logger.info('📊 [IMG] Estados actualizados: isGeneratingShots=true (galería en tiempo real activada)');
       
       const scriptToUse = script || scriptContent;
       if (!scriptToUse) {
         throw new Error("No script content available");
       }
       
-      console.log('📝 [IMG] Script disponible, length:', scriptToUse.length);
+      logger.info('📝 [IMG] Script disponible, length:', scriptToUse.length);
 
       const parsedScript = JSON.parse(scriptToUse);
       let scenes = [];
@@ -956,12 +957,12 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       const imagesToGenerate = isAdmin ? totalScenes : (startFrom === 1 ? Math.min(10, totalScenes) : totalScenes);
       const endAt = startFrom === 1 && !isAdmin ? Math.min(10, totalScenes) : totalScenes;
       
-      console.log(`📸 [IMG] Generation settings: isAdmin=${isAdmin}, startFrom=${startFrom}, endAt=${endAt}, total=${totalScenes}`);
+      logger.info(`📸 [IMG] Generation settings: isAdmin=${isAdmin}, startFrom=${startFrom}, endAt=${endAt}, total=${totalScenes}`);
       
       // Decidir qué endpoint usar basado en si hay imágenes de referencia
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
       
-      console.log(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${totalScenes}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
+      logger.info(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${totalScenes}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
       
       // Inicializar el estado de progreso del modal
       setGenerationProgress({
@@ -985,7 +986,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         const scene = geminiScenes[i];
         const sceneIndex = i + 1;
         
-        console.log(`🎨 [IMG ${sceneIndex}/${totalScenes}] Generando imagen para escena...`);
+        logger.info(`🎨 [IMG ${sceneIndex}/${totalScenes}] Generando imagen para escena...`);
         
         try {
           // Construir el prompt desde el objeto scene
@@ -1003,7 +1004,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             ? [masterCharacter.imageUrl] 
             : (hasReferenceImages ? artistReferenceImages : undefined);
           
-          console.log(`🎭 [SCENE ${sceneIndex}] Performance: ${isPerformanceScene}, Using Master Character: ${usesMasterCharacter}`);
+          logger.info(`🎭 [SCENE ${sceneIndex}] Performance: ${isPerformanceScene}, Using Master Character: ${usesMasterCharacter}`);
           
           const requestBody = (usesMasterCharacter || hasReferenceImages)
             ? { 
@@ -1024,7 +1025,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            console.error(`❌ [IMG ${sceneIndex}] Error:`, errorData.error);
+            logger.error(`❌ [IMG ${sceneIndex}] Error:`, errorData.error);
             continue;
           }
 
@@ -1036,15 +1037,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           
           if (data.success && isValidImageUrl) {
             generatedCount++;
-            console.log(`✅ [IMG ${sceneIndex}/${totalScenes}] Imagen generada exitosamente`);
+            logger.info(`✅ [IMG ${sceneIndex}/${totalScenes}] Imagen generada exitosamente`);
             
             // 💾 GUARDAR EN FIREBASE STORAGE para persistencia
             let permanentImageUrl = data.imageUrl;
             if (user?.uid) {
               try {
-                console.log(`📤 [FIREBASE ${sceneIndex}] Subiendo imagen a Firebase Storage...`);
+                logger.info(`📤 [FIREBASE ${sceneIndex}] Subiendo imagen a Firebase Storage...`);
                 permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
-                console.log(`✅ [FIREBASE ${sceneIndex}] Imagen guardada permanentemente`);
+                logger.info(`✅ [FIREBASE ${sceneIndex}] Imagen guardada permanentemente`);
                 
                 // 🎨 AUTO-PERFIL: Actualizar imágenes de perfil con primera imagen de alta calidad
                 if (sceneIndex === 1 || sceneIndex === 2) {
@@ -1057,14 +1058,14 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
                       ...imageData,
                       onlyIfEmpty: true // Solo actualizar si el usuario no tiene imágenes
                     });
-                    console.log(`✅ Imagen de perfil actualizada automáticamente (escena ${sceneIndex})`);
+                    logger.info(`✅ Imagen de perfil actualizada automáticamente (escena ${sceneIndex})`);
                   } catch (profileImageError) {
                     // No bloqueamos el flujo
-                    console.warn('⚠️ Error actualizando imagen de perfil (no crítico):', profileImageError);
+                    logger.warn('⚠️ Error actualizando imagen de perfil (no crítico):', profileImageError);
                   }
                 }
               } catch (uploadError) {
-                console.warn(`⚠️ [FIREBASE ${sceneIndex}] Error subiendo a Firebase, usando URL temporal:`, uploadError);
+                logger.warn(`⚠️ [FIREBASE ${sceneIndex}] Error subiendo a Firebase, usando URL temporal:`, uploadError);
               }
             }
             
@@ -1095,7 +1096,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
                 const itemSceneNumber = parseInt(sceneNumberMatch[1]);
                 
                 if (itemSceneNumber === sceneIndex) {
-                  console.log(`🖼️ [IMG ${sceneIndex}] ✅ Actualizando timeline item ${item.id}`);
+                  logger.info(`🖼️ [IMG ${sceneIndex}] ✅ Actualizando timeline item ${item.id}`);
                   return {
                     ...item,
                     imageUrl: permanentImageUrl,
@@ -1127,7 +1128,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           }
           
         } catch (error) {
-          console.error(`❌ [IMG ${sceneIndex}] Error en generación:`, error);
+          logger.error(`❌ [IMG ${sceneIndex}] Error en generación:`, error);
           continue;
         }
         
@@ -1135,7 +1136,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         // Payment gate will be shown when they want to render the final video
       }
       
-      console.log(`✅ [IMG] Generación completada: ${generatedCount} imágenes generadas`);
+      logger.info(`✅ [IMG] Generación completada: ${generatedCount} imágenes generadas`);
 
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1143,7 +1144,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       // 🎨 NUEVO: Guardar imágenes generadas en la galería del perfil del artista
       if (generatedCount > 0 && user?.email) {
         try {
-          console.log('📸 [GALLERY] Guardando imágenes generadas en galería del perfil...');
+          logger.info('📸 [GALLERY] Guardando imágenes generadas en galería del perfil...');
           
           // Obtener el artistProfileId desde el proyecto guardado
           const projects = await musicVideoProjectServicePostgres.listProjects(user.email);
@@ -1173,18 +1174,18 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
               });
               
               if (result.success) {
-                console.log(`✅ [GALLERY] ${result.imagesAdded} imágenes agregadas a la galería del perfil`);
+                logger.info(`✅ [GALLERY] ${result.imagesAdded} imágenes agregadas a la galería del perfil`);
               }
             }
           }
         } catch (galleryError) {
-          console.warn('⚠️ [GALLERY] Error agregando imágenes a la galería (no crítico):', galleryError);
+          logger.warn('⚠️ [GALLERY] Error agregando imágenes a la galería (no crítico):', galleryError);
         }
       }
       
       // Only process lip-sync if we've completed all images
       if (audioBuffer && user?.uid && generatedCount > 0 && endAt === totalScenes) {
-        console.log('🎤 [LIP-SYNC] Detectando clips de performance para lip-sync...');
+        logger.info('🎤 [LIP-SYNC] Detectando clips de performance para lip-sync...');
         await executePerformanceLipSync(scriptToUse, audioBuffer);
       }
       
@@ -1194,7 +1195,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         description: `${generatedCount + startFrom - 1} imágenes generadas exitosamente`,
       });
 
-      console.log('✅ [IMG] Imágenes generadas exitosamente');
+      logger.info('✅ [IMG] Imágenes generadas exitosamente');
       
       setCurrentStep(5);
       setIsGeneratingImages(false);
@@ -1222,7 +1223,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       }, 500);
       
     } catch (error) {
-      console.error("❌ [IMG] Error generating images:", error);
+      logger.error("❌ [IMG] Error generating images:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error generating images",
@@ -1237,7 +1238,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Handle payment success - continue generation from image 11
   const handlePaymentSuccess = async () => {
-    console.log('💳 [PAYMENT] Payment successful');
+    logger.info('💳 [PAYMENT] Payment successful');
     
     // Mark user as paid
     setHasUserPaid(true);
@@ -1260,7 +1261,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     aspectRatio: string,
     videoStyle: string
   ) => {
-    console.log('🎉 Onboarding completed:', {
+    logger.info('🎉 Onboarding completed:', {
       audio: audioFile.name,
       imagesCount: referenceImages.length,
       artistName,
@@ -1291,7 +1292,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     setShowOnboarding(false);
     setShowDirectorSelection(true);
     
-    console.log('✅ [ONBOARDING COMPLETADO] Mostrando modal de selección de director');
+    logger.info('✅ [ONBOARDING COMPLETADO] Mostrando modal de selección de director');
   }, []);
 
   // Handler para cuando se selecciona director y estilo
@@ -1299,7 +1300,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
    * Handler para aplicar template rápido
    */
   const handleTemplateSelection = useCallback((template: QuickStartTemplate) => {
-    console.log('📦 Aplicando template:', template.name);
+    logger.info('📦 Aplicando template:', template.name);
     
     // Buscar director por nombre
     const director = getDirectorByName(template.director.name);
@@ -1332,7 +1333,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         description: `Configuración "${template.name}" lista para usar`,
       });
       
-      console.log('✅ Template aplicado exitosamente');
+      logger.info('✅ Template aplicado exitosamente');
     } else {
       toast({
         title: "Error",
@@ -1345,11 +1346,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   // Handler para generar master character
   const handleGenerateMasterCharacter = useCallback(async () => {
     if (artistReferenceImages.length === 0) {
-      console.log('⚠️ No hay imágenes de referencia, saltando generación de master character');
+      logger.info('⚠️ No hay imágenes de referencia, saltando generación de master character');
       return null;
     }
 
-    console.log('🎭 Iniciando generación de Master Character...');
+    logger.info('🎭 Iniciando generación de Master Character...');
     setIsGeneratingCharacter(true);
     setShowCharacterGeneration(true);
     setCharacterGenerationProgress(0);
@@ -1368,7 +1369,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         }
       );
 
-      console.log('✅ Master Character generado:', masterChar.imageUrl);
+      logger.info('✅ Master Character generado:', masterChar.imageUrl);
       setCharacterGenerationProgress(95);
 
       // Paso 4: Finalizar (95-100%)
@@ -1393,7 +1394,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       return masterChar;
 
     } catch (error) {
-      console.error('❌ Error generando master character:', error);
+      logger.error('❌ Error generando master character:', error);
       setIsGeneratingCharacter(false);
       setShowCharacterGeneration(false);
 
@@ -1408,7 +1409,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   }, [artistReferenceImages, videoStyle.selectedDirector?.style, toast]);
 
   const handleDirectorSelection = useCallback(async (director: DirectorProfile, style: string) => {
-    console.log('🎬 Director seleccionado:', director.name, '| Estilo:', style);
+    logger.info('🎬 Director seleccionado:', director.name, '| Estilo:', style);
     
     // Guardar director y estilo
     setVideoStyle(prev => ({
@@ -1422,7 +1423,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     
     // Iniciar transcripción si aún no se ha hecho
     if (!transcription && selectedFile) {
-      console.log('🎤 Iniciando transcripción automática...');
+      logger.info('🎤 Iniciando transcripción automática...');
       setIsTranscribing(true);
       setShowProgress(true);
       setCurrentProgressStage("transcription");
@@ -1442,7 +1443,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       
       try {
         const transcriptionText = await transcribeAudio(selectedFile);
-        console.log('✅ Transcripción completada, length:', transcriptionText.length, 'characters');
+        logger.info('✅ Transcripción completada, length:', transcriptionText.length, 'characters');
         clearInterval(progressInterval);
         setProgressPercentage(100);
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -1451,7 +1452,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         
         // 🎨 AUTO-PERFIL: Guardar canción automáticamente en perfil del artista
         try {
-          console.log('🎨 Guardando canción en perfil del artista...');
+          logger.info('🎨 Guardando canción en perfil del artista...');
           
           // Get genre from director or use default
           const genre = videoStyle.selectedDirector?.name || 'Music Video';
@@ -1459,7 +1460,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           // Ensure profile exists
           const profileResult = await ensureArtistProfile(genre);
           if (profileResult.success) {
-            console.log('✅ Perfil verificado/creado:', profileResult.profile?.slug);
+            logger.info('✅ Perfil verificado/creado:', profileResult.profile?.slug);
             
             // Save song to Firestore
             const songResult = await saveSongToProfile({
@@ -1473,13 +1474,13 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             });
             
             if (songResult.success) {
-              console.log('✅ Canción guardada automáticamente:', songResult.song?.id);
-              console.log('🔗 Ver perfil en: /artist/' + profileResult.profile?.slug);
+              logger.info('✅ Canción guardada automáticamente:', songResult.song?.id);
+              logger.info('🔗 Ver perfil en: /artist/' + profileResult.profile?.slug);
             }
           }
         } catch (autoProfileError) {
           // No bloqueamos el flujo si falla el auto-perfil
-          console.warn('⚠️ Error en auto-perfil (no crítico):', autoProfileError);
+          logger.warn('⚠️ Error en auto-perfil (no crítico):', autoProfileError);
         }
         
         // ✅ TRANSCRIPCIÓN COMPLETADA - Ahora sí generar conceptos con contexto
@@ -1488,18 +1489,18 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         
         // Generar master character si hay imágenes de referencia
         if (artistReferenceImages.length > 0) {
-          console.log('🎭 Generando Master Character antes de conceptos...');
+          logger.info('🎭 Generando Master Character antes de conceptos...');
           setProgressMessage("🎭 Step 2/3: Creating your master character...");
           await handleGenerateMasterCharacter();
         }
         
         // Generar conceptos automáticamente CON el contexto de la letra
-        console.log('🎨 Generando 3 conceptos creativos CON contexto de letra...');
+        logger.info('🎨 Generando 3 conceptos creativos CON contexto de letra...');
         setProgressMessage("🎬 Step 2/2: Generating 3 creative proposals based on your lyrics...");
         await handleGenerateConcepts(transcriptionText, director);
         
       } catch (err) {
-        console.error("❌ Error transcribing audio:", err);
+        logger.error("❌ Error transcribing audio:", err);
         clearInterval(progressInterval);
         toast({
           title: "Error de transcripción",
@@ -1515,25 +1516,25 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       }
     } else if (transcription) {
       // Si ya hay transcripción, generar master character y conceptos directamente
-      console.log('✅ [TRANSCRIPCIÓN] Ya existe, saltando directo a generación de conceptos');
+      logger.info('✅ [TRANSCRIPCIÓN] Ya existe, saltando directo a generación de conceptos');
       setShowProgress(true);
       setProgressMessage("✅ Lyrics already analyzed! Generating creative proposals...");
       
       if (artistReferenceImages.length > 0) {
-        console.log('🎭 Generando Master Character antes de conceptos...');
+        logger.info('🎭 Generando Master Character antes de conceptos...');
         setProgressMessage("🎭 Creating your master character...");
         await handleGenerateMasterCharacter();
       }
       
-      console.log('🎬 [CONCEPTOS] Generando con letra previamente transcrita');
+      logger.info('🎬 [CONCEPTOS] Generando con letra previamente transcrita');
       await handleGenerateConcepts(transcription, director);
     }
   }, [transcription, selectedFile, toast, artistReferenceImages, handleGenerateMasterCharacter]);
 
   // Handler para generar conceptos
   const handleGenerateConcepts = useCallback(async (transcriptionText: string, director: DirectorProfile) => {
-    console.log('🎬 [CONCEPTOS] Iniciando generación con contexto completo de letra');
-    console.log('📝 [LYRICS CONTEXT] Letra disponible:', transcriptionText.substring(0, 100) + '...');
+    logger.info('🎬 [CONCEPTOS] Iniciando generación con contexto completo de letra');
+    logger.info('📝 [LYRICS CONTEXT] Letra disponible:', transcriptionText.substring(0, 100) + '...');
     
     setIsGeneratingConcepts(true);
     setShowProgress(true);
@@ -1548,16 +1549,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         ? [masterCharacter.imageUrl] 
         : (artistReferenceImages.length > 0 ? artistReferenceImages : undefined);
       
-      console.log('🤖 [AI] Llamando a generateThreeConceptProposals con letra completa...');
+      logger.info('🤖 [AI] Llamando a generateThreeConceptProposals con letra completa...');
       const concepts = await generateThreeConceptProposals(
         transcriptionText, // ✅ CRÍTICO: La letra YA está transcrita aquí
         director.name,
         characterReference,
         audioDurationInSeconds
       );
-      console.log('✅ [CONCEPTOS] 3 propuestas generadas con contexto de letra');
+      logger.info('✅ [CONCEPTOS] 3 propuestas generadas con contexto de letra');
       
-      console.log('✅ Conceptos generados:', concepts.length);
+      logger.info('✅ Conceptos generados:', concepts.length);
       
       // 🎬 GENERAR POSTERS DE HOLLYWOOD PROGRESIVAMENTE
       // Mostrar conceptos inmediatamente y generar posters mientras el usuario los ve
@@ -1583,7 +1584,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       for (let index = 0; index < concepts.length; index++) {
         try {
           const concept = concepts[index] as any;
-          console.log(`🎬 Generando poster Hollywood ${index + 1}/3...`);
+          logger.info(`🎬 Generando poster Hollywood ${index + 1}/3...`);
           
           const response = await fetch('/api/gemini-image/generate-hollywood-poster', {
             method: 'POST',
@@ -1603,16 +1604,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           const data = await response.json();
           
           if (data.success && data.imageUrl) {
-            console.log(`✅ Poster Hollywood ${index + 1} generado exitosamente`);
+            logger.info(`✅ Poster Hollywood ${index + 1} generado exitosamente`);
             
             // Subir a Firebase Storage si hay usuario
             let posterUrl = data.imageUrl;
             if (user?.uid) {
               try {
                 posterUrl = await uploadImageFromUrl(data.imageUrl, user.uid, `${projectName}/concept-posters`);
-                console.log(`✅ Poster ${index + 1} guardado en Firebase Storage`);
+                logger.info(`✅ Poster ${index + 1} guardado en Firebase Storage`);
               } catch (uploadError) {
-                console.warn(`⚠️ Error subiendo poster ${index + 1} a Firebase:`, uploadError);
+                logger.warn(`⚠️ Error subiendo poster ${index + 1} a Firebase:`, uploadError);
               }
             }
             
@@ -1635,7 +1636,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             throw new Error(data.error || 'No image URL returned');
           }
         } catch (error) {
-          console.error(`❌ Error generando poster Hollywood ${index + 1}:`, error);
+          logger.error(`❌ Error generando poster Hollywood ${index + 1}:`, error);
           
           // Marcar como fallido pero continuar con los demás
           setConceptProposals((prev: any[]) => {
@@ -1657,10 +1658,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         }
       }
       
-      console.log('✅ Proceso de generación de posters completado');
+      logger.info('✅ Proceso de generación de posters completado');
       
     } catch (err) {
-      console.error("❌ Error generando conceptos:", err);
+      logger.error("❌ Error generando conceptos:", err);
       toast({
         title: "Error",
         description: err instanceof Error ? err.message : "Error generando conceptos",
@@ -1675,14 +1676,14 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Handler para cuando se selecciona un concepto
   const handleConceptSelection = useCallback(async (concept: any) => {
-    console.log('🎨 Concepto seleccionado:', concept.title || 'Concepto');
+    logger.info('🎨 Concepto seleccionado:', concept.title || 'Concepto');
     
     setSelectedConcept(concept);
     
     // Guardar concepto en la base de datos y crear perfil de artista automáticamente
     if (user?.email) {
       try {
-        console.log('💾 Guardando concepto seleccionado en base de datos...');
+        logger.info('💾 Guardando concepto seleccionado en base de datos...');
         
         const projectData = {
           userEmail: user.email!,
@@ -1707,11 +1708,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         };
         
         const savedProject = await musicVideoProjectServicePostgres.saveProject(projectData);
-        console.log('✅ Concepto guardado en base de datos');
+        logger.info('✅ Concepto guardado en base de datos');
         
         // 🎨 NUEVO: Crear perfil de artista automáticamente
         if (savedProject?.project?.id) {
-          console.log('👤 Creando perfil de artista automáticamente...');
+          logger.info('👤 Creando perfil de artista automáticamente...');
           
           const { createArtistProfileFromVideo } = await import('@/lib/api/artist-profile-service');
           
@@ -1737,18 +1738,18 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           });
           
           if (profileResult.success) {
-            console.log('✅ Perfil de artista creado automáticamente:', profileResult.profile?.artistName);
+            logger.info('✅ Perfil de artista creado automáticamente:', profileResult.profile?.artistName);
             toast({
               title: "✨ Perfil de Artista Creado",
               description: `Se ha creado automáticamente el perfil para "${profileResult.profile?.artistName}"`,
             });
           } else {
-            console.warn('⚠️ No se pudo crear el perfil automático, continuando de todas formas');
+            logger.warn('⚠️ No se pudo crear el perfil automático, continuando de todas formas');
           }
         }
         
       } catch (error) {
-        console.error('❌ Error guardando concepto:', error);
+        logger.error('❌ Error guardando concepto:', error);
         // Continuar de todas formas
       }
     }
@@ -1762,12 +1763,12 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     setProgressMessage("Generando guión cinematográfico...");
     
     // Proceder a generar el script completo y las imágenes
-    console.log('📜 Generando script final basado en el concepto...');
+    logger.info('📜 Generando script final basado en el concepto...');
     
     if (transcription && audioBuffer) {
       await executeScriptGeneration(transcription, audioBuffer);
     } else {
-      console.error('❌ No hay transcripción o audioBuffer disponible');
+      logger.error('❌ No hay transcripción o audioBuffer disponible');
       toast({
         title: "Error",
         description: "Falta transcripción o audio para continuar",
@@ -1815,7 +1816,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           setAudioBuffer(buffer);
 
           // Use OpenAI for transcription
-          console.log('🎤 Starting file transcription:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+          logger.info('🎤 Starting file transcription:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
           setIsTranscribing(true);
           setShowProgress(true);
           setCurrentProgressStage("transcription");
@@ -1834,9 +1835,9 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           }, 200);
           
           try {
-            console.log('📤 Sending file to server for transcription...');
+            logger.info('📤 Sending file to server for transcription...');
             const transcriptionText = await transcribeAudio(file);
-            console.log('✅ Transcription completed, length:', transcriptionText.length, 'characters');
+            logger.info('✅ Transcription completed, length:', transcriptionText.length, 'characters');
             clearInterval(progressInterval);
             setProgressPercentage(100);
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1847,7 +1848,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             setIsTranscribing(false);
             setProgressPercentage(0);
             
-            console.log('✅ [TRANSCRIPCIÓN COMPLETADA] Usuario puede ahora seleccionar director');
+            logger.info('✅ [TRANSCRIPCIÓN COMPLETADA] Usuario puede ahora seleccionar director');
             
             toast({
               title: "✅ Transcripción completada",
@@ -1855,7 +1856,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             });
             
           } catch (err) {
-            console.error("❌ Error transcribing audio:", err);
+            logger.error("❌ Error transcribing audio:", err);
             clearInterval(progressInterval);
             toast({
               title: "Transcription error",
@@ -1933,7 +1934,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         description: `${newImages.length} reference image(s) added (${artistReferenceImages.length + newImages.length}/10)`,
       });
     } catch (error) {
-      console.error("Error loading reference images:", error);
+      logger.error("Error loading reference images:", error);
       toast({
         title: "Error",
         description: "Error processing reference images",
@@ -1990,7 +1991,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       if (videoStyle.selectedDirector) {
         directorProfile = getDirectorByName(videoStyle.selectedDirector.name);
         if (directorProfile) {
-          console.log(`🎬 [DIRECTOR] Perfil completo cargado: ${directorProfile.name}`);
+          logger.info(`🎬 [DIRECTOR] Perfil completo cargado: ${directorProfile.name}`);
         }
       }
       
@@ -1998,7 +1999,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       const audioDurationInSeconds = audioBuffer?.duration || undefined;
       
       // 🆕 PASO 1: Generar concepto visual primero
-      console.log('🎨 [CONCEPTO] Generando concepto visual y narrativo...');
+      logger.info('🎨 [CONCEPTO] Generando concepto visual y narrativo...');
       const concept = await generateMusicVideoConcept(
         transcription,
         artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
@@ -2006,13 +2007,13 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       );
       
       if (concept) {
-        console.log('✅ [CONCEPTO] Concepto generado:', concept);
+        logger.info('✅ [CONCEPTO] Concepto generado:', concept);
       } else {
-        console.log('⚠️ [CONCEPTO] No se pudo generar concepto, continuando sin él');
+        logger.info('⚠️ [CONCEPTO] No se pudo generar concepto, continuando sin él');
       }
       
       // PASO 2: Generar script usando el concepto y perfil completo del director
-      console.log('📝 [SCRIPT] Generando script con concepto y perfil del director...');
+      logger.info('📝 [SCRIPT] Generando script con concepto y perfil del director...');
       const scriptResponse = await generateMusicVideoScript(
         transcription, 
         undefined, 
@@ -2033,7 +2034,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         setScriptContent(JSON.stringify(parsed, null, 2));
       } catch (parseError) {
         // If it can't be parsed, use the response directly
-        console.warn("Could not format script JSON, using direct response", parseError);
+        logger.warn("Could not format script JSON, using direct response", parseError);
         setScriptContent(scriptResponse);
       }
       
@@ -2045,7 +2046,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         description: "Music video script generated correctly",
       });
     } catch (error) {
-      console.error("Error generating script:", error);
+      logger.error("Error generating script:", error);
       clearInterval(progressInterval);
       toast({
         title: "Error",
@@ -2100,7 +2101,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           throw new Error("The script does not contain valid scenes");
         }
       } catch (e) {
-        console.error("Error parsing script:", e);
+        logger.error("Error parsing script:", e);
         throw new Error("Could not process the script. Please, generate the script again.");
       }
       
@@ -2116,7 +2117,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         throw new Error("No segments detected in the script");
       }
     } catch (error) {
-      console.error("Error synchronizing audio:", error);
+      logger.error("Error synchronizing audio:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error synchronizing audio with timeline",
@@ -2150,7 +2151,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         sceneId = match ? parseInt(match[0]) : index + 1;
       }
       
-      console.log(`🎬 Creating clip ${sceneId}: start=${scene.start_time}s, duration=${scene.duration}s`);
+      logger.info(`🎬 Creating clip ${sceneId}: start=${scene.start_time}s, duration=${scene.duration}s`);
       
       segments.push({
         id: sceneId, // CRITICAL: Use numeric ID for React keys
@@ -2190,7 +2191,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       });
     });
     
-    console.log(`✅ ${segments.length} clips created from JSON with random durations`);
+    logger.info(`✅ ${segments.length} clips created from JSON with random durations`);
     return segments;
   };
 
@@ -2226,7 +2227,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         selectedEditingStyle
       );
       
-      console.log(`✅ Script generated: ${fullScript.total_scenes} scenes`);
+      logger.info(`✅ Script generated: ${fullScript.total_scenes} scenes`);
       
       // Step 2: Generate images for each scene using Gemini/Flux
       toast({
@@ -2245,11 +2246,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             steps: 30
           });
           
-          console.log(`✅ Image ${index + 1}/${fullScript.total_scenes} generated`);
+          logger.info(`✅ Image ${index + 1}/${fullScript.total_scenes} generated`);
           // FluxTaskResult.images is string[] not objects with url
           return result.images?.[0] || '';
         } catch (error) {
-          console.error(`Error generating image ${index + 1}:`, error);
+          logger.error(`Error generating image ${index + 1}:`, error);
           throw error;
         }
       });
@@ -2323,7 +2324,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       setShowMyVideos(true);
       
     } catch (error) {
-      console.error('Error generating full video:', error);
+      logger.error('Error generating full video:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error generating full video",
@@ -2424,7 +2425,7 @@ ${transcription}`;
         } catch (parseError) {
           // Try to extract valid JSON if it's within quotes, markdown, etc.
           const error = parseError as Error;
-          console.error("Error parsing JSON:", error.message);
+          logger.error("Error parsing JSON:", error.message);
           
           // Verify jsonContent is a string before using regex
           if (typeof jsonContent === 'string') {
@@ -2438,7 +2439,7 @@ ${transcription}`;
                 throw new Error("Could not find valid JSON with segments");
               }
             } catch (regexError) {
-              console.error("Error searching for JSON with regex:", regexError);
+              logger.error("Error searching for JSON with regex:", regexError);
               throw new Error("Could not extract valid JSON from response");
             }
           } else {
@@ -2488,13 +2489,13 @@ ${transcription}`;
 
       } catch (parseError) {
         const error = parseError as Error;
-        console.error("Error parsing response:", error);
-        console.error("Response content:", jsonContent);
+        logger.error("Error parsing response:", error);
+        logger.error("Response content:", jsonContent);
         throw new Error("Error processing script response: " + error.message);
       }
 
     } catch (error) {
-      console.error("Error generating script:", error);
+      logger.error("Error generating script:", error);
       toast({
         title: "Error generating script",
         description: error instanceof Error ? error.message : "Error generating synchronized video script",
@@ -2512,7 +2513,7 @@ ${transcription}`;
    */
   const generateImageForSegment = async (item: TimelineItem): Promise<string | null> => {
     if (!item.imagePrompt) {
-      console.warn(`Segment ${item.id} has no prompt to generate image`);
+      logger.warn(`Segment ${item.id} has no prompt to generate image`);
       return null;
     }
 
@@ -2521,8 +2522,8 @@ ${transcription}`;
       try {
         const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style, ${item.shotType} composition`;
         
-        console.log(`🎨 Generando imagen con ${artistReferenceImages.length} referencias faciales`);
-        console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
+        logger.info(`🎨 Generando imagen con ${artistReferenceImages.length} referencias faciales`);
+        logger.info(`📝 Prompt: ${prompt.substring(0, 100)}...`);
 
         const response = await fetch('/api/gemini-image/generate-single-with-multiple-faces', {
           method: 'POST',
@@ -2547,23 +2548,23 @@ ${transcription}`;
           throw new Error(data.error || 'Error generating image');
         }
 
-        console.log(`✅ Imagen generada con referencias faciales: ${data.imageUrl.substring(0, 100)}`);
+        logger.info(`✅ Imagen generada con referencias faciales: ${data.imageUrl.substring(0, 100)}`);
         
         // CRITICAL: Upload image to Firebase Storage for persistence
         if (user?.uid) {
-          console.log(`📤 Subiendo imagen a Firebase Storage...`);
+          logger.info(`📤 Subiendo imagen a Firebase Storage...`);
           const permanentUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
-          console.log(`✅ Imagen guardada permanentemente en Firebase Storage`);
+          logger.info(`✅ Imagen guardada permanentemente en Firebase Storage`);
           return permanentUrl;
         } else {
-          console.warn(`⚠️ No user ID - returning temporary URL`);
+          logger.warn(`⚠️ No user ID - returning temporary URL`);
           return data.imageUrl;
         }
         
       } catch (error) {
-        console.error(`Error generating image with faces for segment ${item.id}:`, error);
+        logger.error(`Error generating image with faces for segment ${item.id}:`, error);
         // Si falla, continuar con el método tradicional de FLUX
-        console.log('⚠️ Fallando a generación tradicional sin referencias faciales');
+        logger.info('⚠️ Fallando a generación tradicional sin referencias faciales');
       }
     }
 
@@ -2577,8 +2578,8 @@ ${transcription}`;
         // Format the prompt to include style information
         const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style, ${item.shotType} composition`;
         
-        console.log(`Generating image for segment ${item.id}, attempt ${attempt + 1}/${maxAttempts}`);
-        console.log(`Prompt: ${prompt.substring(0, 100)}...`);
+        logger.info(`Generating image for segment ${item.id}, attempt ${attempt + 1}/${maxAttempts}`);
+        logger.info(`Prompt: ${prompt.substring(0, 100)}...`);
 
         // Configure parameters for Flux API
         const params = {
@@ -2594,42 +2595,42 @@ ${transcription}`;
         };
 
         // Start image generation with Flux API
-        console.log('Starting generation with Flux API');
+        logger.info('Starting generation with Flux API');
         const result = await fluxService.generateImage(params);
 
         if (!result.success || !result.taskId) {
           throw new Error(`Error starting image generation: ${result.error || 'Invalid response'}`);
         }
 
-        console.log(`Generation task started with ID: ${result.taskId}`);
+        logger.info(`Generation task started with ID: ${result.taskId}`);
         
         // Wait for image to be generated (polling)
         const imageUrl = await waitForFluxImageGeneration(result.taskId);
         
         if (imageUrl) {
-          console.log(`Image successfully generated for segment ${item.id}: ${imageUrl}`);
+          logger.info(`Image successfully generated for segment ${item.id}: ${imageUrl}`);
           
           // CRITICAL: Upload image to Firebase Storage for persistence
           if (user?.uid) {
-            console.log(`📤 Subiendo imagen de FLUX a Firebase Storage...`);
+            logger.info(`📤 Subiendo imagen de FLUX a Firebase Storage...`);
             const permanentUrl = await uploadImageFromUrl(imageUrl, user.uid, projectName);
-            console.log(`✅ Imagen de FLUX guardada permanentemente en Firebase Storage`);
+            logger.info(`✅ Imagen de FLUX guardada permanentemente en Firebase Storage`);
             return permanentUrl;
           } else {
-            console.warn(`⚠️ No user ID - returning temporary FLUX URL`);
+            logger.warn(`⚠️ No user ID - returning temporary FLUX URL`);
             return imageUrl;
           }
         } else {
           throw new Error("No image URL received in response");
         }
       } catch (error) {
-        console.error(`Error in attempt ${attempt + 1} for segment ${item.id}:`, error);
+        logger.error(`Error in attempt ${attempt + 1} for segment ${item.id}:`, error);
         lastError = error instanceof Error ? error : new Error(String(error));
         
         // If it's the last attempt, we don't wait
         if (attempt < maxAttempts - 1) {
           const backoffTime = Math.min(1000 * Math.pow(2, attempt), 10000);
-          console.log(`Retrying in ${backoffTime/1000} seconds...`);
+          logger.info(`Retrying in ${backoffTime/1000} seconds...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
         }
         
@@ -2637,7 +2638,7 @@ ${transcription}`;
       }
     }
 
-    console.error(`Could not generate image for segment ${item.id} after ${maxAttempts} attempts:`, lastError);
+    logger.error(`Could not generate image for segment ${item.id} after ${maxAttempts} attempts:`, lastError);
     return null;
   };
 
@@ -2655,7 +2656,7 @@ ${transcription}`;
     const checkStatus = async (): Promise<string | null> => {
       const statusResult = await fluxService.checkTaskStatus(taskId);
       
-      console.log(`Task ${taskId} status:`, statusResult.status);
+      logger.info(`Task ${taskId} status:`, statusResult.status);
       
       if (statusResult.success && statusResult.status === 'completed' && statusResult.images && statusResult.images.length > 0) {
         return statusResult.images[0];
@@ -2678,12 +2679,12 @@ ${transcription}`;
         await new Promise(resolve => setTimeout(resolve, pollingInterval));
         attempts++;
       } catch (error) {
-        console.error('Error checking generation status:', error);
+        logger.error('Error checking generation status:', error);
         return null;
       }
     }
 
-    console.error(`Timeout expired after ${attempts} attempts for task ${taskId}`);
+    logger.error(`Timeout expired after ${attempts} attempts for task ${taskId}`);
     return null;
   };
 
@@ -2720,7 +2721,7 @@ ${transcription}`;
         throw new Error("Could not generate image");
       }
     } catch (error) {
-      console.error("Error regenerating image:", error);
+      logger.error("Error regenerating image:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error regenerating image",
@@ -2814,7 +2815,7 @@ ${transcription}`;
           try {
             permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
           } catch (uploadError) {
-            console.warn('Error uploading to Firebase, using temporary URL:', uploadError);
+            logger.warn('Error uploading to Firebase, using temporary URL:', uploadError);
           }
         }
 
@@ -2846,7 +2847,7 @@ ${transcription}`;
         throw new Error(data.error || 'Failed to generate image');
       }
     } catch (error) {
-      console.error("Error regenerating image:", error);
+      logger.error("Error regenerating image:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error regenerating image",
@@ -2923,7 +2924,7 @@ ${transcription}`;
         throw new Error('Failed to generate video');
       }
     } catch (error) {
-      console.error("Error generating video:", error);
+      logger.error("Error generating video:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error generating video",
@@ -2936,14 +2937,14 @@ ${transcription}`;
    * Guardar proyecto en PostgreSQL
    */
   const handleSaveProject = async () => {
-    console.log('🔍 [SAVE] Verificando autenticación:', { 
+    logger.info('🔍 [SAVE] Verificando autenticación:', { 
       user: user ? 'exists' : 'null', 
       uid: user?.uid || 'undefined',
       email: user?.email || 'undefined'
     });
     
     if (!user) {
-      console.error('❌ [SAVE] Usuario no autenticado');
+      logger.error('❌ [SAVE] Usuario no autenticado');
       toast({
         title: "Autenticación requerida",
         description: "Por favor inicia sesión para guardar tu proyecto.",
@@ -2954,7 +2955,7 @@ ${transcription}`;
     
     const userEmail = user.email || user.uid;
     
-    console.log('✅ [SAVE] Usuario autenticado:', user.email);
+    logger.info('✅ [SAVE] Usuario autenticado:', user.email);
 
     if (!projectName.trim()) {
       toast({
@@ -3019,7 +3020,7 @@ ${transcription}`;
         description: `"${projectName}" has been ${result.isNew ? 'created' : 'updated'} successfully`
       });
     } catch (error) {
-      console.error('Error saving project:', error);
+      logger.error('Error saving project:', error);
       toast({
         title: "Error saving project",
         description: "Could not save your project",
@@ -3071,7 +3072,7 @@ ${transcription}`;
         description: `"${project.projectName}" has been loaded successfully`
       });
     } catch (error) {
-      console.error('Error loading project:', error);
+      logger.error('Error loading project:', error);
       toast({
         title: "Error loading project",
         description: "Could not load the project",
@@ -3088,7 +3089,7 @@ ${transcription}`;
       return;
     }
 
-    console.log('🔄 Auto-guardando proyecto...');
+    logger.info('🔄 Auto-guardando proyecto...');
     
     const userEmail = user.email || user.uid;
     
@@ -3142,9 +3143,9 @@ ${transcription}`;
       setCurrentProjectId(String(result.project.id));
       setLastSavedAt(new Date());
       setHasUnsavedChanges(false);
-      console.log('✅ Auto-guardado completado');
+      logger.info('✅ Auto-guardado completado');
     } catch (error) {
-      console.error('❌ Error en auto-guardado:', error);
+      logger.error('❌ Error en auto-guardado:', error);
     }
   }, [user, projectName, hasUnsavedChanges, autoSaveEnabled, timelineItems, audioUrl, audioBuffer, transcription, scriptContent, videoStyle, artistReferenceImages, selectedEditingStyle]);
 
@@ -3226,7 +3227,7 @@ ${transcription}`;
         if (!item) continue;
 
         try {
-          console.log(`🔄 Regenerando imagen ${clipId}...`);
+          logger.info(`🔄 Regenerando imagen ${clipId}...`);
           
           const promptToUse = item.imagePrompt || item.description || `Scene ${clipId}`;
           
@@ -3250,7 +3251,7 @@ ${transcription}`;
               try {
                 permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
               } catch (error) {
-                console.warn('Error uploading to Firebase, using temporary URL:', error);
+                logger.warn('Error uploading to Firebase, using temporary URL:', error);
               }
             }
             
@@ -3275,7 +3276,7 @@ ${transcription}`;
             throw new Error('No image URL returned');
           }
         } catch (error) {
-          console.error(`Error regenerating clip ${clipId}:`, error);
+          logger.error(`Error regenerating clip ${clipId}:`, error);
           failCount++;
         }
       }
@@ -3288,7 +3289,7 @@ ${transcription}`;
       // Limpiar selección
       setSelectedClipIds([]);
     } catch (error) {
-      console.error('Error in batch regeneration:', error);
+      logger.error('Error in batch regeneration:', error);
       toast({
         title: "Error",
         description: "Error al regenerar imágenes",
@@ -3351,7 +3352,7 @@ ${transcription}`;
         throw new Error(result.error || "Failed to generate video");
       }
     } catch (error) {
-      console.error('Error generating video:', error);
+      logger.error('Error generating video:', error);
       toast({
         title: "Error generating video",
         description: error instanceof Error ? error.message : "Could not generate video",
@@ -3414,7 +3415,7 @@ ${transcription}`;
         description: `Successfully generated ${successCount} out of ${scenesWithImages.length} videos`
       });
     } catch (error) {
-      console.error('Error generating videos:', error);
+      logger.error('Error generating videos:', error);
       toast({
         title: "Error generating videos",
         description: error instanceof Error ? error.message : "Could not generate videos",
@@ -3569,7 +3570,7 @@ ${transcription}`;
 
       return url;
     } catch (error) {
-      console.error("Error saving to Firebase:", error);
+      logger.error("Error saving to Firebase:", error);
       return null;
     }
   };
@@ -3709,7 +3710,7 @@ ${transcription}`;
               await new Promise(resolve => setTimeout(resolve, 500));
               
             } catch (error) {
-              console.error(`Error in generation for segment ${item.id}:`, error);
+              logger.error(`Error in generation for segment ${item.id}:`, error);
               failCount++;
               
               results.push({
@@ -3726,7 +3727,7 @@ ${transcription}`;
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
         } catch (batchError) {
-          console.error(`Error processing batch ${Math.floor(i/batchSize) + 1}:`, batchError);
+          logger.error(`Error processing batch ${Math.floor(i/batchSize) + 1}:`, batchError);
           failCount++;
         }
       }
@@ -3779,7 +3780,7 @@ ${transcription}`;
               tags: extractTags(),
             });
           } catch (error) {
-            console.error('Error guardando información del video:', error);
+            logger.error('Error guardando información del video:', error);
           }
           
           setCurrentStep(5); // Avanzar al siguiente paso
@@ -3793,7 +3794,7 @@ ${transcription}`;
       }
 
     } catch (error) {
-      console.error("Error en el proceso de generación:", error);
+      logger.error("Error en el proceso de generación:", error);
       toast({
         title: "Error general",
         description: error instanceof Error ? error.message : "Error en el proceso de generación de imágenes",
@@ -3864,7 +3865,7 @@ ${transcription}`;
 
       return mockVideoUrl;
     } catch (error) {
-      console.error("Error exportando video:", error);
+      logger.error("Error exportando video:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al exportar el video",
@@ -3920,10 +3921,10 @@ ${transcription}`;
         }));
         generateTimelineItems(shotItems);
       } else {
-        console.warn("Formato de script no reconocido:", scriptData);
+        logger.warn("Formato de script no reconocido:", scriptData);
       }
     } catch (error) {
-      console.error("Error parsing script:", error);
+      logger.error("Error parsing script:", error);
       toast({
         title: "Error de formato",
         description: "El script no tiene un formato JSON válido",
@@ -3980,7 +3981,7 @@ ${transcription}`;
 
   // Mapa de clips organizados por capas para el editor profesional multicanal
   const clips: TimelineClip[] = useMemo(() => {
-    console.log("🎬 Generando clips para timeline editor, items:", timelineItems.length);
+    logger.info("🎬 Generando clips para timeline editor, items:", timelineItems.length);
     
     // Asegurar que siempre hay un clip de audio en la capa 0 si existe audioUrl
     const audioClips = audioUrl ? [
@@ -3998,7 +3999,7 @@ ${transcription}`;
       })
     ] : [];
     
-    console.log("🔊 Audio importado:", audioUrl ? "SI" : "NO");
+    logger.info("🔊 Audio importado:", audioUrl ? "SI" : "NO");
     
     // Mapear los items de timeline a clips visuales
     const visualClips = timelineItems.map(item => {
@@ -4030,7 +4031,7 @@ ${transcription}`;
       else if (item.generatedImage) {
         clipType = 'image';
         clipLayer = 7; // Colocar imágenes generadas en la capa 7
-        console.log(`🎨 Imagen generada detectada: ${item.id} - Asignando a capa 7`);
+        logger.info(`🎨 Imagen generada detectada: ${item.id} - Asignando a capa 7`);
       }
       
       // URL del recurso: priorizar video, luego imagen
@@ -4041,7 +4042,7 @@ ${transcription}`;
                   item.firebaseUrl || 
                   '';
       
-      console.log(`📍 Clip ${item.id} - Tipo: ${clipType}, Capa: ${clipLayer}, URL: ${url ? "SI" : "NO"}`);
+      logger.info(`📍 Clip ${item.id} - Tipo: ${clipType}, Capa: ${clipLayer}, URL: ${url ? "SI" : "NO"}`);
       
       // Create base object with all necessary properties
       const clipBase = {
@@ -4165,7 +4166,7 @@ ${transcription}`;
     setTimelineItems(updatedItems);
     
     // Depurar para verificar la actualización
-    console.log(`Clip ${clipId} actualizado:`, updates);
+    logger.info(`Clip ${clipId} actualizado:`, updates);
   };
   
   // Función para manejar la división de clips en la línea de tiempo
@@ -4226,7 +4227,7 @@ ${transcription}`;
     // Actualizar el estado
     setTimelineItems(updatedItems as TimelineItem[]);
     
-    console.log(`Clip ${clipId} dividido en: ${clipId} y ${newClipId} en tiempo ${splitTime}s`);
+    logger.info(`Clip ${clipId} dividido en: ${clipId} y ${newClipId} en tiempo ${splitTime}s`);
   };
 
   /**
@@ -4261,7 +4262,7 @@ ${transcription}`;
       const clipDuration = currentClip.duration || (currentClip.end_time - currentClip.start_time);
       
       if (clipDuration > MAX_CLIP_DURATION) {
-        console.log(`Ajustando clip ${currentClip.id} de ${clipDuration}ms a ${MAX_CLIP_DURATION}ms`);
+        logger.info(`Ajustando clip ${currentClip.id} de ${clipDuration}ms a ${MAX_CLIP_DURATION}ms`);
         currentClip.duration = MAX_CLIP_DURATION;
         currentClip.end_time = currentClip.start_time + MAX_CLIP_DURATION;
       }
@@ -4269,7 +4270,7 @@ ${transcription}`;
       // 2. Restricción de capa para imágenes generadas por IA - siempre en capa 7
       if (currentClip.generatedImage || (currentClip.metadata && currentClip.metadata.isGeneratedImage)) {
         if (currentClip.group !== 7) {
-          console.log(`Moviendo clip de imagen generada ${currentClip.id} a capa 7`);
+          logger.info(`Moviendo clip de imagen generada ${currentClip.id} a capa 7`);
           currentClip.group = 7;
         }
       }
@@ -4283,7 +4284,7 @@ ${transcription}`;
         if (currentClip.group === nextClip.group && 
             currentClip.end_time > nextClip.start_time) {
           
-          console.log(`Detectado solapamiento entre clips ${currentClip.id} y ${nextClip.id} en capa ${currentClip.group}`);
+          logger.info(`Detectado solapamiento entre clips ${currentClip.id} y ${nextClip.id} en capa ${currentClip.group}`);
           
           // Ajustar la duración del clip actual para evitar el solapamiento
           const newEndTime = nextClip.start_time;
@@ -4291,7 +4292,7 @@ ${transcription}`;
           
           // Solo aplicar el cambio si la nueva duración es razonable (más de 0.1 segundos)
           if (newDuration >= 100) {
-            console.log(`Ajustando fin de clip ${currentClip.id} de ${currentClip.end_time}ms a ${newEndTime}ms`);
+            logger.info(`Ajustando fin de clip ${currentClip.id} de ${currentClip.end_time}ms a ${newEndTime}ms`);
             currentClip.end_time = newEndTime;
             currentClip.duration = newDuration;
           }
@@ -4299,7 +4300,7 @@ ${transcription}`;
           else if (newDuration < 100) {
             // Calculamos el nuevo start_time para el clip siguiente
             const newStartTime = currentClip.end_time;
-            console.log(`Ajustando inicio de clip ${nextClip.id} de ${nextClip.start_time}ms a ${newStartTime}ms`);
+            logger.info(`Ajustando inicio de clip ${nextClip.id} de ${nextClip.start_time}ms a ${newStartTime}ms`);
             nextClip.start_time = newStartTime;
             nextClip.duration = nextClip.end_time - newStartTime;
           }
@@ -4318,7 +4319,7 @@ ${transcription}`;
    */
   const generatePromptForSegment = async (segment: TimelineItem): Promise<string> => {
     if (!segment || typeof segment.id !== 'number') {
-      console.error("Invalid segment:", segment);
+      logger.error("Invalid segment:", segment);
       return "Error: invalid segment";
     }
     
@@ -4332,7 +4333,7 @@ ${transcription}`;
     let relevantLyrics = "";
     
     try {
-      console.log(`Generating prompt for segment ${segment.id} (${segmentStartTime.toFixed(2)}s - ${segmentEndTime.toFixed(2)}s)`);
+      logger.info(`Generating prompt for segment ${segment.id} (${segmentStartTime.toFixed(2)}s - ${segmentEndTime.toFixed(2)}s)`);
       
       // STEP 1: RELEVANT LYRICS EXTRACTION
       // If we have transcription with timestamps (more precise)
@@ -4351,7 +4352,7 @@ ${transcription}`;
             .filter(text => text.trim().length > 0)
             .join(" ");
           
-          console.log(`Found ${relevantSegments.length} segments with timestamps for this fragment`);
+          logger.info(`Found ${relevantSegments.length} segments with timestamps for this fragment`);
         }
       }
       
@@ -4374,7 +4375,7 @@ ${transcription}`;
           if (startWordIndex >= 0 && wordCount > 0 && startWordIndex < transcriptionWords.length) {
             const endWordIndex = Math.min(startWordIndex + wordCount, transcriptionWords.length);
             relevantLyrics = transcriptionWords.slice(startWordIndex, endWordIndex).join(" ");
-            console.log(`Using proportional transcription: words ${startWordIndex}-${endWordIndex} of ${transcriptionWords.length}`);
+            logger.info(`Using proportional transcription: words ${startWordIndex}-${endWordIndex} of ${transcriptionWords.length}`);
           }
         }
       }
@@ -4407,19 +4408,19 @@ ${transcription}`;
               : "Instrumental";
         }
         
-        console.log(`No specific lyrics found, using context: "${relevantLyrics}"`);
+        logger.info(`No specific lyrics found, using context: "${relevantLyrics}"`);
       }
 
       // STEP 2: PROMPT GENERATION WITH MULTIPLE ATTEMPTS
       while (attempt < maxAttempts) {
         try {
-          console.log(`Generating prompt for segment ${segment.id}, attempt ${attempt + 1}/${maxAttempts}`);
+          logger.info(`Generating prompt for segment ${segment.id}, attempt ${attempt + 1}/${maxAttempts}`);
           
           // Validate video style parameters before creating prompt
           if (!videoStyle.cameraFormat || !videoStyle.mood || !videoStyle.characterStyle || 
               !videoStyle.colorPalette || videoStyle.visualIntensity === undefined || 
               videoStyle.narrativeIntensity === undefined) {
-            console.error("Incomplete video styles:", videoStyle);
+            logger.error("Incomplete video styles:", videoStyle);
             throw new Error("Missing style parameters to generate prompt");
           }
           
@@ -4446,16 +4447,16 @@ ${transcription}`;
           const promptWithLyrics = `Music video scene representing these lyrics: "${relevantLyrics}". ${await generateVideoPromptWithRetry(promptParams)}`;
 
           if (promptWithLyrics && promptWithLyrics !== "Error generating prompt") {
-            console.log(`Prompt successfully generated for segment ${segment.id}`);
+            logger.info(`Prompt successfully generated for segment ${segment.id}`);
             return promptWithLyrics;
           }
 
-          console.warn(`Attempt ${attempt + 1} failed, retrying in ${2 * (attempt + 1)} seconds...`);
+          logger.warn(`Attempt ${attempt + 1} failed, retrying in ${2 * (attempt + 1)} seconds...`);
           await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
           attempt++;
 
         } catch (error) {
-          console.error(`Error in attempt ${attempt + 1}:`, error);
+          logger.error(`Error in attempt ${attempt + 1}:`, error);
           lastError = error instanceof Error ? error : new Error(String(error));
 
           if (attempt === maxAttempts - 1) {
@@ -4469,23 +4470,23 @@ ${transcription}`;
 
           // Exponential backoff
           const backoffTime = Math.min(1000 * Math.pow(2, attempt), 10000);
-          console.log(`Retrying in ${backoffTime/1000} seconds...`);
+          logger.info(`Retrying in ${backoffTime/1000} seconds...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
           attempt++;
         }
       }
     } catch (outerError) {
-      console.error("General error in generatePromptForSegment:", outerError);
+      logger.error("General error in generatePromptForSegment:", outerError);
       lastError = outerError instanceof Error ? outerError : new Error(String(outerError));
     }
 
     // FALLBACK: If no attempt succeeded
-    console.error(`Could not generate prompt for segment ${segment.id} after multiple attempts:`, lastError);
+    logger.error(`Could not generate prompt for segment ${segment.id} after multiple attempts:`, lastError);
     
     // As a last resort, use a basic prompt based on shot type and mood
     const fallbackPrompt = `${segment.shotType || 'medium shot'} of a ${segment.mood || 'neutral'} scene with ${videoStyle.colorPalette || 'balanced'} colors. ${relevantLyrics}`;
     
-    console.warn(`Using fallback prompt for segment ${segment.id}: ${fallbackPrompt}`);
+    logger.warn(`Using fallback prompt for segment ${segment.id}: ${fallbackPrompt}`);
     return fallbackPrompt;
   };
 
@@ -4559,7 +4560,7 @@ ${transcription}`;
           }
 
         } catch (error) {
-          console.error(`Error procesando batch ${i/3 + 1}:`, error);
+          logger.error(`Error procesando batch ${i/3 + 1}:`, error);
           hasError = true;
         }
       }
@@ -4579,7 +4580,7 @@ ${transcription}`;
       }
 
     } catch (error) {
-      console.error("Error en la generación de prompts:", error);
+      logger.error("Error en la generación de prompts:", error);
       toast({
         title: "Error",
         description: "Error al generar los prompts",
@@ -4630,7 +4631,7 @@ ${transcription}`;
             }
             return { id: item.id, success: !!url, url };
           } catch (error) {
-            console.error(`Error guardando imagen para segmento ${item.id}:`, error);
+            logger.error(`Error guardando imagen para segmento ${item.id}:`, error);
             return { id: item.id, success: false };
           }
         });
@@ -4658,7 +4659,7 @@ ${transcription}`;
           description: `Sincronizando ${performanceScenes.length} escenas de performance...`,
         });
 
-        console.log(`🎤 Aplicando lip-sync a ${performanceScenes.length} escenas de performance`);
+        logger.info(`🎤 Aplicando lip-sync a ${performanceScenes.length} escenas de performance`);
 
         // Procesar lip-sync para cada escena de performance
         for (const scene of performanceScenes) {
@@ -4668,7 +4669,7 @@ ${transcription}`;
             const videoUrl = scene.firebaseUrl || scene.generatedImage;
             
             if (typeof videoUrl === 'string') {
-              console.log(`🎤 Procesando lip-sync para escena ${scene.id}`);
+              logger.info(`🎤 Procesando lip-sync para escena ${scene.id}`);
               
               // Aplicar lip-sync (esto requeriría tener el video generado primero)
               // const syncResult = await applyLipSync({
@@ -4684,7 +4685,7 @@ ${transcription}`;
               // }
             }
           } catch (error) {
-            console.error(`Error aplicando lip-sync a escena ${scene.id}:`, error);
+            logger.error(`Error aplicando lip-sync a escena ${scene.id}:`, error);
           }
         }
 
@@ -4715,7 +4716,7 @@ ${transcription}`;
           hasLipSync: performanceScenes.length > 0
         });
       } catch (error) {
-        console.error("Error guardando información del video:", error);
+        logger.error("Error guardando información del video:", error);
       }
 
       setCurrentStep(7);
@@ -4727,7 +4728,7 @@ ${transcription}`;
 
       return videoId;
     } catch (error) {
-      console.error("Error generando video:", error);
+      logger.error("Error generando video:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error al generar el video",
@@ -4778,7 +4779,7 @@ ${transcription}`;
           });
         })
         .catch(error => {
-          console.error('Error al compartir:', error);
+          logger.error('Error al compartir:', error);
           toast({
             title: "Error al compartir",
             description: "No se pudo compartir el video. Intenta otra opción."
@@ -4807,7 +4808,7 @@ ${transcription}`;
         description: "Estilo de referencia actualizado"
       });
     } catch (error) {
-      console.error("Error analyzing reference image:", error);
+      logger.error("Error analyzing reference image:", error);
       toast({
         title: "Error",
         description: "No se pudo analizar la imagen de referencia",
@@ -4826,7 +4827,7 @@ ${transcription}`;
         })) as Director[];
         setDirectors(directorsData);
       } catch (error) {
-        console.error("Error loading directors:", error);
+        logger.error("Error loading directors:", error);
         toast({
           title: "Error",
           description: "No se pudieron cargar los directores",
@@ -6594,7 +6595,7 @@ ${transcription}`;
                       onShowPaymentGate={() => setShowPaymentGate(true)}
                       videoGenerationsCount={videoGenerationsCount}
                       onVideoRenderComplete={(videoUrl) => {
-                        console.log('✅ Video rendered:', videoUrl);
+                        logger.info('✅ Video rendered:', videoUrl);
                         setVideoGenerationsCount(prev => prev + 1);
                       }}
                     />
@@ -6645,7 +6646,7 @@ ${transcription}`;
                       </p>
                       <VideoGenerator
                         onGenerateVideo={async (settings) => {
-                          console.log("Configuración para generar video:", settings);
+                          logger.info("Configuración para generar video:", settings);
                           toast({
                             title: "Generación iniciada",
                             description: `Generando video con modelo ${settings.model}, calidad ${settings.quality}`
@@ -6705,7 +6706,7 @@ ${transcription}`;
                         scenesCount={timelineItems.length}
                         isLoading={isGeneratingVideo}
                         onGenerateVideo={async (settings) => {
-                          console.log("Configuración para generar video:", settings);
+                          logger.info("Configuración para generar video:", settings);
                           toast({
                             title: "Generación iniciada",
                             description: `Generando video con modelo ${settings.model}, calidad ${settings.quality}`
@@ -6715,7 +6716,7 @@ ${transcription}`;
                             await generateVideo();
                             setCurrentStep(9);
                           } catch (error) {
-                            console.error("Error generando video:", error);
+                            logger.error("Error generando video:", error);
                             toast({
                               title: "Error",
                               description: "No se pudo generar el video. Intenta de nuevo.",
@@ -6764,7 +6765,7 @@ ${transcription}`;
                               throw new Error(result.error || 'Error al mejorar el video');
                             }
                           } catch (error) {
-                            console.error('Error en upscaling:', error);
+                            logger.error('Error en upscaling:', error);
                             throw error;
                           } finally {
                             setIsUpscaling(false);
@@ -6980,7 +6981,7 @@ ${transcription}`;
                     <SmartSuggestionsPanel
                       timelineItems={timelineItems}
                       onApplySuggestion={(suggestionId) => {
-                        console.log('Aplicando sugerencia:', suggestionId);
+                        logger.info('Aplicando sugerencia:', suggestionId);
                         
                         if (suggestionId === 'pending-images') {
                           // Iniciar generación de imágenes pendientes

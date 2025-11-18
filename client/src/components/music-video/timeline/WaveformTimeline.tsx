@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente de línea de tiempo avanzado con waveform
  * Utiliza wavesurfer.js para renderizar forma de onda de audio
  * e implementa un timeline más preciso con detección de colisiones
@@ -85,7 +86,7 @@ export function WaveformTimeline({
       // Configurar eventos
       wavesurfer.on('ready', () => {
         if (isMounted) {
-          console.log('WaveSurfer está listo');
+          logger.info('WaveSurfer está listo');
           setIsWaveSurferReady(true);
         }
       });
@@ -150,7 +151,7 @@ export function WaveformTimeline({
         wavesurferRef.current.zoom(zoom * 50);
       } catch (err) {
         // Silenciar errores si el audio no está cargado
-        console.warn('No se pudo aplicar zoom:', err);
+        logger.warn('No se pudo aplicar zoom:', err);
       }
     }
   }, [zoom, isWaveSurferReady]);
@@ -162,7 +163,7 @@ export function WaveformTimeline({
         wavesurferRef.current.seekTo(currentTime / duration);
       } catch (err) {
         // Silenciar errores si el audio no está cargado
-        console.warn('No se pudo buscar posición:', err);
+        logger.warn('No se pudo buscar posición:', err);
       }
     }
   }, [currentTime, duration, draggingPlayhead, isWaveSurferReady]);
@@ -178,7 +179,7 @@ export function WaveformTimeline({
         }
       } catch (err) {
         // Silenciar errores si el audio no está cargado
-        console.warn('No se pudo cambiar estado de reproducción:', err);
+        logger.warn('No se pudo cambiar estado de reproducción:', err);
       }
     }
   }, [isPlaying, isWaveSurferReady]);

@@ -14,13 +14,18 @@
  */
 
 import type { TimelineClip, TimelineTrack } from '../../components/professional-editor/EnhancedTimeline';
+import { logger } from "../logger";
 import type { ScenePrompt, MusicVideoScript } from '../api/music-video-generator';
+import { logger } from "../logger";
 import { generateMusicVideoPrompts } from '../api/music-video-generator';
+import { logger } from "../logger";
 import { 
+import { logger } from "../logger";
   generateBatchVideosFromClips,
   type VideoModel 
 } from './timeline-video-generation-service';
 import {
+import { logger } from "../logger";
   exportTimelineToMP4,
   type ExportOptions
 } from './timeline-export-service';
@@ -160,7 +165,7 @@ export async function generateImagesForScript(
       });
 
     } catch (error) {
-      console.error(`Error generando imagen para escena ${scene.scene_id}:`, error);
+      logger.error(`Error generando imagen para escena ${scene.scene_id}:`, error);
       // Continuar con la siguiente escena
     }
   }
@@ -321,7 +326,7 @@ export async function createMusicVideoFromScript(
     };
 
   } catch (error: any) {
-    console.error('Error en flujo completo:', error);
+    logger.error('Error en flujo completo:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido'

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -44,7 +45,7 @@ export default function ManagerToolsPage() {
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play().catch(error => {
-        console.log("Video autoplay prevented:", error);
+        logger.info("Video autoplay prevented:", error);
       });
     }
   }, []);

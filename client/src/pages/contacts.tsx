@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -77,7 +78,7 @@ export default function ContactsPage() {
           createdAt: doc.data().createdAt?.toDate() || new Date(),
         })) as Contact[];
       } catch (error) {
-        console.error("Error fetching contacts:", error);
+        logger.error("Error fetching contacts:", error);
         toast({
           title: "Error",
           description: "Could not load contacts. Please try again.",
@@ -132,7 +133,7 @@ export default function ContactsPage() {
         createdAt: serverTimestamp()
       };
 
-      console.log("Adding contact:", contactData);
+      logger.info("Adding contact:", contactData);
       const contactsRef = collection(db, "contacts");
       await addDoc(contactsRef, contactData);
 
@@ -145,7 +146,7 @@ export default function ContactsPage() {
       refetch();
 
     } catch (error) {
-      console.error("Error adding contact:", error);
+      logger.error("Error adding contact:", error);
       toast({
         title: "Error",
         description: "Failed to add contact. Please try again.",
@@ -185,7 +186,7 @@ export default function ContactsPage() {
         return contact;
       });
 
-      console.log("Importing contacts:", contacts);
+      logger.info("Importing contacts:", contacts);
       const contactsRef = collection(db, "contacts");
       let importedCount = 0;
 
@@ -206,7 +207,7 @@ export default function ContactsPage() {
 
       refetch();
     } catch (error) {
-      console.error("Error importing contacts:", error);
+      logger.error("Error importing contacts:", error);
       toast({
         title: "Error",
         description: "Failed to import contacts. Please check your CSV file format.",

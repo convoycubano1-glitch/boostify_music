@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 
 /**
  * Security utility to prevent sensitive credentials from being exposed in the browser
@@ -19,7 +20,7 @@ const createSecureEnvProxy = () => {
       ) {
         // Only log in development, not in production
         if (import.meta.env.DEV) {
-          console.warn(`Attempted to access sensitive key ${String(prop)} directly in the browser. Use server-side API instead.`);
+          logger.warn(`Attempted to access sensitive key ${String(prop)} directly in the browser. Use server-side API instead.`);
         }
         return '[PROTECTED]';
       }

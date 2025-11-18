@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { logger } from "../lib/logger";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -30,7 +31,7 @@ export default function DiagnosticsPage() {
 
       try {
         // Test 1: Get all users
-        console.log('🧪 TEST 1: Fetching all users...');
+        logger.info('🧪 TEST 1: Fetching all users...');
         const usersRef = collection(db, "users");
         const usersSnapshot = await getDocs(usersRef);
         results.users = usersSnapshot.docs.map(doc => ({
@@ -39,10 +40,10 @@ export default function DiagnosticsPage() {
           slug: doc.data().slug,
           name: doc.data().displayName || doc.data().name
         }));
-        console.log(`✅ Found ${results.users.length} users`);
+        logger.info(`✅ Found ${results.users.length} users`);
 
         // Test 2: Get all merchandise
-        console.log('🧪 TEST 2: Fetching all merchandise...');
+        logger.info('🧪 TEST 2: Fetching all merchandise...');
         const merchRef = collection(db, "merchandise");
         const merchSnapshot = await getDocs(merchRef);
         results.merchandise = merchSnapshot.docs.map(doc => ({
@@ -51,19 +52,19 @@ export default function DiagnosticsPage() {
           userId: doc.data().userId,
           imageUrl: doc.data().imageUrl?.substring(0, 50) + '...'
         }));
-        console.log(`✅ Found ${results.merchandise.length} products`);
+        logger.info(`✅ Found ${results.merchandise.length} products`);
 
         // Test 3: Test query for specific user
         if (results.users.length > 0) {
           const testUserId = results.users[0].uid;
-          console.log(`🧪 TEST 3: Fetching merchandise for user: ${testUserId}`);
+          logger.info(`🧪 TEST 3: Fetching merchandise for user: ${testUserId}`);
           const q = query(merchRef, where("userId", "==", testUserId));
           const testSnapshot = await getDocs(q);
-          console.log(`✅ Query test: Found ${testSnapshot.size} products for user ${testUserId}`);
+          logger.info(`✅ Query test: Found ${testSnapshot.size} products for user ${testUserId}`);
         }
 
       } catch (error: any) {
-        console.error('❌ Diagnostics error:', error);
+        logger.error('❌ Diagnostics error:', error);
         errors.push(error.message || String(error));
       }
 

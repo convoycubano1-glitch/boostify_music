@@ -1,7 +1,9 @@
 // client/src/lib/services/agent-usage-service.ts
 
 import { db, auth } from '../../firebase';
+import { logger } from "../logger";
 import { 
+import { logger } from "../logger";
   collection, 
   doc, 
   setDoc, 
@@ -57,9 +59,9 @@ export class AgentUsageService {
         
         // Guardar la lista actualizada en localStorage
         localStorage.setItem('recentAgents', JSON.stringify(recentAgents));
-        console.log('Agente registrado en localStorage:', agentId);
+        logger.info('Agente registrado en localStorage:', agentId);
       } catch (localError) {
-        console.error('Error al guardar en localStorage:', localError);
+        logger.error('Error al guardar en localStorage:', localError);
       }
       
       // Si el usuario es anónimo, no intentamos acceder a Firestore
@@ -108,11 +110,11 @@ export class AgentUsageService {
         });
       }
     } catch (error: any) {
-      console.error('Error al registrar uso de agente:', error);
+      logger.error('Error al registrar uso de agente:', error);
       
       // Si es un error de permisos, no hacemos nada porque ya guardamos en localStorage
       if (error.code === 'permission-denied') {
-        console.log('Permiso denegado en Firestore, usando solo localStorage');
+        logger.info('Permiso denegado en Firestore, usando solo localStorage');
       }
     }
   }
@@ -129,12 +131,12 @@ export class AgentUsageService {
       if (storedRecentAgents) {
         const parsedRecentAgents = JSON.parse(storedRecentAgents);
         if (Array.isArray(parsedRecentAgents) && parsedRecentAgents.length > 0) {
-          console.log('Agentes recientes obtenidos de localStorage:', parsedRecentAgents);
+          logger.info('Agentes recientes obtenidos de localStorage:', parsedRecentAgents);
           return parsedRecentAgents;
         }
       }
     } catch (localError) {
-      console.error('Error al leer localStorage para agentes recientes:', localError);
+      logger.error('Error al leer localStorage para agentes recientes:', localError);
     }
     
     // Si no es un usuario anónimo, intentar obtener de Firestore
@@ -155,16 +157,16 @@ export class AgentUsageService {
             try {
               localStorage.setItem('recentAgents', JSON.stringify(recentAgents));
             } catch (localError) {
-              console.error('Error al guardar agentes recientes en localStorage:', localError);
+              logger.error('Error al guardar agentes recientes en localStorage:', localError);
             }
           }
           
           return recentAgents;
         }
       } catch (error: any) {
-        console.error('Error al obtener agentes recientes de Firestore:', error);
+        logger.error('Error al obtener agentes recientes de Firestore:', error);
         if (error.code === 'permission-denied') {
-          console.log('Permiso denegado en Firestore, usando solo localStorage');
+          logger.info('Permiso denegado en Firestore, usando solo localStorage');
         }
       }
     }
@@ -192,7 +194,7 @@ export class AgentUsageService {
         }
       }
     } catch (localError) {
-      console.error('Error al leer favoritos de localStorage:', localError);
+      logger.error('Error al leer favoritos de localStorage:', localError);
     }
     
     // Verificar si el agente ya está en favoritos
@@ -211,9 +213,9 @@ export class AgentUsageService {
     // Guardar siempre en localStorage primero
     try {
       localStorage.setItem('bookmarkedAgents', JSON.stringify(updatedBookmarks));
-      console.log('Favoritos actualizados en localStorage:', updatedBookmarks);
+      logger.info('Favoritos actualizados en localStorage:', updatedBookmarks);
     } catch (localError) {
-      console.error('Error al guardar favoritos en localStorage:', localError);
+      logger.error('Error al guardar favoritos en localStorage:', localError);
     }
     
     // Si es un usuario anónimo, no intentamos Firestore
@@ -246,9 +248,9 @@ export class AgentUsageService {
         });
       }
     } catch (error: any) {
-      console.error('Error al actualizar favoritos en Firestore:', error);
+      logger.error('Error al actualizar favoritos en Firestore:', error);
       if (error.code === 'permission-denied') {
-        console.log('Permiso denegado en Firestore, usando solo localStorage');
+        logger.info('Permiso denegado en Firestore, usando solo localStorage');
       }
     }
     
@@ -268,12 +270,12 @@ export class AgentUsageService {
       if (storedBookmarks) {
         const parsedBookmarks = JSON.parse(storedBookmarks);
         if (Array.isArray(parsedBookmarks) && parsedBookmarks.length > 0) {
-          console.log('Favoritos obtenidos de localStorage:', parsedBookmarks);
+          logger.info('Favoritos obtenidos de localStorage:', parsedBookmarks);
           return parsedBookmarks;
         }
       }
     } catch (localError) {
-      console.error('Error al leer localStorage para favoritos:', localError);
+      logger.error('Error al leer localStorage para favoritos:', localError);
     }
     
     // Si no es un usuario anónimo, intentar obtener de Firestore
@@ -294,16 +296,16 @@ export class AgentUsageService {
             try {
               localStorage.setItem('bookmarkedAgents', JSON.stringify(bookmarkedAgents));
             } catch (localError) {
-              console.error('Error al guardar favoritos en localStorage:', localError);
+              logger.error('Error al guardar favoritos en localStorage:', localError);
             }
           }
           
           return bookmarkedAgents;
         }
       } catch (error: any) {
-        console.error('Error al obtener favoritos de Firestore:', error);
+        logger.error('Error al obtener favoritos de Firestore:', error);
         if (error.code === 'permission-denied') {
-          console.log('Permiso denegado en Firestore, usando solo localStorage');
+          logger.info('Permiso denegado en Firestore, usando solo localStorage');
         }
       }
     }
@@ -323,7 +325,7 @@ export class AgentUsageService {
       const bookmarkedAgents = await this.getBookmarkedAgents(userId);
       return bookmarkedAgents.includes(agentId);
     } catch (error) {
-      console.error('Error al verificar si el agente está marcado como favorito:', error);
+      logger.error('Error al verificar si el agente está marcado como favorito:', error);
       return false;
     }
   }
@@ -376,7 +378,7 @@ export class AgentUsageService {
         });
       }
     } catch (error) {
-      console.error('Error al sincronizar datos locales con Firestore:', error);
+      logger.error('Error al sincronizar datos locales con Firestore:', error);
     }
   }
 

@@ -1,5 +1,7 @@
 import { db } from '../../firebase';
+import { logger } from "../logger";
 import { 
+import { logger } from "../logger";
   collection, 
   doc, 
   setDoc, 
@@ -14,7 +16,9 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { logger } from "../logger";
 import { storage } from '../../firebase';
+import { logger } from "../logger";
 
 // Definición de tipos para el editor profesional
 export interface EditorProject {
@@ -147,10 +151,10 @@ export async function saveProject(project: EditorProject): Promise<string> {
     // Guardar en Firestore
     await setDoc(projectRef, projectToSave, { merge: true });
     
-    console.log('Proyecto guardado correctamente en Firestore:', projectId);
+    logger.info('Proyecto guardado correctamente en Firestore:', projectId);
     return projectId;
   } catch (error) {
-    console.error('Error guardando proyecto en Firestore:', error);
+    logger.error('Error guardando proyecto en Firestore:', error);
     throw new Error('Error al guardar el proyecto');
   }
 }
@@ -185,7 +189,7 @@ export async function getProject(projectId: string): Promise<EditorProject | nul
     
     return null;
   } catch (error) {
-    console.error('Error obteniendo proyecto de Firestore:', error);
+    logger.error('Error obteniendo proyecto de Firestore:', error);
     throw new Error('Error al obtener el proyecto');
   }
 }
@@ -226,11 +230,11 @@ export async function getUserProjects(userId: string): Promise<EditorProject[]> 
     
     return projects;
   } catch (error) {
-    console.error('Error obteniendo proyectos de Firestore:', error);
+    logger.error('Error obteniendo proyectos de Firestore:', error);
     
     // Intentar con una consulta más simple si hay error de índice
     try {
-      console.log('Intentando consulta alternativa debido a error de índice');
+      logger.info('Intentando consulta alternativa debido a error de índice');
       
       const simpleQuery = query(
         collection(db, 'editorProjects'),
@@ -263,7 +267,7 @@ export async function getUserProjects(userId: string): Promise<EditorProject[]> 
       
       return projects;
     } catch (alternativeError) {
-      console.error('Error en consulta alternativa:', alternativeError);
+      logger.error('Error en consulta alternativa:', alternativeError);
       throw new Error('Error al obtener los proyectos del usuario');
     }
   }
@@ -281,9 +285,9 @@ export async function deleteProject(projectId: string): Promise<void> {
     // Eliminar el documento
     await deleteDoc(projectRef);
     
-    console.log('Proyecto eliminado correctamente:', projectId);
+    logger.info('Proyecto eliminado correctamente:', projectId);
   } catch (error) {
-    console.error('Error eliminando proyecto de Firestore:', error);
+    logger.error('Error eliminando proyecto de Firestore:', error);
     throw new Error('Error al eliminar el proyecto');
   }
 }
@@ -325,7 +329,7 @@ export async function getPublicProjects(limitCount: number = 10): Promise<Editor
     
     return projects;
   } catch (error) {
-    console.error('Error obteniendo proyectos públicos:', error);
+    logger.error('Error obteniendo proyectos públicos:', error);
     throw new Error('Error al obtener proyectos públicos');
   }
 }
@@ -352,7 +356,7 @@ export function exportProjectToJson(project: EditorProject): Blob {
     
     return blob;
   } catch (error) {
-    console.error('Error exportando proyecto a JSON:', error);
+    logger.error('Error exportando proyecto a JSON:', error);
     throw new Error('Error al exportar el proyecto');
   }
 }
@@ -392,7 +396,7 @@ export function importProjectFromJson(jsonFile: File): Promise<EditorProject> {
           
           resolve(importedProject);
         } catch (parseError) {
-          console.error('Error parseando JSON:', parseError);
+          logger.error('Error parseando JSON:', parseError);
           reject(new Error('Error al parsear el archivo JSON'));
         }
       };
@@ -403,7 +407,7 @@ export function importProjectFromJson(jsonFile: File): Promise<EditorProject> {
       
       reader.readAsText(jsonFile);
     } catch (error) {
-      console.error('Error importando proyecto desde JSON:', error);
+      logger.error('Error importando proyecto desde JSON:', error);
       reject(new Error('Error al importar el proyecto'));
     }
   });
@@ -422,9 +426,9 @@ export async function shareProject(projectId: string, isPublic: boolean): Promis
     // Actualizar el estado público del proyecto
     await setDoc(projectRef, { isPublic, updatedAt: serverTimestamp() }, { merge: true });
     
-    console.log(`Proyecto ${isPublic ? 'compartido' : 'privado'} correctamente:`, projectId);
+    logger.info(`Proyecto ${isPublic ? 'compartido' : 'privado'} correctamente:`, projectId);
   } catch (error) {
-    console.error('Error cambiando estado público del proyecto:', error);
+    logger.error('Error cambiando estado público del proyecto:', error);
     throw new Error('Error al compartir el proyecto');
   }
 }
@@ -455,7 +459,7 @@ export async function uploadProjectThumbnail(projectId: string, thumbnailDataUrl
     
     return downloadUrl;
   } catch (error) {
-    console.error('Error subiendo miniatura del proyecto:', error);
+    logger.error('Error subiendo miniatura del proyecto:', error);
     throw new Error('Error al subir la miniatura del proyecto');
   }
 }

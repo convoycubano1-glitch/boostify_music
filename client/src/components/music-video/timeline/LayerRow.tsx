@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente LayerRow - Representa una fila individual de la línea de tiempo
  * 
  * Este componente es responsable de renderizar una capa individual del timeline

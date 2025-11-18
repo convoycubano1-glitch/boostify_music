@@ -6,6 +6,7 @@
  */
 
 import { FluxTaskResult } from './flux-service';
+import { logger } from "./logger";
 
 // Clave donde se almacenarán las tareas en localStorage
 const STORAGE_KEY = 'flux_tasks';
@@ -39,9 +40,9 @@ export const fluxLocalStorageService = {
       // Guardar en localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(limitedTasks));
       
-      console.log('Tarea guardada en almacenamiento local:', task.taskId);
+      logger.info('Tarea guardada en almacenamiento local:', task.taskId);
     } catch (error) {
-      console.error('Error guardando tarea en localStorage:', error);
+      logger.error('Error guardando tarea en localStorage:', error);
     }
   },
   
@@ -53,7 +54,7 @@ export const fluxLocalStorageService = {
   updateTask(task: FluxTaskResult): void {
     try {
       if (!task.taskId) {
-        console.error('No se puede actualizar tarea sin ID');
+        logger.error('No se puede actualizar tarea sin ID');
         return;
       }
       
@@ -74,13 +75,13 @@ export const fluxLocalStorageService = {
         // Guardar en localStorage
         localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
         
-        console.log('Tarea actualizada en almacenamiento local:', task.taskId);
+        logger.info('Tarea actualizada en almacenamiento local:', task.taskId);
       } else {
         // Si no existe, guardarla como nueva
         this.saveTask(task);
       }
     } catch (error) {
-      console.error('Error actualizando tarea en localStorage:', error);
+      logger.error('Error actualizando tarea en localStorage:', error);
     }
   },
   
@@ -108,7 +109,7 @@ export const fluxLocalStorageService = {
         return timestampB - timestampA;
       });
     } catch (error) {
-      console.error('Error recuperando tareas de localStorage:', error);
+      logger.error('Error recuperando tareas de localStorage:', error);
       return [];
     }
   },
@@ -124,7 +125,7 @@ export const fluxLocalStorageService = {
       const tasks = this.getTasks();
       return tasks.find(task => task.taskId === taskId);
     } catch (error) {
-      console.error('Error buscando tarea en localStorage:', error);
+      logger.error('Error buscando tarea en localStorage:', error);
       return undefined;
     }
   },
@@ -145,9 +146,9 @@ export const fluxLocalStorageService = {
       // Guardar la lista actualizada
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredTasks));
       
-      console.log('Tarea eliminada del almacenamiento local:', taskId);
+      logger.info('Tarea eliminada del almacenamiento local:', taskId);
     } catch (error) {
-      console.error('Error eliminando tarea de localStorage:', error);
+      logger.error('Error eliminando tarea de localStorage:', error);
     }
   },
   
@@ -157,9 +158,9 @@ export const fluxLocalStorageService = {
   clearTasks(): void {
     try {
       localStorage.removeItem(STORAGE_KEY);
-      console.log('Todas las tareas eliminadas del almacenamiento local');
+      logger.info('Todas las tareas eliminadas del almacenamiento local');
     } catch (error) {
-      console.error('Error limpiando tareas de localStorage:', error);
+      logger.error('Error limpiando tareas de localStorage:', error);
     }
   }
 };

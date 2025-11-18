@@ -1,6 +1,9 @@
 import { db } from './firebase';
+import { logger } from "./logger";
 import { doc, getDoc } from 'firebase/firestore';
+import { logger } from "./logger";
 import { User } from 'firebase/auth';
+import { logger } from "./logger";
 
 export interface SpotifyData {
   accessToken: string | null;
@@ -41,20 +44,20 @@ export interface SpotifyAnalytics {
 
 export async function getSpotifyData(user: User): Promise<SpotifyData | null> {
   if (!user?.uid) {
-    console.log('No user ID available');
+    logger.info('No user ID available');
     return null;
   }
 
   try {
-    console.log('Fetching Spotify data for user:', user.uid);
+    logger.info('Fetching Spotify data for user:', user.uid);
     const spotifyDocRef = doc(db, 'spotify_data', user.uid);
     const spotifyDoc = await getDoc(spotifyDocRef);
 
-    console.log('Document exists:', spotifyDoc.exists());
+    logger.info('Document exists:', spotifyDoc.exists());
 
     if (spotifyDoc.exists()) {
       const data = spotifyDoc.data();
-      console.log('Retrieved data:', data);
+      logger.info('Retrieved data:', data);
 
       // Convertir Timestamp de Firestore a Date de JavaScript
       const lastUpdated = data.lastUpdated?.toDate?.() || new Date();
@@ -66,7 +69,7 @@ export async function getSpotifyData(user: User): Promise<SpotifyData | null> {
 
     return null;
   } catch (error) {
-    console.error('Error fetching Spotify data:', error);
+    logger.error('Error fetching Spotify data:', error);
     throw error;
   }
 }
@@ -87,7 +90,7 @@ export async function getSpotifyAnalytics(user: User): Promise<SpotifyAnalytics 
       }
     };
   } catch (error) {
-    console.error('Error fetching Spotify analytics:', error);
+    logger.error('Error fetching Spotify analytics:', error);
     throw error;
   }
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
@@ -67,7 +68,7 @@ export function MotionDNASection() {
         throw new Error('Failed to submit application');
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      logger.error('Error submitting form:', error);
       toast({
         title: "Error",
         description: "There was a problem submitting your application. Please try again.",

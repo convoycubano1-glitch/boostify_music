@@ -1,4 +1,5 @@
 import { fal } from "@fal-ai/client";
+import { logger } from "../logger";
 
 /**
  * FAL Video Generation Service
@@ -187,8 +188,8 @@ export async function generateVideoWithFAL(
   options: VideoGenerationOptions
 ): Promise<VideoGenerationResult> {
   try {
-    console.log(`🎬 Generando video con modelo: ${modelId}`);
-    console.log('Opciones:', options);
+    logger.info(`🎬 Generando video con modelo: ${modelId}`);
+    logger.info('Opciones:', options);
 
     const input: any = {
       prompt: options.prompt,
@@ -220,11 +221,11 @@ export async function generateVideoWithFAL(
       input,
       logs: true,
       onQueueUpdate: (update) => {
-        console.log('📊 Estado de generación:', update.status);
+        logger.info('📊 Estado de generación:', update.status);
       }
     });
 
-    console.log('✅ Video generado exitosamente');
+    logger.info('✅ Video generado exitosamente');
 
     // Extraer URL del video del resultado
     let videoUrl = '';
@@ -246,7 +247,7 @@ export async function generateVideoWithFAL(
       metadata: result.data
     };
   } catch (error: any) {
-    console.error('❌ Error generando video con FAL:', error);
+    logger.error('❌ Error generando video con FAL:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido al generar video'
@@ -261,7 +262,7 @@ export async function generateMultipleVideos(
   modelId: string,
   scenes: Array<{ prompt: string; imageUrl?: string }>
 ): Promise<VideoGenerationResult[]> {
-  console.log(`🎬 Generando ${scenes.length} videos en paralelo...`);
+  logger.info(`🎬 Generando ${scenes.length} videos en paralelo...`);
   
   const promises = scenes.map((scene, index) => 
     generateVideoWithFAL(modelId, {
@@ -270,7 +271,7 @@ export async function generateMultipleVideos(
       duration: "5", // 5 segundos por defecto
       aspectRatio: "16:9"
     }).then(result => {
-      console.log(`✅ Video ${index + 1}/${scenes.length} completado`);
+      logger.info(`✅ Video ${index + 1}/${scenes.length} completado`);
       return result;
     })
   );

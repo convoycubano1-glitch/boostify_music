@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Header } from "../components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
 import { db } from "../firebase";
@@ -250,7 +251,7 @@ export default function AIAgentsPage() {
       try {
         // Usar el servicio de agentes para obtener los datos del usuario
         const userId = user?.uid || 'anonymous';
-        console.log(`Loading user data for ${userId}`);
+        logger.info(`Loading user data for ${userId}`);
         
         // Obtener agentes favoritos usando el servicio
         const savedBookmarks = await agentUsageService.getBookmarkedAgents(userId);
@@ -258,7 +259,7 @@ export default function AIAgentsPage() {
         // Verificar si tenemos datos válidos
         if (savedBookmarks && Array.isArray(savedBookmarks) && savedBookmarks.length > 0) {
           setBookmarkedAgents(savedBookmarks);
-          console.log("Bookmarked agents loaded from service:", savedBookmarks);
+          logger.info("Bookmarked agents loaded from service:", savedBookmarks);
         } else {
           // Si no hay datos en el servicio, intentar con localStorage como fallback
           try {
@@ -267,14 +268,14 @@ export default function AIAgentsPage() {
             
             if (Array.isArray(parsedBookmarked) && parsedBookmarked.length > 0) {
               setBookmarkedAgents(parsedBookmarked);
-              console.log("Bookmarked agents loaded from localStorage:", parsedBookmarked);
+              logger.info("Bookmarked agents loaded from localStorage:", parsedBookmarked);
             } else {
               // Si no hay datos en localStorage, usar valores predeterminados
               setBookmarkedAgents(["composer", "manager"]);
-              console.log("Using default bookmarked agents");
+              logger.info("Using default bookmarked agents");
             }
           } catch (localError) {
-            console.error("Error loading bookmarks from localStorage:", localError);
+            logger.error("Error loading bookmarks from localStorage:", localError);
             setBookmarkedAgents(["composer", "manager"]);
           }
         }
@@ -285,7 +286,7 @@ export default function AIAgentsPage() {
         // Verificar si tenemos datos válidos
         if (savedRecentAgents && Array.isArray(savedRecentAgents) && savedRecentAgents.length > 0) {
           setRecentAgents(savedRecentAgents);
-          console.log("Recent agents loaded from service:", savedRecentAgents);
+          logger.info("Recent agents loaded from service:", savedRecentAgents);
           return; // Si ya tenemos datos válidos, no es necesario seguir
         } 
         
@@ -296,15 +297,15 @@ export default function AIAgentsPage() {
           
           if (Array.isArray(parsedRecent) && parsedRecent.length > 0) {
             setRecentAgents(parsedRecent);
-            console.log("Recent agents loaded from localStorage:", parsedRecent);
+            logger.info("Recent agents loaded from localStorage:", parsedRecent);
             return; // Si ya obtuvimos datos, no es necesario seguir
           }
         } catch (localError) {
-          console.error("Error loading recent agents from localStorage:", localError);
+          logger.error("Error loading recent agents from localStorage:", localError);
         }
         
         // Si todavía no tenemos datos, buscar en las colecciones
-        console.log("No stored interactions found, checking collections...");
+        logger.info("No stored interactions found, checking collections...");
         
         try {
           // Importamos las funciones de Firebase aquí para evitar problemas 
@@ -329,31 +330,31 @@ export default function AIAgentsPage() {
               const querySnapshot = await getDocs(recentQuery);
               if (!querySnapshot.empty) {
                 recentAgentTypes.add(agentType);
-                console.log(`Found recent interactions with ${agentType} agent`);
+                logger.info(`Found recent interactions with ${agentType} agent`);
               }
             } catch (error) {
-              console.error(`Error querying collection for ${agentType}:`, error);
+              logger.error(`Error querying collection for ${agentType}:`, error);
             }
           }
           
           if (recentAgentTypes.size > 0) {
             // Convertir el Set a un Array compatible con TypeScript
             const recentAgentsArray = Array.from(recentAgentTypes);
-            console.log("Setting recent agents from Firestore:", recentAgentsArray);
+            logger.info("Setting recent agents from Firestore:", recentAgentsArray);
             setRecentAgents(recentAgentsArray);
           } else {
             // Usar valores predeterminados si no hay interacciones recientes
-            console.log("No recent agent interactions found, using defaults");
+            logger.info("No recent agent interactions found, using defaults");
             setRecentAgents(["composer", "marketing", "video-director"]);
           }
         } catch (firebaseError) {
-          console.error("Error querying Firestore collections:", firebaseError);
+          logger.error("Error querying Firestore collections:", firebaseError);
           // Usar valores predeterminados en caso de error
           setRecentAgents(["composer", "marketing", "video-director"]);
         }
         
       } catch (error) {
-        console.error("Error loading user preferences:", error);
+        logger.error("Error loading user preferences:", error);
         // Usar valores predeterminados en caso de error
         setRecentAgents(["composer", "marketing", "video-director"]);
         setBookmarkedAgents(["composer", "manager"]);
@@ -378,7 +379,7 @@ export default function AIAgentsPage() {
   const toggleBookmark = async (agentId: string) => {
     // Asegurarse de que el agentId sea válido
     if (!agentId || typeof agentId !== 'string') {
-      console.error('Invalid agent ID provided to toggleBookmark');
+      logger.error('Invalid agent ID provided to toggleBookmark');
       return;
     }
 
@@ -386,7 +387,7 @@ export default function AIAgentsPage() {
       // Primero intentamos usar el servicio de agentes que maneja
       // tanto Firestore como localStorage de manera centralizada
       const userId = user?.uid || 'anonymous';
-      console.log(`Toggling bookmark for agent ${agentId} for user ${userId}`);
+      logger.info(`Toggling bookmark for agent ${agentId} for user ${userId}`);
       
       // El servicio devuelve true si se añadió, false si se quitó
       const isNowBookmarked = await agentUsageService.toggleBookmark(agentId, userId);
@@ -397,26 +398,26 @@ export default function AIAgentsPage() {
       // Si el servicio nos devuelve datos válidos, actualizamos la UI
       if (updatedBookmarks) {
         setBookmarkedAgents(updatedBookmarks);
-        console.log(`Agent ${agentId} ${isNowBookmarked ? 'added to' : 'removed from'} bookmarks via service`);
+        logger.info(`Agent ${agentId} ${isNowBookmarked ? 'added to' : 'removed from'} bookmarks via service`);
         return;
       }
     } catch (error) {
-      console.error('Error using agent usage service for bookmarks:', error);
+      logger.error('Error using agent usage service for bookmarks:', error);
     }
     
     // Si el servicio falló o devolvió datos vacíos, usamos el enfoque anterior
-    console.log("Using fallback method for bookmarks");
+    logger.info("Using fallback method for bookmarks");
     
     let newBookmarked: string[] = [];
     
     if (bookmarkedAgents.includes(agentId)) {
       // Quitar de favoritos
       newBookmarked = bookmarkedAgents.filter(id => id !== agentId);
-      console.log(`Removing ${agentId} from bookmarks (fallback)`);
+      logger.info(`Removing ${agentId} from bookmarks (fallback)`);
     } else {
       // Añadir a favoritos
       newBookmarked = [...bookmarkedAgents, agentId];
-      console.log(`Adding ${agentId} to bookmarks (fallback)`);
+      logger.info(`Adding ${agentId} to bookmarks (fallback)`);
     }
     
     // Actualizar estado local inmediatamente para mejor UX
@@ -425,9 +426,9 @@ export default function AIAgentsPage() {
     // Guardar siempre en localStorage como respaldo
     try {
       localStorage.setItem('bookmarkedAgents', JSON.stringify(newBookmarked));
-      console.log('Bookmarks saved to localStorage:', newBookmarked);
+      logger.info('Bookmarks saved to localStorage:', newBookmarked);
     } catch (error) {
-      console.error('Error saving bookmarks to localStorage:', error);
+      logger.error('Error saving bookmarks to localStorage:', error);
     }
     
     // Si no hay usuario autenticado, terminamos aquí
@@ -450,7 +451,7 @@ export default function AIAgentsPage() {
           bookmarkedAgents: newBookmarked,
           updatedAt: serverTimestamp()
         }, { merge: true });
-        console.log('Bookmarks updated in existing Firestore document');
+        logger.info('Bookmarks updated in existing Firestore document');
       } else {
         // Crear nuevo documento
         await setDoc(userPrefsRef, {
@@ -460,10 +461,10 @@ export default function AIAgentsPage() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        console.log('New preferences document created in Firestore with bookmarks');
+        logger.info('New preferences document created in Firestore with bookmarks');
       }
     } catch (error) {
-      console.error('Error saving bookmarks to Firestore:', error);
+      logger.error('Error saving bookmarks to Firestore:', error);
     }
   };
 
@@ -471,7 +472,7 @@ export default function AIAgentsPage() {
   const updateRecentAgents = async (agentId: string) => {
     // Asegurarse de que el agentId sea válido
     if (!agentId || typeof agentId !== 'string') {
-      console.error('Invalid agent ID provided to updateRecentAgents');
+      logger.error('Invalid agent ID provided to updateRecentAgents');
       return;
     }
     
@@ -479,7 +480,7 @@ export default function AIAgentsPage() {
       // Primero, registrar el uso del agente en nuestro servicio
       // Esto manejará tanto usuarios autenticados como anónimos
       const userId = user?.uid || 'anonymous';
-      console.log(`Recording usage of agent ${agentId} for user ${userId}`);
+      logger.info(`Recording usage of agent ${agentId} for user ${userId}`);
       
       await agentUsageService.recordAgentUsage(agentId, userId);
       
@@ -489,16 +490,16 @@ export default function AIAgentsPage() {
       // Actualizar el estado local para la UI
       if (updatedRecentAgents && updatedRecentAgents.length > 0) {
         setRecentAgents(updatedRecentAgents);
-        console.log('Recent agents updated from service:', updatedRecentAgents);
+        logger.info('Recent agents updated from service:', updatedRecentAgents);
         return;
       }
     } catch (error) {
-      console.error('Error using agent usage service:', error);
+      logger.error('Error using agent usage service:', error);
     }
     
     // Si llegamos aquí, el servicio falló o devolvió datos vacíos
     // Usamos el enfoque anterior como respaldo
-    console.log("Using fallback method for recent agents");
+    logger.info("Using fallback method for recent agents");
     
     // Evitar duplicados moviendo el agentId al principio si ya existe
     let updatedRecentAgents: string[] = [];
@@ -507,14 +508,14 @@ export default function AIAgentsPage() {
         agentId,
         ...recentAgents.filter(id => id !== agentId)
       ];
-      console.log(`Repositioning ${agentId} at the top of recent agents`);
+      logger.info(`Repositioning ${agentId} at the top of recent agents`);
     } else {
       // Agregar al principio, manteniendo sólo los 3 más recientes
       updatedRecentAgents = [
         agentId,
         ...recentAgents.slice(0, 2)
       ];
-      console.log(`Adding ${agentId} to recent agents`);
+      logger.info(`Adding ${agentId} to recent agents`);
     }
     
     // Actualizar estado local inmediatamente para mejor UX
@@ -524,9 +525,9 @@ export default function AIAgentsPage() {
     if (!user) {
       try {
         localStorage.setItem('recentAgents', JSON.stringify(updatedRecentAgents));
-        console.log('Recent agents saved to localStorage:', updatedRecentAgents);
+        logger.info('Recent agents saved to localStorage:', updatedRecentAgents);
       } catch (error) {
-        console.error('Error saving recent agents to localStorage:', error);
+        logger.error('Error saving recent agents to localStorage:', error);
       }
       return;
     }
@@ -538,7 +539,7 @@ export default function AIAgentsPage() {
       
       // Asegurarnos de tener un ID de usuario válido, usando 'anonymous' como fallback
       const userId = user?.uid || 'anonymous';
-      console.log(`Saving recent agents for user ${userId}`);
+      logger.info(`Saving recent agents for user ${userId}`);
       
       const userPrefsRef = doc(db, 'userPreferences', userId);
       
@@ -552,7 +553,7 @@ export default function AIAgentsPage() {
           recentAgents: updatedRecentAgents,
           updatedAt: serverTimestamp()
         }, { merge: true });
-        console.log('Recent agents updated in existing Firestore document');
+        logger.info('Recent agents updated in existing Firestore document');
       } else {
         // Crear nuevo documento
         await setDoc(userPrefsRef, {
@@ -562,19 +563,19 @@ export default function AIAgentsPage() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
-        console.log('New preferences document created in Firestore with recent agents');
+        logger.info('New preferences document created in Firestore with recent agents');
       }
       
-      console.log('Recent agents saved to Firestore:', updatedRecentAgents);
+      logger.info('Recent agents saved to Firestore:', updatedRecentAgents);
     } catch (error) {
-      console.error('Error saving recent agents to Firestore:', error);
+      logger.error('Error saving recent agents to Firestore:', error);
       
       // Guardar en localStorage como fallback si falla Firestore
       try {
         localStorage.setItem('recentAgents', JSON.stringify(updatedRecentAgents));
-        console.log('Recent agents saved to localStorage as fallback');
+        logger.info('Recent agents saved to localStorage as fallback');
       } catch (localError) {
-        console.error('Error saving recent agents to localStorage:', localError);
+        logger.error('Error saving recent agents to localStorage:', localError);
       }
     }
   };

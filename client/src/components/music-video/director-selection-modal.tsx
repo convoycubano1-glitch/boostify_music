@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -55,7 +56,7 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
   useEffect(() => {
     if (preSelectedDirector && open) {
       setSelectedDirector(preSelectedDirector);
-      console.log(`✅ Director pre-selected in modal: ${preSelectedDirector.name}`);
+      logger.info(`✅ Director pre-selected in modal: ${preSelectedDirector.name}`);
     }
   }, [preSelectedDirector, open]);
 

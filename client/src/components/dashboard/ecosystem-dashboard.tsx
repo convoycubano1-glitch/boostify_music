@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { useAuth } from "../../hooks/use-auth";
@@ -117,7 +118,7 @@ export default function EcosystemDashboard() {
           setMetrics(data);
         }
       } catch (error) {
-        console.error('Error fetching metrics:', error);
+        logger.error('Error fetching metrics:', error);
         toast({
           title: "Error Loading Metrics",
           description: "Please try refreshing the page.",

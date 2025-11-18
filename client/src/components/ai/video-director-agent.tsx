@@ -1,4 +1,5 @@
 import { Video, Save, Download } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
@@ -88,9 +89,9 @@ export function VideoDirectorAgent() {
         }
       );
 
-      console.log('✅ Video script saved to Firestore with Gemini integration');
+      logger.info('✅ Video script saved to Firestore with Gemini integration');
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       // Don't throw - continue even if save fails
     }
   };
@@ -129,7 +130,7 @@ export function VideoDirectorAgent() {
 
       return script;
     } catch (error) {
-      console.error("Error generating script:", error);
+      logger.error("Error generating script:", error);
       toast({
         title: "Error",
         description: "Failed to generate script. Please try again.",

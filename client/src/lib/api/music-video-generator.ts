@@ -4,6 +4,7 @@
  */
 
 import { generateMusicVideoScript } from "./openrouter";
+import { logger } from "../logger";
 
 export interface ScenePrompt {
   scene_id: number;
@@ -40,11 +41,11 @@ export async function generateMusicVideoPrompts(
   const targetSceneCount = isPaid ? 30 : Math.min(5, Math.floor(audioDuration / 2));
   const targetDuration = isPaid ? audioDuration : Math.min(10, audioDuration);
   
-  console.log(`🎬 Generando script ${isPaid ? 'COMPLETO' : 'PREVIEW'}:`);
-  console.log(`  - Escenas: ${targetSceneCount}`);
-  console.log(`  - Duración: ${targetDuration}s`);
-  console.log(`  - Estilo de edición: ${editingStyle?.name || 'Phrase-based Editing'}`);
-  console.log(`  - Rango de duración: ${editingStyle?.duration.min || 4}-${editingStyle?.duration.max || 8}s por escena`);
+  logger.info(`🎬 Generando script ${isPaid ? 'COMPLETO' : 'PREVIEW'}:`);
+  logger.info(`  - Escenas: ${targetSceneCount}`);
+  logger.info(`  - Duración: ${targetDuration}s`);
+  logger.info(`  - Estilo de edición: ${editingStyle?.name || 'Phrase-based Editing'}`);
+  logger.info(`  - Rango de duración: ${editingStyle?.duration.min || 4}-${editingStyle?.duration.max || 8}s por escena`);
   
   try {
     // Llamar a la API para generar el guion con el número específico de escenas
@@ -79,7 +80,7 @@ export async function generateMusicVideoPrompts(
       scenes: adjustedScenes
     };
   } catch (error) {
-    console.error('Error generando prompts:', error);
+    logger.error('Error generando prompts:', error);
     throw error;
   }
 }

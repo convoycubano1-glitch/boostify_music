@@ -3,7 +3,9 @@
  * Usa Gemini API desde el backend + Firestore desde el cliente
  */
 import { collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
+import { logger } from "../logger";
 import { db } from "../firebase";
+import { logger } from "../logger";
 
 export interface DocumentMetadata {
   artistName: string;
@@ -47,7 +49,7 @@ class ManagerDocumentsService {
     includeImages: boolean = false
   ): Promise<ManagerDocument> {
     try {
-      console.log('📄 Generando documento con Gemini...');
+      logger.info('📄 Generando documento con Gemini...');
 
       // Llamar al backend para generar el texto con Gemini
       const textResponse = await fetch('/api/manager/documents/generate-text', {
@@ -66,7 +68,7 @@ class ManagerDocumentsService {
       let images: { url: string; prompt: string; type: string }[] = [];
       
       if (includeImages) {
-        console.log('🎨 Generando imágenes con Nano Banana...');
+        logger.info('🎨 Generando imágenes con Nano Banana...');
         
         const imagePromptsResponse = await fetch('/api/manager/documents/image-prompts', {
           method: 'POST',
@@ -97,7 +99,7 @@ class ManagerDocumentsService {
                 }
               }
             } catch (error) {
-              console.error(`Error generando imagen ${promptData.type}:`, error);
+              logger.error(`Error generando imagen ${promptData.type}:`, error);
             }
           }
         }
@@ -129,7 +131,7 @@ class ManagerDocumentsService {
         updatedAt: Timestamp.now()
       } as ManagerDocument;
     } catch (error: any) {
-      console.error('Error generando documento:', error);
+      logger.error('Error generando documento:', error);
       throw error;
     }
   }
@@ -167,7 +169,7 @@ class ManagerDocumentsService {
         return bTime - aTime;
       });
     } catch (error: any) {
-      console.error('Error obteniendo documentos:', error);
+      logger.error('Error obteniendo documentos:', error);
       throw error;
     }
   }
@@ -187,7 +189,7 @@ class ManagerDocumentsService {
         updatedAt: serverTimestamp()
       });
     } catch (error: any) {
-      console.error('Error actualizando documento:', error);
+      logger.error('Error actualizando documento:', error);
       throw error;
     }
   }
@@ -200,7 +202,7 @@ class ManagerDocumentsService {
       const docRef = doc(db, this.collectionName, documentId);
       await deleteDoc(docRef);
     } catch (error: any) {
-      console.error('Error eliminando documento:', error);
+      logger.error('Error eliminando documento:', error);
       throw error;
     }
   }
@@ -210,7 +212,7 @@ class ManagerDocumentsService {
    */
   async regenerateImages(documentId: string, document: ManagerDocument): Promise<void> {
     try {
-      console.log('🎨 Regenerando imágenes...');
+      logger.info('🎨 Regenerando imágenes...');
 
       const imagePromptsResponse = await fetch('/api/manager/documents/image-prompts', {
         method: 'POST',
@@ -245,7 +247,7 @@ class ManagerDocumentsService {
             }
           }
         } catch (error) {
-          console.error(`Error generando imagen ${promptData.type}:`, error);
+          logger.error(`Error generando imagen ${promptData.type}:`, error);
         }
       }
 
@@ -256,7 +258,7 @@ class ManagerDocumentsService {
         updatedAt: serverTimestamp()
       });
     } catch (error: any) {
-      console.error('Error regenerando imágenes:', error);
+      logger.error('Error regenerando imágenes:', error);
       throw error;
     }
   }

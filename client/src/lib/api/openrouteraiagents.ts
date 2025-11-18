@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * OpenRouter AI Agents API Integration
  * Módulo para interactuar con agentes de IA basados en OpenRouter
@@ -25,7 +26,7 @@ export class OpenRouterService {
     this.defaultModel = "anthropic/claude-3-haiku";
     
     if (!this.apiKey) {
-      console.warn("⚠️ OpenRouter API key not found. AI responses won't work correctly.");
+      logger.warn("⚠️ OpenRouter API key not found. AI responses won't work correctly.");
     }
   }
   
@@ -58,7 +59,7 @@ export class OpenRouterService {
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Error en API (${response.status}): ${errorText}`);
+        logger.error(`Error en API (${response.status}): ${errorText}`);
         return this.getFallbackResponse(language);
       }
       
@@ -66,7 +67,7 @@ export class OpenRouterService {
       return data.response || this.getFallbackResponse(language);
       
     } catch (error) {
-      console.error("Error generating AI response:", error);
+      logger.error("Error generating AI response:", error);
       return this.getFallbackResponse(language);
     }
   }
@@ -122,7 +123,7 @@ export async function getAgents(collectionName: string) {
     
     return agents;
   } catch (error) {
-    console.error(`Error al obtener agentes de ${collectionName}:`, error);
+    logger.error(`Error al obtener agentes de ${collectionName}:`, error);
     return [];
   }
 }

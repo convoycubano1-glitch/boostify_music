@@ -1,4 +1,5 @@
 import { Camera, Upload, Download, Image as ImageIcon } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { BaseAgent, type AgentAction, type AgentTheme } from "./base-agent";
 import { useState } from "react";
 import { ProgressIndicator } from "./progress-indicator";
@@ -102,9 +103,9 @@ export function PhotographerAgent() {
         mood: data.params.mood
       } as any);
 
-      console.log('✅ Photographer image saved to Firestore with Gemini integration');
+      logger.info('✅ Photographer image saved to Firestore with Gemini integration');
     } catch (error) {
-      console.error('Error saving to Firestore:', error);
+      logger.error('Error saving to Firestore:', error);
       // Don't throw - continue even if save fails
     }
   };
@@ -245,7 +246,7 @@ export function PhotographerAgent() {
 
           prompt += "High resolution, professional quality, album cover worthy, suitable for music industry standards.";
 
-          console.log('Image generation prompt:', prompt);
+          logger.info('Image generation prompt:', prompt);
 
           // Generate image using Gemini 2.5 Flash Image (Nano Banana)
           const imageUrl = await geminiAgentsService.generateImage({
@@ -279,7 +280,7 @@ export function PhotographerAgent() {
             throw new Error('No image generated');
           }
         } catch (error) {
-          console.error("Error generating cover art:", error);
+          logger.error("Error generating cover art:", error);
           toast({
             title: "Error",
             description: error instanceof Error ? error.message : "Failed to generate cover art. Please try again.",

@@ -1,4 +1,5 @@
 import { Card } from "../components/ui/card";
+import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -192,7 +193,7 @@ export default function SettingsPage() {
           });
         }
       } catch (error) {
-        console.error("Error loading artist profile:", error);
+        logger.error("Error loading artist profile:", error);
       } finally {
         setIsLoadingArtistProfile(false);
       }
@@ -241,7 +242,7 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to generate biography');
       }
     } catch (error: any) {
-      console.error("Error generating biography:", error);
+      logger.error("Error generating biography:", error);
       toast({
         title: "Error",
         description: "No se pudo generar la biografía. Intenta de nuevo.",
@@ -290,7 +291,7 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to generate profile image');
       }
     } catch (error: any) {
-      console.error("Error generating profile image:", error);
+      logger.error("Error generating profile image:", error);
       toast({
         title: "Error",
         description: "No se pudo generar la imagen de perfil. Intenta de nuevo.",
@@ -340,7 +341,7 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to generate banner image');
       }
     } catch (error: any) {
-      console.error("Error generating banner image:", error);
+      logger.error("Error generating banner image:", error);
       toast({
         title: "Error",
         description: "No se pudo generar la imagen de banner. Intenta de nuevo.",
@@ -416,7 +417,7 @@ export default function SettingsPage() {
 
       setArtistProfileData(profileData);
     } catch (error) {
-      console.error("Error saving artist profile:", error);
+      logger.error("Error saving artist profile:", error);
       toast({
         title: "Error",
         description: "No se pudo guardar tu perfil. Por favor intenta nuevamente.",

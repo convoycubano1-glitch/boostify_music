@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "../lib/logger";
 import { useLocation } from "wouter";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -95,7 +96,7 @@ export default function CourseDetailPage() {
       // Use FAL AI flux-pro model for high-quality course cover image
       const enhancedPrompt = `Professional high-quality photorealistic music education cover image for a course titled "${course.title}". ${course.description || 'Music industry course'}. Professional studio setting with music equipment, high production value, clean and professional design.`;
       
-      console.log("Generating course cover image with FAL AI...");
+      logger.info("Generating course cover image with FAL AI...");
       
       try {
         // Try FAL AI first
@@ -113,7 +114,7 @@ export default function CourseDetailPage() {
         
         // Get the first image URL
         const imageUrl = result.data.images[0].url;
-        console.log("Successfully generated course cover image with FAL AI:", imageUrl);
+        logger.info("Successfully generated course cover image with FAL AI:", imageUrl);
         
         setCourseCoverImage(imageUrl);
         
@@ -123,7 +124,7 @@ export default function CourseDetailPage() {
           await updateDoc(courseRef, {
             coverImage: imageUrl
           });
-          console.log("Saved course cover image to Firestore");
+          logger.info("Saved course cover image to Firestore");
         }
         
         toast({
@@ -133,7 +134,7 @@ export default function CourseDetailPage() {
         });
       } catch (falError) {
         // If FAL AI fails, fallback to Unsplash
-        console.error("FAL AI generation failed, falling back to Unsplash:", falError);
+        logger.error("FAL AI generation failed, falling back to Unsplash:", falError);
         const imagePrompt = `professional education ${course.title} music industry course cover`;
         const fallbackImageUrl = await getRelevantImage(imagePrompt);
         
@@ -154,7 +155,7 @@ export default function CourseDetailPage() {
         });
       }
     } catch (error) {
-      console.error('Error generating course cover image:', error);
+      logger.error('Error generating course cover image:', error);
       toast({
         title: "Error",
         description: "Failed to generate course cover image",
@@ -250,7 +251,7 @@ export default function CourseDetailPage() {
           }
         }
       } catch (error) {
-        console.error('Error fetching course:', error);
+        logger.error('Error fetching course:', error);
         toast({
           title: "Error",
           description: "Failed to load course",
@@ -275,13 +276,13 @@ export default function CourseDetailPage() {
       return;
     }
 
-    console.log(`Generating content for lesson: "${lessonTitle}"`);
+    logger.info(`Generating content for lesson: "${lessonTitle}"`);
     
     // Check if we already have this lesson content saved
     const currentLessonContents = progress.lessonContents || {};
     
     if (currentLessonContents[lessonTitle]) {
-      console.log('Using cached lesson content from Firestore');
+      logger.info('Using cached lesson content from Firestore');
       setSelectedLesson(currentLessonContents[lessonTitle]);
       return;
     }
@@ -292,7 +293,7 @@ export default function CourseDetailPage() {
       const keyData = await apiKeyResponse.json();
       
       if (!apiKeyResponse.ok || !keyData.exists || !keyData.key) {
-        console.error("OpenRouter API key not available:", keyData);
+        logger.error("OpenRouter API key not available:", keyData);
         toast({
           title: "API Key Issue",
           description: "There was a problem accessing the API key. Contact support.",
@@ -301,9 +302,9 @@ export default function CourseDetailPage() {
         return;
       }
       
-      console.log("OpenRouter API key is available and valid");
+      logger.info("OpenRouter API key is available and valid");
     } catch (keyError) {
-      console.error("Error checking OpenRouter API key:", keyError);
+      logger.error("Error checking OpenRouter API key:", keyError);
       toast({
         title: "API Configuration Error",
         description: "Could not verify API configuration. Please try again later.",
@@ -314,9 +315,9 @@ export default function CourseDetailPage() {
 
     setIsGeneratingContent(true);
     try {
-      console.log("Starting lesson content generation process...");
+      logger.info("Starting lesson content generation process...");
       const content = await generateLessonContent(lessonTitle, lessonDescription);
-      console.log("Lesson content generated successfully:", content);
+      logger.info("Lesson content generated successfully:", content);
 
       // Update progress in memory and in Firestore
       const newProgress = {
@@ -328,12 +329,12 @@ export default function CourseDetailPage() {
       };
 
       if (auth.currentUser && courseId) {
-        console.log("Saving lesson content to Firestore...");
+        logger.info("Saving lesson content to Firestore...");
         const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
         await updateDoc(progressRef, {
           lessonContents: newProgress.lessonContents
         });
-        console.log("Lesson content saved to Firestore successfully");
+        logger.info("Lesson content saved to Firestore successfully");
       }
 
       setProgress(newProgress);
@@ -345,7 +346,7 @@ export default function CourseDetailPage() {
         variant: "default"
       });
     } catch (error) {
-      console.error('Error generating lesson content:', error);
+      logger.error('Error generating lesson content:', error);
       
       // Provide a more specific error message if possible
       let errorMessage = "Failed to generate lesson content. Please try again.";
@@ -379,7 +380,7 @@ export default function CourseDetailPage() {
       const promptPrefix = "Photorealistic high-quality educational illustration for a music course about";
       const prompt = `${promptPrefix} ${lessonTitle}. ${lessonDescription}. Professional photography with vibrant colors, well-lit studio setting, music production equipment, professional quality.`;
       
-      console.log("Generating image with Fal AI for lesson:", lessonTitle);
+      logger.info("Generating image with Fal AI for lesson:", lessonTitle);
       
       // Import the generateImageWithFal function
       const { generateImageWithFal } = await import("../lib/api/fal-ai");
@@ -397,7 +398,7 @@ export default function CourseDetailPage() {
       
       // Get the URL of the first generated image
       const imageUrl = result.data.images[0].url;
-      console.log("Successfully generated image URL:", imageUrl);
+      logger.info("Successfully generated image URL:", imageUrl);
 
       // Update progress with the new image URL
       const currentImages = progress.generatedImages || {};
@@ -411,12 +412,12 @@ export default function CourseDetailPage() {
 
       // Save to Firestore if user is authenticated
       if (auth.currentUser && courseId) {
-        console.log("Saving image URL to Firestore...");
+        logger.info("Saving image URL to Firestore...");
         const progressRef = doc(db, 'course_progress', `${auth.currentUser.uid}_${courseId}`);
         await updateDoc(progressRef, {
           generatedImages: newProgress.generatedImages
         });
-        console.log("Image URL saved to Firestore successfully");
+        logger.info("Image URL saved to Firestore successfully");
       }
 
       setProgress(newProgress);
@@ -426,11 +427,11 @@ export default function CourseDetailPage() {
         variant: "default"
       });
     } catch (error) {
-      console.error('Error generating image with Fal AI:', error);
+      logger.error('Error generating image with Fal AI:', error);
       
       // Fallback to Unsplash if Fal AI fails
       try {
-        console.log("Falling back to Unsplash for image...");
+        logger.info("Falling back to Unsplash for image...");
         const fallbackImageUrl = await getRelevantImage(`professional music education ${lessonTitle} ${lessonDescription}`);
         
         const currentImages = progress.generatedImages || {};
@@ -456,7 +457,7 @@ export default function CourseDetailPage() {
           variant: "default"
         });
       } catch (fallbackError) {
-        console.error('Fallback image also failed:', fallbackError);
+        logger.error('Fallback image also failed:', fallbackError);
         toast({
           title: "Error",
           description: "Failed to generate lesson illustration",
@@ -476,7 +477,7 @@ export default function CourseDetailPage() {
       // Use Fal AI's flux-pro model for section images
       const enhancedPrompt = `Photorealistic high-quality educational illustration for music education: ${imagePrompt}. Professional photography, music studio, high production value, clear visualization.`;
       
-      console.log("Generating section image with Fal AI, prompt:", enhancedPrompt.substring(0, 100) + "...");
+      logger.info("Generating section image with Fal AI, prompt:", enhancedPrompt.substring(0, 100) + "...");
       
       // Import the generateImageWithFal function
       const { generateImageWithFal } = await import("../lib/api/fal-ai");
@@ -494,7 +495,7 @@ export default function CourseDetailPage() {
       
       // Get the URL of the first generated image
       const imageUrl = result.data.images[0].url;
-      console.log("Successfully generated section image URL:", imageUrl);
+      logger.info("Successfully generated section image URL:", imageUrl);
 
       // Update progress with the new image URL
       const currentImages = progress.generatedImages || {};
@@ -518,11 +519,11 @@ export default function CourseDetailPage() {
         variant: "default"
       });
     } catch (error) {
-      console.error('Error generating section image with Fal AI:', error);
+      logger.error('Error generating section image with Fal AI:', error);
       
       // Fallback to Unsplash if Fal AI fails
       try {
-        console.log("Falling back to Unsplash for section image...");
+        logger.info("Falling back to Unsplash for section image...");
         const fallbackImageUrl = await getRelevantImage(imagePrompt);
         
         const currentImages = progress.generatedImages || {};
@@ -546,7 +547,7 @@ export default function CourseDetailPage() {
           variant: "default"
         });
       } catch (fallbackError) {
-        console.error('Fallback section image also failed:', fallbackError);
+        logger.error('Fallback section image also failed:', fallbackError);
         toast({
           title: "Error",
           description: "Failed to generate section illustration",
@@ -595,7 +596,7 @@ export default function CourseDetailPage() {
         description: "Lesson completed successfully! Keep going!"
       });
     } catch (error) {
-      console.error('Error updating progress:', error);
+      logger.error('Error updating progress:', error);
       toast({
         title: "Error",
         description: "Failed to update lesson progress",
@@ -618,10 +619,10 @@ export default function CourseDetailPage() {
       }
 
       const examContent = progress.lessonContents[lessonTitle]?.content?.exam;
-      console.log('Exam content:', examContent); // Para debugging
+      logger.info('Exam content:', examContent); // Para debugging
 
       if (!examContent || !Array.isArray(examContent) || examContent.length === 0) {
-        console.error('Invalid exam content:', examContent);
+        logger.error('Invalid exam content:', examContent);
         toast({
           title: "Error",
           description: "No exam questions available. Please try regenerating the lesson content.",
@@ -636,7 +637,7 @@ export default function CourseDetailPage() {
       setExamResult(null);
       setShowExam(true);
     } catch (error) {
-      console.error('Error starting exam:', error);
+      logger.error('Error starting exam:', error);
       toast({
         title: "Error",
         description: "Failed to start exam. Please try again.",
@@ -691,7 +692,7 @@ export default function CourseDetailPage() {
           description: "You've completed the exam successfully!"
         });
       } catch (error) {
-        console.error('Error updating progress:', error);
+        logger.error('Error updating progress:', error);
         toast({
           title: "Error",
           description: "Failed to save exam progress",

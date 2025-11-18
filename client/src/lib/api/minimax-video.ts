@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 /**
  * MiniMax Video Generation Client
  * Cliente para generar videos desde imágenes usando MiniMax Image-to-Video API
@@ -52,7 +53,7 @@ export async function generateVideoFromImage(
 
     return await response.json();
   } catch (error: any) {
-    console.error('Error generando video con MiniMax:', error);
+    logger.error('Error generando video con MiniMax:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido'
@@ -74,7 +75,7 @@ export async function queryVideoStatus(taskId: string): Promise<MinimaxTaskStatu
 
     return await response.json();
   } catch (error: any) {
-    console.error('Error consultando estado de video:', error);
+    logger.error('Error consultando estado de video:', error);
     return {
       success: false,
       error: error.message || 'Error desconocido'
@@ -140,7 +141,7 @@ export async function generateBatchVideos(
 
     return await response.json();
   } catch (error: any) {
-    console.error('Error generando batch de videos:', error);
+    logger.error('Error generando batch de videos:', error);
     return {
       success: false,
       taskIds: [],

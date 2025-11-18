@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Freepik Image Generator Component
  * 
  * This component provides a dedicated UI for generating images exclusively with Freepik's API,
@@ -58,10 +59,10 @@ export function FreepikGenerator({
         const images = await freepikStorageService.getImages();
         // Filter out images without URLs (pending tasks)
         const completedImages = images.filter(img => img.url && img.url.length > 0);
-        console.log(`Loaded ${completedImages.length} saved Freepik images`);
+        logger.info(`Loaded ${completedImages.length} saved Freepik images`);
         setSavedImages(completedImages);
       } catch (error) {
-        console.error('Error loading saved Freepik images:', error);
+        logger.error('Error loading saved Freepik images:', error);
         toast({
           title: 'Error loading images',
           description: 'Could not load saved images',
@@ -84,7 +85,7 @@ export function FreepikGenerator({
         try {
           const result = await multiPlatformGenerator.checkTaskStatus(pendingTaskId, 'freepik');
           if (result) {
-            console.log('Task status update:', result);
+            logger.info('Task status update:', result);
             if (result.status === 'COMPLETED' && result.url) {
               // Task completed, update state and clear interval
               setGeneratedImage(result);
@@ -116,7 +117,7 @@ export function FreepikGenerator({
             }
           }
         } catch (error) {
-          console.error('Error checking task status:', error);
+          logger.error('Error checking task status:', error);
         }
       }, 3000);
     }
@@ -162,7 +163,7 @@ export function FreepikGenerator({
       );
       
       if (similarImage) {
-        console.log('Found similar existing image:', similarImage);
+        logger.info('Found similar existing image:', similarImage);
         setGeneratedImage(similarImage);
         setIsGenerating(false);
         if (onGeneratedImage) {
@@ -188,7 +189,7 @@ export function FreepikGenerator({
             ...result,
             prompt // Make sure prompt is stored
           });
-          console.log('Stored pending task in Firestore:', firestoreId);
+          logger.info('Stored pending task in Firestore:', firestoreId);
         }
       } 
       // If we immediately got back a URL, we're done
@@ -208,7 +209,7 @@ export function FreepikGenerator({
         });
       }
     } catch (error) {
-      console.error('Error generating image:', error);
+      logger.error('Error generating image:', error);
       setIsGenerating(false);
       toast({
         title: 'Generation Error',

@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componente AIVideoWorkspace
  * Espacio de trabajo principal para la creación de videos musicales con IA
  * Integra el timeline editor y el editor de escenas

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "../lib/logger";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -79,7 +80,7 @@ export function DirectorSignup() {
             setUploadProgress(progress);
           },
           (error) => {
-            console.error("Upload error:", error);
+            logger.error("Upload error:", error);
             throw error;
           }
         );
@@ -107,7 +108,7 @@ export function DirectorSignup() {
       setSelectedFile(null);
       setUploadProgress(0);
     } catch (error) {
-      console.error("Error submitting application:", error);
+      logger.error("Error submitting application:", error);
       toast({
         title: "Error",
         description: "Failed to submit application. Please try again.",

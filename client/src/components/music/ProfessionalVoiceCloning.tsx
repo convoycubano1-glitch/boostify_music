@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Componente de Clonación Profesional de Voz
  * 
  * Este componente proporciona una interfaz de usuario avanzada para:
@@ -48,7 +49,7 @@ export function ProfessionalVoiceCloning({ className }: ProfessionalVoiceModelin
           modelsCount: models.length 
         };
       } catch (error) {
-        console.error('Error verificando estado de API:', error);
+        logger.error('Error verificando estado de API:', error);
         return { 
           isConfigured, 
           isConnected: false, 

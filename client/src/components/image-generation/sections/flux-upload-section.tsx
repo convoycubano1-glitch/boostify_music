@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Flux Upload Section
  * 
  * Este componente integra la generación de imágenes de Flux con PiAPI 
@@ -114,12 +115,12 @@ export function FluxUploadSection({ onImageGenerated, language = 'en' }: FluxUpl
         taskType: 'txt2img'
       };
       
-      console.log('Iniciando generación de imagen con Flux:', params);
+      logger.info('Iniciando generación de imagen con Flux:', params);
       
       // Usar el servicio de Flux que se comunicará con nuestro proxy
       const response = await fluxService.generateImage(params);
       
-      console.log('Respuesta de generación Flux:', response);
+      logger.info('Respuesta de generación Flux:', response);
       
       // Verificar si la generación fue exitosa
       if (response.success && response.taskId) {
@@ -129,7 +130,7 @@ export function FluxUploadSection({ onImageGenerated, language = 'en' }: FluxUpl
         throw new Error(response.error || 'No task ID returned from Flux API');
       }
     } catch (err: any) {
-      console.error('Error generating image:', err);
+      logger.error('Error generating image:', err);
       setError(err.message || t.errorGeneric);
       toast({
         title: "Error",
@@ -144,12 +145,12 @@ export function FluxUploadSection({ onImageGenerated, language = 'en' }: FluxUpl
   // Verifica el estado de la generación
   const checkTaskStatus = async (taskId: string) => {
     try {
-      console.log('Verificando estado de tarea Flux:', taskId);
+      logger.info('Verificando estado de tarea Flux:', taskId);
       
       // Usar el servicio de Flux para verificar el estado
       const response = await fluxService.checkTaskStatus(taskId);
       
-      console.log('Respuesta de verificación de estado:', response);
+      logger.info('Respuesta de verificación de estado:', response);
       
       if (response.success && response.status === 'completed' && response.images && response.images.length > 0) {
         // Obtener la imagen generada
@@ -184,7 +185,7 @@ export function FluxUploadSection({ onImageGenerated, language = 'en' }: FluxUpl
         setTimeout(() => checkTaskStatus(taskId), 5000);
       }
     } catch (err: any) {
-      console.error('Error checking task status:', err);
+      logger.error('Error checking task status:', err);
       setError(err.message || t.errorGeneric);
       toast({
         title: "Error",

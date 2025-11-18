@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from "../lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,13 +16,13 @@ const getStripe = async (): Promise<Stripe | null> => {
     const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
     
     if (!stripeKey) {
-      console.warn('Stripe public key not configured');
+      logger.warn('Stripe public key not configured');
       return null;
     }
     
     return await loadStripe(stripeKey);
   } catch (error) {
-    console.error('Error loading Stripe:', error);
+    logger.error('Error loading Stripe:', error);
     return null;
   }
 };

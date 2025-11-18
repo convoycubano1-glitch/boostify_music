@@ -9,15 +9,21 @@
  */
 
 import { revocalizeAPI } from './api/revocalize-api';
+import { logger } from "../logger";
 import { kitsAIAPI, AudioProcessingOptions } from './api/kits-ai-api';
+import { logger } from "../logger";
 import { toast } from '../../hooks/use-toast';
+import { logger } from "../logger";
 import { VoiceModel, AudioEffect, VoiceConversionRecord } from '../types/voice-model-types';
+import { logger } from "../logger";
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { logger } from "../logger";
 import { getFirestore, collection, addDoc, updateDoc, doc, serverTimestamp, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { logger } from "../logger";
 
 class VoiceProcessingService {
   constructor() {
-    console.log('Voice Processing Service initialized with synchronized Revocalize and KITS integration');
+    logger.info('Voice Processing Service initialized with synchronized Revocalize and KITS integration');
   }
 
   /**
@@ -51,7 +57,7 @@ class VoiceProcessingService {
     try {
       return await revocalizeAPI.getAvailableModels();
     } catch (error) {
-      console.error('Error fetching voice models:', error);
+      logger.error('Error fetching voice models:', error);
       toast({
         title: 'Error al obtener modelos',
         description: 'No se pudieron cargar los modelos de voz.',
@@ -88,7 +94,7 @@ class VoiceProcessingService {
       
       return modelId;
     } catch (error) {
-      console.error('Error creating voice model:', error);
+      logger.error('Error creating voice model:', error);
       toast({
         title: 'Error al crear modelo',
         description: 'No se pudo crear el modelo de voz.',
@@ -172,7 +178,7 @@ class VoiceProcessingService {
         updatedAt: new Date()
       };
     } catch (error) {
-      console.error('Error in voice processing:', error);
+      logger.error('Error in voice processing:', error);
       toast({
         title: 'Error en procesamiento',
         description: 'No se pudo completar el procesamiento de voz.',
@@ -252,7 +258,7 @@ class VoiceProcessingService {
         });
       }
     } catch (error) {
-      console.error('Error polling conversion status:', error);
+      logger.error('Error polling conversion status:', error);
       
       // Actualizar estado de error en Firestore
       await updateDoc(doc(db, 'voice_conversions', docId), {
@@ -319,7 +325,7 @@ class VoiceProcessingService {
         });
       }
     } catch (error) {
-      console.error('Error polling KITS processing status:', error);
+      logger.error('Error polling KITS processing status:', error);
       
       // Actualizar estado de error en Firestore, pero mantener la URL original
       await updateDoc(doc(db, 'voice_conversions', docId), {
@@ -374,7 +380,7 @@ class VoiceProcessingService {
         };
       }
     } catch (error) {
-      console.error('Error checking conversion status:', error);
+      logger.error('Error checking conversion status:', error);
       return {
         status: 'failed',
         error: 'No se pudo verificar el estado de la tarea.'
@@ -424,11 +430,11 @@ class VoiceProcessingService {
       
       return conversions;
     } catch (error) {
-      console.error('Error fetching user conversions:', error);
+      logger.error('Error fetching user conversions:', error);
       
       // En modo desarrollo, devolver datos de ejemplo
       if (import.meta.env.DEV) {
-        console.log('Development environment detected - using mock voice conversion data');
+        logger.info('Development environment detected - using mock voice conversion data');
         return [
           {
             id: 'conv-001',

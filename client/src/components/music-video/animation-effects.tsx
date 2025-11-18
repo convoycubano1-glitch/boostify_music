@@ -1,4 +1,5 @@
 /**
+import { logger } from "../lib/logger";
  * Componentes de Efectos de Animación para Music-Video-AI
  * 
  * Este archivo contiene componentes reutilizables para crear efectos visuales

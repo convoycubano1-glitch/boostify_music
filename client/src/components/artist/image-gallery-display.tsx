@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { logger } from "@/lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../ui/dialog";
@@ -73,7 +74,7 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('🖼️ ImageGalleryDisplay montado para artistId:', artistId, 'refreshKey:', refreshKey);
+    logger.info('🖼️ ImageGalleryDisplay montado para artistId:', artistId, 'refreshKey:', refreshKey);
     loadGalleries();
   }, [artistId, refreshKey]);
 
@@ -94,7 +95,7 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
   const loadGalleries = async () => {
     try {
       setIsLoading(true);
-      console.log('📥 Cargando galerías para artistId:', artistId);
+      logger.info('📥 Cargando galerías para artistId:', artistId);
       
       const galleriesRef = collection(db, "image_galleries");
       const q = query(
@@ -103,11 +104,11 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
       );
       
       const querySnapshot = await getDocs(q);
-      console.log('📊 Documentos encontrados:', querySnapshot.size);
+      logger.info('📊 Documentos encontrados:', querySnapshot.size);
       
       const galleriesData = querySnapshot.docs.map((doc) => {
         const data = doc.data();
-        console.log('📄 Documento:', doc.id, data);
+        logger.info('📄 Documento:', doc.id, data);
         return {
           id: doc.id,
           ...data,
@@ -120,10 +121,10 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
         return dateB - dateA;
       });
       
-      console.log('✅ Galerías cargadas:', galleriesData.length);
+      logger.info('✅ Galerías cargadas:', galleriesData.length);
       setGalleries(galleriesData);
     } catch (error) {
-      console.error("❌ Error loading galleries:", error);
+      logger.error("❌ Error loading galleries:", error);
       toast({
         title: "Error",
         description: "No se pudieron cargar las galerías",
@@ -145,7 +146,7 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
       link.click();
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      console.error("Error downloading image:", error);
+      logger.error("Error downloading image:", error);
       toast({
         title: "Error",
         description: "No se pudo descargar la imagen",
@@ -227,7 +228,7 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
       setUploadedFiles([]);
       loadGalleries();
     } catch (error) {
-      console.error("Error uploading images:", error);
+      logger.error("Error uploading images:", error);
       toast({
         title: "Error al subir",
         description: "No se pudieron subir las imágenes. Por favor intenta de nuevo.",
@@ -253,7 +254,7 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
       setGalleryToDelete(null);
       loadGalleries();
     } catch (error) {
-      console.error("Error deleting gallery:", error);
+      logger.error("Error deleting gallery:", error);
       toast({
         title: "Error",
         description: "No se pudo eliminar la galería. Por favor intenta de nuevo.",
@@ -303,7 +304,7 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
       setImageToDelete(null);
       await loadGalleries();
     } catch (error) {
-      console.error("Error deleting image:", error);
+      logger.error("Error deleting image:", error);
       toast({
         title: "Error",
         description: "No se pudo eliminar la imagen",
@@ -369,7 +370,7 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
       setSelectedGalleryToAddImages(null);
       await loadGalleries();
     } catch (error) {
-      console.error("Error adding images to gallery:", error);
+      logger.error("Error adding images to gallery:", error);
       toast({
         title: "Error al agregar",
         description: "No se pudieron agregar las imágenes. Por favor intenta de nuevo.",

@@ -1,4 +1,5 @@
 /**
+import { logger } from "@/lib/logger";
  * Improved WebSocket Context
  * 
  * Este contexto proporciona una gestión mejorada de WebSockets para la aplicación,
@@ -74,7 +75,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         reconnectInterval,
         maxReconnectAttempts,
         onOpen: () => {
-          console.log('WebSocket conectado');
+          logger.info('WebSocket conectado');
           setIsConnected(true);
         },
         onMessage: (event) => {
@@ -90,23 +91,23 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           }
         },
         onClose: () => {
-          console.log('WebSocket desconectado');
+          logger.info('WebSocket desconectado');
           setIsConnected(false);
         },
         onError: (error) => {
-          console.error('Error de WebSocket:', error);
+          logger.error('Error de WebSocket:', error);
           setIsConnected(false);
         }
       });
     } catch (error) {
-      console.error('Error al inicializar WebSocket:', error);
+      logger.error('Error al inicializar WebSocket:', error);
     }
   };
   
   // Función para enviar mensajes a través de WebSocket
   const send = (data: string | ArrayBufferLike | Blob | ArrayBufferView): boolean => {
     if (!wsManagerRef.current) {
-      console.warn('Intento de envío sin WebSocket inicializado');
+      logger.warn('Intento de envío sin WebSocket inicializado');
       return false;
     }
     return wsManagerRef.current.send(data);
@@ -169,7 +170,7 @@ export const ViteHMRErrorHandler: React.FC = () => {
             try {
               return originalSend.call(ws, data);
             } catch (err) {
-              console.warn('Error interceptado en WebSocket.send de Vite HMR:', err);
+              logger.warn('Error interceptado en WebSocket.send de Vite HMR:', err);
               // No propagar errores para evitar que rompan la aplicación
               return false;
             }
@@ -177,7 +178,7 @@ export const ViteHMRErrorHandler: React.FC = () => {
           
           // Añadir manejador de error más robusto
           ws.addEventListener('error', (event) => {
-            console.warn('Error interceptado en conexión WebSocket de Vite HMR:', event);
+            logger.warn('Error interceptado en conexión WebSocket de Vite HMR:', event);
             // Prevenir que errores de WebSocket provoquen crashes en la aplicación
             event.preventDefault();
             event.stopPropagation();
@@ -196,9 +197,9 @@ export const ViteHMRErrorHandler: React.FC = () => {
     if (import.meta.env.DEV) {
       try {
         patchWebSocket();
-        console.log('WebSocket mejorado para prevenir errores de Vite HMR');
+        logger.info('WebSocket mejorado para prevenir errores de Vite HMR');
       } catch (error) {
-        console.error('Error al aplicar parche WebSocket:', error);
+        logger.error('Error al aplicar parche WebSocket:', error);
       }
     }
     
@@ -210,7 +211,7 @@ export const ViteHMRErrorHandler: React.FC = () => {
         (event.reason.message?.includes('WebSocket') || 
          event.reason.message?.includes('aborted'))
       ) {
-        console.warn('Interceptado error de rechazo no manejado en WebSocket:', event.reason);
+        logger.warn('Interceptado error de rechazo no manejado en WebSocket:', event.reason);
         event.preventDefault();
       }
     };

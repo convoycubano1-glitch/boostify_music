@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import { useAuth } from "../../hooks/use-auth";
 import { db } from "../../lib/firebase";
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from "firebase/firestore";
@@ -200,7 +201,7 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
       alert("Contenido guardado correctamente");
     },
     onError: (error) => {
-      console.error("Error al guardar contenido:", error);
+      logger.error("Error al guardar contenido:", error);
       setIsSaving(false);
       alert("Error al guardar el contenido");
     },
@@ -342,7 +343,7 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
       setGeneratedContent(generatedText);
       
     } catch (error) {
-      console.error("Error al generar contenido:", error);
+      logger.error("Error al generar contenido:", error);
       setGenerationError("Ha ocurrido un error al generar el contenido. Por favor, intenta nuevamente.");
     } finally {
       setIsGenerating(false);
@@ -359,7 +360,7 @@ export function AffiliateContentGenerator({ affiliateData }: AffiliateContentGen
           alert("Contenido copiado al portapapeles");
         })
         .catch(err => {
-          console.error("Error al copiar:", err);
+          logger.error("Error al copiar:", err);
           alert("Error al copiar el contenido");
         });
     }
