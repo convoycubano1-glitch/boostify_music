@@ -42,6 +42,7 @@ import EcosystemDashboard from "../components/dashboard/ecosystem-dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Header } from "../components/layout/header";
 import { ensureFirebaseAuth } from "../lib/firebase-auth";
+import { logger } from "../lib/logger";
 
 
 export default function Dashboard() {
@@ -68,7 +69,7 @@ export default function Dashboard() {
   useEffect(() => {
     // Redirigir al login si no hay usuario autenticado
     if (!user) {
-      console.warn('⚠️ Usuario no autenticado, redirigiendo a login...');
+      logger.warn('Usuario no autenticado, redirigiendo a login');
       setLocation('/auth/login');
       return;
     }
@@ -123,7 +124,7 @@ export default function Dashboard() {
           });
         }
       } catch (error) {
-        console.error('Error processing pending plan:', error);
+        logger.error('Error processing pending plan', { error });
         localStorage.removeItem('selectedPlan');
         toast({
           title: "Aviso",

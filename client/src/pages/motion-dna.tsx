@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Sparkles, Video, ArrowRight, Brain, Database, Cpu, Activity, Network, CheckCircle2, Zap, TrendingUp, Play, ChevronRight, X, Star, Code, Layers } from "lucide-react";
 import { Link } from "wouter";
+import { logger } from "@/lib/logger";
 
 export default function MotionDNAPage() {
   const [formData, setFormData] = useState({
@@ -66,7 +67,7 @@ export default function MotionDNAPage() {
         throw new Error('Failed to submit application');
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      logger.error('Error submitting beta form', { error });
       toast({
         title: "Error",
         description: "There was a problem submitting your application. Please try again.",
