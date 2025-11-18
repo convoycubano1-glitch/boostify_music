@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * API Client para servicios de KITS AI
  * 
@@ -8,9 +9,7 @@
  */
 
 import { AudioEffect } from '../../types/voice-model-types';
-import { logger } from "../logger";
 import axios from 'axios';
-import { logger } from "../logger";
 
 /**
  * Opciones para el procesamiento de audio

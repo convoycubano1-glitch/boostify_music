@@ -1,5 +1,4 @@
 export function PageLoader() {
-import { logger } from "../lib/logger";
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">

@@ -1,7 +1,6 @@
 import { collection, addDoc, getDocs, query, where, orderBy } from "firebase/firestore";
 import { logger } from "./logger";
 import { db } from "../firebase";
-import { logger } from "./logger";
 
 export interface MusicianImage {
   id?: string;

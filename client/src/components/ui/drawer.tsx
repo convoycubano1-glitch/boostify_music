@@ -1,5 +1,5 @@
 import * as React from "react"
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "../../lib/utils"

@@ -1,5 +1,5 @@
 import { useState, useMemo, memo } from "react";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";

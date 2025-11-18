@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { cn } from "../../lib/utils";
 import {
   Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart2,

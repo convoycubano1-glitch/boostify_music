@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Link } from 'wouter';
 import { useUser } from '../../hooks/use-user';
 import { useNavigationVisibility } from '../../hooks/use-navigation-visibility';

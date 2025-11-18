@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, User, CheckCircle2, Loader2 } from "lucide-react";

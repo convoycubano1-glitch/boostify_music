@@ -1,13 +1,11 @@
+import { logger } from "./logger";
 /**
  * Servicio para administrar imágenes y videos generados en Firestore
  * Proporciona funciones para guardar, recuperar y gestionar contenido multimedia generado
  */
 import { auth, db } from '../firebase';
-import { logger } from "./logger";
 import { collection, addDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { logger } from "./logger";
 import { ImageResult, VideoResult } from '../types/model-types';
-import { logger } from "./logger";
 
 // Nombres de colecciones en Firestore
 const IMAGES_COLLECTION = 'generated_images';

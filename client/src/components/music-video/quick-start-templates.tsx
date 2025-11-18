@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";

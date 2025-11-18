@@ -1,9 +1,7 @@
 import { generateImageWithFal } from "./fal-ai";
 import { logger } from "./logger";
 import { saveMusicianImage } from "./musician-images-store";
-import { logger } from "./logger";
 import {db, collection, getDocs, query, orderBy} from "./firebase";
-import { logger } from "./logger";
 
 const musicianImagePrompts = [
   // Guitarristas

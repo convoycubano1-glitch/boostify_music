@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Workspace para Creación de Videos Musicales con IA
  * Integra el editor de escenas cinematográficas con sistema de exportación JSON
  */

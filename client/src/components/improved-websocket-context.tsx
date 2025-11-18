@@ -1,5 +1,4 @@
 /**
-import { logger } from "@/lib/logger";
  * Improved WebSocket Context
  * 
  * Este contexto proporciona una gestión mejorada de WebSockets para la aplicación,
@@ -8,6 +7,7 @@ import { logger } from "@/lib/logger";
  */
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { logger } from "@/lib/logger";
 import WebSocketManager from '../lib/utils/websocket-manager';
 
 interface WebSocketContextValue {

@@ -1,7 +1,6 @@
 import { env } from "../../env";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { 
-import { logger } from "../logger";
   ShotType, 
   SceneRole, 
   CameraMovement, 
@@ -16,7 +15,6 @@ import { logger } from "../logger";
   generateVariedShotSequence
 } from "../../types/music-video-scene";
 import type { DirectorProfile } from "../../data/directors/director-schema";
-import { logger } from "../logger";
 
 interface Message {
   role: "user" | "assistant" | "system";

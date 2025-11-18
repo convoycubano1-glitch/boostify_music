@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Label } from "../ui/label";
 import { TimelineClip } from "./timeline-editor";
 import FaceSwap, { FaceSwapResult } from "../face-swap/face-swap";

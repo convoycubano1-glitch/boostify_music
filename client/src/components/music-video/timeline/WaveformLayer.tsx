@@ -1,5 +1,5 @@
 import React from 'react';
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { WaveformData } from '../../../hooks/timeline/useWaveSurfer';
 import { cn } from '../../../lib/utils';
 

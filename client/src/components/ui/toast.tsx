@@ -1,5 +1,5 @@
 import * as React from "react"
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"

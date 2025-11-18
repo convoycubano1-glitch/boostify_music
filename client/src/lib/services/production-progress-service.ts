@@ -1,5 +1,5 @@
 import { 
-import { logger } from "../logger";
+import { logger } from "./logger";
   collection, 
   doc, 
   addDoc, 
@@ -14,7 +14,6 @@ import { logger } from "../logger";
   Timestamp 
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { logger } from "../logger";
 
 // Interfaces
 export interface ProductionProject {

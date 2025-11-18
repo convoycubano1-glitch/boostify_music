@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * Timeline Video Generation Service
  * Sistema completo para generar videos desde imágenes en el timeline
@@ -5,13 +6,9 @@
  */
 
 import { FAL_VIDEO_MODELS } from '../api/fal-video-service';
-import { logger } from "../logger";
 import { generateVideoFromImage as generateMinimaxVideo, waitForVideoCompletion } from '../api/minimax-video';
-import { logger } from "../logger";
 import type { MinimaxVideoRequest } from '../api/minimax-video';
-import { logger } from "../logger";
 import type { TimelineClip } from '../../components/professional-editor/EnhancedTimeline';
-import { logger } from "../logger";
 
 export type VideoModel = 
   | 'kling-2.5-pro-i2v'

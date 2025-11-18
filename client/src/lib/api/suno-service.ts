@@ -1,13 +1,9 @@
 import { z } from "zod";
 import { logger } from "./logger";
 import { db } from '../firebase';
-import { logger } from "./logger";
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
-import { logger } from "./logger";
 import { env } from '../../env';
-import { logger } from "./logger";
 import { generateMusicWithSuno, checkMusicGenerationStatus } from './piapi-music';
-import { logger } from "./logger";
 
 /**
  * AVISO: Este servicio ahora funciona exclusivamente a través de PiAPI

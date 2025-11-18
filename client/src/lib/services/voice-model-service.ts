@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * Servicio para gestionar modelos de voz
  * 
@@ -9,7 +10,6 @@
  */
 
 import { 
-import { logger } from "../logger";
   VoiceModel, 
   AudioEffect, 
   TrainingStatus, 
@@ -18,13 +18,9 @@ import { logger } from "../logger";
   VoiceConversionRequest 
 } from '../types/voice-model-types';
 import { voiceProcessingService } from './voice-processing-service';
-import { logger } from "../logger";
 import { revocalizeAPI } from './api/revocalize-api';
-import { logger } from "../logger";
 import { kitsAIAPI } from './api/kits-ai-api';
-import { logger } from "../logger";
 import { toast } from '../../hooks/use-toast';
-import { logger } from "../logger";
 
 class VoiceModelService {
   constructor() {

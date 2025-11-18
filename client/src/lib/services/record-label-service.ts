@@ -1,11 +1,8 @@
 import OpenAI from 'openai';
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { env } from "../../env";
-import { logger } from "../logger";
 import { db } from "../firebase";
-import { logger } from "../logger";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
-import { logger } from "../logger";
 
 if (!env.VITE_OPENROUTER_API_KEY) {
   logger.error('OpenRouter API key is not configured');

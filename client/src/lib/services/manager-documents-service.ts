@@ -1,11 +1,10 @@
+import { logger } from "./logger";
 /**
  * Manager Documents Service - Client Side
  * Usa Gemini API desde el backend + Firestore desde el cliente
  */
 import { collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
-import { logger } from "../logger";
 import { db } from "../firebase";
-import { logger } from "../logger";
 
 export interface DocumentMetadata {
   artistName: string;

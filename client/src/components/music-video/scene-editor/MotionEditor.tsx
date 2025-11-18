@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Componente MotionEditor
  * Editor avanzado para controlar aspectos de movimiento y efectos en la escena
  * Versión mejorada con presets de movimiento para diferentes estilos cinematográficos

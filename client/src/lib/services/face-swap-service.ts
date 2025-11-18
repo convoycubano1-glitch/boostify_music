@@ -1,9 +1,7 @@
 import { getAuthToken } from "../auth";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import type { FaceSwapResult } from "../components/face-swap/face-swap";
-import { logger } from "../logger";
 import axios from "axios";
-import { logger } from "../logger";
 
 /**
  * Servicio para la funcionalidad de Face Swap

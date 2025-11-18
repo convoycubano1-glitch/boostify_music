@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Componente CompositionEditor
  * Editor para configurar aspectos compositivos de la escena
  * Mejorado con sugerencias de AI y categorías visuales

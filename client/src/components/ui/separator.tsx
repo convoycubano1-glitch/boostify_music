@@ -1,5 +1,5 @@
 import * as React from "react"
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import * as SeparatorPrimitive from "@radix-ui/react-separator"
 
 import { cn } from "../../lib/utils"

@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Loader2, Check, Camera } from "lucide-react";

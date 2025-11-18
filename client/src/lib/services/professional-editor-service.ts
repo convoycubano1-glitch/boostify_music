@@ -1,7 +1,6 @@
 import { db } from '../../firebase';
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { 
-import { logger } from "../logger";
   collection, 
   doc, 
   setDoc, 
@@ -16,9 +15,7 @@ import { logger } from "../logger";
   deleteDoc
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
-import { logger } from "../logger";
 import { storage } from '../../firebase';
-import { logger } from "../logger";
 
 // Definición de tipos para el editor profesional
 export interface EditorProject {

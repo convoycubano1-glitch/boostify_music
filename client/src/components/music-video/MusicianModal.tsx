@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

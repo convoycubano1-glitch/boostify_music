@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * Firebase Auth with Replit Auth Integration
  * 
@@ -7,9 +8,7 @@
  */
 
 import { auth } from '../firebase';
-import { logger } from "../logger";
 import { signInWithCustomToken } from 'firebase/auth';
-import { logger } from "../logger";
 
 let authInitialized = false;
 

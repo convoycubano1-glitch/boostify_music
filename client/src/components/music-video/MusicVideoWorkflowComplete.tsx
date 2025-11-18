@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Music Video Workflow Complete
  * Mantiene el flujo anterior completo + agrega timeline profesional
  * 

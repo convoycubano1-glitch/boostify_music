@@ -1,9 +1,7 @@
 import { db } from './firebase';
 import { logger } from "./logger";
 import { doc, getDoc } from 'firebase/firestore';
-import { logger } from "./logger";
 import { User } from 'firebase/auth';
-import { logger } from "./logger";
 
 export interface SpotifyData {
   accessToken: string | null;

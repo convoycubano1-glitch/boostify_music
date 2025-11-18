@@ -1,5 +1,5 @@
 import * as React from "react"
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react"

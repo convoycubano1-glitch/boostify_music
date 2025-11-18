@@ -1,5 +1,5 @@
 import * as React from "react"
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 

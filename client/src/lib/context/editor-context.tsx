@@ -1,5 +1,4 @@
 import React, { 
-import { logger } from "../logger";
   createContext, 
   useContext, 
   useState, 
@@ -7,10 +6,9 @@ import { logger } from "../logger";
   ReactNode, 
   useEffect 
 } from 'react';
+import { logger } from "../logger";
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from "../logger";
 import { 
-import { logger } from "../logger";
   Project,
   Track,
   Clip,

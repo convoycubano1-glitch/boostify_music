@@ -1,17 +1,13 @@
 import { doc, collection, addDoc, updateDoc, getDoc, getDocs, query, where, orderBy, Timestamp } from "firebase/firestore";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { logger } from "../logger";
 import { db, storage } from "../firebase";
-import { logger } from "../logger";
 import { User } from "firebase/auth";
-import { logger } from "../logger";
 
 /**
  * Importamos directamente los tipos necesarios
  */
 import type { 
-import { logger } from "../logger";
   VoiceConversionRecord,
   VoiceSettings,
   ConversionStatus,

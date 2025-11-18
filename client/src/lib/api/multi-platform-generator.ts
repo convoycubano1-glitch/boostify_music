@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { 
-import { logger } from "../logger";
   freepikService, 
   FreepikModel, 
   FreepikAspectRatio, 
@@ -15,16 +14,12 @@ import { logger } from "../logger";
 
 // Import Freepik storage service
 import { freepikStorageService } from './freepik-storage-service';
-import { logger } from "../logger";
 
 // Import Flux service and storage
 import { fluxService, FluxModel, FluxTaskType, FluxLoraType, FluxControlNetType } from './flux/flux-service';
-import { logger } from "../logger";
 import { fluxStorageService } from './flux/flux-storage-service';
-import { logger } from "../logger";
 
 import { 
-import { logger } from "../logger";
   GenerateImageParams,
   VideoGenerationParams,
   ImageResult as ImportedImageResult,

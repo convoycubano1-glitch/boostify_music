@@ -9,13 +9,10 @@
  */
 
 import { LucideIcon } from 'lucide-react';
-import { logger } from "../logger";
 import { db } from '../firebase';
-import { logger } from "../logger";
+import { logger } from '../logger';
 import { getAuth } from 'firebase/auth';
-import { logger } from "../logger";
 import {
-import { logger } from "../logger";
   collection,
   addDoc,
   query,
@@ -29,9 +26,7 @@ import { logger } from "../logger";
   FirestoreError
 } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
-import { logger } from "../logger";
 import { getUserId } from '../auth-helpers';
-import { logger } from "../logger";
 
 // Persistence is now handled in main firebase.ts configuration
 // This prevents "failed-precondition" errors when accessing Firestore data

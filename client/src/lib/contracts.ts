@@ -1,9 +1,7 @@
 import { db } from '../firebase';
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, updateDoc, getDoc, Timestamp } from 'firebase/firestore';
-import { logger } from "../logger";
 import { getAuth } from 'firebase/auth';
-import { logger } from "../logger";
 
 const auth = getAuth();
 

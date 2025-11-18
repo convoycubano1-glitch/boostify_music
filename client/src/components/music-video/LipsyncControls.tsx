@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Lip-Sync Controls Component
  * Permite regenerar y previsualizar videos de lip-sync
  */

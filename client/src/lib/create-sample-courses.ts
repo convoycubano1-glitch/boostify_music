@@ -1,11 +1,8 @@
 import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { db } from "../firebase";
-import { logger } from "../logger";
 import { generateCourseContent } from "./api/openrouter";
-import { logger } from "../logger";
 import { getRelevantImage } from "./unsplash-service";
-import { logger } from "../logger";
 
 const sampleCourses = [
   {

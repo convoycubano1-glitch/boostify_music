@@ -1,9 +1,7 @@
 import { db } from './firebase';
 import { logger } from "./logger";
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { logger } from "./logger";
 import { User } from 'firebase/auth';
-import { logger } from "./logger";
 
 export interface YouTubeViewsData {
   id?: string;

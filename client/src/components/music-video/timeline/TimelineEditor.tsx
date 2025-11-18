@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Editor de timeline principal
  * Componente principal para la edición de videos con timeline multiples capas
  */

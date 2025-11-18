@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Slider } from '../ui/slider';

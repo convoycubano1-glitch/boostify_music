@@ -1,5 +1,5 @@
 import { Card } from "../ui/card";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import {
   BarChart,
   Bar,

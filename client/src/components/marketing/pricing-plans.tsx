@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { useAuth } from '../../hooks/use-auth';
 import { useSubscription } from '../../lib/context/subscription-context';
 import { createCheckoutSession } from '../../lib/api/stripe-service';

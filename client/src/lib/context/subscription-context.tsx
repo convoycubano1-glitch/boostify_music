@@ -5,11 +5,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { logger } from "../logger";
 import { useAuth } from '../../hooks/use-auth';
-import { logger } from "../logger";
 import { db } from '../firebase';
-import { logger } from "../logger";
 import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { logger } from "../logger";
 
 // Tipos de planes disponibles
 export type PlanType = 'free' | 'basic' | 'pro' | 'premium';

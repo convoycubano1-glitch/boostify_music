@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { UpscaleOptions } from '../../components/music-video/final-rendering';
-import { logger } from "../logger";
 
 /**
  * Interfaz para los resultados de las operaciones de video

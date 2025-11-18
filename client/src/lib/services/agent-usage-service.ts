@@ -1,9 +1,8 @@
+import { logger } from "./logger";
 // client/src/lib/services/agent-usage-service.ts
 
 import { db, auth } from '../../firebase';
-import { logger } from "../logger";
 import { 
-import { logger } from "../logger";
   collection, 
   doc, 
   setDoc, 

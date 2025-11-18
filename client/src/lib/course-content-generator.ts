@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { logger } from "../logger";
+import { logger } from "./logger";
 import OpenAI from 'openai';
-import { logger } from "../logger";
 
 const examQuestionSchema = z.object({
   question: z.string(),

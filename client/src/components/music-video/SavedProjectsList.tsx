@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Componente para visualizar y gestionar proyectos de video guardados
  */
 import { useEffect, useState } from 'react';

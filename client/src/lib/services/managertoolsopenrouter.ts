@@ -1,9 +1,7 @@
 import { db } from "../firebase";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, deleteDoc, updateDoc } from "firebase/firestore";
-import { logger } from "../logger";
 import { env } from "../../env";
-import { logger } from "../logger";
 
 export const managerToolsService = {
   async generateWithAI(prompt: string, type: string) {

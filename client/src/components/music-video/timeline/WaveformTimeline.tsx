@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Componente de línea de tiempo avanzado con waveform
  * Utiliza wavesurfer.js para renderizar forma de onda de audio
  * e implementa un timeline más preciso con detección de colisiones

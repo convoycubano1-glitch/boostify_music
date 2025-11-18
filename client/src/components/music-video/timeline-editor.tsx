@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Editor de línea de tiempo para música
  * Componente principal que integra gestión de capas, clips y reproducción de audio
  * @export TimelineEditor - Componente principal del editor

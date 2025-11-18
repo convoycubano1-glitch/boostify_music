@@ -1,5 +1,5 @@
 "use client"
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"

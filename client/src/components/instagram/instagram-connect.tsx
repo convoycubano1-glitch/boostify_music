@@ -1,5 +1,5 @@
 import { Button } from "../ui/button";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { SiInstagram } from "react-icons/si";
 import { Card } from "../ui/card";
 

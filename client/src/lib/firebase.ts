@@ -1,11 +1,10 @@
+import { logger } from "./logger";
 /**
  * Firebase lib adapter - Redirects to main Firebase configuration
  * This adapter ensures we don't initialize Firebase multiple times
  */
 import { getIdToken } from 'firebase/auth';
-import { logger } from "../logger";
 import { app, db, auth, storage } from '../firebase';
-import { logger } from "../logger";
 
 /**
  * Gets the current user's authentication token

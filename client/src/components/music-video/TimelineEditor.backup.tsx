@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Enhanced Timeline Editor for Music Videos
  * Professional-grade multi-track editor with advanced features:
  * - Synchronized video preview viewer

@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * Flux Storage Service
  * 
@@ -6,11 +7,8 @@
  */
 
 import { auth, db } from '../../firebase';
-import { logger } from "./logger";
 import { collection, addDoc, getDocs, query, where, orderBy, Timestamp, DocumentData } from 'firebase/firestore';
-import { logger } from "./logger";
 import { ImageResult } from '../../types/model-types';
-import { logger } from "./logger";
 
 // Nombre de la colección específica para imágenes de Flux
 const FLUX_IMAGES_COLLECTION = 'flux_images';

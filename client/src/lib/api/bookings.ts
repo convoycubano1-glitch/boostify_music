@@ -1,9 +1,7 @@
 import { db } from "@db";
 import { logger } from "./logger";
 import { bookings, audioDemos } from "@db/schema";
-import { logger } from "./logger";
 import { auth } from "../firebase";
-import { logger } from "./logger";
 
 export async function createBooking(bookingData: {
   musicianId: string;

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardFooter } from "../ui/card";
 import { useToast } from "../../hooks/use-toast";

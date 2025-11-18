@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Componente SceneEditorContainer
  * Contenedor principal que gestiona múltiples editores de escenas y los integra con el timeline
  */

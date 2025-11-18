@@ -1,5 +1,5 @@
 import { cn } from "../../lib/utils";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Button } from "../ui/button";
 import { Link, useLocation } from "wouter";
 import { 

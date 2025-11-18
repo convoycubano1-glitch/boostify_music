@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { 

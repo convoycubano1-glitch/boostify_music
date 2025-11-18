@@ -1,11 +1,8 @@
 import { env } from "../../env";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { apiRequest } from "../queryClient";
-import { logger } from "../logger";
 import { auth, db } from "../../firebase";
-import { logger } from "../logger";
 import { collection, addDoc, getDocs, doc, getDoc, query, where, orderBy, Timestamp, serverTimestamp } from "firebase/firestore";
-import { logger } from "../logger";
 
 interface ImageAdvice {
   styleAnalysis: string;

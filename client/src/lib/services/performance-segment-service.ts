@@ -1,14 +1,12 @@
+import { logger } from "./logger";
 /**
  * Performance Segment Service
  * Maneja la lógica de negocio para segmentos de performance con lip-sync
  */
 
 import { cutAudioSegment, cutAudioSegments } from './audio-segmentation';
-import { logger } from "../logger";
 import { generateTalkingHead, batchGenerateTalkingHeads } from '../api/fal-musetalk';
-import { logger } from "../logger";
 import { uploadImageFromUrl } from '../firebase-storage';
-import { logger } from "../logger";
 
 export interface PerformanceSegmentData {
   projectId: number;

@@ -1,9 +1,7 @@
 import { z } from "zod";
 import { logger } from "./logger";
 import { db } from '../firebase';
-import { logger } from "./logger";
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
-import { logger } from "./logger";
 
 // Definición de tipos para las respuestas de agentes
 export const AgentResponseSchema = z.object({

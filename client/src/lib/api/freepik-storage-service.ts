@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * Freepik Storage Service
  * 
@@ -7,11 +8,8 @@
  */
 
 import { auth, db } from '../firebase';
-import { logger } from "./logger";
 import { collection, addDoc, getDocs, query, where, orderBy, Timestamp, DocumentData } from 'firebase/firestore';
-import { logger } from "./logger";
 import { ImageResult } from '../types/model-types';
-import { logger } from "./logger";
 
 // Nombre de la colección específica para imágenes de Freepik
 const FREEPIK_IMAGES_COLLECTION = 'freepik_images';

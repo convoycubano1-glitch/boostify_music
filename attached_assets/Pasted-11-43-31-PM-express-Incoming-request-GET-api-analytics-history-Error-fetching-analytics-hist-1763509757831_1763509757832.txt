@@ -1,0 +1,79 @@
+11:43:31 PM [express] 📥 Incoming request: GET /api/analytics/history
+Error fetching analytics history: error: relation "analytics_history" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1302:23) {
+  length: 116,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '95',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+Error fetching analytics summary: error: column "total_engagement" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1316:25) {
+  length: 115,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '8',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+11:43:31 PM [express] 📤 Response: GET /api/analytics/history 500 in 192ms
+11:43:31 PM [express] 📤 Response: GET /api/analytics/summary 500 in 194ms
+Error fetching analytics metrics: error: column "youtube_views" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1251:25) {
+  length: 113,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '69',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+11:43:33 PM [express] 📤 Response: GET /api/analytics/metrics 500 in 2379ms
+11:43:37 PM [express] 📥 Incoming request: GET /assets/noise.svg
+11:43:37 PM [express] 📤 Response: GET /assets/noise.svg 304 in 116ms
+11:44:06 PM [express] 📥 Incoming request: GET /src/pages/music-video-creator.tsx
+11:44:07 PM [express] 📤 Response: GET /src/pages/music-video-creator.tsx 304 in 939ms
+11:44:07 PM [express] 📥 Incoming request: GET /api/notifications/unread-count
+11:44:07 PM [vite] Pre-transform error: Failed to resolve import "../lib/logger" from "client/src/components/music-video/directors-list.tsx". Does the file exist?

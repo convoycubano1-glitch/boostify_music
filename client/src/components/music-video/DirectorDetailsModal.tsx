@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Modal de Detalles del Director
  * Muestra toda la información detallada del JSON de cada director
  */

@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * Servicio de procesamiento de voz que integra Revocalize y KITS AI
  * 
@@ -9,17 +10,11 @@
  */
 
 import { revocalizeAPI } from './api/revocalize-api';
-import { logger } from "../logger";
 import { kitsAIAPI, AudioProcessingOptions } from './api/kits-ai-api';
-import { logger } from "../logger";
 import { toast } from '../../hooks/use-toast';
-import { logger } from "../logger";
 import { VoiceModel, AudioEffect, VoiceConversionRecord } from '../types/voice-model-types';
-import { logger } from "../logger";
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { logger } from "../logger";
 import { getFirestore, collection, addDoc, updateDoc, doc, serverTimestamp, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { logger } from "../logger";
 
 class VoiceProcessingService {
   constructor() {

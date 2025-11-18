@@ -1,13 +1,9 @@
 import { fal } from "@fal-ai/client";
 import { logger } from "./logger";
 import { z } from "zod";
-import { logger } from "./logger";
 import { db } from '../firebase';
-import { logger } from "./logger";
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { logger } from "./logger";
 import { env } from '../../env';
-import { logger } from "./logger";
 
 // Schema validation for FAL.AI responses
 export const FalResponseSchema = z.object({

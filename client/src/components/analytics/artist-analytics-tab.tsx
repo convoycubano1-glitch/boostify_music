@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { collection, getDocs } from 'firebase/firestore';

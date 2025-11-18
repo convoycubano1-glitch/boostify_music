@@ -1,5 +1,5 @@
 import { cn } from "../../lib/utils"
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 
 function Skeleton({
   className,

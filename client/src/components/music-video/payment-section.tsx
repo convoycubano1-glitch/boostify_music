@@ -1,5 +1,5 @@
 import { useState, memo } from "react";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";

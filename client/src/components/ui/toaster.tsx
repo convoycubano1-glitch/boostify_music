@@ -1,5 +1,4 @@
 import {
-import { logger } from "../lib/logger";
   Toast,
   ToastClose,
   ToastDescription,

@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * Servicio para comunicación con API RESTful del Editor Profesional
  * 
@@ -6,9 +7,7 @@
  */
 
 import { apiRequest } from '../queryClient';
-import { logger } from "../logger";
 import { EditorState } from '../professional-editor-types';
-import { logger } from "../logger";
 
 // Interfaz para compatibilidad con la API del servidor
 interface ProjectResponse {

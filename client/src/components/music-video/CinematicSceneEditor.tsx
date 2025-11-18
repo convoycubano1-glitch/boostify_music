@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Editor de Escenas Cinematográficas
  * Permite editar todos los parámetros cinematográficos para cada corte del video musical
  * Estructura: scene, camera, lighting, style, movement

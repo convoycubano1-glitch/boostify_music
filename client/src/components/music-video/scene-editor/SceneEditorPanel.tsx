@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Componente SceneEditorPanel
  * Panel principal que integra el editor de escenas con la API de generación de imágenes
  */

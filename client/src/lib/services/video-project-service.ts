@@ -1,15 +1,12 @@
+import { logger } from "./logger";
 /**
  * Servicio frontend para gestionar proyectos de video musical
  * Maneja el almacenamiento en Firebase Storage y Firestore
  */
 import { db, storage } from '../firebase';
-import { logger } from "../logger";
 import { collection, addDoc, doc, getDoc, getDocs, query, where, orderBy, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { logger } from "../logger";
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
-import { logger } from "../logger";
 import type { MusicVideoScene } from '../../types/music-video-scene';
-import { logger } from "../logger";
 
 export interface VideoProject {
   id: string;

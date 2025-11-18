@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Enhanced Music Video Workflow
  * Flujo completo integrado con EnhancedTimeline
  * 

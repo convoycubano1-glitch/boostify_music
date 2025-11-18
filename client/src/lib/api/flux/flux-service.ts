@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * Servicio para interactuar con la API de Flux
  * 
@@ -6,9 +7,7 @@
  */
 
 import axios from 'axios';
-import { logger } from "./logger";
 import { fluxLocalStorageService } from './flux-local-storage-service';
-import { logger } from "./logger";
 
 // Modelos disponibles en Flux
 export enum FluxModel {

@@ -1,5 +1,5 @@
 import { GripVertical } from "lucide-react"
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import * as ResizablePrimitive from "react-resizable-panels"
 
 import { cn } from "../../lib/utils"

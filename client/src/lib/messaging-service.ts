@@ -1,7 +1,6 @@
 import { db, auth } from "./firebase";
 import { logger } from "./logger";
 import { 
-import { logger } from "./logger";
   collection, 
   addDoc, 
   query, 

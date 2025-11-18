@@ -1,5 +1,5 @@
 /**
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
  * Componente EnhancedProgressSteps
  * 
  * Este componente es una versión mejorada del ProgressSteps original que ofrece:

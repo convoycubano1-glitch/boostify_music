@@ -1,3 +1,4 @@
+import { logger } from "./logger";
 /**
  * API Client para servicios de Revocalize
  * 
@@ -8,9 +9,7 @@
  */
 
 import { VoiceModel, AudioEffect, VoiceConversionResponse } from '../../types/voice-model-types';
-import { logger } from "../logger";
 import axios from 'axios';
-import { logger } from "../logger";
 
 /**
  * Opciones para la conversión de audio

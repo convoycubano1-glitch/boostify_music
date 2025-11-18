@@ -1,7 +1,6 @@
 import { auth } from "../firebase";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { createSampleCourses } from "./create-sample-courses";
-import { logger } from "../logger";
 
 async function createCourses() {
   try {

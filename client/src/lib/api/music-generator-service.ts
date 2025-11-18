@@ -8,7 +8,6 @@
  */
 
 import {
-import { logger } from "../logger";
   generateMusicWithUdio,
   generateMusicWithSuno,
   checkMusicGenerationStatus,
@@ -17,13 +16,10 @@ import { logger } from "../logger";
   SunoMusicParams
 } from './piapi-music';
 import { getAuthToken } from '../auth';
-import { logger } from "../logger";
+import { logger } from '../logger';
 import { db, auth, storage } from '../../firebase';
-import { logger } from "../logger";
 import { collection, addDoc, Timestamp, query, where, orderBy, getDocs, updateDoc } from 'firebase/firestore';
-import { logger } from "../logger";
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { logger } from "../logger";
 
 /**
  * Interfaz para las opciones de generación de música

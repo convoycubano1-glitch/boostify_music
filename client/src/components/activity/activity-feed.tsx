@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Card } from "../ui/card";
 import { Loader2, Calendar, Music2, Video, BarChart2 } from "lucide-react";
 import { auth, db } from "../../lib/firebase";

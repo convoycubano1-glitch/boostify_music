@@ -1,15 +1,10 @@
 import { z } from "zod";
 import { logger } from "./logger";
 import { db, auth } from "../../firebase";
-import { logger } from "./logger";
 import { collection, addDoc, getDocs, query, where, serverTimestamp, DocumentData } from "firebase/firestore";
-import { logger } from "./logger";
 import { User } from "firebase/auth";
-import { logger } from "./logger";
 import { getAuthToken } from "../../lib/auth";
-import { logger } from "./logger";
 import { ApifyClient } from "apify-client";
-import { logger } from "./logger";
 
 /**
  * Extract an email address from a text string

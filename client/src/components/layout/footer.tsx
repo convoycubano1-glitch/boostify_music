@@ -1,5 +1,5 @@
 import React from "react";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import { Link } from "wouter";
 import {
   Github,
