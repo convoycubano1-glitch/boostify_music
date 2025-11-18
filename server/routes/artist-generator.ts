@@ -1269,6 +1269,9 @@ router.post("/news/:newsId/regenerate", isAuthenticated, async (req: Request, re
 
     let newsData;
     try {
+      if (!response.text) {
+        throw new Error('No se recibió respuesta de Gemini');
+      }
       const cleanedResponse = response.text
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
