@@ -1,0 +1,362 @@
+Perfecto, vamos a dejarles un documento que puedas copiar/pegar directo a tu equipo / agentes 👇
+
+---
+
+## 📄 Especificación de mensajería y notificaciones para Boostify
+
+### 0. Objetivo
+
+Implementar un sistema **unificado de notificaciones** para Boostify que cubra:
+
+1. **Notificaciones internas en tiempo real** dentro de la plataforma (campanita, banners, inbox).
+2. **Notificaciones push** (web y mobile) usando **Firebase Cloud Messaging (FCM)**.
+3. Envío de ciertos eventos clave a **Make** mediante **webhooks** para automatizaciones de marketing y operaciones.
+
+Tecnologías base: **Firebase (Firestore, Cloud Functions, FCM)** + **Make**.
+
+---
+
+## 1. Modelo de datos en Firestore
+
+Crear estas colecciones / subcolecciones:
+
+### 1.1. Usuarios
+
+```txt
+/users/{userId}
+  - email: string
+  - displayName: string
+  - role: "artist" | "manager" | "label" | ...
+  - createdAt: Timestamp
+  - ...
+```
+
+### 1.2. Dispositivos del usuario (para FCM)
+
+```txt
+/users/{userId}/devices/{deviceId}
+  - fcmToken: string
+  - platform: "web" | "ios" | "android"
+  - userAgent: string
+  - createdAt: Timestamp
+  - updatedAt: Timestamp
+  - active: boolean
+```
+
+> Cada vez que un usuario acepte notificaciones, se crea/actualiza un `device` con su `fcmToken`.
+
+### 1.3. Notificaciones internas
+
+```txt
+/users/{userId}/notifications/{notificationId}
+  - type: string  // ej: "VIDEO_RENDER_DONE", "NEW_FAN", "PAYMENT_SUCCESS"
+  - title: string
+  - message: string
+  - link: string | null  // ruta dentro de Boostify
+  - createdAt: Timestamp
+  - read: boolean
+  - sendPush: boolean   // si esta notificación debe disparar push FCM
+  - meta: map           // datos adicionales (id del video, etc.)
+```
+
+### 1.4. Eventos globales (opcional pero recomendado)
+
+```txt
+/events/{eventId}
+  - userId: string
+  - type: string        // mismo concepto que arriba
+  - payload: map        // datos en bruto del evento
+  - createdAt: Timestamp
+  - sendToMake: boolean // si este evento debe ir a Make
+```
+
+---
+
+## 2. Notificaciones internas en tiempo real (UI Boostify)
+
+### 2.1. Creación de notificaciones
+
+Cada vez que en el backend suceda algo relevante (ejemplo: video terminado, pago aprobado, nueva campaña, etc.):
+
+* Crear un documento en:
+  `/users/{userId}/notifications`
+
+Ejemplo (pseudo código TypeScript usando Firestore SDK):
+
+```ts
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "./firebase";
+
+export async function createUserNotification(userId: string, data: {
+  type: string;
+  title: string;
+  message: string;
+  link?: string;
+  sendPush?: boolean;
+  meta?: any;
+}) {
+  await addDoc(collection(db, `users/${userId}/notifications`), {
+    ...data,
+    link: data.link || null,
+    sendPush: data.sendPush ?? false,
+    createdAt: serverTimestamp(),
+    read: false,
+  });
+}
+```
+
+### 2.2. Lectura en el frontend
+
+En el panel de Boostify (React/Next), usar `onSnapshot` para suscribirse:
+
+* A la colección `users/{userId}/notifications` ordenada por `createdAt desc`.
+* Mostrar:
+
+  * Icono de campana con contador de `read === false`.
+  * Dropdown / panel con las notificaciones.
+
+Ejemplo:
+
+```ts
+import { onSnapshot, query, collection, orderBy } from "firebase/firestore";
+
+const q = query(
+  collection(db, `users/${userId}/notifications`),
+  orderBy("createdAt", "desc")
+);
+
+const unsub = onSnapshot(q, (snap) => {
+  const notifications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // actualizar estado de React
+});
+```
+
+---
+
+## 3. Registro de FCM tokens (web + mobile)
+
+### 3.1. Frontend – flujo general
+
+1. Mostrar un botón o prompt tipo:
+   “¿Quieres recibir notificaciones de Boostify?”.
+2. Si acepta:
+
+   * Registrar service worker (para web).
+   * Llamar a `getToken` de FCM.
+   * Guardar el token en `/users/{userId}/devices`.
+
+Ejemplo simplificado (Web, React):
+
+```ts
+import { getToken, onMessage } from "firebase/messaging";
+import { messaging } from "./firebase-messaging";
+import { db } from "./firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+
+export async function registerDevice(userId: string) {
+  const token = await getToken(messaging, {
+    vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+  });
+
+  const deviceId = token; // puedes hashearlo si quieres
+  await setDoc(doc(db, `users/${userId}/devices/${deviceId}`), {
+    fcmToken: token,
+    platform: "web",
+    userAgent: navigator.userAgent,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    active: true,
+  }, { merge: true });
+
+  return token;
+}
+```
+
+> Nota: Configurar el **service worker** de FCM (archivo `firebase-messaging-sw.js`) según la documentación oficial de Firebase.
+
+### 3.2. Manejo de mensajes en foreground
+
+* Usar `onMessage(messaging, callback)` para mostrar toasts cuando la app está abierta.
+
+---
+
+## 4. Cloud Functions – envío de push con FCM
+
+### 4.1. Trigger al crear una notificación que tenga `sendPush: true`
+
+Cloud Function (Node.js):
+
+```js
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+
+admin.initializeApp();
+
+exports.sendPushOnNotificationCreate = functions.firestore
+  .document("users/{userId}/notifications/{notificationId}")
+  .onCreate(async (snap, context) => {
+    const notification = snap.data();
+    const userId = context.params.userId;
+
+    if (!notification.sendPush) return null;
+
+    // Obtener todos los devices activos del usuario
+    const devicesSnap = await admin.firestore()
+      .collection(`users/${userId}/devices`)
+      .where("active", "==", true)
+      .get();
+
+    if (devicesSnap.empty) return null;
+
+    const tokens = devicesSnap.docs
+      .map(d => d.data().fcmToken)
+      .filter(Boolean);
+
+    if (!tokens.length) return null;
+
+    const message = {
+      notification: {
+        title: notification.title || "Boostify",
+        body: notification.message || "",
+      },
+      data: {
+        link: notification.link || "",
+        type: notification.type || "",
+      },
+      tokens,
+    };
+
+    const response = await admin.messaging().sendEachForMulticast(message);
+    console.log("Push sent:", response.successCount, "success");
+
+    // Opcional: invalidar tokens que fallaron
+    // (por si FCM devuelve tokens inválidos)
+    return null;
+  });
+```
+
+---
+
+## 5. Integración con Make (webhooks)
+
+### 5.1. Eventos que se envían a Make
+
+No todos los eventos deben ir a Make. Solo los importantes para automatización:
+
+Ejemplos:
+
+* `NEW_LEAD`
+* `NEW_SUBSCRIPTION`
+* `PAYMENT_FAILED`
+* `ARTIST_ONBOARDING_COMPLETED`
+* `NEW_MUSIC_VIDEO_CREATED`
+
+Cada evento se guarda en `/events/{eventId}`:
+
+```ts
+await addDoc(collection(db, "events"), {
+  userId,
+  type: "NEW_LEAD",
+  payload: { ...datosDelLead },
+  createdAt: serverTimestamp(),
+  sendToMake: true,
+});
+```
+
+### 5.2. Cloud Function que envía el webhook
+
+```js
+exports.sendEventToMake = functions.firestore
+  .document("events/{eventId}")
+  .onCreate(async (snap, context) => {
+    const event = snap.data();
+
+    if (!event.sendToMake) return null;
+
+    const webhookUrl = functions.config().make.webhook_url; 
+    // setear con: firebase functions:config:set make.webhook_url="https://hook.make.com/XXXX"
+
+    const payload = {
+      eventId: context.params.eventId,
+      type: event.type,
+      userId: event.userId,
+      payload: event.payload,
+      createdAt: event.createdAt,
+      source: "boostify",
+    };
+
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    console.log("Sent event to Make:", event.type, res.status);
+    return null;
+  });
+```
+
+En **Make**, el escenario debe:
+
+* Recibir este JSON.
+* Ramificarse según `type`.
+* Ejecutar automatizaciones (email, CRM, tareas, etc.).
+
+---
+
+## 6. Reglas de seguridad (Firestore Security Rules)
+
+Puntos mínimos:
+
+1. Un usuario solo puede leer sus propias notificaciones:
+
+```txt
+match /users/{userId}/notifications/{notificationId} {
+  allow read, update: if request.auth != null && request.auth.uid == userId;
+  allow create: if false; // las crea el backend / Cloud Functions
+}
+```
+
+2. Igual para dispositivos:
+
+```txt
+match /users/{userId}/devices/{deviceId} {
+  allow read, write: if request.auth != null && request.auth.uid == userId;
+}
+```
+
+3. La colección `/events` debe ser solo de escritura desde backend / functions, no desde cliente.
+
+---
+
+## 7. Fases de implementación sugeridas
+
+**Fase 1 – Notificaciones internas**
+
+* [ ] Crear colecciones `notifications`.
+* [ ] Exponer funciones backend para crear notificaciones por tipo de evento.
+* [ ] UI: campanita + lista + marcar como leídas.
+
+**Fase 2 – FCM (push)**
+
+* [ ] Configurar FCM en Firebase console.
+* [ ] Implementar registro de `fcmToken` en `/users/{userId}/devices`.
+* [ ] Implementar `sendPushOnNotificationCreate`.
+
+**Fase 3 – Make**
+
+* [ ] Crear colección `events`.
+* [ ] Disparar eventos desde backend donde corresponda.
+* [ ] Cloud Function `sendEventToMake`.
+* [ ] Configurar escenarios en Make para cada `type`.
+
+---
+
+Con esto, los agentes que construyen Boostify tienen:
+
+* Arquitectura clara.
+* Modelo de datos definido.
+* Ejemplos de código.
+* Fases de implementación bien separadas.
+
+Si quieres, después podemos hacer otra especificación solo para **tipos de eventos/notificaciones concretas de Boostify** (ej: “nuevo video listo”, “nueva playlist”, “nuevo fan”, “pago fallido”, etc.) y definir textos y UX.

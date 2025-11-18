@@ -1522,6 +1522,25 @@ export const artistNews = pgTable("artist_news", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+// Notifications - Sistema de notificaciones internas
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // VIDEO_RENDER_DONE, NEW_FAN, PAYMENT_SUCCESS, etc.
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  link: text("link"), // ruta dentro de Boostify (ej: /videos/123)
+  read: boolean("read").default(false).notNull(),
+  metadata: json("metadata").$type<{
+    videoId?: number;
+    amount?: number;
+    fanName?: string;
+    tier?: string;
+    [key: string]: any;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations for Fashion Studio tables
 export const fashionSessionsRelations = relations(fashionSessions, ({ one, many }) => ({
   user: one(users, {
@@ -1628,3 +1647,17 @@ export const insertArtistNewsSchema = createInsertSchema(artistNews).omit({ id: 
 export const selectArtistNewsSchema = createSelectSchema(artistNews);
 export type InsertArtistNews = z.infer<typeof insertArtistNewsSchema>;
 export type SelectArtistNews = typeof artistNews.$inferSelect;
+
+// Notifications Relations
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+// Notifications Schemas
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+export const selectNotificationSchema = createSelectSchema(notifications);
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type SelectNotification = typeof notifications.$inferSelect;
