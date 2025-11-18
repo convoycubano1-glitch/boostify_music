@@ -746,6 +746,9 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   // Video format
   aspectRatio: text("aspect_ratio"),
   
+  // Auto-generated Artist Profile
+  artistProfileId: integer("artist_profile_id").references(() => users.id),
+  
   // Project status
   status: text("status", { 
     enum: ["draft", "generating_script", "generating_images", "generating_videos", "demo_generation", "demo_completed", "payment_pending", "full_generation", "completed", "failed"] 
@@ -778,6 +781,33 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   // Metadata
   tags: json("tags").$type<string[]>().default([]),
   lastModified: timestamp("last_modified").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const artistProfileImages = pgTable("artist_profile_images", {
+  id: serial("id").primaryKey(),
+  artistProfileId: integer("artist_profile_id").references(() => users.id).notNull(),
+  musicVideoProjectId: integer("music_video_project_id").references(() => musicVideoProjects.id),
+  
+  imageUrl: text("image_url").notNull(),
+  imageType: text("image_type", { 
+    enum: ["concept", "scene", "reference", "banner", "profile", "generated"] 
+  }).notNull(),
+  
+  title: text("title"),
+  description: text("description"),
+  
+  sceneMetadata: json("scene_metadata").$type<{
+    sceneNumber?: number;
+    shotType?: string;
+    mood?: string;
+    timestamp?: number;
+  }>(),
+  
+  isPublic: boolean("is_public").default(true).notNull(),
+  displayOrder: integer("display_order").default(0).notNull(),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -921,6 +951,12 @@ export const insertMusicVideoProjectSchema = createInsertSchema(musicVideoProjec
 export const selectMusicVideoProjectSchema = createSelectSchema(musicVideoProjects);
 export type InsertMusicVideoProject = z.infer<typeof insertMusicVideoProjectSchema>;
 export type SelectMusicVideoProject = typeof musicVideoProjects.$inferSelect;
+
+export const insertArtistProfileImageSchema = createInsertSchema(artistProfileImages).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectArtistProfileImageSchema = createSelectSchema(artistProfileImages);
+export type InsertArtistProfileImage = z.infer<typeof insertArtistProfileImageSchema>;
+export type SelectArtistProfileImage = typeof artistProfileImages.$inferSelect;
+
 export const selectManagerNoteSchema = createSelectSchema(managerNotes);
 
 export const insertCourseInstructorSchema = createInsertSchema(courseInstructors);

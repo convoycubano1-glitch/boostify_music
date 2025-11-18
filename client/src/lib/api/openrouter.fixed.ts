@@ -1204,67 +1204,6 @@ function generarGuionFallback(
   
   // Retornar en el formato correcto con la key "scenes"
   return JSON.stringify({ scenes: script.scenes }, null, 2);
-  
-  function extraerPalabrasClave(texto: string): string[] {
-    // Lista de palabras emocionales comunes en canciones
-    const palabrasEmocionales = [
-      "love", "heart", "soul", "dream", "night", "light", "dark",
-      "sky", "pain", "joy", "fire", "water", "earth", "wind",
-      "eyes", "hands", "dance", "sing", "fall", "rise", "break",
-      "build", "hope", "fear", "life", "death", "star", "sun",
-      "moon", "ocean", "river", "mountain", "road", "journey"
-    ];
-    
-    // Determinar posible género musical basado en palabras clave
-    type GeneroKey = 'pop' | 'rock' | 'hip-hop' | 'reggaeton' | 'r&b' | 'electrónica' | 'indie';
-    type PalabrasGeneroType = {
-      [K in GeneroKey]: string[];
-    };
-    
-    const palabrasPorGenero: PalabrasGeneroType = {
-      "pop": ["love", "party", "dance", "night", "feeling", "heart"],
-      "rock": ["fight", "rebel", "freedom", "power", "wild", "alive"],
-      "hip-hop": ["street", "hustle", "real", "flow", "grind", "beat"],
-      "reggaeton": ["bailar", "cuerpo", "ritmo", "noche", "fiesta"],
-      "r&b": ["soul", "touch", "slow", "feel", "smooth", "baby"],
-      "electrónica": ["beat", "night", "high", "sound", "energy", "pulse"],
-      "indie": ["dream", "away", "mind", "wonder", "thought", "world"]
-    };
-    
-    // Extraer palabras que coincidan con las listas
-    const palabrasEncontradas: string[] = [];
-    const palabrasDelTexto = texto.toLowerCase().split(/\s+/);
-    
-    // Primero palabras emocionales
-    for (const palabra of palabrasDelTexto) {
-      const palabraLimpia = palabra.replace(/[.,;!?()]/g, '');
-      if (palabrasEmocionales.includes(palabraLimpia) && !palabrasEncontradas.includes(palabraLimpia)) {
-        palabrasEncontradas.push(palabraLimpia);
-      }
-    }
-    
-    // Luego palabras por género
-    for (const genero in palabrasPorGenero) {
-      for (const palabra of palabrasPorGenero[genero as GeneroKey]) {
-        if (texto.toLowerCase().includes(palabra) && !palabrasEncontradas.includes(palabra)) {
-          palabrasEncontradas.push(palabra);
-        }
-      }
-    }
-    
-    // Si no encontramos suficientes, agregar algunas palabras largas del texto
-    if (palabrasEncontradas.length < 3) {
-      for (const palabra of palabrasDelTexto) {
-        const palabraLimpia = palabra.replace(/[.,;!?()]/g, '');
-        if (palabraLimpia.length > 5 && !palabrasEncontradas.includes(palabraLimpia)) {
-          palabrasEncontradas.push(palabraLimpia);
-          if (palabrasEncontradas.length >= 3) break;
-        }
-      }
-    }
-    
-    return palabrasEncontradas.slice(0, 5); // Limitar a 5 palabras clave
-  }
 }
 
 function formatearTiempo(segundos: number): string {
