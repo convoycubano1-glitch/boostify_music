@@ -5,6 +5,214 @@ Sistema simplificado para crear videos musicales con IA que permite a los usuari
 
 **URL de Producción**: https://boostify.replit.app
 
+---
+
+## 💎 MUSIC VIDEO BUNDLES - PRICING TIERS (November 18, 2025)
+
+### **Concepto**: Video + First Month Subscription FREE
+
+Cada tier incluye:
+- Video musical generado con IA (calidad según tier)
+- **Primer mes GRATIS de subscripción Boostify** (herramientas de crecimiento)
+- Después del mes gratis: puede continuar, cancelar o hacer upgrade
+
+### **🎸 TIER 1: ESSENTIAL - $99**
+```
+VIDEO:
+- 40 escenas únicas
+- 720p HD quality
+- Modelo: Standard quality
+- Lip-sync en 15 close-ups
+- 1 regeneración gratis
+
+SUBSCRIPCIÓN INCLUIDA (Mes 1 GRATIS):
+- Boostify STARTER ($19.99/mes valor)
+- Perfil de artista básico
+- Database de 500 contactos
+- Instagram tools (20/mes)
+- YouTube tools (10/mes)
+- Spotify tools (10/mes)
+
+COSTO REAL: $20.17
+MARGEN: $78.83 (4.9x)
+```
+
+### **⭐ TIER 2: GOLD - $149** (MÁS POPULAR)
+```
+VIDEO:
+- 40 escenas únicas
+- 1080p Full HD quality
+- Modelo: Professional grade
+- Lip-sync en 15 close-ups
+- 2 regeneraciones gratis
+
+SUBSCRIPCIÓN INCLUIDA (Mes 1 GRATIS):
+- Boostify CREATOR ($59.99/mes valor)
+- Perfil PRO con analytics
+- Database de 2,000 contactos
+- Smart Cards digitales
+- Instagram tools (50/mes)
+- YouTube tools (50/mes)
+- Spotify tools (30/mes)
+- Email campaigns (2/mes)
+
+COSTO REAL: $16.17
+MARGEN: $132.83 (9.2x)
+VALOR TOTAL: $237.99
+```
+
+### **🏆 TIER 3: PLATINUM - $249**
+```
+VIDEO:
+- 40 escenas únicas
+- 1080p Full HD quality
+- Modelo: Professional Plus
+- Lip-sync en TODOS los 40 clips
+- Color grading automático
+- 3 regeneraciones gratis
+
+SUBSCRIPCIÓN INCLUIDA (Mes 1 GRATIS):
+- Boostify PRO ($99.99/mes valor)
+- Perfil PRO con video background
+- Database de 5,000 contactos
+- NFC Smart Cards
+- Booking calendar
+- Merchandise store básico
+- Instagram tools (100/mes)
+- YouTube PRO tools (thumbnails incluidos)
+- Spotify tools (100/mes)
+- Email campaigns (10/mes)
+- SMS campaigns (5/mes)
+- A/B testing tools
+
+COSTO REAL: $29.12
+MARGEN: $219.88 (8.5x)
+VALOR TOTAL: $596.99
+```
+
+### **👑 TIER 4: DIAMOND - $399**
+```
+VIDEO:
+- 60 escenas únicas (video extendido)
+- 4K Ultra HD quality
+- Modelo: Premium + 4K upscaling
+- Lip-sync en TODOS los 60 clips
+- 3 conceptos visuales alternativos
+- Director AI: 5 estilos cinematográficos
+- Color grading profesional
+- Regeneración ILIMITADA (30 días)
+- Multi-format export
+
+SUBSCRIPCIÓN INCLUIDA (Mes 1 GRATIS):
+- Boostify ENTERPRISE ($149.99/mes valor)
+- Perfil ENTERPRISE con custom domain
+- Database de contactos ILIMITADA
+- Premium Smart Cards con analytics
+- Booking calendar PRO con pagos
+- Merchandise store + fulfillment
+- TODAS las herramientas UNLIMITED
+- Multi-channel tracking
+- Content Calendar AI
+- Auto-optimization engine
+- API access
+- White-label options
+- Account manager dedicado
+- Soporte 24/7
+
+COSTO REAL: $73.92
+MARGEN: $325.08 (5.4x)
+VALOR TOTAL: $1,646.99
+```
+
+### **📊 DISTRIBUCIÓN DE COSTOS POR VIDEO**
+```
+Whisper (transcripción):    $0.018
+Gemini (script):            $0.002
+Imágenes (40 × FLUX):       $1.600
+Videos (varies por tier):   $12-$31.50
+Lip-sync:                   $2.25-$9.00
+Storage + Processing:       $0.30-$1.00
+4K Upscaling (Diamond):     $30.00
+───────────────────────────────────
+ESSENTIAL: $20.17
+GOLD:      $16.17  (usa modelo más económico)
+PLATINUM:  $29.12
+DIAMOND:   $73.92
+```
+
+### **🎯 ESTRATEGIA DE RETENCIÓN POST-COMPRA**
+```
+Usuario compra bundle $149 (GOLD)
+  ↓
+Recibe video + mes 1 de CREATOR gratis
+  ↓
+Usa herramientas durante 30 días
+  ↓
+Día 31: ¿Qué pasa?
+
+OPCIÓN A: Cancela (sin cargo)
+  → Retiene el video para siempre
+  → Perfil básico gratis permanente
+  
+OPCIÓN B: Continúa ($59.99/mes)
+  → Acceso a todas las herramientas
+  → Nuevos videos con descuento 20%
+  
+OPCIÓN C: Upgrade a PRO ($99.99/mes)
+  → Desbloquea herramientas avanzadas
+
+RETENCIÓN ESPERADA: 40-60%
+MRR PROYECTADO: $2,999+/mes (100 usuarios)
+```
+
+### **📈 ENDPOINTS Y RUTAS**
+
+**Backend** (`server/routes/stripe.ts`):
+- `GET /api/stripe/music-video-tiers` - Retorna configuración de los 4 tiers
+- `POST /api/stripe/create-music-video-bundle-checkout` - Crea checkout de bundle
+
+**Frontend** (`client/src/pages/music-video-pricing.tsx`):
+- `/music-video-pricing` - Página de pricing con tabla comparativa
+- Cards visuales para cada tier
+- Tabla de comparación de features
+- Integración directa con Stripe Checkout
+
+**Configuración de Tiers** (`server/routes/stripe.ts`):
+```typescript
+const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
+  essential: { ... },  // $99
+  gold: { ... },       // $149
+  platinum: { ... },   // $249
+  diamond: { ... }     // $399
+};
+```
+
+### **🔧 PRÓXIMOS PASOS TÉCNICOS**
+
+1. **Crear productos en Stripe Dashboard**:
+   - Essential Bundle - $99 (one-time)
+   - Gold Bundle - $149 (one-time)
+   - Platinum Bundle - $249 (one-time)
+   - Diamond Bundle - $399 (one-time)
+
+2. **Crear subscripciones recurrentes**:
+   - STARTER - $19.99/mes
+   - CREATOR - $59.99/mes
+   - PRO - $99.99/mes
+   - ENTERPRISE - $149.99/mes
+
+3. **Webhook para activar subscripción**:
+   - Cuando usuario paga bundle, activar subscripción con trial de 30 días
+   - Después de 30 días, cobrar automáticamente o cancelar
+
+4. **Lógica de selección de modelo de video**:
+   - ESSENTIAL → PixVerse (standard)
+   - GOLD → Kling Standard
+   - PLATINUM → Kling Professional
+   - DIAMOND → Kling Professional + 4K upscaling
+
+---
+
 ## 👑 ADMIN ACCESS
 
 **ADMIN EMAIL**: `convoycubano@gmail.com` - Acceso ilimitado a todas las features
