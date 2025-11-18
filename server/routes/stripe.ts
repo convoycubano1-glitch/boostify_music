@@ -476,6 +476,49 @@ router.post('/cancel-subscription', authenticate, async (req: Request, res: Resp
 });
 
 /**
+ * Crear sesión del portal de Stripe para gestionar suscripción
+ * Permite al usuario actualizar método de pago, ver facturas, cancelar suscripción, etc.
+ */
+router.post('/create-portal-session', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.uid;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    }
+    
+    // Obtener información del usuario de Firestore
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userData = userSnap.data();
+    
+    // Si el usuario no tiene customerId, no puede acceder al portal
+    if (!userData?.stripeCustomerId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No tienes una suscripción activa para gestionar' 
+      });
+    }
+    
+    // Crear sesión del portal del cliente
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: userData.stripeCustomerId,
+      return_url: `${BASE_URL}/profile`,
+    });
+    
+    res.json({ 
+      success: true, 
+      url: portalSession.url 
+    });
+  } catch (error: any) {
+    console.error('Error al crear sesión del portal:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al crear sesión del portal'
+    });
+  }
+});
+
+/**
  * Verificar si un video ha sido comprado por el usuario
  * Esta ruta permite al frontend saber si mostrar la versión completa o la previsualización
  */

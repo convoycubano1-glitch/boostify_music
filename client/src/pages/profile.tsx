@@ -1,14 +1,10 @@
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
-import { SubscriptionCard } from "../components/profile/subscription-card";
-import { useParams, Link } from "wouter";
+import { SubscriptionCardCompact } from "../components/profile/subscription-card-compact";
+import { MyArtistsCompact } from "../components/profile/my-artists-compact";
+import { useParams } from "wouter";
 import { useAuth } from "../hooks/use-auth";
 import { Head } from "../components/ui/head";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "../lib/queryClient";
-import { Button } from "../components/ui/button";
-import { useToast } from "../hooks/use-toast";
-import { Plus, Users, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 interface ArtistData {
   name: string;
@@ -26,8 +22,6 @@ interface ArtistData {
 export default function ProfilePage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [isGenerating, setIsGenerating] = useState(false);
 
   // Use the URL id or fallback to the authenticated user's id
   const artistId = id || (user?.id ? String(user.id) : null);
@@ -40,37 +34,6 @@ export default function ProfilePage() {
     queryKey: ["/api/artist", artistId],
     enabled: !!artistId
   });
-  
-  // Mutation para crear un nuevo artista
-  const createArtistMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest({
-        url: "/api/artist-generator/generate-artist/secure",
-        method: "POST"
-      });
-      return response;
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "¡Artista creado!",
-        description: `${data.name} ha sido creado exitosamente. Ve a "My Artists" para verlo.`,
-      });
-      setIsGenerating(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "No se pudo crear el artista",
-        variant: "destructive",
-      });
-      setIsGenerating(false);
-    },
-  });
-
-  const handleCreateArtist = async () => {
-    setIsGenerating(true);
-    createArtistMutation.mutate();
-  };
 
   if (!artistId || isLoading) {
     return (
@@ -118,63 +81,13 @@ export default function ProfilePage() {
         />
       )}
       <div className="min-h-screen bg-black pt-4">
-        {/* My Artists Section - Only show for own profile */}
+        {/* Compact sections - Only show for own profile */}
         {isOwnProfile && (
-          <div className="container mx-auto px-4 mb-6">
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 border border-orange-500/20 rounded-2xl p-6 shadow-xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-500/10 rounded-xl">
-                    <Users className="h-8 w-8 text-orange-500" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white mb-1">
-                      My Artists
-                    </h2>
-                    <p className="text-sm text-gray-400">
-                      Administra tus artistas generados con IA
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3 w-full sm:w-auto">
-                  <Button
-                    onClick={handleCreateArtist}
-                    disabled={isGenerating}
-                    className="flex-1 sm:flex-none bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-                    data-testid="button-create-artist-quick"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Generando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Crear Artista
-                      </>
-                    )}
-                  </Button>
-                  <Link href="/my-artists">
-                    <Button
-                      variant="outline"
-                      className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
-                      data-testid="button-view-my-artists"
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Ver Todos
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+          <div className="container mx-auto px-4 mb-4 max-w-md">
+            <div className="space-y-2">
+              <MyArtistsCompact />
+              <SubscriptionCardCompact />
             </div>
-          </div>
-        )}
-
-        {/* Subscription Section - Only show for own profile */}
-        {isOwnProfile && (
-          <div className="container mx-auto px-4 mb-6">
-            <SubscriptionCard />
           </div>
         )}
         
