@@ -1727,6 +1727,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           const profileResult = await createArtistProfileFromVideo({
             projectId: savedProject.project.id,
             userEmail: user.email!,
+            creatorUserId: user.id, // ← Asignar el creador para permitir edición del perfil
             artistName: projectName || 'AI Generated Artist',
             songName: selectedFile?.name?.replace(/\.[^/.]+$/, '') || undefined,
             selectedConcept: concept,
