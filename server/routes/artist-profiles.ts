@@ -1,0 +1,336 @@
+/**
+ * Rutas para gestión de perfiles de artista generados automáticamente desde videos musicales
+ */
+import { Router, Request, Response } from 'express';
+import { db } from '../db';
+import { users, artistProfileImages, musicVideoProjects } from '../../db/schema';
+import { eq, and } from 'drizzle-orm';
+import { z } from 'zod';
+import { GoogleGenAI } from "@google/genai";
+
+const router = Router();
+
+// Configurar Gemini para generar biografías
+const apiKeys = [
+  process.env.GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY2
+].filter(key => key && key.length > 0);
+
+const geminiClients = apiKeys.map(key => new GoogleGenAI({ apiKey: key || "" }));
+
+/**
+ * Genera biografía de artista usando Gemini basándose en el concepto del video
+ */
+async function generateArtistBiography(
+  artistName: string,
+  concept: any,
+  lyrics: string
+): Promise<string> {
+  if (geminiClients.length === 0) {
+    return `${artistName} is an innovative artist creating unique visual and musical experiences.`;
+  }
+
+  const prompt = `Create a compelling artist biography for "${artistName}" based on their music video concept and lyrics.
+
+MUSIC VIDEO CONCEPT:
+${JSON.stringify(concept, null, 2)}
+
+LYRICS SAMPLE:
+${lyrics.substring(0, 500)}
+
+Generate a professional artist biography (2-3 paragraphs) that:
+- Captures the artist's unique style and vision
+- References the visual and musical themes from their work
+- Sounds authentic and engaging
+- Is written in third person
+
+Return ONLY the biography text, no JSON, no markdown.`;
+
+  try {
+    const client = geminiClients[0];
+    const response = await client.models.generateContent({
+      model: "gemini-2.0-flash-exp",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }]
+        }
+      ],
+      config: {
+        temperature: 0.8,
+        topP: 0.9,
+        maxOutputTokens: 500,
+      }
+    });
+
+    const biography = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (biography && biography.length > 50) {
+      return biography;
+    }
+  } catch (error) {
+    console.error('Error generating biography with Gemini:', error);
+  }
+
+  return `${artistName} is an innovative artist known for their unique blend of visual storytelling and musical artistry. Their work combines cinematic visuals with compelling narratives, creating immersive experiences that resonate with audiences worldwide.`;
+}
+
+/**
+ * Genera un slug único para el artista
+ */
+function generateSlug(artistName: string): string {
+  return artistName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+/**
+ * POST /api/artist-profiles/create-from-video
+ * Crea automáticamente un perfil de artista desde un proyecto de video musical
+ */
+const createProfileSchema = z.object({
+  projectId: z.number(),
+  userEmail: z.string().email(),
+  creatorUserId: z.number().optional(),
+  artistName: z.string().min(1),
+  songName: z.string().optional(),
+  selectedConcept: z.any().optional(),
+  lyrics: z.string().optional(),
+  referenceImages: z.array(z.string()).default([]),
+  conceptImages: z.array(z.object({
+    url: z.string(),
+    type: z.string(),
+    description: z.string().optional()
+  })).default([])
+});
+
+router.post("/create-from-video", async (req: Request, res: Response) => {
+  try {
+    console.log('🎨 [CREATE ARTIST PROFILE] Creando perfil desde video...');
+    const data = createProfileSchema.parse(req.body);
+
+    // Verificar si ya existe un perfil para este proyecto
+    const [existingProject] = await db
+      .select()
+      .from(musicVideoProjects)
+      .where(eq(musicVideoProjects.id, data.projectId))
+      .limit(1);
+
+    if (existingProject?.artistProfileId) {
+      console.log('✅ [CREATE ARTIST PROFILE] Perfil ya existe:', existingProject.artistProfileId);
+      const [existingProfile] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, existingProject.artistProfileId))
+        .limit(1);
+      
+      return res.json({ 
+        success: true, 
+        profile: existingProfile,
+        isNew: false 
+      });
+    }
+
+    // Generar slug único
+    let slug = generateSlug(data.artistName);
+    let slugCounter = 1;
+    while (true) {
+      const [existing] = await db
+        .select()
+        .from(users)
+        .where(eq(users.slug, slug))
+        .limit(1);
+      
+      if (!existing) break;
+      slug = `${generateSlug(data.artistName)}-${slugCounter}`;
+      slugCounter++;
+    }
+
+    // Generar biografía con Gemini
+    console.log('✍️ [CREATE ARTIST PROFILE] Generando biografía con Gemini...');
+    const biography = await generateArtistBiography(
+      data.artistName,
+      data.selectedConcept,
+      data.lyrics || ''
+    );
+
+    // Seleccionar imágenes para el perfil
+    const profileImage = data.referenceImages[0] || data.conceptImages[0]?.url || '';
+    const coverImage = data.conceptImages[0]?.url || data.referenceImages[0] || '';
+
+    // Crear perfil de artista AI-generado
+    console.log('👤 [CREATE ARTIST PROFILE] Creando perfil en base de datos...');
+    const [newProfile] = await db
+      .insert(users)
+      .values({
+        artistName: data.artistName,
+        slug,
+        biography,
+        profileImage,
+        coverImage,
+        isAIGenerated: true,
+        generatedBy: data.creatorUserId || null,
+        role: 'artist',
+        email: `${slug}@boostify-ai-generated.com`,
+        username: slug,
+        genres: data.selectedConcept?.mood ? [data.selectedConcept.mood] : []
+      })
+      .returning();
+
+    console.log('✅ [CREATE ARTIST PROFILE] Perfil creado:', newProfile.id);
+
+    // Vincular proyecto con el perfil
+    await db
+      .update(musicVideoProjects)
+      .set({ artistProfileId: newProfile.id })
+      .where(eq(musicVideoProjects.id, data.projectId));
+
+    // Guardar imágenes de referencia en la galería
+    if (data.referenceImages.length > 0) {
+      console.log(`📸 [CREATE ARTIST PROFILE] Guardando ${data.referenceImages.length} imágenes de referencia...`);
+      const referenceImageRecords = data.referenceImages.map((url, index) => ({
+        artistProfileId: newProfile.id,
+        musicVideoProjectId: data.projectId,
+        imageUrl: url,
+        imageType: 'reference' as const,
+        title: `Reference Image ${index + 1}`,
+        isPublic: true,
+        displayOrder: index
+      }));
+
+      await db.insert(artistProfileImages).values(referenceImageRecords);
+    }
+
+    // Guardar imágenes de conceptos en la galería
+    if (data.conceptImages.length > 0) {
+      console.log(`🎨 [CREATE ARTIST PROFILE] Guardando ${data.conceptImages.length} imágenes de conceptos...`);
+      const conceptImageRecords = data.conceptImages.map((img, index) => ({
+        artistProfileId: newProfile.id,
+        musicVideoProjectId: data.projectId,
+        imageUrl: img.url,
+        imageType: 'concept' as const,
+        title: img.description || `Concept Image ${index + 1}`,
+        description: img.description,
+        isPublic: true,
+        displayOrder: data.referenceImages.length + index
+      }));
+
+      await db.insert(artistProfileImages).values(conceptImageRecords);
+    }
+
+    console.log('✅ [CREATE ARTIST PROFILE] Perfil completo creado con éxito');
+
+    res.json({
+      success: true,
+      profile: newProfile,
+      isNew: true,
+      imagesStored: data.referenceImages.length + data.conceptImages.length
+    });
+
+  } catch (error) {
+    console.error('❌ [CREATE ARTIST PROFILE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * POST /api/artist-profiles/add-scene-images
+ * Agrega imágenes de escenas generadas a la galería del perfil
+ */
+const addSceneImagesSchema = z.object({
+  artistProfileId: z.number(),
+  projectId: z.number(),
+  sceneImages: z.array(z.object({
+    url: z.string(),
+    sceneNumber: z.number(),
+    shotType: z.string().optional(),
+    mood: z.string().optional(),
+    timestamp: z.number().optional(),
+    description: z.string().optional()
+  }))
+});
+
+router.post("/add-scene-images", async (req: Request, res: Response) => {
+  try {
+    console.log('📸 [ADD SCENE IMAGES] Agregando imágenes de escenas...');
+    const data = addSceneImagesSchema.parse(req.body);
+
+    // Obtener el orden actual más alto
+    const existingImages = await db
+      .select()
+      .from(artistProfileImages)
+      .where(eq(artistProfileImages.artistProfileId, data.artistProfileId));
+
+    const maxOrder = existingImages.reduce((max, img) => 
+      Math.max(max, img.displayOrder), 0
+    );
+
+    // Crear registros de imágenes de escenas
+    const sceneImageRecords = data.sceneImages.map((img, index) => ({
+      artistProfileId: data.artistProfileId,
+      musicVideoProjectId: data.projectId,
+      imageUrl: img.url,
+      imageType: 'scene' as const,
+      title: `Scene ${img.sceneNumber}`,
+      description: img.description || `Scene ${img.sceneNumber} - ${img.shotType || 'Generated'}`,
+      sceneMetadata: {
+        sceneNumber: img.sceneNumber,
+        shotType: img.shotType,
+        mood: img.mood,
+        timestamp: img.timestamp
+      },
+      isPublic: true,
+      displayOrder: maxOrder + index + 1
+    }));
+
+    await db.insert(artistProfileImages).values(sceneImageRecords);
+
+    console.log(`✅ [ADD SCENE IMAGES] ${sceneImageRecords.length} imágenes agregadas`);
+
+    res.json({
+      success: true,
+      imagesAdded: sceneImageRecords.length
+    });
+
+  } catch (error) {
+    console.error('❌ [ADD SCENE IMAGES] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET /api/artist-profiles/:profileId/gallery
+ * Obtiene todas las imágenes de la galería de un perfil
+ */
+router.get("/:profileId/gallery", async (req: Request, res: Response) => {
+  try {
+    const profileId = parseInt(req.params.profileId);
+    
+    const gallery = await db
+      .select()
+      .from(artistProfileImages)
+      .where(eq(artistProfileImages.artistProfileId, profileId))
+      .orderBy(artistProfileImages.displayOrder);
+
+    res.json({
+      success: true,
+      gallery
+    });
+
+  } catch (error) {
+    console.error('❌ [GET GALLERY] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+export default router;

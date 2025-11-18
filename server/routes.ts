@@ -84,6 +84,7 @@ import spotifyToolsRouter from './routes/spotify-tools'; // Import Spotify Growt
 import instagramToolsRouter from './routes/instagram-tools'; // Import Instagram Boost AI Tools (Gemini AI)
 import instagramOAuthRouter from './routes/instagram-oauth'; // Import Instagram OAuth for real API connection
 import musicVideoRouter from './routes/music-video'; // Import Music Video Concept Generation (Gemini AI)
+import artistProfilesRouter from './routes/artist-profiles'; // Import Artist Profiles auto-generation
 import apifyInstagramRouter from './routes/apify-instagram'; // Import Apify Instagram integration for real data
 import fashionStudioRouter from './routes/fashion-studio'; // Import Artist Fashion Studio (FAL + Gemini)
 
@@ -309,8 +310,10 @@ export function registerRoutes(app: Express): HttpServer {
   console.log('📢 Registrando router de proyectos de music video en /api/music-video-projects');
   app.use('/api/music-video-projects', musicVideoProjectsRouter);
   app.use('/api/music-video', musicVideoRouter);
+  app.use('/api/artist-profiles', artistProfilesRouter);
   app.use('/api/video-rendering', videoRenderingRouter);
   console.log('✅ Router de proyectos de music video registrado');
+  console.log('✅ Router de perfiles de artista auto-generados registrado');
   
   // Registrar el router para musician clips (timeline musicians)
   console.log('📢 Registrando router de musician clips');
