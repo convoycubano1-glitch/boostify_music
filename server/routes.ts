@@ -354,6 +354,108 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/fashion', fashionStudioRouter); // Artist Fashion Studio (Virtual Try-On, AI Advisor, Kling Videos)
   app.use('/api/notifications', notificationsRouter); // Internal notifications system
   app.use(creditsRouter); // Credits and payment routes
+  
+  // Helper function para obtener features de cada plan
+  function getPlanFeatures(plan: string): string[] {
+    const features: Record<string, string[]> = {
+      free: [
+        'Acceso básico a la plataforma',
+        'Perfil de artista',
+        'Subir canciones',
+        'Funcionalidades limitadas'
+      ],
+      essential: [
+        '1 Music Video Premium por mes',
+        'Calidad HD 1080p',
+        'Generación con IA',
+        'Primer mes gratis',
+        'Soporte básico'
+      ],
+      gold: [
+        '2 Music Videos Premium por mes',
+        'Calidad 4K',
+        'Generación avanzada con IA',
+        'Efectos visuales premium',
+        'Primer mes gratis',
+        'Soporte prioritario'
+      ],
+      platinum: [
+        '4 Music Videos Premium por mes',
+        'Calidad 4K HDR',
+        'Efectos visuales profesionales',
+        'Edición personalizada',
+        'Primer mes gratis',
+        'Soporte 24/7'
+      ],
+      diamond: [
+        '8 Music Videos Premium por mes',
+        'Calidad 8K',
+        'Efectos visuales cinematográficos',
+        'Director de arte dedicado',
+        'Revisiones ilimitadas',
+        'Primer mes gratis',
+        'Soporte VIP 24/7'
+      ]
+    };
+    
+    return features[plan] || features.free;
+  }
+  
+  // Endpoint para obtener la suscripción actual del usuario
+  app.get('/api/subscriptions/current', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      const { subscriptions } = await import ('./db/schema');
+      const { eq, desc } = await import ('drizzle-orm');
+      
+      // Obtener la suscripción activa del usuario
+      const [subscription] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .orderBy(desc(subscriptions.createdAt))
+        .limit(1);
+
+      if (!subscription) {
+        // Usuario sin suscripción (free tier)
+        return res.json({
+          plan: 'free',
+          status: 'active',
+          price: 0,
+          currency: 'usd',
+          features: [
+            'Acceso básico a la plataforma',
+            'Perfil de artista',
+            'Subir canciones',
+            'Funcionalidades limitadas'
+          ]
+        });
+      }
+
+      // Información completa de la suscripción
+      return res.json({
+        id: subscription.id,
+        plan: subscription.plan,
+        status: subscription.status,
+        price: subscription.price ? parseFloat(subscription.price.toString()) : 0,
+        currency: subscription.currency || 'usd',
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        currentPeriodStart: subscription.currentPeriodStart,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        features: getPlanFeatures(subscription.plan)
+      });
+    } catch (error) {
+      console.error("Error obteniendo suscripción:", error);
+      return res.status(500).json({ error: "Error al obtener suscripción" });
+    }
+  });
+  
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
   

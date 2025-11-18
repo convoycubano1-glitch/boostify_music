@@ -133,9 +133,15 @@ export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
-  plan: text("plan", { enum: ["free", "basic", "pro", "premium"] }).notNull(),
-  status: text("status", { enum: ["active", "cancelled", "expired"] }).notNull(),
-  currentPeriodEnd: timestamp("current_period_end").notNull()
+  plan: text("plan", { enum: ["free", "essential", "gold", "platinum", "diamond"] }).notNull(),
+  status: text("status", { enum: ["active", "cancelled", "expired", "trialing", "past_due"] }).notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  currentPeriodStart: timestamp("current_period_start"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  currency: text("currency").default("usd"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
 // Artist Wallet - Balance de créditos del artista

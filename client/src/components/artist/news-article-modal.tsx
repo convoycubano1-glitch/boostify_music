@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { SiTwitter, SiFacebook, SiWhatsapp, SiTelegram } from "react-icons/si";
+import { SiX, SiFacebook, SiWhatsapp, SiTelegram } from "react-icons/si";
 
 interface NewsArticle {
   id: number;
@@ -209,7 +209,7 @@ export function NewsArticleModal({
                   className="cursor-pointer hover:bg-zinc-800"
                   data-testid="share-twitter"
                 >
-                  <SiTwitter className="h-4 w-4 mr-2" />
+                  <SiX className="h-4 w-4 mr-2" />
                   Twitter / X
                 </DropdownMenuItem>
                 <DropdownMenuItem 
