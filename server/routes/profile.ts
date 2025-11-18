@@ -79,29 +79,38 @@ router.get('/user/profile', authenticate, async (req: Request, res: Response) =>
   }
 });
 
-// GET /api/profile/:slugOrId - Get public profile by slug or ID
+// GET /api/profile/:slugOrId - Get public profile by slug, ID, or firestoreId
 router.get('/:slugOrId', async (req: Request, res: Response) => {
   try {
     const { slugOrId } = req.params;
     
-    // Check if it's a numeric ID or a slug
+    // Check if it's a numeric ID or a slug/firestoreId
     const isNumericId = /^\d+$/.test(slugOrId);
     
     let user;
     if (isNumericId) {
-      // Search by ID
+      // Search by numeric ID
       [user] = await db
         .select()
         .from(users)
         .where(eq(users.id, parseInt(slugOrId)))
         .limit(1);
     } else {
-      // Search by slug
+      // Search by slug first
       [user] = await db
         .select()
         .from(users)
         .where(eq(users.slug, slugOrId))
         .limit(1);
+      
+      // If not found by slug, try firestoreId
+      if (!user) {
+        [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.firestoreId, slugOrId))
+          .limit(1);
+      }
     }
       
     if (!user) {
