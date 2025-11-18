@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../hooks/use-auth";
 import { Button } from "../../components/ui/button";
+import { NotificationBell } from "../notifications/notification-bell";
 
 export function Header() {
   const [location] = useLocation();
@@ -110,6 +111,7 @@ export function Header() {
 
             {user ? (
               <div className="flex items-center space-x-2">
+                <NotificationBell />
                 <Link href="/my-artists">
                   <Button variant="outline" size="sm" className="gap-1 text-xs">
                     <UserCircle className="h-3.5 w-3.5" />
