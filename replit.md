@@ -1144,3 +1144,121 @@ npm run db:push --force # Force push (in case of data-loss warnings)
 - Las duraciones de las escenas se generan SOLO de forma aleatoria en el JSON
 - El timeline lee duraciones directamente del JSON generado
 - No hay fallback a detección de beats en ninguna parte del código
+
+## 🎤 Lip-Sync System - Smart Shot Detection
+
+**REGLA CRÍTICA**: El lip-sync se aplica AUTOMÁTICAMENTE solo en planos donde la cara del artista es claramente visible.
+
+### ✅ Planos VÁLIDOS para Lip-Sync (Cara Visible)
+
+| Shot Type | Código | Descripción | Aplicar Lip-Sync |
+|-----------|--------|-------------|------------------|
+| **Close-up** | CU | Primer plano de la cara | ✅ SÍ |
+| **Extreme Close-up** | ECU | Primer plano extremo (ojos, boca) | ✅ SÍ |
+| **Medium Close-up** | MCU | Plano medio corto (hombros hacia arriba) | ✅ SÍ |
+| **Medium Shot** | MS | Plano medio (cintura hacia arriba) | ✅ SÍ |
+
+### ❌ Planos EXCLUIDOS (Cara No Visible o Muy Lejana)
+
+| Shot Type | Código | Descripción | Aplicar Lip-Sync |
+|-----------|--------|-------------|------------------|
+| **Wide Shot** | WS | Plano general (cuerpo completo + entorno) | ❌ NO |
+| **Extreme Wide Shot** | EWS | Gran plano general (paisaje) | ❌ NO |
+| **Full Shot** | FS | Plano completo (cuerpo entero) | ❌ NO |
+| **Long Shot** | LS | Plano largo (figura lejana) | ❌ NO |
+| **Over The Shoulder** | OTS | Sobre el hombro | ❌ NO |
+| **Point of View** | POV | Punto de vista | ❌ NO |
+| **Establishing** | EST | Plano de establecimiento | ❌ NO |
+
+### 🎯 Lógica de Detección Automática
+
+El sistema detecta clips de performance usando **dos filtros obligatorios**:
+
+```typescript
+// 1️⃣ FILTRO DE TIPO DE PLANO (Shot Type)
+✅ INCLUYE: CU, ECU, MCU, MS, close-up, medium shot
+❌ EXCLUYE: WS, EWS, FS, LS, wide, full, long, establishing
+
+// 2️⃣ FILTRO DE PERFORMANCE (Keywords)
+Busca en description, role, action:
+- "singing", "performing", "vocalist"
+- "lip sync", "lipsync"
+- "mouthing", "vocals"
+
+// ✅ LIP-SYNC SE APLICA SOLO SI:
+isValidShot (CU/ECU/MCU/MS) && isPerformanceScene (singing/performing)
+```
+
+### 📝 Ejemplos Prácticos
+
+#### ✅ Caso 1: SÍ se aplica lip-sync
+```json
+{
+  "scene_id": 5,
+  "shot_type": "CU",
+  "description": "Artist singing passionately into microphone",
+  "role": "vocalist"
+}
+```
+**Resultado**: ✅ Lip-sync aplicado (Close-up + singing)
+
+#### ✅ Caso 2: SÍ se aplica lip-sync
+```json
+{
+  "scene_id": 12,
+  "shot_type": "MCU",
+  "description": "Close-up of artist performing emotional chorus",
+  "action": "vocalist mouthing lyrics"
+}
+```
+**Resultado**: ✅ Lip-sync aplicado (Medium Close-up + performing)
+
+#### ❌ Caso 3: NO se aplica lip-sync
+```json
+{
+  "scene_id": 8,
+  "shot_type": "WS",
+  "description": "Artist singing on stage with full band",
+  "role": "performer"
+}
+```
+**Resultado**: ❌ Lip-sync NO aplicado (Wide Shot excluido, aunque está cantando)
+
+#### ❌ Caso 4: NO se aplica lip-sync
+```json
+{
+  "scene_id": 3,
+  "shot_type": "CU",
+  "description": "Close-up of guitar strings being strummed",
+  "role": "musician"
+}
+```
+**Resultado**: ❌ Lip-sync NO aplicado (Close-up válido, pero NO es escena de performance vocal)
+
+### 🔧 Archivos Clave
+
+- **Detección**: `client/src/lib/services/performance-segment-service.ts` → `detectPerformanceClips()`
+- **Procesamiento**: `client/src/lib/api/fal-lipsync.ts` → `applyLipSync()`
+- **UI Controls**: `client/src/components/music-video/LipsyncControls.tsx`
+
+### 📊 Logs de Detección
+
+El sistema genera logs claros en consola:
+
+```
+✅ [LIP-SYNC] Clip 5 INCLUIDO: Shot type "cu" + Performance scene
+⛔ [LIP-SYNC] Clip 8 EXCLUIDO: Shot type "ws" no válido para lip-sync
+⚠️ [LIP-SYNC] Clip 3 OMITIDO: Shot válido "cu" pero NO es escena de performance
+```
+
+### 💡 Por Qué Esta Lógica
+
+**Razón técnica**: Los modelos de lip-sync (FAL AI Sync Lipsync 2.0) funcionan mejor cuando:
+1. La cara ocupa >30% del frame
+2. Los labios son claramente visibles (>50 píxeles)
+3. No hay oclusiones significativas
+
+**Razón artística**: En planos generales (WS, FS):
+- Los labios no son visibles con detalle
+- El movimiento labial no se aprecia
+- Aplicar lip-sync sería un desperdicio de recursos y podría verse antinatural
