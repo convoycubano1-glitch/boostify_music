@@ -87,6 +87,7 @@ const FirestoreSocialPage = lazy(() => import("./pages/firestore-social"));
 const ArtistProfilePage = lazy(() => import("./pages/artist-profile"));
 const MyArtistPage = lazy(() => import("./pages/my-artist"));
 const MyArtistsPage = lazy(() => import("./pages/my-artists"));
+const ArticlePage = lazy(() => import("./pages/article"));
 const DiagnosticsPage = lazy(() => import("./pages/diagnostics"));
 const AffiliatesPage = lazy(() => import("./pages/affiliates"));
 const InitProductsPage = lazy(() => import("./pages/init-products"));
@@ -297,6 +298,7 @@ const Router = () => {
   const WrappedTimelineDemoPage = withPageWrapper(TimelineDemoPage);
   const WrappedDebugFirebasePage = withPageWrapper(DebugFirebasePage);
   const WrappedDiagnosticsPage = withPageWrapper(DiagnosticsPage);
+  const WrappedArticlePage = withPageWrapper(ArticlePage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -312,6 +314,7 @@ const Router = () => {
           {getRouteComponent("/terms", WrappedTermsPage, null)}
           {getRouteComponent("/privacy", WrappedPrivacyPage, null)}
           {getRouteComponent("/cookies", WrappedCookiesPage, null)}
+          {getRouteComponent("/article/:id", WrappedArticlePage, null)}
           {getRouteComponent("/profile/:id", WrappedProfilePage, null)}
           {getRouteComponent("/artist/:slug", WrappedArtistProfilePage, null)}
           {getRouteComponent("/my-artist", WrappedMyArtistPage, 'free')}

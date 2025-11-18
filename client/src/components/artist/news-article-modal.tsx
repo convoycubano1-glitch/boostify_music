@@ -56,7 +56,8 @@ export function NewsArticleModal({
 
   const categoryInfo = categoryColors[article.category] || { bg: '#FF6B35', text: article.category };
 
-  const shareUrl = window.location.href;
+  // Usar URL de la página individual de la noticia
+  const shareUrl = `${window.location.origin}/article/${article.id}`;
   const shareText = `${article.title} - ${article.summary}`;
 
   const handleShare = (platform: string) => {

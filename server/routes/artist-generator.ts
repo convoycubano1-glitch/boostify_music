@@ -9,11 +9,29 @@ import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
 import { users, artistNews } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { generateCinematicImage } from '../services/gemini-image-service';
+import { generateCinematicImage, generateImageWithFaceReference } from '../services/gemini-image-service';
 import { GoogleGenAI } from "@google/genai";
 import { NotificationTemplates } from '../utils/notifications';
+import axios from 'axios';
 
 const router = Router();
+
+/**
+ * Helper function para descargar una imagen y convertirla a base64
+ */
+async function downloadImageAsBase64(imageUrl: string): Promise<string | null> {
+  try {
+    const response = await axios.get(imageUrl, { 
+      responseType: 'arraybuffer',
+      timeout: 10000
+    });
+    const base64 = Buffer.from(response.data, 'binary').toString('base64');
+    return base64;
+  } catch (error) {
+    console.error('Error descargando imagen:', error);
+    return null;
+  }
+}
 
 /**
  * Endpoint para obtener todos los artistas de un usuario
@@ -926,6 +944,18 @@ router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, re
 
     console.log(`🤖 Generando ${newsCategories.length} noticias con Gemini...`);
     
+    // Descargar imagen del perfil del artista para usar como referencia
+    let profileImageBase64: string | null = null;
+    if (artist.profileImage) {
+      console.log(`📸 Descargando imagen del perfil del artista para usar como referencia...`);
+      profileImageBase64 = await downloadImageAsBase64(artist.profileImage);
+      if (profileImageBase64) {
+        console.log(`✅ Imagen del perfil descargada exitosamente`);
+      } else {
+        console.warn(`⚠️ No se pudo descargar la imagen del perfil, se generarán imágenes sin referencia`);
+      }
+    }
+    
     const generatedNews = [];
 
     for (let i = 0; i < newsCategories.length; i++) {
@@ -969,11 +999,19 @@ router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, re
           };
         }
 
-        console.log(`🎨 Generando imagen para noticia ${i + 1} con Nano Banana...`);
+        console.log(`🎨 Generando imagen para noticia ${i + 1} con referencia del artista...`);
         
         const imagePrompt = `Professional press photo for music news article: ${artistName}, ${genre} artist, ${newsData.title}. High-quality, editorial photography style, professional lighting, modern aesthetic. Create a compelling visual that captures the essence of this news story. Photorealistic, magazine-quality image.`;
         
-        const imageResult = await generateCinematicImage(imagePrompt);
+        let imageResult;
+        if (profileImageBase64) {
+          // Generar con referencia facial del artista
+          console.log(`👤 Usando imagen del perfil del artista como referencia facial`);
+          imageResult = await generateImageWithFaceReference(imagePrompt, profileImageBase64);
+        } else {
+          // Generar sin referencia
+          imageResult = await generateCinematicImage(imagePrompt);
+        }
 
         if (!imageResult.success || !imageResult.imageUrl) {
           console.warn(`⚠️ Error generando imagen para noticia ${i + 1}, usando placeholder`);
@@ -1075,6 +1113,70 @@ router.get("/news/:artistId", async (req: Request, res: Response) => {
     console.error('❌ Error obteniendo noticias:', error);
     res.status(500).json({ 
       error: 'Error al obtener noticias',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para obtener una noticia individual por ID
+ */
+router.get("/news-item/:newsId", async (req: Request, res: Response) => {
+  try {
+    const newsId = parseInt(req.params.newsId);
+
+    if (isNaN(newsId)) {
+      return res.status(400).json({ error: 'ID de noticia inválido' });
+    }
+
+    console.log(`📰 Obteniendo noticia ${newsId}`);
+
+    // Obtener noticia con información del artista
+    const [newsItem] = await pgDb
+      .select({
+        id: artistNews.id,
+        userId: artistNews.userId,
+        title: artistNews.title,
+        content: artistNews.content,
+        summary: artistNews.summary,
+        imageUrl: artistNews.imageUrl,
+        category: artistNews.category,
+        views: artistNews.views,
+        createdAt: artistNews.createdAt,
+        artistName: users.artistName,
+        profileImage: users.profileImage
+      })
+      .from(artistNews)
+      .leftJoin(users, eq(artistNews.userId, users.id))
+      .where(eq(artistNews.id, newsId))
+      .limit(1);
+
+    if (!newsItem) {
+      return res.status(404).json({ error: 'Noticia no encontrada' });
+    }
+
+    // Incrementar contador de vistas
+    await pgDb
+      .update(artistNews)
+      .set({ views: newsItem.views + 1 })
+      .where(eq(artistNews.id, newsId));
+
+    console.log(`✅ Noticia ${newsId} encontrada`);
+
+    res.status(200).json({
+      success: true,
+      ...newsItem,
+      views: newsItem.views + 1,
+      user: {
+        artistName: newsItem.artistName,
+        profileImage: newsItem.profileImage
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo noticia:', error);
+    res.status(500).json({ 
+      error: 'Error al obtener noticia',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
@@ -1297,10 +1399,25 @@ router.post("/news/:newsId/regenerate", isAuthenticated, async (req: Request, re
     }
 
     // Generar nueva imagen con contexto del artista
-    console.log('🎨 Generando nueva imagen...');
+    console.log('🎨 Generando nueva imagen con referencia del artista...');
+    
+    // Descargar imagen del perfil del artista para usar como referencia
+    let profileImageBase64: string | null = null;
+    if (artist.profileImage) {
+      console.log(`📸 Descargando imagen del perfil del artista para usar como referencia...`);
+      profileImageBase64 = await downloadImageAsBase64(artist.profileImage);
+    }
+    
     const imagePrompt = `Professional music journalism photo: ${newsData.title}, ${artistName} ${genre} artist, high quality, cinematic lighting, photorealistic`;
     
-    const imageResult = await generateCinematicImage(imagePrompt);
+    let imageResult;
+    if (profileImageBase64) {
+      console.log(`👤 Usando imagen del perfil del artista como referencia facial`);
+      imageResult = await generateImageWithFaceReference(imagePrompt, profileImageBase64);
+    } else {
+      imageResult = await generateCinematicImage(imagePrompt);
+    }
+    
     const newImageUrl = imageResult.success ? imageResult.imageUrl : existingNews.imageUrl;
 
     // Actualizar noticia

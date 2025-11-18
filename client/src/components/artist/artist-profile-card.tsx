@@ -951,6 +951,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             generatedBy: postgresData.generatedBy,
             slug: postgresData.slug,
             pgId: postgresData.id,
+            role: postgresData.role || firestoreData?.role || 'artist',
             // ✅ Usar valores de PostgreSQL (fuente de verdad)
             biography: postgresData.biography || firestoreData?.biography,
             bannerPosition: postgresData.bannerPosition ?? firestoreData?.bannerPosition ?? "50",
@@ -2115,6 +2116,15 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 <div className="flex-1 min-w-0 text-center sm:text-left w-full">
                   <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
                     <div className="text-2xl sm:text-3xl font-semibold text-white">{artist.name}</div>
+                    {userProfile?.role === 'admin' && (
+                      <div 
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg"
+                        data-testid="badge-admin"
+                      >
+                        <Crown className="h-3.5 w-3.5" />
+                        ADMIN
+                      </div>
+                    )}
                     {userProfile?.isAIGenerated && (
                       <div 
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg"

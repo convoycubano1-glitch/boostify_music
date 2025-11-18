@@ -147,6 +147,7 @@ router.get('/:slugOrId', async (req: Request, res: Response) => {
       isAIGenerated: user.isAIGenerated,
       firestoreId: user.firestoreId,
       generatedBy: user.generatedBy,
+      role: user.role,
       songs: userSongs,
       merchandise: userMerch,
       videos: userVideos

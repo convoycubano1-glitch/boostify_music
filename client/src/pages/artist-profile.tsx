@@ -123,18 +123,16 @@ export default function ArtistProfilePage() {
 
   const fullUrl = `${window.location.origin}/artist/${slug}`;
   
+  // Función helper para obtener URL absoluta de imagen
   const getAbsoluteImageUrl = (imageUrl?: string) => {
     if (!imageUrl) return `${window.location.origin}/assets/freepik__boostify_music_organe_abstract_icon.png`;
     if (imageUrl.startsWith('http')) return imageUrl;
     return `${window.location.origin}${imageUrl}`;
   };
 
-  // Determinar la mejor imagen para compartir en redes sociales
-  // Prioridad: 1. Banner (más visual), 2. Profile Image, 3. PhotoURL
+  // Prioridad: 1. Cover/Banner (más visual), 2. Profile Image
   const bannerImage = artistData?.bannerImage;
   const profileImage = artistData?.profileImage || artistData?.photoURL;
-  
-  // Si hay banner, usarlo. Si no, usar profile image. Si ninguno, usar default
   const shareImage = getAbsoluteImageUrl(bannerImage || profileImage);
   
   const artistName = artistData?.displayName || artistData?.name || 'Artist';
