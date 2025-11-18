@@ -1,0 +1,127 @@
+/**
+ * Servicio para crear perfiles de artista automáticamente desde proyectos de videos musicales
+ */
+
+export interface CreateArtistProfileRequest {
+  projectId: number;
+  userEmail: string;
+  creatorUserId?: number;
+  artistName: string;
+  songName?: string;
+  selectedConcept?: any;
+  lyrics?: string;
+  referenceImages?: string[];
+  conceptImages?: Array<{
+    url: string;
+    type: string;
+    description?: string;
+  }>;
+}
+
+export interface AddSceneImagesRequest {
+  artistProfileId: number;
+  projectId: number;
+  sceneImages: Array<{
+    url: string;
+    sceneNumber: number;
+    shotType?: string;
+    mood?: string;
+    timestamp?: number;
+    description?: string;
+  }>;
+}
+
+/**
+ * Crea automáticamente un perfil de artista desde un proyecto de video musical
+ */
+export async function createArtistProfileFromVideo(
+  data: CreateArtistProfileRequest
+): Promise<{ success: boolean; profile?: any; isNew?: boolean; error?: string }> {
+  try {
+    console.log('🎨 [Artist Profile Service] Creando perfil automático para:', data.artistName);
+    
+    const response = await fetch('/api/artist-profiles/create-from-video', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || 'Failed to create artist profile');
+    }
+
+    const result = await response.json();
+    console.log('✅ [Artist Profile Service] Perfil creado:', result.profile?.id);
+    
+    return result;
+  } catch (error) {
+    console.error('❌ [Artist Profile Service] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Agrega imágenes de escenas generadas a la galería del perfil
+ */
+export async function addSceneImagesToProfile(
+  data: AddSceneImagesRequest
+): Promise<{ success: boolean; imagesAdded?: number; error?: string }> {
+  try {
+    console.log(`📸 [Artist Profile Service] Agregando ${data.sceneImages.length} imágenes de escenas...`);
+    
+    const response = await fetch('/api/artist-profiles/add-scene-images', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || 'Failed to add scene images');
+    }
+
+    const result = await response.json();
+    console.log(`✅ [Artist Profile Service] ${result.imagesAdded} imágenes agregadas a la galería`);
+    
+    return result;
+  } catch (error) {
+    console.error('❌ [Artist Profile Service] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Obtiene la galería de imágenes de un perfil de artista
+ */
+export async function getArtistProfileGallery(
+  profileId: number
+): Promise<{ success: boolean; gallery?: any[]; error?: string }> {
+  try {
+    const response = await fetch(`/api/artist-profiles/${profileId}/gallery`);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || 'Failed to get gallery');
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('❌ [Artist Profile Service] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}

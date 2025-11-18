@@ -1634,7 +1634,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     
     setSelectedConcept(concept);
     
-    // Guardar concepto en la base de datos
+    // Guardar concepto en la base de datos y crear perfil de artista automáticamente
     if (user?.email) {
       try {
         console.log('💾 Guardando concepto seleccionado en base de datos...');
@@ -1661,8 +1661,45 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           }
         };
         
-        await musicVideoProjectServicePostgres.saveProject(projectData);
+        const savedProject = await musicVideoProjectServicePostgres.saveProject(projectData);
         console.log('✅ Concepto guardado en base de datos');
+        
+        // 🎨 NUEVO: Crear perfil de artista automáticamente
+        if (savedProject?.project?.id) {
+          console.log('👤 Creando perfil de artista automáticamente...');
+          
+          const { createArtistProfileFromVideo } = await import('@/lib/api/artist-profile-service');
+          
+          // Extraer imágenes de conceptos para la galería
+          const conceptImages = conceptProposals
+            .filter(c => c.coverImage)
+            .map(c => ({
+              url: c.coverImage || '',
+              type: 'concept-poster',
+              description: c.title || 'Music Video Concept'
+            }));
+          
+          const profileResult = await createArtistProfileFromVideo({
+            projectId: savedProject.project.id,
+            userEmail: user.email!,
+            artistName: projectName || 'AI Generated Artist',
+            songName: selectedFile?.name?.replace(/\.[^/.]+$/, '') || undefined,
+            selectedConcept: concept,
+            lyrics: transcription || undefined,
+            referenceImages: artistReferenceImages,
+            conceptImages: conceptImages
+          });
+          
+          if (profileResult.success) {
+            console.log('✅ Perfil de artista creado automáticamente:', profileResult.profile?.artistName);
+            toast({
+              title: "✨ Perfil de Artista Creado",
+              description: `Se ha creado automáticamente el perfil para "${profileResult.profile?.artistName}"`,
+            });
+          } else {
+            console.warn('⚠️ No se pudo crear el perfil automático, continuando de todas formas');
+          }
+        }
         
       } catch (error) {
         console.error('❌ Error guardando concepto:', error);
