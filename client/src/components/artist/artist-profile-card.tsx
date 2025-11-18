@@ -82,6 +82,8 @@ import { CrowdfundingButton } from "../crowdfunding/crowdfunding-button";
 import { CrowdfundingPanel } from "../crowdfunding/crowdfunding-panel";
 import { TokenizationPanel } from "../tokenization/tokenization-panel";
 import { TokenizedMusicView } from "../tokenization/tokenized-music-view";
+import { NewsArticleModal } from "./news-article-modal";
+import { queryClient } from "../../lib/queryClient";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -728,6 +730,10 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   // Galleries refresh key
   const [galleriesRefreshKey, setGalleriesRefreshKey] = useState(0);
   
+  // News article modal state
+  const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
+  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+  
   // Manejar reordenamiento de secciones
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -765,6 +771,90 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       toast({
         title: "❌ Error",
         description: "No se pudo guardar el layout",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Manejar edición de noticia
+  const handleEditNews = (article: any) => {
+    toast({
+      title: "Próximamente",
+      description: "La edición de noticias estará disponible pronto",
+    });
+    setIsNewsModalOpen(false);
+  };
+
+  // Manejar eliminación de noticia
+  const handleDeleteNews = async (articleId: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta noticia?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/artist-generator/news/${articleId}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Error al eliminar noticia');
+      }
+
+      toast({
+        title: "✅ Noticia eliminada",
+        description: "La noticia se eliminó exitosamente",
+      });
+
+      // Refrescar las noticias
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-generator/news', artistId] });
+      setIsNewsModalOpen(false);
+    } catch (error: any) {
+      console.error('Error deleting news:', error);
+      toast({
+        title: "❌ Error",
+        description: error.message || "No se pudo eliminar la noticia",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Manejar regeneración de noticia
+  const handleRegenerateNews = async (articleId: number) => {
+    if (!confirm('¿Estás seguro de que quieres regenerar esta noticia? El contenido actual se perderá.')) {
+      return;
+    }
+
+    try {
+      toast({
+        title: "🔄 Regenerando noticia...",
+        description: "Esto puede tomar unos momentos",
+      });
+
+      const response = await fetch(`/api/artist-generator/news/${articleId}/regenerate`, {
+        method: 'POST',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Error al regenerar noticia');
+      }
+
+      toast({
+        title: "✅ Noticia regenerada",
+        description: "La noticia se regeneró exitosamente",
+      });
+
+      // Refrescar las noticias
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-generator/news', artistId] });
+      setIsNewsModalOpen(false);
+    } catch (error: any) {
+      console.error('Error regenerating news:', error);
+      toast({
+        title: "❌ Error",
+        description: error.message || "No se pudo regenerar la noticia",
         variant: "destructive"
       });
     }
@@ -2829,6 +2919,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                   variant="ghost"
                                   className="text-xs h-7"
                                   style={{ color: colors.hexAccent }}
+                                  onClick={() => {
+                                    setSelectedArticle(article);
+                                    setIsNewsModalOpen(true);
+                                  }}
+                                  data-testid={`button-read-more-${article.id}`}
                                 >
                                   Leer más →
                                 </Button>
@@ -4670,6 +4765,20 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           </button>
         </DialogContent>
       </Dialog>
+
+      {/* News Article Modal */}
+      <NewsArticleModal
+        article={selectedArticle}
+        isOpen={isNewsModalOpen}
+        onClose={() => {
+          setIsNewsModalOpen(false);
+          setSelectedArticle(null);
+        }}
+        isOwner={isOwnProfile}
+        onEdit={handleEditNews}
+        onDelete={handleDeleteNews}
+        onRegenerate={handleRegenerateNews}
+      />
     </div>
   );
 }
