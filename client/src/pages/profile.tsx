@@ -1,4 +1,5 @@
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
+import { SubscriptionCard } from "../components/profile/subscription-card";
 import { useParams, Link } from "wouter";
 import { useAuth } from "../hooks/use-auth";
 import { Head } from "../components/ui/head";
@@ -167,6 +168,13 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Subscription Section - Only show for own profile */}
+        {isOwnProfile && (
+          <div className="container mx-auto px-4 mb-6">
+            <SubscriptionCard />
           </div>
         )}
         
