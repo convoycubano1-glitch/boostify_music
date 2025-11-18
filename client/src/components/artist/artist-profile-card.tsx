@@ -868,6 +868,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             location: postgresData.location || firestoreData?.location,
             email: postgresData.email || firestoreData?.email || firestoreData?.contactEmail,
             phone: postgresData.phone || firestoreData?.phone || firestoreData?.contactPhone,
+            // ✅ Mapear redes sociales desde PostgreSQL
+            instagram: postgresData.instagramHandle || firestoreData?.instagram,
+            twitter: postgresData.twitterHandle || firestoreData?.twitter,
+            youtube: postgresData.youtubeChannel || firestoreData?.youtube,
+            spotify: postgresData.spotifyUrl || firestoreData?.spotify,
             profileLayout: postgresData.profileLayout || null
           })
         };
@@ -2056,7 +2061,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                             loopVideoUrl: (userProfile as any)?.loopVideoUrl || "",
                             slug: (userProfile as any)?.slug || "",
                             contactEmail: userProfile?.email || userProfile?.contactEmail || "",
-                            contactPhone: userProfile?.contactPhone || "",
+                            contactPhone: userProfile?.phone || userProfile?.contactPhone || "",
                             instagram: userProfile?.instagram || "",
                             twitter: userProfile?.twitter || "",
                             youtube: userProfile?.youtube || "",
