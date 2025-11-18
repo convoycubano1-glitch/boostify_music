@@ -11,6 +11,7 @@ import { users, artistNews } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { generateCinematicImage } from '../services/gemini-image-service';
 import { GoogleGenAI } from "@google/genai";
+import { NotificationTemplates } from '../utils/notifications';
 
 const router = Router();
 
@@ -1004,6 +1005,19 @@ router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, re
     }
 
     console.log(`✅ ${generatedNews.length} noticias generadas exitosamente`);
+
+    // Enviar notificación al usuario sobre la primera noticia generada
+    if (generatedNews.length > 0) {
+      try {
+        await NotificationTemplates.newsArticleGenerated(
+          artist.id,
+          generatedNews[0].title,
+          generatedNews[0].id
+        );
+      } catch (notifError) {
+        console.error('Error enviando notificación de noticias generadas:', notifError);
+      }
+    }
 
     res.status(200).json({
       success: true,

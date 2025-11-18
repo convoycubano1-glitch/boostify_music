@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth';
 import { db } from '../db';
 import { bookings, payments } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { NotificationTemplates } from '../utils/notifications';
 
 const router = Router();
 
@@ -1127,6 +1128,23 @@ async function handleSuccessfulSubscription(session: any) {
     
     console.log(`  ✅ Usuario ${userId} ahora tiene acceso al plan ${plan}`);
     
+    // Enviar notificación al usuario
+    try {
+      const tierName = plan.toUpperCase();
+      const nextBillingDate = currentPeriodEnd.toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      await NotificationTemplates.subscriptionCreated(
+        parseInt(userId), 
+        tierName, 
+        nextBillingDate
+      );
+    } catch (notifError) {
+      console.error('Error enviando notificación de suscripción:', notifError);
+    }
+    
   } catch (error) {
     console.error('Error al procesar pago de suscripción:', error);
   }
@@ -1177,6 +1195,20 @@ async function handleSuccessfulVideoPayment(session: any) {
     });
     
     console.log(`Compra de video ${videoId} completada para el usuario ${userId}`);
+    
+    // Enviar notificación al usuario
+    try {
+      const amount = session.amount_total / 100; // Convertir de centavos a dólares
+      const tierName = session.metadata.tier || 'Music Video Bundle';
+      await NotificationTemplates.paymentReceived(
+        parseInt(userId),
+        amount,
+        `${tierName} - Video generado próximamente`
+      );
+    } catch (notifError) {
+      console.error('Error enviando notificación de pago:', notifError);
+    }
+    
   } catch (error) {
     console.error('Error al procesar pago de video:', error);
   }
