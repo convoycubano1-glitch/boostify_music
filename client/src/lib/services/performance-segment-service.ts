@@ -33,29 +33,110 @@ export interface DetectedPerformanceClip {
 
 /**
  * Detecta automáticamente clips de performance en el script
- * Busca escenas con shotType que indique performance (CU, MCU, MS con role="performance")
+ * 🎤 REGLA CRÍTICA: Lip-sync SOLO en planos donde se ve claramente la cara del artista
+ * 
+ * ✅ INCLUYE (Cara visible):
+ * - CU (Close-up): Primer plano de la cara
+ * - ECU (Extreme Close-up): Primer plano extremo
+ * - MCU (Medium Close-up): Plano medio corto (hombros hacia arriba)
+ * - MS (Medium Shot): Plano medio (cintura hacia arriba)
+ * 
+ * ❌ EXCLUYE (Cara no visible o muy lejana):
+ * - WS (Wide Shot): Plano general
+ * - EWS (Extreme Wide Shot): Gran plano general
+ * - FS (Full Shot): Plano completo (cuerpo entero)
+ * - LS (Long Shot): Plano largo
+ * - OTS (Over The Shoulder): Sobre el hombro
+ * - POV (Point of View): Punto de vista
+ * - Cualquier plano ambiental o de establecimiento
  */
 export function detectPerformanceClips(script: any): DetectedPerformanceClip[] {
   if (!script || !script.scenes) return [];
   
-  const performanceTypes = [
-    'CU',           // Close-up
-    'ECU',          // Extreme close-up
-    'MCU',          // Medium close-up
-    'MS',           // Medium shot
-    'performance',
+  // ✅ Tipos de plano VÁLIDOS para lip-sync (cara visible)
+  const validShotTypes = [
+    'cu',           // Close-up
+    'ecu',          // Extreme close-up
+    'mcu',          // Medium close-up
+    'ms',           // Medium shot
     'close-up',
-    'singing'
+    'closeup',
+    'medium close-up',
+    'medium-close-up',
+    'medium shot',
+    'medium-shot'
+  ];
+  
+  // ❌ Tipos de plano EXCLUIDOS (cara no visible o muy lejana)
+  const excludedShotTypes = [
+    'ws',           // Wide Shot
+    'ews',          // Extreme Wide Shot
+    'fs',           // Full Shot
+    'ls',           // Long Shot
+    'ots',          // Over The Shoulder
+    'pov',          // Point of View
+    'wide',
+    'full',
+    'long',
+    'establishing',
+    'master',
+    'two-shot',
+    'group',
+    'aerial',
+    'bird',
+    'overhead'
+  ];
+  
+  // Palabras clave que indican performance vocal
+  const performanceKeywords = [
+    'singing',
+    'performing',
+    'vocalist',
+    'lip sync',
+    'lipsync',
+    'mouthing',
+    'vocals'
   ];
   
   return script.scenes
     .filter((scene: any) => {
-      const shotType = scene.shot_type?.toLowerCase() || scene.shotType?.toLowerCase() || '';
-      const role = scene.role?.toLowerCase() || '';
+      const shotType = (scene.shot_type || scene.shotType || '').toLowerCase().trim();
+      const description = (scene.description || '').toLowerCase();
+      const role = (scene.role || '').toLowerCase();
+      const action = (scene.action || '').toLowerCase();
       
-      return performanceTypes.some(type => 
-        shotType.includes(type.toLowerCase())
-      ) || role.includes('performance');
+      // ❌ EXCLUIR explícitamente planos no válidos
+      const isExcludedShot = excludedShotTypes.some(excluded => 
+        shotType.includes(excluded)
+      );
+      
+      if (isExcludedShot) {
+        console.log(`⛔ [LIP-SYNC] Clip ${scene.scene_id || scene.id} EXCLUIDO: Shot type "${shotType}" no válido para lip-sync`);
+        return false;
+      }
+      
+      // ✅ INCLUIR solo si es un plano válido (cara visible)
+      const isValidShot = validShotTypes.some(valid => 
+        shotType.includes(valid)
+      );
+      
+      // ✅ Verificar que sea una escena de performance/cantando
+      const isPerformanceScene = 
+        performanceKeywords.some(keyword => 
+          description.includes(keyword) || 
+          role.includes(keyword) || 
+          action.includes(keyword)
+        );
+      
+      const shouldInclude = isValidShot && isPerformanceScene;
+      
+      if (shouldInclude) {
+        console.log(`✅ [LIP-SYNC] Clip ${scene.scene_id || scene.id} INCLUIDO: Shot type "${shotType}" + Performance scene`);
+      } else if (isValidShot && !isPerformanceScene) {
+        console.log(`⚠️ [LIP-SYNC] Clip ${scene.scene_id || scene.id} OMITIDO: Shot válido "${shotType}" pero NO es escena de performance`);
+      }
+      
+      return shouldInclude;
     })
     .map((scene: any) => ({
       id: scene.scene_id || scene.id,
