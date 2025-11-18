@@ -15,8 +15,10 @@ import {
   Loader2,
   Sparkles,
   Bot,
-  UserPlus
+  UserPlus,
+  Wrench
 } from "lucide-react";
+import { fixGeneratedByForUserArtists } from "../lib/api/artist-profile-service";
 import { Head } from "../components/ui/head";
 import {
   Dialog,
@@ -98,6 +100,37 @@ export default function MyArtistsPage() {
         variant: "destructive",
       });
       setIsGenerating(false);
+    },
+  });
+
+  // Mutation para actualizar artistas AI existentes
+  const fixArtistsMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id || !user?.email) {
+        throw new Error('Usuario no válido');
+      }
+      return await fixGeneratedByForUserArtists(user.id, user.email);
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "✅ Artistas Actualizados",
+          description: data.message || `${data.updated} perfiles actualizados correctamente`,
+        });
+        refetch();
+      } else {
+        toast({
+          title: "Información",
+          description: data.message || "No se encontraron artistas para actualizar",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudieron actualizar los artistas",
+        variant: "destructive",
+      });
     },
   });
 
@@ -212,7 +245,31 @@ export default function MyArtistsPage() {
                 Administra todos tus artistas
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
+              {/* Botón para arreglar artistas AI existentes */}
+              {artists.some(a => a.isAIGenerated) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fixArtistsMutation.mutate()}
+                  disabled={fixArtistsMutation.isPending}
+                  className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                  data-testid="button-fix-ai-artists"
+                >
+                  {fixArtistsMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Actualizando...
+                    </>
+                  ) : (
+                    <>
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Arreglar Artistas AI
+                    </>
+                  )}
+                </Button>
+              )}
+              
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
