@@ -122,44 +122,15 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
       priceId: {
         monthly: SUBSCRIPTION_PLANS.professional.stripeIds.monthly,
         yearly: SUBSCRIPTION_PLANS.professional.stripeIds.yearly
-      },
-      features: [
-        { name: 'Everything in Creator', included: true },
-        { name: 'Music Generator (Advanced)', included: true },
-        { name: 'Music Videos (Professional)', included: true },
-        { name: 'AI Agents (Advanced)', included: true },
-        { name: 'Artist Image (Professional)', included: true },
-        { name: 'Analytics (Advanced)', included: true },
-        { name: 'Merchandise (Full catalog)', included: true },
-        { name: 'YouTube Boost', included: true },
-        { name: 'Instagram Boost', included: true },
-        { name: 'Spotify Boost', included: true },
-        { name: 'Contracts (Legal documents)', included: true },
-        { name: 'Priority support', included: true }
-      ]
+      }
     },
     {
-      name: 'Enterprise',
-      key: 'premium',
-      description: 'For studios & labels',
-      highlight: 'Full power',
+      ...SUBSCRIPTION_PLANS.enterprise,
       icon: <Crown className="h-6 w-6" />,
-      price: { monthly: 149.99, yearly: 1499.90 },
-      priceId: priceIdMap['premium'],
-      features: [
-        { name: 'Everything in Professional', included: true },
-        { name: 'Record Label (Full suite)', included: true },
-        { name: 'Music Generator (Unlimited)', included: true },
-        { name: 'Music Videos (Unlimited)', included: true },
-        { name: 'AI Agents (Custom)', included: true },
-        { name: 'Analytics (Enterprise)', included: true },
-        { name: 'White-label branding', included: true },
-        { name: 'Multi-user team collaboration', included: true },
-        { name: 'API access for integrations', included: true },
-        { name: 'Dedicated account manager', included: true },
-        { name: 'Priority 24/7 support', included: true },
-        { name: 'Early access to new features', included: true }
-      ]
+      priceId: {
+        monthly: SUBSCRIPTION_PLANS.enterprise.stripeIds.monthly,
+        yearly: SUBSCRIPTION_PLANS.enterprise.stripeIds.yearly
+      }
     }
   ];
 
