@@ -634,30 +634,44 @@ export async function generateHollywoodStylePoster(
   try {
     logger.log(`🎬 Generando poster Hollywood para concepto: "${conceptTitle}"...`);
 
-    // Crear prompt para poster cinematográfico profesional
-    const posterPrompt = `Create a professional Hollywood movie poster with these specifications:
+    // Crear prompt para poster cinematográfico profesional con layout específico
+    const posterPrompt = `Create a professional Hollywood theatrical movie poster with these EXACT specifications:
 
 MOVIE TITLE: "${conceptTitle}"
 DIRECTOR: ${directorName}
 CONCEPT: ${conceptDescription}
 
-CRITICAL REQUIREMENTS:
-- This is a MOVIE POSTER, not just a photo
-- Include bold, cinematic title text at the top or center
-- Add "Directed by ${directorName}" credit text
-- Feature the artist as the main character/star (use reference photos for their face)
-- Place the character in the story context (not just standing)
-- Dramatic cinematic lighting and composition
-- Professional color grading (teal and orange, or moody tones)
-- Add subtle film grain and depth
-- Include atmospheric background that tells the story
-- Text overlays should look like real movie posters (bold, stylized fonts)
+COMPOSITION LAYOUT (CRITICAL - FOLLOW EXACTLY):
+1. TOP THIRD: Title text "${conceptTitle}" - Bold, cinematic typography, fully visible within frame
+2. MIDDLE: Main character (artist) featured prominently in the story setting
+3. BOTTOM: Credits including "Directed by ${directorName}" - Clear, legible text
 
-STYLE: Premium Hollywood movie poster, theatrical release quality, motivational and epic
-FORMAT: Vertical poster (2:3 aspect ratio), theatrical one-sheet style
-MOOD: Inspiring, cinematic, professional - make the artist feel like a STAR
+TEXT POSITIONING RULES (MUST FOLLOW):
+- Title text MUST be in the top 25% of the image, completely within frame boundaries
+- ALL text elements MUST have high contrast background (dark vignette, glow, or solid overlay)
+- Use professional movie poster text placement: centered or slightly upper third
+- Credits at bottom MUST be readable with proper spacing from edge (minimum 5% margin)
+- NO text should be cut off by image boundaries
 
-Generate a poster that would hang in a movie theater - professional, polished, with perfect typography and layout.`;
+VISUAL REQUIREMENTS:
+- Feature the artist as the cinematic hero/star (use reference photos for exact facial features)
+- Place character in dramatic story context from the concept description
+- Professional cinematic lighting with depth and atmosphere
+- Hollywood color grading (teal/orange, moody dramatic tones)
+- Film grain texture for premium theatrical quality
+- Atmospheric background that tells the visual story
+
+TYPOGRAPHY STYLE:
+- Bold, impactful title font (like premium movie posters: Trajan Pro, Gotham, or similar)
+- Text should have subtle glow/shadow for legibility
+- Director credit in elegant smaller font below title or at bottom
+- All text integrated naturally into the composition
+
+FORMAT: Vertical theatrical poster (2:3 aspect ratio)
+STYLE: Premium Hollywood theatrical release quality, museum-worthy design
+MOOD: Epic, inspiring, professional - make the artist feel like a HOLLYWOOD STAR
+
+CRITICAL: This poster should look like it belongs in a movie theater lobby - perfect layout, professional typography, and complete visibility of all text elements within frame boundaries.`;
 
     const result = await generateImageWithMultipleFaceReferences(posterPrompt, artistReferenceImages);
     
