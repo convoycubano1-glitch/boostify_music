@@ -1139,6 +1139,48 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       setProgressPercentage(100);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // 🎨 NUEVO: Guardar imágenes generadas en la galería del perfil del artista
+      if (generatedCount > 0 && user?.email) {
+        try {
+          console.log('📸 [GALLERY] Guardando imágenes generadas en galería del perfil...');
+          
+          // Obtener el artistProfileId desde el proyecto guardado
+          const projects = await musicVideoProjectServicePostgres.listProjects(user.email);
+          const currentProject = projects.find(p => p.projectName === projectName);
+          
+          if (currentProject?.artistProfileId) {
+            // Recopilar imágenes generadas con metadata
+            const sceneImages = timelineItems
+              .filter(item => item.generatedImage || item.imageUrl)
+              .map((item, index) => ({
+                url: item.generatedImage || item.imageUrl || '',
+                sceneNumber: index + 1,
+                shotType: item.shotType || item.metadata?.shot_type || undefined,
+                mood: item.metadata?.mood || undefined,
+                timestamp: item.start || undefined,
+                description: item.imagePrompt?.substring(0, 200) || `Scene ${index + 1}`
+              }))
+              .filter(img => img.url.length > 0);
+            
+            if (sceneImages.length > 0) {
+              const { addSceneImagesToProfile } = await import('@/lib/api/artist-profile-service');
+              
+              const result = await addSceneImagesToProfile({
+                artistProfileId: currentProject.artistProfileId,
+                projectId: currentProject.id,
+                sceneImages
+              });
+              
+              if (result.success) {
+                console.log(`✅ [GALLERY] ${result.imagesAdded} imágenes agregadas a la galería del perfil`);
+              }
+            }
+          }
+        } catch (galleryError) {
+          console.warn('⚠️ [GALLERY] Error agregando imágenes a la galería (no crítico):', galleryError);
+        }
+      }
+      
       // Only process lip-sync if we've completed all images
       if (audioBuffer && user?.uid && generatedCount > 0 && endAt === totalScenes) {
         console.log('🎤 [LIP-SYNC] Detectando clips de performance para lip-sync...');
