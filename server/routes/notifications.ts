@@ -191,4 +191,33 @@ router.post("/", isAuthenticated, async (req, res) => {
   }
 });
 
+// POST /api/notifications/test-webhook - Probar envío al webhook de Make.com (solo desarrollo)
+router.post("/test-webhook", async (req, res) => {
+  try {
+    // Solo permitir en desarrollo
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ error: "Este endpoint solo está disponible en desarrollo" });
+    }
+
+    const { NotificationTemplates } = await import('../utils/notifications');
+    
+    // Crear una notificación de prueba
+    const testNotification = await NotificationTemplates.paymentReceived(
+      2, // User ID de prueba
+      149.99,
+      "GOLD Tier Bundle - Prueba Make.com Webhook"
+    );
+
+    return res.json({
+      success: true,
+      message: "Notificación de prueba creada y enviada al webhook de Make.com",
+      notification: testNotification,
+      webhookUrl: process.env.MAKE_WEBHOOK_URL || 'https://hook.us2.make.com/7s19bhqti18bgr2kkr7129u1ccfrv5km'
+    });
+  } catch (error) {
+    console.error("Error testing webhook:", error);
+    return res.status(500).json({ error: "Error al probar webhook" });
+  }
+});
+
 export default router;
