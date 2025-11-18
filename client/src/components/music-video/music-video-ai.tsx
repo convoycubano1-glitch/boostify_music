@@ -901,10 +901,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     try {
       console.log('🎨 [IMG] Generando imágenes con IA...');
       setIsGeneratingImages(true);
-      setShowProgress(true);
+      setIsGeneratingShots(true); // Activar modal de visualización en tiempo real
+      setShowProgress(false); // Usar el modal de galería en vez del progress modal
       setCurrentProgressStage("images");
       setProgressPercentage(0);
-      console.log('📊 [IMG] Estados actualizados: showProgress=true, isGeneratingImages=true, stage=images');
+      console.log('📊 [IMG] Estados actualizados: isGeneratingShots=true (galería en tiempo real activada)');
       
       const scriptToUse = script || scriptContent;
       if (!scriptToUse) {
@@ -1197,6 +1198,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       
       setCurrentStep(5);
       setIsGeneratingImages(false);
+      setIsGeneratingShots(false); // Cerrar modal de galería en tiempo real
       setShowProgress(false);
       setProgressPercentage(0);
       
@@ -1227,6 +1229,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         variant: "destructive",
       });
       setIsGeneratingImages(false);
+      setIsGeneratingShots(false); // Cerrar modal en caso de error
       setShowProgress(false);
       setProgressPercentage(0);
     }
