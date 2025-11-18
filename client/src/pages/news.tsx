@@ -23,6 +23,7 @@ import { fetchMusicIndustryNews, type NewsArticle } from "../lib/news-service";
 import { format } from "date-fns";
 import { useState } from "react";
 import { Badge } from "../components/ui/badge";
+import { Skeleton } from "../components/ui/skeleton";
 
 const COLORS = ['#f97316', '#ea580c', '#c2410c', '#9a3412'];
 
@@ -44,7 +45,7 @@ export default function NewsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const { data: news = [], refetch } = useQuery({
+  const { data: news = [], refetch, isLoading } = useQuery({
     queryKey: ['music-industry-news'],
     queryFn: fetchMusicIndustryNews,
     refetchOnWindowFocus: false,
@@ -238,51 +239,75 @@ export default function NewsPage() {
 
           {/* News Feed */}
           <div className="grid gap-6">
-            {news.map((article: NewsArticle, index: number) => (
-              <Card key={index} className="p-6">
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="w-full md:w-1/3">
-                    <div className="relative aspect-video rounded-lg overflow-hidden">
-                      <img
-                        src={article.urlToImage || 'https://source.unsplash.com/random/800x600/?music'}
-                        alt={article.title}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-2">
-                      <a 
-                        href={article.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="hover:text-orange-500 transition-colors"
-                      >
-                        {article.title}
-                      </a>
-                    </h3>
-                    <p className="text-muted-foreground mb-4">{article.description}</p>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {format(new Date(article.publishedAt), 'MMM dd, yyyy')}
+            {isLoading ? (
+              <>
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="p-6">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <div className="w-full md:w-1/3">
+                        <Skeleton className="aspect-video w-full rounded-lg" />
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        {Math.floor(Math.random() * 1000) + 100} views
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="h-4 w-4" />
-                        {Math.floor(Math.random() * 50) + 5} comments
-                      </div>
-                      <div>
-                        Source: {article.source.name}
+                      <div className="flex-1 space-y-3">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                        <div className="flex gap-4 pt-2">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
                       </div>
                     </div>
+                  </Card>
+                ))}
+              </>
+            ) : (
+              news.map((article: NewsArticle, index: number) => (
+                <Card key={index} className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="w-full md:w-1/3">
+                      <div className="relative aspect-video rounded-lg overflow-hidden">
+                        <img
+                          src={article.urlToImage || 'https://source.unsplash.com/random/800x600/?music'}
+                          alt={article.title}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold mb-2">
+                        <a 
+                          href={article.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="hover:text-orange-500 transition-colors"
+                        >
+                          {article.title}
+                        </a>
+                      </h3>
+                      <p className="text-muted-foreground mb-4">{article.description}</p>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {format(new Date(article.publishedAt), 'MMM dd, yyyy')}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Eye className="h-4 w-4" />
+                          {Math.floor(Math.random() * 1000) + 100} views
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MessageSquare className="h-4 w-4" />
+                          {Math.floor(Math.random() * 50) + 5} comments
+                        </div>
+                        <div>
+                          Source: {article.source.name}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </ScrollArea>
