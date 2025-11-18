@@ -61,6 +61,7 @@ const MusicVideoCreator = lazy(() => import("./pages/music-video-creator"));
 const MusicVideoWorkflowPage = lazy(() => import("./pages/music-video-workflow-page"));
 const MusicVideoWorkflowEnhancedPage = lazy(() => import("./pages/music-video-workflow-enhanced"));
 const MusicGeneratorPage = lazy(() => import("./pages/music-generator"));
+const MotionDNAPage = lazy(() => import("./pages/motion-dna"));
 const NewsPage = lazy(() => import("./pages/news"));
 const PRPage = lazy(() => import("./pages/pr"));
 const PrivacyPage = lazy(() => import("./pages/privacy"));
@@ -241,6 +242,7 @@ const Router = () => {
   const WrappedMusicVideoWorkflowPage = withPageWrapper(MusicVideoWorkflowPage);
   const WrappedMusicVideoWorkflowEnhancedPage = withPageWrapper(MusicVideoWorkflowEnhancedPage);
   const WrappedMusicGeneratorPage = withPageWrapper(MusicGeneratorPage);
+  const WrappedMotionDNAPage = withPageWrapper(MotionDNAPage);
   const WrappedRecordLabelServices = withPageWrapper(RecordLabelServices);
   const WrappedAIAgentsPage = withPageWrapper(AIAgentsPage);
   const WrappedAIAdvisorsPage = withPageWrapper(AIAdvisorsPage);
@@ -369,6 +371,7 @@ const Router = () => {
           
           {/* Rutas para suscripción PREMIUM ($149.99) */}
           {getRouteComponent("/music-video-creator", WrappedMusicVideoCreator, 'free')}
+          {getRouteComponent("/motion-dna", WrappedMotionDNAPage, null)}
           {getRouteComponent("/music-video-workflow", WrappedMusicVideoWorkflowPage, 'free')}
           {getRouteComponent("/music-video-flow", WrappedMusicVideoWorkflowEnhancedPage, 'free')}
           {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}

@@ -3,9 +3,10 @@ import { Header } from "../components/layout/header";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
-import { Video, Users, Star, Wand2, Bot, CloudCog, Edit } from "lucide-react";
+import { Video, Users, Star, Wand2, Bot, CloudCog, Edit, Sparkles, ArrowRight } from "lucide-react";
 import { DirectorsList } from "../components/music-video/directors-list";
 import { MusicVideoAI } from "../components/music-video/music-video-ai";
+import { MotionDNASection } from "../components/music-video/motion-dna-section";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import type { DirectorProfile } from "../data/directors";
@@ -30,6 +31,7 @@ export default function MusicVideoCreator() {
           selectedDirector={selectedDirector}
           onDirectorSelected={handleDirectorSelected}
         />
+        <MotionDNASection />
       </main>
     </div>
   );
@@ -66,6 +68,28 @@ const HeroSection = () => (
         >
           Transform your music into stunning visuals with AI-powered technology or collaborate with professional directors
         </motion.p>
+        
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-6"
+        >
+          <Link href="/motion-dna">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-white text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-7 shadow-2xl shadow-orange-600/50 hover:shadow-orange-600/70 transition-all group"
+              data-testid="button-motion-dna"
+            >
+              <Sparkles className="h-5 w-5 mr-2 animate-pulse" />
+              Discover MotionDNA - Launching Q2 2026
+              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
+          <p className="text-xs sm:text-sm text-white/70 mt-3" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+            Revolutionary AI motion model trained on 700+ professional music videos
+          </p>
+        </motion.div>
       </motion.div>
       <Features />
     </div>

@@ -1,0 +1,193 @@
+{
+  "motion_dna_prompts": {
+    "technology_core": [
+      {
+        "id": 1,
+        "prompt": "Futuristic neural network core glowing with orange and purple energy, representing motion analysis, dynamic lines swirling around a central AI brain, cinematic lighting, hyper-realistic render, Boostify MotionDNA aesthetic"
+      },
+      {
+        "id": 2,
+        "prompt": "3D hologram of a motion-capture skeleton model performing dynamic dance movements, surrounded by floating data points and waveform graphs, deep black background with neon orange accents"
+      },
+      {
+        "id": 3,
+        "prompt": "AI engine room showing massive neural pathways connecting motion nodes, glowing circuits and movement vectors, ultra-detailed and cybernetic"
+      },
+      {
+        "id": 4,
+        "prompt": "Digital twin model of an artist in a T-pose surrounded by rotating motion capture markers, holographic projections, clean futuristic UI"
+      }
+    ],
+
+    "movement_analysis": [
+      {
+        "id": 5,
+        "prompt": "Abstract visualization of human motion trails captured over time, long exposure style, neon ribbons forming dancing silhouettes, high-tech atmosphere"
+      },
+      {
+        "id": 6,
+        "prompt": "AI analyzing body movement with geometric overlays, pose estimation joints, lines connecting elbows knees shoulders, glowing minimal interface"
+      },
+      {
+        "id": 7,
+        "prompt": "Timeline of movement intensity shown as rising and falling energy waves, color-coded in Boostify orange and pink, futuristic graph"
+      },
+      {
+        "id": 8,
+        "prompt": "Motion breakdown of a dancer mid-performance, with multiple ghost silhouettes showing stages of the move, holographic design"
+      }
+    ],
+
+    "model_training": [
+      {
+        "id": 9,
+        "prompt": "AI training lab environment with giant transparent screens showing datasets of body movements, video fragments floating in space"
+      },
+      {
+        "id": 10,
+        "prompt": "Dataset visualization made of thousands of tiny frames from real music videos forming the shape of a dancer in motion"
+      },
+      {
+        "id": 11,
+        "prompt": "MotionDNA training pipeline illustrated as a glowing energy stream moving through neural layers, cinematic tech render"
+      },
+      {
+        "id": 12,
+        "prompt": "Neural network nodes learning movement patterns, microchip texture fused with human silhouettes, macro shot"
+      }
+    ],
+
+    "system_architecture": [
+      {
+        "id": 13,
+        "prompt": "Boostify MotionDNA architecture diagram turned into an artistic tech visualization, modules connected with glowing veins"
+      },
+      {
+        "id": 14,
+        "prompt": "Backend AI engine as a futuristic machine with moving gears made of data streams, glowing orange and pink"
+      },
+      {
+        "id": 15,
+        "prompt": "Multi-layered neural system represented as stacked holographic grids processing motion frames"
+      },
+      {
+        "id": 16,
+        "prompt": "MotionDNA pipeline shown as a digital river flowing from input frames to final motion outputs"
+      }
+    ],
+
+    "movement_output": [
+      {
+        "id": 17,
+        "prompt": "Artist silhouette moving gracefully with motion-trail effects, showing MotionDNA-generated choreography, glowing background"
+      },
+      {
+        "id": 18,
+        "prompt": "Performance timeline rendered as dynamic camera movements and motion arcs floating in 3D space"
+      },
+      {
+        "id": 19,
+        "prompt": "Virtual avatar performing movements guided by MotionDNA, surrounded by UI panels and movement grids"
+      },
+      {
+        "id": 20,
+        "prompt": "AI-generated movement path visualized as neon curves weaving around a digital performer"
+      }
+    ],
+
+    "boostify_brand_theme": [
+      {
+        "id": 21,
+        "prompt": "Boostify MotionDNA identity artwork in deep black background with orange gradients, abstract movement shapes"
+      },
+      {
+        "id": 22,
+        "prompt": "High-end cinematic poster for MotionDNA featuring holographic dancer silhouette and glowing motion vectors"
+      },
+      {
+        "id": 23,
+        "prompt": "MotionDNA logo concept floating over a futuristic stage with digital waves and motion trails"
+      },
+      {
+        "id": 24,
+        "prompt": "Abstract image mixing music, motion, and AI circuits in Boostify color palette"
+      }
+    ],
+
+    "dataset_visualization": [
+      {
+        "id": 25,
+        "prompt": "Collage-style visualization of 700+ music videos transformed into a motion dataset, blurred frames forming dynamic shapes"
+      },
+      {
+        "id": 26,
+        "prompt": "Dataset rendered as millions of tiny particles forming a moving dancer silhouette"
+      },
+      {
+        "id": 27,
+        "prompt": "Digital archive vault representing Boostify's private video dataset with glowing energy bars"
+      },
+      {
+        "id": 28,
+        "prompt": "Tech-art style representation of raw video footage feeding into an AI model"
+      }
+    ],
+
+    "concept_art": [
+      {
+        "id": 29,
+        "prompt": "Futuristic stage made of holograms where movement is projected as colored lines, cinematic wide shot"
+      },
+      {
+        "id": 30,
+        "prompt": "AI-human hybrid dancer made of digital particles showing evolution of movement over time"
+      },
+      {
+        "id": 31,
+        "prompt": "MotionDNA represented as a glowing spine-like structure moving through digital space"
+      },
+      {
+        "id": 32,
+        "prompt": "Music meets motion visualization: sound waves transforming into movement vectors"
+      }
+    ],
+
+    "marketing_visuals": [
+      {
+        "id": 33,
+        "prompt": "Hero image for a tech product launch featuring motion trails, holographic UI and AI dancer silhouette"
+      },
+      {
+        "id": 34,
+        "prompt": "Cinematic promo art of MotionDNA engine glowing inside a dark futuristic room"
+      },
+      {
+        "id": 35,
+        "prompt": "3D kinetic typography poster with the text 'MotionDNA – Boostify' made of floating motion vectors"
+      },
+      {
+        "id": 36,
+        "prompt": "Explainer-style visual showing before and after of AI movement generation"
+      }
+    ],
+
+    "premium_visuals": [
+      {
+        "id": 37,
+        "prompt": "Ultra-premium render showing a holographic dancer emerging from a crystal-like AI core"
+      },
+      {
+        "id": 38,
+        "prompt": "Luxury-style minimalistic MotionDNA branding with soft reflections, deep blacks and neon accents"
+      },
+      {
+        "id": 39,
+        "prompt": "Futuristic glass orb containing swirling movement data and silhouettes"
+      },
+      {
+        "id": 40,
+        "prompt": "Abstract sculpture made of glowing motion trails symbolizing Movement Intelligence"
+      }
+    ]
+  }
+}

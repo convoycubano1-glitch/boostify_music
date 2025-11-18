@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Boostify MotionDNA – Modelo de Movimiento para Videoclips</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #050509;
+      color: #f9fafb;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+    h1, h2, h3 {
+      color: #f9fafb;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 2.5rem;
+    }
+    h2 {
+      font-size: 1.8rem;
+      margin-top: 40px;
+    }
+    p {
+      color: #d1d5db;
+      margin: 8px 0;
+    }
+    .hero {
+      text-align: left;
+      padding: 48px 0 32px;
+      border-bottom: 1px solid #111827;
+    }
+    .hero-subtitle {
+      font-size: 1.1rem;
+      color: #e5e7eb;
+      max-width: 640px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: linear-gradient(90deg, #f97316, #ec4899);
+      color: #111827;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .hero-buttons {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .btn-primary, .btn-secondary {
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, #f97316, #ec4899);
+      color: #111827;
+    }
+    .btn-secondary {
+      background: transparent;
+      color: #f9fafb;
+      border: 1px solid #4b5563;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      h1 {
+        font-size: 3rem;
+      }
+    }
+    ul {
+      padding-left: 20px;
+      color: #d1d5db;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    .section-card {
+      background: radial-gradient(circle at top left, #111827, #020617);
+      border-radius: 16px;
+      padding: 20px 18px;
+      border: 1px solid #111827;
+      margin-top: 20px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .form-card {
+      margin-top: 20px;
+      background: #020617;
+      border-radius: 16px;
+      padding: 20px 18px;
+      border: 1px solid #111827;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #e5e7eb;
+      margin-bottom: 4px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #f9fafb;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #6b7280;
+    }
+    footer {
+      border-top: 1px solid #111827;
+      margin-top: 40px;
+      padding-top: 20px;
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-align: center;
+    }
+    footer a {
+      color: #f97316;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- HERO -->
+    <section class="hero">
+      <span class="badge">Nuevo modelo de movimiento · Boostify</span>
+      <h1>Boostify MotionDNA – El modelo de movimiento entrenado con +700 videoclips reales</h1>
+      <p class="hero-subtitle">
+        Convierte cualquier canción en un video con movimientos de artista real, coreografías naturales y energía de escenario… sin grabar una sola toma.
+      </p>
+      <ul>
+        <li>Entrenado con más de <strong>700 videos musicales</strong> reales</li>
+        <li>Captura estilos de movimiento, performance y puesta en escena</li>
+        <li>Genera movimientos listos para aplicar a tus videos con IA</li>
+        <li>Diseñado exclusivamente para <strong>Boostify Music</strong></li>
+      </ul>
+      <div class="hero-buttons">
+        <a href="#beta" class="btn-primary">Join Early Access</a>
+        <a href="#demo" class="btn-secondary">Ver demo del movimiento</a>
+      </div>
+    </section>
+
+    <!-- QUÉ ES -->
+    <section id="que-es">
+      <h2>¿Qué es Boostify MotionDNA?</h2>
+      <p>
+        Boostify MotionDNA es el <strong>modelo de captura de movimiento oficial de Boostify</strong>, entrenado con más de 700 videoclips que han sido filmados en rodajes reales.
+      </p>
+      <p>
+        En lugar de generar imágenes fijas, MotionDNA se enfoca en algo todavía más valioso: <strong>el movimiento</strong>.
+      </p>
+      <ul>
+        <li>Cómo se mueve un artista en el escenario</li>
+        <li>Cómodo respira una coreografía</li>
+        <li>Cómo se siente una cámara siguiendo el performance</li>
+      </ul>
+      <p>
+        Todo ese conocimiento se convierte en un <strong>modelo de movimiento</strong> que Boostify aplica sobre tus videos generados con IA, para que se vean como videoclips dirigidos por un director real, no por un algoritmo genérico.
+      </p>
+    </section>
+
+    <!-- PARA QUIÉN -->
+    <section id="para-quien">
+      <h2>Creado para artistas, directores y sellos que quieren más que plantillas</h2>
+      <div class="section-card">
+        <p>Boostify MotionDNA está pensado para:</p>
+        <ul>
+          <li><strong>Artistas independientes</strong> que quieren videoclips con presencia escénica real.</li>
+          <li><strong>Productores musicales</strong> que necesitan contenido visual constante sin producir 20 rodajes al mes.</li>
+          <li><strong>Directores y creativos</strong> que quieren usar IA sin perder el lenguaje del videoclip profesional.</li>
+          <li><strong>Sellos y managers</strong> que buscan estandarizar la calidad visual de sus artistas con flujos automatizados.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- WORKFLOW -->
+    <section id="workflow">
+      <h2>¿Cómo funciona Boostify MotionDNA dentro de Boostify?</h2>
+      <p>
+        El flujo es simple. Nosotros nos encargamos de la complejidad técnica, tú solo te enfocas en la música y la creatividad.
+      </p>
+      <div class="grid grid-2">
+        <div class="section-card">
+          <h3>Paso 1 – Analizamos tu música</h3>
+          <p>Subes tu canción a Boostify. El sistema analiza tempo, energía y estructura.</p>
+        </div>
+        <div class="section-card">
+          <h3>Paso 2 – Seleccionamos el MotionDNA adecuado</h3>
+          <p>Boostify elige un perfil de movimiento basado en tu estilo (balada, trap, pop, urbano, rock, etc.).</p>
+        </div>
+        <div class="section-card">
+          <h3>Paso 3 – Generación de movimientos</h3>
+          <p>
+            El modelo genera un <strong>timeline de movimientos</strong>: poses, intensidades, ángulos de cámara simulados, ritmo escénico.
+          </p>
+        </div>
+        <div class="section-card">
+          <h3>Paso 4 – Aplicación a tus videos con IA</h3>
+          <p>
+            Ese “esqueleto de movimiento” se aplica a tus clips generados con las herramientas de video de Boostify (video con avatar, vídeo abstracto, performance virtual, etc.).
+          </p>
+        </div>
+      </div>
+      <div class="section-card">
+        <h3>Paso 5 – Ajustes finos y exportación</h3>
+        <p>
+          Ajustas intensidad, velocidad, cámara y estilo. Luego exportas tu videoclip listo para publicar en cualquier plataforma.
+        </p>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+      <h2>Lo que hace único a Boostify MotionDNA</h2>
+      <div class="section-card">
+        <ul>
+          <li><strong>Entrenado con rodajes reales:</strong> más de 700 videoclips profesionales como base.</li>
+          <li><strong>Lenguaje de videoclip, no de plantilla:</strong> patrones aprendidos de artistas reales en escena.</li>
+          <li><strong>Adaptable al género musical:</strong> rock, urbano, pop, bachata, salsa, electrónica y más.</li>
+          <li><strong>Pensado para IA de video moderna:</strong> integrable con text-to-video, image-to-video y avatars.</li>
+          <li><strong>Consistencia visual de marca:</strong> define líneas de movimiento para mantener la misma personalidad en todos tus videos.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- USE CASES -->
+    <section id="use-cases">
+      <h2>¿Qué puedes crear con Boostify MotionDNA?</h2>
+      <div class="section-card">
+        <ul>
+          <li>Videoclips completos generados con IA, pero con movimientos de artista real.</li>
+          <li>Visualizers y loops con movimiento expresivo para Spotify, YouTube y TikTok.</li>
+          <li>Lyric videos con cámara viva y escenas dinámicas.</li>
+          <li>Contenido para redes sociales (shorts, reels, stories) con coreografías cortas y ganchos visuales.</li>
+          <li>Experimentos creativos combinando distintos estilos de movimiento en un mismo proyecto.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BEHIND THE TECH -->
+    <section id="demo">
+      <h2>Entrenado con un dataset privado de +700 videoclips</h2>
+      <p>
+        Boostify MotionDNA nace de una ventaja que casi nadie tiene: <strong>años de rodajes profesionales y más de 700 videoclips filmados</strong>.
+      </p>
+      <p>
+        Ese material crudo se convierte en un dataset estructurado de:
+      </p>
+      <ul>
+        <li>Patrones de movimiento de artistas</li>
+        <li>Coreografías completas</li>
+        <li>Bloqueos de cámara y puestas en escena</li>
+        <li>Niveles de energía y dinámica de performance</li>
+      </ul>
+      <p>
+        El resultado: un modelo de movimiento <strong>propietario</strong>, imposible de replicar con datasets genéricos.
+      </p>
+    </section>
+
+    <!-- BETA -->
+    <section id="beta">
+      <h2>Únete a la primera generación de artistas con MotionDNA</h2>
+      <p>
+        Estamos abriendo una <strong>beta cerrada</strong> de Boostify MotionDNA para un grupo reducido de artistas,
+        productores, directores, managers y sellos que quieran usar este modelo antes que nadie y ayudarnos a pulir el sistema.
+      </p>
+
+      <div class="form-card">
+        <form>
+          <label for="name">Nombre / Nombre artístico</label>
+          <input id="name" name="name" type="text" placeholder="Tu nombre o nombre artístico" />
+
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="tu@email.com" />
+
+          <label for="city">País / Ciudad</label>
+          <input id="city" name="city" type="text" placeholder="Ej: Miami, FL – USA" />
+
+          <label for="role">Rol</label>
+          <select id="role" name="role">
+            <option value="">Selecciona tu rol</option>
+            <option value="artista">Artista</option>
+            <option value="productor">Productor</option>
+            <option value="director">Director / Creativo</option>
+            <option value="manager">Manager</option>
+            <option value="sello">Sello discográfico</option>
+            <option value="otro">Otro</option>
+          </select>
+
+          <label for="message">Cuéntanos brevemente tu proyecto (opcional)</label>
+          <textarea id="message" name="message" rows="3" placeholder="Comparte tu visión o el tipo de videos que quieres crear con MotionDNA..."></textarea>
+
+          <button type="submit" class="btn-primary" style="margin-top: 8px;">
+            Solicitar acceso a la beta
+          </button>
+          <p style="font-size: 0.8rem; color: #9ca3af; margin-top: 8px;">
+            Cupos limitados. Seleccionaremos los proyectos que mejor encajen con el roadmap de Boostify.
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      Boostify MotionDNA es un proyecto de <strong>Boostify Music</strong> · Creado por Neiver Alvarez, CEO Metafeed APPS ·
+      Tel: +1 (786) 543 2478 · Ecosistema: <a href="https://www.autoleadsx.com" target="_blank" rel="noopener noreferrer">www.autoleadsx.com</a>
+    </footer>
+  </div>
+</body>
+</html>
