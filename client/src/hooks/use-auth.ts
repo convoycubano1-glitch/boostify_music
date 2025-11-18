@@ -15,6 +15,7 @@ interface User {
   lastName?: string | null;
   profileImageUrl?: string | null;
   role: string;
+  isAdmin?: boolean;
 }
 
 export function useAuth() {

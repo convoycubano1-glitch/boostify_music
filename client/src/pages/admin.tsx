@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const [showImportModal, setShowImportModal] = useState(false);
   
   const ADMIN_EMAIL = 'convoycubano@gmail.com';
-  const isAdmin = user && user.email === ADMIN_EMAIL;
+  const isAdmin = user && (user.isAdmin === true || user.email === ADMIN_EMAIL);
 
   const [artists, setArtists] = useState<any[]>([]);
   const [investors, setInvestors] = useState<any[]>([]);

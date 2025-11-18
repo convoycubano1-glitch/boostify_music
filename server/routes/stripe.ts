@@ -22,7 +22,7 @@ console.log('🔑 Using Stripe key:', stripeKey ? (stripeKey.startsWith('sk_test
 const getBaseUrl = () => {
   // En producción, usar el dominio de producción
   if (process.env.NODE_ENV === 'production') {
-    return 'https://artistboost.replit.app';
+    return 'https://boostify.replit.app';
   }
   
   // En desarrollo, construir la URL usando las variables de entorno de Replit
@@ -276,7 +276,7 @@ router.post('/create-subscription', authenticate, async (req: Request, res: Resp
     let customerId: string;
     
     // Si no hay email, usar un email placeholder basado en el UID
-    const emailToUse = userEmail || `${userId}@placeholder.artistboost.app`;
+    const emailToUse = userEmail || `${userId}@placeholder.boostify.app`;
     
     console.log(`Creating Stripe customer for user ${userId} with email ${emailToUse}`);
     
@@ -691,7 +691,7 @@ router.post('/create-musician-booking', authenticate, async (req: Request, res: 
     const userEmail = req.user?.email;
     let customerId: string;
     
-    const emailToUse = userEmail || `${userId}@placeholder.artistboost.app`;
+    const emailToUse = userEmail || `${userId}@placeholder.boostify.app`;
     
     // Buscar cliente existente
     const existingCustomers = await stripe.customers.list({
@@ -1386,7 +1386,7 @@ router.post('/create-music-video-bundle-checkout', authenticate, async (req: Req
 
     const tierConfig = MUSIC_VIDEO_TIERS[tier];
     const userEmail = req.user?.email;
-    const emailToUse = userEmail || `${userId}@placeholder.artistboost.app`;
+    const emailToUse = userEmail || `${userId}@placeholder.boostify.app`;
 
     // Find or create Stripe customer
     const existingCustomers = await stripe.customers.list({

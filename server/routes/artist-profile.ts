@@ -222,7 +222,7 @@ router.post('/generate-product-image', async (req: Request, res: Response) => {
  */
 const getBaseUrl = () => {
   if (process.env.NODE_ENV === 'production') {
-    return 'https://artistboost.replit.app';
+    return 'https://boostify.replit.app';
   }
   
   if (process.env.REPLIT_DOMAINS) {
