@@ -1697,7 +1697,12 @@ export const affiliates = pgTable("affiliates", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   website: text("website"),
-  socialMedia: text("social_media"),
+  socialMedia: json("social_media").$type<{
+    instagram?: string;
+    youtube?: string;
+    tiktok?: string;
+    twitter?: string;
+  }>(),
   audienceSize: text("audience_size"),
   marketingExperience: text("marketing_experience"),
   promotionStrategy: text("promotion_strategy"),
@@ -1771,11 +1776,12 @@ export const affiliateEarnings = pgTable("affiliate_earnings", {
   id: serial("id").primaryKey(),
   affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  type: text("type", { enum: ["commission", "bonus", "referral", "adjustment"] }).notNull(),
+  type: text("type", { enum: ["commission", "bonus", "referral", "adjustment", "payout_request", "payout_completed", "referral_commission"] }).notNull(),
   description: text("description").notNull(),
   status: text("status", { enum: ["pending", "approved", "paid"] }).default("pending").notNull(),
   conversionId: integer("conversion_id").references(() => affiliateConversions.id),
   paymentId: text("payment_id"),
+  metadata: json("metadata"),
   paidAt: timestamp("paid_at"),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });

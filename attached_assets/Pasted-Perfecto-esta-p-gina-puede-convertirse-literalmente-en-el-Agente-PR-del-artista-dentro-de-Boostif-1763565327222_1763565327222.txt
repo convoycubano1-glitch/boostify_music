@@ -1,0 +1,291 @@
+Perfecto, esta página puede convertirse literalmente en el “Agente PR” del artista dentro de Boostify. Te propongo una estructura pensada para:
+	•	Leer automáticamente el perfil del artista
+	•	Crear una “orden de PR” clara
+	•	Enviar todo a una base de datos lista para radio, TV, podcasts, medios digitales, etc.
+	•	Dejar preparado el terreno para automatizar envíos y agendar entrevistas
+
+⸻
+
+1. Ubicación y concepto
+
+Dentro del perfil del artista:
+
+Perfil del Artista
+Tabs: Overview | Música | Videos | Tienda | Analíticas | ⭐ PR / Media Agent
+
+Al entrar en PR / Media Agent, el artista ve una página que se siente como llenar un brief para su agente, pero súper guiado y rápido.
+
+⸻
+
+2. Estructura visual de la página
+
+Imagina la página dividida en bloques:
+	1.	Resumen rápido de campaña
+	2.	Contenido que se va a promocionar
+	3.	Datos de prensa (EPK inteligente)
+	4.	Destinos: Radio / TV / Podcasts / Medios / Playlists
+	5.	Disponibilidad para entrevistas
+	6.	Preferencias de contacto & permisos
+	7.	Automatización y estado de la campaña
+
+Te lo detallo:
+
+⸻
+
+2.1. Bloque 1 – Resumen rápido de campaña
+
+Arriba, tipo “wizard” sencillo.
+	•	Título de la campaña
+Input: “Lanzamiento nuevo single – [Nombre Canción]”
+	•	Objetivo principal (checkbox o select múltiple)
+	•	☐ Conseguir entrevistas en radio
+	•	☐ Apariciones en TV
+	•	☐ Podcasts
+	•	☐ Medios digitales / blogs
+	•	☐ Playlists editoriales
+	•	☐ Promociones especiales / concursos
+	•	Mensaje corto para medios (elevator pitch)
+Textarea: 1–2 frases para presentar al artista y el proyecto.
+
+⸻
+
+2.2. Bloque 2 – Contenido que se va a promocionar
+
+Este bloque se alimenta automáticamente del perfil de Boostify.
+	•	Seleccionar contenido principal (radio button o cards)
+	•	🔘 Single principal
+	•	🔘 Álbum
+	•	🔘 Video musical
+	•	🔘 Gira / Tour
+	•	🔘 Evento especial
+	•	Selector dinámico:
+Si elige Single → dropdown con los últimos singles del artista.
+Si elige Video → dropdown con videos subidos a Boostify.
+	•	Campos automáticos bloqueados pero visibles:
+	•	Nombre del single / álbum / video
+	•	Género
+	•	Fecha de lanzamiento
+	•	Link de escucha (Spotify, YouTube, etc.)
+	•	Link de landing del artista en Boostify
+
+⸻
+
+2.3. Bloque 3 – EPK inteligente (Press Kit)
+
+Aquí se combina lo que ya tienes en el perfil + extras específicos para medios.
+	•	Bio corta para medios (max 600 caracteres)
+Ideal para locutores y presentadores.
+	•	Frase clave / titular de prensa
+Ej: “El artista urbano que fusiona ritmos latinos con atmósferas cinematográficas”.
+	•	Puntos de conversación (bullet list)
+	•	Input tipo tags: “Nuevo single”, “Historia detrás de la canción”, “Colaboración con X”, etc.
+	•	Archivos multimedia
+	•	Foto oficial para prensa (1–3 imágenes)
+	•	Logo (si tiene)
+	•	Link a press kit completo (Drive, Dropbox o interno de Boostify)
+
+Todo esto se guarda y se reutiliza para futuras campañas.
+
+⸻
+
+2.4. Bloque 4 – Destinos PR (Radio / TV / Podcasts / Medios / Playlists)
+
+Aquí es donde se conecta con tu base de datos de medios.
+
+Vista para el artista:
+	•	Tipo de medios a los que quiere llegar
+	•	☐ Radios locales
+	•	☐ Radios internacionales
+	•	☐ TV regional
+	•	☐ TV nacional
+	•	☐ Podcasts
+	•	☐ Blogs / medios digitales
+	•	☐ Playlists (Spotify / Apple / etc.)
+	•	Territorio y lenguaje
+	•	Países preferidos
+	•	Ciudades prioritarias
+	•	Idioma(s)
+	•	Estilo de medios
+	•	☐ Música latina
+	•	☐ Urbano
+	•	☐ Pop
+	•	☐ Electrónica
+	•	☐ Cristiana
+	•	etc.
+
+Vista para tu sistema (base de datos):
+Desde esta info, tú filtras contra tu tabla de medios.
+Por ejemplo, tu DB podría tener:
+
+{
+  "mediaOutletId": "radio_mega_miami",
+  "type": "radio",
+  "name": "La Mega Miami",
+  "city": "Miami",
+  "country": "USA",
+  "languages": ["es"],
+  "genres": ["urbano", "latin", "pop"],
+  "contactEmail": "programacion@lamega.com",
+  "contactPhone": "+1 305 000 0000",
+  "preferredFormat": "EPK + mp3 + link spotify",
+  "notes": "Prefieren artistas latinos emergentes"
+}
+
+La página solo muestra una frase tipo:
+
+“Tu campaña se enviará a XX radios y YY medios que coinciden con tu perfil.”
+
+⸻
+
+2.5. Bloque 5 – Disponibilidad para entrevistas
+
+Ideal para conectar después con Google Calendar o tu propio sistema.
+	•	Formato de entrevistas
+	•	☐ Presencial
+	•	☐ Zoom / Meet
+	•	☐ Teléfono
+	•	☐ Pregrabado
+	•	Horarios disponibles
+	•	Selector de días y rangos horarios (ej: Lunes a Viernes, 10:00–18:00 hora del artista).
+	•	Zona horaria
+	•	Para evitar líos con medios internacionales.
+
+Este bloque alimenta el tipo de “ventana de agenda” que vas a usar cuando algún medio quiera una cita.
+
+⸻
+
+2.6. Bloque 6 – Preferencias de contacto & permisos
+	•	Contacto principal para medios
+	•	Nombre
+	•	Email
+	•	Teléfono / WhatsApp
+	•	Rol del contacto
+	•	☐ El mismo artista
+	•	☐ Manager
+	•	☐ PR / Label
+	•	Permisos
+	•	☐ Acepto que Boostify envíe mi material a medios seleccionados.
+	•	☐ Acepto recibir actualizaciones de oportunidades de medios.
+
+⸻
+
+2.7. Bloque 7 – Automatización y estado de campaña
+
+Aquí la magia para que se convierta en un “agente”.
+	•	Botón principal: “Activar campaña PR”
+	•	Al activarlo, tu sistema:
+	1.	Guarda un registro de campaña PR en Firestore / DB.
+	2.	Dispara un webhook a Make para manejar:
+	•	Envío de emails a medios
+	•	Registro de respuestas
+	•	Creación de tareas para agendar entrevistas
+	•	Estado de campaña (timeline sencillo)
+	•	Ej:
+	•	20 medios contactados
+	•	5 abrieron el email
+	•	2 interesados
+	•	1 entrevista confirmada
+
+Con pequeños badges tipo:
+
+✅ 1 entrevista de radio agendada
+⏳ 3 medios pendientes de respuesta
+📩 Último envío: 19 de noviembre de 2025
+
+⸻
+
+3. Ejemplo de objeto que se guarda en la base de datos
+
+Para que tus devs tengan claro qué debe salir de esa página:
+
+{
+  "campaignId": "pr_2025_11_19_abc123",
+  "artistId": "artist_12345",
+  "createdAt": "2025-11-19T13:00:00Z",
+  "title": "Lanzamiento nuevo single – El Silencio Grita",
+  "goals": ["radio_interviews", "tv_appearances", "podcasts"],
+  "mainContent": {
+    "type": "single",
+    "id": "single_6789",
+    "name": "El Silencio Grita",
+    "genre": "Latin Pop",
+    "releaseDate": "2025-11-25",
+    "links": {
+      "boostifyProfile": "https://boostify.app/artist/redwine",
+      "spotify": "https://open.spotify.com/track/...",
+      "youtube": "https://youtube.com/..."
+    }
+  },
+  "pressKit": {
+    "shortBio": "Redwine es un artista...",
+    "headline": "El artista que mezcla cine y música latina...",
+    "talkingPoints": [
+      "Nuevo single inspirado en...",
+      "Producción realizada entre Miami y Medellín",
+      "Mensaje principal de la canción..."
+    ],
+    "photos": [
+      "https://cdn.boostify.app/press/redwine_photo1.jpg"
+    ],
+    "epkLink": "https://cdn.boostify.app/press/redwine_epk.pdf"
+  },
+  "targetMedia": {
+    "types": ["radio", "tv", "podcast", "digital_media"],
+    "countries": ["USA", "Mexico", "Colombia"],
+    "cities": ["Miami", "CDMX", "Medellín"],
+    "languages": ["es"],
+    "genresFocus": ["urbano", "latin_pop"]
+  },
+  "availability": {
+    "timeZone": "America/New_York",
+    "days": ["monday", "tuesday", "wednesday"],
+    "from": "10:00",
+    "to": "18:00",
+    "formats": ["zoom", "phone", "in_person"]
+  },
+  "contact": {
+    "name": "Redwine",
+    "role": "artist",
+    "email": "artist@email.com",
+    "phone": "+1 786 000 0000",
+    "whatsapp": "+1 786 000 0000"
+  },
+  "permissions": {
+    "allowMediaOutreach": true,
+    "allowUpdateEmails": true
+  },
+  "status": "active",
+  "stats": {
+    "mediaContacted": 0,
+    "interests": 0,
+    "interviewsBooked": 0
+  }
+}
+
+Con ese JSON ya puedes:
+	•	Guardarlo en Firestore
+	•	Enviar el campaignId a Make
+	•	Desde Make recorrer tu base de medios y disparar emails / formularios / tareas de agenda.
+
+⸻
+
+4. Flujo para el usuario (artista)
+	1.	Entra a su perfil → pestaña PR / Media Agent
+	2.	Completa 5–10 minutos de información guiada
+	3.	Toca “Activar campaña PR”
+	4.	Boostify:
+	•	Registra la campaña
+	•	Empieza a contactar medios desde tu infraestructura
+	5.	El artista ve en esa misma página el estado y las entrevistas confirmadas.
+
+⸻
+
+Si quieres, en el siguiente paso te puedo:
+	•	Convertir esto en un wireframe textual para que tus devs lo maqueten en React, o
+	•	Diseñar el JSON exacto que envía esta página hacia tu webhook en Make para automatizar todo el PR.
+
+⸻
+
+Neiver Alvarez
+CEO Metafeed APPS
+📞 786 543 2478

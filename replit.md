@@ -1904,3 +1904,396 @@ const link = await db.insert(affiliateLinks).values({
 **Last Updated**: November 19, 2025 - Full system operational
 **Next Steps**: Launch affiliate program publicly, onboard first 10 affiliates, create marketing materials
 
+
+---
+
+## 🛡️ ADMIN DASHBOARD - AFFILIATE MANAGEMENT (November 19, 2025)
+
+### 📍 ACCESS
+
+**URL**: `/affiliate-admin`  
+**Permissions**: Solo usuarios admin (userId 1 o 2)  
+**Features**: Gestión completa de afiliados y pagos
+
+---
+
+### 🚀 BACKEND ENDPOINTS (Admin Only)
+
+Todos los endpoints requieren autenticación y verifican que el usuario sea admin (userId 1 o 2).
+
+#### **1. GET /api/affiliate/admin/all**
+Obtiene todos los afiliados con filtro opcional por status.
+
+**Query Params**:
+- `status` (opcional): pending | approved | rejected | suspended
+
+**Response**:
+```json
+{
+  "success": true,
+  "affiliates": [
+    {
+      "id": 1,
+      "userId": 2,
+      "fullName": "Admin User",
+      "email": "admin@boostify.com",
+      "level": "Platino",
+      "status": "approved",
+      "totalClicks": 125,
+      "totalConversions": 8,
+      "totalEarnings": "240.50",
+      "pendingPayment": "120.25",
+      "paidAmount": "120.25",
+      "createdAt": "2025-11-19T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### **2. POST /api/affiliate/admin/approve/:id**
+Aprueba un afiliado pendiente.
+
+**Params**:
+- `id`: ID del afiliado
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Afiliado Admin User aprobado exitosamente"
+}
+```
+
+#### **3. POST /api/affiliate/admin/reject/:id**
+Rechaza un afiliado pendiente.
+
+**Params**:
+- `id`: ID del afiliado
+
+**Body** (opcional):
+```json
+{
+  "reason": "Rejected by admin"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Afiliado Admin User rechazado"
+}
+```
+
+#### **4. GET /api/affiliate/admin/pending-payouts**
+Obtiene todas las solicitudes de pago pendientes con información del afiliado.
+
+**Response**:
+```json
+{
+  "success": true,
+  "payouts": [
+    {
+      "id": 15,
+      "affiliateId": 1,
+      "amount": "-120.25",
+      "description": "Solicitud de pago por $120.25",
+      "status": "pending",
+      "createdAt": "2025-11-19T12:00:00.000Z",
+      "affiliateName": "Admin User",
+      "affiliateEmail": "admin@boostify.com",
+      "paymentMethod": "PayPal",
+      "paymentEmail": "admin@paypal.com"
+    }
+  ]
+}
+```
+
+#### **5. POST /api/affiliate/admin/approve-payout/:id**
+Aprueba y procesa un pago de afiliado (ya existía).
+
+**Params**:
+- `id`: ID del payout request
+
+**Actions**:
+1. Actualiza status del payout a 'approved'
+2. Resta monto de `pendingPayment` del afiliado
+3. Suma monto a `paidAmount` del afiliado
+4. Crea registro de `payout_completed`
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Pago aprobado y procesado exitosamente"
+}
+```
+
+#### **6. GET /api/affiliate/admin/stats**
+Obtiene estadísticas completas del sistema de afiliados.
+
+**Response**:
+```json
+{
+  "success": true,
+  "stats": {
+    "totalAffiliates": 1,
+    "pending": 0,
+    "approved": 1,
+    "rejected": 0,
+    "suspended": 0,
+    "totalClicks": 125,
+    "totalConversions": 8,
+    "totalEarnings": 240.50,
+    "totalPendingPayments": 120.25,
+    "totalPaidOut": 120.25,
+    "conversionRate": "6.40",
+    "pendingPayoutsCount": 1,
+    "pendingPayoutsAmount": 120.25,
+    "topPerformers": [
+      {
+        "id": 1,
+        "name": "Admin User",
+        "email": "admin@boostify.com",
+        "level": "Platino",
+        "conversions": 8,
+        "earnings": 240.50
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 🎨 FRONTEND DASHBOARD
+
+**Componente**: `client/src/pages/affiliate-admin.tsx`  
+**Ruta**: `/affiliate-admin`  
+**Tecnologías**: React + TanStack Query + shadcn/ui
+
+#### **Tabs del Dashboard**
+
+1. **📊 Estadísticas**
+   - Cards con métricas principales:
+     - Total Afiliados (pending, approved)
+     - Total Clicks (conversiones, conversion rate)
+     - Total Comisiones (pagado vs pendiente)
+     - Pagos Pendientes (cantidad, monto total)
+   - Tabla de Top 5 Afiliados (por ganancias)
+
+2. **👥 Afiliados**
+   - Filtros: Todos | Pendientes | Aprobados
+   - Tabla completa de afiliados con:
+     - Nombre, Email, Nivel, Estado
+     - Stats: Clicks, Conversiones, Ganancias
+   - Acciones:
+     - ✅ Aprobar (solo para pending)
+     - ❌ Rechazar (solo para pending)
+   - Estados con badges de color:
+     - Pending: Outline
+     - Approved: Default (verde)
+     - Rejected: Destructive (rojo)
+     - Suspended: Secondary
+
+3. **💳 Pagos**
+   - Tabla de solicitudes de pago pendientes
+   - Columnas:
+     - Afiliado (nombre, email)
+     - Método de pago
+     - Cuenta (PayPal email, banco, etc)
+     - Monto (en verde)
+     - Fecha de solicitud
+   - Acción:
+     - ✅ Aprobar Pago (procesa inmediatamente)
+
+#### **Características UI**
+
+- **Real-time Updates**: TanStack Query con invalidación automática
+- **Loading States**: Skeleton loaders y spinners
+- **Error Handling**: Toast notifications para errores
+- **Responsive Design**: Funciona en mobile/tablet/desktop
+- **Data Refresh**: Auto-refresh al aprobar/rechazar
+- **Empty States**: Mensajes cuando no hay datos
+- **Test IDs**: Todos los elementos tienen data-testid
+
+#### **Invalidación de Cache**
+
+Al aprobar/rechazar afiliado:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['/api/affiliate/admin/all'] });
+queryClient.invalidateQueries({ queryKey: ['/api/affiliate/admin/stats'] });
+```
+
+Al aprobar payout:
+```typescript
+queryClient.invalidateQueries({ queryKey: ['/api/affiliate/admin/pending-payouts'] });
+queryClient.invalidateQueries({ queryKey: ['/api/affiliate/admin/stats'] });
+queryClient.invalidateQueries({ queryKey: ['/api/affiliate/admin/all'] });
+```
+
+---
+
+### 🔒 SEGURIDAD
+
+#### **Backend Protection**
+
+Todos los endpoints admin verifican:
+```typescript
+if (!req.user?.id || (req.user.id !== 1 && req.user.id !== 2)) {
+  return res.status(403).json({ 
+    success: false, 
+    message: 'Acceso denegado. Solo administradores.' 
+  });
+}
+```
+
+Solo userId 1 y 2 pueden acceder a funciones de admin.
+
+#### **Frontend Protection**
+
+La ruta está registrada con plan 'free' pero la protección real está en el backend.  
+Si un usuario no-admin intenta acceder, recibirá error 403.
+
+---
+
+### 🎯 WORKFLOW DE APROBACIÓN
+
+#### **Nuevo Afiliado**
+```
+1. Usuario se registra como afiliado
+2. Status: 'pending'
+3. Aparece en Admin Dashboard → Tab Afiliados → Filtro Pendientes
+4. Admin revisa aplicación
+5. Admin hace click en "Aprobar" o "Rechazar"
+6. Status cambia a 'approved' o 'rejected'
+7. Si aprobado: afiliado puede crear links y empezar a ganar comisiones
+```
+
+#### **Solicitud de Pago**
+```
+1. Afiliado acumula $50+ en pendingPayment
+2. Afiliado hace click en "Request Payout"
+3. Se crea registro en affiliate_earnings (type: payout_request, status: pending)
+4. Aparece en Admin Dashboard → Tab Pagos
+5. Admin revisa:
+   - Monto solicitado
+   - Método de pago configurado
+   - Email/cuenta para pago
+6. Admin hace click en "Aprobar Pago"
+7. Sistema ejecuta:
+   - Actualiza payout_request a 'approved'
+   - Resta de pendingPayment
+   - Suma a paidAmount
+   - Crea payout_completed record
+8. Admin procesa pago manualmente vía PayPal/Stripe/Bank
+```
+
+---
+
+### 📊 EJEMPLO DE USO
+
+#### **Escenario 1: Aprobar Nuevo Afiliado**
+
+1. Iniciar sesión como admin (userId 1 o 2)
+2. Navegar a `/affiliate-admin`
+3. Click en tab "Afiliados"
+4. Click en filtro "Pendientes"
+5. Ver lista de aplicaciones pendientes
+6. Click en "Aprobar" en el afiliado deseado
+7. Ver confirmación toast "Afiliado aprobado"
+8. Afiliado cambia a tab "Aprobados"
+
+#### **Escenario 2: Aprobar Pago**
+
+1. Iniciar sesión como admin
+2. Navegar a `/affiliate-admin`
+3. Click en tab "Pagos"
+4. Ver solicitudes de pago pendientes
+5. Verificar:
+   - Método de pago (PayPal, Bank, Stripe)
+   - Cuenta destino
+   - Monto solicitado
+6. Click en "Aprobar Pago"
+7. Sistema procesa automáticamente
+8. Admin procesa pago manual en PayPal/Stripe
+9. Payout desaparece de tabla (ya no pending)
+
+#### **Escenario 3: Revisar Estadísticas**
+
+1. Navegar a `/affiliate-admin`
+2. Tab "Estadísticas" (default)
+3. Ver métricas globales:
+   - Total afiliados activos
+   - Conversiones totales
+   - Comisiones generadas
+   - Pagos pendientes
+4. Ver Top 5 afiliados con mejor performance
+5. Identificar oportunidades de mejora
+
+---
+
+### 🧪 TESTING
+
+#### **Test Data Existente**
+
+Afiliado de prueba (userId 2):
+- Nombre: Admin User
+- Email: admin@boostify.com
+- Nivel: Platino (25% comisión)
+- Status: approved
+- Stats: 125 clicks, 8 conversions, $240.50 earnings
+- Referral Code: ADMIN123
+
+#### **Cómo Probar**
+
+1. **Crear afiliado pendiente**:
+```sql
+INSERT INTO affiliates (user_id, full_name, email, level, status)
+VALUES (3, 'Test User', 'test@test.com', 'Básico', 'pending');
+```
+
+2. **Crear payout pendiente**:
+```sql
+INSERT INTO affiliate_earnings (affiliate_id, amount, type, description, status)
+VALUES (1, '-100.00', 'payout_request', 'Solicitud de pago por $100', 'pending');
+```
+
+3. **Acceder al dashboard**:
+   - Login como admin
+   - Navegar a `/affiliate-admin`
+   - Aprobar/rechazar desde UI
+
+---
+
+### 🔄 SINCRONIZACIÓN CON STRIPE
+
+Cuando se aprueba un payout:
+1. Admin ve solicitud en dashboard
+2. Admin hace click en "Aprobar Pago"
+3. Backend actualiza base de datos
+4. **Admin debe procesar pago manualmente en Stripe/PayPal**
+5. Afiliado recibe pago en 3-5 días hábiles
+
+**Nota**: El sistema NO procesa pagos automáticamente por seguridad.  
+Admin tiene control total sobre qué pagos se procesan.
+
+---
+
+### 📝 PRÓXIMAS MEJORAS
+
+1. **Webhook de Stripe**: Notificar automáticamente cuando pago es confirmado
+2. **Email Notifications**: Enviar emails a afiliados cuando son aprobados o reciben pago
+3. **Historial de Acciones**: Log de todas las acciones de admin (auditoría)
+4. **Filtros Avanzados**: Búsqueda por nombre/email, rango de fechas
+5. **Export CSV**: Descargar reportes de afiliados y pagos
+6. **Dashboard Analytics**: Gráficos de crecimiento, comparativas mensuales
+7. **Batch Actions**: Aprobar múltiples afiliados a la vez
+8. **Notas Internas**: Agregar notas a cada afiliado (ej: "Review pending docs")
+
+---
+
+**Last Updated**: November 19, 2025  
+**Status**: ✅ Fully operational and ready for production
+**Access**: Restricted to admin users only (userId 1, 2)
+
