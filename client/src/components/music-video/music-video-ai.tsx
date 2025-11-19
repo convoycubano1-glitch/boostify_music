@@ -976,6 +976,13 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         throw new Error("The script has no valid scenes");
       }
 
+      // Extraer información global del script para contexto
+      const narrativeSummary = parsedScript.narrative_summary || '';
+      const directorName = videoStyle.selectedDirector?.name || 'Cinematic Director';
+      const conceptStory = selectedConcept?.story_concept || '';
+      
+      logger.info(`🎬 [IMG] Context: Director=${directorName}, Concept=${conceptStory ? 'Yes' : 'No'}, Narrative=${narrativeSummary ? 'Yes' : 'No'}`);
+
       setProgressPercentage(10);
 
       const geminiScenes = scenes.map((scene: any) => {
@@ -1038,14 +1045,53 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         logger.info(`🎨 [IMG ${sceneIndex}/${totalScenes}] Generando imagen para escena...`);
         
         try {
-          // Construir el prompt desde el objeto scene
-          const prompt = `${scene.scene}. ${scene.camera}, ${scene.lighting}, ${scene.style}`;
+          // Obtener la escena original del JSON con todos los campos narrativos
+          const originalScene = scenes[i];
           
-          // Detectar si es escena de performance (canto/singing)
-          const isPerformanceScene = scene.scene?.toLowerCase().includes('singing') || 
-                                     scene.scene?.toLowerCase().includes('performing') ||
-                                     scene.scene?.toLowerCase().includes('vocalist') ||
-                                     scene.description?.toLowerCase().includes('singing');
+          // Construir prompt RICO EN NARRATIVA usando los nuevos campos
+          const shotCategory = originalScene.shot_category || 'STORY';
+          const narrativeContext = originalScene.narrative_context || '';
+          const lyricConnection = originalScene.lyric_connection || '';
+          const visualDescription = originalScene.visual_description || originalScene.description || scene.scene;
+          const emotion = originalScene.emotion || originalScene.mood || '';
+          const storyProgression = originalScene.story_progression || '';
+          
+          // Construir prompt cinematográfico COMPLETO con narrativa y contexto global
+          const prompt = `MUSIC VIDEO CONTEXT:
+${narrativeSummary ? `Overall Story: ${narrativeSummary}` : ''}
+${conceptStory ? `Concept: ${conceptStory}` : ''}
+Director Style: ${directorName}
+
+SCENE ${sceneIndex} - ${shotCategory} SHOT:
+${visualDescription}
+
+NARRATIVE:
+${narrativeContext}
+
+LYRIC CONNECTION:
+${lyricConnection}
+
+STORY ARC:
+${storyProgression}
+
+EMOTION: ${emotion}
+
+TECHNICAL SPECS:
+Camera: ${scene.camera}
+Lighting: ${scene.lighting}
+Style: ${scene.style}
+Shot Type: ${originalScene.shot_type || 'medium-shot'}
+Color Grading: ${originalScene.color_grading || 'cinematic'}
+Location: ${originalScene.location || 'performance space'}
+
+Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring the artist performing/singing' : shotCategory === 'B-ROLL' ? 'cinematic b-roll visual WITHOUT the artist visible' : 'narrative story scene with characters/elements'}, high production quality, ${directorName} directorial style, cohesive with overall music video narrative.`;
+          
+          logger.info(`📝 [IMG ${sceneIndex}] Shot Category: ${shotCategory}, Emotion: ${emotion}`);
+          
+          // Detectar si es escena de performance usando el campo shot_category
+          const isPerformanceScene = shotCategory === 'PERFORMANCE' || 
+                                     visualDescription?.toLowerCase().includes('singing') || 
+                                     visualDescription?.toLowerCase().includes('performing');
           
           // Usar master character si está disponible y es escena de performance
           const usesMasterCharacter = masterCharacter && isPerformanceScene;
