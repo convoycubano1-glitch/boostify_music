@@ -185,6 +185,10 @@ interface TimelineEditorProps {
   isSavingProject?: boolean;
   lastSavedAt?: Date | null;
   hasUnsavedChanges?: boolean;
+  director?: { name: string; style: string; specialty?: string };
+  concept?: any;
+  narrativeSummary?: string;
+  projectId?: number;
 }
 
 // ===== Constants =====
@@ -216,7 +220,11 @@ export function TimelineEditor({
   onProjectNameChange,
   isSavingProject = false,
   lastSavedAt = null,
-  hasUnsavedChanges = false
+  hasUnsavedChanges = false,
+  director,
+  concept,
+  narrativeSummary,
+  projectId
 }: TimelineEditorProps) {
   const { toast } = useToast();
 
@@ -2591,8 +2599,10 @@ export function TimelineEditor({
             imageUrl: musicianModalClip.imageUrl,
           }}
           scriptContext={musicianModalClip.prompt || musicianModalClip.description || "Music video performance scene"} 
-          director={{ name: "Modern", style: "Cinematic" }}
-          concept="Music Video Performance"
+          director={director}
+          concept={concept?.story_concept || concept}
+          narrativeSummary={narrativeSummary}
+          projectId={projectId}
           onMusicianCreated={handleMusicianCreated}
         />
       )}
