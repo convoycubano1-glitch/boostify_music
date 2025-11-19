@@ -1976,3 +1976,103 @@ export const insertAffiliateMarketingMaterialSchema = createInsertSchema(affilia
 export const selectAffiliateMarketingMaterialSchema = createSelectSchema(affiliateMarketingMaterials);
 export type InsertAffiliateMarketingMaterial = z.infer<typeof insertAffiliateMarketingMaterialSchema>;
 export type SelectAffiliateMarketingMaterial = typeof affiliateMarketingMaterials.$inferSelect;
+
+// PR Agent Tables
+export const prCampaigns = pgTable("pr_campaigns", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  title: text("title").notNull(),
+  artistName: text("artist_name").notNull(),
+  artistProfileUrl: text("artist_profile_url"),
+  
+  contentType: text("content_type", { enum: ["single", "album", "video", "tour", "announcement"] }).notNull(),
+  contentTitle: text("content_title").notNull(),
+  contentUrl: text("content_url"),
+  
+  targetMediaTypes: text("target_media_types").array(),
+  targetCountries: text("target_countries").array(),
+  targetGenres: text("target_genres").array(),
+  
+  pitchMessage: text("pitch_message").notNull(),
+  
+  contactEmail: text("contact_email").notNull(),
+  contactPhone: text("contact_phone"),
+  
+  status: text("status", { enum: ["draft", "active", "paused", "completed"] }).default("draft").notNull(),
+  
+  mediaContacted: integer("media_contacted").default(0).notNull(),
+  emailsOpened: integer("emails_opened").default(0).notNull(),
+  mediaReplied: integer("media_replied").default(0).notNull(),
+  interviewsBooked: integer("interviews_booked").default(0).notNull(),
+  
+  makeScenarioId: text("make_scenario_id"),
+  lastSyncAt: timestamp("last_sync_at"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const prMediaDatabase = pgTable("pr_media_database", {
+  id: serial("id").primaryKey(),
+  
+  type: text("type", { enum: ["radio", "tv", "podcast", "blog", "magazine"] }).notNull(),
+  name: text("name").notNull(),
+  
+  country: text("country").notNull(),
+  city: text("city"),
+  
+  genres: text("genres").array(),
+  language: text("language").notNull(),
+  
+  email: text("email").notNull(),
+  websiteUrl: text("website_url"),
+  
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const prWebhookEvents = pgTable("pr_webhook_events", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").references(() => prCampaigns.id).notNull(),
+  
+  eventType: text("event_type", { enum: ["email_sent", "email_opened", "media_replied", "interview_booked"] }).notNull(),
+  
+  payload: json("payload"),
+  
+  mediaName: text("media_name"),
+  mediaEmail: text("media_email"),
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const insertPRCampaignSchema = createInsertSchema(prCampaigns).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  mediaContacted: true,
+  emailsOpened: true,
+  mediaReplied: true,
+  interviewsBooked: true
+});
+export const selectPRCampaignSchema = createSelectSchema(prCampaigns);
+export type InsertPRCampaign = z.infer<typeof insertPRCampaignSchema>;
+export type SelectPRCampaign = typeof prCampaigns.$inferSelect;
+
+export const insertPRMediaSchema = createInsertSchema(prMediaDatabase).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export const selectPRMediaSchema = createSelectSchema(prMediaDatabase);
+export type InsertPRMedia = z.infer<typeof insertPRMediaSchema>;
+export type SelectPRMedia = typeof prMediaDatabase.$inferSelect;
+
+export const insertPRWebhookEventSchema = createInsertSchema(prWebhookEvents).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export const selectPRWebhookEventSchema = createSelectSchema(prWebhookEvents);
+export type InsertPRWebhookEvent = z.infer<typeof insertPRWebhookEventSchema>;
+export type SelectPRWebhookEvent = typeof prWebhookEvents.$inferSelect;
