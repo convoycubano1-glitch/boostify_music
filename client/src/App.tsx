@@ -92,6 +92,7 @@ const ArticlePage = lazy(() => import("./pages/article"));
 const DiagnosticsPage = lazy(() => import("./pages/diagnostics"));
 const AffiliatesPage = lazy(() => import("./pages/affiliates"));
 const AffiliatesNewPage = lazy(() => import("./pages/affiliates-new"));
+const AffiliateAdminPage = lazy(() => import("./pages/affiliate-admin"));
 const InitProductsPage = lazy(() => import("./pages/init-products"));
 const MusicMasteringPage = lazy(() => import("./pages/music-mastering"));
 const VirtualRecordLabelPage = lazy(() => import("./pages/virtual-record-label"));
@@ -262,6 +263,7 @@ const Router = () => {
   const WrappedInvestorsDashboard = withPageWrapper(InvestorsDashboard);
   const WrappedAffiliatesPage = withPageWrapper(AffiliatesPage);
   const WrappedAffiliatesNewPage = withPageWrapper(AffiliatesNewPage);
+  const WrappedAffiliateAdminPage = withPageWrapper(AffiliateAdminPage);
   const WrappedInitProductsPage = withPageWrapper(InitProductsPage);
   const WrappedSocialNetworkPage = withPageWrapper(SocialNetworkPage);
   const WrappedFirestoreSocialPage = withPageWrapper(FirestoreSocialPage);
@@ -389,6 +391,7 @@ const Router = () => {
           
           {/* Rutas administrativas especiales */}
           {getRouteComponent("/admin", WrappedAdminPage, 'free')} {/* Admin tiene acceso con verificación especial */}
+          {getRouteComponent("/affiliate-admin", WrappedAffiliateAdminPage, 'free')} {/* Admin affiliate dashboard */}
           
           {/* Rutas que requieren autenticación con plan 'free' mínimo */}
           {getRouteComponent("/boostify-tv", WrappedBoostifyTVPage, 'free')}
