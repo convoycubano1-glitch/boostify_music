@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../logger";
 /**
  * Servicio para gestionar modelos de voz
  * 

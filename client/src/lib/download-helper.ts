@@ -1,4 +1,4 @@
-import { logger } from "../logger";
+import { logger } from "./logger";
 /**
  * Utility function to download text content as a file
  * 

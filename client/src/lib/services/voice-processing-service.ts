@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../logger";
 /**
  * Servicio de procesamiento de voz que integra Revocalize y KITS AI
  * 

@@ -1,4 +1,4 @@
-import { logger } from "../logger";
+import { logger } from "./logger";
 /**
  * Auto-Profile Service - Manages automatic artist profile creation and updates
  * 

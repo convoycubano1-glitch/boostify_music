@@ -1,4 +1,4 @@
-import { logger } from "../logger";
+import { logger } from "./logger";
 
 /**
  * Security utility to prevent sensitive credentials from being exposed in the browser

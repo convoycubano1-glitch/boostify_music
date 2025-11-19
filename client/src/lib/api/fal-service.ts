@@ -1,5 +1,5 @@
 import { fal } from "@fal-ai/client";
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { z } from "zod";
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';

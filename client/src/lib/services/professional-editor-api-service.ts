@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../logger";
 /**
  * Servicio para comunicación con API RESTful del Editor Profesional
  * 

@@ -1,4 +1,4 @@
-import { logger } from "../logger";
+import { logger } from "./logger";
 /**
  * Utilidades para procesamiento de imágenes específicamente para la API de Kling
  * Versión para el lado del cliente (browser)

@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { env } from "../../env";
 import { db } from "../firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";

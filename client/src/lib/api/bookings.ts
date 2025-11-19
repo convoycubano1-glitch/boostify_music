@@ -1,5 +1,5 @@
 import { db } from "@db";
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { bookings, audioDemos } from "@db/schema";
 import { auth } from "../firebase";
 

@@ -1,5 +1,5 @@
 import { createApi } from 'unsplash-js';
-import { logger } from "../logger";
+import { logger } from "./logger";
 
 const unsplash = createApi({
   accessKey: import.meta.env.VITE_UNSPLASH_ACCESS_KEY || ''

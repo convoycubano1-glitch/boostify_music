@@ -1,4 +1,4 @@
-import { logger } from "../logger";
+import { logger } from "./logger";
 type LogLevel = 'log' | 'warn' | 'error' | 'info' | 'debug';
 
 interface Logger {

@@ -1,5 +1,5 @@
+import { logger } from "../logger";
 import { 
-import { logger } from "./logger";
   collection, 
   doc, 
   addDoc, 

@@ -1,5 +1,5 @@
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { db } from '../firebase';
 import type { TimelineItem } from '../../components/timeline/TimelineClipUnified';
 import type { TimelineClip } from '../../interfaces/timeline';

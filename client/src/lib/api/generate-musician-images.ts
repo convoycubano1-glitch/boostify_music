@@ -1,5 +1,5 @@
 import { generateImageWithFal } from "./fal-ai";
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { saveMusicianImage } from "./musician-images-store";
 import {db, collection, getDocs, query, orderBy} from "./firebase";
 

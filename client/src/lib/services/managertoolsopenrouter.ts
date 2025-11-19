@@ -1,5 +1,5 @@
 import { db } from "../firebase";
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { env } from "../../env";
 

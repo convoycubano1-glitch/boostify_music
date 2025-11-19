@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { db } from '../firebase';
 import { collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp } from 'firebase/firestore';
 

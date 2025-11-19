@@ -1,5 +1,5 @@
 import { collection, addDoc, serverTimestamp, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { db } from '../firebase';
 
 // Firestore collections for each agent type

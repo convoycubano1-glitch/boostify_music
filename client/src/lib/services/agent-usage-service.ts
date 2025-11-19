@@ -1,6 +1,6 @@
-import { logger } from "./logger";
 // client/src/lib/services/agent-usage-service.ts
 
+import { logger } from "../logger";
 import { db, auth } from '../../firebase';
 import { 
   collection, 

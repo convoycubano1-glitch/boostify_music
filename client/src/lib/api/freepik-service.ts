@@ -6,7 +6,7 @@
  */
 
 import axios from 'axios';
-import { logger } from "./logger";
+import { logger } from "../logger";
 
 /**
  * Enum for supported Freepik AI models

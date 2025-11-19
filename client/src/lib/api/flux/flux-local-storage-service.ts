@@ -6,7 +6,7 @@
  */
 
 import { FluxTaskResult } from './flux-service';
-import { logger } from "./logger";
+import { logger } from "../../logger";
 
 // Clave donde se almacenarán las tareas en localStorage
 const STORAGE_KEY = 'flux_tasks';

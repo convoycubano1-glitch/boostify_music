@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../logger";
 /**
  * Manager Documents Service - Client Side
  * Usa Gemini API desde el backend + Firestore desde el cliente

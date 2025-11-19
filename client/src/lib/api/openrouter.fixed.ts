@@ -1,5 +1,5 @@
 import { env } from "../../env";
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { 
   ShotType, 
   SceneRole, 

@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../logger";
 /**
  * Timeline Video Generation Service
  * Sistema completo para generar videos desde imágenes en el timeline

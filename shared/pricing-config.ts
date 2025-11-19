@@ -29,8 +29,8 @@ export interface PlanConfig {
 }
 
 /**
- * TODO: Actualizar con los Price IDs anuales reales de Stripe
- * Ver STRIPE_PRICE_IDS_GUIDE.md para instrucciones
+ * ✅ Price IDs actualizados - Noviembre 19, 2025
+ * Incluye precios mensuales y anuales (16% descuento en anuales)
  */
 export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
   free: {
@@ -76,7 +76,7 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     },
     stripeIds: {
       monthly: 'price_1R0lay2LyFplWimfQxUL6Hn0',
-      yearly: 'price_PENDING_CREATOR_YEARLY' // TODO: Reemplazar con Price ID real de Stripe
+      yearly: 'price_1SUz302LyFplWimfv5MZCNz4' // ✅ Creator Yearly - $604/año
     },
     features: [
       { name: 'Everything in Free', included: true },
@@ -107,7 +107,7 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     },
     stripeIds: {
       monthly: 'price_1R0laz2LyFplWimfsBd5ASoa',
-      yearly: 'price_PENDING_PROFESSIONAL_YEARLY' // TODO: Reemplazar con Price ID real de Stripe
+      yearly: 'price_1SUz302LyFplWimfG5YtbUJ3' // ✅ Professional Yearly - $1,007/año
     },
     features: [
       { name: 'Everything in Creator', included: true },
@@ -137,7 +137,7 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     },
     stripeIds: {
       monthly: 'price_1R0lb12LyFplWimf7JpMynKA',
-      yearly: 'price_PENDING_ENTERPRISE_YEARLY' // TODO: Reemplazar con Price ID real de Stripe
+      yearly: 'price_1SUz312LyFplWimfQSQLo349' // ✅ Enterprise Yearly - $1,511/año
     },
     features: [
       { name: 'Everything in Professional', included: true },

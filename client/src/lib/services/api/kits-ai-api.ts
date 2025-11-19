@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../../logger";
 /**
  * API Client para servicios de KITS AI
  * 

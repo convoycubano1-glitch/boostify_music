@@ -1,5 +1,5 @@
 import { openai } from "../openai";
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { getAuthToken } from "../firebase";
 
 interface TranslationRequest {

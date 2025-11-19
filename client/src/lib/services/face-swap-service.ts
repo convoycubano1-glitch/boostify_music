@@ -1,5 +1,5 @@
 import { getAuthToken } from "../auth";
-import { logger } from "./logger";
+import { logger } from "../logger";
 import type { FaceSwapResult } from "../components/face-swap/face-swap";
 import axios from "axios";
 

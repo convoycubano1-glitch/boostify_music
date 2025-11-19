@@ -1,5 +1,5 @@
 import { db } from '../../firebase';
-import { logger } from "./logger";
+import { logger } from "../logger";
 import { 
   collection, 
   doc, 

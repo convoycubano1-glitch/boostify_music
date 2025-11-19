@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../logger";
 /**
  * Performance Segment Service
  * Maneja la lógica de negocio para segmentos de performance con lip-sync

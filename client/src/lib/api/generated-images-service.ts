@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../logger";
 /**
  * Servicio para administrar imágenes y videos generados en Firestore
  * Proporciona funciones para guardar, recuperar y gestionar contenido multimedia generado

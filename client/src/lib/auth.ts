@@ -1,5 +1,5 @@
 import { auth } from "../firebase";
-import { logger } from "../logger";
+import { logger } from "./logger";
 
 /**
  * Implements exponential backoff for retrying network requests

@@ -1,5 +1,5 @@
 import { getAuthToken } from "../auth";
-import { logger } from "./logger";
+import { logger } from "../logger";
 
 interface CourseContent {
   overview: string;

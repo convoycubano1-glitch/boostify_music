@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../../logger";
 /**
  * Servicio para interactuar con la API de Flux
  * 

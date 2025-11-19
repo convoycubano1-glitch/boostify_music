@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "../logger";
 /**
  * Servicio frontend para gestionar proyectos de video musical
  * Maneja el almacenamiento en Firebase Storage y Firestore
