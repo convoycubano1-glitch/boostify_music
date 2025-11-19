@@ -1487,17 +1487,24 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         setProgressMessage("✅ Lyrics analyzed! Now generating creative proposals...");
         setProgressPercentage(0);
         
-        // Generar master character si hay imágenes de referencia
+        // ⚡ OPTIMIZACIÓN: Generar conceptos INMEDIATAMENTE (sin esperar Master Character)
+        // El Master Character se generará en PARALELO en background
+        logger.info('🎨 Generando 3 conceptos creativos CON contexto de letra (SIN esperar Master Character)...');
+        setProgressMessage("🎬 Generating 3 creative proposals based on your lyrics...");
+        
+        // Generar conceptos en paralelo con Master Character (si hay imágenes)
+        const conceptsPromise = handleGenerateConcepts(transcriptionText, director);
+        
+        // Generar Master Character en BACKGROUND (no bloquea conceptos)
         if (artistReferenceImages.length > 0) {
-          logger.info('🎭 Generando Master Character antes de conceptos...');
-          setProgressMessage("🎭 Step 2/3: Creating your master character...");
-          await handleGenerateMasterCharacter();
+          logger.info('🎭 Generando Master Character en PARALELO (background)...');
+          handleGenerateMasterCharacter().catch(err => {
+            logger.warn('⚠️ Master Character falló (no crítico):', err);
+          });
         }
         
-        // Generar conceptos automáticamente CON el contexto de la letra
-        logger.info('🎨 Generando 3 conceptos creativos CON contexto de letra...');
-        setProgressMessage("🎬 Step 2/2: Generating 3 creative proposals based on your lyrics...");
-        await handleGenerateConcepts(transcriptionText, director);
+        // Esperar SOLO a conceptos (mucho más rápido)
+        await conceptsPromise;
         
       } catch (err) {
         logger.error("❌ Error transcribing audio:", err);
@@ -1515,19 +1522,25 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         setShowDirectorSelection(true);
       }
     } else if (transcription) {
-      // Si ya hay transcripción, generar master character y conceptos directamente
+      // Si ya hay transcripción, generar conceptos directamente (Master Character en paralelo)
       logger.info('✅ [TRANSCRIPCIÓN] Ya existe, saltando directo a generación de conceptos');
       setShowProgress(true);
       setProgressMessage("✅ Lyrics already analyzed! Generating creative proposals...");
       
+      // ⚡ OPTIMIZACIÓN: Generar conceptos INMEDIATAMENTE
+      logger.info('🎬 [CONCEPTOS] Generando con letra previamente transcrita (SIN esperar Master Character)');
+      const conceptsPromise = handleGenerateConcepts(transcription, director);
+      
+      // Generar Master Character en BACKGROUND (no bloquea conceptos)
       if (artistReferenceImages.length > 0) {
-        logger.info('🎭 Generando Master Character antes de conceptos...');
-        setProgressMessage("🎭 Creating your master character...");
-        await handleGenerateMasterCharacter();
+        logger.info('🎭 Generando Master Character en PARALELO (background)...');
+        handleGenerateMasterCharacter().catch(err => {
+          logger.warn('⚠️ Master Character falló (no crítico):', err);
+        });
       }
       
-      logger.info('🎬 [CONCEPTOS] Generando con letra previamente transcrita');
-      await handleGenerateConcepts(transcription, director);
+      // Esperar SOLO a conceptos
+      await conceptsPromise;
     }
   }, [transcription, selectedFile, toast, artistReferenceImages, handleGenerateMasterCharacter]);
 
@@ -1544,10 +1557,17 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     try {
       const audioDurationInSeconds = audioBuffer ? audioBuffer.duration : 180;
       
-      // Usar master character si está disponible, sino usar imágenes de referencia
+      // ⚡ OPTIMIZACIÓN: Usar imágenes de referencia DIRECTAMENTE (sin esperar Master Character)
+      // Si Master Character ya existe, úsalo; sino usa las imágenes de referencia originales
       const characterReference = masterCharacter?.imageUrl 
         ? [masterCharacter.imageUrl] 
         : (artistReferenceImages.length > 0 ? artistReferenceImages : undefined);
+      
+      if (characterReference) {
+        logger.info(`🖼️ [REFERENCIAS] Usando ${characterReference === artistReferenceImages ? 'imágenes originales' : 'Master Character'} (${characterReference.length} imagen(es))`);
+      } else {
+        logger.info('ℹ️ [REFERENCIAS] Sin imágenes de referencia');
+      }
       
       logger.info('🤖 [AI] Llamando a generateThreeConceptProposals con letra completa...');
       const concepts = await generateThreeConceptProposals(
