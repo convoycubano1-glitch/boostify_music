@@ -9,6 +9,7 @@ import { Textarea } from "../ui/textarea";
 import { TimelineEditor } from "./TimelineEditor";
 import type { TimelineClip } from "./TimelineEditor";
 import { TimelineClipUnified, ensureCompatibleClip, TimelineItem } from "../timeline/TimelineClipUnified";
+import { PreviewImagesModal } from "./PreviewImagesModal";
 import { Slider } from "../ui/slider";
 import { Card } from "../ui/card";
 import Editor from "@monaco-editor/react";
@@ -489,6 +490,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [isGeneratingRemaining, setIsGeneratingRemaining] = useState(false);
   const [hasUserPaid, setHasUserPaid] = useState(false);
   const [videoGenerationsCount, setVideoGenerationsCount] = useState(0);
+
+  // Preview states
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewImages, setPreviewImages] = useState<Array<{ id: string; url: string; prompt: string }>>([]);
 
   // Función para generar 3 propuestas de concepto
   const generateConceptProposals = async () => {
@@ -1122,6 +1127,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
               });
             });
             
+            // 🎯 PREVIEW: Mostrar modal después de 10 imágenes (solo primera vez)
+            if (sceneIndex === 10 && startFrom === 1 && !isAdmin && totalScenes > 10) {
+              logger.info('🎯 [PREVIEW] 10 imágenes completadas, mostrando modal de preview...');
+              setPreviewImages(generationProgress.generatedImages.filter((_, idx) => idx < 10));
+              setShowPreviewModal(true);
+              setIsGeneratingImages(false);
+              setIsGeneratingShots(false);
+              return; // Detener generación hasta que usuario apruebe
+            }
+            
             // Actualizar progreso general
             const progress = 30 + ((sceneIndex / totalScenes) * 60);
             setProgressPercentage(Math.round(progress));
@@ -1250,6 +1265,33 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     toast({
       title: "Payment Successful!",
       description: "You can now generate up to 3 final videos.",
+    });
+  };
+
+  // Handle preview approval - continue generating remaining images
+  const handlePreviewApprove = async () => {
+    logger.info('✅ [PREVIEW] User approved, continuing generation...');
+    setShowPreviewModal(false);
+    
+    toast({
+      title: "Preview Approved!",
+      description: "Continuing generation for remaining images...",
+    });
+    
+    // Continue from image 11
+    await executeImageGeneration(scriptContent, 11);
+  };
+
+  // Handle preview rejection - stop and allow adjustments
+  const handlePreviewReject = () => {
+    logger.info('❌ [PREVIEW] User rejected, stopping generation');
+    setShowPreviewModal(false);
+    setIsGeneratingImages(false);
+    setIsGeneratingShots(false);
+    
+    toast({
+      title: "Generation Stopped",
+      description: "You can adjust settings and try again",
     });
   };
 
@@ -5046,6 +5088,14 @@ ${transcription}`;
         stage={characterGenerationStage}
         progress={characterGenerationProgress}
         characterImage={masterCharacter?.imageUrl}
+      />
+
+      {/* Preview Modal - Shows first 10 images for approval */}
+      <PreviewImagesModal
+        open={showPreviewModal}
+        images={previewImages}
+        onApprove={handlePreviewApprove}
+        onReject={handlePreviewReject}
       />
 
       {/* Modal de Templates Rápidos */}
