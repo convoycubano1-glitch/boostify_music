@@ -34,6 +34,7 @@ interface MusicianModalProps {
     style: string;
   };
   concept?: string;
+  narrativeSummary?: string;
   projectId?: number;
   onMusicianCreated: (musicianData: any) => void;
 }
@@ -45,6 +46,7 @@ export function MusicianModal({
   scriptContext,
   director,
   concept,
+  narrativeSummary,
   projectId,
   onMusicianCreated,
 }: MusicianModalProps) {
@@ -160,11 +162,31 @@ export function MusicianModal({
       return;
     }
 
-    // Create full cinematic prompt
+    // Create CONTEXT-RICH cinematic prompt with narrative coherence
     const instrument = INSTRUMENTS.find(i => i.id === selectedInstrument);
-    const fullPrompt = `Cinematic ${instrument?.name} player: ${musicianTypeDescription}. ${director ? `Director style: ${director.style}. ` : ''}${concept ? `Video concept: ${concept}. ` : ''}Photorealistic, professional lighting, 8K resolution, cinematic composition.`;
+    
+    const fullPrompt = `MUSIC VIDEO CONTEXT:
+${narrativeSummary ? `Overall Story: ${narrativeSummary}` : ''}
+${concept ? `Visual Concept: ${concept}` : ''}
+${director ? `Director Style: ${director.name} - ${director.style}` : ''}
 
-    logger.info('🎸 Generating musician with prompt:', fullPrompt);
+MUSICIAN CHARACTER:
+Instrument: ${instrument?.name}
+Description: ${musicianTypeDescription}
+Scene Context: ${scriptContext || 'Performance scene'}
+Timestamp: ${timelineItem.timestamp.toFixed(2)}s
+
+REQUIREMENTS:
+- Professional ${instrument?.name} player in cinematic music video setting
+- Must match the overall visual concept and director's style
+- Character should feel integrated into the video's narrative world
+- Photorealistic, professional lighting, 8K resolution
+- Cinematic composition with depth and atmosphere
+- Consistent with the music video's aesthetic
+
+Create a stunning, context-appropriate musician character that feels like part of this specific music video production.`;
+
+    logger.info('🎸 Generating musician with context-rich prompt:', fullPrompt);
     generateImageMutation.mutate(fullPrompt);
   };
 
