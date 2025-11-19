@@ -2159,8 +2159,8 @@ export function TimelineEditor({
 
       {/* Main timeline area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Effects Panel - Responsive Side/Bottom Panel */}
-        {showEffectsPanel && selectedClip !== null && !isMobile && (
+        {/* Effects Panel - DISABLED: Was blocking timeline icons and unprofessional */}
+        {/* {showEffectsPanel && selectedClip !== null && !isMobile && (
           <div className="order-last w-full lg:w-80 lg:min-w-80 border-l border-gray-700 bg-gray-800 overflow-y-auto">
             <EffectsPanel
               clip={clips.find(c => c.id === selectedClip)!}
@@ -2168,7 +2168,7 @@ export function TimelineEditor({
               className="h-full"
             />
           </div>
-        )}
+        )} */}
         
         {/* Layer panel - Enhanced Width */}
         <div className="w-40 min-w-40 md:w-48 md:min-w-48 border-r-2 border-gray-700 bg-gradient-to-b from-gray-800 to-gray-850 overflow-hidden">
@@ -2622,8 +2622,8 @@ export function TimelineEditor({
         />
       )}
 
-      {/* Mobile Effects Panel - Drawer Style */}
-      {isMobile && showEffectsPanel && selectedClip !== null && (
+      {/* Mobile Effects Panel - DISABLED: Was blocking timeline and unprofessional */}
+      {/* {isMobile && showEffectsPanel && selectedClip !== null && (
         <Dialog open={showEffectsPanel} onOpenChange={(open) => {
           if (!open) {
             setShowEffectsPanel(false);
@@ -2655,7 +2655,7 @@ export function TimelineEditor({
             </div>
           </DialogContent>
         </Dialog>
-      )}
+      )} */}
     </div>
   );
 }
