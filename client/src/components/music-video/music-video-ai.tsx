@@ -93,6 +93,44 @@ fal.config({
   credentials: (import.meta as any).env.VITE_FAL_API_KEY,
 });
 
+/**
+ * Retry with exponential backoff
+ * @param fn Function to retry
+ * @param maxRetries Maximum number of retries (default: 3)
+ * @param baseDelay Base delay in ms (default: 1000)
+ * @param onRetry Callback called on each retry attempt
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000,
+  onRetry?: (attempt: number, delay: number, error: Error) => void
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt < maxRetries) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        logger.warn(`🔄 Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms...`);
+        
+        if (onRetry) {
+          onRetry(attempt + 1, delay, lastError);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  logger.error(`❌ All ${maxRetries} retry attempts failed`);
+  throw lastError!;
+}
+
 // Transcribe audio using backend API (secure)
 async function transcribeAudio(file: File) {
   try {
@@ -494,6 +532,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   // Preview states
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewImages, setPreviewImages] = useState<Array<{ id: string; url: string; prompt: string }>>([]);
+
+  // Retry states
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryMessage, setRetryMessage] = useState("");
 
   // Función para generar 3 propuestas de concepto
   const generateConceptProposals = async () => {
@@ -1021,21 +1064,39 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
               }
             : { scenes: [scene] };
           
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+          // 🔄 RETRY: Usar retry con exponential backoff para mayor robustez
+          const data = await retryWithBackoff(
+            async () => {
+              const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody),
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+              }
+
+              return await response.json();
             },
-            body: JSON.stringify(requestBody),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            logger.error(`❌ [IMG ${sceneIndex}] Error:`, errorData.error);
-            continue;
-          }
-
-          const data = await response.json();
+            3, // 3 reintentos
+            2000, // 2 segundos de delay inicial
+            (attempt, delay, error) => {
+              // Callback para mostrar feedback visual
+              setIsRetrying(true);
+              setRetryAttempt(attempt);
+              setRetryMessage(`Retrying scene ${sceneIndex}... Attempt ${attempt}/3 (${delay}ms delay)`);
+              logger.warn(`🔄 [IMG ${sceneIndex}] Retry ${attempt}/3: ${error.message}`);
+            }
+          );
+          
+          // Limpiar estado de retry después de éxito
+          setIsRetrying(false);
+          setRetryAttempt(0);
+          setRetryMessage("");
           
           const isValidImageUrl = data.imageUrl && 
                                   typeof data.imageUrl === 'string' && 
@@ -5130,6 +5191,21 @@ ${transcription}`;
                   </span>
                 </div>
               </motion.div>
+              
+              {/* Retry Indicator */}
+              {isRetrying && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center justify-center gap-2 bg-yellow-500/20 border border-yellow-500/40 rounded-lg px-4 py-2 mt-2"
+                >
+                  <RefreshCw className="h-4 w-4 text-yellow-400 animate-spin" />
+                  <div className="text-sm">
+                    <p className="text-yellow-400 font-semibold">Retrying...</p>
+                    <p className="text-yellow-300/70 text-xs">{retryMessage}</p>
+                  </div>
+                </motion.div>
+              )}
               
               <div>
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">
