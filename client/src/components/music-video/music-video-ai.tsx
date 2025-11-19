@@ -2106,12 +2106,26 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       }
       
       if (segments && segments.length > 0) {
+        // ✅ VERIFICAR Y REPORTAR PROMPTS DEL SCRIPT JSON
+        const segmentsWithPrompts = segments.filter(s => s.imagePrompt && s.imagePrompt.length > 20);
+        logger.info(`📊 RESUMEN DE SINCRONIZACIÓN:`);
+        logger.info(`   Total de escenas: ${segments.length}`);
+        logger.info(`   Escenas con prompts: ${segmentsWithPrompts.length}`);
+        logger.info(`   Prompts únicos detectados: ${new Set(segments.map(s => s.imagePrompt)).size}`);
+        
+        if (segmentsWithPrompts.length > 0) {
+          logger.info(`📝 Primeros 3 prompts del guion:`);
+          segmentsWithPrompts.slice(0, 3).forEach((s, i) => {
+            logger.info(`   ${i + 1}. ${s.imagePrompt?.substring(0, 80)}...`);
+          });
+        }
+        
         setTimelineItems(segments);
         setCurrentStep(4);
 
         toast({
           title: "Success",
-          description: `${segments.length} scenes synchronized with music`,
+          description: `${segments.length} scenes synchronized with ${segmentsWithPrompts.length} cinematic prompts`,
         });
       } else {
         throw new Error("No segments detected in the script");
