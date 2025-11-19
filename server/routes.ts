@@ -46,6 +46,7 @@ import musicRouter from './routes/music'; // Import the music generation router
 import uploadApiRouter from './routes/upload-api'; // Import the upload API router for image processing
 import fluxApiRouter from './routes/flux-api-proxy'; // Import the Flux API router
 import affiliateRouter from './routes/affiliate'; // Import the affiliate program router
+import affiliateTrackingRouter from './routes/affiliate-tracking'; // Import the affiliate tracking router
 import geminiImageRouter from './routes/gemini-image'; // Import the Gemini image generation router
 import artistProfileRouter from './routes/artist-profile'; // Import the artist profile generation router
 import imageGalleryRouter from './routes/image-gallery'; // Import the image gallery router
@@ -769,6 +770,7 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Register affiliate program routes
   app.use('/api/affiliate', affiliateRouter);
+  app.use('/', affiliateTrackingRouter); // Tracking routes (public, no auth required)
   
   // Register musicians routes
   app.use('/api', musiciansRouter);
