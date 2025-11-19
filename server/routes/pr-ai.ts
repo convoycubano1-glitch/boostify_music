@@ -31,7 +31,7 @@ router.post('/generate-pitch', authenticate, async (req: Request, res: Response)
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `Eres un experto en relaciones públicas para la industria musical.
 
@@ -94,7 +94,7 @@ router.post('/improve-text', authenticate, async (req: Request, res: Response) =
       });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `Mejora el siguiente texto para que sea más profesional, conciso y efectivo para ${context || 'comunicación con medios'}:
 
@@ -209,7 +209,7 @@ router.post('/suggest-campaign-title', authenticate, async (req: Request, res: R
 
     const { artistName, contentType, contentTitle } = req.body;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `Sugiere 3 títulos creativos y profesionales para una campaña de PR.
 

@@ -16,6 +16,14 @@ interface User {
   profileImageUrl?: string | null;
   role: string;
   isAdmin?: boolean;
+  // Artist profile fields
+  slug?: string | null;
+  artistName?: string | null;
+  biography?: string | null;
+  genre?: string | null;
+  genres?: string[] | null;
+  profileImage?: string | null;
+  coverImage?: string | null;
 }
 
 export function useAuth() {

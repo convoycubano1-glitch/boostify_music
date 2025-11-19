@@ -59,7 +59,17 @@ declare global {
  */
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
-    // Check if user is already authenticated via session
+    // PRIORITY 1: Check Replit Auth via passport (req.user)
+    if (req.user && (req.user as any).id) {
+      console.log('✅ User authenticated via Replit Auth (passport):', {
+        id: (req.user as any).id,
+        replitId: (req.user as any).replitId,
+        email: (req.user as any).email
+      });
+      return next();
+    }
+    
+    // PRIORITY 2: Check if user is already authenticated via session
     if (req.session && req.session.user) {
       console.log('✅ User authenticated via session:', {
         id: req.session.user.id,
@@ -70,17 +80,13 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       return next();
     }
     
-    // También verificar req.user de passport (Replit Auth)
-    if (req.user) {
-      console.log('✅ User authenticated via passport:', {
-        id: (req.user as any).id,
-        replitId: (req.user as any).replitId,
-        email: (req.user as any).email
-      });
+    // PRIORITY 3: Check for authenticated session via isAuthenticated (Replit Auth)
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      console.log('✅ User authenticated via req.isAuthenticated()');
       return next();
     }
     
-    console.log('⚠️ No session.user and no req.user found, checking Firebase token...');
+    console.log('⚠️ No Replit Auth user found, checking Firebase token...');
     
     // Check Firebase token from Authorization header
     const authHeader = req.headers.authorization;

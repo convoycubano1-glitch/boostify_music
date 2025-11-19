@@ -114,7 +114,7 @@ export default function PRPage() {
   const [formData, setFormData] = useState({
     title: "",
     artistName: user?.artistName || "",
-    artistProfileUrl: "",
+    artistProfileUrl: user?.slug ? `${window.location.origin}/artist/${user.slug}` : "",
     contentType: "single" as const,
     contentTitle: "",
     contentUrl: "",
@@ -296,7 +296,7 @@ export default function PRPage() {
     setFormData({
       title: "",
       artistName: user?.artistName || "",
-      artistProfileUrl: "",
+      artistProfileUrl: user?.slug ? `${window.location.origin}/artist/${user.slug}` : "",
       contentType: "single",
       contentTitle: "",
       contentUrl: "",
@@ -578,7 +578,7 @@ export default function PRPage() {
                   </div>
                   <div>
                     <Label htmlFor="artistProfileUrl" data-testid="label-profile-url">
-                      Link del Perfil (Opcional)
+                      Link del Perfil {user?.slug && <span className="text-green-600">✓ Auto-cargado</span>}
                     </Label>
                     <Input
                       id="artistProfileUrl"
@@ -586,9 +586,13 @@ export default function PRPage() {
                       value={formData.artistProfileUrl}
                       onChange={(e) => setFormData({ ...formData, artistProfileUrl: e.target.value })}
                       data-testid="input-profile-url"
+                      className={user?.slug ? "border-green-500 bg-green-50 dark:bg-green-950/20" : ""}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Si no lo tienes, generaremos uno automáticamente
+                      {user?.slug 
+                        ? "✓ Tu perfil de artista se ha cargado automáticamente. Puedes editarlo si lo deseas."
+                        : "Si no lo tienes, generaremos uno automáticamente"
+                      }
                     </p>
                   </div>
                 </div>
