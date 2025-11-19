@@ -37,9 +37,12 @@ import {
   Loader2,
   Eye,
   MessageSquare,
-  Star
+  Star,
+  Sparkles,
+  Wand2,
+  Image as ImageIcon
 } from "lucide-react";
-import prHeroImage from "@assets/generated_images/PR_Agent_Hero_Image_d3c922a5.png";
+import prHeroImage from "../../../attached_assets/generated_images/PR_Agent_Hero_Image_d3c922a5.png";
 
 interface PRCampaign {
   id: number;
@@ -198,6 +201,94 @@ export default function PRPage() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/pr/campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['/api/pr/campaigns', selectedCampaign] });
+    }
+  });
+
+  const generatePitchMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('/api/pr-ai/generate-pitch', {
+        method: 'POST',
+        body: JSON.stringify({
+          artistName: formData.artistName,
+          contentType: formData.contentType,
+          contentTitle: formData.contentTitle,
+          genre: formData.targetGenres[0] || 'urban',
+          biography: user?.biography || ''
+        })
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data.pitch) {
+        setFormData({ ...formData, pitchMessage: data.pitch });
+        toast({
+          title: "¡Pitch generado!",
+          description: "El mensaje ha sido generado con IA."
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo generar el pitch. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const improvePitchMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('/api/pr-ai/improve-text', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: formData.pitchMessage,
+          context: 'comunicación con medios musicales'
+        })
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data.improvedText) {
+        setFormData({ ...formData, pitchMessage: data.improvedText });
+        toast({
+          title: "¡Texto mejorado!",
+          description: "El mensaje ha sido optimizado con IA."
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo mejorar el texto.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const suggestTitleMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('/api/pr-ai/suggest-campaign-title', {
+        method: 'POST',
+        body: JSON.stringify({
+          artistName: formData.artistName,
+          contentType: formData.contentType,
+          contentTitle: formData.contentTitle
+        })
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data.suggestions && data.suggestions.length > 0) {
+        setFormData({ ...formData, title: data.suggestions[0] });
+        toast({
+          title: "¡Título sugerido!",
+          description: "Puedes editarlo si lo deseas."
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo generar título.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -446,7 +537,27 @@ export default function PRPage() {
               {wizardStep === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="title" data-testid="label-campaign-title">Nombre de la Campaña</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label htmlFor="title" data-testid="label-campaign-title">Nombre de la Campaña</Label>
+                      {formData.artistName && formData.contentTitle && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => suggestTitleMutation.mutate()}
+                          disabled={suggestTitleMutation.isPending}
+                          className="gap-2"
+                          data-testid="button-suggest-title-ai"
+                        >
+                          {suggestTitleMutation.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-3 h-3" />
+                          )}
+                          Generar con IA
+                        </Button>
+                      )}
+                    </div>
                     <Input
                       id="title"
                       placeholder="Ej: Lanzamiento Single Noviembre 2025"
@@ -626,9 +737,49 @@ export default function PRPage() {
               {wizardStep === 4 && (
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="pitchMessage" data-testid="label-pitch-message">
-                      Mensaje para Medios (2-3 frases)
-                    </Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label htmlFor="pitchMessage" data-testid="label-pitch-message">
+                        Mensaje para Medios (2-3 frases)
+                      </Label>
+                      <div className="flex gap-2">
+                        {formData.pitchMessage && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => improvePitchMutation.mutate()}
+                            disabled={improvePitchMutation.isPending}
+                            className="gap-2"
+                            data-testid="button-improve-pitch-ai"
+                          >
+                            {improvePitchMutation.isPending ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Wand2 className="w-3 h-3" />
+                            )}
+                            Mejorar con IA
+                          </Button>
+                        )}
+                        {formData.artistName && formData.contentTitle && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => generatePitchMutation.mutate()}
+                            disabled={generatePitchMutation.isPending}
+                            className="gap-2"
+                            data-testid="button-generate-pitch-ai"
+                          >
+                            {generatePitchMutation.isPending ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3 h-3" />
+                            )}
+                            Generar con IA
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                     <Textarea
                       id="pitchMessage"
                       placeholder="Ej: Redwine lanza su nuevo single 'El Silencio Grita', una fusión única de cine y música latina. Disponible ahora en todas las plataformas."
@@ -637,6 +788,11 @@ export default function PRPage() {
                       rows={4}
                       data-testid="input-pitch-message"
                     />
+                    {!formData.pitchMessage && formData.artistName && formData.contentTitle && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        💡 Tip: Usa "Generar con IA" para crear un mensaje profesional automáticamente
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="contactEmail" data-testid="label-contact-email">Email de Contacto</Label>
