@@ -211,7 +211,7 @@ Locations: ${JSON.stringify(concept.locations || [])}
 `;
     }
 
-    const prompt = `Generate a complete music video script for these lyrics. Return ONLY valid JSON, no markdown.
+    const prompt = `You are an award-winning music video director creating a COHESIVE NARRATIVE with visual variety. Generate a complete music video script for these lyrics. Return ONLY valid JSON, no markdown.
 
 LYRICS:
 ${lyrics}
@@ -221,27 +221,54 @@ DURATION: ${audioDuration || 180} seconds
 TARGET SCENES: ${targetScenes}
 EDITING STYLE: ${editingStyle?.name || 'Dynamic'}
 
-Create a detailed script with exactly ${targetScenes} scenes. Each scene MUST include:
+🎯 CRITICAL CREATIVE REQUIREMENTS:
+
+1. **NARRATIVE COHERENCE**: Create a complete story arc with beginning, middle, and end. Every scene should connect logically to tell ONE cohesive story based on the concept and lyrics.
+
+2. **SHOT VARIETY** (MUST FOLLOW THIS DISTRIBUTION):
+   - 30% PERFORMANCE shots: Artist singing/performing (use "shot_category": "PERFORMANCE")
+   - 40% B-ROLL shots: Cinematic visuals that tell the story WITHOUT the artist (use "shot_category": "B-ROLL")
+   - 30% STORY shots: Narrative scenes with characters/elements from the story (use "shot_category": "STORY")
+
+3. **VISUAL PROGRESSION**: Scenes should progress naturally:
+   - Opening: Establish the world and main character
+   - Rising: Develop the conflict or emotional journey
+   - Climax: Peak emotional or visual moment
+   - Resolution: Closure or final statement
+
+Create exactly ${targetScenes} scenes. FIRST 10 SCENES ARE CRITICAL - they set the entire tone and narrative.
+
+Each scene MUST include ALL these fields:
+
+TECHNICAL:
 - scene_number: Sequential number
 - start_time: Start time in seconds
-- duration: Scene duration in seconds (vary between 2-6 seconds)
-- lyrics: Lyrics for this scene
-- shot_type: One of [close-up, medium-shot, wide-shot, extreme-close-up, over-shoulder, tracking-shot, crane-shot, drone-shot]
-- camera_movement: One of [static, pan, tilt, dolly, tracking, handheld, steadicam, crane, drone, zoom]
-- lens: One of [wide-angle, standard, telephoto, macro, fisheye]
-- role: Either "performance" or "b-roll"
-- music_section: One of [intro, verse, pre-chorus, chorus, bridge, breakdown, outro]
-- visual_description: Detailed description of what's happening
-- mood: Emotional tone
-- lighting: Lighting setup
+- duration: Scene duration (vary 2-6 seconds)
+- shot_type: [close-up, medium-shot, wide-shot, extreme-close-up, over-shoulder, tracking-shot, crane-shot, drone-shot]
+- camera_movement: [static, pan, tilt, dolly, tracking, handheld, steadicam, crane, drone, zoom]
+- lens: [wide-angle, standard, telephoto, macro, fisheye]
+- lighting: Specific lighting setup
 - color_grading: Color treatment
-- location: Where this scene takes place
-- props: Array of props needed
-- wardrobe_notes: Wardrobe details for this scene
 
-Return ONLY this JSON structure (no markdown):
+NARRATIVE (NEW - CRITICAL FOR IMAGE GENERATION):
+- shot_category: MUST be "PERFORMANCE" | "B-ROLL" | "STORY" (follow 30/40/30 distribution)
+- narrative_context: 2-3 sentences explaining what's happening in the story at this moment
+- lyric_connection: How this specific lyric connects to the visual concept
+- story_progression: Where we are in the story arc (e.g., "Introduction of main character", "Rising tension", "Emotional climax")
+- emotion: Primary emotion for this scene
+- visual_description: DETAILED description (3-4 sentences) of exactly what we see - be specific about actions, expressions, environment
+
+SCENE DETAILS:
+- lyrics: Lyrics for this scene
+- music_section: [intro, verse, pre-chorus, chorus, bridge, breakdown, outro]
+- location: Specific location
+- props: Array of props
+- wardrobe_notes: Wardrobe details
+
+Return ONLY this JSON structure (no markdown, no explanation):
 {
   "title": "Video title",
+  "narrative_summary": "One paragraph summary of the complete story/concept",
   "total_duration": ${audioDuration || 180},
   "scenes": [
     {
@@ -250,20 +277,26 @@ Return ONLY this JSON structure (no markdown):
       "duration": 3.5,
       "lyrics": "...",
       "shot_type": "wide-shot",
+      "shot_category": "STORY",
       "camera_movement": "dolly",
       "lens": "wide-angle",
-      "role": "performance",
       "music_section": "intro",
-      "visual_description": "...",
-      "mood": "mysterious",
-      "lighting": "low-key dramatic",
-      "color_grading": "cool tones",
-      "location": "urban rooftop",
-      "props": ["microphone", "fog machine"],
-      "wardrobe_notes": "..."
+      "narrative_context": "We open in a desolate urban landscape. The main character walks alone through empty streets, symbolizing isolation and searching for meaning.",
+      "lyric_connection": "The opening lyrics about feeling lost mirror the visual of wandering through the city",
+      "story_progression": "Act 1 - Introduction: Establishing the character's emotional state and world",
+      "emotion": "melancholic, searching",
+      "visual_description": "Wide establishing shot of a lone figure walking down a rain-slicked street at dusk. Neon signs reflect in puddles. The character is dressed in dark clothing, head down, shoulders hunched. Camera slowly dollies forward, following from behind.",
+      "mood": "mysterious, melancholic",
+      "lighting": "low-key dramatic with practical neon lights",
+      "color_grading": "desaturated cool tones with warm neon accents",
+      "location": "urban city street at dusk",
+      "props": ["neon signs", "rain", "street lights"],
+      "wardrobe_notes": "Dark jacket, casual street wear"
     }
   ]
-}`;
+}
+
+REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Tell a COMPLETE STORY with visual variety!`;
 
     const response = await generateContentWithFallback({
       model: "gemini-2.0-flash-exp",
