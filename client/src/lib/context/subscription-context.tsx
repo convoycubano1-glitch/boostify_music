@@ -1,50 +1,134 @@
 /**
  * Contexto para gestionar la información de suscripción del usuario
+ * MIGRADO A POSTGRESQL - Noviembre 2025
  */
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { logger } from "../logger";
 import { useAuth } from '../../hooks/use-auth';
-import { db } from '../firebase';
-import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 
-// Tipos de planes disponibles
-export type PlanType = 'free' | 'basic' | 'pro' | 'premium';
+// Tipos de planes disponibles (UNIFICADOS con pricing-config.ts)
+export type PlanType = 'free' | 'creator' | 'professional' | 'enterprise';
 
 // Interfaz para los datos de suscripción
 export interface Subscription {
-  id: string;                 // ID de la suscripción
-  userId: string;             // ID del usuario
-  plan: PlanType;             // Tipo de plan
-  status: 'active' | 'canceled' | 'past_due'; // Estado
-  currentPeriodStart: Date;   // Inicio del período actual
-  currentPeriodEnd: Date;     // Fin del período actual
-  cancelAtPeriodEnd: boolean; // Si se cancelará al final del período
-  stripeCustomerId?: string;  // ID de cliente en Stripe
-  stripeSubscriptionId?: string; // ID de suscripción en Stripe
-  createdAt: Date;            // Fecha de creación
-  updatedAt: Date;            // Fecha de última actualización
+  id: number;
+  userId: number;
+  plan: PlanType;
+  status: 'active' | 'cancelled' | 'expired' | 'trialing' | 'past_due';
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  interval: 'monthly' | 'yearly';
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  isTrial: boolean;
+  trialEndsAt?: Date;
+  grantedByBundle?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Interfaz de rol de usuario
+export interface UserRole {
+  id: number;
+  userId: number;
+  role: 'user' | 'moderator' | 'support' | 'admin';
+  permissions: string[];
+  grantedAt: Date;
 }
 
 // Interfaz para el contexto de suscripción
 interface SubscriptionContextType {
   subscription: Subscription | null;
   currentPlan: PlanType;
+  userRole: UserRole | null;
   isLoading: boolean;
   error: string | null;
   refreshSubscription: () => Promise<void>;
   hasAccess: (requiredPlan: PlanType) => boolean;
+  isAdmin: () => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 // Crear contexto
 const SubscriptionContext = createContext<SubscriptionContextType>({
   subscription: null,
   currentPlan: 'free',
+  userRole: null,
   isLoading: true,
   error: null,
   refreshSubscription: async () => {},
-  hasAccess: () => false, // Por defecto, sin acceso
+  hasAccess: () => false,
+  isAdmin: () => false,
+  hasPermission: () => false,
 });
+
+/**
+ * Función para obtener suscripción desde PostgreSQL
+ */
+async function fetchSubscription(userId: number): Promise<Subscription | null> {
+  try {
+    const response = await fetch(`/api/subscription/user/${userId}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // No subscription found
+      }
+      throw new Error(`Failed to fetch subscription: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Convert date strings to Date objects
+    if (data) {
+      return {
+        ...data,
+        currentPeriodStart: new Date(data.currentPeriodStart),
+        currentPeriodEnd: new Date(data.currentPeriodEnd),
+        trialEndsAt: data.trialEndsAt ? new Date(data.trialEndsAt) : undefined,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    logger.error('Error fetching subscription from PostgreSQL:', error);
+    throw error;
+  }
+}
+
+/**
+ * Función para obtener rol de usuario desde PostgreSQL
+ */
+async function fetchUserRole(userId: number): Promise<UserRole | null> {
+  try {
+    const response = await fetch(`/api/user/role/${userId}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // No role assigned (default: user)
+      }
+      throw new Error(`Failed to fetch user role: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data) {
+      return {
+        ...data,
+        grantedAt: new Date(data.grantedAt),
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    logger.error('Error fetching user role from PostgreSQL:', error);
+    throw error;
+  }
+}
 
 /**
  * Proveedor de contexto de suscripción
@@ -52,22 +136,21 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Calcular plan actual basado en el estado de la suscripción
-  const currentPlan: PlanType = subscription?.status === 'active' 
+  const currentPlan: PlanType = subscription?.status === 'active' || subscription?.status === 'trialing'
     ? subscription.plan 
     : 'free';
   
   // Cargar datos de suscripción cuando cambia el usuario
   useEffect(() => {
-    let unsubscribe: (() => void) | null = null;
-    
-    const loadSubscription = async () => {
-      // Si no hay usuario, vaciar la suscripción
-      if (!user) {
+    const loadSubscriptionAndRole = async () => {
+      if (!user?.id) {
         setSubscription(null);
+        setUserRole(null);
         setIsLoading(false);
         return;
       }
@@ -76,179 +159,102 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setError(null);
       
       try {
-        // ADMIN tiene acceso premium automático
-        if (user.email === 'convoycubano@gmail.com') {
-          setSubscription({
-            id: 'admin',
-            userId: String(user.id),
-            plan: 'premium',
-            status: 'active',
-            currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 año
-            cancelAtPeriodEnd: false,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-          setIsLoading(false);
-          return;
-        }
+        // Cargar suscripción y rol en paralelo
+        const [subscriptionData, roleData] = await Promise.all([
+          fetchSubscription(user.id),
+          fetchUserRole(user.id)
+        ]);
         
-        // Verificar si existe una suscripción activa para el usuario
-        const subscriptionsRef = collection(db, 'subscriptions');
+        setSubscription(subscriptionData);
+        setUserRole(roleData);
         
-        // Usar user.id en lugar de user.uid (Replit Auth usa id, no uid)
-        const userId = String(user.id); // Convertir a string para Firestore
-        
-        // Obtener la primera suscripción activa del usuario
-        // En caso real, se usaría una consulta más precisa con Firestore
-        const subscriptionDoc = await getDoc(doc(db, 'user_subscriptions', userId));
-        
-        if (subscriptionDoc.exists()) {
-          // Obtener la suscripción activa
-          const subscriptionId = subscriptionDoc.data().activeSubscriptionId;
-          
-          if (subscriptionId) {
-            // Configurar listener para actualizaciones en tiempo real
-            unsubscribe = onSnapshot(
-              doc(db, 'subscriptions', subscriptionId),
-              (docSnapshot) => {
-                if (docSnapshot.exists()) {
-                  const data = docSnapshot.data();
-                  
-                  setSubscription({
-                    id: docSnapshot.id,
-                    userId: data.userId,
-                    plan: data.plan || 'free',
-                    status: data.status || 'active',
-                    currentPeriodStart: data.currentPeriodStart?.toDate() || new Date(),
-                    currentPeriodEnd: data.currentPeriodEnd?.toDate() || new Date(),
-                    cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
-                    stripeCustomerId: data.stripeCustomerId,
-                    stripeSubscriptionId: data.stripeSubscriptionId,
-                    createdAt: data.createdAt?.toDate() || new Date(),
-                    updatedAt: data.updatedAt?.toDate() || new Date(),
-                  });
-                } else {
-                  // No hay suscripción activa
-                  setSubscription(null);
-                }
-                
-                setIsLoading(false);
-              },
-              (err) => {
-                logger.error('Error al suscribirse a actualizaciones de suscripción:', err);
-                setError('Error al cargar datos de suscripción');
-                setIsLoading(false);
-              }
-            );
-          } else {
-            // No hay suscripción activa
-            setSubscription(null);
-            setIsLoading(false);
-          }
-        } else {
-          // No hay documento de suscripción para el usuario
-          setSubscription(null);
-          setIsLoading(false);
-        }
+        logger.info('Subscription and role loaded:', {
+          subscription: subscriptionData,
+          role: roleData
+        });
       } catch (err: any) {
-        logger.error('Error al cargar suscripción:', err);
+        logger.error('Error loading subscription and role:', err);
         setError(err.message || 'Error al cargar datos de suscripción');
+      } finally {
         setIsLoading(false);
       }
     };
     
-    loadSubscription();
-    
-    // Limpiar listener al desmontar
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [user]);
+    loadSubscriptionAndRole();
+  }, [user?.id]);
   
   /**
    * Recargar datos de suscripción bajo demanda
    */
   const refreshSubscription = async (): Promise<void> => {
-    if (!user) return;
+    if (!user?.id) return;
     
     setIsLoading(true);
-    setError(null);
-    
     try {
-      // Obtener la suscripción activa del usuario
-      const subscriptionDoc = await getDoc(doc(db, 'user_subscriptions', user.uid));
+      const [subscriptionData, roleData] = await Promise.all([
+        fetchSubscription(user.id),
+        fetchUserRole(user.id)
+      ]);
       
-      if (subscriptionDoc.exists()) {
-        const subscriptionId = subscriptionDoc.data().activeSubscriptionId;
-        
-        if (subscriptionId) {
-          const subscriptionData = await getDoc(doc(db, 'subscriptions', subscriptionId));
-          
-          if (subscriptionData.exists()) {
-            const data = subscriptionData.data();
-            
-            setSubscription({
-              id: subscriptionData.id,
-              userId: data.userId,
-              plan: data.plan || 'free',
-              status: data.status || 'active',
-              currentPeriodStart: data.currentPeriodStart?.toDate() || new Date(),
-              currentPeriodEnd: data.currentPeriodEnd?.toDate() || new Date(),
-              cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
-              stripeCustomerId: data.stripeCustomerId,
-              stripeSubscriptionId: data.stripeSubscriptionId,
-              createdAt: data.createdAt?.toDate() || new Date(),
-              updatedAt: data.updatedAt?.toDate() || new Date(),
-            });
-          } else {
-            setSubscription(null);
-          }
-        } else {
-          setSubscription(null);
-        }
-      } else {
-        setSubscription(null);
-      }
+      setSubscription(subscriptionData);
+      setUserRole(roleData);
     } catch (err: any) {
-      logger.error('Error al recargar suscripción:', err);
-      setError(err.message || 'Error al recargar datos de suscripción');
+      logger.error('Error refreshing subscription:', err);
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
   
   /**
-   * Verifica si el plan actual tiene acceso al plan requerido
-   * @param requiredPlan Plan requerido para acceder a cierta funcionalidad
-   * @returns true si el plan actual permite acceso, false en caso contrario
+   * Verificar si el usuario tiene acceso a un plan específico
+   * Jerarquía: free < creator < professional < enterprise
    */
   const hasAccess = (requiredPlan: PlanType): boolean => {
-    // Jerarquía de planes por nivel de acceso
-    const planLevels: Record<PlanType, number> = {
-      'free': 0,
-      'basic': 1,
-      'pro': 2,
-      'premium': 3
-    };
-
-    // Obtener nivel del plan actual y el plan requerido
-    const currentLevel = planLevels[currentPlan];
-    const requiredLevel = planLevels[requiredPlan];
-
-    // Verificar si el nivel actual es >= al nivel requerido
-    return currentLevel >= requiredLevel;
+    // Admin tiene acceso a todo
+    if (userRole?.role === 'admin') {
+      return true;
+    }
+    
+    const planHierarchy: PlanType[] = ['free', 'creator', 'professional', 'enterprise'];
+    const currentIndex = planHierarchy.indexOf(currentPlan);
+    const requiredIndex = planHierarchy.indexOf(requiredPlan);
+    
+    return currentIndex >= requiredIndex;
   };
-
-  const value = {
+  
+  /**
+   * Verificar si el usuario es administrador
+   */
+  const isAdmin = (): boolean => {
+    return userRole?.role === 'admin';
+  };
+  
+  /**
+   * Verificar si el usuario tiene un permiso específico
+   */
+  const hasPermission = (permission: string): boolean => {
+    if (!userRole) return false;
+    
+    // Admin tiene todos los permisos
+    if (userRole.role === 'admin') {
+      return true;
+    }
+    
+    // Verificar permisos específicos
+    return userRole.permissions?.includes(permission) || false;
+  };
+  
+  const value: SubscriptionContextType = {
     subscription,
     currentPlan,
+    userRole,
     isLoading,
     error,
     refreshSubscription,
     hasAccess,
+    isAdmin,
+    hasPermission,
   };
   
   return (
@@ -259,14 +265,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 }
 
 /**
- * Hook para utilizar el contexto de suscripción
+ * Hook para usar el contexto de suscripción
  */
-export function useSubscription(): SubscriptionContextType {
+export function useSubscription() {
   const context = useContext(SubscriptionContext);
-  
-  if (context === undefined) {
-    throw new Error('useSubscription debe ser usado dentro de un SubscriptionProvider');
+  if (!context) {
+    throw new Error('useSubscription debe usarse dentro de un SubscriptionProvider');
   }
-  
   return context;
 }

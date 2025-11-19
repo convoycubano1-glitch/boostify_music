@@ -101,36 +101,69 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
   // Esto elimina duplicación y asegura consistencia
   const pricingPlans: ProcessedPlan[] = [
     {
-      ...SUBSCRIPTION_PLANS.free,
+      name: SUBSCRIPTION_PLANS.free.displayName,
+      key: SUBSCRIPTION_PLANS.free.key,
+      description: SUBSCRIPTION_PLANS.free.description,
+      highlight: SUBSCRIPTION_PLANS.free.highlight,
       icon: <Music className="h-6 w-6" />,
+      price: {
+        monthly: SUBSCRIPTION_PLANS.free.price.monthly,
+        yearly: SUBSCRIPTION_PLANS.free.price.yearly
+      },
       priceId: {
         monthly: SUBSCRIPTION_PLANS.free.stripeIds.monthly,
         yearly: SUBSCRIPTION_PLANS.free.stripeIds.yearly
-      }
+      },
+      features: SUBSCRIPTION_PLANS.free.features
     },
     {
-      ...SUBSCRIPTION_PLANS.creator,
+      name: SUBSCRIPTION_PLANS.creator.displayName,
+      key: SUBSCRIPTION_PLANS.creator.key,
+      description: SUBSCRIPTION_PLANS.creator.description,
+      highlight: SUBSCRIPTION_PLANS.creator.highlight,
+      popular: SUBSCRIPTION_PLANS.creator.popular,
       icon: <Video className="h-6 w-6" />,
+      price: {
+        monthly: SUBSCRIPTION_PLANS.creator.price.monthly,
+        yearly: SUBSCRIPTION_PLANS.creator.price.yearly
+      },
       priceId: {
         monthly: SUBSCRIPTION_PLANS.creator.stripeIds.monthly,
         yearly: SUBSCRIPTION_PLANS.creator.stripeIds.yearly
-      }
+      },
+      features: SUBSCRIPTION_PLANS.creator.features
     },
     {
-      ...SUBSCRIPTION_PLANS.professional,
+      name: SUBSCRIPTION_PLANS.professional.displayName,
+      key: SUBSCRIPTION_PLANS.professional.key,
+      description: SUBSCRIPTION_PLANS.professional.description,
+      highlight: SUBSCRIPTION_PLANS.professional.highlight,
       icon: <Zap className="h-6 w-6" />,
+      price: {
+        monthly: SUBSCRIPTION_PLANS.professional.price.monthly,
+        yearly: SUBSCRIPTION_PLANS.professional.price.yearly
+      },
       priceId: {
         monthly: SUBSCRIPTION_PLANS.professional.stripeIds.monthly,
         yearly: SUBSCRIPTION_PLANS.professional.stripeIds.yearly
-      }
+      },
+      features: SUBSCRIPTION_PLANS.professional.features
     },
     {
-      ...SUBSCRIPTION_PLANS.enterprise,
+      name: SUBSCRIPTION_PLANS.enterprise.displayName,
+      key: SUBSCRIPTION_PLANS.enterprise.key,
+      description: SUBSCRIPTION_PLANS.enterprise.description,
+      highlight: SUBSCRIPTION_PLANS.enterprise.highlight,
       icon: <Crown className="h-6 w-6" />,
+      price: {
+        monthly: SUBSCRIPTION_PLANS.enterprise.price.monthly,
+        yearly: SUBSCRIPTION_PLANS.enterprise.price.yearly
+      },
       priceId: {
         monthly: SUBSCRIPTION_PLANS.enterprise.stripeIds.monthly,
         yearly: SUBSCRIPTION_PLANS.enterprise.stripeIds.yearly
-      }
+      },
+      features: SUBSCRIPTION_PLANS.enterprise.features
     }
   ];
 

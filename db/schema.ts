@@ -132,15 +132,31 @@ export const merchandise = pgTable("merchandise", {
 export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
-  plan: text("plan", { enum: ["free", "essential", "gold", "platinum", "diamond"] }).notNull(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  stripeCustomerId: text("stripe_customer_id"),
+  plan: text("plan", { enum: ["free", "creator", "professional", "enterprise"] }).notNull(),
   status: text("status", { enum: ["active", "cancelled", "expired", "trialing", "past_due"] }).notNull(),
   currentPeriodEnd: timestamp("current_period_end").notNull(),
   currentPeriodStart: timestamp("current_period_start"),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+  interval: text("interval", { enum: ["monthly", "yearly"] }).default("monthly"),
   price: decimal("price", { precision: 10, scale: 2 }),
   currency: text("currency").default("usd"),
+  isTrial: boolean("is_trial").default(false).notNull(),
+  trialEndsAt: timestamp("trial_ends_at"),
+  grantedByBundle: text("granted_by_bundle"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Sistema de roles y permisos (reemplaza admin hardcodeado)
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  role: text("role", { enum: ["user", "moderator", "support", "admin"] }).default("user").notNull(),
+  permissions: json("permissions").$type<string[]>(),
+  grantedBy: integer("granted_by").references(() => users.id),
+  grantedAt: timestamp("granted_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
