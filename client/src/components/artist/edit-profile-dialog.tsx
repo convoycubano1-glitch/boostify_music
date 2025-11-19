@@ -15,8 +15,9 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { useToast } from "../../hooks/use-toast";
-import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images, Newspaper } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images, Newspaper, FileText } from "lucide-react";
 import { ImageGalleryGenerator } from "./image-gallery-generator";
+import { EPKGenerator } from "../artist-profile/epk-generator";
 import { db, storage } from "../../firebase";
 import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -1518,6 +1519,44 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                   </>
                 )}
               </Button>
+            </div>
+          </div>
+
+          {/* Generador de EPK Profesional */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Electronic Press Kit (EPK)
+                </h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  Genera un kit de prensa profesional completo con biografía mejorada, logros y fotos de prensa
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
+              <div className="flex items-start gap-3 mb-3">
+                <Sparkles className="h-5 w-5 text-green-400 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h5 className="text-sm font-semibold text-white mb-1">
+                    Kit de Prensa Completo
+                  </h5>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Crea un EPK profesional listo para enviar a medios, festivales y promotores. Incluye biografías 
+                    en diferentes formatos, logros destacados, citas inspiradoras, fact sheet y fotos de prensa 
+                    coherentes con tu género musical generadas por Gemini 2.5 Flash (Nano Banana).
+                  </p>
+                  <p className="text-xs text-green-400 mt-2">
+                    📄 Descarga en JSON • PDF próximamente
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-black/20 rounded-lg p-3 border border-green-500/10">
+                <EPKGenerator />
+              </div>
             </div>
           </div>
 

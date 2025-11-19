@@ -24,7 +24,9 @@ import {
   Loader2,
   Sparkles,
   Wand2,
+  FileText,
 } from "lucide-react";
+import { EPKGenerator } from "../components/artist-profile/epk-generator";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useSettingsStore, themeOptions, densityOptions, languageOptions } from "../store/settings-store";
 import { useEffect, useState } from "react";
@@ -805,6 +807,18 @@ export default function SettingsPage() {
                 </form>
               </Form>
             )}
+          </Card>
+
+          {/* EPK Generator Section */}
+          <Card className="p-3 md:p-6 border-primary/20">
+            <div className="flex items-center gap-2 mb-3 md:mb-4">
+              <FileText className="h-5 w-5 text-primary" />
+              <h3 className="text-base md:text-lg font-semibold">Electronic Press Kit (EPK)</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Genera un kit de prensa profesional completo con IA. Incluye biografía mejorada, logros, citas inspiradoras y fotos de prensa coherentes con tu estilo musical.
+            </p>
+            <EPKGenerator />
           </Card>
         </TabsContent>
 

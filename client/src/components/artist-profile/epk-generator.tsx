@@ -20,6 +20,7 @@ interface EPKData {
   factSheet: { label: string; value: string }[];
   profileImage?: string;
   coverImage?: string;
+  referenceImage?: string;
   pressPhotos: { url: string; caption: string }[];
   socialLinks: {
     spotify?: string;
@@ -28,6 +29,17 @@ interface EPKData {
     tiktok?: string;
     youtube?: string;
     website?: string;
+  };
+  boostifyLinks?: {
+    profile?: string;
+    mainSong?: {
+      name: string;
+      url: string;
+    };
+    mainVideo?: {
+      title: string;
+      url: string;
+    };
   };
   pressRelease?: string;
 }
@@ -166,23 +178,78 @@ export function EPKGenerator() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Header */}
-              <div className="text-center space-y-2">
-                <h1 className="text-3xl font-bold">{generatedEPK.artistName}</h1>
-                {generatedEPK.realName && (
-                  <p className="text-muted-foreground">{generatedEPK.realName}</p>
+              {/* Hero Section with Professional Image */}
+              <div className="relative w-full h-96 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-purple-500/20">
+                {(generatedEPK.coverImage || generatedEPK.profileImage || generatedEPK.referenceImage) && (
+                  <img
+                    src={generatedEPK.coverImage || generatedEPK.profileImage || generatedEPK.referenceImage}
+                    alt={`${generatedEPK.artistName} Hero`}
+                    className="w-full h-full object-cover"
+                  />
                 )}
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  {generatedEPK.genre.map((g, i) => (
-                    <span key={i} className="bg-primary/10 text-primary px-2 py-1 rounded">
-                      {g}
-                    </span>
-                  ))}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent flex items-end">
+                  <div className="p-8 w-full">
+                    <h1 className="text-5xl font-bold text-white mb-2">{generatedEPK.artistName}</h1>
+                    {generatedEPK.realName && (
+                      <p className="text-xl text-white/80 mb-3">{generatedEPK.realName}</p>
+                    )}
+                    <div className="flex items-center gap-2 flex-wrap mb-3">
+                      {generatedEPK.genre.map((g, i) => (
+                        <span key={i} className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                          {g}
+                        </span>
+                      ))}
+                      {generatedEPK.location && (
+                        <span className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
+                          📍 {generatedEPK.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                {generatedEPK.location && (
-                  <p className="text-sm text-muted-foreground">📍 {generatedEPK.location}</p>
-                )}
               </div>
+
+              {/* Boostify Links Section */}
+              {generatedEPK.boostifyLinks && (generatedEPK.boostifyLinks.profile || generatedEPK.boostifyLinks.mainSong || generatedEPK.boostifyLinks.mainVideo) && (
+                <div className="bg-gradient-to-r from-orange-500/10 to-purple-500/10 rounded-lg p-4 border border-orange-500/20">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-orange-500" />
+                    Escucha & Mira en Boostify
+                  </h3>
+                  <div className="space-y-2">
+                    {generatedEPK.boostifyLinks.profile && (
+                      <a
+                        href={generatedEPK.boostifyLinks.profile}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 px-4 py-2 rounded transition-colors"
+                      >
+                        🎤 Perfil Completo en Boostify
+                      </a>
+                    )}
+                    {generatedEPK.boostifyLinks.mainSong && generatedEPK.boostifyLinks.mainSong.url && (
+                      <a
+                        href={generatedEPK.boostifyLinks.profile}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm bg-green-500/10 hover:bg-green-500/20 text-green-500 px-4 py-2 rounded transition-colors"
+                      >
+                        🎵 {generatedEPK.boostifyLinks.mainSong.name}
+                      </a>
+                    )}
+                    {generatedEPK.boostifyLinks.mainVideo && generatedEPK.boostifyLinks.mainVideo.url && (
+                      <a
+                        href={generatedEPK.boostifyLinks.profile}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded transition-colors"
+                      >
+                        🎬 {generatedEPK.boostifyLinks.mainVideo.title}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <Separator />
 

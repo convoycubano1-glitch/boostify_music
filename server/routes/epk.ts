@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { db } from '../db';
 import { users } from '@db/schema';
 import { eq } from 'drizzle-orm';
+import * as fal from '@fal-ai/serverless-client';
 
 const router = express.Router();
 
@@ -11,6 +12,13 @@ const router = express.Router();
 const genAI = process.env.GEMINI_API_KEY 
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
+
+// Configure FAL AI
+if (process.env.FAL_KEY) {
+  fal.config({
+    credentials: process.env.FAL_KEY
+  });
+}
 
 interface EPKData {
   // Basic Info
@@ -31,6 +39,7 @@ interface EPKData {
   // Images
   profileImage?: string;
   coverImage?: string;
+  referenceImage?: string;
   pressPhotos: {
     url: string;
     caption: string;
@@ -44,6 +53,19 @@ interface EPKData {
     tiktok?: string;
     youtube?: string;
     website?: string;
+  };
+  
+  // Boostify Links
+  boostifyLinks?: {
+    profile?: string;
+    mainSong?: {
+      name: string;
+      url: string;
+    };
+    mainVideo?: {
+      title: string;
+      url: string;
+    };
   };
   
   // Generated content
@@ -154,68 +176,187 @@ Importante:
 
     console.log('[EPK] Contenido textual generado');
 
-    // 2. Generate coherent press photos using Gemini nano banana (image model)
-    const imageModel = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp'
-    });
+    // 2. Get artist data from Firestore for reference image and links
+    let referenceImageUrl: string | undefined;
+    let artistSlug: string | undefined;
+    let mainSong: { name: string; url: string } | undefined;
+    let mainVideo: { title: string; url: string } | undefined;
 
-    // Describe the visual style based on genre and existing images
-    const visualStyle = genres.includes('urbano') || genres.includes('trap') || genres.includes('reggaeton')
-      ? 'urbano moderno, streetwear, colores vibrantes, ambiente de ciudad'
-      : genres.includes('rock') || genres.includes('alternativo')
-      ? 'alternativo, estética indie, colores desaturados, ambiente artístico'
-      : genres.includes('electrónica') || genres.includes('edm')
-      ? 'futurista, neón, colores brillantes, ambiente nocturno'
-      : 'profesional, moderno, iluminación natural, ambiente limpio';
+    try {
+      const { getFirestore, collection: fsCollection, query: fsQuery, where: fsWhere, getDocs: fsGetDocs, limit: fsLimit } = await import('firebase-admin/firestore');
+      const admin = await import('firebase-admin');
+      
+      // Initialize Firebase Admin if not already initialized
+      if (!admin.default.apps.length) {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+        admin.default.initializeApp({
+          credential: admin.default.credential.cert(serviceAccount)
+        });
+      }
+
+      const firestore = getFirestore();
+      
+      // Get artist Firestore data
+      const usersRef = fsCollection(firestore, 'users');
+      const q = fsQuery(usersRef, fsWhere('uid', '==', String(userId)), fsLimit(1));
+      const snapshot = await fsGetDocs(q);
+      
+      if (!snapshot.empty) {
+        const artistData = snapshot.docs[0].data();
+        referenceImageUrl = artistData.referenceImage;
+        artistSlug = artistData.slug;
+        console.log(`[EPK] Imagen de referencia encontrada: ${referenceImageUrl ? 'Sí' : 'No'}`);
+        console.log(`[EPK] Slug del artista: ${artistSlug}`);
+      }
+
+      // Get main song
+      const songsRef = fsCollection(firestore, 'songs');
+      const songsQ = fsQuery(songsRef, fsWhere('userId', '==', String(userId)), fsLimit(1));
+      const songsSnapshot = await fsGetDocs(songsQ);
+      
+      if (!songsSnapshot.empty) {
+        const songData = songsSnapshot.docs[0].data();
+        mainSong = {
+          name: songData.name || 'Canción Principal',
+          url: songData.audioUrl || ''
+        };
+        console.log(`[EPK] Canción principal: ${mainSong.name}`);
+      }
+
+      // Get main video
+      const videosRef = fsCollection(firestore, 'videos');
+      const videosQ = fsQuery(videosRef, fsWhere('userId', '==', String(userId)), fsLimit(1));
+      const videosSnapshot = await fsGetDocs(videosQ);
+      
+      if (!videosSnapshot.empty) {
+        const videoData = videosSnapshot.docs[0].data();
+        mainVideo = {
+          title: videoData.title || 'Video Principal',
+          url: videoData.url || ''
+        };
+        console.log(`[EPK] Video principal: ${mainVideo.title}`);
+      }
+    } catch (firestoreError) {
+      console.error('[EPK] Error obteniendo datos de Firestore:', firestoreError);
+    }
+
+    // 3. Generate professional press photos using Gemini (nano banana) as first option
+    const pressPhotos: { url: string; caption: string; }[] = [];
+
+    // Describe the visual style based on genre
+    const genreStyles: Record<string, string> = {
+      'urbano': 'urban modern style, streetwear fashion, vibrant colors, city environment, confident pose, professional street photography',
+      'trap': 'trap artist aesthetic, designer clothing, luxury accessories, dramatic lighting, moody atmosphere, high-end photography',
+      'reggaeton': 'reggaeton star style, tropical vibes, colorful setting, energetic pose, Latin music industry standard',
+      'rock': 'rock musician aesthetic, edgy style, leather jacket, artistic composition, concert venue, professional music photography',
+      'alternativo': 'alternative artist look, indie aesthetic, creative lighting, artistic background, editorial style photography',
+      'pop': 'pop star glamour, fashion-forward styling, bright lighting, clean background, commercial photography quality',
+      'electrónica': 'electronic music artist, futuristic aesthetic, neon lights, modern technology vibe, club atmosphere',
+      'hip hop': 'hip hop artist style, urban fashion, street credibility, professional rap photography, authentic vibe',
+      'latin soul': 'Latin soul artist, sophisticated style, warm tones, elegant setting, professional portrait photography'
+    };
+
+    const mainGenre = genres[0]?.toLowerCase() || 'urbano';
+    const visualStyle = genreStyles[mainGenre] || 'professional musician portrait, modern aesthetic, high-quality photography, magazine cover worthy';
 
     const imagePrompts = [
       {
-        caption: 'Retrato profesional principal',
-        prompt: `Professional press photo of ${artistName}, ${genres.join('/')} artist. ${visualStyle}. High quality portrait, confident expression, professional lighting, magazine quality, photorealistic, 4K`
+        caption: 'Hero Portrait - Retrato Principal para Press Kit',
+        description: 'Professional press kit hero image, high-resolution portrait',
+        prompt: `Professional EPK hero portrait photography of ${artistName}, ${visualStyle}, high-end fashion magazine quality, dramatic professional lighting, sharp focus, confident expression, music industry standard, editorial photography, photorealistic, award-winning portrait`
       },
       {
-        caption: 'Foto de acción/performance',
-        prompt: `${artistName} performing on stage, ${genres.join('/')} concert. ${visualStyle}. Dynamic energy, stage lights, crowd atmosphere, professional concert photography, photorealistic, 4K`
+        caption: 'Performance Shot - Foto en Acción',
+        description: 'Dynamic performance or stage photo',
+        prompt: `${artistName} as ${mainGenre} artist performing on professional stage, ${visualStyle}, dynamic energy, professional concert photography, dramatic stage lighting, crowd atmosphere, music festival quality, photojournalism style, action shot, photorealistic`
       },
       {
-        caption: 'Foto lifestyle/promocional',
-        prompt: `Lifestyle promotional photo of ${artistName}, ${genres.join('/')} musician. ${visualStyle}. Creative composition, artistic angle, album cover quality, editorial photography, photorealistic, 4K`
+        caption: 'Creative Editorial - Sesión Artística',
+        description: 'Artistic promotional photo for magazines',
+        prompt: `Creative editorial photo session of ${artistName}, ${visualStyle}, artistic composition, unique angle, album cover quality, fashion photography meets music industry, creative lighting setup, professional art direction, magazine spread worthy, photorealistic`
       }
     ];
 
-    const pressPhotos: { url: string; caption: string; }[] = [];
+    console.log('[EPK] 🍌 Generando imágenes profesionales con Gemini nano banana (gemini-2.5-flash-image)');
 
-    // Generate images sequentially to avoid rate limits
-    for (const imagePrompt of imagePrompts) {
-      try {
-        console.log(`[EPK] Generando imagen: ${imagePrompt.caption}`);
-        
-        const imageResult = await imageModel.generateContent([imagePrompt.prompt]);
-        
-        // Note: Gemini image generation returns base64 data
-        // In production, you'd upload this to storage and get a URL
-        // For now, we'll use placeholder or return base64
-        
-        pressPhotos.push({
-          url: user.profileImage || 'https://via.placeholder.com/800x600/667eea/ffffff?text=Press+Photo',
-          caption: imagePrompt.caption
-        });
-        
-        console.log(`[EPK] Imagen generada: ${imagePrompt.caption}`);
-        
-        // Small delay between requests
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (imgError: any) {
-        console.error(`[EPK] Error generando imagen "${imagePrompt.caption}":`, imgError.message);
-        // Continue with placeholder if image generation fails
-        pressPhotos.push({
-          url: user.profileImage || 'https://via.placeholder.com/800x600/667eea/ffffff?text=Press+Photo',
-          caption: imagePrompt.caption
-        });
+    // Use Gemini nano banana for direct image generation
+    if (genAI) {
+      const nanoModel = genAI.getGenerativeModel({ 
+        model: 'gemini-2.5-flash-image' // nano banana - native image generation
+      });
+
+      for (const imagePrompt of imagePrompts) {
+        try {
+          console.log(`[EPK] 🖼️ Generando imagen con nano banana: ${imagePrompt.caption}`);
+          
+          // Generate image directly with Gemini nano banana
+          const imageResult = await nanoModel.generateContent({
+            contents: [{
+              parts: [{ text: imagePrompt.prompt }]
+            }],
+            generationConfig: {
+              // @ts-ignore - imageConfig may not be in types yet
+              imageConfig: {
+                aspectRatio: '16:9' // Landscape format for press photos
+              }
+            }
+          });
+
+          // Extract image from response (Gemini returns inline_data with base64)
+          const response = imageResult.response;
+          let imageBase64: string | null = null;
+
+          if (response.candidates && response.candidates.length > 0) {
+            const parts = response.candidates[0].content.parts;
+            for (const part of parts) {
+              // @ts-ignore - inline_data may not be in types
+              if (part.inlineData) {
+                // @ts-ignore
+                imageBase64 = part.inlineData.data;
+                console.log(`[EPK] ✅ Imagen generada por nano banana: ${imagePrompt.caption}`);
+                break;
+              }
+            }
+          }
+
+          if (imageBase64) {
+            // Convert base64 to data URL
+            const imageDataUrl = `data:image/png;base64,${imageBase64}`;
+            pressPhotos.push({
+              url: imageDataUrl,
+              caption: imagePrompt.caption
+            });
+          } else {
+            throw new Error('nano banana no devolvió imagen en la respuesta');
+          }
+          
+          // Delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (imgError: any) {
+          console.error(`[EPK] ❌ Error generando con nano banana "${imagePrompt.caption}":`, imgError.message);
+          // Use reference image or profile image as fallback
+          pressPhotos.push({
+            url: referenceImageUrl || user.profileImage || user.coverImage || 'https://via.placeholder.com/1920x1080/667eea/ffffff?text=Press+Photo',
+            caption: imagePrompt.caption
+          });
+        }
       }
+    } else {
+      console.log('[EPK] ⚠️ Gemini no disponible, usando imágenes existentes del perfil');
+      // Use existing profile images
+      imagePrompts.forEach(prompt => {
+        pressPhotos.push({
+          url: referenceImageUrl || user.profileImage || user.coverImage || 'https://via.placeholder.com/1920x1080/667eea/ffffff?text=Press+Photo',
+          caption: prompt.caption
+        });
+      });
     }
 
-    // 3. Build complete EPK data
+    // 4. Build complete EPK data with all links
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://boostify.com' 
+      : 'https://ecb7959a-10a2-43c2-b3de-f9c2a2fb7282-00-5xhhuxyy3b9j.kirk.replit.dev';
+
     const epkData: EPKData = {
       // Basic Info
       artistName,
@@ -235,6 +376,7 @@ Importante:
       // Images
       profileImage: user.profileImage || user.profileImageUrl || undefined,
       coverImage: user.coverImage || undefined,
+      referenceImage: referenceImageUrl,
       pressPhotos,
       
       // Social Links
@@ -245,6 +387,13 @@ Importante:
         tiktok: user.tiktokUrl || undefined,
         youtube: user.youtubeUrl || undefined,
         website: user.website || undefined
+      },
+
+      // Boostify Links
+      boostifyLinks: {
+        profile: artistSlug ? `${baseUrl}/artist/${artistSlug}` : undefined,
+        mainSong: mainSong,
+        mainVideo: mainVideo
       }
     };
 
