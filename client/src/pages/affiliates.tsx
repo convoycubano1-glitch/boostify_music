@@ -64,18 +64,19 @@ export default function AffiliatesPage() {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Query to check if the current user is an affiliate using backend API
-  const { data: affiliateApiData, isLoading: isLoadingAffiliateData } = useQuery<{
+  const { data: affiliateApiData, isLoading: isLoadingAffiliateData, error: affiliateError } = useQuery<{
     success: boolean;
-    data?: AffiliateDataType;
+    affiliate?: any;
     message?: string;
   }>({
     queryKey: ["/api/affiliate/me"],
     enabled: !!user?.uid,
+    retry: false
   });
 
   // Extract affiliate data from API response
-  const affiliateData: AffiliateDataType | null = affiliateApiData?.success && affiliateApiData?.data
-    ? affiliateApiData.data 
+  const affiliateData = affiliateApiData?.success && affiliateApiData?.affiliate
+    ? affiliateApiData.affiliate 
     : null;
 
   // Determine if we should show the registration form or the affiliate dashboard
@@ -85,7 +86,7 @@ export default function AffiliatesPage() {
   const currentAffiliateData = affiliateData || {
     id: user?.uid || "",
     level: "Básico",
-    name: user?.displayName || "Usuario",
+    fullName: user?.displayName || "Usuario",
     stats: {
       totalClicks: 0,
       conversions: 0,
@@ -93,8 +94,8 @@ export default function AffiliatesPage() {
       pendingPayment: 0
     },
     links: [],
-    paymentHistory: [],
-    savedContent: []
+    conversions: [],
+    badges: []
   };
 
   // Benefits of the affiliate program
