@@ -998,15 +998,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         };
       });
 
-      // Check if user is admin
-      const isAdmin = user?.email === 'convoycubano@gmail.com';
-      const totalScenes = geminiScenes.length;
+      // LIMIT TO 10 IMAGES FOR TESTING - Faster iteration on narrative quality
+      const MAX_IMAGES_FOR_TESTING = 10;
+      const totalScenes = Math.min(geminiScenes.length, MAX_IMAGES_FOR_TESTING);
       
-      // Determine how many images to generate
-      const imagesToGenerate = isAdmin ? totalScenes : (startFrom === 1 ? Math.min(10, totalScenes) : totalScenes);
-      const endAt = startFrom === 1 && !isAdmin ? Math.min(10, totalScenes) : totalScenes;
+      // Always generate only 10 images for testing
+      const imagesToGenerate = Math.min(10, totalScenes);
+      const endAt = Math.min(10, totalScenes);
       
-      logger.info(`📸 [IMG] Generation settings: isAdmin=${isAdmin}, startFrom=${startFrom}, endAt=${endAt}, total=${totalScenes}`);
+      logger.info(`📸 [IMG] Generation settings (TESTING MODE): startFrom=${startFrom}, endAt=${endAt}, total=${totalScenes}, maxAllowed=${MAX_IMAGES_FOR_TESTING}`);
       
       // Decidir qué endpoint usar basado en si hay imágenes de referencia
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
