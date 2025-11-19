@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { logger } from "../../lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Music, Guitar, Piano, Mic, Drum, Upload, Sparkles, Loader2 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { Music, Guitar, Piano, Mic, Drum, Sparkles, Loader2 } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 const INSTRUMENTS = [
   { id: "guitar", name: "Guitar", icon: Guitar, emoji: "🎸" },
@@ -35,6 +34,7 @@ interface MusicianModalProps {
     style: string;
   };
   concept?: string;
+  projectId?: number;
   onMusicianCreated: (musicianData: any) => void;
 }
 
@@ -45,65 +45,40 @@ export function MusicianModal({
   scriptContext,
   director,
   concept,
+  projectId,
   onMusicianCreated,
 }: MusicianModalProps) {
   const { toast } = useToast();
   const [selectedInstrument, setSelectedInstrument] = useState<string>("");
-  const [generatedDescription, setGeneratedDescription] = useState<string>("");
-  const [faceReferenceFile, setFaceReferenceFile] = useState<File | null>(null);
-  const [faceReferenceUrl, setFaceReferenceUrl] = useState<string>("");
+  const [musicianTypeDescription, setMusicianTypeDescription] = useState<string>("");
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"generate" | "photo">("generate");
 
-  const generateDescriptionMutation = useMutation({
-    mutationFn: async (instrument: string) => {
-      const response = await fetch("/api/musician-clips/generate-description", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instrument,
-          scriptContext,
-          timestamp: timelineItem.timestamp,
-          director,
-          concept,
-        }),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate description");
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setGeneratedDescription(data.description);
-      toast({
-        title: "Description Generated",
-        description: "Musician character description created successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate description",
-        variant: "destructive",
-      });
-    },
+  // Load previous musician description for this instrument from this project
+  const { data: previousMusicians } = useQuery({
+    queryKey: ['/api/musician-clips/project', projectId],
+    enabled: !!projectId && open,
   });
 
+  // Auto-fill description when selecting instrument if it exists
+  useEffect(() => {
+    if (selectedInstrument && previousMusicians && Array.isArray(previousMusicians)) {
+      const previousMusician = previousMusicians.find(
+        (m: any) => m.musicianType === selectedInstrument && m.characterDescription
+      );
+      if (previousMusician) {
+        setMusicianTypeDescription(previousMusician.characterDescription);
+        logger.info(`✅ Loaded previous description for ${selectedInstrument}:`, previousMusician.characterDescription);
+      }
+    }
+  }, [selectedInstrument, previousMusicians]);
+
   const generateImageMutation = useMutation({
-    mutationFn: async ({
-      description,
-      faceRef,
-    }: {
-      description: string;
-      faceRef?: string;
-    }) => {
+    mutationFn: async (description: string) => {
       const response = await fetch("/api/musician-clips/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           description,
-          faceReferenceUrl: faceRef,
         }),
       });
       if (!response.ok) {
@@ -116,7 +91,7 @@ export function MusicianModal({
       setGeneratedImageUrl(data.imageUrl);
       toast({
         title: "Musician Generated",
-        description: "Character image created successfully",
+        description: "Character image created successfully with Gemini nano banana",
       });
     },
     onError: (error: any) => {
@@ -160,18 +135,9 @@ export function MusicianModal({
 
   const handleInstrumentSelect = (instrumentId: string) => {
     setSelectedInstrument(instrumentId);
-    generateDescriptionMutation.mutate(instrumentId);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFaceReferenceFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFaceReferenceUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    // Reset description only if no previous musician exists
+    if (!previousMusicians?.find((m: any) => m.musicianType === instrumentId)) {
+      setMusicianTypeDescription("");
     }
   };
 
@@ -185,19 +151,21 @@ export function MusicianModal({
       return;
     }
 
-    if (!generatedDescription) {
+    if (!musicianTypeDescription.trim()) {
       toast({
-        title: "No Description",
-        description: "Please generate a character description first",
+        title: "Missing Description",
+        description: "Please describe what type of musician you want",
         variant: "destructive",
       });
       return;
     }
 
-    generateImageMutation.mutate({
-      description: generatedDescription,
-      faceRef: activeTab === "photo" ? faceReferenceUrl : undefined,
-    });
+    // Create full cinematic prompt
+    const instrument = INSTRUMENTS.find(i => i.id === selectedInstrument);
+    const fullPrompt = `Cinematic ${instrument?.name} player: ${musicianTypeDescription}. ${director ? `Director style: ${director.style}. ` : ''}${concept ? `Video concept: ${concept}. ` : ''}Photorealistic, professional lighting, 8K resolution, cinematic composition.`;
+
+    logger.info('🎸 Generating musician with prompt:', fullPrompt);
+    generateImageMutation.mutate(fullPrompt);
   };
 
   const handleSave = () => {
@@ -211,10 +179,10 @@ export function MusicianModal({
     }
 
     saveMusicianMutation.mutate({
+      projectId,
       timelineItemId: timelineItem.id,
       musicianType: selectedInstrument,
-      characterDescription: generatedDescription,
-      faceReferenceUrl: activeTab === "photo" ? faceReferenceUrl : null,
+      characterDescription: musicianTypeDescription, // Save user's description for consistency
       generatedImageUrl,
       scriptContext,
       cutTimestamp: timelineItem.timestamp,
@@ -223,47 +191,43 @@ export function MusicianModal({
 
   const handleClose = () => {
     setSelectedInstrument("");
-    setGeneratedDescription("");
-    setFaceReferenceFile(null);
-    setFaceReferenceUrl("");
+    setMusicianTypeDescription("");
     setGeneratedImageUrl("");
-    setActiveTab("generate");
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background via-background to-purple-950/10">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Music className="w-5 h-5" />
+          <DialogTitle className="flex items-center gap-3 text-2xl">
+            <Music className="w-6 h-6 text-purple-500" />
             Add Musician to Timeline
           </DialogTitle>
-          <DialogDescription>
-            Add a musician character at {timelineItem.timestamp.toFixed(2)}s
+          <DialogDescription className="text-base">
+            Create a musician at {timelineItem.timestamp.toFixed(2)}s • Description saved for consistency
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Instrument Selector */}
           <div className="space-y-3">
-            <Label>Select Instrument</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Label className="text-lg font-semibold">Select Instrument</Label>
+            <div className="grid grid-cols-4 gap-3">
               {INSTRUMENTS.map((instrument) => {
-                const Icon = instrument.icon;
                 return (
                   <Card
                     key={instrument.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
+                    className={`cursor-pointer transition-all hover:scale-105 hover:shadow-lg ${
                       selectedInstrument === instrument.id
-                        ? "border-primary border-2 bg-primary/5"
-                        : ""
+                        ? "border-purple-500 border-2 bg-purple-500/10 shadow-md"
+                        : "border-border hover:border-purple-300"
                     }`}
                     onClick={() => handleInstrumentSelect(instrument.id)}
                     data-testid={`instrument-${instrument.id}`}
                   >
                     <CardContent className="p-4 text-center">
-                      <div className="text-3xl mb-2">{instrument.emoji}</div>
+                      <div className="text-4xl mb-2">{instrument.emoji}</div>
                       <div className="text-sm font-medium">{instrument.name}</div>
                     </CardContent>
                   </Card>
@@ -272,93 +236,34 @@ export function MusicianModal({
             </div>
           </div>
 
-          {/* Tabs for Generation Method */}
+          {/* Musician Type Description Input */}
           {selectedInstrument && (
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="generate" data-testid="tab-generate">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate New
-                </TabsTrigger>
-                <TabsTrigger value="photo" data-testid="tab-photo">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Use Photo
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="generate" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Character Description</Label>
-                  <Textarea
-                    value={generatedDescription}
-                    onChange={(e) => setGeneratedDescription(e.target.value)}
-                    rows={6}
-                    placeholder="Character description will appear here..."
-                    disabled={generateDescriptionMutation.isPending}
-                    data-testid="textarea-description"
-                  />
-                  {generateDescriptionMutation.isPending && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating description with AI...
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="photo" className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Upload Face Reference</Label>
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="face-upload"
-                      data-testid="input-face-upload"
-                    />
-                    <label
-                      htmlFor="face-upload"
-                      className="cursor-pointer flex flex-col items-center gap-2"
-                    >
-                      {faceReferenceUrl ? (
-                        <img
-                          src={faceReferenceUrl}
-                          alt="Face reference"
-                          className="w-32 h-32 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <>
-                          <Upload className="w-8 h-8 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            Click to upload your photo
-                          </span>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Character Body/Outfit Description</Label>
-                  <Textarea
-                    value={generatedDescription}
-                    onChange={(e) => setGeneratedDescription(e.target.value)}
-                    rows={6}
-                    placeholder="Describe the outfit, pose, and setting for the musician..."
-                    data-testid="textarea-body-description"
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+            <div className="space-y-3 p-5 rounded-lg border-2 border-purple-500/30 bg-purple-500/5">
+              <Label htmlFor="musician-description" className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-500" />
+                Describe Your Musician
+              </Label>
+              <Input
+                id="musician-description"
+                value={musicianTypeDescription}
+                onChange={(e) => setMusicianTypeDescription(e.target.value)}
+                placeholder="e.g., young rock guitarist with leather jacket, tattoos, playing electric guitar..."
+                className="text-base h-12"
+                data-testid="input-musician-description"
+              />
+              <p className="text-sm text-muted-foreground">
+                💡 Be specific: age, gender, style, clothing, pose. This description will be reused for consistency.
+              </p>
+            </div>
           )}
 
           {/* Generated Image Preview */}
           {generatedImageUrl && (
-            <div className="space-y-2">
-              <Label>Generated Musician</Label>
-              <div className="rounded-lg overflow-hidden border">
+            <div className="space-y-3 p-4 rounded-lg border-2 border-green-500/30 bg-green-500/5">
+              <Label className="text-lg font-semibold flex items-center gap-2">
+                ✅ Generated Musician
+              </Label>
+              <div className="rounded-lg overflow-hidden border-2 border-green-500/30">
                 <img
                   src={generatedImageUrl}
                   alt="Generated musician"
@@ -370,28 +275,31 @@ export function MusicianModal({
           )}
 
           {/* Actions */}
-          <div className="flex gap-3 justify-end">
+          <div className="flex gap-3 justify-end pt-4 border-t">
             <Button
               variant="outline"
               onClick={handleClose}
               data-testid="button-cancel"
+              className="h-11"
             >
               Cancel
             </Button>
-            {generatedDescription && !generatedImageUrl && (
+            {musicianTypeDescription && !generatedImageUrl && (
               <Button
                 onClick={handleGenerateImage}
                 disabled={generateImageMutation.isPending}
                 data-testid="button-generate-image"
+                className="h-11 bg-purple-600 hover:bg-purple-700"
+                size="lg"
               >
                 {generateImageMutation.isPending ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Generating with Gemini...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 mr-2" />
+                    <Sparkles className="w-5 h-5 mr-2" />
                     Generate Musician
                   </>
                 )}
@@ -402,10 +310,12 @@ export function MusicianModal({
                 onClick={handleSave}
                 disabled={saveMusicianMutation.isPending}
                 data-testid="button-save-musician"
+                className="h-11 bg-green-600 hover:bg-green-700"
+                size="lg"
               >
                 {saveMusicianMutation.isPending ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Saving...
                   </>
                 ) : (
