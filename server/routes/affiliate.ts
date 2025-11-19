@@ -902,4 +902,209 @@ router.get('/payment-history', authenticate, async (req: Request, res: Response)
   }
 });
 
+/**
+ * GET /api/affiliate/admin/all
+ * Obtiene todos los afiliados (solo admin)
+ */
+router.get('/admin/all', authenticate, async (req: Request, res: Response) => {
+  try {
+    // Check if user is admin (userId 1 or 2)
+    if (!req.user?.id || (req.user.id !== 1 && req.user.id !== 2)) {
+      return res.status(403).json({ success: false, message: 'Acceso denegado. Solo administradores.' });
+    }
+
+    const status = req.query.status as string | undefined;
+    
+    let query = db.select().from(affiliates);
+    
+    if (status && ['pending', 'approved', 'rejected', 'suspended'].includes(status)) {
+      query = query.where(eq(affiliates.status, status as any));
+    }
+    
+    const allAffiliates = await query.orderBy(desc(affiliates.createdAt));
+
+    res.json({ success: true, affiliates: allAffiliates });
+  } catch (error) {
+    console.error('[ADMIN GET ALL AFFILIATES ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al obtener afiliados' });
+  }
+});
+
+/**
+ * POST /api/affiliate/admin/approve/:id
+ * Aprueba un afiliado (solo admin)
+ */
+router.post('/admin/approve/:id', authenticate, async (req: Request, res: Response) => {
+  try {
+    // Check if user is admin (userId 1 or 2)
+    if (!req.user?.id || (req.user.id !== 1 && req.user.id !== 2)) {
+      return res.status(403).json({ success: false, message: 'Acceso denegado. Solo administradores.' });
+    }
+
+    const affiliateId = parseInt(req.params.id);
+
+    const [affiliate] = await db.select().from(affiliates)
+      .where(eq(affiliates.id, affiliateId))
+      .limit(1);
+
+    if (!affiliate) {
+      return res.status(404).json({ success: false, message: 'Afiliado no encontrado' });
+    }
+
+    await db.update(affiliates)
+      .set({ 
+        status: 'approved',
+        updatedAt: new Date()
+      })
+      .where(eq(affiliates.id, affiliateId));
+
+    res.json({ 
+      success: true, 
+      message: `Afiliado ${affiliate.fullName} aprobado exitosamente`
+    });
+  } catch (error) {
+    console.error('[ADMIN APPROVE AFFILIATE ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al aprobar afiliado' });
+  }
+});
+
+/**
+ * POST /api/affiliate/admin/reject/:id
+ * Rechaza un afiliado (solo admin)
+ */
+router.post('/admin/reject/:id', authenticate, async (req: Request, res: Response) => {
+  try {
+    // Check if user is admin (userId 1 or 2)
+    if (!req.user?.id || (req.user.id !== 1 && req.user.id !== 2)) {
+      return res.status(403).json({ success: false, message: 'Acceso denegado. Solo administradores.' });
+    }
+
+    const affiliateId = parseInt(req.params.id);
+    const { reason } = req.body;
+
+    const [affiliate] = await db.select().from(affiliates)
+      .where(eq(affiliates.id, affiliateId))
+      .limit(1);
+
+    if (!affiliate) {
+      return res.status(404).json({ success: false, message: 'Afiliado no encontrado' });
+    }
+
+    await db.update(affiliates)
+      .set({ 
+        status: 'rejected',
+        updatedAt: new Date()
+      })
+      .where(eq(affiliates.id, affiliateId));
+
+    res.json({ 
+      success: true, 
+      message: `Afiliado ${affiliate.fullName} rechazado`
+    });
+  } catch (error) {
+    console.error('[ADMIN REJECT AFFILIATE ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al rechazar afiliado' });
+  }
+});
+
+/**
+ * GET /api/affiliate/admin/pending-payouts
+ * Obtiene todas las solicitudes de pago pendientes (solo admin)
+ */
+router.get('/admin/pending-payouts', authenticate, async (req: Request, res: Response) => {
+  try {
+    // Check if user is admin (userId 1 or 2)
+    if (!req.user?.id || (req.user.id !== 1 && req.user.id !== 2)) {
+      return res.status(403).json({ success: false, message: 'Acceso denegado. Solo administradores.' });
+    }
+
+    const pendingPayouts = await db.select({
+      id: affiliateEarnings.id,
+      affiliateId: affiliateEarnings.affiliateId,
+      amount: affiliateEarnings.amount,
+      description: affiliateEarnings.description,
+      status: affiliateEarnings.status,
+      metadata: affiliateEarnings.metadata,
+      createdAt: affiliateEarnings.createdAt,
+      affiliateName: affiliates.fullName,
+      affiliateEmail: affiliates.email,
+      paymentMethod: affiliates.paymentMethod,
+      paymentEmail: affiliates.paymentEmail
+    })
+    .from(affiliateEarnings)
+    .leftJoin(affiliates, eq(affiliateEarnings.affiliateId, affiliates.id))
+    .where(and(
+      eq(affiliateEarnings.type, 'payout_request'),
+      eq(affiliateEarnings.status, 'pending')
+    ))
+    .orderBy(desc(affiliateEarnings.createdAt));
+
+    res.json({ success: true, payouts: pendingPayouts });
+  } catch (error) {
+    console.error('[ADMIN GET PENDING PAYOUTS ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al obtener solicitudes de pago' });
+  }
+});
+
+/**
+ * GET /api/affiliate/admin/stats
+ * Obtiene estadísticas del sistema de afiliados (solo admin)
+ */
+router.get('/admin/stats', authenticate, async (req: Request, res: Response) => {
+  try {
+    // Check if user is admin (userId 1 or 2)
+    if (!req.user?.id || (req.user.id !== 1 && req.user.id !== 2)) {
+      return res.status(403).json({ success: false, message: 'Acceso denegado. Solo administradores.' });
+    }
+
+    // Get total affiliates by status
+    const allAffiliates = await db.select().from(affiliates);
+    
+    const stats = {
+      totalAffiliates: allAffiliates.length,
+      pending: allAffiliates.filter(a => a.status === 'pending').length,
+      approved: allAffiliates.filter(a => a.status === 'approved').length,
+      rejected: allAffiliates.filter(a => a.status === 'rejected').length,
+      suspended: allAffiliates.filter(a => a.status === 'suspended').length,
+      totalClicks: allAffiliates.reduce((sum, a) => sum + a.totalClicks, 0),
+      totalConversions: allAffiliates.reduce((sum, a) => sum + a.totalConversions, 0),
+      totalEarnings: allAffiliates.reduce((sum, a) => sum + Number(a.totalEarnings), 0),
+      totalPendingPayments: allAffiliates.reduce((sum, a) => sum + Number(a.pendingPayment), 0),
+      totalPaidOut: allAffiliates.reduce((sum, a) => sum + Number(a.paidAmount), 0),
+      conversionRate: allAffiliates.reduce((sum, a) => sum + a.totalClicks, 0) > 0 
+        ? (allAffiliates.reduce((sum, a) => sum + a.totalConversions, 0) / allAffiliates.reduce((sum, a) => sum + a.totalClicks, 0) * 100).toFixed(2)
+        : '0.00'
+    };
+
+    // Get pending payouts count
+    const pendingPayouts = await db.select().from(affiliateEarnings)
+      .where(and(
+        eq(affiliateEarnings.type, 'payout_request'),
+        eq(affiliateEarnings.status, 'pending')
+      ));
+
+    stats['pendingPayoutsCount'] = pendingPayouts.length;
+    stats['pendingPayoutsAmount'] = pendingPayouts.reduce((sum, p) => sum + Math.abs(Number(p.amount)), 0);
+
+    // Top performers
+    const topPerformers = allAffiliates
+      .filter(a => a.status === 'approved')
+      .sort((a, b) => Number(b.totalEarnings) - Number(a.totalEarnings))
+      .slice(0, 5)
+      .map(a => ({
+        id: a.id,
+        name: a.fullName,
+        email: a.email,
+        level: a.level,
+        conversions: a.totalConversions,
+        earnings: Number(a.totalEarnings)
+      }));
+
+    res.json({ success: true, stats: { ...stats, topPerformers } });
+  } catch (error) {
+    console.error('[ADMIN GET STATS ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al obtener estadísticas' });
+  }
+});
+
 export default router;
