@@ -1704,6 +1704,7 @@ export const affiliates = pgTable("affiliates", {
   level: text("level", { enum: ["Básico", "Plata", "Oro", "Platino", "Diamante"] }).default("Básico").notNull(),
   commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default('10.00').notNull(),
   status: text("status", { enum: ["pending", "approved", "rejected", "suspended"] }).default("pending").notNull(),
+  referralCode: text("referral_code").unique(),
   paymentMethod: text("payment_method", { enum: ["paypal", "bank_transfer", "stripe"] }).default("paypal"),
   paymentEmail: text("payment_email"),
   bankDetails: json("bank_details").$type<{
