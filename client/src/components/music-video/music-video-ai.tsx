@@ -3241,14 +3241,14 @@ ${transcription}`;
   }, [timelineItems, transcription, scriptContent]);
 
   /**
-   * Auto-guardado cada 2 minutos
+   * Auto-guardado cada 30 segundos
    */
   useEffect(() => {
     if (!autoSaveEnabled) return;
 
     const autoSaveInterval = setInterval(() => {
       handleAutoSave();
-    }, 120000); // 2 minutos
+    }, 30000); // 30 segundos
 
     return () => clearInterval(autoSaveInterval);
   }, [handleAutoSave, autoSaveEnabled]);
