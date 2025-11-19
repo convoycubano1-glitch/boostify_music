@@ -5264,6 +5264,49 @@ ${transcription}`;
       {/* Efectos visuales para toda la aplicación */}
       {allStepsCompleted && <motion.div className="confetti-container" />}
       
+      {/* Indicador de Progreso Persistente - Siempre visible */}
+      {(isGeneratingImages || isGeneratingShots || showProgress || isRetrying) && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="fixed top-4 right-4 z-50"
+        >
+          <Card className="bg-gradient-to-br from-orange-600/95 to-orange-500/95 backdrop-blur-sm border-orange-400/50 shadow-2xl px-4 py-3 min-w-[280px]">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  className="w-10 h-10 rounded-full border-4 border-white/30 border-t-white"
+                />
+                {generationProgress.percentage > 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">
+                      {generationProgress.percentage}%
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">
+                  {isRetrying ? '🔄 Retrying...' : 
+                   isGeneratingShots ? '🎨 Generating Images' : 
+                   currentProgressStage === 'transcription' ? '🎙️ Transcribing Audio' :
+                   currentProgressStage === 'script' ? '📝 Creating Script' :
+                   '⚙️ Processing...'}
+                </p>
+                <p className="text-xs text-white/80">
+                  {isRetrying ? retryMessage : 
+                   generationProgress.current > 0 ? `${generationProgress.current}/${generationProgress.total}` :
+                   `${progressPercentage}%`}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+      
       {/* Sistema de partículas dinámicas basadas en el paso actual - Ajustadas a naranja/negro */}
       {/* Botón de Quick Start - Solo visible al inicio */}
       {currentStep === 1 && !transcription && (
