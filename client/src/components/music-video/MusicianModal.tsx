@@ -185,7 +185,7 @@ export function MusicianModal({
       characterDescription: musicianTypeDescription, // Save user's description for consistency
       generatedImageUrl,
       scriptContext,
-      cutTimestamp: timelineItem.timestamp,
+      cutTimestamp: timelineItem.timestamp.toString(), // Convert to string for decimal type
     });
   };
 
