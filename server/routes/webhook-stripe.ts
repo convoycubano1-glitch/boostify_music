@@ -98,13 +98,75 @@ router.post('/webhook', async (req: Request, res: Response) => {
 });
 
 /**
- * Manejar checkout completado (nueva suscripción)
+ * Mapear bundle tier a plan tier
+ */
+function mapBundleToPlan(bundleTier: string): 'free' | 'creator' | 'professional' | 'enterprise' {
+  const mapping: Record<string, 'free' | 'creator' | 'professional' | 'enterprise'> = {
+    'essential': 'creator',
+    'gold': 'professional',
+    'platinum': 'enterprise',
+    'diamond': 'enterprise'
+  };
+  return mapping[bundleTier] || 'free';
+}
+
+/**
+ * Manejar checkout completado (nueva suscripción O bundle)
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   console.log('💳 Processing checkout.session.completed:', session.id);
   
-  const { customer, subscription: subscriptionId, client_reference_id } = session;
+  const { customer, subscription: subscriptionId, client_reference_id, metadata } = session;
   
+  // Verificar si es un bundle de music video (metadata.type = 'music_video_bundle')
+  const isMusicVideoBundle = metadata?.type === 'music_video_bundle';
+  const bundleTier = metadata?.tier;
+  
+  if (isMusicVideoBundle && bundleTier) {
+    console.log(`🎵 Processing music video bundle purchase: ${bundleTier}`);
+    
+    // Buscar usuario
+    const userEmail = session.customer_details?.email;
+    const userId = client_reference_id ? parseInt(client_reference_id) : null;
+    
+    let user;
+    if (userId) {
+      const users_result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      user = users_result[0];
+    } else if (userEmail) {
+      const users_result = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
+      user = users_result[0];
+    }
+    
+    if (!user) {
+      console.error('❌ User not found for bundle purchase:', userEmail || userId);
+      return;
+    }
+    
+    // Activar suscripción trial automáticamente según el bundle
+    const planTier = mapBundleToPlan(bundleTier);
+    const now = new Date();
+    const trialEndDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 días
+    
+    await db.insert(subscriptions).values({
+      userId: user.id,
+      plan: planTier,
+      status: 'trialing',
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEndDate,
+      cancelAtPeriodEnd: false,
+      interval: 'monthly',
+      isTrial: true,
+      trialEndsAt: trialEndDate,
+      grantedByBundle: `${bundleTier}_bundle_${session.id}`,
+      stripeCustomerId: customer as string
+    });
+    
+    console.log(`✅ Music video bundle ${bundleTier} purchased! Trial subscription activated for user ${user.email}: ${planTier} (30 days)`);
+    return;
+  }
+  
+  // Flujo normal de suscripción
   if (!subscriptionId || !customer) {
     console.log('⚠️ Checkout session without subscription or customer');
     return;
@@ -135,21 +197,27 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
   
+  // Determinar intervalo (monthly o yearly)
+  const interval = subscription.items.data[0]?.price.recurring?.interval || 'monthly';
+  
   // Crear o actualizar suscripción en la base de datos
   await db.insert(subscriptions).values({
     userId: user.id,
     stripeSubscriptionId: subscription.id,
     stripeCustomerId: customer as string,
-    stripePriceId: priceId,
     plan: planTier,
-    status: subscription.status as 'active' | 'canceled' | 'past_due',
+    status: subscription.status as any,
     currentPeriodStart: new Date(subscription.current_period_start * 1000),
     currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    cancelAtPeriodEnd: subscription.cancel_at_period_end
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    interval: interval as 'monthly' | 'yearly',
+    price: (subscription.items.data[0]?.price.unit_amount || 0) / 100,
+    currency: subscription.currency,
+    isTrial: subscription.status === 'trialing'
   }).onConflictDoUpdate({
     target: subscriptions.stripeSubscriptionId,
     set: {
-      status: subscription.status as 'active' | 'canceled' | 'past_due',
+      status: subscription.status as any,
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       updatedAt: new Date()
@@ -178,20 +246,25 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     return;
   }
   
+  const interval = subscription.items.data[0]?.price.recurring?.interval || 'monthly';
+  
   await db.insert(subscriptions).values({
     userId: user.id,
     stripeSubscriptionId: subscription.id,
     stripeCustomerId: customer,
-    stripePriceId: priceId,
     plan: planTier,
-    status: subscription.status as 'active' | 'canceled' | 'past_due',
+    status: subscription.status as any,
     currentPeriodStart: new Date(subscription.current_period_start * 1000),
     currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    cancelAtPeriodEnd: subscription.cancel_at_period_end
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    interval: interval as 'monthly' | 'yearly',
+    price: (subscription.items.data[0]?.price.unit_amount || 0) / 100,
+    currency: subscription.currency,
+    isTrial: subscription.status === 'trialing'
   }).onConflictDoUpdate({
     target: subscriptions.stripeSubscriptionId,
     set: {
-      status: subscription.status as 'active' | 'canceled' | 'past_due',
+      status: subscription.status as any,
       updatedAt: new Date()
     }
   });
@@ -207,15 +280,18 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   
   const priceId = subscription.items.data[0]?.price.id;
   const planTier = determinePlanTier(priceId);
+  const interval = subscription.items.data[0]?.price.recurring?.interval || 'monthly';
   
   await db.update(subscriptions)
     .set({
       plan: planTier,
-      stripePriceId: priceId,
-      status: subscription.status as 'active' | 'canceled' | 'past_due',
+      status: subscription.status as any,
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      interval: interval as 'monthly' | 'yearly',
+      price: (subscription.items.data[0]?.price.unit_amount || 0) / 100,
+      isTrial: subscription.status === 'trialing',
       updatedAt: new Date()
     })
     .where(eq(subscriptions.stripeSubscriptionId, subscription.id));

@@ -90,6 +90,7 @@ import apifyInstagramRouter from './routes/apify-instagram'; // Import Apify Ins
 import fashionStudioRouter from './routes/fashion-studio'; // Import Artist Fashion Studio (FAL + Gemini)
 import notificationsRouter from './routes/notifications'; // Import Notifications router for internal messaging
 import webhookStripeRouter from './routes/webhook-stripe'; // Import Stripe Webhook handler
+import subscriptionApiRouter from './routes/subscription-api'; // Import Subscription API routes (PostgreSQL)
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -738,6 +739,10 @@ export function registerRoutes(app: Express): HttpServer {
   
   // Stripe Webhook (debe estar antes de cualquier middleware de autenticación)
   app.use('/api/stripe', webhookStripeRouter);
+  
+  // Subscription API (PostgreSQL)
+  app.use('/api/subscription', subscriptionApiRouter);
+  app.use('/api/user', subscriptionApiRouter);
   
   // Setup subscription-protected routes
   setupSubscriptionRoutes(app);
