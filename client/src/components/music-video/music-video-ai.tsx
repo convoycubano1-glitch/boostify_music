@@ -414,6 +414,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [songTitle, setSongTitle] = useState<string>("");
   const [duration, setDuration] = useState<number>(0);
   const [scriptContent, setScriptContent] = useState<string>("");
+  const [narrativeSummary, setNarrativeSummary] = useState<string>("");
   const playbackRef = useRef<NodeJS.Timeout | null>(null);
   const visualStyleRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -977,11 +978,16 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       }
 
       // Extraer información global del script para contexto
-      const narrativeSummary = parsedScript.narrative_summary || '';
+      const narrativeSummaryText = parsedScript.narrative_summary || '';
       const directorName = videoStyle.selectedDirector?.name || 'Cinematic Director';
       const conceptStory = selectedConcept?.story_concept || '';
       
-      logger.info(`🎬 [IMG] Context: Director=${directorName}, Concept=${conceptStory ? 'Yes' : 'No'}, Narrative=${narrativeSummary ? 'Yes' : 'No'}`);
+      // Store narrative summary in state for TimelineEditor
+      if (narrativeSummaryText) {
+        setNarrativeSummary(narrativeSummaryText);
+      }
+      
+      logger.info(`🎬 [IMG] Context: Director=${directorName}, Concept=${conceptStory ? 'Yes' : 'No'}, Narrative=${narrativeSummaryText ? 'Yes' : 'No'}`);
 
       setProgressPercentage(10);
 
@@ -1058,7 +1064,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           
           // Construir prompt cinematográfico COMPLETO con narrativa y contexto global
           const prompt = `MUSIC VIDEO CONTEXT:
-${narrativeSummary ? `Overall Story: ${narrativeSummary}` : ''}
+${narrativeSummaryText ? `Overall Story: ${narrativeSummaryText}` : ''}
 ${conceptStory ? `Concept: ${conceptStory}` : ''}
 Director Style: ${directorName}
 
@@ -7226,6 +7232,14 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                       isSavingProject={isSavingProject}
                       lastSavedAt={lastSavedAt}
                       hasUnsavedChanges={hasUnsavedChanges}
+                      director={videoStyle.selectedDirector ? {
+                        name: videoStyle.selectedDirector.name,
+                        style: videoStyle.selectedDirector.style,
+                        specialty: videoStyle.selectedDirector.specialty
+                      } : undefined}
+                      concept={selectedConcept}
+                      narrativeSummary={narrativeSummary}
+                      projectId={currentProjectId ? parseInt(currentProjectId) : undefined}
                     />
                   </div>
 
