@@ -196,6 +196,51 @@ router.post('/track/conversion', async (req: Request, res: Response) => {
       })
       .where(eq(affiliates.id, affiliateId));
 
+    // Check for second-level commission (referral system)
+    const referralRelation = await db.query.affiliateReferrals.findFirst({
+      where: (referrals, { eq, and }) => and(
+        eq(referrals.referredId, affiliateId),
+        eq(referrals.status, 'active')
+      )
+    });
+
+    if (referralRelation) {
+      // Calculate second-level commission (5% of sale amount)
+      const secondLevelRate = 5;
+      const secondLevelCommission = (Number(saleAmount) * secondLevelRate) / 100;
+
+      // Record second-level earning for the referrer
+      await db.insert(affiliateEarnings).values({
+        affiliateId: referralRelation.referrerId,
+        amount: secondLevelCommission.toString(),
+        type: 'referral_commission',
+        description: `Comisión de 2do nivel por venta de referido`,
+        status: 'pending',
+        conversionId: conversion.id,
+        metadata: {
+          referredAffiliateId: affiliateId,
+          saleAmount,
+          secondLevelRate
+        }
+      });
+
+      // Update referrer's earnings
+      await db.update(affiliates)
+        .set({
+          totalEarnings: sql`${affiliates.totalEarnings} + ${secondLevelCommission}`,
+          pendingPayment: sql`${affiliates.pendingPayment} + ${secondLevelCommission}`,
+          updatedAt: new Date()
+        })
+        .where(eq(affiliates.id, referralRelation.referrerId));
+
+      // Update referral relationship earnings
+      await db.update(affiliateReferrals)
+        .set({
+          totalEarnings: sql`${affiliateReferrals.totalEarnings} + ${secondLevelCommission}`
+        })
+        .where(eq(affiliateReferrals.id, referralRelation.id));
+    }
+
     // Clear the affiliate tracking from session
     if (req.session) {
       delete req.session.affiliateLinkId;
@@ -206,7 +251,8 @@ router.post('/track/conversion', async (req: Request, res: Response) => {
       success: true, 
       conversion: {
         id: conversion.id,
-        commissionAmount
+        commissionAmount,
+        secondLevelCommission: referralRelation ? (Number(saleAmount) * 5) / 100 : 0
       }
     });
   } catch (error) {

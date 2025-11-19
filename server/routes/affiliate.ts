@@ -87,7 +87,7 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
 
 /**
  * POST /api/affiliate/register
- * Registra un nuevo afiliado
+ * Registra un nuevo afiliado con código de referido opcional
  */
 router.post('/register', authenticate, async (req: Request, res: Response) => {
   try {
@@ -103,6 +103,36 @@ router.post('/register', authenticate, async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Ya estás registrado como afiliado' });
     }
 
+    // Check for referral code
+    let referrerId: number | null = null;
+    if (req.body.referralCode) {
+      const referralCode = req.body.referralCode.toUpperCase();
+      
+      // Find affiliate by referral code (using their first link as referral code)
+      const referrerAffiliate = await db.query.affiliates.findFirst({
+        where: (affiliates, { eq }) => eq(affiliates.referralCode, referralCode)
+      });
+
+      if (referrerAffiliate) {
+        referrerId = referrerAffiliate.id;
+      }
+    }
+
+    // Generate unique referral code for new affiliate
+    let referralCode = generateUniqueCode(8);
+    let codeExists = true;
+    
+    while (codeExists) {
+      const existing = await db.query.affiliates.findFirst({
+        where: (affiliates, { eq }) => eq(affiliates.referralCode, referralCode)
+      });
+      if (!existing) {
+        codeExists = false;
+      } else {
+        referralCode = generateUniqueCode(8);
+      }
+    }
+
     // Validate input
     const validatedData = insertAffiliateSchema.parse({
       userId,
@@ -114,15 +144,28 @@ router.post('/register', authenticate, async (req: Request, res: Response) => {
       marketingExperience: req.body.marketingExperience,
       promotionStrategy: req.body.promotionStrategy,
       level: 'Básico',
-      status: 'pending'
+      status: 'pending',
+      referralCode
     });
 
     const [newAffiliate] = await db.insert(affiliates).values(validatedData).returning();
 
+    // Create referral relationship if referrer exists
+    if (referrerId) {
+      await db.insert(affiliateReferrals).values({
+        referrerId,
+        referredId: newAffiliate.id,
+        status: 'active'
+      });
+    }
+
     res.json({
       success: true,
       message: 'Registro exitoso! Tu solicitud está siendo revisada.',
-      affiliate: newAffiliate
+      affiliate: {
+        ...newAffiliate,
+        wasReferred: !!referrerId
+      }
     });
   } catch (error: any) {
     console.error('[AFFILIATE REGISTER ERROR]', error);
@@ -560,6 +603,143 @@ router.put('/settings', authenticate, async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[AFFILIATE UPDATE SETTINGS ERROR]', error);
     res.status(400).json({ success: false, message: error.message || 'Error al actualizar configuración' });
+  }
+});
+
+/**
+ * GET /api/affiliate/referrals
+ * Obtiene todos los referidos del afiliado (sistema multinivel)
+ */
+router.get('/referrals', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.userId, req.user.id)).limit(1);
+    if (!affiliate) {
+      return res.status(404).json({ success: false, message: 'Afiliado no encontrado' });
+    }
+
+    // Get direct referrals
+    const directReferrals = await db
+      .select({
+        id: affiliateReferrals.id,
+        referredId: affiliateReferrals.referredId,
+        createdAt: affiliateReferrals.createdAt,
+        status: affiliateReferrals.status,
+        totalEarnings: affiliateReferrals.totalEarnings,
+        affiliate: {
+          id: affiliates.id,
+          fullName: affiliates.fullName,
+          email: affiliates.email,
+          level: affiliates.level,
+          totalClicks: affiliates.totalClicks,
+          totalConversions: affiliates.totalConversions,
+          totalEarnings: affiliates.totalEarnings
+        }
+      })
+      .from(affiliateReferrals)
+      .innerJoin(affiliates, eq(affiliates.id, affiliateReferrals.referredId))
+      .where(eq(affiliateReferrals.referrerId, affiliate.id));
+
+    // Calculate totals
+    const totalReferrals = directReferrals.length;
+    const totalReferralEarnings = directReferrals.reduce((sum, ref) => 
+      sum + Number(ref.totalEarnings), 0
+    );
+
+    res.json({
+      success: true,
+      referrals: directReferrals,
+      summary: {
+        totalReferrals,
+        totalReferralEarnings,
+        activeReferrals: directReferrals.filter(r => r.status === 'active').length
+      }
+    });
+  } catch (error) {
+    console.error('[AFFILIATE REFERRALS ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al obtener referidos' });
+  }
+});
+
+/**
+ * POST /api/affiliate/referrals/:referredId/track-earning
+ * Registra una ganancia de segundo nivel cuando un referido hace una venta
+ * (Llamado automáticamente por el sistema de tracking)
+ */
+router.post('/referrals/:referredId/track-earning', async (req: Request, res: Response) => {
+  try {
+    const referredId = parseInt(req.params.referredId);
+    const { conversionId, saleAmount } = req.body;
+
+    // Find referral relationship
+    const [referralRelation] = await db.select()
+      .from(affiliateReferrals)
+      .where(and(
+        eq(affiliateReferrals.referredId, referredId),
+        eq(affiliateReferrals.status, 'active')
+      ))
+      .limit(1);
+
+    if (!referralRelation) {
+      return res.json({ success: false, message: 'No referral relationship found' });
+    }
+
+    // Get referrer affiliate to check their second-level commission rate
+    const [referrer] = await db.select().from(affiliates)
+      .where(eq(affiliates.id, referralRelation.referrerId))
+      .limit(1);
+
+    if (!referrer) {
+      return res.json({ success: false, message: 'Referrer not found' });
+    }
+
+    // Calculate second-level commission (typically 5% of the sale or 10% of the first-level commission)
+    const secondLevelRate = 5; // 5% of sale amount
+    const secondLevelCommission = (Number(saleAmount) * secondLevelRate) / 100;
+
+    // Record the second-level earning
+    await db.insert(affiliateEarnings).values({
+      affiliateId: referrer.id,
+      amount: secondLevelCommission.toString(),
+      type: 'referral_commission',
+      description: `Comisión de segundo nivel por venta de referido`,
+      status: 'pending',
+      conversionId,
+      metadata: {
+        referredAffiliateId: referredId,
+        saleAmount,
+        secondLevelRate,
+        conversionId
+      }
+    });
+
+    // Update referrer's earnings
+    await db.update(affiliates)
+      .set({
+        totalEarnings: sql`${affiliates.totalEarnings} + ${secondLevelCommission}`,
+        pendingPayment: sql`${affiliates.pendingPayment} + ${secondLevelCommission}`,
+        updatedAt: new Date()
+      })
+      .where(eq(affiliates.id, referrer.id));
+
+    // Update referral relationship earnings
+    await db.update(affiliateReferrals)
+      .set({
+        totalEarnings: sql`${affiliateReferrals.totalEarnings} + ${secondLevelCommission}`
+      })
+      .where(eq(affiliateReferrals.id, referralRelation.id));
+
+    res.json({ 
+      success: true, 
+      secondLevelCommission,
+      message: 'Second-level commission recorded'
+    });
+  } catch (error) {
+    console.error('[TRACK REFERRAL EARNING ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error tracking referral earning' });
   }
 });
 
