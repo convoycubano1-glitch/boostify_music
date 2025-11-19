@@ -870,6 +870,622 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/affiliate/coupons
+ * Crear cupón de descuento exclusivo para afiliado
+ */
+router.post('/coupons', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+    const { code, discount, type, expiresAt, productIds } = req.body;
+
+    // Verificar si el usuario es un afiliado aprobado
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
+    
+    if (!affiliateDoc.exists || affiliateDoc.data()?.status !== 'approved') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Solo afiliados aprobados pueden crear cupones' 
+      });
+    }
+
+    // Verificar que el código no exista
+    const existingCoupon = await db.collection('affiliateCoupons')
+      .where('code', '==', code)
+      .get();
+    
+    if (!existingCoupon.empty) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Este código de cupón ya existe' 
+      });
+    }
+
+    // Crear el cupón
+    const couponData = {
+      affiliateId: userId,
+      code: code.toUpperCase(),
+      discount: discount || 10,
+      type: type || 'percentage', // 'percentage' o 'fixed'
+      productIds: productIds || [],
+      usageCount: 0,
+      usageLimit: req.body.usageLimit || null,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      active: true,
+      createdAt: FieldValue.serverTimestamp()
+    };
+
+    const docRef = await db.collection('affiliateCoupons').add(couponData);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Cupón creado correctamente',
+      data: { id: docRef.id, ...couponData }
+    });
+  } catch (error: any) {
+    console.error('Error al crear cupón:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al crear cupón',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/affiliate/coupons
+ * Obtener cupones del afiliado
+ */
+router.get('/coupons', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+
+    const couponsSnapshot = await db.collection('affiliateCoupons')
+      .where('affiliateId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const coupons = couponsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate?.() || new Date()
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: coupons
+    });
+  } catch (error: any) {
+    console.error('Error al obtener cupones:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener cupones',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/affiliate/promotions
+ * Crear promoción especial para afiliado
+ */
+router.post('/promotions', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+    const { name, description, productIds, bonusCommission, startDate, endDate, requirements } = req.body;
+
+    // Verificar si el usuario es un afiliado aprobado
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
+    
+    if (!affiliateDoc.exists || affiliateDoc.data()?.status !== 'approved') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Solo afiliados aprobados pueden crear promociones' 
+      });
+    }
+
+    const promotionData = {
+      affiliateId: userId,
+      name,
+      description,
+      productIds: productIds || [],
+      bonusCommission: bonusCommission || 5, // Comisión adicional en %
+      startDate: startDate ? new Date(startDate) : new Date(),
+      endDate: endDate ? new Date(endDate) : null,
+      requirements: requirements || {
+        minSales: 0,
+        minRevenue: 0
+      },
+      active: true,
+      stats: {
+        sales: 0,
+        revenue: 0,
+        bonusEarned: 0
+      },
+      createdAt: FieldValue.serverTimestamp()
+    };
+
+    const docRef = await db.collection('affiliatePromotions').add(promotionData);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Promoción creada correctamente',
+      data: { id: docRef.id, ...promotionData }
+    });
+  } catch (error: any) {
+    console.error('Error al crear promoción:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al crear promoción',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/affiliate/promotions
+ * Obtener promociones del afiliado
+ */
+router.get('/promotions', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+
+    const promotionsSnapshot = await db.collection('affiliatePromotions')
+      .where('affiliateId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const promotions = promotionsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate?.() || new Date(),
+      startDate: doc.data().startDate?.toDate?.() || new Date(),
+      endDate: doc.data().endDate?.toDate?.() || null
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: promotions
+    });
+  } catch (error: any) {
+    console.error('Error al obtener promociones:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener promociones',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/affiliate/links/:id/qr
+ * Generar código QR para un enlace de afiliado
+ */
+router.post('/links/:id/qr', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+    const linkId = req.params.id;
+    const { size = 300, color = '#000000', backgroundColor = '#FFFFFF' } = req.body;
+
+    // Verificar que el enlace existe y pertenece al usuario
+    const linkRef = db.collection('affiliateLinks').doc(linkId);
+    const linkDoc = await linkRef.get();
+    
+    if (!linkDoc.exists || linkDoc.data()?.affiliateId !== userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Enlace no encontrado o no autorizado' 
+      });
+    }
+
+    const linkData = linkDoc.data();
+    const trackingUrl = `${req.protocol}://${req.get('host')}/api/affiliate/track/${linkId}`;
+
+    // Generar URL de código QR usando API pública
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(trackingUrl)}&color=${color.replace('#', '')}&bgcolor=${backgroundColor.replace('#', '')}`;
+
+    // Guardar información del QR
+    await linkRef.update({
+      qrCode: {
+        url: qrCodeUrl,
+        size,
+        color,
+        backgroundColor,
+        generatedAt: FieldValue.serverTimestamp()
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        qrCodeUrl,
+        trackingUrl,
+        linkId
+      }
+    });
+  } catch (error: any) {
+    console.error('Error al generar código QR:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al generar código QR',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/affiliate/referrals
+ * Registrar un referido de segundo nivel
+ */
+router.post('/referrals', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+    const { referredUserId, referredEmail } = req.body;
+
+    // Verificar si el usuario es un afiliado aprobado
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
+    
+    if (!affiliateDoc.exists || affiliateDoc.data()?.status !== 'approved') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Solo afiliados aprobados pueden referir usuarios' 
+      });
+    }
+
+    // Crear el referido
+    const referralData = {
+      referrerId: userId,
+      referredUserId: referredUserId || null,
+      referredEmail: referredEmail,
+      status: 'pending', // pending, active, converted
+      level: 2, // Nivel de referido
+      commissionEarned: 0,
+      createdAt: FieldValue.serverTimestamp()
+    };
+
+    const docRef = await db.collection('affiliateReferrals').add(referralData);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Referido registrado correctamente',
+      data: { id: docRef.id, ...referralData }
+    });
+  } catch (error: any) {
+    console.error('Error al registrar referido:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al registrar referido',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/affiliate/referrals
+ * Obtener referidos del afiliado
+ */
+router.get('/referrals', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+
+    const referralsSnapshot = await db.collection('affiliateReferrals')
+      .where('referrerId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const referrals = referralsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate?.() || new Date()
+    }));
+
+    // Calcular estadísticas
+    const stats = {
+      total: referrals.length,
+      active: referrals.filter((r: any) => r.status === 'active').length,
+      converted: referrals.filter((r: any) => r.status === 'converted').length,
+      totalEarned: referrals.reduce((sum: number, r: any) => sum + (r.commissionEarned || 0), 0)
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        referrals,
+        stats
+      }
+    });
+  } catch (error: any) {
+    console.error('Error al obtener referidos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener referidos',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/affiliate/badges
+ * Obtener badges/logros del afiliado
+ */
+router.get('/badges', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+
+    // Obtener datos del afiliado
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
+    
+    if (!affiliateDoc.exists) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'No eres un afiliado registrado' 
+      });
+    }
+
+    const affiliateData = affiliateDoc.data();
+    const stats = affiliateData?.stats || {};
+
+    // Definir badges disponibles
+    const allBadges = [
+      {
+        id: 'first_sale',
+        name: 'Primera Venta',
+        description: 'Realizaste tu primera venta como afiliado',
+        icon: '🎯',
+        earned: stats.conversions >= 1,
+        requirement: '1 conversión',
+        progress: Math.min(stats.conversions, 1)
+      },
+      {
+        id: 'sales_10',
+        name: 'Vendedor Emergente',
+        description: 'Alcanzaste 10 ventas',
+        icon: '🚀',
+        earned: stats.conversions >= 10,
+        requirement: '10 conversiones',
+        progress: Math.min(stats.conversions, 10)
+      },
+      {
+        id: 'sales_50',
+        name: 'Vendedor Estrella',
+        description: 'Alcanzaste 50 ventas',
+        icon: '⭐',
+        earned: stats.conversions >= 50,
+        requirement: '50 conversiones',
+        progress: Math.min(stats.conversions, 50)
+      },
+      {
+        id: 'sales_100',
+        name: 'Vendedor Elite',
+        description: 'Alcanzaste 100 ventas',
+        icon: '👑',
+        earned: stats.conversions >= 100,
+        requirement: '100 conversiones',
+        progress: Math.min(stats.conversions, 100)
+      },
+      {
+        id: 'earnings_1000',
+        name: 'Primer Millar',
+        description: 'Ganaste $1,000 en comisiones',
+        icon: '💰',
+        earned: stats.earnings >= 1000,
+        requirement: '$1,000 en ganancias',
+        progress: Math.min(stats.earnings, 1000)
+      },
+      {
+        id: 'earnings_5000',
+        name: 'Generador de Ingresos',
+        description: 'Ganaste $5,000 en comisiones',
+        icon: '💎',
+        earned: stats.earnings >= 5000,
+        requirement: '$5,000 en ganancias',
+        progress: Math.min(stats.earnings, 5000)
+      },
+      {
+        id: 'clicks_1000',
+        name: 'Influencer',
+        description: 'Generaste 1,000 clics en tus enlaces',
+        icon: '🔥',
+        earned: stats.totalClicks >= 1000,
+        requirement: '1,000 clics',
+        progress: Math.min(stats.totalClicks, 1000)
+      },
+      {
+        id: 'referrer',
+        name: 'Reclutador',
+        description: 'Referiste a 5 afiliados exitosos',
+        icon: '🤝',
+        earned: false, // Requiere lógica adicional de referidos
+        requirement: '5 referidos activos',
+        progress: 0
+      }
+    ];
+
+    // Obtener badges ya desbloqueados del usuario
+    const earnedBadges = allBadges.filter(badge => badge.earned);
+    const lockedBadges = allBadges.filter(badge => !badge.earned);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        earnedBadges,
+        lockedBadges,
+        totalBadges: allBadges.length,
+        earnedCount: earnedBadges.length
+      }
+    });
+  } catch (error: any) {
+    console.error('Error al obtener badges:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener badges',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/affiliate/marketing-materials
+ * Obtener materiales de marketing disponibles
+ */
+router.get('/marketing-materials', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+
+    // Verificar si el usuario es un afiliado
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    const affiliateDoc = await affiliateRef.get();
+    
+    if (!affiliateDoc.exists) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'No tienes permisos de afiliado' 
+      });
+    }
+
+    const materials = [
+      {
+        id: 'banner_1',
+        type: 'banner',
+        name: 'Banner Principal 728x90',
+        description: 'Banner horizontal para sitios web',
+        dimensions: '728x90',
+        url: '/assets/marketing/banner-728x90.png',
+        downloadUrl: '/api/affiliate/download/banner-728x90.png'
+      },
+      {
+        id: 'banner_2',
+        type: 'banner',
+        name: 'Banner Cuadrado 300x250',
+        description: 'Banner para sidebar',
+        dimensions: '300x250',
+        url: '/assets/marketing/banner-300x250.png',
+        downloadUrl: '/api/affiliate/download/banner-300x250.png'
+      },
+      {
+        id: 'social_1',
+        type: 'social',
+        name: 'Post Instagram',
+        description: 'Imagen para Instagram 1080x1080',
+        dimensions: '1080x1080',
+        url: '/assets/marketing/instagram-post.png',
+        downloadUrl: '/api/affiliate/download/instagram-post.png'
+      },
+      {
+        id: 'email_1',
+        type: 'template',
+        name: 'Plantilla de Email',
+        description: 'Template HTML para campañas de email',
+        format: 'HTML',
+        url: '/assets/marketing/email-template.html',
+        downloadUrl: '/api/affiliate/download/email-template.html'
+      },
+      {
+        id: 'video_1',
+        type: 'video',
+        name: 'Video Promocional',
+        description: 'Video promocional de 30 segundos',
+        duration: '30s',
+        url: '/assets/marketing/promo-video.mp4',
+        downloadUrl: '/api/affiliate/download/promo-video.mp4'
+      }
+    ];
+
+    return res.status(200).json({
+      success: true,
+      data: materials
+    });
+  } catch (error: any) {
+    console.error('Error al obtener materiales de marketing:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener materiales de marketing',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/affiliate/notifications/subscribe
+ * Suscribirse a notificaciones de afiliado
+ */
+router.post('/notifications/subscribe', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const userId = getUserId(req);
+    const { channels, preferences } = req.body;
+
+    // Actualizar preferencias de notificación
+    const affiliateRef = db.collection('affiliates').doc(userId);
+    await affiliateRef.update({
+      notificationPreferences: {
+        channels: channels || ['email', 'in_app'],
+        newSale: preferences?.newSale !== undefined ? preferences.newSale : true,
+        newClick: preferences?.newClick !== undefined ? preferences.newClick : false,
+        paymentProcessed: preferences?.paymentProcessed !== undefined ? preferences.paymentProcessed : true,
+        newPromotion: preferences?.newPromotion !== undefined ? preferences.newPromotion : true,
+        weeklyReport: preferences?.weeklyReport !== undefined ? preferences.weeklyReport : true,
+        updatedAt: FieldValue.serverTimestamp()
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Preferencias de notificación actualizadas'
+    });
+  } catch (error: any) {
+    console.error('Error al actualizar notificaciones:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar notificaciones',
+      error: error.message
+    });
+  }
+});
+
+/**
  * Calcula la fecha del próximo pago de afiliados (ejemplo: día 15 del mes siguiente)
  */
 function getNextPaymentDate(): Date {

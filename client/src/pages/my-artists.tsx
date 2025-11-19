@@ -16,7 +16,8 @@ import {
   Sparkles,
   Bot,
   UserPlus,
-  Wrench
+  Wrench,
+  Trash2
 } from "lucide-react";
 import { fixGeneratedByForUserArtists } from "../lib/api/artist-profile-service";
 import { Head } from "../components/ui/head";
@@ -100,6 +101,31 @@ export default function MyArtistsPage() {
         variant: "destructive",
       });
       setIsGenerating(false);
+    },
+  });
+
+  // Mutation para eliminar un artista
+  const deleteArtistMutation = useMutation({
+    mutationFn: async (artistId: number) => {
+      const response = await apiRequest({
+        url: `/api/artist-generator/delete-artist/${artistId}`,
+        method: "DELETE"
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Artista eliminado",
+        description: "El artista ha sido eliminado exitosamente",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/my-artists"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar el artista",
+        variant: "destructive",
+      });
     },
   });
 
@@ -194,6 +220,12 @@ export default function MyArtistsPage() {
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteArtist = (artistId: number, artistName: string) => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar a ${artistName}? Esta acción no se puede deshacer.`)) {
+      deleteArtistMutation.mutate(artistId);
     }
   };
 
@@ -510,16 +542,32 @@ export default function MyArtistsPage() {
                       </p>
                     )}
 
-                    <Link href={`/artist/${artist.slug}`}>
+                    <div className="flex gap-2">
+                      <Link href={`/artist/${artist.slug}`} className="flex-1">
+                        <Button
+                          variant="outline"
+                          className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                          data-testid={`button-view-artist-${artist.id}`}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Ver Perfil
+                        </Button>
+                      </Link>
                       <Button
                         variant="outline"
-                        className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
-                        data-testid={`button-view-artist-${artist.id}`}
+                        size="icon"
+                        className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                        onClick={() => handleDeleteArtist(artist.id, artist.name)}
+                        disabled={deleteArtistMutation.isPending}
+                        data-testid={`button-delete-artist-${artist.id}`}
                       >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Ver Perfil
+                        {deleteArtistMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
-                    </Link>
+                    </div>
                   </div>
                 </Card>
               ))}

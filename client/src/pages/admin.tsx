@@ -529,7 +529,7 @@ export default function AdminDashboard() {
                           {videos.map(v => (
                             <tr key={v.id} className="border-b border-slate-800 hover:bg-slate-800/50">
                               <td className="p-3 text-sm text-white">{v.title || v.songTitle || 'Untitled'}</td>
-                              <td className="p-3 text-sm text-slate-400">{v.userId?.substring(0,15)}...</td>
+                              <td className="p-3 text-sm text-slate-400">{v.userId ? String(v.userId).substring(0,15) + '...' : 'N/A'}</td>
                               <td className="p-3 text-sm text-slate-400">{v.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}</td>
                               <td className="p-3 text-right">
                                 <Button size="sm" variant="ghost" onClick={() => handleDelete('videos', v.id)} className="text-red-400">

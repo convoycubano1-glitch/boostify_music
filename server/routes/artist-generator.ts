@@ -513,14 +513,97 @@ router.post("/regenerate-artist-field", async (req: Request, res: Response) => {
 });
 
 /**
- * Endpoint para eliminar un artista
+ * Endpoint para eliminar un artista por ID de PostgreSQL
  */
-router.delete("/delete-artist/:id", async (req: Request, res: Response) => {
+router.delete("/delete-artist/:pgId", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const artistId = req.params.id;
-    console.log(`Recibida solicitud para eliminar artista con ID: ${artistId}`);
+    const pgId = parseInt(req.params.pgId);
+    const userId = req.user?.id;
+    
+    console.log(`🗑️ Recibida solicitud para eliminar artista con PostgreSQL ID: ${pgId}`);
 
-    if (!artistId) {
+    if (isNaN(pgId)) {
+      return res.status(400).json({
+        error: 'ID de artista no válido',
+        details: 'Se requiere un ID numérico válido'
+      });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ 
+        error: 'Usuario no autenticado' 
+      });
+    }
+
+    // 1. Buscar el artista en PostgreSQL
+    const [artist] = await pgDb
+      .select()
+      .from(users)
+      .where(eq(users.id, pgId))
+      .limit(1);
+
+    if (!artist) {
+      return res.status(404).json({
+        error: 'Artista no encontrado',
+        details: `No se encontró un artista con ID: ${pgId}`
+      });
+    }
+
+    // 2. Verificar que el usuario tiene permiso para eliminar este artista
+    // Solo puede eliminar si es su propio perfil O si él lo generó
+    if (artist.id !== userId && artist.generatedBy !== userId) {
+      return res.status(403).json({
+        error: 'No autorizado',
+        details: 'No tienes permiso para eliminar este artista'
+      });
+    }
+
+    // 3. Si tiene firestoreId, eliminar también de Firestore
+    if (artist.firestoreId) {
+      try {
+        const artistRef = db.collection('generated_artists').doc(artist.firestoreId);
+        const artistDoc = await artistRef.get();
+        
+        if (artistDoc.exists) {
+          await artistRef.delete();
+          console.log(`✅ Artista eliminado de Firestore: ${artist.firestoreId}`);
+        }
+      } catch (firestoreError) {
+        console.error('⚠️ Error eliminando de Firestore (continuando):', firestoreError);
+        // Continuamos aunque falle Firestore
+      }
+    }
+
+    // 4. Eliminar de PostgreSQL
+    await pgDb
+      .delete(users)
+      .where(eq(users.id, pgId));
+
+    console.log(`✅ Artista eliminado de PostgreSQL: ${pgId}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Artista eliminado correctamente`,
+      deletedId: pgId
+    });
+  } catch (error) {
+    console.error('❌ Error eliminando artista:', error);
+    res.status(500).json({
+      error: 'Error al eliminar artista',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint LEGACY para eliminar un artista por firestoreId (mantener para compatibilidad)
+ */
+router.delete("/delete-artist-firestore/:firestoreId", async (req: Request, res: Response) => {
+  try {
+    const firestoreId = req.params.firestoreId;
+    console.log(`Recibida solicitud para eliminar artista con Firestore ID: ${firestoreId}`);
+
+    if (!firestoreId) {
       return res.status(400).json({
         error: 'ID de artista no proporcionado',
         details: 'Se requiere un ID de artista válido para eliminar'
@@ -528,24 +611,24 @@ router.delete("/delete-artist/:id", async (req: Request, res: Response) => {
     }
 
     // Verificar que el artista existe
-    const artistRef = db.collection('generated_artists').doc(artistId);
+    const artistRef = db.collection('generated_artists').doc(firestoreId);
     const artistDoc = await artistRef.get();
 
     if (!artistDoc.exists) {
       return res.status(404).json({
         error: 'Artista no encontrado',
-        details: `No se encontró un artista con ID: ${artistId}`
+        details: `No se encontró un artista con ID: ${firestoreId}`
       });
     }
 
     // Eliminar el artista
     await artistRef.delete();
-    console.log(`Artista eliminado con ID: ${artistId}`);
+    console.log(`Artista eliminado con ID: ${firestoreId}`);
 
     res.status(200).json({
       success: true,
-      message: `Artista con ID ${artistId} eliminado correctamente`,
-      deletedId: artistId
+      message: `Artista con ID ${firestoreId} eliminado correctamente`,
+      deletedId: firestoreId
     });
   } catch (error) {
     console.error('Error eliminando artista:', error);
