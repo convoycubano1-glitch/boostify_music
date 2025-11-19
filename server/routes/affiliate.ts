@@ -563,4 +563,163 @@ router.put('/settings', authenticate, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/affiliate/request-payout
+ * Solicita un pago de comisiones
+ */
+router.post('/request-payout', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.userId, req.user.id)).limit(1);
+    if (!affiliate) {
+      return res.status(404).json({ success: false, message: 'Afiliado no encontrado' });
+    }
+
+    const pendingAmount = Number(affiliate.pendingPayment);
+    
+    // Minimum payout threshold: $50
+    if (pendingAmount < 50) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `El monto mínimo para solicitar un pago es $50. Tu saldo actual es $${pendingAmount.toFixed(2)}` 
+      });
+    }
+
+    // Check payment method
+    if (!affiliate.paymentMethod) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Por favor configura tu método de pago antes de solicitar un retiro' 
+      });
+    }
+
+    // Create payout earning record
+    const [payoutRequest] = await db.insert(affiliateEarnings).values({
+      affiliateId: affiliate.id,
+      amount: (-pendingAmount).toString(), // Negative to show withdrawal
+      type: 'payout_request',
+      description: `Solicitud de pago por $${pendingAmount.toFixed(2)}`,
+      status: 'pending',
+      metadata: {
+        paymentMethod: affiliate.paymentMethod,
+        paymentEmail: affiliate.paymentEmail,
+        requestedAt: new Date().toISOString()
+      }
+    }).returning();
+
+    res.json({ 
+      success: true, 
+      message: 'Solicitud de pago enviada. Procesaremos tu pago en 3-5 días hábiles.',
+      payout: payoutRequest
+    });
+  } catch (error) {
+    console.error('[PAYOUT REQUEST ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al solicitar pago' });
+  }
+});
+
+/**
+ * POST /api/affiliate/admin/approve-payout/:id
+ * Aprueba y procesa un pago de afiliado (solo admin)
+ */
+router.post('/admin/approve-payout/:id', authenticate, async (req: Request, res: Response) => {
+  try {
+    // Check if user is admin (userId 1 or 2)
+    if (!req.user?.id || (req.user.id !== 1 && req.user.id !== 2)) {
+      return res.status(403).json({ success: false, message: 'Acceso denegado. Solo administradores.' });
+    }
+
+    const payoutId = parseInt(req.params.id);
+    
+    const [payout] = await db.select().from(affiliateEarnings)
+      .where(and(
+        eq(affiliateEarnings.id, payoutId),
+        eq(affiliateEarnings.type, 'payout_request'),
+        eq(affiliateEarnings.status, 'pending')
+      ))
+      .limit(1);
+
+    if (!payout) {
+      return res.status(404).json({ success: false, message: 'Solicitud de pago no encontrada' });
+    }
+
+    const payoutAmount = Math.abs(Number(payout.amount));
+
+    // Update payout status to approved
+    await db.update(affiliateEarnings)
+      .set({ 
+        status: 'approved',
+        metadata: {
+          ...payout.metadata,
+          approvedAt: new Date().toISOString(),
+          approvedBy: req.user.id
+        }
+      })
+      .where(eq(affiliateEarnings.id, payoutId));
+
+    // Update affiliate balances
+    await db.update(affiliates)
+      .set({
+        pendingPayment: sql`${affiliates.pendingPayment} - ${payoutAmount}`,
+        paidAmount: sql`${affiliates.paidAmount} + ${payoutAmount}`,
+        updatedAt: new Date()
+      })
+      .where(eq(affiliates.id, payout.affiliateId));
+
+    // Create approved payment record
+    await db.insert(affiliateEarnings).values({
+      affiliateId: payout.affiliateId,
+      amount: payoutAmount.toString(),
+      type: 'payout_completed',
+      description: `Pago aprobado: $${payoutAmount.toFixed(2)}`,
+      status: 'approved',
+      metadata: {
+        payoutRequestId: payoutId,
+        approvedBy: req.user.id,
+        approvedAt: new Date().toISOString()
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Pago aprobado y procesado exitosamente'
+    });
+  } catch (error) {
+    console.error('[APPROVE PAYOUT ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al aprobar pago' });
+  }
+});
+
+/**
+ * GET /api/affiliate/payment-history
+ * Obtiene el historial de pagos del afiliado
+ */
+router.get('/payment-history', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const [affiliate] = await db.select().from(affiliates).where(eq(affiliates.userId, req.user.id)).limit(1);
+    if (!affiliate) {
+      return res.status(404).json({ success: false, message: 'Afiliado no encontrado' });
+    }
+
+    const paymentHistory = await db.select().from(affiliateEarnings)
+      .where(and(
+        eq(affiliateEarnings.affiliateId, affiliate.id),
+        sql`type IN ('payout_request', 'payout_completed')`
+      ))
+      .orderBy(desc(affiliateEarnings.createdAt));
+
+    res.json({ success: true, payments: paymentHistory });
+  } catch (error) {
+    console.error('[PAYMENT HISTORY ERROR]', error);
+    res.status(500).json({ success: false, message: 'Error al obtener historial de pagos' });
+  }
+});
+
 export default router;
