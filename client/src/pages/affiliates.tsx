@@ -10,6 +10,11 @@ import { AffiliateContentGenerator } from "../components/affiliates/content-gene
 import { AffiliateResources } from "../components/affiliates/resources";
 import { AffiliateSupport } from "../components/affiliates/affiliate-support";
 import { AffiliateSettings } from "../components/affiliates/settings";
+import { AffiliateCoupons } from "../components/affiliates/coupons";
+import { AffiliatePromotions } from "../components/affiliates/promotions";
+import { AffiliateBadges } from "../components/affiliates/badges";
+import { AffiliateReferrals } from "../components/affiliates/referrals";
+import { AffiliateMarketingMaterials } from "../components/affiliates/marketing-materials";
 import { useAuth } from "../hooks/use-auth";
 import { db, auth } from "../lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
@@ -34,7 +39,10 @@ import {
   AlertCircle,
   Zap,
   Crown,
-  Headphones as HeadphonesIcon
+  Headphones as HeadphonesIcon,
+  Ticket,
+  Globe,
+  UserPlus
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 
@@ -271,72 +279,105 @@ export default function AffiliatesPage() {
               </div>
 
               <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-8">
-                {/* Tabs para móvil: vista en forma de grid con 3 columnas */}
-                <TabsList className="grid grid-cols-3 md:hidden gap-3 mb-4">
-                  <TabsTrigger value="overview" className="flex flex-col items-center gap-2 py-3">
-                    <LineChart className="h-5 w-5" />
-                    <span className="text-xs">Overview</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="links" className="flex flex-col items-center gap-2 py-3">
-                    <Link className="h-5 w-5" />
-                    <span className="text-xs">Links</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="earnings" className="flex flex-col items-center gap-2 py-3">
-                    <DollarSign className="h-5 w-5" />
-                    <span className="text-xs">Earnings</span>
-                  </TabsTrigger>
-                </TabsList>
+                {/* Tabs para móvil: vista en forma de grid */}
+                <div className="md:hidden space-y-3">
+                  <TabsList className="grid grid-cols-3 gap-2">
+                    <TabsTrigger value="overview" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <LineChart className="h-4 w-4" />
+                      <span className="text-xs">Overview</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="links" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <Link className="h-4 w-4" />
+                      <span className="text-xs">Links</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="earnings" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <DollarSign className="h-4 w-4" />
+                      <span className="text-xs">Earnings</span>
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsList className="grid grid-cols-3 gap-2">
+                    <TabsTrigger value="coupons" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <Ticket className="h-4 w-4" />
+                      <span className="text-xs">Cupones</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="promotions" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <Zap className="h-4 w-4" />
+                      <span className="text-xs">Promos</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="badges" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <Award className="h-4 w-4" />
+                      <span className="text-xs">Logros</span>
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsList className="grid grid-cols-4 gap-2">
+                    <TabsTrigger value="referrals" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <UserPlus className="h-4 w-4" />
+                      <span className="text-xs">Referidos</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="materials" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <Globe className="h-4 w-4" />
+                      <span className="text-xs">Recursos</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="content" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <Sparkles className="h-4 w-4" />
+                      <span className="text-xs">Content</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="settings" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <Settings2 className="h-4 w-4" />
+                      <span className="text-xs">Config</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
                 
-                <TabsList className="grid grid-cols-4 md:hidden gap-3">
-                  <TabsTrigger value="content" className="flex flex-col items-center gap-2 py-3">
-                    <Sparkles className="h-5 w-5" />
-                    <span className="text-xs">Content</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="resources" className="flex flex-col items-center gap-2 py-3">
-                    <FileText className="h-5 w-5" />
-                    <span className="text-xs">Resources</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="support" className="flex flex-col items-center gap-2 py-3">
-                    <LifeBuoy className="h-5 w-5" />
-                    <span className="text-xs">Support</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="settings" className="flex flex-col items-center gap-2 py-3">
-                    <Settings2 className="h-5 w-5" />
-                    <span className="text-xs">Settings</span>
-                  </TabsTrigger>
-                </TabsList>
-                
-                {/* Tabs para escritorio: vista en fila única */}
-                <TabsList className="hidden md:grid md:grid-cols-7 gap-2">
-                  <TabsTrigger value="overview" className="flex items-center gap-1.5">
-                    <LineChart className="h-4 w-4" />
-                    <span>Overview</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="links" className="flex items-center gap-1.5">
-                    <Link className="h-4 w-4" />
-                    <span>Links</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="earnings" className="flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4" />
-                    <span>Earnings</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="content" className="flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4" />
-                    <span>Content</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="resources" className="flex items-center gap-1.5">
-                    <FileText className="h-4 w-4" />
-                    <span>Resources</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="support" className="flex items-center gap-1.5">
-                    <LifeBuoy className="h-4 w-4" />
-                    <span>Support</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="settings" className="flex items-center gap-1.5">
-                    <Settings2 className="h-4 w-4" />
-                    <span>Settings</span>
-                  </TabsTrigger>
-                </TabsList>
+                {/* Tabs para escritorio: scrollable horizontal */}
+                <div className="hidden md:block relative">
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <TabsList className="inline-flex gap-2 w-auto">
+                      <TabsTrigger value="overview" className="flex items-center gap-1.5 px-4">
+                        <LineChart className="h-4 w-4" />
+                        <span>Overview</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="links" className="flex items-center gap-1.5 px-4">
+                        <Link className="h-4 w-4" />
+                        <span>Enlaces</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="earnings" className="flex items-center gap-1.5 px-4">
+                        <DollarSign className="h-4 w-4" />
+                        <span>Ganancias</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="coupons" className="flex items-center gap-1.5 px-4">
+                        <Ticket className="h-4 w-4" />
+                        <span>Cupones</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="promotions" className="flex items-center gap-1.5 px-4">
+                        <Zap className="h-4 w-4" />
+                        <span>Promociones</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="badges" className="flex items-center gap-1.5 px-4">
+                        <Award className="h-4 w-4" />
+                        <span>Logros</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="referrals" className="flex items-center gap-1.5 px-4">
+                        <UserPlus className="h-4 w-4" />
+                        <span>Referidos</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="materials" className="flex items-center gap-1.5 px-4">
+                        <Globe className="h-4 w-4" />
+                        <span>Materiales</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="content" className="flex items-center gap-1.5 px-4">
+                        <Sparkles className="h-4 w-4" />
+                        <span>Contenido</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="settings" className="flex items-center gap-1.5 px-4">
+                        <Settings2 className="h-4 w-4" />
+                        <span>Configuración</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                </div>
                 
                 <TabsContent value="overview" className="space-y-4">
                   <AffiliateOverview affiliateData={currentAffiliateData as any} />
@@ -348,6 +389,26 @@ export default function AffiliatesPage() {
                 
                 <TabsContent value="earnings" className="space-y-4">
                   <AffiliateEarnings affiliateData={currentAffiliateData} />
+                </TabsContent>
+                
+                <TabsContent value="coupons" className="space-y-4">
+                  <AffiliateCoupons />
+                </TabsContent>
+                
+                <TabsContent value="promotions" className="space-y-4">
+                  <AffiliatePromotions />
+                </TabsContent>
+                
+                <TabsContent value="badges" className="space-y-4">
+                  <AffiliateBadges />
+                </TabsContent>
+                
+                <TabsContent value="referrals" className="space-y-4">
+                  <AffiliateReferrals />
+                </TabsContent>
+                
+                <TabsContent value="materials" className="space-y-4">
+                  <AffiliateMarketingMaterials />
                 </TabsContent>
                 
                 <TabsContent value="content" className="space-y-6">
