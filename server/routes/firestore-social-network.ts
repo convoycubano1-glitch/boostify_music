@@ -1,15 +1,18 @@
 import { Router } from "express";
-import { firestoreSocialNetworkService } from "../services/firestore-social-network";
+import { postgresSocialNetworkService } from "../services/postgres-social-network";
 import { openRouterService } from "../services/openrouter-service";
 
 const router = Router();
+
+// Usar el servicio PostgreSQL en lugar de Firestore
+const socialService = postgresSocialNetworkService;
 
 /**
  * Obtener todos los usuarios de la red social
  */
 router.get("/users", async (req, res) => {
   try {
-    const users = await firestoreSocialNetworkService.getAllUsers();
+    const users = await socialService.getAllUsers();
     res.json(users);
   } catch (error) {
     console.error("Error getting social users:", error);
@@ -23,7 +26,7 @@ router.get("/users", async (req, res) => {
 router.get("/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await firestoreSocialNetworkService.getUserById(id);
+    const user = await socialService.getUserById(id);
     
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -55,7 +58,7 @@ router.post("/users/sync", async (req, res) => {
       language: language || 'en'
     };
     
-    const user = await firestoreSocialNetworkService.createOrUpdateUserWithId(userId, userData);
+    const user = await socialService.createOrUpdateUserWithId(userId, userData);
     res.json(user);
   } catch (error) {
     console.error("Error syncing user:", error);
@@ -71,7 +74,7 @@ router.patch("/users/:id", async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     
-    const updatedUser = await firestoreSocialNetworkService.updateUser(id, updateData);
+    const updatedUser = await socialService.updateUser(id, updateData);
     
     if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
@@ -90,7 +93,7 @@ router.patch("/users/:id", async (req, res) => {
 router.get("/users/:id/posts", async (req, res) => {
   try {
     const { id } = req.params;
-    const posts = await firestoreSocialNetworkService.getUserPosts(id);
+    const posts = await socialService.getUserPosts(id);
     res.json(posts);
   } catch (error) {
     console.error("Error getting user posts:", error);
@@ -103,7 +106,7 @@ router.get("/users/:id/posts", async (req, res) => {
  */
 router.get("/posts", async (req, res) => {
   try {
-    const postsWithDetails = await firestoreSocialNetworkService.getPostsWithDetails();
+    const postsWithDetails = await socialService.getPostsWithDetails();
     res.json(postsWithDetails);
   } catch (error) {
     console.error("Error getting posts:", error);
@@ -135,10 +138,10 @@ router.post("/posts", async (req, res) => {
       updatedAt: new Date()
     };
     
-    const newPost = await firestoreSocialNetworkService.createPost(postData);
+    const newPost = await socialService.createPost(postData);
     
     // Obtener el usuario para incluirlo en la respuesta
-    const user = await firestoreSocialNetworkService.getUserById(newPost.userId);
+    const user = await socialService.getUserById(newPost.userId);
     
     // Generar respuestas automatizadas de usuarios bot
     await generateBotResponses(newPost);
@@ -164,7 +167,7 @@ router.post("/posts/:id/like", async (req, res) => {
     // Nota: En un sistema real, obtendríamos el usuario de la sesión
     const userId = req.query.userId || req.body.userId || "1"; // Default to user ID 1
     
-    const updatedPost = await firestoreSocialNetworkService.incrementPostLikes(id, userId as string);
+    const updatedPost = await socialService.incrementPostLikes(id, userId as string);
     
     if (!updatedPost) {
       return res.status(404).json({ error: "Post not found" });
@@ -186,7 +189,7 @@ router.post("/posts/:id/save", async (req, res) => {
     // Obtener el usuario actual
     const userId = req.query.userId || req.body.userId || "1"; // Default to user ID 1
     
-    const success = await firestoreSocialNetworkService.savePost(id, userId as string);
+    const success = await socialService.savePost(id, userId as string);
     
     if (!success) {
       return res.status(404).json({ error: "Post not found" });
@@ -207,7 +210,7 @@ router.get("/user/saved-posts", async (req, res) => {
     // Obtener el usuario actual
     const userId = req.query.userId || "1"; // Default to user ID 1
     
-    const savedPosts = await firestoreSocialNetworkService.getSavedPosts(userId as string);
+    const savedPosts = await socialService.getSavedPosts(userId as string);
     
     res.json(savedPosts);
   } catch (error) {
@@ -229,7 +232,7 @@ router.post("/posts/:id/comments", async (req, res) => {
     }
     
     // Verificar si el post existe
-    const post = await firestoreSocialNetworkService.getPostById(id);
+    const post = await socialService.getPostById(id);
     
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
@@ -241,20 +244,17 @@ router.post("/posts/:id/comments", async (req, res) => {
     
     // Crear el comentario
     const commentData = {
-      postId: id,
+      postId: parseInt(id),
       userId: userId as string,
       content,
-      likes: 0,
       isReply,
-      parentId: parentId ? parentId as string : null,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      parentId: parentId ? parseInt(parentId as string) : null
     };
     
-    const newComment = await firestoreSocialNetworkService.createComment(commentData);
+    const newComment = await socialService.createComment(commentData);
     
     // Obtener el usuario para incluirlo en la respuesta
-    const user = await firestoreSocialNetworkService.getUserById(newComment.userId);
+    const user = await socialService.getUserById(newComment.userId);
     
     // Generar respuestas automatizadas de usuarios bot a este comentario
     await generateBotReplies(post, newComment);
@@ -276,7 +276,7 @@ router.post("/posts/:id/comments", async (req, res) => {
 async function generateBotResponses(post: any) {
   try {
     // Obtener todos los usuarios bot
-    const botUsers = await firestoreSocialNetworkService.getBotUsers();
+    const botUsers = await socialService.getBotUsers();
     
     // Elegir aleatoriamente 1-2 bots para responder
     const numResponders = Math.floor(Math.random() * 2) + 1;
@@ -311,17 +311,14 @@ async function generateBotResponses(post: any) {
       
       // Crear el comentario
       const botCommentData = {
-        postId: post.id,
+        postId: typeof post.id === 'string' ? parseInt(post.id) : post.id,
         userId: bot.id as string,
         content: botResponse,
-        likes: Math.floor(Math.random() * 3), // 0-2 likes aleatorios
         isReply: false,
-        parentId: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        parentId: null
       };
       
-      await firestoreSocialNetworkService.createComment(botCommentData);
+      await socialService.createComment(botCommentData);
     }
   } catch (error) {
     console.error("Error generating bot responses:", error);
@@ -336,7 +333,7 @@ async function generateBotResponses(post: any) {
 async function generateBotReplies(post: any, comment: any) {
   try {
     // Verificar si el usuario del post es un bot (solo los bots responden a comentarios)
-    const postUser = await firestoreSocialNetworkService.getUserById(post.userId);
+    const postUser = await socialService.getUserById(post.userId);
     
     // Si el autor del post no es un bot O con una probabilidad del 70%, no responder
     if (!postUser?.isBot || Math.random() > 0.3) {
@@ -350,7 +347,7 @@ async function generateBotReplies(post: any, comment: any) {
     await new Promise(resolve => setTimeout(resolve, replyDelay));
     
     // Obtener el usuario que hizo el comentario
-    const commentUser = await firestoreSocialNetworkService.getUserById(comment.userId);
+    const commentUser = await socialService.getUserById(comment.userId);
     
     // Personalidad del bot e intereses
     const personality = postUser.personality || 'friendly and engaging';
@@ -372,16 +369,13 @@ async function generateBotReplies(post: any, comment: any) {
     // Crear la respuesta
     const replyData = {
       userId: postUser.id as string,
-      postId: post.id,
-      parentId: comment.id,
+      postId: typeof post.id === 'string' ? parseInt(post.id) : post.id,
+      parentId: typeof comment.id === 'string' ? parseInt(comment.id) : comment.id,
       content: botResponse,
-      likes: Math.floor(Math.random() * 3),
-      isReply: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      isReply: true
     };
     
-    await firestoreSocialNetworkService.createComment(replyData);
+    await socialService.createComment(replyData);
   } catch (error) {
     console.error("Error generating bot replies:", error);
   }

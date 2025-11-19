@@ -1683,3 +1683,92 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export const selectNotificationSchema = createSelectSchema(notifications);
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type SelectNotification = typeof notifications.$inferSelect;
+
+// ===================== SOCIAL NETWORK TABLES =====================
+
+// Social Users - Perfiles para la red social (independiente de usuarios principales)
+export const socialUsers = pgTable("social_users", {
+  id: varchar("id").primaryKey(), // Usamos el Firebase UID del usuario
+  displayName: text("display_name").notNull(),
+  avatar: text("avatar"),
+  bio: text("bio"),
+  interests: text("interests").array(),
+  language: text("language", { enum: ["en", "es"] }).default("en").notNull(),
+  isBot: boolean("is_bot").default(false).notNull(),
+  personality: text("personality"), // Para bots: su personalidad
+  savedPosts: text("saved_posts").array().default(sql`ARRAY[]::text[]`), // Array de IDs de posts guardados
+  likedPosts: text("liked_posts").array().default(sql`ARRAY[]::text[]`), // Array de IDs de posts que le gustaron
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Social Posts - Posts en la red social
+export const socialPosts = pgTable("social_posts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => socialUsers.id, { onDelete: "cascade" }).notNull(),
+  content: text("content").notNull(),
+  likes: integer("likes").default(0).notNull(),
+  likedBy: text("liked_by").array().default(sql`ARRAY[]::text[]`), // Array de user IDs que dieron like
+  savedBy: text("saved_by").array().default(sql`ARRAY[]::text[]`), // Array de user IDs que guardaron el post
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Social Comments - Comentarios en posts
+export const socialComments = pgTable("social_comments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => socialUsers.id, { onDelete: "cascade" }).notNull(),
+  postId: integer("post_id").references(() => socialPosts.id, { onDelete: "cascade" }).notNull(),
+  parentId: integer("parent_id"), // Para respuestas a comentarios (self-reference)
+  content: text("content").notNull(),
+  likes: integer("likes").default(0).notNull(),
+  isReply: boolean("is_reply").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Social Network Relations
+export const socialUsersRelations = relations(socialUsers, ({ many }) => ({
+  posts: many(socialPosts),
+  comments: many(socialComments),
+}));
+
+export const socialPostsRelations = relations(socialPosts, ({ one, many }) => ({
+  user: one(socialUsers, {
+    fields: [socialPosts.userId],
+    references: [socialUsers.id],
+  }),
+  comments: many(socialComments),
+}));
+
+export const socialCommentsRelations = relations(socialComments, ({ one }) => ({
+  user: one(socialUsers, {
+    fields: [socialComments.userId],
+    references: [socialUsers.id],
+  }),
+  post: one(socialPosts, {
+    fields: [socialComments.postId],
+    references: [socialPosts.id],
+  }),
+  parent: one(socialComments, {
+    fields: [socialComments.parentId],
+    references: [socialComments.id],
+    relationName: "replies"
+  }),
+}));
+
+// Social Network Schemas
+export const insertSocialUserSchema = createInsertSchema(socialUsers).omit({ createdAt: true, updatedAt: true });
+export const selectSocialUserSchema = createSelectSchema(socialUsers);
+export type InsertSocialUser = z.infer<typeof insertSocialUserSchema>;
+export type SelectSocialUser = typeof socialUsers.$inferSelect;
+
+export const insertSocialPostSchema = createInsertSchema(socialPosts).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectSocialPostSchema = createSelectSchema(socialPosts);
+export type InsertSocialPost = z.infer<typeof insertSocialPostSchema>;
+export type SelectSocialPost = typeof socialPosts.$inferSelect;
+
+export const insertSocialCommentSchema = createInsertSchema(socialComments).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectSocialCommentSchema = createSelectSchema(socialComments);
+export type InsertSocialComment = z.infer<typeof insertSocialCommentSchema>;
+export type SelectSocialComment = typeof socialComments.$inferSelect;
