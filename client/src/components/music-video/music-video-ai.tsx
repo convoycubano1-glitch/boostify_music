@@ -84,6 +84,7 @@ import { CharacterGenerationModal } from "./character-generation-modal";
 import { analyzeFaceFeatures } from "../../lib/api/face-analyzer";
 import { generateMasterCharacter } from "../../lib/api/master-character-generator";
 import { EnhancedScenesGallery } from "./EnhancedScenesGallery";
+import { SequentialImageGallery } from "./SequentialImageGallery";
 import { ensureArtistProfile, saveSongToProfile, updateProfileImages } from "../../lib/auto-profile-service";
 
 // Fal.ai configuration
@@ -5101,92 +5102,12 @@ ${transcription}`;
               </p>
             </div>
 
-            {/* Prompt actual */}
-            {generationProgress.currentPrompt && (
-              <motion.div
-                className="bg-zinc-800/50 border border-orange-500/20 rounded-lg p-3 sm:p-4"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                key={generationProgress.currentPrompt}
-              >
-                <p className="text-xs text-orange-400/60 mb-1">Generando ahora:</p>
-                <p className="text-xs sm:text-sm text-white/90 line-clamp-2">
-                  {generationProgress.currentPrompt}
-                </p>
-              </motion.div>
-            )}
-
-            {/* Galería de imágenes generadas - Más prominente */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base sm:text-lg font-semibold text-orange-400">
-                  {generationProgress.generatedImages.length > 0 ? 'Visuales Creados' : 'Preparando generación...'}
-                </h3>
-                {generationProgress.generatedImages.length > 0 && (
-                  <Badge variant="outline" className="bg-green-900/30 text-green-400 border-green-500/30">
-                    {generationProgress.generatedImages.length} completadas
-                  </Badge>
-                )}
-              </div>
-              
-              {generationProgress.generatedImages.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-                  {generationProgress.generatedImages.map((img, index) => (
-                    <motion.div
-                      key={img.id}
-                      className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 border-2 border-orange-500/30 group shadow-lg"
-                      initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
-                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 20,
-                        delay: index * 0.15 
-                      }}
-                    >
-                      <img
-                        src={img.url}
-                        alt={`Generated ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        data-testid={`generated-image-${index}`}
-                      />
-                      
-                      {/* Overlay con prompt al hacer hover */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 flex flex-col justify-end">
-                        <p className="text-[10px] sm:text-xs text-white/90 line-clamp-3">
-                          {img.prompt}
-                        </p>
-                      </div>
-
-                      {/* Checkmark de completado con animación */}
-                      <motion.div 
-                        className="absolute top-2 right-2 bg-green-500 rounded-full p-1 shadow-md"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: index * 0.15 + 0.3, type: "spring" }}
-                      >
-                        <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                      </motion.div>
-
-                      {/* Número de imagen */}
-                      <div className="absolute bottom-2 left-2 bg-orange-500/90 rounded-full px-2 py-0.5">
-                        <span className="text-[10px] sm:text-xs font-bold text-white">#{index + 1}</span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-orange-500/30 rounded-lg p-8 text-center">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    <ImageIcon className="w-12 h-12 text-orange-400/50 mx-auto mb-3" />
-                  </motion.div>
-                  <p className="text-sm text-white/60">Las imágenes aparecerán aquí mientras se generan...</p>
-                </div>
-              )}
-            </div>
+            {/* Galería secuencial de imágenes - NUEVO COMPONENTE FLUIDO */}
+            <SequentialImageGallery 
+              images={generationProgress.generatedImages}
+              currentPrompt={generationProgress.currentPrompt}
+              total={generationProgress.total}
+            />
 
             {/* Mensaje motivacional */}
             <motion.div
