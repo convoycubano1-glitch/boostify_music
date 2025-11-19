@@ -16,6 +16,7 @@ export interface MasterCharacter {
 /**
  * Genera el Master Character del artista usando Nano Banana (Gemini 2.5 Flash Image)
  * Este character se usará en todas las generaciones del video
+ * OPTIMIZADO: Usa directamente Nano Banana sin análisis facial previo (más rápido)
  */
 export async function generateMasterCharacter(
   artistPhotos: string[],
@@ -23,20 +24,30 @@ export async function generateMasterCharacter(
   onProgress?: (stage: string, progress: number) => void
 ): Promise<MasterCharacter> {
   try {
-    logger.info('🎭 Iniciando generación de Master Character con Nano Banana...');
+    logger.info('🎭 Iniciando generación de Master Character con Nano Banana (modo rápido)...');
     
-    // Paso 1: Analizar características faciales (20%)
-    onProgress?.('Analizando rasgos faciales con IA...', 20);
-    const analysis = await analyzeFaceFeatures(artistPhotos);
-    logger.info('✅ Análisis facial completado');
+    // ⚡ OPTIMIZACIÓN: Generar directamente con Nano Banana (SIN análisis facial previo)
+    // Nano Banana puede entender las referencias faciales directamente
+    onProgress?.('Generando personaje consistente con Nano Banana...', 20);
     
-    // Paso 2: Generar prompt optimizado (30%)
-    onProgress?.('Creando prompt de generación optimizado...', 30);
-    const characterPrompt = generateMasterCharacterPrompt(analysis, directorStyle);
-    logger.info('📝 Prompt generado:', characterPrompt.substring(0, 100) + '...');
+    // Crear prompt optimizado para Master Character (sin análisis previo)
+    const characterPrompt = `Create a professional, high-quality master character portrait based on the reference images provided.
+
+Style: ${directorStyle}
+
+CRITICAL REQUIREMENTS:
+- Use the reference images to maintain EXACT facial identity, features, and skin tone
+- Professional studio lighting
+- Cinematic quality and composition
+- Photorealistic rendering
+- High resolution (8K quality)
+- Perfect facial consistency for use across multiple video scenes
+- Professional color grading
+- Sharp focus on facial details`;
     
-    // Paso 3: Generar imagen con Nano Banana (40% - 90%)
-    onProgress?.('Generando personaje consistente con Nano Banana...', 40);
+    logger.info('📝 Generando con prompt optimizado para Nano Banana...');
+    
+    onProgress?.('Procesando referencias faciales y generando...', 40);
     
     const response = await fetch('/api/gemini-image/generate-master-character', {
       method: 'POST',
@@ -63,15 +74,50 @@ export async function generateMasterCharacter(
       throw new Error('No se generó ninguna imagen');
     }
     
+    // Crear análisis simplificado (sin el paso lento de análisis facial)
+    const simplifiedAnalysis: FaceAnalysis = {
+      faceShape: 'from reference images',
+      jawline: 'from reference images',
+      cheekbones: 'from reference images',
+      eyeShape: 'from reference images',
+      eyeColor: 'from reference images',
+      eyeSize: 'from reference images',
+      eyebrowShape: 'from reference images',
+      eyeSpacing: 'from reference images',
+      noseShape: 'from reference images',
+      noseSize: 'from reference images',
+      lipShape: 'from reference images',
+      lipSize: 'from reference images',
+      smileType: 'from reference images',
+      hairColor: 'from reference images',
+      hairTexture: 'from reference images',
+      hairStyle: 'from reference images',
+      hairline: 'from reference images',
+      skinTone: 'from reference images',
+      skinTexture: 'from reference images',
+      distinctiveFeatures: ['Based on reference images'],
+      typicalExpression: 'from reference images',
+      facialProportions: {
+        foreheadSize: 'from reference images',
+        eyeToEyeDistance: 'from reference images',
+        noseToLipDistance: 'from reference images',
+        chinSize: 'from reference images'
+      },
+      apparentAge: 'from reference images',
+      perceivedGender: 'from reference images',
+      overallDescription: 'Master character generated directly from reference images using Nano Banana',
+      generationPrompt: characterPrompt
+    };
+    
     const masterCharacter: MasterCharacter = {
       imageUrl: data.imageUrl,
-      analysis,
+      analysis: simplifiedAnalysis,
       prompt: characterPrompt,
       timestamp: new Date()
     };
     
     onProgress?.('Master Character generado exitosamente', 100);
-    logger.info('✅ Master Character generado con Nano Banana:', masterCharacter.imageUrl.substring(0, 100) + '...');
+    logger.info('✅ Master Character generado con Nano Banana (modo rápido):', masterCharacter.imageUrl.substring(0, 100) + '...');
     
     return masterCharacter;
     
