@@ -1088,27 +1088,30 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           
           logger.info(`📝 [IMG ${sceneIndex}] Shot Category: ${shotCategory}, Emotion: ${emotion}`);
           
-          // Detectar si es escena de performance usando el campo shot_category
-          const isPerformanceScene = shotCategory === 'PERFORMANCE' || 
-                                     visualDescription?.toLowerCase().includes('singing') || 
-                                     visualDescription?.toLowerCase().includes('performing');
+          // Detectar si debe usar referencia del artista usando los nuevos campos
+          const useArtistReference = originalScene.use_artist_reference !== false; // Default true for backward compatibility
+          const referenceUsage = originalScene.reference_usage || 
+                                (shotCategory === 'PERFORMANCE' ? 'full_performance' : 'none');
           
-          // Usar master character si está disponible y es escena de performance
-          const usesMasterCharacter = masterCharacter && isPerformanceScene;
-          const referenceToUse = usesMasterCharacter 
-            ? [masterCharacter.imageUrl] 
-            : (hasReferenceImages ? artistReferenceImages : undefined);
+          // Determinar si usar la imagen de referencia basado en la lógica avanzada
+          const shouldUseReference = useArtistReference && 
+                                    (referenceUsage !== 'none') &&
+                                    (masterCharacter || hasReferenceImages);
           
-          logger.info(`🎭 [SCENE ${sceneIndex}] Performance: ${isPerformanceScene}, Using Master Character: ${usesMasterCharacter}`);
+          const referenceToUse = shouldUseReference 
+            ? (masterCharacter ? [masterCharacter.imageUrl] : artistReferenceImages)
+            : undefined;
           
-          const requestBody = (usesMasterCharacter || hasReferenceImages)
+          logger.info(`🎭 [SCENE ${sceneIndex}] Category: ${shotCategory}, Reference Usage: ${referenceUsage}, Using Reference: ${!!referenceToUse}`);
+          
+          const requestBody = shouldUseReference
             ? { 
                 prompt: prompt,
                 sceneId: sceneIndex,
                 referenceImagesBase64: referenceToUse,
                 seed: seed + sceneIndex
               }
-            : { scenes: [scene] };
+            : { scenes: [{ scene: prompt, camera: '', lighting: '', style: '' }] };
           
           // 🔄 RETRY: Usar retry con exponential backoff para mayor robustez
           const data = await retryWithBackoff(
@@ -3012,20 +3015,26 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
       
-      // Determine if this is a performance scene that should use face reference
-      const isPerformanceScene = shotCategory === 'PERFORMANCE' || 
-                                 visualDescription?.toLowerCase().includes('singing') || 
-                                 visualDescription?.toLowerCase().includes('performing');
-      const usesMasterCharacter = masterCharacter && isPerformanceScene;
-      const referenceToUse = usesMasterCharacter 
-        ? [masterCharacter.imageUrl] 
-        : (hasReferenceImages ? artistReferenceImages : undefined);
+      // Determine if should use artist reference using the advanced logic
+      const useArtistReference = scene.use_artist_reference !== false; // Default true for backward compatibility
+      const referenceUsage = scene.reference_usage || 
+                            (shotCategory === 'PERFORMANCE' ? 'full_performance' : 'none');
       
-      const endpoint = (usesMasterCharacter || hasReferenceImages)
+      const shouldUseReference = useArtistReference && 
+                                (referenceUsage !== 'none') &&
+                                (masterCharacter || hasReferenceImages);
+      
+      const referenceToUse = shouldUseReference 
+        ? (masterCharacter ? [masterCharacter.imageUrl] : artistReferenceImages)
+        : undefined;
+      
+      logger.info(`🔄 [REGENERATE ${sceneNumber}] Reference Usage: ${referenceUsage}, Using Reference: ${!!referenceToUse}`);
+      
+      const endpoint = shouldUseReference
         ? '/api/gemini-image/generate-single-with-multiple-faces'
         : '/api/gemini-image/generate-batch';
 
-      const requestBody = (usesMasterCharacter || hasReferenceImages)
+      const requestBody = shouldUseReference
         ? { 
             prompt: prompt,
             sceneId: sceneNumber,

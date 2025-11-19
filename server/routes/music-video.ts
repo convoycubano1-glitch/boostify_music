@@ -252,11 +252,18 @@ TECHNICAL:
 
 NARRATIVE (NEW - CRITICAL FOR IMAGE GENERATION):
 - shot_category: MUST be "PERFORMANCE" | "B-ROLL" | "STORY" (follow 30/40/30 distribution)
+- use_artist_reference: Boolean - if true, use artist's face as reference (for performance, detail shots, or narrative scenes where artist appears)
+- reference_usage: If using reference: "full_performance" | "detail_shot" | "alternate_angle" | "story_character" | "none"
+  * full_performance: Artist performing/singing (traditional music video shot)
+  * detail_shot: Close-up detail (hands, eyes, expression, gesture) - artist present but focus on specific element
+  * alternate_angle: Different camera angle of same moment - creative cinematography
+  * story_character: Artist as character in narrative (not performing, but acting/present in story)
+  * none: Pure B-roll or visuals without artist
 - narrative_context: 2-3 sentences explaining what's happening in the story at this moment
 - lyric_connection: How this specific lyric connects to the visual concept
 - story_progression: Where we are in the story arc (e.g., "Introduction of main character", "Rising tension", "Emotional climax")
 - emotion: Primary emotion for this scene
-- visual_description: DETAILED description (3-4 sentences) of exactly what we see - be specific about actions, expressions, environment
+- visual_description: DETAILED description (3-4 sentences) of exactly what we see - be specific about actions, expressions, environment, camera focus
 
 SCENE DETAILS:
 - lyrics: Lyrics for this scene
@@ -278,6 +285,8 @@ Return ONLY this JSON structure (no markdown, no explanation):
       "lyrics": "...",
       "shot_type": "wide-shot",
       "shot_category": "STORY",
+      "use_artist_reference": false,
+      "reference_usage": "none",
       "camera_movement": "dolly",
       "lens": "wide-angle",
       "music_section": "intro",
@@ -296,7 +305,16 @@ Return ONLY this JSON structure (no markdown, no explanation):
   ]
 }
 
-REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Tell a COMPLETE STORY with visual variety!`;
+IMPORTANT REFERENCE USAGE GUIDELINES:
+- PERFORMANCE shots (30%): Always use_artist_reference=true with "full_performance"
+- DETAIL SHOTS: use_artist_reference=true with "detail_shot" for cinematic close-ups (hands on instrument, eyes, facial expressions)
+- ALTERNATE ANGLES: use_artist_reference=true with "alternate_angle" for creative cinematography of same performance
+- STORY/CHARACTER: use_artist_reference=true with "story_character" when artist appears as character in narrative
+- B-ROLL (40%): use_artist_reference=false with "none" for pure visuals without artist
+
+This creates MAXIMUM REALISM and VISUAL VARIETY - the artist appears in multiple ways (performing, details, angles, character) while B-roll provides cinematic breathing space!
+
+REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creatively for detail shots and angles, not just full performance. Tell a COMPLETE STORY with visual variety!`;
 
     const response = await generateContentWithFallback({
       model: "gemini-2.0-flash-exp",
