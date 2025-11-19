@@ -2151,19 +2151,24 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         sceneId = match ? parseInt(match[0]) : index + 1;
       }
       
+      // Construir prompt cinematográfico completo desde todos los campos del JSON
+      const cinematicPrompt = scene.visual_description || 
+                               `${scene.shot_type || 'medium-shot'} of ${scene.description || scene.lyrics || 'scene'}, ${scene.lighting || 'dramatic lighting'}, ${scene.color_grading || 'cinematic colors'}, ${scene.mood || 'emotional'} atmosphere, ${scene.location || 'location'}, ${scene.camera_movement || 'smooth camera movement'}`;
+      
       logger.info(`🎬 Creating clip ${sceneId}: start=${scene.start_time}s, duration=${scene.duration}s`);
+      logger.info(`📝 Prompt: ${cinematicPrompt.substring(0, 100)}...`);
       
       segments.push({
         id: sceneId, // CRITICAL: Use numeric ID for React keys
         type: 'image', // Image type for proper display
         group: 1,
-        title: scene.title || `Scene ${scene.scene_id}`,
+        title: scene.title || `Scene ${scene.scene_id || scene.scene_number}`,
         start_time: startTime,
         end_time: endTime,
         duration: duration,
         shotType: scene.shot_type || scene.camera?.lens || 'MS', // Shot type from JSON
-        description: scene.description || `Scene ${scene.scene_id}`,
-        imagePrompt: scene.imagePrompt || scene.description || '', // CRITICAL: Add imagePrompt from scene
+        description: scene.visual_description || scene.description || `Scene ${scene.scene_id || scene.scene_number}`,
+        imagePrompt: cinematicPrompt, // ✅ CORREGIDO: Usa visual_description del backend
         thumbnail: '', // Will be assigned when image is generated
         imageUrl: '', // Will be assigned when image is generated
         itemProps: {
@@ -3610,10 +3615,11 @@ ${transcription}`;
 
     setIsGeneratingShots(true);
     
-    // Limit to maximum 10 images to avoid overload
+    // ✅ ELIMINADO LÍMITE: Generar imágenes para TODOS los segmentos con prompts
     const items = timelineItems
-      .filter(item => item.imagePrompt && !item.generatedImage)
-      .slice(0, 10);
+      .filter(item => item.imagePrompt && !item.generatedImage);
+    
+    logger.info(`🎨 Generando imágenes para ${items.length} segmentos (de ${timelineItems.length} totales)`);
 
     if (items.length === 0) {
       toast({
@@ -3622,6 +3628,11 @@ ${transcription}`;
       });
       setIsGeneratingShots(false);
       return;
+    }
+    
+    // Advertir si hay muchas imágenes por generar
+    if (items.length > 20) {
+      logger.info(`⏱️ Generando ${items.length} imágenes - esto puede tomar varios minutos...`);
     }
 
     // Inicializar progreso
@@ -4500,6 +4511,22 @@ ${transcription}`;
       return;
     }
 
+    // ✅ VERIFICAR SI YA TIENEN PROMPTS DEL SCRIPT JSON
+    const itemsWithPrompts = timelineItems.filter(item => item.imagePrompt && item.imagePrompt.length > 20);
+    
+    if (itemsWithPrompts.length === timelineItems.length) {
+      toast({
+        title: "✅ Prompts ya generados",
+        description: `Todos los ${timelineItems.length} segmentos ya tienen prompts del guion JSON. Puedes proceder a generar imágenes.`,
+      });
+      setCurrentStep(5);
+      return;
+    }
+    
+    if (itemsWithPrompts.length > 0) {
+      logger.info(`ℹ️ ${itemsWithPrompts.length}/${timelineItems.length} segmentos ya tienen prompts del JSON`);
+    }
+
     if (!videoStyle.mood || !videoStyle.colorPalette || !videoStyle.characterStyle) {
       toast({
         title: "Error",
@@ -4512,7 +4539,8 @@ ${transcription}`;
     setIsGeneratingScript(true);
 
     try {
-      const updatedItems = [...timelineItems].slice(0, 10); // Limitar a 10 segmentos
+      // ✅ ELIMINADO LÍMITE: Procesar TODOS los segmentos, no solo 10
+      const updatedItems = [...timelineItems];
       let hasError = false;
       let successCount = 0;
 
