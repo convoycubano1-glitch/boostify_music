@@ -42,9 +42,14 @@ router.post('/save', async (req, res) => {
     });
     
     // Convert audioDuration number to string for decimal field
+    // Ensure JSON/array fields are proper arrays, not undefined
     const dbData: any = {
       ...validatedData,
-      audioDuration: validatedData.audioDuration !== undefined ? String(validatedData.audioDuration) : undefined
+      audioDuration: validatedData.audioDuration !== undefined ? String(validatedData.audioDuration) : undefined,
+      timelineItems: validatedData.timelineItems || [],
+      artistReferenceImages: validatedData.artistReferenceImages || [],
+      tags: validatedData.tags || [],
+      progress: validatedData.progress || undefined
     };
     
     const existingProject = await db
