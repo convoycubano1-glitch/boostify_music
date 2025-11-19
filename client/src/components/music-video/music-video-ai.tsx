@@ -4323,8 +4323,9 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         videoUrl: (clipType === 'video') ? url : undefined,
         audioUrl: (clipType === 'audio') ? item.audioUrl : undefined,
         textContent: (clipType === 'text') ? item.metadata?.textContent : undefined,
-        // Agregar imagePrompt y shotType para regeneración
+        // Agregar imagePrompt, prompt y shotType para regeneración y camera angles
         imagePrompt: item.imagePrompt,
+        prompt: item.imagePrompt || item.description || `${item.shotType} shot`,
         shotType: item.shotType,
         // Estado de visibilidad y bloqueo
         visible: true,
