@@ -143,14 +143,24 @@ app.use((req, res, next) => {
     log('🔐 Registering /api/auth/user endpoint...');
     app.get('/api/auth/user', async (req: any, res) => {
       try {
-        // Check if user is authenticated
-        if (!req.isAuthenticated || !req.isAuthenticated()) {
+        console.log('[/api/auth/user] req.user:', req.user ? { id: req.user.id, email: req.user.email } : 'undefined');
+        console.log('[/api/auth/user] req.isAuthenticated:', typeof req.isAuthenticated, req.isAuthenticated ? req.isAuthenticated() : 'undefined');
+        console.log('[/api/auth/user] req.session:', req.session ? 'exists' : 'undefined');
+        
+        // Check if user is authenticated via passport
+        if (req.user && req.user.id) {
+          console.log('✅ User authenticated via req.user');
+        } else if (req.isAuthenticated && req.isAuthenticated()) {
+          console.log('✅ User authenticated via req.isAuthenticated()');
+        } else {
+          console.log('❌ User not authenticated - no req.user and isAuthenticated() = false');
           return res.status(401).json({ message: "Unauthorized" });
         }
         
         // Get user from session (already deserialized by passport)
         const user = req.user;
         if (!user || !user.id) {
+          console.log('❌ No user.id found');
           return res.status(401).json({ message: "Unauthorized" });
         }
         

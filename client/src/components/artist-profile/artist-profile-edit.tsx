@@ -7,10 +7,11 @@ import { Label } from "../ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { useToast } from "../../hooks/use-toast";
-import { Save, X, Upload, Music, ShoppingBag, Image as ImageIcon, Trash2, Sparkles } from "lucide-react";
+import { Save, X, Upload, Music, ShoppingBag, Image as ImageIcon, Trash2, Sparkles, FileText } from "lucide-react";
 import type { ArtistProfile, Song, Merchandise } from "../../pages/artist-profile";
 import { Textarea } from "../ui/textarea";
 import { AIAssistant } from "./ai-assistant";
+import { EPKGenerator } from "./epk-generator";
 
 interface ArtistProfileEditProps {
   profile: ArtistProfile;
@@ -119,11 +120,15 @@ export function ArtistProfileEdit({
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile Info</TabsTrigger>
           <TabsTrigger value="ai-assistant">
             <Sparkles className="h-4 w-4 mr-2" />
             AI Assistant
+          </TabsTrigger>
+          <TabsTrigger value="epk">
+            <FileText className="h-4 w-4 mr-2" />
+            EPK Generator
           </TabsTrigger>
           <TabsTrigger value="songs">Songs ({songs.length})</TabsTrigger>
           <TabsTrigger value="merch">Merch ({merchandise.length})</TabsTrigger>
@@ -236,6 +241,10 @@ export function ArtistProfileEdit({
               }
             }}
           />
+        </TabsContent>
+
+        <TabsContent value="epk" className="space-y-6">
+          <EPKGenerator />
         </TabsContent>
 
         <TabsContent value="songs" className="space-y-6">
