@@ -1517,14 +1517,15 @@ router.post('/create-music-video-bundle-checkout', authenticate, async (req: Req
       success_url: `${BASE_URL}/music-video/success?session_id={CHECKOUT_SESSION_ID}&tier=${tier}`,
       cancel_url: `${BASE_URL}/music-video/cancelled`,
       metadata: {
+        type: 'music_video_bundle', // ✅ Para que el webhook lo detecte
         userId,
         tier,
         songName: songName || 'Music Video',
         duration: duration?.toString() || '0',
-        bundleType: 'music_video',
         subscriptionTier: tierConfig.subscriptionTier,
         subscriptionValue: tierConfig.subscriptionValue.toString()
-      }
+      },
+      client_reference_id: userId // ✅ Para identificar al usuario en el webhook
     });
 
     res.json({ 

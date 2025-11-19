@@ -61,7 +61,7 @@ interface PricingPlansProps {
 export function PricingPlans({ simplified = false, withAnimation = false }: PricingPlansProps) {
   const [yearly, setYearly] = useState(false);
   const { user, loading: authLoading } = useAuth();
-  const { subscription, currentPlan, isLoading: subscriptionLoading } = useSubscription();
+  const { subscription, currentPlan, isLoading: subscriptionLoading, isAdmin } = useSubscription();
   
   const { data: plansData, isLoading: plansLoading, error: plansError } = useQuery({
     queryKey: ['subscription-plans'],
@@ -184,7 +184,8 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
       return;
     }
     
-    if (user.email === 'convoycubano@gmail.com') {
+    // ✅ Usar sistema de roles en lugar de email hardcodeado
+    if (isAdmin()) {
       toast({
         title: "Acceso administrativo",
         description: "Como administrador, ya tienes acceso completo a todas las funcionalidades sin necesidad de suscripción.",
