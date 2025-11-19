@@ -130,6 +130,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
           
           const user: AuthUser = {
             uid: uid,
+            id: uid,  // También incluir id para compatibilidad
             email: email || null,
             role: isAdmin ? 'admin' : 'artist',
             isAdmin: isAdmin,
@@ -190,6 +191,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
         
         const user: AuthUser = {
           uid: decodedToken.uid,
+          id: decodedToken.uid,  // También incluir id para compatibilidad
           email: decodedToken.email || null,
           role: isAdmin ? 'admin' : (decodedToken.role || 'artist'),
           isAdmin: isAdmin,

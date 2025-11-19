@@ -113,6 +113,12 @@ export function Header() {
             {user ? (
               <div className="flex items-center space-x-2">
                 <NotificationBell />
+                <Link href="/affiliates">
+                  <Button variant="default" size="sm" className="gap-1 text-xs bg-primary hover:bg-primary/90">
+                    <span className="hidden xl:inline">🎯 Affiliate Dashboard</span>
+                    <span className="xl:hidden">Affiliate</span>
+                  </Button>
+                </Link>
                 <Link href="/my-artists">
                   <Button variant="outline" size="sm" className="gap-1 text-xs">
                     <UserCircle className="h-3.5 w-3.5" />
@@ -229,6 +235,14 @@ export function Header() {
                 data-testid="mobile-nav-pricing"
               >
                 Pricing
+              </Link>
+              <Link 
+                href="/affiliates" 
+                className="py-3 px-4 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2"
+                onClick={closeMenu}
+                data-testid="mobile-nav-affiliates"
+              >
+                🎯 Affiliate Dashboard
               </Link>
               <Link 
                 href="/social-network" 

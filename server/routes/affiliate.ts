@@ -72,9 +72,9 @@ const router = express.Router();
 
 // Esquema de validación para registro de afiliado
 const affiliateRegistrationSchema = z.object({
-  name: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }),
-  bio: z.string().min(10, { message: "La biografía debe tener al menos 10 caracteres" }).max(500),
-  email: z.string().email({ message: "Email inválido" }).optional(),
+  fullName: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres" }),
+  email: z.string().email({ message: "Email inválido" }),
+  phone: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   socialMedia: z.object({
     instagram: z.string().optional().or(z.literal("")),
@@ -82,16 +82,12 @@ const affiliateRegistrationSchema = z.object({
     youtube: z.string().optional().or(z.literal("")),
     tiktok: z.string().optional().or(z.literal(""))
   }).optional(),
-  categories: z.array(z.string()).min(1, { message: "Debes seleccionar al menos una categoría" }),
-  paymentMethod: z.enum(["paypal", "bank_transfer", "crypto"], { 
-    required_error: "Debes seleccionar un método de pago" 
-  }),
-  paymentEmail: z.string().email({ message: "Email de pago inválido" }),
-  termsAccepted: z.boolean().refine(val => val === true, {
+  audienceSize: z.string().min(1, { message: "Debes seleccionar el tamaño de tu audiencia" }),
+  marketingExperience: z.string().min(1, { message: "Describe tu experiencia en marketing" }),
+  promotionStrategy: z.string().min(1, { message: "Describe cómo planeas promocionar" }),
+  language: z.enum(["en", "es"]).optional(),
+  agreeTerms: z.boolean().refine(val => val === true, {
     message: "Debes aceptar los términos y condiciones"
-  }),
-  dataProcessingAccepted: z.boolean().refine(val => val === true, {
-    message: "Debes aceptar el acuerdo de procesamiento de datos"
   }),
 });
 
@@ -119,8 +115,12 @@ router.get('/me', authenticate, async (req: Request, res: Response) => {
     }
 
     const userId = getUserId(req);
+    console.log('[AFFILIATE DEBUG] Buscando afiliado para userId:', userId, 'req.user.id:', req.user?.id);
+    
     const affiliateRef = db.collection('affiliates').doc(userId);
     const affiliateDoc = await affiliateRef.get();
+    
+    console.log('[AFFILIATE DEBUG] Documento existe:', affiliateDoc.exists);
     
     if (!affiliateDoc.exists) {
       return res.status(404).json({ success: false, message: 'No eres un afiliado registrado' });

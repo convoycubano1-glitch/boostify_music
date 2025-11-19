@@ -1686,3 +1686,286 @@ export const insertSocialCommentSchema = createInsertSchema(socialComments).omit
 export const selectSocialCommentSchema = createSelectSchema(socialComments);
 export type InsertSocialComment = z.infer<typeof insertSocialCommentSchema>;
 export type SelectSocialComment = typeof socialComments.$inferSelect;
+
+// ========================================
+// AFFILIATE SYSTEM TABLES
+// ========================================
+
+export const affiliates = pgTable("affiliates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull(),
+  website: text("website"),
+  socialMedia: text("social_media"),
+  audienceSize: text("audience_size"),
+  marketingExperience: text("marketing_experience"),
+  promotionStrategy: text("promotion_strategy"),
+  level: text("level", { enum: ["Básico", "Plata", "Oro", "Platino", "Diamante"] }).default("Básico").notNull(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default('10.00').notNull(),
+  status: text("status", { enum: ["pending", "approved", "rejected", "suspended"] }).default("pending").notNull(),
+  paymentMethod: text("payment_method", { enum: ["paypal", "bank_transfer", "stripe"] }).default("paypal"),
+  paymentEmail: text("payment_email"),
+  bankDetails: json("bank_details").$type<{
+    accountName?: string;
+    accountNumber?: string;
+    bankName?: string;
+    routingNumber?: string;
+  }>(),
+  totalClicks: integer("total_clicks").default(0).notNull(),
+  totalConversions: integer("total_conversions").default(0).notNull(),
+  totalEarnings: decimal("total_earnings", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  pendingPayment: decimal("pending_payment", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const affiliateLinks = pgTable("affiliate_links", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
+  uniqueCode: text("unique_code").unique().notNull(),
+  productType: text("product_type", { enum: ["subscription", "bundle", "merchandise", "course", "general"] }).default("general").notNull(),
+  productId: text("product_id"),
+  customPath: text("custom_path"),
+  title: text("title").notNull(),
+  description: text("description"),
+  clicks: integer("clicks").default(0).notNull(),
+  conversions: integer("conversions").default(0).notNull(),
+  earnings: decimal("earnings", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const affiliateClicks = pgTable("affiliate_clicks", {
+  id: serial("id").primaryKey(),
+  linkId: integer("link_id").references(() => affiliateLinks.id).notNull(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  referrer: text("referrer"),
+  country: text("country"),
+  device: text("device", { enum: ["desktop", "mobile", "tablet", "unknown"] }).default("unknown"),
+  clickedAt: timestamp("clicked_at").defaultNow().notNull()
+});
+
+export const affiliateConversions = pgTable("affiliate_conversions", {
+  id: serial("id").primaryKey(),
+  linkId: integer("link_id").references(() => affiliateLinks.id).notNull(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  productType: text("product_type").notNull(),
+  productId: text("product_id").notNull(),
+  saleAmount: decimal("sale_amount", { precision: 10, scale: 2 }).notNull(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).notNull(),
+  commissionAmount: decimal("commission_amount", { precision: 10, scale: 2 }).notNull(),
+  status: text("status", { enum: ["pending", "approved", "paid", "cancelled"] }).default("pending").notNull(),
+  stripePaymentId: text("stripe_payment_id"),
+  metadata: json("metadata"),
+  convertedAt: timestamp("converted_at").defaultNow().notNull()
+});
+
+export const affiliateEarnings = pgTable("affiliate_earnings", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  type: text("type", { enum: ["commission", "bonus", "referral", "adjustment"] }).notNull(),
+  description: text("description").notNull(),
+  status: text("status", { enum: ["pending", "approved", "paid"] }).default("pending").notNull(),
+  conversionId: integer("conversion_id").references(() => affiliateConversions.id),
+  paymentId: text("payment_id"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const affiliateCoupons = pgTable("affiliate_coupons", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
+  code: text("code").unique().notNull(),
+  description: text("description").notNull(),
+  discountType: text("discount_type", { enum: ["percentage", "fixed"] }).notNull(),
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  minimumPurchase: decimal("minimum_purchase", { precision: 10, scale: 2 }),
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").default(0).notNull(),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").default(true).notNull(),
+  applicableProducts: text("applicable_products").array(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const affiliatePromotions = pgTable("affiliate_promotions", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  bannerUrl: text("banner_url"),
+  landingPageUrl: text("landing_page_url").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  clicks: integer("clicks").default(0).notNull(),
+  impressions: integer("impressions").default(0).notNull(),
+  conversions: integer("conversions").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const affiliateBadges = pgTable("affiliate_badges", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id).notNull(),
+  badgeType: text("badge_type", { 
+    enum: ["first_sale", "milestone_10", "milestone_50", "milestone_100", "top_performer", "consistent_earner", "viral_marketer", "elite_affiliate"] 
+  }).notNull(),
+  badgeName: text("badge_name").notNull(),
+  badgeDescription: text("badge_description").notNull(),
+  iconUrl: text("icon_url"),
+  earnedAt: timestamp("earned_at").defaultNow().notNull()
+});
+
+export const affiliateReferrals = pgTable("affiliate_referrals", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").references(() => affiliates.id).notNull(),
+  referredAffiliateId: integer("referred_affiliate_id").references(() => affiliates.id),
+  referredEmail: text("referred_email").notNull(),
+  status: text("status", { enum: ["pending", "registered", "approved", "active"] }).default("pending").notNull(),
+  level: integer("level").default(1).notNull(),
+  totalEarnings: decimal("total_earnings", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default('5.00').notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const affiliateMarketingMaterials = pgTable("affiliate_marketing_materials", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category", { enum: ["banner", "social_media", "email_template", "video", "guide"] }).notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileType: text("file_type").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  downloadCount: integer("download_count").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+// Affiliate Relations
+export const affiliatesRelations = relations(affiliates, ({ one, many }) => ({
+  user: one(users, {
+    fields: [affiliates.userId],
+    references: [users.id],
+  }),
+  links: many(affiliateLinks),
+  clicks: many(affiliateClicks),
+  conversions: many(affiliateConversions),
+  earnings: many(affiliateEarnings),
+  coupons: many(affiliateCoupons),
+  promotions: many(affiliatePromotions),
+  badges: many(affiliateBadges),
+  referralsGiven: many(affiliateReferrals, { relationName: "referrer" }),
+}));
+
+export const affiliateLinksRelations = relations(affiliateLinks, ({ one, many }) => ({
+  affiliate: one(affiliates, {
+    fields: [affiliateLinks.affiliateId],
+    references: [affiliates.id],
+  }),
+  clicks: many(affiliateClicks),
+  conversions: many(affiliateConversions),
+}));
+
+// Affiliate Schemas
+export const insertAffiliateSchema = createInsertSchema(affiliates).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  totalClicks: true,
+  totalConversions: true,
+  totalEarnings: true,
+  pendingPayment: true,
+  paidAmount: true
+});
+export const selectAffiliateSchema = createSelectSchema(affiliates);
+export type InsertAffiliate = z.infer<typeof insertAffiliateSchema>;
+export type SelectAffiliate = typeof affiliates.$inferSelect;
+
+export const insertAffiliateLinkSchema = createInsertSchema(affiliateLinks).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  clicks: true,
+  conversions: true,
+  earnings: true
+});
+export const selectAffiliateLinkSchema = createSelectSchema(affiliateLinks);
+export type InsertAffiliateLink = z.infer<typeof insertAffiliateLinkSchema>;
+export type SelectAffiliateLink = typeof affiliateLinks.$inferSelect;
+
+export const insertAffiliateClickSchema = createInsertSchema(affiliateClicks).omit({ 
+  id: true, 
+  clickedAt: true 
+});
+export const selectAffiliateClickSchema = createSelectSchema(affiliateClicks);
+export type InsertAffiliateClick = z.infer<typeof insertAffiliateClickSchema>;
+export type SelectAffiliateClick = typeof affiliateClicks.$inferSelect;
+
+export const insertAffiliateConversionSchema = createInsertSchema(affiliateConversions).omit({ 
+  id: true, 
+  convertedAt: true 
+});
+export const selectAffiliateConversionSchema = createSelectSchema(affiliateConversions);
+export type InsertAffiliateConversion = z.infer<typeof insertAffiliateConversionSchema>;
+export type SelectAffiliateConversion = typeof affiliateConversions.$inferSelect;
+
+export const insertAffiliateCouponSchema = createInsertSchema(affiliateCoupons).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  usedCount: true
+});
+export const selectAffiliateCouponSchema = createSelectSchema(affiliateCoupons);
+export type InsertAffiliateCoupon = z.infer<typeof insertAffiliateCouponSchema>;
+export type SelectAffiliateCoupon = typeof affiliateCoupons.$inferSelect;
+
+export const insertAffiliatePromotionSchema = createInsertSchema(affiliatePromotions).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  clicks: true,
+  impressions: true,
+  conversions: true
+});
+export const selectAffiliatePromotionSchema = createSelectSchema(affiliatePromotions);
+export type InsertAffiliatePromotion = z.infer<typeof insertAffiliatePromotionSchema>;
+export type SelectAffiliatePromotion = typeof affiliatePromotions.$inferSelect;
+
+export const insertAffiliateBadgeSchema = createInsertSchema(affiliateBadges).omit({ 
+  id: true, 
+  earnedAt: true 
+});
+export const selectAffiliateBadgeSchema = createSelectSchema(affiliateBadges);
+export type InsertAffiliateBadge = z.infer<typeof insertAffiliateBadgeSchema>;
+export type SelectAffiliateBadge = typeof affiliateBadges.$inferSelect;
+
+export const insertAffiliateReferralSchema = createInsertSchema(affiliateReferrals).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  totalEarnings: true
+});
+export const selectAffiliateReferralSchema = createSelectSchema(affiliateReferrals);
+export type InsertAffiliateReferral = z.infer<typeof insertAffiliateReferralSchema>;
+export type SelectAffiliateReferral = typeof affiliateReferrals.$inferSelect;
+
+export const insertAffiliateMarketingMaterialSchema = createInsertSchema(affiliateMarketingMaterials).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  downloadCount: true
+});
+export const selectAffiliateMarketingMaterialSchema = createSelectSchema(affiliateMarketingMaterials);
+export type InsertAffiliateMarketingMaterial = z.infer<typeof insertAffiliateMarketingMaterialSchema>;
+export type SelectAffiliateMarketingMaterial = typeof affiliateMarketingMaterials.$inferSelect;

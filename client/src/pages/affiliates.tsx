@@ -58,6 +58,7 @@ type AffiliateDataType = {
   // Add other properties as needed
 };
 
+// Updated with new affiliate features: Coupons, Promotions, Badges, Referrals, Materials
 export default function AffiliatesPage() {
   const { user } = useAuth() || {};
   const [activeTab, setActiveTab] = useState("overview");
@@ -279,6 +280,7 @@ export default function AffiliatesPage() {
               </div>
 
               <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-8">
+                {/* Sistema de pestañas mejorado con nuevas funcionalidades */}
                 {/* Tabs para móvil: vista en forma de grid */}
                 <div className="md:hidden space-y-3">
                   <TabsList className="grid grid-cols-3 gap-2">
