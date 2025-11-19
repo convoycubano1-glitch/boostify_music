@@ -2965,22 +2965,74 @@ ${transcription}`;
         description: `Generating new image for scene ${sceneNumber}...`,
       });
 
-      // Build prompt from scene
-      const prompt = `${scene.scene}. ${scene.camera}, ${scene.lighting}, ${scene.style}`;
+      // Build CONTEXT-RICH prompt using the SAME enriched format as initial generation
+      const shotCategory = scene.shot_category || 'STORY';
+      const narrativeContext = scene.narrative_context || '';
+      const lyricConnection = scene.lyric_connection || '';
+      const visualDescription = scene.visual_description || scene.description || scene.scene;
+      const emotion = scene.emotion || scene.mood || '';
+      const storyProgression = scene.story_progression || '';
+      
+      // Extract global context from parsed script
+      const narrativeSummary = parsedScript.narrative_summary || '';
+      const directorName = videoStyle.selectedDirector?.name || 'Cinematic Director';
+      const conceptStory = selectedConcept?.story_concept || '';
+      
+      // Build enriched prompt matching initial generation
+      const prompt = `MUSIC VIDEO CONTEXT:
+${narrativeSummary ? `Overall Story: ${narrativeSummary}` : ''}
+${conceptStory ? `Concept: ${conceptStory}` : ''}
+Director Style: ${directorName}
+
+SCENE ${sceneNumber} - ${shotCategory} SHOT:
+${visualDescription}
+
+NARRATIVE:
+${narrativeContext}
+
+LYRIC CONNECTION:
+${lyricConnection}
+
+STORY ARC:
+${storyProgression}
+
+EMOTION: ${emotion}
+
+TECHNICAL SPECS:
+Camera: ${scene.camera_movement || 'static'}, ${scene.shot_type || 'medium-shot'}
+Lighting: ${scene.lighting || 'natural lighting'}
+Style: ${scene.visual_style || 'cinematic'}
+Shot Type: ${scene.shot_type || 'medium-shot'}
+Color Grading: ${scene.color_grading || 'cinematic'}
+Location: ${scene.location || 'performance space'}
+
+Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring the artist performing/singing' : shotCategory === 'B-ROLL' ? 'cinematic b-roll visual WITHOUT the artist visible' : 'narrative story scene with characters/elements'}, high production quality, ${directorName} directorial style, cohesive with overall music video narrative.`;
+      
+      logger.info(`🔄 [REGENERATE] Using enriched prompt for scene ${sceneNumber} with category: ${shotCategory}`);
       
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
-      const endpoint = hasReferenceImages 
+      
+      // Determine if this is a performance scene that should use face reference
+      const isPerformanceScene = shotCategory === 'PERFORMANCE' || 
+                                 visualDescription?.toLowerCase().includes('singing') || 
+                                 visualDescription?.toLowerCase().includes('performing');
+      const usesMasterCharacter = masterCharacter && isPerformanceScene;
+      const referenceToUse = usesMasterCharacter 
+        ? [masterCharacter.imageUrl] 
+        : (hasReferenceImages ? artistReferenceImages : undefined);
+      
+      const endpoint = (usesMasterCharacter || hasReferenceImages)
         ? '/api/gemini-image/generate-single-with-multiple-faces'
         : '/api/gemini-image/generate-batch';
 
-      const requestBody = hasReferenceImages
+      const requestBody = (usesMasterCharacter || hasReferenceImages)
         ? { 
             prompt: prompt,
             sceneId: sceneNumber,
-            referenceImagesBase64: artistReferenceImages,
+            referenceImagesBase64: referenceToUse,
             seed: seed + sceneNumber
           }
-        : { scenes: [scene] };
+        : { scenes: [{ scene: prompt, camera: '', lighting: '', style: '' }] };
 
       const response = await fetch(endpoint, {
         method: 'POST',
