@@ -6,7 +6,8 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { TimelineEditor } from "./timeline/TimelineResponsive";
+import { TimelineEditor } from "./timeline/TimelineEditor";
+import { TimelineEditorCapCut } from "./timeline/TimelineEditorCapCut";
 import type { TimelineClip } from "./timeline/TimelineEditor";
 import { TimelineClipUnified, ensureCompatibleClip, TimelineItem } from "../timeline/TimelineClipUnified";
 import { PreviewImagesModal } from "./PreviewImagesModal";
@@ -88,9 +89,9 @@ import {
   batchProcessSceneLipsync
 } from "../../lib/api/lipsync-scene-processor";
 import { PaymentGateModal } from "./payment-gate-modal";
-import { CharacterGenerationModal } from "./character-generation-modal";
+import { CharacterGenerationModalEnhanced } from "./character-generation-modal-enhanced";
 import { analyzeFaceFeatures } from "../../lib/api/face-analyzer";
-import { generateMasterCharacter } from "../../lib/api/master-character-generator";
+import { generateMasterCharacterMultiAngle, type MasterCharacterMultiAngle } from "../../lib/api/master-character-generator";
 import { EnhancedScenesGallery } from "./EnhancedScenesGallery";
 import { SequentialImageGallery } from "./SequentialImageGallery";
 import { ensureArtistProfile, saveSongToProfile, updateProfileImages } from "../../lib/auto-profile-service";
@@ -1194,9 +1195,12 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                                   typeof data.imageUrl === 'string' && 
                                   (data.imageUrl.startsWith('http') || data.imageUrl.startsWith('data:image/'));
           
-          if (data.success && isValidImageUrl) {
+          // Fixed: Check if we got an image URL regardless of success field
+          const hasValidUrl = isValidImageUrl && data.imageUrl;
+          
+          if (hasValidUrl) {
             generatedCount++;
-            logger.info(`✅ [IMG ${sceneIndex}/${totalScenes}] Imagen generada exitosamente`);
+            logger.info(`✅ [IMG ${sceneIndex}/${totalScenes}] Image generated successfully`);
             
             // 💾 GUARDAR EN FIREBASE STORAGE para persistencia
             let permanentImageUrl = data.imageUrl;
@@ -1569,24 +1573,23 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     }
   }, [toast]);
 
-  // Handler para generar master character
+  // Handler para generar master character con soporte multi-ángulo y casting
   const handleGenerateMasterCharacter = useCallback(async () => {
     if (artistReferenceImages.length === 0) {
-      logger.info('⚠️ No hay imágenes de referencia, saltando generación de master character');
+      logger.info('⚠️ No reference images available, skipping character generation');
       return null;
     }
 
-    logger.info('🎭 Iniciando generación de Master Character...');
+    logger.info('🎭 Starting Master Character generation with multi-angle support...');
     setIsGeneratingCharacter(true);
     setShowCharacterGeneration(true);
     setCharacterGenerationProgress(0);
-    setCharacterGenerationStage("Analizando rasgos faciales...");
+    setCharacterGenerationStage("Analyzing facial features...");
 
     try {
-      // Generar master character con progreso en tiempo real
-      const directorStyle = videoStyle.selectedDirector?.style || "Cinematic professional style";
+      const directorStyle = videoStyle.selectedDirector?.visual_style?.description || "Cinematic professional style";
       
-      const masterChar = await generateMasterCharacter(
+      const masterChar = await generateMasterCharacterMultiAngle(
         artistReferenceImages,
         directorStyle,
         (stage, progress) => {
@@ -1595,44 +1598,38 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         }
       );
 
-      logger.info('✅ Master Character generado:', masterChar.imageUrl);
-      setCharacterGenerationProgress(95);
-
-      // Paso 4: Finalizar (95-100%)
-      setCharacterGenerationStage("Finalizando...");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setCharacterGenerationProgress(100);
-
-      // Guardar master character en estado
-      setMasterCharacter(masterChar);
-
-      // Esperar un momento para mostrar el resultado
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      setIsGeneratingCharacter(false);
-      setShowCharacterGeneration(false);
-
-      toast({
-        title: "Personaje Generado",
-        description: "Tu master character está listo para el video",
+      logger.info('✅ Master Character generated with multi-angle support:', {
+        angles: masterChar.mainCharacter.angles.length,
+        castMembers: masterChar.casting.length
       });
 
+      setCharacterGenerationProgress(100);
+      setCharacterGenerationStage("Character and casting generation complete!");
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setIsGeneratingCharacter(false);
+
+      toast({
+        title: "Character Profiles Ready",
+        description: "Master character with 4 angles + 4 cast members generated",
+      });
+
+      setMasterCharacter(masterChar);
       return masterChar;
 
     } catch (error) {
-      logger.error('❌ Error generando master character:', error);
+      logger.error('❌ Error generating master character:', error);
       setIsGeneratingCharacter(false);
       setShowCharacterGeneration(false);
 
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error generando personaje",
+        description: error instanceof Error ? error.message : "Error generating character",
         variant: "destructive",
       });
 
       return null;
     }
-  }, [artistReferenceImages, videoStyle.selectedDirector?.style, toast]);
+  }, [artistReferenceImages, videoStyle.selectedDirector?.visual_style?.description, toast]);
 
   const handleDirectorSelection = useCallback(async (director: DirectorProfile, style: string) => {
     logger.info('🎬 Director seleccionado:', director.name, '| Estilo:', style);
@@ -5253,12 +5250,19 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         onSelect={handleConceptSelection}
       />
 
-      {/* Modal de Generación de Master Character */}
-      <CharacterGenerationModal
+      {/* Character Generation Modal with Multi-Angle & Casting */}
+      <CharacterGenerationModalEnhanced
         open={showCharacterGeneration}
         stage={characterGenerationStage}
         progress={characterGenerationProgress}
-        characterImage={masterCharacter?.imageUrl}
+        character={masterCharacter}
+        onContinue={() => {
+          setShowCharacterGeneration(false);
+          // Automatically proceed to image generation
+          if (timelineItems.length === 0) {
+            handleGenerateImages();
+          }
+        }}
       />
 
       {/* Preview Modal - Shows first 10 images for approval */}
@@ -5283,6 +5287,27 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         onPaymentSuccess={handlePaymentSuccess}
         userEmail={user?.email || ''}
       />
+
+      {/* Timeline Editor CapCut - Full Screen After Image Generation */}
+      {timelineItems.length > 0 && !showPreviewModal && (
+        <div className="fixed inset-0 z-50">
+          {/* Dynamic import to avoid circular dependencies */}
+          {typeof window !== 'undefined' && (
+            <TimelineEditorCapCut
+              initialClips={timelineItems}
+              duration={audioFile?.duration || 0}
+              scenes={previewImages.map((img, idx) => ({
+                id: img.id || `scene-${idx}`,
+                imageUrl: img.url,
+                timestamp: (idx / previewImages.length) * (audioFile?.duration || 0),
+                description: img.prompt || `Scene ${idx + 1}`
+              }))}
+              audioPreviewUrl={audioFile?.url}
+              onChange={(clips) => setTimelineItems(clips)}
+            />
+          )}
+        </div>
+      )}
 
       {/* Modal de Progreso de Generación de Imágenes */}
       <Dialog open={isGeneratingShots} onOpenChange={() => {}}>
