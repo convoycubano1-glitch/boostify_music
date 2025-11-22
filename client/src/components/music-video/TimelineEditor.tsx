@@ -1,5 +1,4 @@
 /**
-import { logger } from "@/lib/logger";
  * Enhanced Timeline Editor for Music Videos
  * Professional-grade multi-track editor with advanced features:
  * - Synchronized video preview viewer
@@ -8,11 +7,13 @@ import { logger } from "@/lib/logger";
  * - Snap-to-grid and marker snapping
  * - Auto-scroll following playhead
  * - Comprehensive keyboard shortcuts
- * - Mobile-responsive with touch support
+ * - Mobile-responsive with touch support with pinch-to-zoom
  * - Multi-layer editing (Audio, Video, Text, Effects, AI)
+ * - Touch gestures with momentum scrolling
  */
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useGesture } from 'react-use-gesture';
 import { cn } from '../../lib/utils';
 import { 
   Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut,
@@ -283,6 +284,14 @@ export function TimelineEditor({
   const [panStartX, setPanStartX] = useState(0);
   const [panStartScrollLeft, setPanStartScrollLeft] = useState(0);
   
+  // Momentum scrolling state (for smooth inertia on mobile)
+  const [scrollVelocity, setScrollVelocity] = useState(0);
+  const momentumRef = useRef<{ velocity: number; lastScroll: number; lastTime: number }>({
+    velocity: 0,
+    lastScroll: 0,
+    lastTime: 0
+  });
+  
   // History for undo/redo
   const [history, setHistory] = useState<{ past: HistoryState[]; future: HistoryState[] }>({ 
     past: [], 
@@ -295,6 +304,7 @@ export function TimelineEditor({
   const waveformRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const rafIdRef = useRef<number | null>(null);
+  const gesturesRef = useRef<any>(null);
 
   // ===== Computed Values =====
   const scaledPixelsPerSecond = PIXELS_PER_SECOND_BASE * zoom;
@@ -963,7 +973,8 @@ export function TimelineEditor({
         const offsetX = e.clientX - rect.left + scrollLeft;
         const clickTime = pixelsToTime(offsetX);
         
-        logger.info('🔪 Razor Tool:', {
+        // Debug info for razor tool
+        console.log('🔪 Razor Tool:', {
           clientX: e.clientX,
           rectLeft: rect.left,
           scrollLeft,
@@ -1158,9 +1169,9 @@ export function TimelineEditor({
       
       setSelectedClips(selectedIds);
       if (selectedIds.size === 1) {
-        setSelectedClip([...selectedIds][0]);
+        setSelectedClip(Array.from(selectedIds)[0]);
       } else if (selectedIds.size > 1) {
-        setSelectedClip([...selectedIds][0]); // Seleccionar el primero como principal
+        setSelectedClip(Array.from(selectedIds)[0]); // Seleccionar el primero como principal
       }
       
       setSelectionRect(null);
@@ -1368,6 +1379,115 @@ export function TimelineEditor({
     handleDeleteLeft, handleDeleteRight, selectedClip, pushHistory, handleClipUpdate,
     handlePreviousFrame, handleNextFrame, handlePreviousClip, handleNextClip
   ]);
+
+  // ===== Momentum Scrolling Effect =====
+  useEffect(() => {
+    if (scrollVelocity === 0 || !timelineRef.current) return;
+    
+    let animationId: number;
+    const element = timelineRef.current;
+    let currentVelocity = scrollVelocity;
+    const damping = 0.95; // Friction coefficient
+    
+    const applyMomentum = () => {
+      if (Math.abs(currentVelocity) < 0.5) {
+        setScrollVelocity(0);
+        return;
+      }
+      
+      element.scrollLeft += currentVelocity;
+      currentVelocity *= damping;
+      animationId = requestAnimationFrame(applyMomentum);
+    };
+    
+    animationId = requestAnimationFrame(applyMomentum);
+    
+    return () => cancelAnimationFrame(animationId);
+  }, [scrollVelocity]);
+
+  // ===== Gesture Handlers (Touch + Wheel) =====
+  useEffect(() => {
+    if (!timelineRef.current) return;
+    const element = timelineRef.current;
+    
+    // Pinch-to-zoom (touch gesture)
+    let lastDistance = 0;
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && isMobile) {
+        e.preventDefault();
+        
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+        
+        if (lastDistance > 0) {
+          const scale = distance / lastDistance;
+          const newZoom = Math.min(3, Math.max(0.5, zoom * scale));
+          
+          if (newZoom !== zoom) {
+            setZoom(newZoom);
+            triggerHaptic(5);
+          }
+        }
+        lastDistance = distance;
+      }
+    };
+    
+    const handleTouchEnd = () => {
+      lastDistance = 0;
+    };
+    
+    // Wheel zoom (mouse wheel)
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.min(3, Math.max(0.5, zoom * delta));
+      
+      if (newZoom !== zoom) {
+        setZoom(newZoom);
+      }
+    };
+    
+    // Momentum scrolling detector
+    let lastScrollLeft = element.scrollLeft;
+    let lastScrollTime = Date.now();
+    
+    const handleScroll = () => {
+      const now = Date.now();
+      const scrollDelta = element.scrollLeft - lastScrollLeft;
+      const timeDelta = now - lastScrollTime;
+      
+      if (timeDelta > 0) {
+        const velocity = scrollDelta / (timeDelta / 16.67); // Normalize to 60fps
+        momentumRef.current = { velocity, lastScroll: element.scrollLeft, lastTime: now };
+        
+        // Only apply momentum after user stops scrolling
+        if (Math.abs(velocity) > 0.5) {
+          setScrollVelocity(velocity * 0.8); // Start with 80% of final velocity
+        }
+      }
+      
+      lastScrollLeft = element.scrollLeft;
+      lastScrollTime = now;
+    };
+    
+    element.addEventListener('touchmove', handleTouchMove, { passive: false });
+    element.addEventListener('touchend', handleTouchEnd);
+    element.addEventListener('wheel', handleWheel, { passive: false });
+    element.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener('wheel', handleWheel);
+      element.removeEventListener('scroll', handleScroll);
+    };
+  }, [zoom, isMobile, triggerHaptic]);
 
   // ===== Timeline Click Handler =====
   const handleTimelineClick = useCallback((e: React.MouseEvent) => {
@@ -2159,7 +2279,7 @@ export function TimelineEditor({
               style={{
                 left: `${(marker.time / duration) * 100}%`
               }}
-              title={marker.name}
+              title={marker.label}
             />
           ))}
         </div>
@@ -2230,8 +2350,16 @@ export function TimelineEditor({
           </div>
         </div>
 
-        {/* Timeline scroll area */}
-        <div className="flex-1 overflow-auto" ref={timelineRef}>
+        {/* Timeline scroll area - Enhanced for mobile with momentum scrolling */}
+        <div 
+          className="flex-1 overflow-auto" 
+          ref={timelineRef}
+          style={{
+            scrollBehavior: 'auto', // Disable smooth scroll to enable momentum manually
+            overscrollBehavior: 'contain', // Prevent bouncing on mobile
+            WebkitOverflowScrolling: 'touch' as any // Hardware acceleration on iOS
+          }}
+        >
           <div 
             className={cn(
               "relative min-h-full timeline-background",
@@ -2241,7 +2369,7 @@ export function TimelineEditor({
             style={{ 
               width: `${timeToPixels(duration)}px`, 
               minWidth: '100%',
-              touchAction: tool === 'hand' ? 'none' : 'auto' // Prevent default gestures for hand tool
+              touchAction: isMobile ? 'pinch-zoom' : 'auto' // Allow pinch-zoom on mobile
             }}
             onClick={handleTimelineClick}
             onMouseDown={handleTimelineMouseDown}
@@ -2295,8 +2423,11 @@ export function TimelineEditor({
                   .map((layerId, index) => (
                   <div 
                     key={layerId}
-                    className="relative h-24 border-b border-gray-700"
-                    style={{ top: `${index * 96}px` }}
+                    className={cn(
+                      "relative border-b border-gray-700",
+                      isMobile ? "h-32" : "h-24"
+                    )}
+                    style={{ top: `${index * (isMobile ? 128 : 96)}px` }}
                   >
                     {clipsByLayer[layerId]?.map(clip => {
                       const clipLeft = timeToPixels(clip.start);
@@ -2310,7 +2441,8 @@ export function TimelineEditor({
                         <div
                           key={clip.id}
                           className={cn(
-                            "absolute h-20 rounded-md transition-all overflow-visible group border-2",
+                            "absolute rounded-md transition-all overflow-visible group border-2",
+                            isMobile ? "h-28" : "h-20",
                             isSelected ? "ring-2 ring-orange-500 ring-offset-1 ring-offset-gray-900 border-orange-500" : "border-gray-600/50 hover:border-gray-400",
                             clip.locked ? "opacity-50 cursor-not-allowed" : ""  ,
                             clip.metadata?.lipsync?.applied ? "ring-1 ring-purple-500" : ""
@@ -2319,7 +2451,7 @@ export function TimelineEditor({
                             left: `${clipLeft}px`,
                             width: `${clipWidth}px`,
                             backgroundColor: layerColor.bg,
-                            top: '8px',
+                            top: isMobile ? '4px' : '8px',
                             backgroundImage: clip.imageUrl || clip.thumbnail 
                               ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url(${clip.imageUrl || clip.thumbnail})`
                               : undefined,
@@ -2379,13 +2511,19 @@ export function TimelineEditor({
                             </div>
                           </div>
                           
-                          {/* Action buttons for images */}
+                          {/* Action buttons for images - Responsive sizes */}
                           {(clip.imageUrl || clip.metadata?.isGeneratedImage) && (
-                            <div className="absolute top-1 right-1 flex gap-1 opacity-80 hover:opacity-100 transition-opacity">
+                            <div className={cn(
+                              "absolute top-1 right-1 flex gap-1 opacity-80 hover:opacity-100 transition-opacity",
+                              isMobile ? "flex-col" : "flex-row"
+                            )}>
                               <Button
                                 size="icon"
                                 variant="secondary"
-                                className="h-7 w-7 bg-orange-600 hover:bg-orange-700 text-white shadow-lg border border-white/20"
+                                className={cn(
+                                  "bg-orange-600 hover:bg-orange-700 text-white shadow-lg border border-white/20",
+                                  isMobile ? "h-9 w-9" : "h-7 w-7"
+                                )}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEditImage(clip);
@@ -2393,12 +2531,15 @@ export function TimelineEditor({
                                 title="Edit Image with Nano Banana AI"
                                 data-testid={`button-edit-image-${clip.id}`}
                               >
-                                <Pencil className="h-3.5 w-3.5" />
+                                <Pencil className={isMobile ? "h-4 w-4" : "h-3.5 w-3.5"} />
                               </Button>
                               <Button
                                 size="icon"
                                 variant="secondary"
-                                className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white shadow-lg border border-white/20"
+                                className={cn(
+                                  "bg-green-600 hover:bg-green-700 text-white shadow-lg border border-white/20",
+                                  isMobile ? "h-9 w-9" : "h-7 w-7"
+                                )}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleAddMusician(clip);
@@ -2406,12 +2547,15 @@ export function TimelineEditor({
                                 title="Add Musician"
                                 data-testid={`button-add-musician-${clip.id}`}
                               >
-                                <Guitar className="h-3.5 w-3.5" />
+                                <Guitar className={isMobile ? "h-4 w-4" : "h-3.5 w-3.5"} />
                               </Button>
                               <Button
                                 size="icon"
                                 variant="secondary"
-                                className="h-7 w-7 bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg border border-white/20"
+                                className={cn(
+                                  "bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg border border-white/20",
+                                  isMobile ? "h-9 w-9" : "h-7 w-7"
+                                )}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleOpenCameraAngles(clip);
@@ -2419,13 +2563,16 @@ export function TimelineEditor({
                                 title="Camera Angles"
                                 data-testid={`button-camera-angles-${clip.id}`}
                               >
-                                <Camera className="h-3.5 w-3.5" />
+                                <Camera className={isMobile ? "h-4 w-4" : "h-3.5 w-3.5"} />
                               </Button>
                               {onRegenerateImage && (
                                 <Button
                                   size="icon"
                                   variant="secondary"
-                                  className="h-7 w-7 bg-purple-600 hover:bg-purple-700 text-white shadow-lg border border-white/20"
+                                  className={cn(
+                                    "bg-purple-600 hover:bg-purple-700 text-white shadow-lg border border-white/20",
+                                    isMobile ? "h-9 w-9" : "h-7 w-7"
+                                  )}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onRegenerateImage(clip.id);
@@ -2433,14 +2580,17 @@ export function TimelineEditor({
                                   title="Regenerar Imagen"
                                   data-testid={`button-regenerate-${clip.id}`}
                                 >
-                                  <RefreshCw className="h-3.5 w-3.5" />
+                                  <RefreshCw className={isMobile ? "h-4 w-4" : "h-3.5 w-3.5"} />
                                 </Button>
                               )}
                               {onGenerateVideo && (
                                 <Button
                                   size="icon"
                                   variant="secondary"
-                                  className="h-7 w-7 bg-blue-600 hover:bg-blue-700 text-white shadow-lg border border-white/20"
+                                  className={cn(
+                                    "bg-blue-600 hover:bg-blue-700 text-white shadow-lg border border-white/20",
+                                    isMobile ? "h-9 w-9" : "h-7 w-7"
+                                  )}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onGenerateVideo(clip.id);
@@ -2448,7 +2598,7 @@ export function TimelineEditor({
                                   title="Generar Video"
                                   data-testid={`button-generate-video-${clip.id}`}
                                 >
-                                  <Video className="h-3.5 w-3.5" />
+                                  <Video className={isMobile ? "h-4 w-4" : "h-3.5 w-3.5"} />
                                 </Button>
                               )}
                             </div>

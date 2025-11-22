@@ -1,7 +1,7 @@
 /**
- * Servicio de generación de imágenes con Gemini 2.5 Flash Image (Nano Banana)
+ * Servicio de generación de imágenes con Gemini 3.5 Flash Image (Nano Banana Pro)
  * Para crear imágenes cinematográficas de alta calidad para videos musicales
- * Con sistema de fallback automático entre múltiples API keys
+ * Con sistema de fallback automático entre múltiples API keys y modelos
  */
 import { GoogleGenAI, Modality } from "@google/genai";
 import { logger } from '../utils/logger';
@@ -18,53 +18,94 @@ const geminiClients = apiKeys.map(key => new GoogleGenAI({ apiKey: key || "" }))
 // Cliente principal (para compatibilidad con código legacy)
 const ai = geminiClients[0] || new GoogleGenAI({ apiKey: "" });
 
+// Modelos disponibles con fallback automático
+const AVAILABLE_MODELS = [
+  "gemini-3.5-flash-image",           // PRIMARY: Gemini 3.5 Flash Image (latest)
+  "gemini-3-5-flash-image",           // FALLBACK: Alternative naming format
+  "gemini-2.5-flash-image"            // FALLBACK: Nano Banana Pro (backwards compatibility)
+];
+
 /**
- * Intenta generar contenido con fallback automático entre API keys
- * Si una key alcanza su límite de cuota (error 429), automáticamente intenta con la siguiente
+ * Obtiene el modelo a usar basado en disponibilidad y fallback automático
+ * Intenta con modelos en orden de preferencia
+ */
+function getImageGenerationModel(): string {
+  const preferredModel = process.env.GEMINI_IMAGE_MODEL || AVAILABLE_MODELS[0];
+  
+  // Si existe variable de entorno que especifique el modelo, usar esa primero
+  if (process.env.GEMINI_IMAGE_MODEL) {
+    logger.log(`📊 [MODEL] Usando modelo configurado: ${preferredModel}`);
+    return preferredModel;
+  }
+  
+  logger.log(`📊 [MODEL] Usando modelo por defecto: ${AVAILABLE_MODELS[0]}`);
+  return AVAILABLE_MODELS[0];
+}
+
+/**
+ * Intenta generar contenido con fallback automático entre API keys Y modelos
+ * Si una key/modelo alcanza su límite de cuota (error 429), automáticamente intenta con la siguiente
  */
 async function generateContentWithFallback(params: any): Promise<any> {
   let lastError: any = null;
   
-  for (let i = 0; i < geminiClients.length; i++) {
-    try {
-      logger.log(`🔑 Intentando generación con API key ${i + 1}/${geminiClients.length}...`);
-      const client = geminiClients[i];
-      
-      // Agregar timeout de 60 segundos para evitar colgarse indefinidamente
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Gemini API timeout después de 60 segundos')), 60000);
-      });
-      
-      const generationPromise = client.models.generateContent(params);
-      
-      const response = await Promise.race([generationPromise, timeoutPromise]);
-      logger.log(`✅ Generación exitosa con API key ${i + 1}`);
-      return response;
-    } catch (error: any) {
-      lastError = error;
-      
-      logger.error(`❌ Error con API key ${i + 1}:`, error.message);
-      
-      // Si es error 429 (quota exceeded), intentar con la siguiente key
-      if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
-        logger.warn(`⚠️ API key ${i + 1} sin cuota disponible, intentando con siguiente key...`);
-        continue;
+  // Intentar fallback de modelos primero
+  const modelsToTry = [params.model, ...AVAILABLE_MODELS.filter(m => m !== params.model)];
+  
+  for (const model of modelsToTry) {
+    for (let i = 0; i < geminiClients.length; i++) {
+      try {
+        logger.log(`🔑 [FALLBACK] API key ${i + 1}/${geminiClients.length}, Modelo: ${model}`);
+        const client = geminiClients[i];
+        
+        // Crear parámetros con el modelo actual
+        const currentParams = { ...params, model };
+        
+        // Agregar timeout de 60 segundos para evitar colgarse indefinidamente
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Gemini API timeout después de 60 segundos')), 60000);
+        });
+        
+        const generationPromise = client.models.generateContent(currentParams);
+        
+        const response = await Promise.race([generationPromise, timeoutPromise]);
+        logger.log(`✅ Generación exitosa con API key ${i + 1}, modelo: ${model}`);
+        return response;
+      } catch (error: any) {
+        lastError = error;
+        
+        logger.error(`❌ Error con API key ${i + 1}, modelo ${model}:`, error.message);
+        
+        // Si es error de modelo no disponible o no encontrado, pasar al siguiente modelo
+        if (error.message?.includes('not found') || 
+            error.message?.includes('model') || 
+            error.message?.includes('does not exist') ||
+            error.status === 404) {
+          logger.warn(`⚠️ Modelo ${model} no disponible en key ${i + 1}, intentando siguiente modelo...`);
+          break; // Romper el loop de keys y pasar al siguiente modelo
+        }
+        
+        // Si es error 429 (quota exceeded), intentar con la siguiente key
+        if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+          logger.warn(`⚠️ API key ${i + 1} sin cuota disponible con modelo ${model}, intentando siguiente key...`);
+          continue;
+        }
+        
+        // Si es timeout, intentar con la siguiente key
+        if (error.message?.includes('timeout')) {
+          logger.warn(`⏱️ API key ${i + 1} timeout con modelo ${model}, intentando siguiente key...`);
+          continue;
+        }
+        
+        // Para otros errores, lanzar inmediatamente
+        throw error;
       }
-      
-      // Si es timeout, intentar con la siguiente key
-      if (error.message?.includes('timeout')) {
-        logger.warn(`⏱️ API key ${i + 1} timeout, intentando con siguiente key...`);
-        continue;
-      }
-      
-      // Para otros errores, lanzar inmediatamente
-      throw error;
     }
   }
   
-  // Si llegamos aquí, todas las keys fallaron
-  logger.error('❌ Todas las API keys agotaron su cuota o fallaron');
-  throw lastError || new Error('Todas las API keys de Gemini han fallado');
+  // Si llegamos aquí, todas las keys y modelos fallaron
+  logger.error('❌ Todas las API keys, modelos y combinaciones agotaron su cuota o fallaron');
+  throw lastError || new Error('Todas las API keys y modelos de Gemini han fallado');
 }
 
 export interface CinematicScene {
@@ -194,7 +235,7 @@ Please create a new version of this image with these edits applied. Maintain the
 
     // Usar Gemini con imagen de referencia para edición
     const response = await generateContentWithFallback({
-      model: "gemini-2.5-flash-image",
+      model: getImageGenerationModel(),
       contents: [
         { 
           role: "user", 
@@ -252,7 +293,7 @@ Please create a new version of this image with these edits applied. Maintain the
 }
 
 /**
- * Genera una imagen usando Gemini 2.5 Flash Image
+ * Genera una imagen usando Gemini 3.5 Flash Image (con fallback a Nano Banana)
  * @param prompt - Descripción detallada de la escena
  * @returns Imagen en formato base64
  */
@@ -268,7 +309,7 @@ export async function generateCinematicImage(
 
     // Usar el modelo de generación de imágenes con fallback automático
     const response = await generateContentWithFallback({
-      model: "gemini-2.5-flash-image",
+      model: getImageGenerationModel(),
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         responseModalities: [Modality.TEXT, Modality.IMAGE],
@@ -386,9 +427,9 @@ export async function generateImageWithFaceReference(
 
 IMPORTANT: Maintain the exact same face, facial features, and person from the reference image. Keep their identity, facial structure, skin tone, and distinctive features identical.`;
 
-    // Usar Gemini con imagen de referencia para edición
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image",
+    // Usar Gemini con imagen de referencia para edición (con fallback automático)
+    const response = await generateContentWithFallback({
+      model: getImageGenerationModel(),
       contents: [
         { 
           role: "user", 
@@ -556,9 +597,9 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
     // Agregar el prompt al final
     parts.push({ text: combinedPrompt });
 
-    // Usar Gemini con múltiples imágenes de referencia y fallback automático
+    // Usar Gemini con múltiples imágenes de referencia y fallback automático entre API keys y modelos
     const response = await generateContentWithFallback({
-      model: "gemini-2.5-flash-image",
+      model: getImageGenerationModel(),
       contents: [
         { 
           role: "user", 

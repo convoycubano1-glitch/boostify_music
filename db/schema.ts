@@ -749,8 +749,8 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   scriptContent: text("script_content"),
   
   // Timeline data (JSON con todos los items del timeline)
-  timelineItems: json("timeline_items").$type<any[]>().default([]),
-  scenes: json("scenes").$type<any[]>().default([]),
+  timelineItems: json("timeline_items").$type<any[]>(),
+  scenes: json("scenes").$type<any[]>(),
   
   // Style & Director data
   selectedDirector: json("selected_director"),
@@ -758,7 +758,7 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   videoStyle: json("video_style"),
   
   // Reference images & artist info
-  artistReferenceImages: json("artist_reference_images").$type<string[]>().default([]),
+  artistReferenceImages: json("artist_reference_images").$type<string[]>(),
   artistName: text("artist_name"),
   songName: text("song_name"),
   
@@ -783,13 +783,7 @@ export const musicVideoProjects = pgTable("music_video_projects", {
     totalImages: number;
     videosGenerated: number;
     totalVideos: number;
-  }>().default({
-    scriptGenerated: false,
-    imagesGenerated: 0,
-    totalImages: 0,
-    videosGenerated: 0,
-    totalVideos: 0
-  }),
+  }>(),
   generatedImagesCount: integer("generated_images_count").default(0),
   totalImagesTarget: integer("total_images_target").default(40),
   
@@ -801,7 +795,7 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   creditsUsed: integer("credits_used").default(0).notNull(),
   
   // Metadata
-  tags: json("tags").$type<string[]>().default([]),
+  tags: json("tags").$type<string[]>(),
   lastModified: timestamp("last_modified").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()

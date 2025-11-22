@@ -42,15 +42,29 @@ router.post('/save', async (req, res) => {
     });
     
     // Convert audioDuration number to string for decimal field
-    // Ensure JSON/array fields are proper arrays, not undefined
+    // Build dbData, only including fields that have values to avoid PostgreSQL array literal errors
     const dbData: any = {
-      ...validatedData,
-      audioDuration: validatedData.audioDuration !== undefined ? String(validatedData.audioDuration) : undefined,
-      timelineItems: validatedData.timelineItems || [],
-      artistReferenceImages: validatedData.artistReferenceImages || [],
-      tags: validatedData.tags || [],
-      progress: validatedData.progress || undefined
+      userEmail: validatedData.userEmail,
+      projectName: validatedData.projectName,
+      status: validatedData.status
     };
+    
+    // Only include optional fields if they have truthy values
+    if (validatedData.audioUrl) dbData.audioUrl = validatedData.audioUrl;
+    if (validatedData.audioDuration !== undefined) dbData.audioDuration = String(validatedData.audioDuration);
+    if (validatedData.transcription) dbData.transcription = validatedData.transcription;
+    if (validatedData.scriptContent) dbData.scriptContent = validatedData.scriptContent;
+    
+    // Always set array fields to empty array if not provided (never undefined/null for JSON fields)
+    dbData.timelineItems = validatedData.timelineItems && validatedData.timelineItems.length > 0 ? validatedData.timelineItems : [];
+    dbData.artistReferenceImages = validatedData.artistReferenceImages && validatedData.artistReferenceImages.length > 0 ? validatedData.artistReferenceImages : [];
+    dbData.tags = validatedData.tags && validatedData.tags.length > 0 ? validatedData.tags : [];
+    
+    // Only include JSON objects if they exist
+    if (validatedData.selectedDirector) dbData.selectedDirector = validatedData.selectedDirector;
+    if (validatedData.videoStyle) dbData.videoStyle = validatedData.videoStyle;
+    if (validatedData.selectedEditingStyle) dbData.selectedEditingStyle = validatedData.selectedEditingStyle;
+    if (validatedData.progress) dbData.progress = validatedData.progress;
     
     const existingProject = await db
       .select()
