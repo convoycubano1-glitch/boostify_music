@@ -285,22 +285,22 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
                               <p className="text-xs text-muted-foreground mb-1">Cinematographer</p>
                               <p className="font-semibold text-sm">{dp.name}</p>
                             </div>
-                            {dp.equipment_specs?.camera_format && (
+                            {dp.camera_arsenal?.primary_cameras?.[0]?.format && (
                               <div className="p-3 bg-white/5 rounded border border-white/10">
                                 <p className="text-xs text-muted-foreground mb-1">Camera Format</p>
-                                <p className="font-semibold text-sm">{dp.equipment_specs.camera_format}</p>
+                                <p className="font-semibold text-sm">{dp.camera_arsenal.primary_cameras[0].format}</p>
                               </div>
                             )}
-                            {dp.equipment_specs?.primary_lenses && (
+                            {dp.camera_arsenal?.lens_packages?.[0]?.series && (
                               <div className="p-3 bg-white/5 rounded border border-white/10">
                                 <p className="text-xs text-muted-foreground mb-1">Lens Package</p>
-                                <p className="font-semibold text-sm">{dp.equipment_specs.primary_lenses}</p>
+                                <p className="font-semibold text-sm">{dp.camera_arsenal.lens_packages[0].manufacturer} {dp.camera_arsenal.lens_packages[0].series}</p>
                               </div>
                             )}
-                            {dp.equipment_specs?.film_stock && (
+                            {dp.camera_arsenal?.film_stock_emulation?.[0]?.name && (
                               <div className="p-3 bg-white/5 rounded border border-white/10">
                                 <p className="text-xs text-muted-foreground mb-1">Film Stock</p>
-                                <p className="font-semibold text-sm">{dp.equipment_specs.film_stock}</p>
+                                <p className="font-semibold text-sm">{dp.camera_arsenal.film_stock_emulation[0].name}</p>
                               </div>
                             )}
                           </>
