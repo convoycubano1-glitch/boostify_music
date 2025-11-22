@@ -7170,7 +7170,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                       duration={totalDuration}
                       markers={[]}
                       readOnly={false}
-                      videoPreviewUrl={mediaUrl || undefined}
+                      videoPreviewUrl={undefined}
                       audioPreviewUrl={audioFile ? URL.createObjectURL(audioFile) : undefined}
                       onChange={handleClipUpdate}
                       audioBuffer={audioBuffer}
