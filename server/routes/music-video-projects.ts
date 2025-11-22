@@ -133,6 +133,118 @@ router.get('/list/:userEmail', async (req, res) => {
   }
 });
 
+router.post('/create-empty', async (req, res) => {
+  try {
+    const { projectName, artistName = 'Unknown Artist', songName = 'Untitled' } = req.body;
+    
+    if (!projectName) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'projectName es requerido' 
+      });
+    }
+    
+    logger.log('✨ [CREATE EMPTY] Creando proyecto vacío:', projectName);
+    
+    // Crear proyecto vacío con timelineItems de ejemplo
+    const emptyTimelineItems = [
+      {
+        id: 1,
+        start_time: 0,
+        end_time: 3000,
+        duration: 3000,
+        title: 'Intro',
+        imagePrompt: 'Cinematic intro shot with dramatic lighting',
+        shotType: 'Wide Shot',
+        mood: 'Mysterious',
+        generatedImage: null
+      },
+      {
+        id: 2,
+        start_time: 3000,
+        end_time: 6000,
+        duration: 3000,
+        title: 'Verse 1',
+        imagePrompt: 'Close-up of main character with cinematic lighting',
+        shotType: 'Close-Up',
+        mood: 'Emotional',
+        generatedImage: null
+      },
+      {
+        id: 3,
+        start_time: 6000,
+        end_time: 10000,
+        duration: 4000,
+        title: 'Chorus',
+        imagePrompt: 'Dynamic wide shot with energy and movement',
+        shotType: 'Wide Shot',
+        mood: 'Energetic',
+        generatedImage: null
+      },
+      {
+        id: 4,
+        start_time: 10000,
+        end_time: 13000,
+        duration: 3000,
+        title: 'Verse 2',
+        imagePrompt: 'Medium shot with subtle camera movement',
+        shotType: 'Medium Shot',
+        mood: 'Thoughtful',
+        generatedImage: null
+      },
+      {
+        id: 5,
+        start_time: 13000,
+        end_time: 17000,
+        duration: 4000,
+        title: 'Bridge',
+        imagePrompt: 'Epic wide shot with dramatic composition',
+        shotType: 'Wide Shot',
+        mood: 'Epic',
+        generatedImage: null
+      },
+      {
+        id: 6,
+        start_time: 17000,
+        end_time: 21000,
+        duration: 4000,
+        title: 'Final Chorus',
+        imagePrompt: 'Intense close-up with professional lighting',
+        shotType: 'Close-Up',
+        mood: 'Climactic',
+        generatedImage: null
+      }
+    ];
+    
+    const [newProject] = await db
+      .insert(musicVideoProjects)
+      .values({
+        projectName: projectName,
+        artistName: artistName,
+        songName: songName,
+        userEmail: 'demo@timeline-editor.local',
+        status: 'draft',
+        timelineItems: emptyTimelineItems,
+        artistReferenceImages: [],
+        tags: []
+      })
+      .returning();
+    
+    logger.log('✅ [CREATE EMPTY] Proyecto vacío creado:', newProject.id);
+    res.json({ 
+      success: true, 
+      project: newProject,
+      projectId: newProject.id 
+    });
+  } catch (error) {
+    logger.error('❌ [CREATE EMPTY] Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error desconocido' 
+    });
+  }
+});
+
 router.get('/load/:projectId', async (req, res) => {
   try {
     const { projectId } = req.params;

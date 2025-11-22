@@ -427,6 +427,7 @@ const Router = () => {
           {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, 'free')}
           {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, 'free')}
           {getRouteComponent("/timeline-demo", WrappedTimelineDemoPage, 'free')}
+          {getRouteComponent("/timeline", WrappedTimelineEditorPage, 'free')}
           {getRouteComponent("/timeline/:projectId", WrappedTimelineEditorPage, 'free')}
           {getRouteComponent("/debug-firebase", WrappedDebugFirebasePage, null)}
           

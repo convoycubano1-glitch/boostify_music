@@ -1284,7 +1284,7 @@ export default function HomePage() {
 
       {/* Modern CTA Section */}
       <section className="py-24 bg-gradient-to-r from-orange-500/20 to-red-500/20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-[0.03] mix-blend-soft-light"></div>
+        <div className="absolute inset-0 bg-[url('/assets/noise.svg')] opacity-[0.03] mix-blend-soft-light"></div>
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-orange-500/20 rounded-full filter blur-3xl animate-pulse" style={{ animationDuration: '10s' }} />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-red-500/20 rounded-full filter blur-3xl animate-pulse" style={{ animationDuration: '14s' }} />
         

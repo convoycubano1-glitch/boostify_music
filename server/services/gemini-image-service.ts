@@ -128,10 +128,11 @@ export interface ImageGenerationResult {
 
 /**
  * Sube una imagen base64 a Firebase Storage y devuelve su URL pública
+ * Si Storage falla, retorna como data URL para garantizar que la imagen siempre esté disponible
  * @param base64Data - Datos de la imagen en base64
  * @param mimeType - Tipo MIME de la imagen (default: 'image/png')
  * @param folder - Carpeta donde guardar (default: 'merchandise')
- * @returns URL pública de la imagen en Storage
+ * @returns URL pública de la imagen en Storage o data URL si falla
  */
 async function uploadBase64ToStorage(
   base64Data: string,
@@ -139,10 +140,17 @@ async function uploadBase64ToStorage(
   folder: string = 'merchandise'
 ): Promise<string> {
   try {
+    logger.log(`🔍 [STORAGE] Verificando disponibilidad de Firebase Storage...`);
+    
     // Verificar que storage esté inicializado
     if (!storage) {
-      throw new Error('Firebase Storage no está inicializado');
+      logger.warn(`⚠️ [STORAGE] Firebase Storage no está inicializado, usando data URL como fallback`);
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+      logger.log(`✅ [STORAGE] Usando data URL fallback para imagen`);
+      return dataUrl;
     }
+    
+    logger.log(`✅ [STORAGE] Firebase Storage disponible, intentando subida...`);
     
     // Generar nombre único con timestamp
     const timestamp = Date.now();
@@ -150,17 +158,22 @@ async function uploadBase64ToStorage(
     const extension = mimeType.split('/')[1] || 'png';
     const fileName = `${folder}/${timestamp}_${randomId}.${extension}`;
     
+    logger.log(`📝 [STORAGE] Nombre de archivo: ${fileName}`);
+    
     // Convertir base64 a Buffer
+    logger.log(`🔄 [STORAGE] Convirtiendo base64 a Buffer...`);
     const imageBuffer = Buffer.from(base64Data, 'base64');
+    logger.log(`✅ [STORAGE] Buffer creado: ${imageBuffer.length} bytes`);
     
     // Usar Firebase Admin SDK para subir
+    logger.log(`📤 [STORAGE] Obteniendo bucket de Firebase...`);
     const bucket = storage.bucket();
     const file = bucket.file(fileName);
     
-    logger.log(`📤 Subiendo imagen a Storage: ${fileName}`);
+    logger.log(`📤 [STORAGE] Subiendo archivo a Storage: ${fileName}`);
     
-    // Guardar archivo con metadata
-    await file.save(imageBuffer, {
+    // Guardar archivo con metadata - CON TIMEOUT
+    const savePromise = file.save(imageBuffer, {
       metadata: {
         contentType: mimeType,
       },
@@ -168,16 +181,45 @@ async function uploadBase64ToStorage(
       validation: false,
     });
     
-    // Hacer el archivo público y obtener URL
-    await file.makePublic();
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+    const saveTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Storage upload timeout después de 30s')), 30000)
+    );
     
-    logger.log(`✅ Imagen subida exitosamente: ${publicUrl.substring(0, 100)}...`);
+    await Promise.race([savePromise, saveTimeout]);
+    logger.log(`✅ [STORAGE] Archivo guardado exitosamente`);
+    
+    // Hacer el archivo público y obtener URL
+    logger.log(`🔓 [STORAGE] Haciendo archivo público...`);
+    const makePublicPromise = file.makePublic();
+    const makePublicTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Make public timeout después de 15s')), 15000)
+    );
+    
+    await Promise.race([makePublicPromise, makePublicTimeout]);
+    logger.log(`✅ [STORAGE] Archivo es público`);
+    
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+    logger.log(`✅ [STORAGE] Imagen subida exitosamente: ${publicUrl.substring(0, 100)}...`);
     
     return publicUrl;
-  } catch (error: any) {
-    logger.error('❌ Error subiendo imagen a Storage:', error);
-    throw error;
+  } catch (storageError: any) {
+    logger.error(`❌ [STORAGE] Error subiendo a Firebase Storage:`, {
+      message: storageError.message,
+      code: storageError.code,
+      status: storageError.status
+    });
+    
+    // FALLBACK: Retornar como data URL en lugar de fallar
+    logger.warn(`⚠️ [STORAGE] Usando data URL como fallback debido a error de Storage`);
+    try {
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+      logger.log(`✅ [STORAGE] Data URL fallback creado exitosamente`);
+      return dataUrl;
+    } catch (fallbackError: any) {
+      logger.error(`❌ [STORAGE] Error crítico - ni Storage ni fallback funcionan:`, fallbackError.message);
+      // Último recurso: retornar un data URL vacío para no romper completamente
+      throw new Error(`Image upload failed completely: ${storageError.message}`);
+    }
   }
 }
 
@@ -329,27 +371,42 @@ export async function generateCinematicImage(
     // Buscar la parte de imagen en la respuesta
     for (const part of content.parts) {
       if (part.text) {
-        logger.log('Texto de respuesta:', part.text);
+        logger.log('✅ [GEMINI] Texto de respuesta:', part.text.substring(0, 100));
       } else if (part.inlineData && part.inlineData.data) {
         const imageBase64 = part.inlineData.data;
         const mimeType = part.inlineData.mimeType || 'image/png';
-        logger.log('Imagen generada exitosamente, subiendo a Storage...');
+        logger.log(`✅ [GEMINI] Imagen generada exitosamente (${imageBase64.length} bytes)`);
         
-        // Subir a Firebase Storage y obtener URL pública
-        const storageUrl = await uploadBase64ToStorage(imageBase64, mimeType, 'generated-images');
-        
-        return {
-          success: true,
-          imageBase64: imageBase64,
-          imageUrl: storageUrl,
-          provider: 'gemini'
-        };
+        try {
+          logger.log(`📤 [GEMINI] Subiendo imagen a Storage...`);
+          // Subir a Firebase Storage y obtener URL pública (con fallback a data URL)
+          const imageUrl = await uploadBase64ToStorage(imageBase64, mimeType, 'generated-images');
+          
+          logger.log(`✅ [GEMINI] Imagen disponible en: ${imageUrl.substring(0, 100)}...`);
+          return {
+            success: true,
+            imageBase64: imageBase64,
+            imageUrl: imageUrl,
+            provider: 'gemini'
+          };
+        } catch (uploadError: any) {
+          logger.error(`❌ [GEMINI] Error crítico en upload:`, uploadError.message);
+          // Último fallback: retornar base64 como data URL
+          const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+          logger.log(`✅ [GEMINI] Usando data URL directo como fallback final`);
+          return {
+            success: true,
+            imageBase64: imageBase64,
+            imageUrl: dataUrl,
+            provider: 'gemini'
+          };
+        }
       }
     }
 
     throw new Error('No se encontró imagen en la respuesta');
   } catch (error: any) {
-    logger.error('Error generando imagen con Gemini:', error);
+    logger.error('❌ [GEMINI] Error generando imagen con Gemini:', error.message);
     return {
       success: false,
       error: error.message || 'Error desconocido al generar imagen'
@@ -624,27 +681,45 @@ CRITICAL: Use these ${referenceImagesBase64.length} reference images to maintain
     // Buscar la parte de imagen en la respuesta
     for (const part of content.parts) {
       if (part.text) {
-        logger.log('Texto de respuesta:', part.text);
+        logger.log(`✅ [MULTI-FACE] Texto de respuesta: ${part.text.substring(0, 100)}`);
       } else if (part.inlineData && part.inlineData.data) {
         const imageBase64 = part.inlineData.data;
         const mimeType = part.inlineData.mimeType || 'image/png';
-        logger.log('Imagen con rostros adaptados generada exitosamente, subiendo a Storage...');
+        logger.log(`✅ [MULTI-FACE] Imagen con rostros generada exitosamente (${imageBase64.length} bytes)`);
         
-        // Subir a Firebase Storage y obtener URL pública
-        const storageUrl = await uploadBase64ToStorage(imageBase64, mimeType, 'generated-images');
-        
-        return {
-          success: true,
-          imageBase64: imageBase64,
-          imageUrl: storageUrl,
-          provider: 'gemini'
-        };
+        try {
+          logger.log(`📤 [MULTI-FACE] Subiendo imagen a Storage...`);
+          // Subir a Firebase Storage y obtener URL pública (con fallback a data URL)
+          const imageUrl = await uploadBase64ToStorage(imageBase64, mimeType, 'generated-images');
+          
+          logger.log(`✅ [MULTI-FACE] Imagen disponible en: ${imageUrl.substring(0, 100)}...`);
+          return {
+            success: true,
+            imageBase64: imageBase64,
+            imageUrl: imageUrl,
+            provider: 'gemini'
+          };
+        } catch (uploadError: any) {
+          logger.error(`❌ [MULTI-FACE] Error en upload:`, uploadError.message);
+          // Fallback: retornar base64 como data URL
+          const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+          logger.log(`✅ [MULTI-FACE] Usando data URL directo como fallback`);
+          return {
+            success: true,
+            imageBase64: imageBase64,
+            imageUrl: dataUrl,
+            provider: 'gemini'
+          };
+        }
       }
     }
 
     throw new Error('No se encontró imagen en la respuesta');
   } catch (error: any) {
-    logger.error('Error generando imagen con múltiples referencias faciales:', error);
+    logger.error(`❌ [MULTI-FACE] Error generando imagen:`, {
+      message: error.message,
+      status: error.status
+    });
     
     // Detectar error de cuota excedida (429)
     if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {

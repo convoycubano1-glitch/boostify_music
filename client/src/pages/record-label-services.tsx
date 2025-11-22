@@ -66,7 +66,7 @@ export default function RecordLabelServices() {
             src="/assets/Standard_Mode_Generated_Video (9).mp4"
           />
           {/* Gradient overlay removed as requested */}
-          <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-20" />
+          <div className="absolute inset-0 bg-[url('/assets/noise.svg')] opacity-20" />
           <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

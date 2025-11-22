@@ -1079,9 +1079,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       });
       
       // Usar generación SECUENCIAL - una imagen a la vez
-      const endpoint = hasReferenceImages 
-        ? '/api/gemini-image/generate-single-with-multiple-faces'
-        : '/api/gemini-image/generate-batch';
+      // 🎬 CRITICAL: Siempre usar el endpoint con múltiples referencias (funciona con array vacío también)
+      const endpoint = '/api/gemini-image/generate-single-with-multiple-faces';
       
       let generatedCount = 0;
       
@@ -1152,14 +1151,12 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           
           logger.info(`🎭 [SCENE ${sceneIndex}] Category: ${shotCategory}, Reference Usage: ${referenceUsage}, Using Reference: ${!!referenceToUse}`);
           
-          const requestBody = shouldUseReference
-            ? { 
-                prompt: prompt,
-                sceneId: sceneIndex,
-                referenceImagesBase64: referenceToUse,
-                seed: seed + sceneIndex
-              }
-            : { scenes: [{ scene: prompt, camera: '', lighting: '', style: '' }] };
+          const requestBody = { 
+            prompt: prompt,
+            sceneId: sceneIndex,
+            referenceImagesBase64: referenceToUse || [],
+            seed: seed + sceneIndex
+          };
           
           // 🔄 RETRY: Usar retry con exponential backoff para mayor robustez
           const data = await retryWithBackoff(
