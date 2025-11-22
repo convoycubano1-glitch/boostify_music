@@ -3,7 +3,7 @@ import { logger } from "@/lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, ChevronRight, Check, Film, Music, Palette, MapPin, Shirt, Clock, Eye, Loader2, Camera, Clapperboard } from "lucide-react";
+import { Sparkles, ChevronRight, Check, Film, Music, Palette, MapPin, Shirt, Clock, Eye, Loader2, Camera, Clapperboard, Flame, Zap, BookOpen, Film as FilmIcon, Lightbulb } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +53,7 @@ export function ConceptSelectionModal({
         </DialogHeader>
 
         <ScrollArea className="flex-1 overflow-auto px-4 sm:px-6 py-2">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             {concepts.map((concept, index) => (
               <motion.div
                 key={index}
@@ -63,14 +63,14 @@ export function ConceptSelectionModal({
               >
                 <Card
                   className={cn(
-                    "p-4 md:p-5 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-xl h-full flex flex-col",
-                    selectedConcept === concept && "border-2 border-orange-500 bg-orange-500/10 shadow-lg shadow-orange-500/20"
+                    "p-0 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-2xl h-full flex flex-col overflow-hidden group",
+                    selectedConcept === concept && "border-2 border-orange-500 bg-orange-500/10 shadow-2xl shadow-orange-500/30"
                   )}
                   onClick={() => setSelectedConcept(concept)}
                   data-testid={`concept-${index}`}
                 >
-                  {/* Cover Image - Cinematic Poster */}
-                  <div className="relative w-full aspect-[2/3] mb-4 rounded-lg overflow-hidden group bg-gradient-to-br from-gray-900 to-gray-800 border-2 border-gray-700">
+                  {/* Cover Image - Cinematic Poster - ENHANCED */}
+                  <div className="relative w-full aspect-[2/3] overflow-hidden group bg-gradient-to-br from-gray-900 to-gray-800 border-b-4 border-orange-500/20">
                     <AnimatePresence mode="wait">
                       {concept.isGenerating ? (
                         <motion.div
@@ -107,12 +107,15 @@ export function ConceptSelectionModal({
                           <img 
                             src={concept.coverImage} 
                             alt={concept.title}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
                             loading="lazy"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-                          <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
-                            <p className="text-white font-bold text-base md:text-lg mb-1 drop-shadow-lg line-clamp-2">{concept.title || 'Untitled'}</p>
+                          {/* Enhanced gradient overlays */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/20" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
+                            <p className="text-white font-bold text-lg md:text-xl mb-2 drop-shadow-lg line-clamp-1">{concept.title || 'Untitled'}</p>
+                            <p className="text-white/80 text-xs md:text-sm drop-shadow-lg line-clamp-1">{concept.visual_theme?.split('.')[0] || 'Cinematic vision'}</p>
                           </div>
                           {selectedConcept === concept && (
                             <div className="absolute top-3 right-3">
@@ -127,94 +130,106 @@ export function ConceptSelectionModal({
                           key="placeholder"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 p-4"
+                          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-orange-950/40 via-gray-900 to-gray-800 p-4"
                         >
-                          <Clapperboard className="h-12 w-12 text-gray-600 mb-3" />
-                          <p className="text-gray-500 text-sm text-center">Concept #{index + 1}</p>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                          >
+                            <Clapperboard className="h-16 w-16 text-orange-500/60 mb-3" />
+                          </motion.div>
+                          <p className="text-gray-400 text-sm text-center font-semibold">Concept #{index + 1}</p>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
 
-                  {/* Header with Selection */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={cn(
-                      "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-lg md:text-xl font-bold transition-all shadow-lg",
-                      selectedConcept === concept ? "bg-orange-500 text-white ring-4 ring-orange-500/30" : "bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900 dark:to-orange-800"
-                    )}>
-                      {selectedConcept === concept ? (
-                        <Check className="h-5 w-5 md:h-6 md:w-6" />
-                      ) : (
-                        <span>#{index + 1}</span>
+                  {/* Content Section - Enhanced Styling */}
+                  <div className="p-5 md:p-6 flex-1 flex flex-col bg-gradient-to-br from-background to-background/80">
+                    {/* Selection Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all shadow-lg",
+                        selectedConcept === concept ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white ring-4 ring-orange-500/40" : "bg-gradient-to-br from-orange-400/30 to-orange-500/20 text-orange-500"
+                      )}>
+                        {selectedConcept === concept ? (
+                          <Check className="h-6 w-6" />
+                        ) : (
+                          <span>#{index + 1}</span>
+                        )}
+                      </div>
+                      
+                      {selectedConcept === concept && (
+                        <Badge className="bg-orange-500 text-white text-xs animate-pulse shadow-lg">
+                          ✓ Selected
+                        </Badge>
                       )}
                     </div>
-                    
-                    {selectedConcept === concept && (
-                      <Badge className="bg-orange-500 text-white text-xs">
-                        Selected
-                      </Badge>
+
+                    {/* Title with Icon */}
+                    {concept.title && (
+                      <h3 className="text-lg md:text-xl font-bold mb-3 text-foreground line-clamp-2 flex items-start gap-2">
+                        <Flame className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                        {concept.title}
+                      </h3>
                     )}
-                  </div>
 
-                  {/* Title */}
-                  {concept.title && (
-                    <h3 className="text-base md:text-lg font-bold mb-2 text-foreground line-clamp-2">
-                      {concept.title}
-                    </h3>
-                  )}
-
-                  {/* Story Concept */}
-                  {concept.story_concept && (
-                    <div className="mb-3">
-                      <p className="text-xs md:text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                        {concept.story_concept}
-                      </p>
-                    </div>
-                  )}
-
-                  <Separator className="my-2" />
-
-                  {/* TECHNICAL CINEMATOGRAPHY DETAILS */}
-                  {concept.cinematography && (
-                    <div className="mb-3 p-2.5 bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-lg border border-orange-500/20">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Camera className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs font-bold uppercase tracking-wider text-foreground">Cinematography</span>
+                    {/* Story Concept with enhanced styling */}
+                    {concept.story_concept && (
+                      <div className="mb-4 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                        <div className="flex gap-2 mb-2">
+                          <BookOpen className="h-4 w-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">NARRATIVE</p>
+                        </div>
+                        <p className="text-xs md:text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                          {concept.story_concept}
+                        </p>
                       </div>
-                      <div className="space-y-1.5 text-xs">
-                        {concept.cinematography.cinematographer && (
-                          <div className="flex items-start justify-between">
-                            <span className="text-muted-foreground">DP:</span>
-                            <span className="font-semibold text-foreground text-right">{concept.cinematography.cinematographer}</span>
-                          </div>
-                        )}
-                        {concept.cinematography.camera_format && (
-                          <div className="flex items-start justify-between">
-                            <span className="text-muted-foreground">Format:</span>
-                            <span className="font-semibold text-foreground text-right">{concept.cinematography.camera_format}</span>
-                          </div>
-                        )}
-                        {concept.cinematography.lens_package && (
-                          <div className="flex items-start justify-between">
-                            <span className="text-muted-foreground">Lenses:</span>
-                            <span className="font-semibold text-foreground text-right">{concept.cinematography.lens_package}</span>
-                          </div>
-                        )}
-                        {concept.cinematography.film_stock && (
-                          <div className="flex items-start justify-between">
-                            <span className="text-muted-foreground">Film Stock:</span>
-                            <span className="font-semibold text-foreground text-right">{concept.cinematography.film_stock}</span>
-                          </div>
-                        )}
-                        {concept.cinematography.dynamic_range && (
-                          <div className="flex items-start justify-between">
-                            <span className="text-muted-foreground">DR:</span>
-                            <span className="font-semibold text-foreground text-right">{concept.cinematography.dynamic_range}</span>
-                          </div>
-                        )}
+                    )}
+
+                    <Separator className="my-3" />
+
+                    {/* TECHNICAL CINEMATOGRAPHY DETAILS - ENHANCED */}
+                    {concept.cinematography && (
+                      <div className="mb-4 p-3 bg-gradient-to-br from-orange-500/15 to-orange-600/10 rounded-lg border border-orange-500/30 space-y-2.5">
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-orange-500" />
+                          <span className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">Technical Specs</span>
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          {concept.cinematography.cinematographer && (
+                            <div className="flex items-start justify-between">
+                              <span className="text-muted-foreground">DP:</span>
+                              <span className="font-semibold text-foreground text-right">{concept.cinematography.cinematographer}</span>
+                            </div>
+                          )}
+                          {concept.cinematography.camera_format && (
+                            <div className="flex items-start justify-between">
+                              <span className="text-muted-foreground">Format:</span>
+                              <span className="font-semibold text-foreground text-right">{concept.cinematography.camera_format}</span>
+                            </div>
+                          )}
+                          {concept.cinematography.lens_package && (
+                            <div className="flex items-start justify-between">
+                              <span className="text-muted-foreground">Lenses:</span>
+                              <span className="font-semibold text-foreground text-right">{concept.cinematography.lens_package}</span>
+                            </div>
+                          )}
+                          {concept.cinematography.film_stock && (
+                            <div className="flex items-start justify-between">
+                              <span className="text-muted-foreground">Film Stock:</span>
+                              <span className="font-semibold text-foreground text-right">{concept.cinematography.film_stock}</span>
+                            </div>
+                          )}
+                          {concept.cinematography.dynamic_range && (
+                            <div className="flex items-start justify-between">
+                              <span className="text-muted-foreground">DR:</span>
+                              <span className="font-semibold text-foreground text-right">{concept.cinematography.dynamic_range}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Visual Theme */}
                   {concept.visual_theme && (
@@ -328,6 +343,7 @@ export function ConceptSelectionModal({
                       </div>
                     </div>
                   )}
+                  </div>
                 </Card>
               </motion.div>
             ))}

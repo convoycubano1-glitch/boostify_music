@@ -44,7 +44,7 @@ export async function generateSceneImageWithGemini(
       },
       body: JSON.stringify({
         prompt: enrichedPrompt,
-        model: 'gemini-2.5-flash-image', // Nano Banana Pro - Ultra rápido
+        model: 'gemini-2.5-flash', // ⚡ Flash 2.5 - Ultra rápido y eficiente
         imageSize: 'landscape_4_3', // 1024x768 - Óptimo para música
       }),
     });

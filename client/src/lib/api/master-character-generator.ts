@@ -45,18 +45,20 @@ export async function generateMasterCharacterMultiAngle(
     
     onProgress?.('Analyzing reference images...', 10);
 
-    const baseCharacterPrompt = `Create a professional studio photography style portrait of the artist character based on the reference images.
+    const baseCharacterPrompt = `Create a professional casting-ready studio portrait of the artist character based on the reference images.
 
 CRITICAL REQUIREMENTS FOR ALL ANGLES:
 - Maintain EXACT facial identity, features, and skin tone across all angles
+- WARDROBE: Professional casting outfit (elegant black shirt, neutral professional clothing) - NOT the same clothes from reference
 - Professional studio lighting (key light, fill light, back light)
 - White or neutral background
 - High-resolution 8K quality
 - Sharp focus on facial details
 - Professional color grading
-- Movie-level cinematography`;
+- Movie-level cinematography
+- Ready for professional casting and production`;
 
-    // Generate 4 different angles of the main character
+    // Generate 4 different angles of the main character IN PARALLEL for speed
     const angles: CharacterPortrait[] = [];
     const anglePrompts = [
       {
@@ -77,80 +79,115 @@ CRITICAL REQUIREMENTS FOR ALL ANGLES:
       }
     ];
 
-    let progress = 20;
-    for (const angleData of anglePrompts) {
+    onProgress?.('Generating all camera angles in parallel...', 20);
+
+    // Start a progress interval that advances continuously while waiting for responses
+    let currentProgress = 20;
+    const angleProgressInterval = setInterval(() => {
+      currentProgress = Math.min(currentProgress + 3, 48); // Advance by 3% every 200ms, cap at 48%
+      onProgress?.(`Generating all camera angles in parallel...`, currentProgress);
+    }, 200);
+
+    // Generate all angles IN PARALLEL instead of sequential for speed
+    const anglePromises = anglePrompts.map((angleData, index) => {
       const anglePrompt = `${baseCharacterPrompt}
 
 CAMERA ANGLE: ${angleData.instruction}
 Style: ${directorStyle}
 Studio Setting: Professional photography studio with cinematic lighting`;
 
-      onProgress?.(`Generating ${angleData.angle.replace('-', ' ')} angle...`, progress);
-
-      try {
-        const response = await fetch('/api/gemini-image/generate-master-character', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            referenceImagesBase64: artistPhotos,
-            prompt: anglePrompt,
-            directorStyle: directorStyle
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.imageUrl) {
-            angles.push({
-              angle: angleData.angle,
-              imageUrl: data.imageUrl,
-              description: angleData.instruction
+      return fetch('/api/gemini-image/generate-master-character', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referenceImagesBase64: artistPhotos,
+          prompt: anglePrompt,
+          directorStyle: directorStyle
+        }),
+      })
+        .then(response => {
+          // Report progress as each angle completes with specific message
+          const angleProgressMessages = [
+            '📸 Frontal angle complete - Sharp headshot captured',
+            '👤 Left profile complete - Clean side profile done',
+            '👤 Right profile complete - Dimensional view ready',
+            '✨ Three-quarter view complete - Most flattering angle captured'
+          ];
+          const progressValue = 25 + (index * 8); // 25%, 33%, 41%, 49%
+          onProgress?.(angleProgressMessages[index], progressValue);
+          
+          if (response.ok) {
+            return response.json().then(data => {
+              if (data.success && data.imageUrl) {
+                logger.info(`✅ Generated ${angleData.angle} angle`);
+                return {
+                  angle: angleData.angle,
+                  imageUrl: data.imageUrl,
+                  description: angleData.instruction
+                };
+              }
+              return null;
             });
-            logger.info(`✅ Generated ${angleData.angle} angle`);
           }
-        }
-      } catch (error) {
-        logger.warn(`⚠️ Error generating ${angleData.angle}:`, error);
-      }
-      progress += 15;
-    }
+          return null;
+        })
+        .catch(error => {
+          logger.warn(`⚠️ Error generating ${angleData.angle}:`, error);
+          return null;
+        });
+    });
 
-    // Generate casting members
-    onProgress?.('Generating cast members...', 80);
+    const angleResults = await Promise.all(anglePromises);
+    clearInterval(angleProgressInterval);
+    angleResults.forEach(result => {
+      if (result) angles.push(result);
+    });
+    
+    // Report progress after all angles complete
+    onProgress?.('✅ All angles generated! Now creating casting profiles...', 50);
+
+    // Generate casting members IN PARALLEL for speed
+    onProgress?.('Preparing to generate ensemble cast members...', 55);
+
+    // Start another progress interval for casting generation
+    let castingProgress = 55;
+    const castingProgressInterval = setInterval(() => {
+      castingProgress = Math.min(castingProgress + 2.5, 88); // Advance by 2.5% every 200ms, cap at 88%
+      onProgress?.(`🎬 Creating diverse ensemble cast for your video...`, castingProgress);
+    }, 200);
 
     const castingRoles = [
       {
         role: 'Lead Supporting Actor',
         characterName: 'Protagonist',
-        instruction: 'professional male actor, cinematic headshot, studio lighting'
+        instruction: 'professional male actor, cinematic headshot, studio lighting, wearing professional casting wardrobe'
       },
       {
         role: 'Supporting Actress',
         characterName: 'Secondary Character',
-        instruction: 'professional female actress, cinematic headshot, studio lighting'
+        instruction: 'professional female actress, cinematic headshot, studio lighting, wearing professional casting wardrobe'
       },
       {
         role: 'Background Actor 1',
         characterName: 'Ensemble Member',
-        instruction: 'diverse male actor, cinematic headshot, studio lighting'
+        instruction: 'diverse male actor, cinematic headshot, studio lighting, wearing professional casting wardrobe'
       },
       {
         role: 'Background Actress 2',
         characterName: 'Ensemble Member',
-        instruction: 'diverse female actress, cinematic headshot, studio lighting'
+        instruction: 'diverse female actress, cinematic headshot, studio lighting, wearing professional casting wardrobe'
       }
     ];
 
-    const casting: CastingMember[] = [];
-
-    for (const castingRole of castingRoles) {
-      try {
-        const castingPrompt = `Create a professional cinema-style headshot for a casting call.
+    // Generate all casting members IN PARALLEL instead of sequential
+    const castingPromises = castingRoles.map((castingRole, index) => {
+      const castingPrompt = `Create a professional cinema-style headshot for a casting call.
 Role: ${castingRole.role}
 Character: ${castingRole.characterName}
 Style: ${castingRole.instruction}
 
 REQUIREMENTS:
+- Professional casting wardrobe (elegant black/neutral professional clothing)
 - Professional studio photography style
 - 8K resolution, sharp focus
 - Cinematic lighting with key, fill, and back light
@@ -160,31 +197,56 @@ REQUIREMENTS:
 - Photorealistic rendering
 - Suitable for music video casting`;
 
-        const response = await fetch('/api/gemini-image/generate-casting-headshot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: castingPrompt,
-            role: castingRole.role
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.imageUrl) {
-            casting.push({
-              role: castingRole.role,
-              characterName: castingRole.characterName,
-              description: castingRole.instruction,
-              imageUrl: data.imageUrl
+      return fetch('/api/gemini-image/generate-casting-headshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: castingPrompt,
+          role: castingRole.role
+        }),
+      })
+        .then(response => {
+          // Report progress as each cast member is generated
+          const castingProgressMessages = [
+            '👨 Lead actor headshot captured with professional lighting',
+            '👩 Supporting actress portrait ready for casting',
+            '👨 Background actor ensemble member generated',
+            '👩 Ensemble actress profile created for production'
+          ];
+          const progressValue = 60 + (index * 8); // 60%, 68%, 76%, 84%
+          onProgress?.(castingProgressMessages[index], progressValue);
+          
+          if (response.ok) {
+            return response.json().then(data => {
+              if (data.success && data.imageUrl) {
+                logger.info(`✅ Generated casting for ${castingRole.role}`);
+                return {
+                  role: castingRole.role,
+                  characterName: castingRole.characterName,
+                  description: castingRole.instruction,
+                  imageUrl: data.imageUrl
+                };
+              }
+              return null;
             });
-            logger.info(`✅ Generated casting for ${castingRole.role}`);
           }
-        }
-      } catch (error) {
-        logger.warn(`⚠️ Error generating casting for ${castingRole.role}:`, error);
-      }
-    }
+          return null;
+        })
+        .catch(error => {
+          logger.warn(`⚠️ Error generating casting for ${castingRole.role}:`, error);
+          return null;
+        });
+    });
+
+    const castingResults = await Promise.all(castingPromises);
+    clearInterval(castingProgressInterval);
+    const casting: CastingMember[] = [];
+    castingResults.forEach(result => {
+      if (result) casting.push(result);
+    });
+    
+    // Report almost done
+    onProgress?.('⚡ Optimizing images and finalizing details...', 90);
 
     onProgress?.('Finalizing character generation...', 95);
 

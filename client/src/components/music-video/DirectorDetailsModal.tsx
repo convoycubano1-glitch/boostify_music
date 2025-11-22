@@ -257,7 +257,7 @@ export function DirectorDetailsModal({
           </Card>
 
           {/* Videos Icónicos */}
-          {director.iconic_videos.length > 0 && (
+          {director.iconic_videos && director.iconic_videos.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">

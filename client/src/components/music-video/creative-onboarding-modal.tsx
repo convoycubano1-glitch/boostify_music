@@ -35,7 +35,8 @@ interface CreativeOnboardingModalProps {
     artistName: string,
     songName: string,
     aspectRatio: string,
-    videoStyle: string
+    videoStyle: string,
+    conceptBrief?: string
   ) => void;
 }
 
@@ -48,6 +49,7 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
   const [songName, setSongName] = useState<string>("");
   const [aspectRatio, setAspectRatio] = useState<string>("16:9");
   const [videoStyle, setVideoStyle] = useState<string>("realistic");
+  const [conceptBrief, setConceptBrief] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,7 +194,7 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
         });
         return;
       }
-      onComplete(selectedAudioFile, selectedImages, artistName, songName, aspectRatio, videoStyle);
+      onComplete(selectedAudioFile, selectedImages, artistName, songName, aspectRatio, videoStyle, conceptBrief || undefined);
     }
   };
 
@@ -389,6 +391,29 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Optional Concept Brief */}
+                <Card className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20">
+                  <CardContent className="p-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="concept-brief" className="text-base font-semibold flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-indigo-500" />
+                        Concept Brief <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+                      </Label>
+                      <textarea
+                        id="concept-brief"
+                        placeholder="e.g., A story about urban love, cinematic visuals with neon lights, dancing in the streets, or describe your vision..."
+                        value={conceptBrief}
+                        onChange={(e) => setConceptBrief(e.target.value)}
+                        className="w-full min-h-24 p-3 rounded-md border border-input bg-background text-base resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        data-testid="input-concept-brief"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Share your creative vision. This helps AI understand your concept better.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Visual examples with placeholders */}
                 <Card className="bg-muted/50 border-dashed">

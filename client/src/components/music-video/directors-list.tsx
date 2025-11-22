@@ -1,198 +1,76 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { logger } from "../../lib/logger";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
-import { Label } from "../ui/label";
 import {
   Video,
-  Award,
+  Check,
   Star,
-  Loader2,
-  Clock,
   Eye,
+  Clapperboard,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "../../hooks/use-toast";
-import { db } from "../../lib/firebase";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
-import { auth } from "../../lib/firebase";
 import { DirectorDetailsModal } from "./DirectorDetailsModal";
-import { DIRECTORS, getDirectorById, type DirectorProfile } from "../../data/directors";
+import { DIRECTORS, type DirectorProfile } from "../../data/directors";
+import { cn } from "@/lib/utils";
 
-
-// Interface for directors list props
 interface DirectorsListProps {
   onDirectorSelected?: (director: DirectorProfile) => void;
 }
 
-// Legacy Director interface for Firestore compatibility
 interface Director {
   id: string;
   name: string;
   specialty: string;
   experience: string;
-  style: string;
   rating: number;
   imageUrl?: string;
 }
 
-interface MusicVideoRequest {
-  id: string;
-  directorId: string;
-  directorName: string;
-  userId: string;
-  visualTheme: string;
-  mood: string;
-  visualStyle: string;
-  budget: string;
-  timeline: string;
-  status: string;
-  createdAt: any;
-  submittedAt: string;
-  requestType: string;
-  projectStatus: string;
-  priceEstimate?: {
-    basicPackage: {
-      price: number;
-      description: string;
-      features: string[];
-    };
-    standardPackage: {
-      price: number;
-      description: string;
-      features: string[];
-    };
-    premiumPackage: {
-      price: number;
-      description: string;
-      features: string[];
-    };
-  };
-  conceptImages?: string[];
-}
+// Director image mapping - same as director-selection-modal
+const DIRECTOR_IMAGE_MAP: { [key: string]: string } = {
+  "sofia-ramirez": "/assets/generated_images/sofia_ramirez_director_headshot_portrait.png",
+  "david-kim": "/assets/generated_images/david_kim_director_professional_headshot.png",
+  "james-wilson": "/assets/generated_images/james_wilson_director_headshot_portrait.png",
+  "isabella-moretti": "/assets/generated_images/isabella_moretti_director_professional_portrait.png",
+  "marcus-chen": "/assets/generated_images/marcus_chen_director_professional_headshot.png",
+  "elena-rodriguez": "/assets/generated_images/elena_rodriguez_director_professional_portrait.png",
+  "carlos-rodriguez": "/assets/generated_images/carlos_rodriguez_director_headshot_portrait.png",
+  "nina-patel": "/assets/generated_images/nina_patel_director_professional_portrait.png",
+  "david-oconnor": "/assets/generated_images/david_oconnor_director_professional_headshot.png",
+  "elena-petrov": "/assets/generated_images/elena_petrov_director_professional_portrait.png",
+  "yuki-tanaka": "/assets/generated_images/yuki_tanaka_director_professional_headshot.png",
+  "amara-johnson": "/assets/generated_images/amara_johnson_director_professional_portrait.png",
+  "michael-brooks": "/assets/generated_images/michael_brooks_director_professional_headshot.png",
+  "alex-thompson": "/assets/generated_images/alex_thompson_director_professional_portrait.png",
+};
 
 export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
   const { toast } = useToast();
-  const [directors, setDirectors] = useState<Director[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedDirector, setSelectedDirector] = useState<Director | null>(null);
   const [selectedDirectorForDetails, setSelectedDirectorForDetails] = useState<DirectorProfile | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [requests, setRequests] = useState<MusicVideoRequest[]>([]);
-  const [showRequests, setShowRequests] = useState(false);
 
-  useEffect(() => {
-    const fetchDirectors = async () => {
-      try {
-        // Cargar directores desde Firestore para obtener las imágenes
-        const directorsSnapshot = await getDocs(collection(db, "directors"));
-        const directorsFromFirestore = directorsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Director[];
+  // Transform DIRECTORS to include imageUrl - same pattern as director-selection-modal
+  const directors: Director[] = DIRECTORS.map(d => ({
+    id: d.id,
+    name: d.name,
+    specialty: d.specialty,
+    experience: d.experience || "Professional Director",
+    rating: d.rating,
+    imageUrl: DIRECTOR_IMAGE_MAP[d.id] || undefined
+  }));
 
-        // Combinar con datos JSON para información completa
-        // Solo incluir directores que tienen datos completos en JSON
-        const directorsWithFullData = directorsFromFirestore
-          .map(firestoreDirector => {
-            // Buscar el director correspondiente en JSON usando el nombre
-            // Normalizar nombres para comparación (quitar apóstrofes, espacios extra, etc.)
-            const normalizeName = (name: string) => 
-              name.toLowerCase().replace(/['\s-]/g, '');
-            
-            const jsonDirector = DIRECTORS.find(d => 
-              normalizeName(d.name) === normalizeName(firestoreDirector.name || '')
-            );
-
-            if (!jsonDirector) {
-              logger.warn(`⚠️ Director "${firestoreDirector.name}" en Firestore pero sin datos JSON completos`);
-              return null;
-            }
-
-            return {
-              id: jsonDirector.id,
-              name: firestoreDirector.name,
-              specialty: firestoreDirector.specialty,
-              experience: firestoreDirector.experience,
-              style: firestoreDirector.style,
-              rating: firestoreDirector.rating,
-              imageUrl: firestoreDirector.imageUrl || undefined
-            };
-          })
-          .filter((director): director is Director => director !== null);
-        
-        setDirectors(directorsWithFullData);
-        logger.info(`✅ Cargados ${directorsWithFullData.length} directores con detalles completos`);
-      } catch (error) {
-        logger.error("Error loading directors:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load directors. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchRequests = async () => {
-      try {
-        // Verificar si hay un usuario autenticado
-        const user = auth.currentUser;
-        
-        // Cargar solicitudes desde Firestore
-        const requestsRef = collection(db, "music-video-request");
-        const q = query(requestsRef, orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const requestsData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as MusicVideoRequest[];
-        setRequests(requestsData);
-      } catch (error) {
-        logger.error("Error fetching requests:", error);
-        // Si es un error de permisos, no mostrar toast para evitar spam
-        if (!(error instanceof Error && error.name === "FirebaseError" && error.toString().includes("permission-denied"))) {
-          toast({
-            title: "Error",
-            description: "Failed to load requests. Please try again later.",
-            variant: "destructive",
-          });
-        }
-        
-        // Establecer un array vacío como fallback
-        setRequests([]);
-      }
-    };
-
-    fetchDirectors();
-    fetchRequests();
-  }, [toast]);
-
-  // Handler para ver detalles del director
   const handleViewDetails = (director: Director) => {
-    // Buscar el director completo en los datos JSON por nombre normalizado
-    const normalizeName = (name: string) => 
-      name.toLowerCase().replace(/['\s-]/g, '');
-    
-    const fullDirector = DIRECTORS.find(d => 
-      normalizeName(d.name) === normalizeName(director.name)
-    );
-    
+    const fullDirector = DIRECTORS.find(d => d.id === director.id);
     if (fullDirector) {
       setSelectedDirectorForDetails(fullDirector);
       setShowDetailsModal(true);
       logger.info(`✅ Detalles del director cargados:`, fullDirector.name);
-    } else {
-      logger.error(`❌ Director no encontrado en JSON:`, director.name);
-      toast({
-        title: "Información no disponible",
-        description: "No se encontraron los detalles completos para este director",
-        variant: "destructive"
-      });
     }
   };
 
-  // Handler para crear video con un director
   const handleCreateVideo = (director: DirectorProfile) => {
     setShowDetailsModal(false);
     if (onDirectorSelected) {
@@ -200,133 +78,97 @@ export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
     }
   };
 
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="space-y-4">
         <Card className="p-4 md:p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                <Video className="h-6 w-6 text-orange-500" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold">Featured Directors</h2>
-                <p className="text-sm text-muted-foreground">
-                  Connect with talented music video directors
-                </p>
-              </div>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-12 w-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+              <Video className="h-6 w-6 text-orange-500" />
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowRequests(!showRequests)}
-              className="transition-all duration-200"
-            >
-              {showRequests ? "Show Directors" : "View Requests"}
-            </Button>
+            <div>
+              <h2 className="text-xl font-semibold">Featured Directors</h2>
+              <p className="text-sm text-muted-foreground">
+                Connect with talented music video directors
+              </p>
+            </div>
           </div>
 
-          {showRequests ? (
-            <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-              {requests.map((request) => (
-                <motion.div
-                  key={request.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+            {directors.map((director, index) => (
+              <motion.div
+                key={director.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card
+                  className={cn(
+                    "p-5 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-2xl hover:scale-[1.03] relative overflow-hidden group bg-gradient-to-br from-background to-background/80",
+                    selectedDirector?.id === director.id && "border-2 border-orange-500 bg-gradient-to-br from-orange-500/25 to-orange-600/15 shadow-2xl shadow-orange-500/40"
+                  )}
+                  onClick={() => setSelectedDirector(director)}
+                  data-testid={`director-${director.id}`}
                 >
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">{request.directorName}</h3>
-                      <span className={`px-3 py-1 rounded-full text-sm ${
-                        request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        request.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <Label className="text-muted-foreground">Theme</Label>
-                        <p>{request.visualTheme}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Mood</Label>
-                        <p>{request.mood}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Style</Label>
-                        <p>{request.visualStyle}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground">Budget</Label>
-                        <p>${request.budget}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                      <Clock className="h-4 w-4" />
-                      <span>Timeline: {request.timeline}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-              {directors.map((director) => (
-                <motion.div
-                  key={director.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-lg border hover:bg-orange-500/5 transition-colors"
-                >
-                  <div className="flex flex-col sm:flex-row items-start gap-4">
-                    <div className="h-32 w-32 rounded-lg overflow-hidden bg-orange-500/10 flex-shrink-0">
+                  {/* Animated Background Accent */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/20 to-orange-600/0 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
+                  
+                  <div className="flex flex-col gap-4 relative z-10">
+                    {/* Avatar Section - EXACT SAME AS MODAL */}
+                    <div className={cn(
+                      "w-full aspect-square rounded-xl flex-shrink-0 overflow-hidden bg-gradient-to-br from-orange-500/30 to-orange-600/20 flex items-center justify-center transition-all border-3 border-orange-500/40 shadow-lg",
+                      selectedDirector?.id === director.id && "ring-4 ring-orange-500/50 border-orange-500/70 shadow-xl shadow-orange-500/40"
+                    )}>
                       {director.imageUrl ? (
                         <img
                           src={director.imageUrl}
                           alt={`${director.name} - ${director.specialty}`}
                           className="h-full w-full object-cover"
+                          loading="lazy"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(director.name);
+                            target.src = "https://api.dicebear.com/7.x/avatar/svg?seed=" + encodeURIComponent(director.name) + "&scale=80";
                           }}
                         />
                       ) : (
-                        <div className="h-full w-full flex items-center justify-center">
-                          <Award className="h-8 w-8 text-orange-500" />
+                        <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-orange-600 via-orange-700 to-red-800">
+                          <Clapperboard className="h-12 w-12 text-white/80" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold truncate">{director.name}</h3>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                          <span className="text-sm font-medium">{director.rating}</span>
+                    
+                    {/* Director Info Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-lg line-clamp-1">{director.name}</h4>
+                          <p className="text-sm font-semibold text-orange-500 mb-1">
+                            {director.specialty}
+                          </p>
                         </div>
+                        {selectedDirector?.id === director.id && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="h-6 w-6 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-lg"
+                          >
+                            <Check className="h-4 w-4" />
+                          </motion.div>
+                        )}
                       </div>
-                      <p className="text-sm font-medium text-orange-500">
-                        {director.specialty}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">
+                      
+                      {/* Rating Badge */}
+                      <div className="flex items-center gap-2 bg-orange-500/15 px-3 py-2 rounded-lg border border-orange-500/30 w-fit">
+                        <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
+                        <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{director.rating || 4.5}/5</span>
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                         {director.experience}
                       </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Style: {director.style}
-                      </p>
+
                       <Button
-                        className="mt-4 w-full transition-all duration-200"
-                        variant="outline"
+                        className="mt-4 w-full transition-all duration-200 bg-orange-500 hover:bg-orange-600 text-white"
                         onClick={() => handleViewDetails(director)}
                         data-testid={`button-view-details-${director.id}`}
                       >
@@ -335,10 +177,10 @@ export function DirectorsList({ onDirectorSelected }: DirectorsListProps = {}) {
                       </Button>
                     </div>
                   </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </Card>
       </div>
 

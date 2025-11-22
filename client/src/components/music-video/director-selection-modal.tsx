@@ -3,7 +3,7 @@ import { logger } from "@/lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Film, Sparkles, ChevronRight, Check, Star, Loader2, Award, Camera, Zap } from "lucide-react";
+import { Film, Sparkles, ChevronRight, Check, Star, Loader2, Award, Camera, Zap, Lightbulb, Video, Glasses, Clapperboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,24 @@ const VISUAL_STYLES = [
   { id: "natural", name: "Natural", description: "Organic, authentic, and documentary-style", icon: "🌿" }
 ];
 
+// Director image mapping - using public URLs (matches generated director images)
+const DIRECTOR_IMAGE_MAP: { [key: string]: string } = {
+  "sofia-ramirez": "/assets/generated_images/sofia_ramirez_director_headshot_portrait.png",
+  "david-kim": "/assets/generated_images/david_kim_director_professional_headshot.png",
+  "james-wilson": "/assets/generated_images/james_wilson_director_headshot_portrait.png",
+  "isabella-moretti": "/assets/generated_images/isabella_moretti_director_professional_portrait.png",
+  "marcus-chen": "/assets/generated_images/marcus_chen_director_professional_headshot.png",
+  "elena-rodriguez": "/assets/generated_images/elena_rodriguez_director_professional_portrait.png",
+  "carlos-rodriguez": "/assets/generated_images/carlos_rodriguez_director_headshot_portrait.png",
+  "nina-patel": "/assets/generated_images/nina_patel_director_professional_portrait.png",
+  "david-oconnor": "/assets/generated_images/david_oconnor_director_professional_headshot.png",
+  "elena-petrov": "/assets/generated_images/elena_petrov_director_professional_portrait.png",
+  "yuki-tanaka": "/assets/generated_images/yuki_tanaka_director_professional_headshot.png",
+  "amara-johnson": "/assets/generated_images/amara_johnson_director_professional_portrait.png",
+  "michael-brooks": "/assets/generated_images/michael_brooks_director_professional_headshot.png",
+  "alex-thompson": "/assets/generated_images/alex_thompson_director_professional_portrait.png",
+};
+
 export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: DirectorSelectionModalProps) {
   const { toast } = useToast();
   const [selectedDirector, setSelectedDirector] = useState<Director | null>(preSelectedDirector || null);
@@ -49,7 +67,7 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
     experience: d.experience || "Professional Director",
     style: d.visual_style?.description || "Cinematic",
     rating: d.rating,
-    imageUrl: undefined
+    imageUrl: DIRECTOR_IMAGE_MAP[d.id] || undefined
   }));
 
   useEffect(() => {
@@ -133,17 +151,20 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
                     >
                       <Card
                         className={cn(
-                          "p-4 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-lg hover:scale-[1.02]",
-                          selectedDirector?.id === director.id && "border-2 border-orange-500 bg-orange-500/10 shadow-lg shadow-orange-500/20"
+                          "p-5 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-2xl hover:scale-[1.03] relative overflow-hidden group bg-gradient-to-br from-background to-background/80",
+                          selectedDirector?.id === director.id && "border-2 border-orange-500 bg-gradient-to-br from-orange-500/25 to-orange-600/15 shadow-2xl shadow-orange-500/40"
                         )}
                         onClick={() => setSelectedDirector(director)}
                         data-testid={`director-${director.id}`}
                       >
-                        <div className="flex items-start gap-3">
-                          {/* Avatar */}
+                        {/* Animated Background Accent */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/20 to-orange-600/0 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
+                        
+                        <div className="flex flex-col gap-4 relative z-10">
+                          {/* Avatar Section - ENHANCED */}
                           <div className={cn(
-                            "w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex-shrink-0 overflow-hidden bg-orange-500/10 flex items-center justify-center transition-all",
-                            selectedDirector?.id === director.id && "ring-4 ring-orange-500/50"
+                            "w-full aspect-square rounded-xl flex-shrink-0 overflow-hidden bg-gradient-to-br from-orange-500/30 to-orange-600/20 flex items-center justify-center transition-all border-3 border-orange-500/40 shadow-lg",
+                            selectedDirector?.id === director.id && "ring-4 ring-orange-500/50 border-orange-500/70 shadow-xl shadow-orange-500/40"
                           )}>
                             {director.imageUrl ? (
                               <img
@@ -153,44 +174,77 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
                                 loading="lazy"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
-                                  target.src = "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(director.name);
+                                  target.src = "https://api.dicebear.com/7.x/avatar/svg?seed=" + encodeURIComponent(director.name) + "&scale=80";
                                 }}
                               />
                             ) : (
-                              <div className="h-full w-full flex items-center justify-center">
-                                <Award className="h-8 w-8 text-orange-500" />
+                              <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-orange-600 via-orange-700 to-red-800">
+                                <Clapperboard className="h-12 w-12 text-white/80" />
                               </div>
                             )}
                           </div>
                           
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <h4 className="font-bold text-base md:text-lg line-clamp-1">{director.name}</h4>
+                          {/* Director Info Section */}
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-lg line-clamp-1">{director.name}</h4>
+                                <p className="text-sm font-semibold text-orange-500 mb-1">
+                                  {director.specialty}
+                                </p>
+                              </div>
                               {selectedDirector?.id === director.id && (
-                                <Check className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="h-6 w-6 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-lg"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </motion.div>
                               )}
                             </div>
                             
-                            <p className="text-sm font-semibold text-orange-500 mb-1">
-                              {director.specialty}
-                            </p>
-                            
-                            <div className="flex items-center gap-1 mb-2">
-                              <Star className="h-4 w-4 fill-orange-500 text-orange-500 flex-shrink-0" />
-                              <span className="text-sm font-medium">{director.rating || 4.5}</span>
+                            {/* Rating Badge */}
+                            <div className="flex items-center gap-2 bg-orange-500/15 px-3 py-2 rounded-lg border border-orange-500/30 w-fit">
+                              <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
+                              <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{director.rating || 4.5}/5</span>
                             </div>
                             
-                            <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                               {director.experience}
                             </p>
 
-                            {/* Paired Cinematographer Badge */}
+                            {/* Paired Cinematographer with enhanced styling */}
                             {pairedDP && (
-                              <div className="flex items-center gap-1.5 p-1.5 bg-orange-500/10 rounded border border-orange-500/30">
-                                <Camera className="h-3 w-3 text-orange-500 flex-shrink-0" />
-                                <span className="text-xs font-semibold text-foreground line-clamp-1">
-                                  DP: {pairedDP.name}
-                                </span>
+                              <div className="space-y-2 mt-2 pt-3 border-t border-orange-500/20">
+                                <div className="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-orange-500/10 p-3 rounded-lg border border-orange-500/30">
+                                  <Video className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-muted-foreground font-semibold">Cinematographer</p>
+                                    <p className="text-sm font-bold text-orange-600 dark:text-orange-400 line-clamp-1">
+                                      {pairedDP.name}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {/* Show camera/lens info */}
+                                {pairedDP.camera_arsenal?.primary_cameras?.[0] && (
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white/5 p-2 rounded border border-white/10">
+                                    <Camera className="h-3 w-3 text-orange-500 flex-shrink-0" />
+                                    <span className="line-clamp-1">
+                                      {pairedDP.camera_arsenal.primary_cameras[0].format || "Cinema Camera"}
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {pairedDP.camera_arsenal?.lens_packages?.[0] && (
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white/5 p-2 rounded border border-white/10">
+                                    <Glasses className="h-3 w-3 text-orange-500 flex-shrink-0" />
+                                    <span className="line-clamp-1">
+                                      {pairedDP.camera_arsenal.lens_packages[0].manufacturer} {pairedDP.camera_arsenal.lens_packages[0].series}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

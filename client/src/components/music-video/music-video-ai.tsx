@@ -92,6 +92,7 @@ import { PaymentGateModal } from "./payment-gate-modal";
 import { CharacterGenerationModalEnhanced } from "./character-generation-modal-enhanced";
 import { analyzeFaceFeatures } from "../../lib/api/face-analyzer";
 import { generateMasterCharacterMultiAngle, type MasterCharacterMultiAngle } from "../../lib/api/master-character-generator";
+import { generateImagesInParallel, createParallelBatches } from "../../lib/api/parallel-image-generator";
 import { EnhancedScenesGallery } from "./EnhancedScenesGallery";
 import { SequentialImageGallery } from "./SequentialImageGallery";
 import { ensureArtistProfile, saveSongToProfile, updateProfileImages } from "../../lib/auto-profile-service";
@@ -347,6 +348,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [isGeneratingShots, setIsGeneratingShots] = useState(false);
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  const [selectedImageModel, setSelectedImageModel] = useState<'gemini-2.5-flash' | 'gemini-pro-3.0'>('gemini-2.5-flash');
   const [transcription, setTranscription] = useState<string>("");
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [selectedSceneId, setSelectedSceneId] = useState<number | null>(null);
@@ -519,6 +521,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [characterGenerationProgress, setCharacterGenerationProgress] = useState(0);
   const [characterGenerationStage, setCharacterGenerationStage] = useState("");
   const [showCharacterGeneration, setShowCharacterGeneration] = useState(false);
+  const [characterGenerationComplete, setCharacterGenerationComplete] = useState(false);
+  const [pendingConceptGeneration, setPendingConceptGeneration] = useState<{ transcription: string; director: DirectorProfile } | null>(null);
   
   // Lip-sync and performance segments states
   const [isProcessingLipSync, setIsProcessingLipSync] = useState(false);
@@ -1489,7 +1493,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     artistName: string,
     songName: string,
     aspectRatio: string,
-    videoStyle: string
+    videoStyle: string,
+    conceptBrief?: string
   ) => {
     logger.info('🎉 Onboarding completed:', {
       audio: audioFile.name,
@@ -1497,13 +1502,19 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       artistName,
       songName,
       aspectRatio,
-      videoStyle
+      videoStyle,
+      conceptBrief: conceptBrief || 'No concept provided'
     });
     
     // Set artist name, song name, reference images, and audio file
     setProjectName(`${artistName} - ${songName}`);
     setArtistReferenceImages(referenceImages);
     setSelectedFile(audioFile);
+    
+    // Store concept brief if provided
+    if (conceptBrief) {
+      logger.info('💡 Concept Brief:', conceptBrief);
+    }
     
     // Preparar el audio buffer
     const reader = new FileReader();
@@ -1604,9 +1615,10 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       });
 
       setCharacterGenerationProgress(100);
-      setCharacterGenerationStage("Character and casting generation complete!");
+      setCharacterGenerationStage("✅ Character and casting generation complete!");
       await new Promise(resolve => setTimeout(resolve, 800));
       setIsGeneratingCharacter(false);
+      setCharacterGenerationComplete(true);
 
       toast({
         title: "Character Profiles Ready",
@@ -1742,10 +1754,24 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         setProgressPercentage(0);
         setProgressMessage("");
         // Volver al modal de selección
-    } else if (transcription) {      // If transcription exists, generate Master Character FIRST, then concepts      logger.info('✅ [TRANSCRIPCIÓN] Ya existe - generando Character PRIMERO');            // 🎭 PASO 1: GENERATE MASTER CHARACTER FIRST      if (artistReferenceImages.length > 0) {        logger.info('🎭 Generating Master Character FIRST (with artist + casting)...');        setShowProgress(true);        setProgressMessage("✨ Generating master character with 4 angles and casting...");        await handleGenerateMasterCharacter();        logger.info('✅ Master Character generated successfully');      }            // 🎬 PASO 2: GENERATE CONCEPTS USING CHARACTER IMAGES      logger.info('🎬 Now generating 3 detailed concepts using the generated artist...');      setProgressMessage("🎬 Generating 3 detailed concept proposals using the generated artist...");      const conceptsPromise = handleGenerateConcepts(transcription, director);      await conceptsPromise;    }
-
-
-
+        setShowDirectorSelection(true);
+      }
+    } else if (transcription) {
+      // If transcription exists, generate Master Character FIRST, then WAIT for user to click Next
+      logger.info('✅ [TRANSCRIPCIÓN] Ya existe - generando Character PRIMERO');
+      
+      // 🎭 PASO 1: GENERATE MASTER CHARACTER FIRST
+      if (artistReferenceImages.length > 0) {
+        logger.info('🎭 Generating Master Character FIRST (with artist + casting)...');
+        setShowProgress(false);
+        setCharacterGenerationComplete(false);
+        // Guardar datos para generar conceptos CUANDO usuario clickee Siguiente
+        setPendingConceptGeneration({ transcription, director });
+        await handleGenerateMasterCharacter();
+        logger.info('✅ Master Character generated - waiting for user to click Next...');
+      }
+    }
+  }, [transcription, artistReferenceImages, selectedFile, videoStyle, audioContext, audioUrl, toast, audioBuffer, projectName, selectedVisualStyle]);
 
 
 
@@ -1848,25 +1874,60 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       // Mostrar modal INMEDIATAMENTE para que el usuario vea el progreso
       setShowConceptSelection(true);
       
-      // Generar posters PROGRESIVAMENTE (uno por uno, actualizar UI en tiempo real)
-      for (let index = 0; index < concepts.length; index++) {
+      // ⚡ Generar TODOS los posters EN PARALELO para máxima velocidad
+      logger.info(`🎬 Iniciando generación de ${concepts.length} posters en PARALELO...`);
+      
+      const posterPromises = concepts.map(async (concept: any, index: number) => {
         try {
-          const concept = concepts[index] as any;
           logger.info(`🎬 Generando poster Hollywood ${index + 1}/3...`);
+          
+          // Crear prompt mejorado y detallado para poster cinematográfico
+          const posterPrompt = `HOLLYWOOD MUSIC VIDEO POSTER DESIGN
+
+Title: "${concept.title || `Concept ${index + 1}`}"
+
+VISUAL CONCEPT:
+${concept.detailed_description || concept.description || concept.visual_theme || 'Dynamic music video poster'}
+
+STORY ELEMENTS:
+${concept.story_concept || 'Engaging narrative visual'}
+
+ATMOSPHERE & MOOD:
+${concept.emotional_arc || 'Cinematic and impactful'}
+
+DIRECTOR STYLE: ${director.name}'s signature style with:
+- ${concept.visual_theme || 'Professional cinematography'}
+- ${concept.lighting || 'Cinematic lighting'}
+- ${concept.camera_work || 'Dynamic camera angles'}
+
+CHARACTER: ${concept.character_description || 'Lead performer as the focal point'}
+
+COLOR GRADING: ${concept.color_grading || 'Bold cinematic color palette'}
+
+DESIGN REQUIREMENTS:
+- Professional Hollywood-style movie poster
+- High-impact visual composition
+- Text-ready layout (blank space for title area)
+- Photorealistic rendering
+- 4K resolution ready for print
+- Commercial music video aesthetics
+- Catchy and memorable visual`;
           
           const response = await fetch('/api/gemini-image/generate-hollywood-poster', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               conceptTitle: concept.title || `Concepto ${index + 1}`,
-              conceptDescription: concept.story_concept || concept.description || concept.visual_theme || '',
+              conceptDescription: posterPrompt,
               artistReferenceImages: characterReference || [],
-              directorName: director.name
+              directorName: director.name,
+              conceptIndex: index + 1,
+              totalConcepts: concepts.length
             })
           });
           
           if (!response.ok) {
-            throw new Error('Failed to generate Hollywood poster');
+            throw new Error(`HTTP ${response.status}: Failed to generate poster`);
           }
           
           const data = await response.json();
@@ -1898,8 +1959,10 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
             
             toast({
               title: `Poster ${index + 1}/3 listo`,
-              description: `"${concept.title || `Concepto ${index + 1}`}" está listo para ver`,
+              description: `"${concept.title || `Concepto ${index + 1}`}" generado en HD`,
             });
+            
+            return { success: true, index };
           } else {
             throw new Error(data.error || 'No image URL returned');
           }
@@ -1919,14 +1982,20 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           });
           
           toast({
-            title: `Error en poster ${index + 1}`,
-            description: `Continuando con los demás posters...`,
+            title: `Poster ${index + 1} - Error`,
+            description: `Reintentando...`,
             variant: "destructive",
           });
+          
+          return { success: false, index };
         }
-      }
+      });
       
-      logger.info('✅ Proceso de generación de posters completado');
+      // Ejecutar todos en paralelo y esperar a que terminen
+      const posterResults = await Promise.all(posterPromises);
+      const successCount = posterResults.filter(r => r.success).length;
+      
+      logger.info(`✅ Proceso de generación de posters completado: ${successCount}/3 exitosos`);
       
     } catch (err) {
       logger.error("❌ Error generando conceptos:", err);
@@ -5281,11 +5350,16 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         stage={characterGenerationStage}
         progress={characterGenerationProgress}
         character={masterCharacter}
-        onContinue={() => {
+        onContinue={async () => {
+          logger.info('👉 Usuario clickeó "Continue to Concept Generation"');
           setShowCharacterGeneration(false);
-          // Automatically proceed to image generation
-          if (timelineItems.length === 0) {
-            handleGenerateImages();
+          
+          // Si hay conceptos pendientes de generar, genéralos AHORA
+          if (pendingConceptGeneration) {
+            logger.info('🎬 Iniciando generación de 3 conceptos...');
+            const { transcription, director } = pendingConceptGeneration;
+            await handleGenerateConcepts(transcription, director);
+            setPendingConceptGeneration(null);
           }
         }}
       />
@@ -5316,18 +5390,17 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       {/* Timeline Editor CapCut - Full Screen After Image Generation */}
       {timelineItems.length > 0 && !showPreviewModal && (
         <div className="fixed inset-0 z-50">
-          {/* Dynamic import to avoid circular dependencies */}
           {typeof window !== 'undefined' && (
             <TimelineEditorCapCut
               initialClips={timelineItems}
-              duration={audioFile?.duration || 0}
+              duration={selectedFile?.duration || 0}
               scenes={previewImages.map((img, idx) => ({
                 id: img.id || `scene-${idx}`,
                 imageUrl: img.url,
-                timestamp: (idx / previewImages.length) * (audioFile?.duration || 0),
+                timestamp: (idx / previewImages.length) * (selectedFile?.duration || 0),
                 description: img.prompt || `Scene ${idx + 1}`
               }))}
-              audioPreviewUrl={audioFile?.url}
+              audioPreviewUrl={selectedFile?.url}
               onChange={(clips) => setTimelineItems(clips)}
             />
           )}
