@@ -13,6 +13,8 @@ export interface ImageGenerationParams {
   mood?: string;
   duration?: number;
   sceneNumber?: number;
+  referenceImages?: string[]; // Referencias faciales base64 para consistencia
+  directorStyle?: string;
 }
 
 export interface GeneratedImage {
@@ -44,6 +46,12 @@ export async function generateSceneImageWithGemini(
       },
       body: JSON.stringify({
         prompt: enrichedPrompt,
+        sceneNumber: params.sceneNumber,
+        shotType: params.shotType,
+        mood: params.mood,
+        cinematicStyle: params.cinematicStyle,
+        directorStyle: params.directorStyle,
+        referenceImages: params.referenceImages || [], // Pasar referencias para consistencia facial
         model: 'gemini-2.5-flash', // ⚡ Flash 2.5 - Ultra rápido y eficiente
         imageSize: 'landscape_4_3', // 1024x768 - Óptimo para música
       }),
@@ -59,7 +67,7 @@ export async function generateSceneImageWithGemini(
     const data = await response.json();
 
     if (data.success && data.imageUrl) {
-      logger.info(`✅ [Gemini Image] Imagen generada exitosamente`);
+      logger.info(`✅ [Gemini Image] Imagen generada exitosamente (escena ${data.sceneNumber})`);
       return {
         success: true,
         imageUrl: data.imageUrl,

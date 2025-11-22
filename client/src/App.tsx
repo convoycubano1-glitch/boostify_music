@@ -118,6 +118,7 @@ const FeaturesPage = lazy(() => import("./pages/features"));
 const AIVideoCreationPage = lazy(() => import("./pages/ai-video-creation"));
 const TimelineDemoPage = lazy(() => import("./pages/timeline-demo"));
 const DebugFirebasePage = lazy(() => import("./pages/debug-firebase"));
+const TimelineEditorPage = lazy(() => import("./pages/timeline-editor"));
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -303,6 +304,7 @@ const Router = () => {
   const WrappedAIVideoCreationPage = withPageWrapper(AIVideoCreationPage);
   const WrappedTimelineDemoPage = withPageWrapper(TimelineDemoPage);
   const WrappedDebugFirebasePage = withPageWrapper(DebugFirebasePage);
+  const WrappedTimelineEditorPage = withPageWrapper(TimelineEditorPage);
   const WrappedDiagnosticsPage = withPageWrapper(DiagnosticsPage);
   const WrappedArticlePage = withPageWrapper(ArticlePage);
   const WrappedNotFound = withPageWrapper(NotFound);
@@ -425,6 +427,7 @@ const Router = () => {
           {getRouteComponent("/tools/playlist-submission", WrappedToolsPage, 'free')}
           {getRouteComponent("/ai-video-creation", WrappedAIVideoCreationPage, 'free')}
           {getRouteComponent("/timeline-demo", WrappedTimelineDemoPage, 'free')}
+          {getRouteComponent("/timeline/:projectId", WrappedTimelineEditorPage, 'free')}
           {getRouteComponent("/debug-firebase", WrappedDebugFirebasePage, null)}
           
           {/* Página de error 404 */}

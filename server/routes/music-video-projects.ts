@@ -255,4 +255,55 @@ router.post('/rename', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/music-video-projects/update-timeline
+ * Actualiza solo los timelineItems de un proyecto
+ */
+router.post('/update-timeline', async (req, res) => {
+  try {
+    const { projectId, timelineItems, status } = req.body;
+    
+    if (!projectId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'projectId es requerido' 
+      });
+    }
+
+    logger.log('📝 [UPDATE TIMELINE] Actualizando timeline para proyecto:', projectId);
+    
+    const updateData: any = {
+      timelineItems: timelineItems || [],
+      lastModified: new Date()
+    };
+
+    if (status) {
+      updateData.status = status;
+    }
+
+    const [updated] = await db
+      .update(musicVideoProjects)
+      .set(updateData)
+      .where(eq(musicVideoProjects.id, parseInt(projectId)))
+      .returning();
+    
+    if (!updated) {
+      logger.log('❌ [UPDATE TIMELINE] Proyecto no encontrado');
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Proyecto no encontrado' 
+      });
+    }
+
+    logger.log('✅ [UPDATE TIMELINE] Timeline actualizado exitosamente');
+    res.json({ success: true, project: updated });
+  } catch (error) {
+    logger.error('❌ [UPDATE TIMELINE] Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error desconocido' 
+    });
+  }
+});
+
 export default router;

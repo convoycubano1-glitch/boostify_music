@@ -501,6 +501,89 @@ CRITICAL REQUIREMENTS:
 });
 
 /**
+ * POST /api/gemini/generate-image
+ * Genera imagen para escena del timeline respetando el guión JSON y referencias faciales
+ * Soporta:
+ * - Prompts específicos de escena
+ * - Múltiples referencias faciales para consistencia
+ * - Contexto cinematográfico del director
+ */
+router.post('/generate-image', async (req: Request, res: Response) => {
+  try {
+    const { 
+      prompt,
+      referenceImages,
+      sceneNumber,
+      shotType,
+      mood,
+      cinematicStyle,
+      directorStyle
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Se requiere un prompt' 
+      });
+    }
+
+    console.log(`🎬 [Timeline] Generando imagen para escena ${sceneNumber || '?'}`);
+    console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
+
+    // Si hay referencias faciales, usar generación con múltiples rostros para consistencia
+    if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
+      console.log(`📸 Usando ${referenceImages.length} referencias faciales para consistencia`);
+      
+      const result = await generateImageWithMultipleFaceReferences(
+        prompt,
+        referenceImages
+      );
+
+      if (result.success && result.imageUrl) {
+        console.log(`✅ Imagen generada con referencias faciales`);
+        return res.json({
+          success: true,
+          imageUrl: result.imageUrl,
+          imageBase64: result.imageBase64,
+          provider: 'gemini-with-faces',
+          sceneNumber
+        });
+      }
+
+      // Si falla con referencias, intentar sin ellas
+      console.warn(`⚠️ Generación con referencias falló, intentando sin referencias...`);
+    }
+
+    // Generación simple (sin referencias o como fallback)
+    const result = await generateCinematicImage(prompt);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error generando imagen',
+        sceneNumber
+      });
+    }
+
+    console.log(`✅ Imagen generada para escena ${sceneNumber || '?'}`);
+    return res.json({
+      success: true,
+      imageUrl: result.imageUrl,
+      imageBase64: result.imageBase64,
+      provider: 'gemini',
+      sceneNumber
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error en /generate-image:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno al generar imagen'
+    });
+  }
+});
+
+/**
  * Genera poster cinematográfico estilo Hollywood para un concepto
  */
 router.post('/generate-hollywood-poster', async (req: Request, res: Response) => {
