@@ -24,10 +24,19 @@ export function ConceptSelectionModal({
   onSelect 
 }: ConceptSelectionModalProps) {
   const [selectedConcept, setSelectedConcept] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleContinue = () => {
-    if (selectedConcept) {
-      onSelect(selectedConcept);
+  const handleContinue = async () => {
+    if (selectedConcept && !isLoading) {
+      setIsLoading(true);
+      try {
+        // Call onSelect and let it handle the async work
+        await onSelect(selectedConcept);
+      } catch (error) {
+        logger.error('Error in handleContinue:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -303,13 +312,22 @@ export function ConceptSelectionModal({
             <Button
               size="lg"
               onClick={handleContinue}
-              disabled={!selectedConcept}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white gap-2 shadow-lg hover:shadow-xl transition-all w-full min-h-[52px] text-base font-semibold"
+              disabled={!selectedConcept || isLoading}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white gap-2 shadow-lg hover:shadow-xl transition-all w-full min-h-[52px] text-base font-semibold disabled:opacity-75"
               data-testid="button-continue-concept"
             >
-              <Sparkles className="h-5 w-5" />
-              {selectedConcept ? 'Generate Music Video' : 'Select a Concept'}
-              <ChevronRight className="h-5 w-5" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5" />
+                  {selectedConcept ? 'Generate Music Video' : 'Select a Concept'}
+                  <ChevronRight className="h-5 w-5" />
+                </>
+              )}
             </Button>
           </div>
 
@@ -341,13 +359,22 @@ export function ConceptSelectionModal({
             <Button
               size="lg"
               onClick={handleContinue}
-              disabled={!selectedConcept}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white gap-2 shadow-lg hover:shadow-xl transition-all whitespace-nowrap"
+              disabled={!selectedConcept || isLoading}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white gap-2 shadow-lg hover:shadow-xl transition-all whitespace-nowrap disabled:opacity-75"
               data-testid="button-continue-concept"
             >
-              <Sparkles className="h-5 w-5" />
-              Generate Music Video
-              <ChevronRight className="h-5 w-5" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5" />
+                  Generate Music Video
+                  <ChevronRight className="h-5 w-5" />
+                </>
+              )}
             </Button>
           </div>
         </div>

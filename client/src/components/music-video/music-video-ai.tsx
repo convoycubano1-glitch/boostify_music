@@ -1859,102 +1859,115 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     
     setSelectedConcept(concept);
     
-    // Guardar concepto en la base de datos y crear perfil de artista automáticamente
-    if (user?.email) {
-      try {
-        logger.info('💾 Guardando concepto seleccionado en base de datos...');
-        
-        const projectData = {
-          userEmail: user.email!,
-          projectName: projectName || `Video ${Date.now()}`,
-          audioUrl: selectedFile?.name || '',
-          audioDuration: audioBuffer?.duration,
-          transcription: transcription,
-          timelineItems: timelineItems,
-          selectedDirector: videoStyle.selectedDirector,
-          videoStyle: videoStyle,
-          artistReferenceImages: artistReferenceImages,
-          selectedConcept: concept,
-          generatedConcepts: conceptProposals,
-          status: 'generating_script' as const,
-          progress: {
-            scriptGenerated: false,
-            imagesGenerated: 0,
-            totalImages: 0,
-            videosGenerated: 0,
-            totalVideos: 0
-          }
-        };
-        
-        const savedProject = await musicVideoProjectServicePostgres.saveProject(projectData);
-        logger.info('✅ Concepto guardado en base de datos');
-        
-        // 🎨 NUEVO: Crear perfil de artista automáticamente
-        if (savedProject?.project?.id) {
-          logger.info('👤 Creando perfil de artista automáticamente...');
-          
-          const { createArtistProfileFromVideo } = await import('@/lib/api/artist-profile-service');
-          
-          // Extraer imágenes de conceptos para la galería
-          const conceptImages = conceptProposals
-            .filter(c => c.coverImage)
-            .map(c => ({
-              url: c.coverImage || '',
-              type: 'concept-poster',
-              description: c.title || 'Music Video Concept'
-            }));
-          
-          const profileResult = await createArtistProfileFromVideo({
-            projectId: savedProject.project.id,
-            userEmail: user.email!,
-            creatorUserId: user.id, // ← Asignar el creador para permitir edición del perfil
-            artistName: projectName || 'AI Generated Artist',
-            songName: selectedFile?.name?.replace(/\.[^/.]+$/, '') || undefined,
-            selectedConcept: concept,
-            lyrics: transcription || undefined,
-            referenceImages: artistReferenceImages,
-            conceptImages: conceptImages
-          });
-          
-          if (profileResult.success) {
-            logger.info('✅ Perfil de artista creado automáticamente:', profileResult.profile?.artistName);
-            toast({
-              title: "✨ Perfil de Artista Creado",
-              description: `Se ha creado automáticamente el perfil para "${profileResult.profile?.artistName}"`,
-            });
-          } else {
-            logger.warn('⚠️ No se pudo crear el perfil automático, continuando de todas formas');
-          }
-        }
-        
-      } catch (error) {
-        logger.error('❌ Error guardando concepto:', error);
-        // Continuar de todas formas
-      }
-    }
-    
-    // Cerrar modal de concepto
+    // ⚡ CIERRE INMEDIATO DEL MODAL
     setShowConceptSelection(false);
     
-    // Mostrar modal de progreso
+    // 🎬 MOSTRAR PROGRESO INMEDIATAMENTE
     setShowProgress(true);
     setCurrentProgressStage("script");
     setProgressMessage("Generando guión cinematográfico...");
     
-    // Proceder a generar el script completo y las imágenes
-    logger.info('📜 Generando script final basado en el concepto...');
-    
-    if (transcription && audioBuffer) {
-      await executeScriptGeneration(transcription, audioBuffer);
-    } else {
-      logger.error('❌ No hay transcripción o audioBuffer disponible');
-      toast({
-        title: "Error",
-        description: "Falta transcripción o audio para continuar",
-        variant: "destructive",
-      });
+    // 🚀 TRABAJO PESADO EN BACKGROUND (no bloquea la UI)
+    // Usar Promise.then() para no bloquear el cierre del modal
+    Promise.resolve().then(async () => {
+      try {
+        // Guardar concepto en la base de datos EN BACKGROUND
+        if (user?.email) {
+          try {
+            logger.info('💾 [BG] Guardando concepto seleccionado en base de datos...');
+            
+            const projectData = {
+              userEmail: user.email!,
+              projectName: projectName || `Video ${Date.now()}`,
+              audioUrl: selectedFile?.name || '',
+              audioDuration: audioBuffer?.duration,
+              transcription: transcription,
+              timelineItems: timelineItems,
+              selectedDirector: videoStyle.selectedDirector,
+              videoStyle: videoStyle,
+              artistReferenceImages: artistReferenceImages,
+              selectedConcept: concept,
+              generatedConcepts: conceptProposals,
+              status: 'generating_script' as const,
+              progress: {
+                scriptGenerated: false,
+                imagesGenerated: 0,
+                totalImages: 0,
+                videosGenerated: 0,
+                totalVideos: 0
+              }
+            };
+            
+            const savedProject = await musicVideoProjectServicePostgres.saveProject(projectData);
+            logger.info('✅ [BG] Concepto guardado en base de datos');
+            
+            // 🎨 Crear perfil de artista automáticamente EN BACKGROUND
+            if (savedProject?.project?.id) {
+              logger.info('👤 [BG] Creando perfil de artista automáticamente...');
+              
+              const { createArtistProfileFromVideo } = await import('@/lib/api/artist-profile-service');
+              
+              // Extraer imágenes de conceptos para la galería
+              const conceptImages = conceptProposals
+                .filter(c => c.coverImage)
+                .map(c => ({
+                  url: c.coverImage || '',
+                  type: 'concept-poster',
+                  description: c.title || 'Music Video Concept'
+                }));
+              
+              const profileResult = await createArtistProfileFromVideo({
+                projectId: savedProject.project.id,
+                userEmail: user.email!,
+                creatorUserId: user.id,
+                artistName: projectName || 'AI Generated Artist',
+                songName: selectedFile?.name?.replace(/\.[^/.]+$/, '') || undefined,
+                selectedConcept: concept,
+                lyrics: transcription || undefined,
+                referenceImages: artistReferenceImages,
+                conceptImages: conceptImages
+              });
+              
+              if (profileResult.success) {
+                logger.info('✅ [BG] Perfil de artista creado:', profileResult.profile?.artistName);
+                toast({
+                  title: "✨ Perfil de Artista Creado",
+                  description: `Se ha creado automáticamente el perfil para "${profileResult.profile?.artistName}"`,
+                });
+              } else {
+                logger.warn('⚠️ [BG] No se pudo crear el perfil automático, continuando');
+              }
+            }
+            
+          } catch (error) {
+            logger.error('❌ [BG] Error guardando concepto:', error);
+            // Continuar de todas formas - no es crítico
+          }
+        }
+        
+        // Proceder a generar el script completo y las imágenes
+        logger.info('📜 Generando script final basado en el concepto...');
+        
+        if (transcription && audioBuffer) {
+          await executeScriptGeneration(transcription, audioBuffer);
+        } else {
+          logger.error('❌ No hay transcripción o audioBuffer disponible');
+          toast({
+            title: "Error",
+            description: "Falta transcripción o audio para continuar",
+            variant: "destructive",
+          });
+          setShowProgress(false);
+        }
+        
+      } catch (error) {
+        logger.error('❌ Error en procesamiento de concepto:', error);
+        setShowProgress(false);
+      }
+    }).catch(error => {
+      logger.error('❌ Error en promesa de background:', error);
       setShowProgress(false);
-    }
+    });
     
   }, [executeScriptGeneration, user, projectName, selectedFile, audioBuffer, transcription, timelineItems, videoStyle, artistReferenceImages, conceptProposals, toast]);
 
@@ -5377,49 +5390,6 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
 
       {/* Efectos visuales para toda la aplicación */}
       {allStepsCompleted && <motion.div className="confetti-container" />}
-      
-      {/* Indicador de Progreso Persistente - Siempre visible */}
-      {(isGeneratingImages || isGeneratingShots || showProgress || isRetrying) && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="fixed top-4 right-4 z-50"
-        >
-          <Card className="bg-gradient-to-br from-orange-600/95 to-orange-500/95 backdrop-blur-sm border-orange-400/50 shadow-2xl px-4 py-3 min-w-[280px]">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  className="w-10 h-10 rounded-full border-4 border-white/30 border-t-white"
-                />
-                {generationProgress.percentage > 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">
-                      {generationProgress.percentage}%
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-white">
-                  {isRetrying ? '🔄 Retrying...' : 
-                   isGeneratingShots ? '🎨 Generating Images' : 
-                   currentProgressStage === 'transcription' ? '🎙️ Transcribing Audio' :
-                   currentProgressStage === 'script' ? '📝 Creating Script' :
-                   '⚙️ Processing...'}
-                </p>
-                <p className="text-xs text-white/80">
-                  {isRetrying ? retryMessage : 
-                   generationProgress.current > 0 ? `${generationProgress.current}/${generationProgress.total}` :
-                   `${progressPercentage}%`}
-                </p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-      )}
       
       {/* Sistema de partículas dinámicas basadas en el paso actual - Ajustadas a naranja/negro */}
       {/* Botón de Quick Start - Solo visible al inicio */}
