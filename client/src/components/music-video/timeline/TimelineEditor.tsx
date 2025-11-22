@@ -5,8 +5,9 @@ import { logger } from "../../lib/logger";
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TimelineLayers } from './TimelineLayers';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
+import { EditorAgentPanel } from '../editor-agent-panel';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   Play as PlayIcon, Pause as PauseIcon, 
   Scissors as ScissorIcon, Hand as HandIcon,
@@ -16,10 +17,11 @@ import {
   Magnet as MagnetIcon, Trash as TrashIcon,
   Video as VideoIcon, Volume2 as VolumeIcon
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 import { 
   TimelineClip, LayerConfig, ClipType, LayerType, TimelineMarker 
-} from '../../../interfaces/timeline';
+} from '@/interfaces/timeline';
 
 const LAYER_LABEL_WIDTH = 160;  // fallback local si no existe en constants
 const PLAYHEAD_WIDTH = 2;
@@ -35,6 +37,8 @@ interface TimelineEditorProps {
   videoPreviewUrl?: string; // fuente del visor
   audioPreviewUrl?: string; // fuente del visor
   onChange?: (clips: TimelineClip[]) => void;
+  audioBuffer?: AudioBuffer;
+  genreHint?: string;
 }
 
 export const TimelineEditor: React.FC<TimelineEditorProps> = ({
@@ -46,6 +50,8 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   videoPreviewUrl,
   audioPreviewUrl,
   onChange,
+  audioBuffer,
+  genreHint,
 }) => {
   const [clips, setClips] = useState<TimelineClip[]>(() => normalizeClips(initialClips));
   const [zoom, setZoom] = useState(initialZoom);
@@ -391,6 +397,19 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
           <Button size="sm" variant="ghost" onClick={zoomIn} title="Zoom In (+)"><ZoomInIcon size={16}/></Button>
           <Button size="sm" variant="ghost" onClick={zoomOut} title="Zoom Out (-)"><ZoomOutIcon size={16}/></Button>
           <Badge variant="outline">{Math.round(zoom)} px/s</Badge>
+
+          <div className="mx-2 h-5 w-px bg-white/10" />
+
+          <EditorAgentPanel 
+            timeline={clips.map((c, i) => ({
+              id: String(c.id),
+              label: c.name || `Clip ${i + 1}`,
+              start_time: c.start,
+              duration: c.duration,
+            }))}
+            audioBuffer={audioBuffer}
+            genreHint={genreHint}
+          />
 
           <div className="mx-2 h-5 w-px bg-white/10" />
 
