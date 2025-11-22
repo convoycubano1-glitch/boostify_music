@@ -20,9 +20,9 @@ const ai = geminiClients[0] || new GoogleGenAI({ apiKey: "" });
 
 // Modelos disponibles con fallback automático
 const AVAILABLE_MODELS = [
-  "gemini-3.5-flash-image",           // PRIMARY: Gemini 3.5 Flash Image (latest)
-  "gemini-3-5-flash-image",           // FALLBACK: Alternative naming format
-  "gemini-2.5-flash-image"            // FALLBACK: Nano Banana Pro (backwards compatibility)
+  "gemini-3-pro-image-preview",       // PRIMARY: Nano Banana Pro (Gemini 3 Pro - Nov 2025, Studio Quality 4K)
+  "gemini-2.5-flash-image",           // FALLBACK: Nano Banana (Gemini 2.5 - Fast, economical)
+  "gemini-2.0-flash-image"            // FALLBACK: Versión anterior compatible
 ];
 
 /**
