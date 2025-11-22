@@ -7166,15 +7166,15 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                   {/* Timeline Section con ref para scroll automático */}
                   <div ref={timelineRef} className="w-full">
                     <TimelineEditor
-                      initialClips={clips}
-                      duration={totalDuration}
+                      initialClips={clips || []}
+                      duration={totalDuration || 0}
                       markers={[]}
                       readOnly={false}
                       videoPreviewUrl={undefined}
-                      audioPreviewUrl={audioFile ? URL.createObjectURL(audioFile) : undefined}
-                      onChange={handleClipUpdate}
+                      audioPreviewUrl={selectedFile ? URL.createObjectURL(selectedFile) : undefined}
+                      onChange={handleClipUpdate || (() => {})}
                       audioBuffer={audioBuffer}
-                      genreHint={selectedGenre}
+                      genreHint="Pop"
                     />
                   </div>
 
