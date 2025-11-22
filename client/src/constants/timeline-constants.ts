@@ -63,6 +63,20 @@ export enum ClipOperation {
 }
 
 /**
+ * Nombres de las capas según su tipo
+ */
+export const LAYER_NAMES: Record<LayerType, string> = {
+  [LayerType.VIDEO_PRINCIPAL]: 'Video Principal',
+  [LayerType.VIDEO_SECUNDARIO]: 'Video B-Roll',
+  [LayerType.IMAGEN]: 'Imágenes',
+  [LayerType.TEXTO]: 'Textos',
+  [LayerType.AUDIO]: 'Audio',
+  [LayerType.EFECTOS]: 'Efectos',
+  [LayerType.IA_GENERADA]: 'IA Generada',
+  [LayerType.TRANSICIONES]: 'Transiciones'
+};
+
+/**
  * Colores por defecto para las capas según su tipo
  */
 export const DEFAULT_LAYER_COLORS: Record<LayerType, string> = {
@@ -75,6 +89,16 @@ export const DEFAULT_LAYER_COLORS: Record<LayerType, string> = {
   [LayerType.IA_GENERADA]: '#D81B60',       // Rosa
   [LayerType.TRANSICIONES]: '#546E7A'       // Gris azulado
 };
+
+/**
+ * Alias para LAYER_COLORS (compatibilidad con importes existentes)
+ */
+export const LAYER_COLORS = DEFAULT_LAYER_COLORS;
+
+/**
+ * Colores para clips (alias de DEFAULT_LAYER_COLORS)
+ */
+export const CLIP_COLORS = DEFAULT_LAYER_COLORS;
 
 /**
  * Configuración inicial predeterminada para capas

@@ -6,8 +6,8 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { TimelineEditor } from "./TimelineEditor";
-import type { TimelineClip } from "./TimelineEditor";
+import { TimelineEditor } from "./timeline/TimelineResponsive";
+import type { TimelineClip } from "./timeline/TimelineEditor";
 import { TimelineClipUnified, ensureCompatibleClip, TimelineItem } from "../timeline/TimelineClipUnified";
 import { PreviewImagesModal } from "./PreviewImagesModal";
 import { Slider } from "../ui/slider";
@@ -53,6 +53,7 @@ import {
   generateThreeConceptProposals,
   type VideoPromptParams 
 } from "../../lib/api/openrouter";
+import { generateSceneImageWithGemini, type ImageGenerationParams } from "../../lib/api/gemini-nano-image-generator";
 import { upscaleVideo } from "../../lib/api/video-service";
 import { generateVideoScript as generateVideoScriptAPI } from "../../lib/api/openrouter";
 import { batchGenerateMasterVariations, blendMasterAndVariations, detectMasterScenes } from "../../lib/api/master-scene-variations";
@@ -362,7 +363,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   // Load saved projects when dialog opens
   useEffect(() => {
     if (showLoadProjectDialog && user?.uid) {
-      musicVideoProjectServicePostgres.getUserProjects(user.uid)
+      musicVideoProjectServicePostgres.getUserProjects(user?.id)
         .then(projects => setSavedProjects(projects))
         .catch(error => {
           logger.error('Error loading projects:', error);
@@ -1202,7 +1203,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
             if (user?.uid) {
               try {
                 logger.info(`📤 [FIREBASE ${sceneIndex}] Subiendo imagen a Firebase Storage...`);
-                permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
+                permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user?.id, projectName);
                 logger.info(`✅ [FIREBASE ${sceneIndex}] Imagen guardada permanentemente`);
                 
                 // 🎨 AUTO-PERFIL: Actualizar imágenes de perfil con primera imagen de alta calidad
@@ -1855,7 +1856,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
             let posterUrl = data.imageUrl;
             if (user?.uid) {
               try {
-                posterUrl = await uploadImageFromUrl(data.imageUrl, user.uid, `${projectName}/concept-posters`);
+                posterUrl = await uploadImageFromUrl(data.imageUrl, user?.id, `${projectName}/concept-posters`);
                 logger.info(`✅ Poster ${index + 1} guardado en Firebase Storage`);
               } catch (uploadError) {
                 logger.warn(`⚠️ Error subiendo poster ${index + 1} a Firebase:`, uploadError);
@@ -2564,7 +2565,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       
       // Step 4: Save to database
       const videoData = {
-        user_id: user.uid,
+        user_id: user?.id,
         song_name: selectedFile?.name || "Music Video",
         video_url: null, // Will be updated when final video is compiled
         thumbnail_url: imageUrls[0],
@@ -2784,7 +2785,8 @@ ${transcription}`;
   };
 
   /**
-   * Generates an image for a specific segment using FAL AI
+   * Generates an image for a specific segment using Gemini 2.5 Flash Image (Nano Banana)
+   * Ultra-fast image generation optimized for music videos
    * @param item - The timeline segment for which the image will be generated
    * @returns Promise<string> URL of generated image or null in case of error
    */
@@ -2794,129 +2796,44 @@ ${transcription}`;
       return null;
     }
 
-    // Si hay imágenes de referencia del artista, usar el nuevo endpoint
-    if (artistReferenceImages && artistReferenceImages.length > 0) {
-      try {
-        const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style, ${item.shotType} composition`;
-        
-        logger.info(`🎨 Generando imagen con ${artistReferenceImages.length} referencias faciales`);
-        logger.info(`📝 Prompt: ${prompt.substring(0, 100)}...`);
+    try {
+      logger.info(`🎨 [Gemini Nano] Generando imagen para segmento ${item.id}...`);
 
-        const response = await fetch('/api/gemini-image/generate-single-with-multiple-faces', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            prompt: prompt,
-            referenceImagesBase64: artistReferenceImages,
-            seed: seed + (typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id)
-          }),
-        });
+      // Build image generation params with cinematographic context
+      const geminiParams: ImageGenerationParams = {
+        prompt: item.imagePrompt,
+        shotType: item.shotType || 'MS',
+        cinematicStyle: videoStyle.characterStyle || 'cinematic',
+        mood: videoStyle.mood || 'neutral',
+        duration: item.duration || 2,
+        sceneNumber: typeof item.id === 'string' ? parseInt(item.id, 10) : item.id,
+      };
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Server error: ${response.statusText}`);
-        }
+      // Generate image using Gemini Nano
+      logger.info(`📝 Prompt: ${geminiParams.prompt.substring(0, 100)}...`);
+      const result = await generateSceneImageWithGemini(geminiParams);
 
-        const data = await response.json();
-        
-        if (!data.success || !data.imageUrl) {
-          throw new Error(data.error || 'Error generating image');
-        }
-
-        logger.info(`✅ Imagen generada con referencias faciales: ${data.imageUrl.substring(0, 100)}`);
-        
-        // CRITICAL: Upload image to Firebase Storage for persistence
-        if (user?.uid) {
-          logger.info(`📤 Subiendo imagen a Firebase Storage...`);
-          const permanentUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
-          logger.info(`✅ Imagen guardada permanentemente en Firebase Storage`);
-          return permanentUrl;
-        } else {
-          logger.warn(`⚠️ No user ID - returning temporary URL`);
-          return data.imageUrl;
-        }
-        
-      } catch (error) {
-        logger.error(`Error generating image with faces for segment ${item.id}:`, error);
-        // Si falla, continuar con el método tradicional de FLUX
-        logger.info('⚠️ Fallando a generación tradicional sin referencias faciales');
+      if (!result.success || !result.imageUrl) {
+        throw new Error(result.error || 'Error generating image with Gemini');
       }
-    }
 
-    // Método tradicional sin referencias faciales (fallback)
-    const maxAttempts = 2;
-    let attempt = 0;
-    let lastError: Error | null = null;
+      logger.info(`✅ Imagen generada exitosamente: ${result.imageUrl.substring(0, 100)}`);
 
-    while (attempt < maxAttempts) {
-      try {
-        // Format the prompt to include style information
-        const prompt = `${item.imagePrompt}. Style: ${videoStyle.mood}, ${videoStyle.colorPalette} color palette, ${videoStyle.characterStyle} character style, ${item.shotType} composition`;
-        
-        logger.info(`Generating image for segment ${item.id}, attempt ${attempt + 1}/${maxAttempts}`);
-        logger.info(`Prompt: ${prompt.substring(0, 100)}...`);
-
-        // Configure parameters for Flux API
-        const params = {
-          prompt: prompt,
-          negativePrompt: "low quality, blurry, distorted, deformed, unrealistic, oversaturated, text, watermark",
-          width: 1024,
-          height: 576, // 16:9 aspect ratio
-          guidance_scale: 2.5,
-          model: FluxModel.FLUX1_DEV,
-          taskType: FluxTaskType.TXT2IMG,
-          // Use a specific seed for each segment, but consistent in regenerations
-          seed: seed + (typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id)
-        };
-
-        // Start image generation with Flux API
-        logger.info('Starting generation with Flux API');
-        const result = await fluxService.generateImage(params);
-
-        if (!result.success || !result.taskId) {
-          throw new Error(`Error starting image generation: ${result.error || 'Invalid response'}`);
-        }
-
-        logger.info(`Generation task started with ID: ${result.taskId}`);
-        
-        // Wait for image to be generated (polling)
-        const imageUrl = await waitForFluxImageGeneration(result.taskId);
-        
-        if (imageUrl) {
-          logger.info(`Image successfully generated for segment ${item.id}: ${imageUrl}`);
-          
-          // CRITICAL: Upload image to Firebase Storage for persistence
-          if (user?.uid) {
-            logger.info(`📤 Subiendo imagen de FLUX a Firebase Storage...`);
-            const permanentUrl = await uploadImageFromUrl(imageUrl, user.uid, projectName);
-            logger.info(`✅ Imagen de FLUX guardada permanentemente en Firebase Storage`);
-            return permanentUrl;
-          } else {
-            logger.warn(`⚠️ No user ID - returning temporary FLUX URL`);
-            return imageUrl;
-          }
-        } else {
-          throw new Error("No image URL received in response");
-        }
-      } catch (error) {
-        logger.error(`Error in attempt ${attempt + 1} for segment ${item.id}:`, error);
-        lastError = error instanceof Error ? error : new Error(String(error));
-        
-        // If it's the last attempt, we don't wait
-        if (attempt < maxAttempts - 1) {
-          const backoffTime = Math.min(1000 * Math.pow(2, attempt), 10000);
-          logger.info(`Retrying in ${backoffTime/1000} seconds...`);
-          await new Promise(resolve => setTimeout(resolve, backoffTime));
-        }
-        
-        attempt++;
+      // Upload to Firebase for persistence
+      if (user?.id) {
+        logger.info(`📤 Subiendo imagen a Firebase Storage...`);
+        const permanentUrl = await uploadImageFromUrl(result.imageUrl, user.id, projectName);
+        logger.info(`✅ Imagen guardada permanentemente en Firebase Storage`);
+        return permanentUrl;
+      } else {
+        logger.warn(`⚠️ No user ID - using temporary URL`);
+        return result.imageUrl;
       }
-    }
 
-    logger.error(`Could not generate image for segment ${item.id} after ${maxAttempts} attempts:`, lastError);
-    return null;
+    } catch (error) {
+      logger.error(`❌ Error generando imagen para segmento ${item.id}:`, error);
+      return null;
+    }
   };
 
   /**
@@ -3148,7 +3065,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         let permanentImageUrl = data.imageUrl;
         if (user?.uid) {
           try {
-            permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
+            permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user?.id, projectName);
           } catch (uploadError) {
             logger.warn('Error uploading to Firebase, using temporary URL:', uploadError);
           }
@@ -3288,7 +3205,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       return;
     }
     
-    const userEmail = user.email || user.uid;
+    const userEmail = user.email || user?.id;
     
     logger.info('✅ [SAVE] Usuario autenticado:', user.email);
 
@@ -3426,7 +3343,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
 
     logger.info('🔄 Auto-guardando proyecto...');
     
-    const userEmail = user.email || user.uid;
+    const userEmail = user.email || user?.id;
     
     try {
       const imagesGenerated = timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length;
@@ -3584,7 +3501,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
             
             if (user?.uid) {
               try {
-                permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user.uid, projectName);
+                permanentImageUrl = await uploadImageFromUrl(data.imageUrl, user?.id, projectName);
               } catch (error) {
                 logger.warn('Error uploading to Firebase, using temporary URL:', error);
               }
@@ -3784,7 +3701,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
   useEffect(() => {
     if (user?.uid && projectName && timelineItems.length > 0 && audioUrl) {
       musicVideoProjectService.autoSave(
-        user.uid,
+        user?.id,
         projectName,
         {
           audioUrl,
@@ -6882,7 +6799,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                 {user && (
                   <div className="mt-6">
                     <ProjectManager
-                      userId={user.uid}
+                      userId={user?.id}
                       projectName={projectName}
                       onProjectNameChange={setProjectName}
                       onSaveProject={handleSaveProject}
@@ -7247,36 +7164,17 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                   )}
                   
                   {/* Timeline Section con ref para scroll automático */}
-                  <div ref={timelineRef}>
+                  <div ref={timelineRef} className="w-full">
                     <TimelineEditor
-                      clips={clips}
-                      currentTime={(currentTime - (timelineItems[0]?.start_time || 0)) / 1000}
+                      initialClips={clips}
                       duration={totalDuration}
+                      markers={[]}
+                      readOnly={false}
+                      videoPreviewUrl={mediaUrl || undefined}
+                      audioPreviewUrl={audioFile ? URL.createObjectURL(audioFile) : undefined}
+                      onChange={handleClipUpdate}
                       audioBuffer={audioBuffer}
-                      onTimeUpdate={handleTimeUpdate}
-                      onClipUpdate={handleClipUpdate}
-                      onSplitClip={handleSplitClip}
-                      onPlay={() => setIsPlaying(true)}
-                      onPause={() => setIsPlaying(false)}
-                      isPlaying={isPlaying}
-                      onSceneSelect={setSelectedSceneId}
-                      onRegenerateImage={handleRegenerateImageFromTimeline}
-                      onGenerateVideo={handleGenerateVideoFromTimeline}
-                      onSaveProject={handleSaveProject}
-                      onLoadProject={() => setShowLoadProjectDialog(true)}
-                      projectName={projectName}
-                      onProjectNameChange={setProjectName}
-                      isSavingProject={isSavingProject}
-                      lastSavedAt={lastSavedAt}
-                      hasUnsavedChanges={hasUnsavedChanges}
-                      director={videoStyle.selectedDirector ? {
-                        name: videoStyle.selectedDirector.name,
-                        style: videoStyle.selectedDirector.style,
-                        specialty: videoStyle.selectedDirector.specialty
-                      } : undefined}
-                      concept={selectedConcept}
-                      narrativeSummary={narrativeSummary}
-                      projectId={currentProjectId ? parseInt(currentProjectId) : undefined}
+                      genreHint={selectedGenre}
                     />
                   </div>
 

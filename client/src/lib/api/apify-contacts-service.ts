@@ -4,7 +4,8 @@ import { db, auth } from "../../firebase";
 import { collection, addDoc, getDocs, query, where, serverTimestamp, DocumentData } from "firebase/firestore";
 import { User } from "firebase/auth";
 import { getAuthToken } from "../../lib/auth";
-import { ApifyClient } from "apify-client";
+// MOVED TO SERVER: ApifyClient is now called via /api/apify endpoints
+// This prevents bundling Node.js-only packages in the browser
 
 /**
  * Extract an email address from a text string
@@ -129,166 +130,9 @@ export async function getExtractionLimits(): Promise<{
  * @param maxPages Maximum number of pages to crawl (admin only)
  * @returns Promise with extracted contacts
  */
-// Get the Apify token from environment
-const APIFY_TOKEN = process.env.APIFY_API_TOKEN || import.meta.env.VITE_APIFY_API_TOKEN;
-
-/**
- * Create a new ApifyClient instance with authentication
- * @returns A configured ApifyClient instance
- */
-function getApifyClient() {
-  if (!APIFY_TOKEN) {
-    logger.warn("No Apify token found. Direct API calls will not work.");
-    return null;
-  }
-  return new ApifyClient({
-    token: APIFY_TOKEN,
-  });
-}
-
-/**
- * Extract contacts directly using the Apify API
- * This function uses the Google Maps with Contact Details actor to extract comprehensive business contact information
- * @param searchTerm Term to search for
- * @param locality Geographic location to search in
- * @param category Category of contacts to search for
- * @param maxPages Maximum number of places to crawl
- * @returns Promise with extracted contacts
- */
-export async function extractContactsWithApify(
-  searchTerm: string,
-  locality: string,
-  category: "radio" | "tv" | "movie" | "publishing" | "other",
-  maxResults: number = 10
-): Promise<Contact[]> {
-  try {
-    // First check if we have the API token before proceeding
-    const apifyClient = getApifyClient();
-    if (!apifyClient) {
-      throw new Error("Apify API token not available");
-    }
-    
-    logger.info(`Extracting contacts using Apify for "${searchTerm} ${category}" in ${locality}`);
-    
-    // Start an actor run with a Google SERP scraper actor
-    // First try the Google Maps With Contact Details actor
-    try {
-      const actor = apifyClient.actor("drobnikj/crawler-google-places");
-      const runInfo = await actor.call({
-        searchText: `${searchTerm} ${category}`,
-        location: locality,
-        maxPlacesPerSearch: maxResults,
-        language: "en",
-        includeWebsite: true,
-        includeOpeningHours: true,
-        includeAddress: true,
-        includeRating: true,
-        includePhoneNumber: true,
-        maxReviews: 0,
-        maxImages: 0,
-        extendedOutputInfo: true,
-        maxConcurrency: 5,
-        includeStatistics: true
-      });
-      
-      logger.info(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
-      
-      // Get the dataset items
-      const { items } = await apifyClient.dataset(runInfo.defaultDatasetId).listItems();
-      logger.info(`Retrieved ${items.length} contacts from Apify`);
-      
-      if (items.length > 0) {
-        // Process and format the contacts
-        const contacts: Contact[] = items.map((item: any) => {
-          // Extract contact information from the Apify result
-          // Google Places Crawler actor returns a different structure
-          const name = item.name || 'Unknown';
-          const website = item.url || '';
-          // Phone is often in the full page data
-          const phone = item.phoneNumber ? item.phoneNumber : undefined;
-          const allText = [
-            name,
-            item.address || '',
-            item.categories?.join(' ') || '',
-            item.description || '',
-            website
-          ].join(' ');
-          const email = extractEmailFromText(allText);
-          
-          return {
-            name: name,
-            category: category,
-            company: name,
-            website: website,
-            email: email,
-            phone: phone,
-            address: item.address || undefined,
-            locality: locality,
-            notes: item.description || "",
-            extractedAt: new Date(),
-            // Add social media if available
-            twitter: extractSocialFromText('twitter', allText),
-            linkedin: extractSocialFromText('linkedin', allText),
-            instagram: extractSocialFromText('instagram', allText)
-          };
-        });
-        
-        return contacts;
-      }
-      
-      // If no items were found, try the Google Search Scraper actor
-      logger.info("No places found. Trying alternate actor...");
-    } catch (error) {
-      logger.error("Error with Google Maps Scraper actor, trying fallback:", error);
-    }
-    
-    // Fallback to a basic Google Search scraper if the Google Maps actor fails
-    const fallbackActor = apifyClient.actor("apify/google-search-scraper");
-    const runInfo = await fallbackActor.call({
-      queries: [`${searchTerm} ${category} ${locality} contact info`],
-      maxPagesPerQuery: Math.ceil(maxResults / 10),
-      resultsPerPage: 10,
-      mobileResults: false,
-      languageCode: "en",
-      countryCode: "US",
-      includeUnfilteredResults: false,
-      saveHtml: false,
-      saveHtmlToKeyValueStore: false
-    });
-    
-    logger.info(`Apify run completed, dataset ID: ${runInfo.defaultDatasetId}`);
-    
-    // Get the dataset items
-    const { items } = await apifyClient.dataset(runInfo.defaultDatasetId).listItems();
-    logger.info(`Retrieved ${items.length} contacts from Apify`);
-    
-    // Process and format the contacts
-    const contacts: Contact[] = items.map((item: any) => {
-      // Extract contact information from the Apify result
-      return {
-        name: item.name || "Unknown",
-        category: category,
-        company: item.name || "",
-        website: item.website || "",
-        email: item.email || undefined,
-        phone: item.phone || undefined,
-        address: item.address || undefined,
-        locality: locality,
-        notes: item.description || "",
-        extractedAt: new Date(),
-        // Add social media if available
-        twitter: item.twitter || undefined,
-        linkedin: item.linkedin || undefined,
-        instagram: item.instagram || undefined
-      };
-    });
-    
-    return contacts;
-  } catch (error) {
-    logger.error("Error extracting contacts with Apify:", error);
-    throw error;
-  }
-}
+// NOTE: ApifyClient functionality has been moved to server-side at server/routes/apify.ts
+// This prevents bundling Node.js-only modules in the client bundle
+// All Apify operations now go through API endpoints only
 
 /**
  * Extract contacts through the server API route
@@ -305,18 +149,7 @@ export async function extractContacts(
   maxPages: number = 1
 ): Promise<Contact[]> {
   try {
-    // First try direct Apify API call if token is available
-    if (getApifyClient()) {
-      try {
-        // Convert maxPages to maxResults for new actor format
-        const maxResults = maxPages * 20; // Each "page" counts as 20 results
-        return await extractContactsWithApify(searchTerm, locality, category, maxResults);
-      } catch (apiError) {
-        logger.warn("Direct Apify API call failed, falling back to server API:", apiError);
-        // Fall back to server API
-      }
-    }
-    
+    // Always use server API for Apify operations to avoid bundling Node.js modules
     const token = await getAuthToken();
     if (!token) {
       throw new Error("Not authenticated");

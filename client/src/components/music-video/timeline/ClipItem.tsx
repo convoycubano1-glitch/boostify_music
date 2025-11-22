@@ -218,4 +218,5 @@ const ClipItem: React.FC<ClipItemProps> = ({
   );
 };
 
+export { ClipItem };
 export default ClipItem;
