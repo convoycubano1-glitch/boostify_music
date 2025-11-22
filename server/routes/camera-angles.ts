@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { generateCinematicImage } from '../services/gemini-image-service';
 import { logger } from '../utils/logger';
+import fetch from 'node-fetch';
 
 const router = Router();
 
@@ -35,6 +36,56 @@ const CAMERA_ANGLES = [
   }
 ];
 
+/**
+ * Genera imagen con FLUX Context (fal-ai/flux-pro/kontext)
+ * Más rápido que otros modelos - optimizado para cinematografía
+ */
+async function generateWithFLUXContext(prompt: string): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+  const FAL_API_KEY = process.env.FAL_KEY || process.env.FAL_API_KEY;
+  
+  if (!FAL_API_KEY) {
+    return { success: false, error: 'FAL_KEY not configured' };
+  }
+
+  try {
+    const response = await fetch('https://fal.run/fal-ai/flux-pro/kontext', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        image_size: 'landscape_16_9',
+        num_images: 1,
+        num_inference_steps: 30,
+        guidance_scale: 3.5,
+        enable_safety_checker: false
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      logger.error('FLUX API error:', error);
+      return { success: false, error: `FLUX API error: ${response.status}` };
+    }
+
+    const result = await response.json() as any;
+    
+    if (result.images && result.images.length > 0) {
+      return {
+        success: true,
+        imageUrl: result.images[0].url
+      };
+    }
+    
+    return { success: false, error: 'No images generated' };
+  } catch (error: any) {
+    logger.error('FLUX Context generation error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 router.post('/api/clips/generate-camera-angles', async (req, res) => {
   try {
     const { originalPrompt, clipId } = req.body;
@@ -62,8 +113,29 @@ CRITICAL INSTRUCTIONS:
 - Maintain consistency with the original concept
 - Use the camera angle to create visual variety while preserving the story`;
 
-        logger.log(`📸 Generating ${angle.name} variation...`);
+        logger.log(`📸 Generating ${angle.name} variation (FLUX Context first)...`);
         
+        // INTENTO 1: FLUX Context (más rápido - 2x) 
+        try {
+          const fluxResult = await generateWithFLUXContext(enhancedPrompt);
+          if (fluxResult.success && fluxResult.imageUrl) {
+            logger.log(`✅ ${angle.name} generated with FLUX Context (fast!)`);
+            return {
+              angle: angle.id,
+              name: angle.name,
+              emoji: angle.emoji,
+              success: true,
+              imageUrl: fluxResult.imageUrl,
+              prompt: enhancedPrompt,
+              provider: 'flux-context'
+            };
+          }
+        } catch (fluxError: any) {
+          logger.warn(`⚠️ FLUX Context falló para ${angle.name}:`, fluxError.message);
+          logger.log(`🔄 Intentando fallback con Gemini 2.5 Flash Image...`);
+        }
+        
+        // INTENTO 2: Gemini 2.5 Flash Image (fallback)
         const result = await generateCinematicImage(enhancedPrompt);
 
         if (!result.success || !result.imageUrl) {
@@ -78,7 +150,7 @@ CRITICAL INSTRUCTIONS:
           };
         }
 
-        logger.log(`✅ ${angle.name} generated successfully`);
+        logger.log(`✅ ${angle.name} generated with Gemini fallback`);
         
         return {
           angle: angle.id,
@@ -86,7 +158,8 @@ CRITICAL INSTRUCTIONS:
           emoji: angle.emoji,
           success: true,
           imageUrl: result.imageUrl,
-          prompt: enhancedPrompt
+          prompt: enhancedPrompt,
+          provider: 'gemini-fallback'
         };
       } catch (error: any) {
         logger.error(`❌ Error generating ${angle.name}:`, error);

@@ -161,7 +161,7 @@ router.post("/create-from-video", async (req: Request, res: Response) => {
 
     // Crear perfil de artista AI-generado
     console.log('👤 [CREATE ARTIST PROFILE] Creando perfil en base de datos...');
-    const [newProfile] = await db
+    const newProfiles = await db
       .insert(users)
       .values({
         artistName: data.artistName,
@@ -178,6 +178,7 @@ router.post("/create-from-video", async (req: Request, res: Response) => {
       })
       .returning();
 
+    const newProfile = newProfiles[0];
     console.log('✅ [CREATE ARTIST PROFILE] Perfil creado:', newProfile.id);
 
     // Vincular proyecto con el perfil

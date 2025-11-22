@@ -3,6 +3,7 @@
  */
 import { Router, Request, Response } from 'express';
 import { GoogleGenAI } from "@google/genai";
+import fetch from 'node-fetch';
 
 const router = Router();
 
@@ -55,6 +56,92 @@ async function generateContentWithFallback(params: any): Promise<any> {
   
   console.error('❌ Todas las API keys agotaron su cuota o fallaron');
   throw lastError || new Error('Todas las API keys de Gemini han fallado');
+}
+
+/**
+ * Genera imagen con FLUX Context (fal-ai/flux-pro/kontext) - RÁPIDO
+ * Fallback a Gemini si falla
+ */
+async function generateConceptImage(prompt: string, conceptIndex: number): Promise<{ success: boolean; imageUrl?: string; error?: string; provider?: string }> {
+  const FAL_API_KEY = process.env.FAL_KEY || process.env.FAL_API_KEY;
+  
+  // INTENTO 1: FLUX Context (más rápido - 2x)
+  if (FAL_API_KEY) {
+    try {
+      console.log(`🚀 [Concept #${conceptIndex + 1}] Generando con FLUX Context...`);
+      
+      const response = await fetch('https://fal.run/fal-ai/flux-pro/kontext', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          image_size: 'portrait_4_3',
+          num_images: 1,
+          num_inference_steps: 30,
+          guidance_scale: 3.5,
+          enable_safety_checker: false
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json() as any;
+        if (result.images && result.images.length > 0) {
+          console.log(`✅ [Concept #${conceptIndex + 1}] Imagen generada con FLUX (rápido!)`);
+          return {
+            success: true,
+            imageUrl: result.images[0].url,
+            provider: 'flux-context'
+          };
+        }
+      }
+    } catch (fluxError: any) {
+      console.warn(`⚠️ [Concept #${conceptIndex + 1}] FLUX falló:`, fluxError.message);
+    }
+  }
+
+  // INTENTO 2: Gemini 2.5 Flash Image (fallback)
+  try {
+    console.log(`🔄 [Concept #${conceptIndex + 1}] Fallback a Gemini 2.5 Flash Image...`);
+    
+    // Generar imagen con Gemini usando el cliente disponible
+    const client = geminiClients[0];
+    if (!client) {
+      return { success: false, error: 'No Gemini client available' };
+    }
+
+    const response = await generateContentWithFallback({
+      model: "gemini-2.5-flash-image",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `Create a cinematic movie poster for a music video with this concept: ${prompt}. High-quality, professional, cinematographic style.` }]
+        }
+      ],
+      config: {
+        temperature: 0.7,
+      }
+    });
+
+    const imagePart = response.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData);
+    if (imagePart?.inlineData?.data) {
+      const base64Image = imagePart.inlineData.data;
+      const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+      console.log(`✅ [Concept #${conceptIndex + 1}] Imagen generada con Gemini fallback`);
+      return {
+        success: true,
+        imageUrl: dataUrl,
+        provider: 'gemini-fallback'
+      };
+    }
+
+    return { success: false, error: 'No image data from Gemini' };
+  } catch (geminiError: any) {
+    console.error(`❌ [Concept #${conceptIndex + 1}] Gemini fallback también falló:`, geminiError.message);
+    return { success: false, error: geminiError.message };
+  }
 }
 
 /**
@@ -161,10 +248,37 @@ ${prompt}`;
     const concepts = result.concepts || [];
 
     console.log(`✅ Generados ${concepts.length} conceptos de video musical`);
+    console.log(`📸 Generando ${concepts.length} imágenes de póster EN PARALELO...`);
+
+    // Generar las 3 imágenes EN PARALELO (mucho más rápido que secuencial)
+    const imagePromises = concepts.map(async (concept: any, index: number) => {
+      // Crear prompt para la imagen basado en el concepto
+      const imagePrompt = `Professional cinematic movie poster for music video concept:
+Title: ${concept.title}
+Visual Theme: ${concept.visual_theme}
+Mood: ${concept.mood}
+Color Palette: ${concept.color_palette?.primary_colors?.join(', ')}
+Story: ${concept.story_concept?.substring(0, 150)}...
+Style: High-quality Hollywood-level cinematography, 4K poster design`;
+
+      const imageResult = await generateConceptImage(imagePrompt, index);
+      return {
+        ...concept,
+        coverImage: imageResult.imageUrl || null,
+        isGenerating: false,
+        error: imageResult.success ? null : imageResult.error,
+        imageProvider: imageResult.provider || 'none'
+      };
+    });
+
+    const conceptsWithImages = await Promise.all(imagePromises);
+    
+    const successCount = conceptsWithImages.filter(c => c.coverImage).length;
+    console.log(`✅ Generadas ${successCount}/${conceptsWithImages.length} imágenes de póster`);
 
     res.status(200).json({
       success: true,
-      concepts: concepts
+      concepts: conceptsWithImages
     });
 
   } catch (error) {
@@ -344,7 +458,30 @@ REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creativ
       cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
     }
 
-    const script = JSON.parse(cleanedContent);
+    // Limpiar caracteres especiales y problemas de formato JSON
+    cleanedContent = cleanedContent
+      .replace(/[\x00-\x1F\x7F]/g, ' ') // Eliminar caracteres de control
+      .replace(/,\s*}/g, '}') // Eliminar comas trailing
+      .replace(/,\s*]/g, ']') // Eliminar comas trailing en arrays
+      .trim();
+
+    let script: any;
+    try {
+      script = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.warn('⚠️ JSON parse error, attempting recovery:', parseError);
+      // Último intento: usar regex para extraer JSON válido
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          script = JSON.parse(jsonMatch[0]);
+        } catch {
+          throw new Error(`JSON parsing failed after recovery attempt: ${parseError}`);
+        }
+      } else {
+        throw new Error(`No valid JSON found in response: ${parseError}`);
+      }
+    }
 
     console.log(`✅ Script generado con ${script.scenes?.length || 0} escenas`);
 
