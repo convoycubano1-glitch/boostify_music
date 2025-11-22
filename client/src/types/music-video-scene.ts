@@ -248,12 +248,37 @@ export interface MusicVideoScene {
     creative_priorities: string[];     // What matters most for this scene
   };
   
+  // 🆕 MOTION DESCRIPTOR LAYER - Para video generation con movimientos
+  motion_descriptor?: {
+    performance_type: "singing" | "dancing" | "talking" | "reacting" | "instrumental" | "ambient";
+    camera_distance: "close-up" | "medium" | "wide" | "extreme-wide";
+    emotion_intensity: number;
+    movement_intensity: number;
+    head_movement: "static" | "subtle" | "moderate" | "dynamic";
+    body_movement: "static" | "subtle" | "moderate" | "dynamic" | "dance";
+    hand_gestures: "none" | "minimal" | "expressive" | "choreographed";
+    eye_direction: "camera" | "away" | "moving" | "interactive";
+    duration_seconds: number;
+    fps: number;
+    bpm?: number;
+    beat_sync: boolean;
+    emotion: string;
+    motion_complexity: "minimal" | "moderate" | "high" | "cinematic";
+    fal_prompt: string;
+    generation_hints: string[];
+  };
+
+  // 🆕 Video generation (instead of static image)
+  video_url?: string;                // URL del video generado por FAL
+  video_status?: 'pending' | 'generating' | 'completed' | 'error'; // Video gen status
+
   // Metadatos adicionales
   metadata?: {
-    generation_prompt?: string;        // Prompt usado para generar la imagen
+    generation_prompt?: string;        // Prompt usado para generar la imagen/video
     generation_timestamp?: number;     // Timestamp de generación
     error_message?: string;            // Mensaje de error si falla
     reference_images?: string[];       // URLs de imágenes usadas como referencia
+    video_generation_model?: string;   // FAL model usado (runway-gen2, stable-video, etc)
   };
 }
 

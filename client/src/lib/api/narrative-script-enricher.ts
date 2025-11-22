@@ -14,6 +14,7 @@ import { logger } from "../logger";
 import type { MusicVideoScene, MusicVideoConcept } from "../../types/music-video-scene";
 import type { DirectorProfile } from "../../data/directors/director-schema";
 import { createDirectorDPTeam } from "./director-dp-pairing";
+import { generateMotionDescriptor, type MotionDescriptorConfig } from "./motion-descriptor-generator";
 
 export interface NarrativeContext {
   storyOverview: string;
@@ -39,7 +40,7 @@ export interface NarrativeContext {
 }
 
 /**
- * Enriquece el script JSON con contexto narrativo + cinematográfico completo
+ * Enriquece el script JSON con contexto narrativo + cinematográfico + MOTION DESCRIPTORS
  */
 export async function enrichScriptWithNarrative(
   lyrics: string,
@@ -48,7 +49,9 @@ export async function enrichScriptWithNarrative(
   artistDescription: string,
   concept: MusicVideoConcept | null,
   audioDuration: number,
-  directorProfile?: DirectorProfile
+  directorProfile?: DirectorProfile,
+  musicGenre?: string,
+  bpm?: number
 ): Promise<MusicVideoScene[]> {
   try {
     logger.info("📖 Enriqueciendo script con contexto narrativo y cinematográfico...");
@@ -109,6 +112,22 @@ export async function enrichScriptWithNarrative(
         wardrobe_suggestion: artistGuidelines.wardrobe[index % artistGuidelines.wardrobe.length],
         director_signature: `${directorName} style - ${concept?.story_concept || "cinematic narrative"}`,
       };
+
+      // 🆕 AGREGAR MOTION DESCRIPTOR para video generation
+      const motionConfig: MotionDescriptorConfig = {
+        directorStyle: directorName,
+        artistDescription,
+        conceptMood: concept?.mood_progression,
+        musicGenre
+      };
+      
+      enrichedScene.motion_descriptor = generateMotionDescriptor(
+        enrichedScene,
+        motionConfig,
+        bpm || 120,
+        directorProfile
+      );
+      logger.info(`✅ [Motion] Descriptor agregado a escena ${enrichedScene.scene_id}`);
 
       // 🆕 Agregar capa cinematográfica si tenemos DP
       if (dpTeam) {
