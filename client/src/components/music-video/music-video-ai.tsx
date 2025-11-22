@@ -55,6 +55,8 @@ import {
 } from "../../lib/api/openrouter";
 import { upscaleVideo } from "../../lib/api/video-service";
 import { generateVideoScript as generateVideoScriptAPI } from "../../lib/api/openrouter";
+import { batchGenerateMasterVariations, blendMasterAndVariations, detectMasterScenes } from "../../lib/api/master-scene-variations";
+import { enrichScriptWithNarrative } from "../../lib/api/narrative-script-enricher";
 import { FileText } from "lucide-react";
 import fluxService, { FluxModel, FluxTaskType } from "../../lib/api/flux/flux-service";
 import { FalModelSelector } from "./fal-model-selector";
@@ -80,6 +82,10 @@ import {
   processPerformanceClips,
   getPerformanceSegments
 } from "../../lib/services/performance-segment-service";
+import {
+  type SceneLipsyncConfig,
+  batchProcessSceneLipsync
+} from "../../lib/api/lipsync-scene-processor";
 import { PaymentGateModal } from "./payment-gate-modal";
 import { CharacterGenerationModal } from "./character-generation-modal";
 import { analyzeFaceFeatures } from "../../lib/api/face-analyzer";
@@ -671,7 +677,30 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       
       try {
         const parsed = JSON.parse(scriptResponse);
-        setScriptContent(JSON.stringify(parsed, null, 2));
+        let scenesToUse = parsed.scenes || (Array.isArray(parsed) ? parsed : []);
+        
+        // 🆕 ENRIQUECER SCRIPT CON CONTEXTO NARRATIVO
+        if (scenesToUse.length > 0) {
+          logger.info('📖 [ENRICH] Enriqueciendo script con contexto narrativo...');
+          const artistDesc = masterCharacter?.description || 'Professional artist';
+          
+          try {
+            scenesToUse = await enrichScriptWithNarrative(
+              transcriptionText,
+              scenesToUse,
+              directorProfile?.name || 'Creative Director',
+              artistDesc,
+              concept || null,
+              buffer.duration
+            );
+            logger.info('✅ [ENRICH] Script enriquecido con narrativa');
+          } catch (enrichError) {
+            logger.warn('⚠️ [ENRICH] Error enriqueciendo narrativa, continuando con script original:', enrichError);
+          }
+        }
+        
+        const enrichedScript = { ...parsed, scenes: scenesToUse };
+        setScriptContent(JSON.stringify(enrichedScript, null, 2));
       } catch (parseError) {
         setScriptContent(scriptResponse);
       }
@@ -774,7 +803,7 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Función auxiliar para procesar lip-sync automáticamente en clips de performance
   const executePerformanceLipSync = async (script: string, buffer: AudioBuffer) => {
-    logger.info('🎤 [LIP-SYNC] Iniciando procesamiento de lip-sync');
+    logger.info('🎤 [LIP-SYNC] Iniciando procesamiento de lip-sync por escena');
     
     try {
       setIsProcessingLipSync(true);
@@ -803,41 +832,42 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       
       toast({
         title: "🎤 Procesando Lip-Sync",
-        description: `Generando ${performanceClips.length} videos con sincronización labial...`,
+        description: `Generando ${performanceClips.length} videos con sincronización labial (audio segmentado)...`,
       });
       
-      // Usar master character si está disponible, sino usar la primera imagen generada
-      let artistImageUrl = masterCharacter?.imageUrl || null;
+      // Convertir performanceClips a SceneLipsyncConfig usando timeline items
+      const sceneConfigs: SceneLipsyncConfig[] = performanceClips.map(clip => {
+        // Buscar el timeline item correspondiente
+        const timelineItem = timelineItems.find(item => {
+          const itemSceneId = parseInt(item.id.toString().match(/(\d+)$/)?.[1] || '0');
+          return itemSceneId === clip.id;
+        });
+        
+        const imageUrl = timelineItem?.generatedImage || 
+                         timelineItem?.imageUrl || 
+                         masterCharacter?.imageUrl || 
+                         '';
+        
+        return {
+          sceneId: clip.id,
+          imageUrl: imageUrl,
+          startTime: clip.startTime,
+          endTime: clip.endTime,
+          duration: clip.duration,
+          shotType: clip.shotType
+        };
+      });
       
-      if (!artistImageUrl) {
-        // Fallback: usar la primera imagen del timeline que tenga master character o imagen generada
-        const artistImageClip = timelineItems.find(item => 
-          item.metadata?.masterCharacterUrl || item.imageUrl || item.generatedImage
-        );
-        artistImageUrl = artistImageClip?.metadata?.masterCharacterUrl || 
-                        artistImageClip?.imageUrl || 
-                        artistImageClip?.generatedImage || 
-                        null;
+      if (sceneConfigs.some(config => !config.imageUrl)) {
+        logger.warn('⚠️ [LIP-SYNC] Algunas escenas no tienen imagen disponible');
       }
       
-      if (!artistImageUrl) {
-        logger.warn('⚠️ [LIP-SYNC] No hay imagen del artista disponible');
-        setIsProcessingLipSync(false);
-        return;
-      }
-      
-      logger.info(`🎭 [LIP-SYNC] Usando imagen: ${masterCharacter ? 'Master Character' : 'Timeline image'}`);
-      
-      // Procesar clips de performance
-      const projectId = currentProjectId ? parseInt(currentProjectId) : Date.now();
       const userId = user?.uid || 'anonymous';
-      const safeArtistImageUrl = artistImageUrl && typeof artistImageUrl === 'string' ? artistImageUrl : '';
       
-      const results = await processPerformanceClips(
-        projectId,
+      // Procesar lip-sync por escena con audio segmentado
+      const results = await batchProcessSceneLipsync(
+        sceneConfigs,
         buffer,
-        performanceClips,
-        safeArtistImageUrl,
         userId,
         projectName || 'untitled',
         (current, total, message) => {
@@ -848,26 +878,26 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         }
       );
       
-      logger.info(`✅ [LIP-SYNC] Procesados ${results.size} segmentos de performance`);
+      logger.info(`✅ [LIP-SYNC] Procesados ${results.size} escenas con lip-sync`);
       
       // Actualizar timeline con videos generados
       setTimelineItems(prevItems => {
         return prevItems.map(item => {
           const sceneId = parseInt(item.id.toString().match(/(\d+)$/)?.[1] || '0');
-          const segment = results.get(sceneId);
+          const lipsyncResult = results.get(sceneId);
           
-          if (segment && segment.lipsyncVideoUrl) {
+          if (lipsyncResult?.success && lipsyncResult?.lipsyncVideoUrl) {
             logger.info(`🎥 [LIP-SYNC] Actualizando clip ${sceneId} con video lip-sync`);
             return {
               ...item,
-              videoUrl: segment.lipsyncVideoUrl,
-              url: segment.lipsyncVideoUrl,
-              thumbnail: safeArtistImageUrl,
+              videoUrl: lipsyncResult.lipsyncVideoUrl,
+              url: lipsyncResult.lipsyncVideoUrl,
+              lipsyncApplied: true,
               metadata: {
                 ...item.metadata,
                 hasLipSync: true,
-                lipsyncVideoUrl: segment.lipsyncVideoUrl,
-                performanceSegmentId: segment.sceneId
+                lipsyncVideoUrl: lipsyncResult.lipsyncVideoUrl,
+                lipsyncAppliedAt: new Date().toISOString()
               }
             };
           }
@@ -876,12 +906,12 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         });
       });
       
-      setPerformanceSegments(results);
+      const successCount = Array.from(results.values()).filter(r => r.success).length;
       setProgressPercentage(100);
       
       toast({
         title: "✅ Lip-Sync Completado",
-        description: `${results.size} videos generados con sincronización labial perfecta`,
+        description: `${successCount}/${results.size} videos generados con sincronización labial perfecta (audio segmentado)`,
       });
       
       setIsProcessingLipSync(false);
@@ -1025,6 +1055,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
       
       logger.info(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${totalScenes}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
+      
+      // 🆕 MASTER SCENE VARIATIONS SYSTEM
+      let masterImageUrls = new Map<string, string>();
+      let scenesWithVariations: Map<string, any> = new Map();
+      let masterSceneIds: string[] = [];
       
       // Inicializar el estado de progreso del modal
       setGenerationProgress({
@@ -1243,9 +1278,39 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
               });
             });
             
+            // 🆕 GUARDAR URL PARA MASTER SCENE VARIATIONS
+            if (!masterImageUrls.has(scene.scene_id || `scene-${sceneIndex}`)) {
+              masterImageUrls.set(scene.scene_id || `scene-${sceneIndex}`, permanentImageUrl);
+            }
+            
             // 🎯 PREVIEW: Mostrar modal después de 10 imágenes (solo primera vez)
             if (sceneIndex === 10 && startFrom === 1 && !isAdmin && totalScenes > 10) {
               logger.info('🎯 [PREVIEW] 10 imágenes completadas, mostrando modal de preview...');
+              
+              // 🆕 GENERAR MASTER SCENE VARIATIONS
+              if (masterImageUrls.size > 0) {
+                logger.info(`🎬 [VARIATIONS] Generando variaciones para ${masterImageUrls.size} escenas maestro...`);
+                try {
+                  scenesWithVariations = await batchGenerateMasterVariations(
+                    scenes,
+                    masterImageUrls,
+                    (current, total, msg) => {
+                      logger.info(`🎬 [VARIATIONS] ${current}/${total}: ${msg}`);
+                      setProgressPercentage(100 - (current / total) * 10);
+                    }
+                  );
+                  logger.info(`✅ [VARIATIONS] ${scenesWithVariations.size} escenas con variaciones`);
+                  
+                  // 🆕 MEZCLAR MAESTROS CON VARIACIONES
+                  if (scenesWithVariations.size > 0) {
+                    scenes = blendMasterAndVariations(scenes, scenesWithVariations);
+                    logger.info('✅ [BLEND] Escenas maestro + variaciones mezcladas');
+                  }
+                } catch (variationError) {
+                  logger.warn('⚠️ [VARIATIONS] Error generando variaciones, continuando sin ellas:', variationError);
+                }
+              }
+              
               setPreviewImages(generationProgress.generatedImages.filter((_, idx) => idx < 10));
               setShowPreviewModal(true);
               setIsGeneratingImages(false);

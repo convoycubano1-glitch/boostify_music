@@ -191,6 +191,28 @@ export interface MusicVideoScene {
   image_url?: string;                  // URL de la imagen generada
   status?: 'pending' | 'generating' | 'completed' | 'error';
   
+  // 🆕 Master Scene Variations
+  isMasterScene?: boolean;             // True si es escena maestro
+  masterSceneId?: string | null;       // ID de escena maestro (null si es master)
+  shotVariation?: {                    // Parámetros de variación de composición
+    type: "wide" | "medium" | "closeup" | "detail";
+    depthOfField: "shallow" | "moderate" | "deep";
+    cameraAngle: "neutral" | "low" | "high" | "diagonal";
+    framingShift: number;
+    zoomLevel: number;
+  };
+  
+  // 🆕 Contexto Narrativo Enriquecido
+  narrative_context?: string;          // Contexto narrativo de la escena
+  emotion?: string;                    // Emoción dominante
+  emotion_intensity?: number;          // Intensidad 0-1
+  color_tone?: string;                 // Tono de color recomendado
+  connection_to_lyrics?: string;       // Conexión explícita con la letra
+  story_progression?: string;          // Fase del arco narrativo
+  artist_presence_description?: string; // Cómo debe estar presente el artista
+  wardrobe_suggestion?: string;        // Sugerencia de vestuario/apariencia
+  director_signature?: string;         // Firma/estilo del director
+  
   // Metadatos adicionales
   metadata?: {
     generation_prompt?: string;        // Prompt usado para generar la imagen

@@ -1410,34 +1410,57 @@ export function TimelineEditor({
     if (!timelineRef.current) return;
     const element = timelineRef.current;
     
-    // Pinch-to-zoom (touch gesture)
+    // Multi-touch gesture handler (pinch-to-zoom and two-finger pan)
     let lastDistance = 0;
+    let lastCenterX = 0;
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2 && isMobile) {
         e.preventDefault();
         
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
+        
+        // Calculate distance between two touches
         const distance = Math.hypot(
           touch2.clientX - touch1.clientX,
           touch2.clientY - touch1.clientY
         );
         
+        // Calculate center X position of the two touches
+        const centerX = (touch1.clientX + touch2.clientX) / 2;
+        
         if (lastDistance > 0) {
-          const scale = distance / lastDistance;
-          const newZoom = Math.min(3, Math.max(0.5, zoom * scale));
+          // Check if this is a pinch gesture (distance changing significantly)
+          const distanceChange = Math.abs(distance - lastDistance);
           
-          if (newZoom !== zoom) {
-            setZoom(newZoom);
-            triggerHaptic(5);
+          // Check if this is a pan gesture (horizontal movement)
+          const horizontalMovement = Math.abs(centerX - lastCenterX);
+          
+          // If horizontal movement is significant (more than distance change), treat as pan
+          if (horizontalMovement > distanceChange && horizontalMovement > 5) {
+            // Two-finger pan: scroll timeline horizontally
+            const panDelta = centerX - lastCenterX;
+            element.scrollLeft -= panDelta * 0.5; // Smooth scrolling with 0.5 factor
+            triggerHaptic(2); // Light haptic feedback
+          } else if (distanceChange > 2) {
+            // Pinch zoom: adjust zoom level
+            const scale = distance / lastDistance;
+            const newZoom = Math.min(3, Math.max(0.5, zoom * scale));
+            
+            if (newZoom !== zoom) {
+              setZoom(newZoom);
+              triggerHaptic(5); // Stronger haptic for zoom
+            }
           }
         }
         lastDistance = distance;
+        lastCenterX = centerX;
       }
     };
     
     const handleTouchEnd = () => {
       lastDistance = 0;
+      lastCenterX = 0;
     };
     
     // Wheel zoom (mouse wheel)
@@ -1893,7 +1916,7 @@ export function TimelineEditor({
             </span>
           </div>
           
-          <Separator orientation="vertical" className="h-6 md:h-8" />
+          <Separator orientation="vertical" className="h-6 md:h-8 hidden md:block" />
           
           {/* BLOCK 2: Tool Selection */}
           <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
@@ -1942,7 +1965,7 @@ export function TimelineEditor({
             </Button>
           </div>
           
-          <Separator orientation="vertical" className="h-6 md:h-8" />
+          <Separator orientation="vertical" className="h-6 md:h-8 hidden md:block" />
           
           {/* BLOCK 3: Advanced Editing Tools */}
           <div className="flex items-center gap-0.5 md:gap-1 bg-gray-800/50 rounded-md p-1">
@@ -1990,7 +2013,7 @@ export function TimelineEditor({
               <Flag className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
 
-            <Separator orientation="vertical" className="h-5 mx-0.5" />
+            <Separator orientation="vertical" className="h-5 mx-0.5 hidden md:block" />
 
             {/* Snap Toggle */}
             <Button 
@@ -2091,7 +2114,7 @@ export function TimelineEditor({
                 </Button>
               )}
               
-              <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2" />
+              <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2 hidden md:block" />
             </>
           )}
           
@@ -2132,7 +2155,7 @@ export function TimelineEditor({
             {zoom.toFixed(1)}x
           </Badge>
           
-          <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2" />
+          <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2 hidden md:block" />
           
           {/* Undo/Redo - Responsive */}
           <Button 
@@ -2162,7 +2185,7 @@ export function TimelineEditor({
           {/* Waveform Toggle */}
           {audioBuffer && (
             <>
-              <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2" />
+              <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2 hidden md:block" />
               
               <Button 
                 size="icon" 
@@ -2182,7 +2205,7 @@ export function TimelineEditor({
           
           <Separator orientation="vertical" className="h-6 md:h-8 mx-1 md:mx-2 hidden lg:block" />
           
-          {/* Time display - Responsive */}
+          {/* Time display - Hidden on mobile to save space */}
           <div className="text-[10px] md:text-sm font-medium bg-gray-800 px-1 md:px-2 py-0.5 md:py-1 rounded font-mono hidden md:flex" data-testid="text-timecode">
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
