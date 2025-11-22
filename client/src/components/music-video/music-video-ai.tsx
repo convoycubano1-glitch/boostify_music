@@ -1742,32 +1742,33 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         setProgressPercentage(0);
         setProgressMessage("");
         // Volver al modal de selección
-        setShowDirectorSelection(true);
-      }
-    } else if (transcription) {
-      // Si ya hay transcripción, generar conceptos directamente (Master Character en paralelo)
-      logger.info('✅ [TRANSCRIPCIÓN] Ya existe, saltando directo a generación de conceptos');
-      setShowProgress(true);
-      setProgressMessage("✅ Lyrics already analyzed! Generating creative proposals...");
-      
-      // ⚡ OPTIMIZACIÓN: Generar conceptos INMEDIATAMENTE
-      logger.info('🎬 [CONCEPTOS] Generando con letra previamente transcrita (SIN esperar Master Character)');
-      const conceptsPromise = handleGenerateConcepts(transcription, director);
-      
-      // Generar Master Character en BACKGROUND (no bloquea conceptos)
-      if (artistReferenceImages.length > 0) {
-        logger.info('🎭 Generando Master Character en PARALELO (background)...');
-        handleGenerateMasterCharacter().catch(err => {
-          logger.warn('⚠️ Master Character falló (no crítico):', err);
-        });
-      }
-      
-      // Esperar SOLO a conceptos
-      await conceptsPromise;
-    }
-  }, [transcription, selectedFile, toast, artistReferenceImages, handleGenerateMasterCharacter]);
+    } else if (transcription) {      // If transcription exists, generate Master Character FIRST, then concepts      logger.info('✅ [TRANSCRIPCIÓN] Ya existe - generando Character PRIMERO');            // 🎭 PASO 1: GENERATE MASTER CHARACTER FIRST      if (artistReferenceImages.length > 0) {        logger.info('🎭 Generating Master Character FIRST (with artist + casting)...');        setShowProgress(true);        setProgressMessage("✨ Generating master character with 4 angles and casting...");        await handleGenerateMasterCharacter();        logger.info('✅ Master Character generated successfully');      }            // 🎬 PASO 2: GENERATE CONCEPTS USING CHARACTER IMAGES      logger.info('🎬 Now generating 3 detailed concepts using the generated artist...');      setProgressMessage("🎬 Generating 3 detailed concept proposals using the generated artist...");      const conceptsPromise = handleGenerateConcepts(transcription, director);      await conceptsPromise;    }
 
-  // Handler para generar conceptos
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   const handleGenerateConcepts = useCallback(async (transcriptionText: string, director: DirectorProfile) => {
     logger.info('🎬 [CONCEPTOS] Iniciando generación con contexto completo de letra');
     logger.info('📝 [LYRICS CONTEXT] Letra disponible:', transcriptionText.substring(0, 100) + '...');
@@ -1780,16 +1781,29 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     try {
       const audioDurationInSeconds = audioBuffer ? audioBuffer.duration : 180;
       
-      // ⚡ OPTIMIZACIÓN: Usar imágenes de referencia DIRECTAMENTE (sin esperar Master Character)
-      // Si Master Character ya existe, úsalo; sino usa las imágenes de referencia originales
-      const characterReference = masterCharacter?.imageUrl 
-        ? [masterCharacter.imageUrl] 
-        : (artistReferenceImages.length > 0 ? artistReferenceImages : undefined);
+      // 🎨 USAR IMÁGENES DEL MASTER CHARACTER GENERADO (ahora siempre existen)
+      // El Master Character se genera ANTES de los conceptos, por eso siempre debe estar disponible
+      const characterImages = masterCharacter 
+        ? [
+            masterCharacter.mainCharacter.angles[0]?.url, // frontal
+            masterCharacter.mainCharacter.angles[1]?.url, // left-profile
+            masterCharacter.mainCharacter.angles[2]?.url, // right-profile
+            masterCharacter.mainCharacter.angles[3]?.url  // three-quarter
+          ].filter(Boolean)
+        : artistReferenceImages;
+      
+      const characterReference = characterImages.length > 0 ? characterImages : undefined;
       
       if (characterReference) {
-        logger.info(`🖼️ [REFERENCIAS] Usando ${characterReference === artistReferenceImages ? 'imágenes originales' : 'Master Character'} (${characterReference.length} imagen(es))`);
+        logger.info(`🎭 [REFERENCIAS] Usando imágenes del Master Character generado (${characterReference.length} ángulos)`);
+        logger.info('📸 Ángulos disponibles:', {
+          frontal: masterCharacter?.mainCharacter.angles[0]?.url ? '✅' : '❌',
+          leftProfile: masterCharacter?.mainCharacter.angles[1]?.url ? '✅' : '❌',
+          rightProfile: masterCharacter?.mainCharacter.angles[2]?.url ? '✅' : '❌',
+          threeQuarter: masterCharacter?.mainCharacter.angles[3]?.url ? '✅' : '❌'
+        });
       } else {
-        logger.info('ℹ️ [REFERENCIAS] Sin imágenes de referencia');
+        logger.info('⚠️ [REFERENCIAS] No hay imágenes del Master Character disponibles');
       }
       
       logger.info('🤖 [AI] Llamando a generateThreeConceptProposals con letra completa...');
@@ -1807,13 +1821,24 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       // Mostrar conceptos inmediatamente y generar posters mientras el usuario los ve
       setProgressMessage("Generando posters cinematográficos estilo Hollywood...");
       
-      // Inicializar conceptos SIN posters primero (progressive loading)
+      // Inicializar conceptos CON DETALLES COMPLETOS (mejorado para mostrar más info)
       const conceptsInitial = concepts.map((concept: any, index: number) => ({
         ...concept,
         coverImage: null,
         isGenerating: true,
         artistName: projectName || 'Artist Name',
-        songTitle: selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title'
+        songTitle: selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Song Title',
+        // 📝 CONCEPTOS MEJORADOS - Mostrar detalles completos
+        detailedDescription: concept.detailed_description || concept.description || '',
+        visualTheme: concept.visual_theme || '',
+        cameraWork: concept.camera_angles || concept.cinematography || 'Dynamic camera movements',
+        editingStyle: concept.editing_style || 'Fast-paced cuts with creative transitions',
+        characterRole: concept.character_description || 'Lead performer',
+        lighting: concept.lighting_setup || 'Cinematic lighting with color grading',
+        locationDetails: concept.setting || concept.location || 'Various locations',
+        emotionalArc: concept.emotional_arc || 'Building intensity throughout',
+        specialEffects: concept.special_effects || 'Subtle visual effects',
+        paceAndRhythm: concept.pacing || 'Synced to beat drops and verses'
       }));
       
       setConceptProposals(conceptsInitial);
