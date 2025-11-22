@@ -213,6 +213,41 @@ export interface MusicVideoScene {
   wardrobe_suggestion?: string;        // Sugerencia de vestuario/apariencia
   director_signature?: string;         // Firma/estilo del director
   
+  // 🆕 Cinematography Layer (Director of Photography)
+  cinematography?: {
+    camera_format: string;             // "Alexa 65", "Panavision System LF", etc.
+    lens_manufacturer: string;         // "Panavision", "Zeiss", "Cooke"
+    lens_series: string;               // "Master Prime", "Anamorphic/i"
+    focal_length: string;              // "32mm", "50mm", etc.
+    aperture: string;                  // "T1.3", "T2.8"
+    film_stock_emulation: string;      // "Kodak Vision3 500T", etc.
+    grain_characteristics: string;     // "Fine", "Medium", "Coarse"
+    
+    lighting_setup: {
+      key_light: string;               // Type and intensity
+      fill_ratio: string;              // Light ratio philosophy
+      practicals: string[];            // Practical light sources
+      color_temp_contrast: string;     // Warm/cool balance
+      technique_summary: string;       // Overall approach
+    };
+    
+    exposure_strategy: string;         // DP's exposure philosophy
+    dynamic_range_utilization: string; // How to use full DR
+    
+    // DP rationale
+    dp_signature: string;              // Which DP style is being honored
+    dp_rationale: string;              // Why these choices for this scene
+  };
+  
+  // Director-DP Collaboration Context
+  director_dp_context?: {
+    director_name: string;
+    cinematographer_name: string;
+    collaboration_intent: string;      // How they work together
+    technical_mandates: string[];      // Non-negotiable technical requirements
+    creative_priorities: string[];     // What matters most for this scene
+  };
+  
   // Metadatos adicionales
   metadata?: {
     generation_prompt?: string;        // Prompt usado para generar la imagen

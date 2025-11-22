@@ -12,6 +12,8 @@
 
 import { logger } from "../logger";
 import type { MusicVideoScene, MusicVideoConcept } from "../../types/music-video-scene";
+import type { DirectorProfile } from "../../data/directors/director-schema";
+import { createDirectorDPTeam } from "./director-dp-pairing";
 
 export interface NarrativeContext {
   storyOverview: string;
@@ -37,7 +39,7 @@ export interface NarrativeContext {
 }
 
 /**
- * Enriquece el script JSON con contexto narrativo completo
+ * Enriquece el script JSON con contexto narrativo + cinematográfico completo
  */
 export async function enrichScriptWithNarrative(
   lyrics: string,
@@ -45,18 +47,19 @@ export async function enrichScriptWithNarrative(
   directorName: string,
   artistDescription: string,
   concept: MusicVideoConcept | null,
-  audioDuration: number
+  audioDuration: number,
+  directorProfile?: DirectorProfile
 ): Promise<MusicVideoScene[]> {
   try {
-    logger.info("📖 Enriching script with narrative context...");
+    logger.info("📖 Enriqueciendo script con contexto narrativo y cinematográfico...");
 
     // 1. Extraer temas de la letra
     const themes = extractThemesFromLyrics(lyrics);
-    logger.info(`🎯 Extracted themes: ${themes.join(", ")}`);
+    logger.info(`🎯 Temas extraídos: ${themes.join(", ")}`);
 
     // 2. Definir arco narrativo
     const narrativeArc = defineNarrativeArc(lyrics, themes, scenes.length);
-    logger.info(`📈 Narrative arc: ${narrativeArc.act1.substring(0, 50)}...`);
+    logger.info(`📈 Arco narrativo: ${narrativeArc.act1.substring(0, 50)}...`);
 
     // 3. Crear guía artística
     const artistGuidelines = createArtistGuidelines(
@@ -64,13 +67,25 @@ export async function enrichScriptWithNarrative(
       concept?.main_wardrobe,
       concept?.story_concept
     );
-    logger.info(`🎭 Artist guidelines: ${artistGuidelines.presence}`);
+    logger.info(`🎭 Guía artística: ${artistGuidelines.presence}`);
 
     // 4. Mapear emociones
     const emotionalMap = mapEmotionalJourney(lyrics, scenes, audioDuration);
-    logger.info(`💔 Emotional map: ${emotionalMap.length} points mapped`);
+    logger.info(`💔 Mapa emocional: ${emotionalMap.length} puntos mapeados`);
 
-    // 5. Enriquecer cada escena
+    // 5. 🆕 CREAR EQUIPO DIRECTOR + DP
+    let dpTeam = null;
+    if (directorProfile) {
+      logger.info(`🎬 [DP] Creando equipo cinematográfico para ${directorProfile.name}...`);
+      try {
+        dpTeam = await createDirectorDPTeam(directorProfile);
+        logger.info(`✅ [DP] Equipo: ${dpTeam.director.name} + ${dpTeam.cinematographer.name} (Sinergia: ${dpTeam.synergy_score}/100)`);
+      } catch (dpError) {
+        logger.warn('⚠️ [DP] Error creando equipo cinematográfico, continuando sin DP:', dpError);
+      }
+    }
+
+    // 6. Enriquecer cada escena
     const enrichedScenes = scenes.map((scene, index) => {
       const emotionalContext = emotionalMap.find(
         (em) =>
@@ -81,7 +96,8 @@ export async function enrichScriptWithNarrative(
       const theme = themes[index % themes.length];
       const relevantArcPhase = getArcPhaseForScene(scene.start_time, audioDuration, narrativeArc);
 
-      return {
+      // 🆕 Enriquecer con datos cinematográficos
+      const enrichedScene: MusicVideoScene = {
         ...scene,
         narrative_context: `${relevantArcPhase} - ${theme}`,
         emotion: emotionalContext?.emotion || "cinematic",
@@ -93,12 +109,48 @@ export async function enrichScriptWithNarrative(
         wardrobe_suggestion: artistGuidelines.wardrobe[index % artistGuidelines.wardrobe.length],
         director_signature: `${directorName} style - ${concept?.story_concept || "cinematic narrative"}`,
       };
+
+      // 🆕 Agregar capa cinematográfica si tenemos DP
+      if (dpTeam) {
+        enrichedScene.cinematography = {
+          camera_format: dpTeam.scene_generation_mandate.camera_format,
+          lens_manufacturer: dpTeam.cinematographer.camera_arsenal.lens_packages[0]?.manufacturer || "Panavision",
+          lens_series: dpTeam.cinematographer.camera_arsenal.lens_packages[0]?.series || "Master Prime",
+          focal_length: dpTeam.cinematographer.camera_arsenal.lens_packages[0]?.focal_lengths[Math.floor(Math.random() * 6)] || "35mm",
+          aperture: "T1.3 - T2.8",
+          film_stock_emulation: dpTeam.scene_generation_mandate.film_stock_emulation,
+          grain_characteristics: dpTeam.cinematographer.camera_arsenal.film_stock_emulation[0]?.characteristics || "Fine grain",
+          
+          lighting_setup: {
+            key_light: dpTeam.cinematographer.technical_specialties.lighting_approach.split(".")[0] || "Motivated practical",
+            fill_ratio: "3:1 ratio for depth",
+            practicals: ["Practicals integrated with key light"],
+            color_temp_contrast: dpTeam.cinematographer.technical_specialties.color_science.split(".")[0] || "Warm/cool balance",
+            technique_summary: dpTeam.cinematographer.signature_look.legendary_technique,
+          },
+          
+          exposure_strategy: dpTeam.cinematographer.technical_specialties.exposure_philosophy,
+          dynamic_range_utilization: "Full 14+ stops for maximum detail",
+          dp_signature: dpTeam.cinematographer.name,
+          dp_rationale: `${dpTeam.cinematographer.name} approach optimizes for ${theme} with ${emotionalContext?.emotion || 'cinematic'} emotional tone`,
+        };
+
+        enrichedScene.director_dp_context = {
+          director_name: dpTeam.director.name,
+          cinematographer_name: dpTeam.cinematographer.name,
+          collaboration_intent: dpTeam.collaboration_philosophy,
+          technical_mandates: dpTeam.cinematography_guidelines.must_haves.slice(0, 5),
+          creative_priorities: dpTeam.cinematography_guidelines.emphasis.slice(0, 5),
+        };
+      }
+
+      return enrichedScene;
     });
 
-    logger.info("✅ Script enriched with narrative context");
+    logger.info("✅ Script enriquecido con narrativa y cinematografía");
     return enrichedScenes;
   } catch (error) {
-    logger.error("❌ Error enriching script:", error);
+    logger.error("❌ Error enriqueciendo script:", error);
     return scenes; // Fallback: return original scenes
   }
 }

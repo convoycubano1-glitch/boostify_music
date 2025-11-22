@@ -691,9 +691,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
               directorProfile?.name || 'Creative Director',
               artistDesc,
               concept || null,
-              buffer.duration
+              buffer.duration,
+              directorProfile || undefined  // 🆕 Pasar perfil completo del director para cinematografía
             );
-            logger.info('✅ [ENRICH] Script enriquecido con narrativa');
+            logger.info('✅ [ENRICH] Script enriquecido con narrativa y cinematografía DP');
           } catch (enrichError) {
             logger.warn('⚠️ [ENRICH] Error enriqueciendo narrativa, continuando con script original:', enrichError);
           }
