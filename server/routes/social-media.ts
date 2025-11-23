@@ -6,6 +6,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { socialMediaPosts } from '../db/schema';
+import { eq, and, desc } from 'drizzle-orm';
 import { generateSocialMediaContent } from '../services/social-media-service';
 
 const router = Router();
@@ -105,9 +106,9 @@ router.get('/posts/:userId', async (req: Request, res: Response) => {
       .select()
       .from(socialMediaPosts)
       .where(
-        (table) => (table.userId = numUserId && table.isPublished = true)
+        and(eq(socialMediaPosts.userId, numUserId), eq(socialMediaPosts.isPublished, true))
       )
-      .orderBy((table) => table.createdAt);
+      .orderBy(desc(socialMediaPosts.createdAt));
 
     return res.json({
       success: true,
