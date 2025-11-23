@@ -699,23 +699,27 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     'songs': { name: 'Música', icon: Music, isOwnerOnly: false },
     'videos': { name: 'Videos', icon: VideoIcon, isOwnerOnly: false },
     'news': { name: 'Noticias', icon: Newspaper, isOwnerOnly: false },
+    'social-posts': { name: 'Posts Redes Sociales', icon: Share2, isOwnerOnly: false },
     'social-hub': { name: 'Redes Sociales', icon: Share2, isOwnerOnly: false },
     'merchandise': { name: 'Merchandising', icon: ShoppingBag, isOwnerOnly: false },
     'galleries': { name: 'Galerías de Imágenes', icon: Image, isOwnerOnly: false },
+    'tokenization': { name: 'Tokenización de Canciones', icon: Coins, isOwnerOnly: true },
     'monetize-cta': { name: 'Monetiza Tu Talento', icon: Sparkles, isOwnerOnly: false },
     'analytics': { name: 'Analytics', icon: TrendingUp, isOwnerOnly: false },
     'earnings': { name: 'Ganancias', icon: DollarSign, isOwnerOnly: true },
     'crowdfunding': { name: 'Crowdfunding', icon: Target, isOwnerOnly: true },
   };
   
-  const defaultOrder = ['songs', 'videos', 'news', 'social-hub', 'merchandise', 'galleries', 'monetize-cta', 'analytics', 'earnings', 'crowdfunding'];
+  const defaultOrder = ['songs', 'videos', 'news', 'social-posts', 'social-hub', 'merchandise', 'galleries', 'tokenization', 'monetize-cta', 'analytics', 'earnings', 'crowdfunding'];
   const defaultVisibility: Record<string, boolean> = {
     'songs': true,
     'videos': true,
     'news': true,
+    'social-posts': true,
     'social-hub': true,
     'merchandise': true,
     'galleries': true,
+    'tokenization': true,
     'monetize-cta': true,
     'analytics': true,
     'earnings': true,
