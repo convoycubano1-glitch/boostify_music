@@ -1979,6 +1979,7 @@ export const prCampaigns = pgTable("pr_campaigns", {
   title: text("title").notNull(),
   artistName: text("artist_name").notNull(),
   artistProfileUrl: text("artist_profile_url"),
+  campaignImage: text("campaign_image"), // AI-generated campaign image
   
   contentType: text("content_type", { enum: ["single", "album", "video", "tour", "announcement"] }).notNull(),
   contentTitle: text("content_title").notNull(),
@@ -2042,15 +2043,34 @@ export const prWebhookEvents = pgTable("pr_webhook_events", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-export const insertPRCampaignSchema = createInsertSchema(prCampaigns).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true,
-  mediaContacted: true,
-  emailsOpened: true,
-  mediaReplied: true,
-  interviewsBooked: true
-});
+export const insertPRCampaignSchema = createInsertSchema(prCampaigns)
+  .omit({ 
+    id: true, 
+    createdAt: true, 
+    updatedAt: true,
+    mediaContacted: true,
+    emailsOpened: true,
+    mediaReplied: true,
+    interviewsBooked: true,
+    lastSyncAt: true,
+    makeScenarioId: true
+  })
+  .extend({
+    title: z.string().min(1, 'Campaign title is required'),
+    artistName: z.string().min(1, 'Artist name is required'),
+    contentTitle: z.string().min(1, 'Content title is required'),
+    contentType: z.enum(["single", "album", "video", "tour", "announcement"]),
+    pitchMessage: z.string().min(1, 'Pitch message is required'),
+    contactEmail: z.string().email('Valid email required'),
+    contactPhone: z.string().optional(),
+    artistProfileUrl: z.string().optional(),
+    contentUrl: z.string().optional(),
+    targetMediaTypes: z.array(z.string()).nullable().default([]).transform(v => v || []),
+    targetCountries: z.array(z.string()).nullable().default([]).transform(v => v || []),
+    targetGenres: z.array(z.string()).nullable().default([]).transform(v => v || []),
+    campaignImage: z.string().optional(),
+    userId: z.number().optional()
+  });
 export const selectPRCampaignSchema = createSelectSchema(prCampaigns);
 export type InsertPRCampaign = z.infer<typeof insertPRCampaignSchema>;
 export type SelectPRCampaign = typeof prCampaigns.$inferSelect;

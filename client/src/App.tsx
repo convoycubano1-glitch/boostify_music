@@ -88,6 +88,7 @@ const FirestoreSocialPage = lazy(() => import("./pages/firestore-social"));
 const ArtistProfilePage = lazy(() => import("./pages/artist-profile"));
 const MyArtistPage = lazy(() => import("./pages/my-artist"));
 const MyArtistsPage = lazy(() => import("./pages/my-artists"));
+const EditArtistPage = lazy(() => import("./pages/edit-artist"));
 const ArticlePage = lazy(() => import("./pages/article"));
 const DiagnosticsPage = lazy(() => import("./pages/diagnostics"));
 const AffiliatesPage = lazy(() => import("./pages/affiliates"));
@@ -219,6 +220,7 @@ const Router = () => {
   const WrappedArtistProfilePage = withPageWrapper(ArtistProfilePage);
   const WrappedMyArtistPage = withPageWrapper(MyArtistPage);
   const WrappedMyArtistsPage = withPageWrapper(MyArtistsPage);
+  const WrappedEditArtistPage = withPageWrapper(EditArtistPage);
   const WrappedDashboardPage = withPageWrapper(DashboardPage);
   const WrappedAdminPage = withPageWrapper(AdminPage);
   const WrappedArtistDashboard = withPageWrapper(ArtistDashboard);
@@ -329,6 +331,7 @@ const Router = () => {
           {getRouteComponent("/artist/:slug", WrappedArtistProfilePage, null)}
           {getRouteComponent("/my-artist", WrappedMyArtistPage, 'free')}
           {getRouteComponent("/my-artists", WrappedMyArtistsPage, 'free')}
+          {getRouteComponent("/edit-artist/:id", WrappedEditArtistPage, 'free')}
           {getRouteComponent("/pricing", WrappedPricingPage, null)}
           {getRouteComponent("/music-video-pricing", WrappedMusicVideoPricing, null)}
           {getRouteComponent("/boostify-explicit", WrappedBoostifyExplicitPage, null)}

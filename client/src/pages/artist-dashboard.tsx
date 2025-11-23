@@ -32,10 +32,10 @@ import { DistributionCard } from "../components/distribution/distribution-card";
 import { TokenizationPanel } from "../components/tokenization/tokenization-panel";
 import { useAuth } from "../hooks/use-auth";
 
-// Import generated images
-import aggregatorDashboardImg from "@assets/generated_images/modern_music_aggregator_dashboard_interface.png";
-import networkVisualizationImg from "@assets/generated_images/music_distribution_network_visualization.png";
-import controlPanelImg from "@assets/generated_images/futuristic_music_production_control_panel.png";
+// Placeholder images - will be generated
+const aggregatorDashboardImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect fill='%23222' width='800' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' fill='%23fff'%3EMusicAggregator Dashboard%3C/text%3E%3C/svg%3E";
+const networkVisualizationImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect fill='%23222' width='800' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' fill='%23fff'%3EDistribution Network%3C/text%3E%3C/svg%3E";
+const controlPanelImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect fill='%23222' width='800' height='400'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='20' fill='%23fff'%3EControl Panel%3C/text%3E%3C/svg%3E";
 
 export default function DistributionTools() {
   const { user } = useAuth();

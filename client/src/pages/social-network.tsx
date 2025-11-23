@@ -19,7 +19,6 @@ import { BookingDialog } from "../components/booking/booking-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { ScrollArea } from "../components/ui/scroll-area";
-import { apiRequest } from "../lib/queryClient";
 import { ServiceRequestForm, ServiceRequestList } from "../components/services/ServiceRequestForm";
 import { Briefcase } from "lucide-react";
 
@@ -85,8 +84,8 @@ export default function SocialNetworkPage() {
           method: "POST",
           data: {
             userId: user.id,
-            displayName: user.displayName || user.email?.split('@')[0] || 'Usuario',
-            avatar: user.photoURL || '',
+            displayName: user.username || user.firstName || user.email?.split('@')[0] || 'Usuario',
+            avatar: user.profileImageUrl || '',
             bio: '',
             interests: [],
             language: navigator.language.startsWith('es') ? 'es' : 'en'
