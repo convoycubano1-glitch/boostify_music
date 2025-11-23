@@ -58,34 +58,81 @@ export default function SocialNetworkPage() {
     syncUser();
   }, [user?.id]);
 
-  // Cargar artistas desde Firestore y datos del artista actual
+  // Cargar artistas desde PostgreSQL
   useEffect(() => {
     const loadArtists = async () => {
       try {
-        const usersRef = collection(db, "users");
-        const snapshot = await getDocs(usersRef);
-        const artistsList = snapshot.docs
-          .map(doc => ({
-            ...doc.data(),
-            id: doc.id
-          }))
-          .filter((user: any) => user.slug && user.displayName)
-          .slice(0, 6); // Mostrar máximo 6 artistas
-        setArtists(artistsList);
+        // Obtener artistas desde PostgreSQL vía API
+        const response = await apiRequest({
+          url: "/api/artist-generator/my-artists",
+          method: "GET"
+        });
+        
+        if (response?.artists && Array.isArray(response.artists)) {
+          const artistsList = response.artists
+            .filter((artist: any) => artist.slug && artist.name)
+            .slice(0, 20); // Mostrar máximo 20 artistas
+          setArtists(artistsList.map((a: any) => ({
+            id: a.id,
+            uid: String(a.id),
+            displayName: a.name,
+            slug: a.slug,
+            photoURL: a.profileImage,
+            profileImage: a.profileImage,
+            bannerImage: a.coverImage,
+            biography: a.biography,
+            genre: a.genres?.[0] || a.genre,
+            location: a.location,
+            instagram: a.instagram,
+            twitter: a.twitter,
+            youtube: a.youtube,
+            spotify: a.spotify
+          })));
+        }
 
-        // Buscar el perfil del artista del usuario actual
+        // Cargar perfil del artista actual desde PostgreSQL
         if (user?.id) {
-          const q = query(usersRef, where("uid", "==", String(user.id)));
-          const userSnapshot = await getDocs(q);
-          if (userSnapshot.docs.length > 0) {
+          const profileResponse = await apiRequest({
+            url: `/api/profile/${user.id}`,
+            method: "GET"
+          });
+          
+          if (profileResponse) {
             setCurrentUserArtist({
-              ...userSnapshot.docs[0].data(),
-              id: userSnapshot.docs[0].id
+              id: profileResponse.id,
+              uid: String(profileResponse.id),
+              displayName: profileResponse.artistName,
+              slug: profileResponse.slug,
+              photoURL: profileResponse.profileImage,
+              profileImage: profileResponse.profileImage,
+              bannerImage: profileResponse.coverImage,
+              biography: profileResponse.biography,
+              genre: profileResponse.genre,
+              location: profileResponse.location,
+              instagram: profileResponse.instagramHandle,
+              twitter: profileResponse.twitterHandle,
+              youtube: profileResponse.youtubeChannel,
+              spotify: profileResponse.spotifyUrl
             });
           }
         }
       } catch (error) {
-        console.error("Error loading artists:", error);
+        console.error("Error loading artists from PostgreSQL:", error);
+        // Fallback a Firestore si PostgreSQL falla
+        try {
+          const usersRef = collection(db, "users");
+          const snapshot = await getDocs(usersRef);
+          const artistsList = snapshot.docs
+            .map(doc => ({
+              ...doc.data(),
+              id: doc.id
+            }))
+            .filter((user: any) => user.slug && user.displayName)
+            .slice(0, 6);
+          setArtists(artistsList);
+        } catch (firebaseError) {
+          console.error("Error loading artists from Firestore:", firebaseError);
+        }
       }
     };
     loadArtists();

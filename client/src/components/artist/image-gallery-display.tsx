@@ -48,12 +48,13 @@ interface ImageGallery {
 }
 
 interface ImageGalleryDisplayProps {
-  artistId: string;
+  artistId: string | number;
+  pgId?: string | number;
   isOwner?: boolean;
   refreshKey?: number;
 }
 
-export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 }: ImageGalleryDisplayProps) {
+export function ImageGalleryDisplay({ artistId, pgId, isOwner = false, refreshKey = 0 }: ImageGalleryDisplayProps) {
   const [galleries, setGalleries] = useState<ImageGallery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -74,9 +75,10 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
   const { toast } = useToast();
 
   useEffect(() => {
-    logger.info('🖼️ ImageGalleryDisplay montado para artistId:', artistId, 'refreshKey:', refreshKey);
+    const queryId = pgId || artistId;
+    logger.info('🖼️ ImageGalleryDisplay montado para artistId:', queryId, 'refreshKey:', refreshKey);
     loadGalleries();
-  }, [artistId, refreshKey]);
+  }, [artistId, pgId, refreshKey]);
 
   // Auto-rotación de imágenes cada 5 segundos
   useEffect(() => {
@@ -95,12 +97,13 @@ export function ImageGalleryDisplay({ artistId, isOwner = false, refreshKey = 0 
   const loadGalleries = async () => {
     try {
       setIsLoading(true);
-      logger.info('📥 Cargando galerías para artistId:', artistId);
+      const queryId = pgId || artistId;
+      logger.info('📥 Cargando galerías para artistId:', queryId, '(PostgreSQL ID)');
       
       const galleriesRef = collection(db, "image_galleries");
       const q = query(
         galleriesRef,
-        where("userId", "==", artistId)
+        where("userId", "==", queryId)
       );
       
       const querySnapshot = await getDocs(q);

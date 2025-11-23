@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "../db";
 import { tokenizedSongs } from "../db/schema";
-import { desc } from "drizzle-orm";
+import { users } from "../db/schema";
+import { desc, eq } from "drizzle-orm";
 
 const router = Router();
 
@@ -18,27 +19,46 @@ router.get("/tokenized-songs", async (req, res) => {
     
     console.log(`✅ [BOOSTISWAP] Se encontraron ${songs.length} canciones tokenizadas`);
     
-    // Format response for marketplace
-    const formattedSongs = songs.map((song) => ({
-      id: song.id,
-      artistId: song.artistId,
-      songName: song.songName,
-      artist: song.songName, // Will be populated from artist data
-      tokenSymbol: song.tokenSymbol,
-      pricePerTokenUsd: parseFloat(song.pricePerTokenUsd),
-      pricePerTokenEth: song.pricePerTokenEth ? parseFloat(song.pricePerTokenEth) : 0.005,
-      totalSupply: song.totalSupply,
-      availableSupply: song.availableSupply,
-      volume24h: Math.floor(Math.random() * 50000) + 10000, // Demo data
-      holders: Math.floor(Math.random() * 1000) + 100, // Demo data
-      imageUrl: song.imageUrl || "",
-      description: song.description || "",
-      change24h: Math.random() * 30 - 5, // Demo data: -5% to +25%
-      contractAddress: song.contractAddress,
-      tokenId: song.tokenId,
-      blockchainTokenId: song.tokenId,
-      benefits: song.benefits || []
-    }));
+    // Format response for marketplace - fetch artist names
+    const formattedSongs = await Promise.all(
+      songs.map(async (song) => {
+        let artistName = song.songName;
+        try {
+          if (song.artistId) {
+            const artist = await db.select({ name: users.artistName })
+              .from(users)
+              .where(eq(users.id, song.artistId))
+              .limit(1);
+            if (artist.length > 0 && artist[0].name) {
+              artistName = artist[0].name;
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching artist:", err);
+        }
+
+        return {
+          id: song.id,
+          artistId: song.artistId,
+          songName: song.songName,
+          artist: artistName,
+          tokenSymbol: song.tokenSymbol,
+          pricePerTokenUsd: parseFloat(song.pricePerTokenUsd),
+          pricePerTokenEth: song.pricePerTokenEth ? parseFloat(song.pricePerTokenEth) : 0.005,
+          totalSupply: song.totalSupply,
+          availableSupply: song.availableSupply,
+          volume24h: Math.floor(Math.random() * 50000) + 10000,
+          holders: Math.floor(Math.random() * 1000) + 100,
+          imageUrl: song.imageUrl || "",
+          description: song.description || "",
+          change24h: Math.random() * 30 - 5,
+          contractAddress: song.contractAddress,
+          tokenId: song.tokenId,
+          blockchainTokenId: song.tokenId,
+          benefits: song.benefits || []
+        };
+      })
+    );
     
     res.json(formattedSongs);
   } catch (error) {

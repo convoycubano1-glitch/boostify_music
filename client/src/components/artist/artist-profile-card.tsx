@@ -980,12 +980,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Query para canciones
   const { data: songs = [] as Song[], refetch: refetchSongs } = useQuery<Song[]>({
-    queryKey: ["songs", artistId],
+    queryKey: ["songs", userProfile?.pgId || artistId],
     queryFn: async () => {
       try {
-        logger.info(`🎵 Fetching songs for artist: ${artistId}`);
+        const pgId = userProfile?.pgId || artistId;
+        logger.info(`🎵 Fetching songs for artist: ${pgId} (PostgreSQL ID)`);
         const songsRef = collection(db, "songs");
-        const q = query(songsRef, where("userId", "==", artistId));
+        const q = query(songsRef, where("userId", "==", pgId));
         const querySnapshot = await getDocs(q);
 
         logger.info(`📊 Songs query returned ${querySnapshot.size} documents`);
@@ -1023,12 +1024,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Query para videos
   const { data: videos = [] as Video[], refetch: refetchVideos } = useQuery<Video[]>({
-    queryKey: ["videos", artistId],
+    queryKey: ["videos", userProfile?.pgId || artistId],
     queryFn: async () => {
       try {
-        logger.info(`📹 Fetching videos for artist: ${artistId}`);
+        const pgId = userProfile?.pgId || artistId;
+        logger.info(`📹 Fetching videos for artist: ${pgId} (PostgreSQL ID)`);
         const videosRef = collection(db, "videos");
-        const q = query(videosRef, where("userId", "==", artistId));
+        const q = query(videosRef, where("userId", "==", pgId));
         const querySnapshot = await getDocs(q);
 
         logger.info(`📊 Videos query returned ${querySnapshot.size} documents`);
@@ -1086,16 +1088,17 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Query para productos con auto-generación
   const { data: products = [] as Product[], refetch: refetchProducts } = useQuery<Product[]>({
-    queryKey: ["merchandise", artistId],
+    queryKey: ["merchandise", userProfile?.pgId || artistId],
     queryFn: async () => {
       try {
-        logger.info(`🛍️ Fetching merchandise for artist: ${artistId}`);
+        const pgId = userProfile?.pgId || artistId;
+        logger.info(`🛍️ Fetching merchandise for artist: ${pgId} (PostgreSQL ID)`);
         logger.info(`👤 User profile loaded:`, userProfile ? 'YES' : 'NO');
-        logger.info(`🔍 DEBUG - Artist ID being used for query:`, artistId);
-        logger.info(`🔍 DEBUG - Artist ID type:`, typeof artistId);
+        logger.info(`🔍 DEBUG - Using PostgreSQL ID for query:`, pgId);
+        logger.info(`🔍 DEBUG - Artist ID type:`, typeof pgId);
         
         const merchRef = collection(db, "merchandise");
-        const q = query(merchRef, where("userId", "==", artistId));
+        const q = query(merchRef, where("userId", "==", pgId));
         const querySnapshot = await getDocs(q);
 
         logger.info(`📊 Merchandise query returned ${querySnapshot.size} documents`);
@@ -1323,12 +1326,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Query para shows
   const { data: shows = [] as Show[], refetch: refetchShows} = useQuery<Show[]>({
-    queryKey: ["shows", artistId],
+    queryKey: ["shows", userProfile?.pgId || artistId],
     queryFn: async () => {
       try {
-        logger.info(`🎤 Fetching shows for artist: ${artistId}`);
+        const pgId = userProfile?.pgId || artistId;
+        logger.info(`🎤 Fetching shows for artist: ${pgId} (PostgreSQL ID)`);
         const showsRef = collection(db, "shows");
-        const q = query(showsRef, where("userId", "==", artistId));
+        const q = query(showsRef, where("userId", "==", pgId));
         const querySnapshot = await getDocs(q);
 
         logger.info(`📊 Shows query returned ${querySnapshot.size} documents`);
@@ -1376,11 +1380,12 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   }
 
   const { data: newsArticles = [] as NewsArticle[], refetch: refetchNews } = useQuery<NewsArticle[]>({
-    queryKey: ['/api/artist-generator/news', artistId],
+    queryKey: ['/api/artist-generator/news', userProfile?.pgId || artistId],
     queryFn: async () => {
       try {
-        logger.info(`📰 Fetching news for artist: ${artistId}`);
-        const response = await fetch(`/api/artist-generator/news/${artistId}`);
+        const pgId = userProfile?.pgId || artistId;
+        logger.info(`📰 Fetching news for artist: ${pgId} (PostgreSQL ID)`);
+        const response = await fetch(`/api/artist-generator/news/${pgId}`);
         
         if (!response.ok) {
           logger.warn('⚠️ News API returned non-OK status:', response.status);
@@ -1404,20 +1409,22 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   });
 
   const artist = {
-    name: userProfile?.displayName || userProfile?.name || "Artist Name",
-    genre: userProfile?.genre || "Music Artist",
-    location: userProfile?.location || "",
-    profileImage: userProfile?.photoURL || userProfile?.profileImage || '/assets/freepik__boostify_music_organe_abstract_icon.png',
-    bannerImage: userProfile?.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80',
-    loopVideoUrl: userProfile?.loopVideoUrl || "",
-    bannerPosition: userProfile?.bannerPosition ?? "50",
-    biography: userProfile?.biography || "Music artist profile",
+    id: userProfile?.pgId || artistId,
+    pgId: userProfile?.pgId || artistId,
+    name: initialArtistData?.displayName || initialArtistData?.name || userProfile?.displayName || userProfile?.name || "Artist Name",
+    genre: initialArtistData?.genre || userProfile?.genre || "Music Artist",
+    location: initialArtistData?.location || userProfile?.location || "",
+    profileImage: initialArtistData?.profileImage || initialArtistData?.photoURL || userProfile?.photoURL || userProfile?.profileImage || '/assets/freepik__boostify_music_organe_abstract_icon.png',
+    bannerImage: initialArtistData?.bannerImage || userProfile?.bannerImage || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80',
+    loopVideoUrl: initialArtistData?.loopVideoUrl || userProfile?.loopVideoUrl || "",
+    bannerPosition: initialArtistData?.bannerPosition ?? userProfile?.bannerPosition ?? "50",
+    biography: initialArtistData?.biography || userProfile?.biography || "Music artist profile",
     followers: userProfile?.followers || 0,
-    instagram: userProfile?.instagram || "",
-    twitter: userProfile?.twitter || "",
-    youtube: userProfile?.youtube || "",
-    spotify: userProfile?.spotify || "",
-    website: userProfile?.website || "",
+    instagram: initialArtistData?.instagram || userProfile?.instagram || "",
+    twitter: initialArtistData?.twitter || userProfile?.twitter || "",
+    youtube: initialArtistData?.youtube || userProfile?.youtube || "",
+    spotify: initialArtistData?.spotify || userProfile?.spotify || "",
+    website: initialArtistData?.website || userProfile?.website || "",
     profileLayout: userProfile?.profileLayout || null
   };
 
@@ -3240,7 +3247,8 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       } else if (sectionId === 'galleries') {
                         sectionElement = (
                           <ImageGalleryDisplay 
-                            artistId={artistId} 
+                            artistId={artistId}
+                            pgId={artist.pgId}
                             isOwner={isOwnProfile}
                             refreshKey={galleriesRefreshKey}
                           />
@@ -3947,7 +3955,8 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
             {/* Image Galleries */}
             <ImageGalleryDisplay 
-              artistId={artistId} 
+              artistId={artistId}
+              pgId={artist.pgId}
               isOwner={isOwnProfile}
               refreshKey={galleriesRefreshKey}
             />

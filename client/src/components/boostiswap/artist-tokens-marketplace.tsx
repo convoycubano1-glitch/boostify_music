@@ -66,24 +66,37 @@ export function ArtistTokensMarketplace() {
   );
 
   const handleTokenCardClick = (songId: number, artistName?: string) => {
-    console.log("🎯 Clicked token card for song ID:", songId);
+    console.log("🎯 Clicked token card for song ID:", songId, "Artist:", artistName);
     
     // Find the profile by searching through all profiles for matching name
     let profile: ArtistProfile | null = null;
     
-    // First try to find by artist name
+    // First try to find by artist name (exact match)
     if (artistName) {
-      profile = Object.values(artistProfiles).find(p => p.name === artistName) || null;
+      profile = Object.values(artistProfiles).find(p => p.name.toLowerCase() === artistName.toLowerCase()) || null;
+      console.log("🔍 Found by artist name:", profile?.name);
     }
     
-    // Fallback: try direct ID lookup
-    if (!profile && artistProfiles[songId]) {
-      profile = artistProfiles[songId];
+    // If not found, try loose matching (substring)
+    if (!profile && artistName) {
+      profile = Object.values(artistProfiles).find(p => 
+        artistName.toLowerCase().includes(p.name.split(' ')[0].toLowerCase())
+      ) || null;
+      console.log("🔍 Found by loose match:", profile?.name);
     }
     
-    // Fallback: try first profile if nothing found
+    // Try tokenId/songId mapping
+    if (!profile) {
+      // Map token IDs 1-20 to artist profile IDs 1-20
+      const profileId = ((songId - 1) % 20) + 1;
+      profile = artistProfiles[profileId] || null;
+      console.log("🔍 Found by token ID mapping:", profile?.name);
+    }
+    
+    // Last fallback: use first available profile
     if (!profile) {
       profile = Object.values(artistProfiles)[0] || null;
+      console.log("🔍 Using first profile as fallback:", profile?.name);
     }
     
     if (profile) {
