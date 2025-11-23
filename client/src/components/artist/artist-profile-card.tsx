@@ -3161,8 +3161,9 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               </button>
               
               {sectionExpanded[sectionId] && (
-              {/* Contenedor del elemento circular */}
-              <div className="relative py-8 md:py-12 overflow-hidden bg-black rounded-2xl">
+                <>
+                {/* Contenedor del elemento circular */}
+                <div className="relative py-8 md:py-12 overflow-hidden bg-black rounded-2xl">
                 {/* Fondo degradado animado */}
                 <div className="absolute inset-0" style={{
                   background: `radial-gradient(circle at 50% 50%, ${colors.hexPrimary}30 0%, ${colors.hexAccent}20 30%, #000000 70%)`
@@ -3274,6 +3275,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   }
                 `}} />
               </div>
+              </>
               )}
             </div>
                         );
