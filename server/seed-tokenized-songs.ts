@@ -4,6 +4,7 @@
  */
 import { db } from './db';
 import { tokenizedSongs } from './db/schema';
+import { eq } from 'drizzle-orm';
 
 // Use direct URLs instead of client-side function
 const BOOSTIFY_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -424,7 +425,7 @@ export async function seedTokenizedSongs() {
     
     for (const song of TOKENIZED_SONGS_SEED) {
       const existing = await db.select().from(tokenizedSongs)
-        .where(db.eq(tokenizedSongs.tokenId, song.tokenId));
+        .where(eq(tokenizedSongs.tokenId, song.tokenId));
       
       if (existing.length === 0) {
         await db.insert(tokenizedSongs).values(song);
