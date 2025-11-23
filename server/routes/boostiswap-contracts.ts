@@ -8,7 +8,7 @@ import { db } from '../db';
 import { z } from 'zod';
 import { 
   calculateSwapOutput, 
-  calculateFees, 
+  calculateDEXFees, 
   MUSIC_TOKEN_ABI, 
   BOOSTISWAP_ROUTER_ABI,
   BOOSTIFY_FEE_PERCENTAGE 
