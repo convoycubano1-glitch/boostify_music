@@ -341,9 +341,7 @@ export function ArtistDetailModal({
               </span>
             </p>
             <a 
-              href={`/artist/${artist.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`/artist/${artist.name.toLowerCase().replace(/\s+/g, '-')}`}
               className="w-full inline-block"
             >
               <Button 
