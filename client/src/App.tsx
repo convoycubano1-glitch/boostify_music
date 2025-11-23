@@ -110,6 +110,7 @@ const ProfessionalEditorPage = lazy(() => import("./pages/professional-editor"))
 const LayerFilterDemoPage = lazy(() => import("./pages/layer-filter-demo"));
 const AnimatedWorkflowPage = lazy(() => import("./pages/animated-workflow"));
 const TokenizationPage = lazy(() => import("./pages/tokenization"));
+const BoostiSwapPage = lazy(() => import("./pages/boostiswap"));
 const ResourcesPage = lazy(() => import("./pages/resources"));
 const TipsPage = lazy(() => import("./pages/tips"));
 const GuidesPage = lazy(() => import("./pages/guides"));
@@ -268,6 +269,7 @@ const Router = () => {
   const WrappedInitProductsPage = withPageWrapper(InitProductsPage);
   const WrappedSocialNetworkPage = withPageWrapper(SocialNetworkPage);
   const WrappedFirestoreSocialPage = withPageWrapper(FirestoreSocialPage);
+  const WrappedBoostiSwapPage = withPageWrapper(BoostiSwapPage);
   const WrappedImageGeneratorPage = withPageWrapper(ImageGeneratorPage);
   const WrappedImageGeneratorSimplePage = withPageWrapper(ImageGeneratorSimplePage);
   const WrappedFaceSwapPage = withPageWrapper(FaceSwapPage);
@@ -416,6 +418,7 @@ const Router = () => {
           {getRouteComponent("/layer-filter-demo", WrappedLayerFilterDemoPage, 'free')}
           {getRouteComponent("/animated-workflow", WrappedAnimatedWorkflowPage, 'free')}
           {getRouteComponent("/tokenization", WrappedTokenizationPage, 'free')}
+          {getRouteComponent("/boostiswap", WrappedBoostiSwapPage, 'free')}
           {getRouteComponent("/resources", WrappedResourcesPage, null)}
           {getRouteComponent("/tips", WrappedTipsPage, null)}
           {getRouteComponent("/guides", WrappedGuidesPage, null)}

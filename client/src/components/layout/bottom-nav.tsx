@@ -28,6 +28,7 @@ export function BottomNav() {
 
   // Elementos de navegación para el botón "More" (23 páginas específicas) - Rutas verificadas contra App.tsx
   const moreNavItems = [
+    { title: "BoostiSwap", icon: Zap, href: "/boostiswap", plan: "free" },
     { title: "Virtual Record Label", icon: Radio, href: "/virtual-record-label", plan: "premium" },
     { title: "AI Advisors", icon: PhoneCall, href: "/ai-advisors", plan: "premium" },
     { title: "Store", icon: ShoppingBag, href: "/store", plan: "basic" },

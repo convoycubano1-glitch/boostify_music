@@ -136,7 +136,7 @@ app.use((req, res, next) => {
     log(`📁 Serving uploaded files from: ${uploadsPath}`);
 
     // IMPORTANT: Register API routes BEFORE static file serving
-    const server = registerRoutes(app);
+    const server = await registerRoutes(app);
     log('✅ API routes registered successfully');
 
     // Register /api/auth/user endpoint

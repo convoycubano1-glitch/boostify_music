@@ -98,6 +98,9 @@ import subscriptionApiRouter from './routes/subscription-api'; // Import Subscri
 import apiUsageRouter from './routes/api-usage'; // Import API usage monitoring router
 import accountingRouter from './routes/accounting'; // Import accounting/transactions router
 import adminAgentRouter from './routes/admin-agent'; // Import AI admin agent
+import boostiswapContractsRouter from './routes/boostiswap-contracts'; // Import BoostiSwap Smart Contracts router
+import boostiswapRouter from './routes/boostiswap'; // Import BoostiSwap Marketplace router
+import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed function
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -112,7 +115,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 // Export the configured server
-export function registerRoutes(app: Express): HttpServer {
+export async function registerRoutes(app: Express): Promise<HttpServer> {
   // API Proxy seguro para producción
   app.use('/api/proxy', apiProxySecure);
   
@@ -738,6 +741,19 @@ export function registerRoutes(app: Express): HttpServer {
   // Register contracts router (Passport is initialized in server/index.ts)
   app.use('/api/contracts', contractsRouter);
   console.log('✅ Router de contratos registrado');
+  
+  // Register BoostiSwap Smart Contracts router
+  app.use('/api/boostiswap/contracts', boostiswapContractsRouter);
+  console.log('✅ Router de BoostiSwap Smart Contracts registrado');
+  
+  // Register BoostiSwap Marketplace router
+  app.use('/api/boostiswap', boostiswapRouter);
+  console.log('✅ Router de BoostiSwap Marketplace registrado');
+  
+  // Seed tokenized songs on startup (non-blocking)
+  seedTokenizedSongs().catch(error => {
+    console.error('⚠️ Error seeding tokenized songs:', error);
+  });
   
   setupSpotifyRoutes(app);
   setupInstagramRoutes(app);
@@ -1847,13 +1863,62 @@ export function registerRoutes(app: Express): HttpServer {
     }
   });
 
+  /**
+   * Artist Token Purchase Endpoints
+   */
+
+  /**
+   * Artist Token Purchase Endpoints
+   */
+  app.post('/api/token-purchase', async (req: any, res) => {
+    try {
+      const { artistId, tokenAmount } = req.body;
+      
+      if (!artistId || !tokenAmount) {
+        return res.status(400).json({ error: 'Missing artistId or tokenAmount' });
+      }
+
+      console.log(`🛒 Token purchase request: Artist ${artistId}, Amount: ${tokenAmount}`);
+
+      res.json({
+        success: true,
+        transactionId: `TXN_${Date.now()}`,
+        artistId,
+        tokenAmount,
+        status: 'pending',
+        message: 'Purchase initiated. Redirecting to payment...'
+      });
+    } catch (error) {
+      console.error('❌ Token purchase error:', error);
+      res.status(500).json({ error: 'Failed to process token purchase' });
+    }
+  });
+
+  app.get('/checkout', (req: any, res) => {
+    try {
+      const { artistId, amount } = req.query;
+      console.log(`💳 Checkout page requested for artist ${artistId}, amount: ${amount}`);
+      
+      res.json({
+        success: true,
+        artistId,
+        tokenAmount: amount,
+        pricePerToken: 0.50,
+        totalPrice: parseFloat(amount) * 0.50,
+        paymentMethods: ['stripe', 'crypto', 'paypal'],
+        status: 'ready_for_checkout'
+      });
+    } catch (error) {
+      console.error('❌ Checkout error:', error);
+      res.status(500).json({ error: 'Failed to initiate checkout' });
+    }
+  });
+
   const httpServer = createServer(app);
   
-  // Configurar timeouts largos para soportar transcripciones de audio largas
-  // Timeout de 15 minutos (900000ms) para permitir procesamiento de archivos grandes
-  httpServer.timeout = 900000; // 15 minutos
-  httpServer.keepAliveTimeout = 900000; // 15 minutos
-  httpServer.headersTimeout = 910000; // 15 minutos + 10 segundos
+  httpServer.timeout = 900000;
+  httpServer.keepAliveTimeout = 900000;
+  httpServer.headersTimeout = 910000;
   
   console.log('⏱️ Server timeouts configured: 15 minutes for long-running operations');
   

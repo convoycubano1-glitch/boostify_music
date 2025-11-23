@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { TokenizedSongPreview } from './tokenized-song-preview';
 
 interface TokenizedSong {
   id: number;
@@ -28,14 +29,17 @@ interface TokenizedSong {
 
 interface TokenizationPanelProps {
   artistId: number;
+  artistName?: string;
+  artistImage?: string;
 }
 
-export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
+export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistImage }: TokenizationPanelProps) {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [isImprovingDescription, setIsImprovingDescription] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageTab, setImageTab] = useState<'url' | 'generate'>('url');
+  const [artistImageUrl, setArtistImageUrl] = useState<string>(artistImage || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Artist');
   const [formData, setFormData] = useState({
     songName: '',
     tokenSymbol: '',
@@ -46,6 +50,29 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
     description: '',
     benefits: '',
   });
+
+  // Fetch artist info to get current image if not provided
+  useEffect(() => {
+    const fetchArtistInfo = async () => {
+      try {
+        const response = await fetch(`/api/artist/${artistId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.artist) {
+            if (!artistImage && data.artist.profileImage) {
+              setArtistImageUrl(data.artist.profileImage);
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Could not fetch artist info');
+      }
+    };
+
+    if (!artistImage) {
+      fetchArtistInfo();
+    }
+  }, [artistId, artistImage]);
 
   const { data: songs = [], isLoading } = useQuery<TokenizedSong[]>({
     queryKey: ['/api/tokenization/songs', artistId],
@@ -253,13 +280,14 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
                 Tokenizar Nueva Canción
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Tokenizar Canción</DialogTitle>
                 <DialogDescription>
                   Crea tokens ERC-1155 para tu canción en Polygon blockchain
                 </DialogDescription>
               </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="songName">Nombre de la Canción</Label>
@@ -426,6 +454,21 @@ export function TokenizationPanel({ artistId }: TokenizationPanelProps) {
                 >
                   {createMutation.isPending ? 'Tokenizando...' : 'Tokenizar Canción'}
                 </Button>
+              </div>
+
+              {/* Token Preview on the Right */}
+              <div className="flex flex-col gap-4">
+                <div className="sticky top-0">
+                  <TokenizedSongPreview
+                    songName={formData.songName}
+                    tokenSymbol={formData.tokenSymbol}
+                    price={formData.pricePerTokenUsd}
+                    artistImage={artistImageUrl}
+                    songImageUrl={formData.imageUrl}
+                    artistName={artistName}
+                  />
+                </div>
+              </div>
               </div>
             </DialogContent>
           </Dialog>

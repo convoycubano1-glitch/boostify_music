@@ -4,16 +4,23 @@ import { useParams } from "wouter";
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { CrowdfundingButton } from "../components/crowdfunding/crowdfunding-button";
 import { TokenizedMusicView } from "../components/tokenization/tokenized-music-view";
+import { TokenizationPanel } from "../components/tokenization/tokenization-panel";
 import { Head } from "../components/ui/head";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
+import { useAuth } from "../hooks/use-auth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Music2, Coins } from "lucide-react";
 
 export default function ArtistProfilePage() {
   const { slug } = useParams<{ slug: string }>();
+  const { user: currentUser } = useAuth();
   const [artistId, setArtistId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [artistData, setArtistData] = useState<any>(null);
+  const [postgresId, setPostgresId] = useState<number | null>(null);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     const findArtistBySlug = async () => {
@@ -39,6 +46,12 @@ export default function ArtistProfilePage() {
               // Usar el firestoreId o el id como artistId
               const artistIdToUse = data.artist.firestoreId || String(data.artist.id);
               setArtistId(artistIdToUse);
+              setPostgresId(data.artist.id);
+              
+              // Check if current user owns this profile
+              if (currentUser && currentUser.id === data.artist.id) {
+                setIsOwnProfile(true);
+              }
               
               // Adaptar la estructura de datos para que sea compatible con ArtistProfileCard
               setArtistData({
@@ -56,7 +69,6 @@ export default function ArtistProfilePage() {
                 twitter: data.artist.twitterHandle,
                 youtube: data.artist.youtubeHandle,
                 spotify: data.artist.spotifyUrl,
-                // Agregar campos de PostgreSQL para verificación de permisos
                 generatedBy: data.artist.generatedBy,
                 isAIGenerated: data.artist.isAIGenerated,
                 postgresId: data.artist.id,
@@ -99,7 +111,7 @@ export default function ArtistProfilePage() {
     };
 
     findArtistBySlug();
-  }, [slug]);
+  }, [slug, currentUser]);
 
   if (isLoading) {
     return (
@@ -147,14 +159,12 @@ export default function ArtistProfilePage() {
   // Descripción optimizada con información del artista
   let description = '';
   if (biography && biography.trim().length > 0) {
-    // Usar la biografía completa del artista, truncada si es necesaria
     description = biography.length > 155 ? `${biography.slice(0, 152)}...` : biography;
   } else {
-    // Crear descripción automática con la información disponible
-    const parts = [`Descubre la música de ${artistName}`];
-    if (genre) parts.push(`artista de ${genre}`);
-    if (location) parts.push(`desde ${location}`);
-    description = parts.join(', ') + '. Escucha canciones, mira videos y conecta directamente en Boostify Music.';
+    const parts = [`Discover the music of ${artistName}`];
+    if (genre) parts.push(`${genre} artist`);
+    if (location) parts.push(`from ${location}`);
+    description = parts.join(', ') + '. Listen to songs, watch videos and connect directly on Boostify Music.';
   }
 
   return (
@@ -181,9 +191,42 @@ export default function ArtistProfilePage() {
         )}
         <ArtistProfileCard artistId={artistId} initialArtistData={artistData} />
         
-        {/* Music Tokenization Section (Web3/Blockchain) */}
+        {/* Music Tokenization & Trading Section */}
         <div className="container mx-auto px-4 py-8">
-          <TokenizedMusicView artistId={artistId} />
+          <Tabs defaultValue="music" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-800/50">
+              <TabsTrigger value="music" className="gap-2 flex items-center">
+                <Music2 className="h-4 w-4" />
+                <span>My Music</span>
+              </TabsTrigger>
+              <TabsTrigger value="tokenize" className="gap-2 flex items-center">
+                <Coins className="h-4 w-4" />
+                <span>Tokenize Songs</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Music View Tab - Shows tokenized songs */}
+            <TabsContent value="music" className="space-y-4">
+              <TokenizedMusicView artistId={artistId} />
+            </TabsContent>
+
+            {/* Tokenization Panel Tab - Create & Manage Tokens (Only for own profile) */}
+            <TabsContent value="tokenize" className="space-y-4">
+              {isOwnProfile && postgresId ? (
+                <TokenizationPanel 
+                  artistId={postgresId}
+                  artistName={artistName}
+                  artistImage={profileImage}
+                />
+              ) : (
+                <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
+                  <p className="text-muted-foreground">
+                    Only the artist can tokenize their songs from this panel.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </>

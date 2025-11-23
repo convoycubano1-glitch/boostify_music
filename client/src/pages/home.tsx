@@ -3,6 +3,9 @@ import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { HeroSection } from "../components/landing/hero-section";
+import { HowItWorks } from "../components/landing/how-it-works";
+import { InvestmentPotential } from "../components/landing/investment-potential";
 import { SiGoogle } from "react-icons/si";
 import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
@@ -303,6 +306,9 @@ function StatCard({ value, label, icon }: { value: number, label: string, icon: 
 export default function HomePage() {
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Check if user is on home page - show landing if not logged in
+  const isLoggedIn = !!user;
   const [, setLocation] = useLocation();
   const [viewCount, setViewCount] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -430,6 +436,18 @@ export default function HomePage() {
   const now = new Date();
   const diffTime = launchDate.getTime() - now.getTime();
   const daysUntilLaunch = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  // Show landing page for non-logged-in users
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <HeroSection />
+        <HowItWorks />
+        <InvestmentPotential />
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
