@@ -29,11 +29,14 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
 router.get('/user/:userId', async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.userId);
+    console.log(`🎵 [SONGS] Fetching songs for user: ${userId}`);
+    
     const userSongs = await db
       .select()
       .from(songs)
       .where(eq(songs.userId, userId));
-      
+    
+    console.log(`🎵 [SONGS] Found ${userSongs.length} songs for user ${userId}`);
     res.json(userSongs);
   } catch (error) {
     console.error('Error getting songs:', error);

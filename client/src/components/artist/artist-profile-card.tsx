@@ -944,7 +944,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
         }
         
         // Combinar datos: PostgreSQL es la fuente de verdad para campos del perfil
-        return {
+        const combined = {
           ...firestoreData,
           ...(postgresData && {
             isAIGenerated: postgresData.isAIGenerated || false,
@@ -953,21 +953,27 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             slug: postgresData.slug,
             pgId: postgresData.id,
             role: postgresData.role || firestoreData?.role || 'artist',
-            // ✅ Usar valores de PostgreSQL (fuente de verdad)
             biography: postgresData.biography || firestoreData?.biography,
             bannerPosition: postgresData.bannerPosition ?? firestoreData?.bannerPosition ?? "50",
             loopVideoUrl: postgresData.loopVideoUrl || firestoreData?.loopVideoUrl,
             location: postgresData.location || firestoreData?.location,
             email: postgresData.email || firestoreData?.email || firestoreData?.contactEmail,
             phone: postgresData.phone || firestoreData?.phone || firestoreData?.contactPhone,
-            // ✅ Mapear redes sociales desde PostgreSQL
             instagram: postgresData.instagramHandle || firestoreData?.instagram,
             twitter: postgresData.twitterHandle || firestoreData?.twitter,
             youtube: postgresData.youtubeChannel || firestoreData?.youtube,
             spotify: postgresData.spotifyUrl || firestoreData?.spotify,
-            profileLayout: postgresData.profileLayout || null
+            profileLayout: postgresData.profileLayout || null,
+            // ✅ Imágenes de PostgreSQL
+            profileImage: postgresData.profileImage || firestoreData?.profileImage || firestoreData?.photoURL,
+            bannerImage: postgresData.coverImage || firestoreData?.bannerImage,
+            photoURL: postgresData.profileImage || firestoreData?.photoURL,
+            displayName: postgresData.artistName?.trim() || firestoreData?.displayName || firestoreData?.name,
+            name: postgresData.artistName?.trim() || firestoreData?.name || firestoreData?.displayName,
+            genre: postgresData.genres?.[0] || firestoreData?.genre
           })
         };
+        return combined;
       } catch (error) {
         logger.error("Error fetching user profile:", error);
         return null;
@@ -1305,22 +1311,30 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     }
   }, [products]);
 
-  // Verificar si es perfil propio (directo) O si el usuario es el creador del artista
-  const isOwnProfile = user?.id ? (
-    String(user.id) === artistId || 
-    userProfile?.generatedBy === user.id
-  ) : false;
+  // Verificar si es perfil propio: SIMPLE Y PERMISIVO
+  // ✅ Permite editar si: es creador del artista O propietario directo
+  const isOwnProfile = user?.id && (
+    userProfile?.generatedBy === user.id ||
+    Number(user.id) === Number(userProfile?.pgId) ||
+    String(user.id) === String(artistId)
+  );
   
   // Debug logging para verificar autenticación
   useEffect(() => {
     logger.info('🔍 [Artist Profile] Debug info:', {
       userId: user?.id,
+      userIdAsNumber: user?.id ? Number(user.id) : null,
       userIdAsString: user?.id ? String(user.id) : null,
       artistId,
+      userProfilePgId: userProfile?.pgId,
       userProfileGeneratedBy: userProfile?.generatedBy,
+      userProfileUid: userProfile?.uid,
       isOwnProfile,
       isCreator: userProfile?.generatedBy === user?.id,
-      userAuthenticated: !!user
+      userAuthenticated: !!user,
+      bannerImage: userProfile?.bannerImage,
+      profileImage: userProfile?.profileImage,
+      coverImage: userProfile?.coverImage
     });
   }, [user, artistId, userProfile, isOwnProfile]);
 
@@ -2157,7 +2171,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     {isOwnProfile ? (
                       <>
                         <EditProfileDialog
-                          artistId={artistId}
+                          artistId={String(userProfile?.pgId || artistId)}
                           currentData={{
                             displayName: userProfile?.displayName || userProfile?.name || "",
                             biography: userProfile?.biography || "",

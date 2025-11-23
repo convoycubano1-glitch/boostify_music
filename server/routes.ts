@@ -65,6 +65,7 @@ import performanceSegmentsRouter from './routes/performance-segments'; // Import
 import songsRouter from './routes/songs'; // Import the songs router
 import merchRouter from './routes/merch'; // Import the merchandise router
 import aiAssistantRouter from './routes/ai-assistant'; // Import the AI assistant router
+import albumGeneratorRouter from './routes/album-generator'; // Import the album generator router
 import geminiAgentsRouter from './routes/gemini-agents'; // Import the Gemini agents router
 import contractsRouter from './routes/contracts'; // Import the contracts router with Gemini AI
 import falApiRouter from './routes/fal-api'; // Import the FAL AI router for secure backend processing
@@ -354,6 +355,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/merch', merchRouter);
   app.use('/api/artist-wallet', artistWalletRouter);
   app.use('/api/ai', aiAssistantRouter);
+  app.use('/api', albumGeneratorRouter);
   app.use('/api/fal', falApiRouter); // FAL AI backend routes (MuseTalk lip-sync, etc.)
   app.use('/api/gemini-agents', geminiAgentsRouter);
   app.use('/api/printful', printfulRouter); // Printful integration routes

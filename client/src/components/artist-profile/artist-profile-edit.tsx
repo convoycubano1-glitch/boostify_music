@@ -12,6 +12,7 @@ import type { ArtistProfile, Song, Merchandise } from "../../pages/artist-profil
 import { Textarea } from "../ui/textarea";
 import { AIAssistant } from "./ai-assistant";
 import { EPKGenerator } from "./epk-generator";
+import { AlbumGenerator } from "./album-generator";
 
 interface ArtistProfileEditProps {
   profile: ArtistProfile;
@@ -120,15 +121,19 @@ export function ArtistProfileEdit({
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile">Profile Info</TabsTrigger>
           <TabsTrigger value="ai-assistant">
             <Sparkles className="h-4 w-4 mr-2" />
             AI Assistant
           </TabsTrigger>
+          <TabsTrigger value="album">
+            <Music className="h-4 w-4 mr-2" />
+            Album
+          </TabsTrigger>
           <TabsTrigger value="epk">
             <FileText className="h-4 w-4 mr-2" />
-            EPK Generator
+            EPK
           </TabsTrigger>
           <TabsTrigger value="songs">Songs ({songs.length})</TabsTrigger>
           <TabsTrigger value="merch">Merch ({merchandise.length})</TabsTrigger>
@@ -240,6 +245,15 @@ export function ArtistProfileEdit({
                 queryClient.invalidateQueries({ queryKey: [`/api/profile/${currentSlug}`] });
               }
             }}
+          />
+        </TabsContent>
+
+        <TabsContent value="album" className="space-y-6">
+          <AlbumGenerator 
+            artistName={profile.artistName || 'Artist'} 
+            biography={profile.biography || ''}
+            profileImage={profile.profileImage}
+            isAIGenerated={profile.isAIGenerated}
           />
         </TabsContent>
 

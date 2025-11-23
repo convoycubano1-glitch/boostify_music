@@ -205,9 +205,13 @@ export default function ArtistProfilePage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Music View Tab - Shows tokenized songs */}
+            {/* Music View Tab - Shows tokenized songs and AI-generated songs */}
             <TabsContent value="music" className="space-y-4">
-              <TokenizedMusicView artistId={artistId} />
+              <TokenizedMusicView 
+                artistId={artistId} 
+                postgresId={postgresId}
+                isAIGenerated={artistData?.isAIGenerated}
+              />
             </TabsContent>
 
             {/* Tokenization Panel Tab - Create & Manage Tokens (Only for own profile) */}

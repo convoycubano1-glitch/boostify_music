@@ -15,7 +15,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { useToast } from "../../hooks/use-toast";
-import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images, Newspaper, FileText } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images, Newspaper, FileText, Music } from "lucide-react";
 import { ImageGalleryGenerator } from "./image-gallery-generator";
 import { EPKGenerator } from "../artist-profile/epk-generator";
 import { db, storage } from "../../firebase";
@@ -77,6 +77,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   const [isAddingShow, setIsAddingShow] = useState(false);
   const [isGeneratingProducts, setIsGeneratingProducts] = useState(false);
   const [isGeneratingNews, setIsGeneratingNews] = useState(false);
+  const [isGeneratingAlbum, setIsGeneratingAlbum] = useState(false);
   const [imageUpdateKey, setImageUpdateKey] = useState(0);
 
   // Actualizar formData cuando se abre el diálogo
@@ -547,6 +548,52 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     }
   };
 
+  const handleGenerateAlbum = async () => {
+    if (!formData.displayName) {
+      toast({
+        title: "Nombre requerido",
+        description: "Debes ingresar tu nombre artístico primero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingAlbum(true);
+
+    try {
+      const response = await fetch('/api/generate-album', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistName: formData.displayName,
+          biography: formData.biography,
+          profileImage: formData.profileImage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        logger.info('✅ Álbum generado exitosamente');
+        toast({
+          title: "Álbum generado",
+          description: "Se han creado 3 canciones con audio. Puedes verlas en la sección de Música de tu perfil.",
+        });
+      } else {
+        throw new Error(data.message || 'Failed to generate album');
+      }
+    } catch (error: any) {
+      logger.error("Error generating album:", error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo generar el álbum. Intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAlbum(false);
+    }
+  };
+
   const handleGenerateProfileImage = async () => {
     if (!formData.displayName) {
       toast({
@@ -753,6 +800,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.info('✅ Perfil actualizado exitosamente en PostgreSQL y Firebase');
 
       // Invalidar TODAS las queryKeys relevantes para forzar actualización en el UI
+      const numericId = parseInt(artistId);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["userProfile", artistId] }),
         queryClient.invalidateQueries({ queryKey: ["userProfile", String(artistId)] }),
@@ -760,6 +808,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/my-artists"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/artist", artistId] }),
         queryClient.invalidateQueries({ queryKey: ["/api/artist-profile", artistId] }),
+        queryClient.invalidateQueries({ queryKey: [`/api/songs/user/${numericId}`] }),
+        queryClient.invalidateQueries({ queryKey: ["songs"] }),
       ]);
       
       // 🔔 Enviar datos al webhook de Make.com para automatización
@@ -931,25 +981,47 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="biography">Biografía</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleGenerateBiography}
-                disabled={isGeneratingBiography}
-              >
-                {isGeneratingBiography ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generar con IA
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateBiography}
+                  disabled={isGeneratingBiography}
+                >
+                  {isGeneratingBiography ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generar con IA
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateAlbum}
+                  disabled={isGeneratingAlbum}
+                  data-testid="button-generate-album"
+                >
+                  {isGeneratingAlbum ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <Music className="mr-2 h-4 w-4" />
+                      Generar Álbum
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             <Textarea
               id="biography"
@@ -1444,7 +1516,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               <Button
                 type="button"
                 onClick={handleGenerateProducts}
-                disabled={isGeneratingProducts || !formData.displayName}
+                disabled={isGeneratingProducts}
                 className="w-full"
                 style={{ 
                   backgroundColor: isGeneratingProducts ? undefined : '#f97316',
@@ -1500,7 +1572,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               <Button
                 type="button"
                 onClick={handleGenerateNews}
-                disabled={isGeneratingNews || !formData.displayName}
+                disabled={isGeneratingNews}
                 className="w-full"
                 style={{ 
                   backgroundColor: isGeneratingNews ? undefined : '#3b82f6',
