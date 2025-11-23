@@ -2382,3 +2382,22 @@ export const insertInvestorPaymentSchema = createInsertSchema(investorPayments).
 export const selectInvestorPaymentSchema = createSelectSchema(investorPayments);
 export type InsertInvestorPayment = z.infer<typeof insertInvestorPaymentSchema>;
 export type SelectInvestorPayment = typeof investorPayments.$inferSelect;
+
+// Social Media Posts
+export const socialMediaPosts = pgTable("social_media_posts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  platform: text("platform", { enum: ["facebook", "instagram", "tiktok"] }).notNull(),
+  caption: text("caption").notNull(),
+  hashtags: text("hashtags").array().notNull(),
+  cta: text("cta").notNull(),
+  viralScore: integer("viral_score"),
+  isPublished: boolean("is_published").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const insertSocialMediaPostSchema = createInsertSchema(socialMediaPosts).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectSocialMediaPostSchema = createSelectSchema(socialMediaPosts);
+export type InsertSocialMediaPost = z.infer<typeof insertSocialMediaPostSchema>;
+export type SelectSocialMediaPost = typeof socialMediaPosts.$inferSelect;

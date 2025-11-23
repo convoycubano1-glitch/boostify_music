@@ -5,6 +5,7 @@ import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { CrowdfundingButton } from "../components/crowdfunding/crowdfunding-button";
 import { TokenizedMusicView } from "../components/tokenization/tokenized-music-view";
 import { TokenizationPanel } from "../components/tokenization/tokenization-panel";
+import { SocialPostsDisplay } from "../components/artist/social-posts-display";
 import { Head } from "../components/ui/head";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
@@ -190,6 +191,13 @@ export default function ArtistProfilePage() {
           />
         )}
         <ArtistProfileCard artistId={artistId} initialArtistData={artistData} />
+        
+        {/* Social Media Posts Section */}
+        {postgresId && (
+          <div className="container mx-auto px-4">
+            <SocialPostsDisplay userId={postgresId} />
+          </div>
+        )}
         
         {/* Music Tokenization & Trading Section */}
         <div className="container mx-auto px-4 py-8">

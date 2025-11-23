@@ -36,12 +36,13 @@ const VIRAL_THEMES = [
 ];
 
 /**
- * Genera contenido viral para las 3 plataformas
+ * Genera contenido viral para las 3 plataformas y guarda en BD
  */
 export async function generateSocialMediaContent(
   artistName: string,
   biography: string,
-  profileUrl: string
+  profileUrl: string,
+  userId?: number
 ): Promise<SocialMediaGeneratorResult> {
   try {
     const randomTheme = VIRAL_THEMES[Math.floor(Math.random() * VIRAL_THEMES.length)];
