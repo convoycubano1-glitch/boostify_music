@@ -30,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArtistProfile } from "@/data/artist-profiles";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { BOOSTIFY_CONTRACT_ADDRESS, ERC1155_ABI } from "@/lib/web3-config";
+import { ArtistProgressWidget } from "./artist-progress-widget";
 
 interface ArtistDetailModalProps {
   artist: ArtistProfile | null;
@@ -178,6 +179,12 @@ export function ArtistDetailModal({
         </DialogHeader>
 
         <div className="space-y-6 py-6">
+          {/* Artist Progress Milestones */}
+          <ArtistProgressWidget 
+            milestones={artist.milestones}
+            streams={artist.streams}
+          />
+
           {/* Key Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-lg p-4 border border-orange-500/30">

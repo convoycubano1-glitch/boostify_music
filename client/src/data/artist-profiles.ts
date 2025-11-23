@@ -22,6 +22,14 @@ export interface ArtistProfile {
     duration: number;
     url: string;
   }>;
+  milestones?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    status: "completed" | "in_progress" | "coming_soon";
+    progress: number; // 0-100
+    icon: "album" | "video" | "campaign" | "chart" | "award" | "headphones";
+  }>;
 }
 
 export const artistProfiles: Record<number, ArtistProfile> = {
@@ -56,6 +64,40 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     tracks: [
       { id: "1-1", title: "Moonlight Dreams", duration: 245, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
       { id: "1-2", title: "Neon Nights", duration: 198, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+    ],
+    milestones: [
+      {
+        id: "1-m1",
+        title: "Album Released",
+        description: "Debut album 'Synthetic Dreams' released",
+        status: "completed",
+        progress: 100,
+        icon: "album",
+      },
+      {
+        id: "1-m2",
+        title: "Music Video Production",
+        description: "4K music video for 'Moonlight Dreams'",
+        status: "in_progress",
+        progress: 85,
+        icon: "video",
+      },
+      {
+        id: "1-m3",
+        title: "Marketing Campaign",
+        description: "Social media & influencer partnerships",
+        status: "in_progress",
+        progress: 60,
+        icon: "campaign",
+      },
+      {
+        id: "1-m4",
+        title: "World Tour",
+        description: "30-city international tour coming 2026",
+        status: "coming_soon",
+        progress: 0,
+        icon: "award",
+      },
     ],
   },
   2: {
@@ -144,6 +186,40 @@ export const artistProfiles: Record<number, ArtistProfile> = {
       yearlyGrowth: 98,
       tokenAppreciation: 15.2,
     },
+    milestones: [
+      {
+        id: "4-m1",
+        title: "Album Released",
+        description: "Soul Harmony's latest album 'Deep Connections'",
+        status: "completed",
+        progress: 100,
+        icon: "album",
+      },
+      {
+        id: "4-m2",
+        title: "Music Video Production",
+        description: "Professional music video shoots scheduled",
+        status: "in_progress",
+        progress: 70,
+        icon: "video",
+      },
+      {
+        id: "4-m3",
+        title: "Marketing Campaign",
+        description: "Spotify playlist placements & radio play",
+        status: "in_progress",
+        progress: 75,
+        icon: "campaign",
+      },
+      {
+        id: "4-m4",
+        title: "Award Nomination",
+        description: "Grammy nomination submission ready",
+        status: "coming_soon",
+        progress: 0,
+        icon: "award",
+      },
+    ],
   },
   5: {
     id: 5,
