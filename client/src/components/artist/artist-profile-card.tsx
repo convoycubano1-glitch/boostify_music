@@ -3599,6 +3599,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                 </span>
                               </div>
                             </div>
+                              </>
                             )}
                           </div>
                         );
