@@ -120,6 +120,7 @@ const AIVideoCreationPage = lazy(() => import("./pages/ai-video-creation"));
 const TimelineDemoPage = lazy(() => import("./pages/timeline-demo"));
 const DebugFirebasePage = lazy(() => import("./pages/debug-firebase"));
 const TimelineEditorPage = lazy(() => import("./pages/timeline-editor"));
+const SocialMediaGeneratorPage = lazy(() => import("./pages/social-media-generator"));
 
 interface ErrorBoundaryState {
   hasError: boolean;
