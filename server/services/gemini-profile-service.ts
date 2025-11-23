@@ -23,6 +23,12 @@ export interface BiographyResult {
   error?: string;
 }
 
+export interface GenresResult {
+  success: boolean;
+  genres?: string[];
+  error?: string;
+}
+
 /**
  * Genera una biografía profesional de artista usando Gemini
  */
