@@ -3039,16 +3039,28 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         sectionElement = (
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
-                  <div 
-                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
-                    style={{ color: colors.hexAccent }}
+                  <button
+                    onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                    className="flex-1 text-left flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    data-testid={`button-toggle-section-${sectionId}`}
                   >
-                    <Newspaper className="h-5 w-5" />
-                    Noticias ({newsArticles.length})
-                  </div>
+                    <div 
+                      className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" 
+                      style={{ color: colors.hexAccent }}
+                    >
+                      {sectionExpanded[sectionId] ? (
+                        <ChevronDown className="h-5 w-5" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5" />
+                      )}
+                      <Newspaper className="h-5 w-5" />
+                      Noticias ({newsArticles.length})
+                    </div>
+                  </button>
                 </div>
 
-                {newsArticles.length === 0 ? (
+                {sectionExpanded[sectionId] && (
+                newsArticles.length === 0 ? (
                   <div className="text-center py-12 text-gray-400">
                     <Newspaper className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p>No hay noticias disponibles aún</p>
@@ -3126,13 +3138,30 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     </div>
                   </div>
                 )}
+                )}
               </div>
                         );
                       } else if (sectionId === 'social-hub') {
                         // Elemento circular con iconos de redes sociales
                         sectionElement = (
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+              <button
+                onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                className="w-full text-left mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity"
+                data-testid={`button-toggle-section-${sectionId}`}
+              >
+                <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" style={{ color: colors.hexAccent }}>
+                  {sectionExpanded[sectionId] ? (
+                    <ChevronDown className="h-5 w-5" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5" />
+                  )}
+                  <Share2 className="h-5 w-5" />
+                  Redes Sociales
+                </div>
+              </button>
               
+              {sectionExpanded[sectionId] && (
               {/* Contenedor del elemento circular */}
               <div className="relative py-8 md:py-12 overflow-hidden bg-black rounded-2xl">
                 {/* Fondo degradado animado */}
@@ -3246,43 +3275,85 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   }
                 `}} />
               </div>
+              )}
             </div>
                         );
                       } else if (sectionId === 'social-posts') {
                         sectionElement = (
-                          <SocialPostsDisplay userId={artist.pgId} />
+                          <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                            <button
+                              onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                              className="w-full text-left mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity"
+                              data-testid={`button-toggle-section-${sectionId}`}
+                            >
+                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" style={{ color: colors.hexAccent }}>
+                                {sectionExpanded[sectionId] ? (
+                                  <ChevronDown className="h-5 w-5" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5" />
+                                )}
+                                <Share2 className="h-5 w-5" />
+                                Posts Redes Sociales
+                              </div>
+                            </button>
+                            {sectionExpanded[sectionId] && (
+                              <SocialPostsDisplay userId={artist.pgId} />
+                            )}
+                          </div>
                         );
                       } else if (sectionId === 'tokenization' && isOwnProfile) {
                         sectionElement = (
                           <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-                            <TokenizationPanel 
-                              artistId={artist.pgId}
-                              artistName={artist.name}
-                              artistImage={artist.profileImage}
-                            />
+                            <button
+                              onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                              className="w-full text-left mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity"
+                              data-testid={`button-toggle-section-${sectionId}`}
+                            >
+                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" style={{ color: colors.hexAccent }}>
+                                {sectionExpanded[sectionId] ? (
+                                  <ChevronDown className="h-5 w-5" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5" />
+                                )}
+                                <Coins className="h-5 w-5" />
+                                Tokenización de Canciones
+                              </div>
+                            </button>
+                            {sectionExpanded[sectionId] && (
+                              <TokenizationPanel 
+                                artistId={artist.pgId}
+                                artistName={artist.name}
+                                artistImage={artist.profileImage}
+                              />
+                            )}
                           </div>
                         );
                       } else if (sectionId === 'merchandise' && (products.length > 0 || isOwnProfile)) {
                         sectionElement = (
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
-                  <div 
-                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 cursor-pointer"
-                    style={{ color: colors.hexAccent }}
-                    onClick={() => setIsMerchandiseExpanded(!isMerchandiseExpanded)}
+                  <button
+                    onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                    className="flex-1 text-left flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    data-testid={`button-toggle-section-${sectionId}`}
                   >
-                    <ShoppingBag className="h-5 w-5" />
-                    Tienda Oficial ({products.length})
-                    {isMerchandiseExpanded ? (
-                      <ChevronDown className="h-4 w-4 ml-auto" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 ml-auto" />
-                    )}
-                  </div>
+                    <div 
+                      className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1"
+                      style={{ color: colors.hexAccent }}
+                    >
+                      {sectionExpanded[sectionId] ? (
+                        <ChevronDown className="h-5 w-5" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5" />
+                      )}
+                      <ShoppingBag className="h-5 w-5" />
+                      Tienda Oficial ({products.length})
+                    </div>
+                  </button>
                 </div>
 
                 {/* Nota de colaboración */}
-                {isMerchandiseExpanded && (
+                {sectionExpanded[sectionId] && (
                   <div 
                     className="mb-4 p-3 sm:p-4 rounded-lg border-2 flex items-start gap-3"
                     style={{ 
@@ -3326,7 +3397,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 )}
 
                 {/* Mensaje de Disponibilidad - Enero 2025 */}
-                {isMerchandiseExpanded && (
+                {sectionExpanded[sectionId] && (
                   <div 
                     className="mb-4 p-3 sm:p-4 rounded-lg border-2 flex items-start gap-3"
                     style={{ 
@@ -3365,7 +3436,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   </div>
                 )}
 
-                {isMerchandiseExpanded && (
+                {sectionExpanded[sectionId] && (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                   {products.map((product, index) => (
                     <div
@@ -3408,7 +3479,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 )}
                 
                 {/* Botón promocional para manejar tienda - Solo visible para el artista */}
-                {isOwnProfile && isMerchandiseExpanded && (
+                {isOwnProfile && sectionExpanded[sectionId] && (
                   <div className="mt-4 pt-4 border-t" style={{ borderColor: colors.hexBorder }}>
                     <Link href="/merchandise">
                       <button
@@ -3433,16 +3504,52 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         );
                       } else if (sectionId === 'galleries') {
                         sectionElement = (
-                          <ImageGalleryDisplay 
-                            artistId={artistId}
-                            pgId={artist.pgId}
-                            isOwner={isOwnProfile}
-                            refreshKey={galleriesRefreshKey}
-                          />
+                          <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                            <button
+                              onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                              className="w-full text-left mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity"
+                              data-testid={`button-toggle-section-${sectionId}`}
+                            >
+                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" style={{ color: colors.hexAccent }}>
+                                {sectionExpanded[sectionId] ? (
+                                  <ChevronDown className="h-5 w-5" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5" />
+                                )}
+                                <Image className="h-5 w-5" />
+                                Galerías de Imágenes
+                              </div>
+                            </button>
+                            {sectionExpanded[sectionId] && (
+                              <ImageGalleryDisplay 
+                                artistId={artistId}
+                                pgId={artist.pgId}
+                                isOwner={isOwnProfile}
+                                refreshKey={galleriesRefreshKey}
+                              />
+                            )}
+                          </div>
                         );
                       } else if (sectionId === 'monetize-cta') {
                         sectionElement = (
                           <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
+                            <button
+                              onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                              className="w-full text-left mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity"
+                              data-testid={`button-toggle-section-${sectionId}`}
+                            >
+                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" style={{ color: colors.hexAccent }}>
+                                {sectionExpanded[sectionId] ? (
+                                  <ChevronDown className="h-5 w-5" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5" />
+                                )}
+                                <Sparkles className="h-5 w-5" />
+                                Monetiza Tu Talento
+                              </div>
+                            </button>
+                            {sectionExpanded[sectionId] && (
+                              <>
                             <div className="absolute inset-0 opacity-10" style={{
                               background: `radial-gradient(circle at 30% 50%, ${colors.hexPrimary}, transparent 70%)`
                             }}></div>
@@ -3492,6 +3599,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                 </span>
                               </div>
                             </div>
+                            )}
                           </div>
                         );
                       } else if (sectionId === 'analytics') {
@@ -3502,13 +3610,22 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         
                         sectionElement = (
                           <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-                            <div 
-                              className="text-base font-semibold mb-4 transition-colors duration-500 flex items-center gap-2" 
-                              style={{ color: colors.hexAccent }}
+                            <button
+                              onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                              className="w-full text-left mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity"
+                              data-testid={`button-toggle-section-${sectionId}`}
                             >
-                              <TrendingUp className="h-5 w-5" />
-                              {t('profile.analytics.title')}
-                            </div>
+                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" style={{ color: colors.hexAccent }}>
+                                {sectionExpanded[sectionId] ? (
+                                  <ChevronDown className="h-5 w-5" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5" />
+                                )}
+                                <TrendingUp className="h-5 w-5" />
+                                {t('profile.analytics.title')}
+                              </div>
+                            </button>
+                            {sectionExpanded[sectionId] && (
                             
                             <div className="grid grid-cols-2 gap-3">
                               <motion.div 
@@ -3533,79 +3650,55 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                 </div>
                               </motion.div>
                             </div>
+                            )}
                           </div>
                         );
                       } else if (sectionId === 'earnings' && isOwnProfile) {
                         sectionElement = (
                           <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-                            <div className="flex justify-between items-center mb-4">
-                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" style={{ color: colors.hexAccent }}>
+                            <button
+                              onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                              className="w-full text-left mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity"
+                              data-testid={`button-toggle-section-${sectionId}`}
+                            >
+                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" style={{ color: colors.hexAccent }}>
+                                {sectionExpanded[sectionId] ? (
+                                  <ChevronDown className="h-5 w-5" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5" />
+                                )}
                                 <DollarSign className="h-5 w-5" />
                                 {t('profile.earnings.title')}
                               </div>
-                              <button 
-                                onClick={() => setIsEarningsExpanded(!isEarningsExpanded)}
-                                className="p-2 rounded-full hover:bg-white/5 transition-colors"
-                                style={{ color: colors.hexAccent }}
-                              >
-                                <motion.div
-                                  animate={{ rotate: isEarningsExpanded ? 180 : 0 }}
-                                  transition={{ duration: 0.3 }}
-                                >
-                                  <ChevronDown className="h-5 w-5" />
-                                </motion.div>
-                              </button>
-                            </div>
+                            </button>
 
-                            <motion.div
-                              initial={false}
-                              animate={{
-                                height: isEarningsExpanded ? "auto" : 0,
-                                opacity: isEarningsExpanded ? 1 : 0
-                              }}
-                              transition={{ duration: 0.3 }}
-                              style={{ overflow: "hidden" }}
-                            >
-                              {isEarningsExpanded && <EarningsChart userId={user.id} days={30} />}
-                            </motion.div>
+                            {sectionExpanded[sectionId] && (
+                              <EarningsChart userId={user.id} days={30} />
+                            )}
                           </div>
                         );
                       } else if (sectionId === 'crowdfunding' && isOwnProfile) {
                         sectionElement = (
                           <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
-                            <div className="flex justify-between items-center mb-4">
-                              <div 
-                                className="text-base font-semibold transition-colors duration-500 flex items-center gap-2"
-                                style={{ color: colors.hexAccent }}
-                              >
+                            <button
+                              onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                              className="w-full text-left mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity"
+                              data-testid={`button-toggle-section-${sectionId}`}
+                            >
+                              <div className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" style={{ color: colors.hexAccent }}>
+                                {sectionExpanded[sectionId] ? (
+                                  <ChevronDown className="h-5 w-5" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5" />
+                                )}
                                 <Target className="h-5 w-5" />
                                 Crowdfunding
                               </div>
-                              <button 
-                                onClick={() => setIsCrowdfundingExpanded(!isCrowdfundingExpanded)}
-                                className="p-2 rounded-full hover:bg-white/5 transition-colors"
-                                style={{ color: colors.hexAccent }}
-                              >
-                                <motion.div
-                                  animate={{ rotate: isCrowdfundingExpanded ? 180 : 0 }}
-                                  transition={{ duration: 0.3 }}
-                                >
-                                  <ChevronDown className="h-5 w-5" />
-                                </motion.div>
-                              </button>
-                            </div>
+                            </button>
 
-                            <motion.div
-                              initial={false}
-                              animate={{
-                                height: isCrowdfundingExpanded ? "auto" : 0,
-                                opacity: isCrowdfundingExpanded ? 1 : 0
-                              }}
-                              transition={{ duration: 0.3 }}
-                              style={{ overflow: "hidden" }}
-                            >
-                              {isCrowdfundingExpanded && <CrowdfundingPanel colors={colors} />}
-                            </motion.div>
+                            {sectionExpanded[sectionId] && (
+                              <CrowdfundingPanel colors={colors} />
+                            )}
                           </div>
                         );
                       }
