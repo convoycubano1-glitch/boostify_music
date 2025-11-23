@@ -76,7 +76,7 @@ export function BottomNav() {
     {
       title: "Social",
       icon: MessageSquare,
-      href: "/firestore-social",
+      href: "/social-network",
       plan: "basic" // Requiere suscripción básica
     },
     {

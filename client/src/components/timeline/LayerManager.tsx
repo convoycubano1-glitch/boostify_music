@@ -34,7 +34,7 @@ import { Button } from '../../components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../../components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
-import { LayerType } from '../../constants/timeline-constants';
+import { LayerType } from '../../interfaces/timeline';
 import { TimelineClip } from './TimelineClip';
 
 /**

@@ -87,6 +87,7 @@
     "cookie-session": "^2.1.1",
     "cors": "^2.8.5",
     "css-loader": "^7.1.2",
+    "csv-parse": "^6.1.0",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.4",

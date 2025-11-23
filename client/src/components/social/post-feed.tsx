@@ -1,25 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { logger } from "@/lib/logger";
 import { PostCard } from "./post-card";
-import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { CreatePostForm } from "./create-post-form";
+import { AdvancedSearch } from "./advanced-search";
+import { ChallengesSection } from "./challenges-section";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { CircularProgress } from "../ui/circular-progress";
 import { Skeleton } from "../ui/skeleton";
 import { useToast } from "../../hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/use-auth";
 import { apiRequest } from "../../lib/queryClient";
 import { Post, CreatePostRequest } from "../../lib/social/types";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../../firebase";
+import { Button } from "../ui/button";
 
-export function PostFeed() {
+interface PostFeedProps {
+  userId?: number | null;
+}
+
+export function PostFeed({ userId: propUserId }: PostFeedProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth() || {};
-  const [newPostContent, setNewPostContent] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [artistData, setArtistData] = useState<any>(null);
+  
+  // Usar el ID del usuario autenticado como fallback
+  const userId = propUserId || user?.id;
+
+  // Cargar datos del artista desde Firestore
+  useEffect(() => {
+    const loadArtistData = async () => {
+      if (!user?.id) return;
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("uid", "==", String(user.id)));
+        const snapshot = await getDocs(q);
+        if (snapshot.docs.length > 0) {
+          setArtistData(snapshot.docs[0].data());
+        }
+      } catch (error) {
+        console.error("Error loading artist data:", error);
+      }
+    };
+    loadArtistData();
+  }, [user?.id]);
 
   // Consulta para obtener los posts
   const { data: posts, isLoading, error } = useQuery({
@@ -32,41 +59,7 @@ export function PostFeed() {
     }
   });
 
-  // Mutación para crear un nuevo post
-  const createPostMutation = useMutation({
-    mutationFn: async (newPost: CreatePostRequest) => {
-      return apiRequest({ 
-        url: "/api/social/posts", 
-        method: "POST", 
-        data: newPost 
-      }) as Promise<Post>;
-    },
-    onSuccess: () => {
-      setNewPostContent("");
-      queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] });
-      toast({
-        title: "Publicación creada",
-        description: "Tu publicación se ha compartido correctamente",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "No se pudo crear la publicación",
-        variant: "destructive",
-      });
-      logger.error(error);
-    },
-  });
 
-  const handleSubmitPost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPostContent.trim()) return;
-    
-    createPostMutation.mutate({
-      content: newPostContent
-    });
-  };
 
   // Filtrar posts según la pestaña activa
   const filteredPosts = React.useMemo(() => {
@@ -129,38 +122,19 @@ export function PostFeed() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Formulario para nueva publicación */}
-      <Card>
-        <CardHeader className="pb-3">
-          <h3 className="text-lg font-semibold">Crear nueva publicación</h3>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmitPost} className="space-y-4">
-            <div className="flex space-x-3">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback>
-                  {user?.email?.charAt(0).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <Textarea
-                placeholder="¿Qué estás pensando? / What are you thinking about?"
-                className="flex-1 resize-none"
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button 
-                type="submit" 
-                disabled={!newPostContent.trim() || createPostMutation.isPending}
-              >
-                {createPostMutation.isPending ? "Publicando..." : "Publicar"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Desafíos en vivo */}
+      <ChallengesSection />
+
+      {/* Búsqueda avanzada */}
+      <AdvancedSearch />
+
+      {/* Formulario creativo para nueva publicación */}
+      <CreatePostForm 
+        userId={userId}
+        artistData={artistData}
+        onPostCreated={() => queryClient.invalidateQueries({ queryKey: ["/api/social/posts"] })}
+      />
 
       {/* Tabs para filtrar publicaciones */}
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>

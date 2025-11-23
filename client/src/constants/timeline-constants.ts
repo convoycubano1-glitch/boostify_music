@@ -7,6 +7,9 @@
 
 import { LayerType, ClipType } from '../interfaces/timeline';
 
+// Re-export for easier imports
+export type { LayerType, ClipType };
+
 /**
  * Ancho en píxeles de la cabecera de cada capa
  */

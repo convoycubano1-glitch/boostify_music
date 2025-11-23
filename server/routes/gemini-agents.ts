@@ -1,6 +1,7 @@
 import express from 'express';
 import { geminiService } from '../services/gemini-service';
 import { z } from 'zod';
+import { logApiUsage } from '../utils/api-logger';
 
 const router = express.Router();
 
@@ -62,6 +63,16 @@ router.post('/composer/lyrics', async (req, res) => {
     const params = musicLyricsSchema.parse(req.body);
     const lyrics = await geminiService.generateMusicLyrics(params);
     
+    // Log API usage (estimating ~500 tokens per lyrics generation)
+    await logApiUsage({
+      apiProvider: 'gemini',
+      endpoint: '/composer/lyrics',
+      model: 'gemini-2.0-flash',
+      promptTokens: 300,
+      completionTokens: 200,
+      status: 'success'
+    });
+    
     res.json({
       success: true,
       lyrics,
@@ -69,6 +80,15 @@ router.post('/composer/lyrics', async (req, res) => {
     });
   } catch (error) {
     console.error('Error generating lyrics:', error);
+    
+    await logApiUsage({
+      apiProvider: 'gemini',
+      endpoint: '/composer/lyrics',
+      model: 'gemini-2.0-flash',
+      status: 'error',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
+    
     res.status(500).json({
       success: false,
       error: 'Failed to generate lyrics',

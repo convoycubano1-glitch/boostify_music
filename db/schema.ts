@@ -2070,3 +2070,153 @@ export const insertPRWebhookEventSchema = createInsertSchema(prWebhookEvents).om
 export const selectPRWebhookEventSchema = createSelectSchema(prWebhookEvents);
 export type InsertPRWebhookEvent = z.infer<typeof insertPRWebhookEventSchema>;
 export type SelectPRWebhookEvent = typeof prWebhookEvents.$inferSelect;
+
+// API Usage Monitoring - Tabla para monitorear consumo de APIs
+export const apiUsageLog = pgTable("api_usage_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  apiProvider: text("api_provider", { enum: ["openai", "gemini", "fal", "anthropic", "other"] }).notNull(),
+  endpoint: text("endpoint").notNull(),
+  model: text("model"),
+  tokensUsed: integer("tokens_used").default(0).notNull(),
+  promptTokens: integer("prompt_tokens").default(0),
+  completionTokens: integer("completion_tokens").default(0),
+  estimatedCost: decimal("estimated_cost", { precision: 10, scale: 6 }).default('0').notNull(),
+  currency: text("currency").default("usd").notNull(),
+  responseTime: integer("response_time"), // milliseconds
+  status: text("status", { enum: ["success", "error", "rate_limited"] }).default("success").notNull(),
+  errorMessage: text("error_message"),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertApiUsageLogSchema = createInsertSchema(apiUsageLog).omit({ id: true, createdAt: true });
+export const selectApiUsageLogSchema = createSelectSchema(apiUsageLog);
+export type InsertApiUsageLog = z.infer<typeof insertApiUsageLogSchema>;
+export type SelectApiUsageLog = typeof apiUsageLog.$inferSelect;
+
+// Accounting/Transactions - Sistema de contabilidad
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  
+  // Tipo de transacción
+  type: text("type", { 
+    enum: ["subscription", "product_purchase", "course_purchase", "service_fee", "refund", "payment", "other"] 
+  }).notNull(),
+  
+  // Detalles de la transacción
+  description: text("description").notNull(),
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: text("currency").default("usd").notNull(),
+  
+  // Referencias a otros recursos
+  subscriptionId: integer("subscription_id").references(() => subscriptions.id),
+  productId: integer("product_id"),
+  courseId: integer("course_id"),
+  invoiceNumber: text("invoice_number"),
+  
+  // Información de pago
+  paymentMethod: text("payment_method", { enum: ["stripe", "paypal", "bank_transfer", "credit_card", "other"] }),
+  paymentStatus: text("payment_status", { enum: ["pending", "completed", "failed", "refunded"] }).default("pending").notNull(),
+  stripeTransactionId: text("stripe_transaction_id"),
+  
+  // Detalles comerciales
+  taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }).default('0'),
+  discountAmount: decimal("discount_amount", { precision: 12, scale: 2 }).default('0'),
+  netAmount: decimal("net_amount", { precision: 12, scale: 2 }).notNull(),
+  
+  // Metadata
+  metadata: json("metadata"),
+  notes: text("notes"),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTransactionSchema = createInsertSchema(transactions).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+export const selectTransactionSchema = createSelectSchema(transactions);
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type SelectTransaction = typeof transactions.$inferSelect;
+
+// Affiliate Payouts
+export const affiliatePayouts = pgTable("affiliate_payouts", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliate_id").references(() => affiliates.id),
+  affiliateName: text("affiliate_name"),
+  affiliateEmail: text("affiliate_email"),
+  
+  // Comisiones y pagos
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).notNull(), // Porcentaje
+  totalSales: decimal("total_sales", { precision: 12, scale: 2 }).default('0').notNull(),
+  totalCommission: decimal("total_commission", { precision: 12, scale: 2 }).default('0').notNull(),
+  
+  // Pagos
+  amountPaid: decimal("amount_paid", { precision: 12, scale: 2 }).default('0').notNull(),
+  amountPending: decimal("amount_pending", { precision: 12, scale: 2 }).default('0').notNull(),
+  lastPaymentDate: timestamp("last_payment_date"),
+  nextPaymentDate: timestamp("next_payment_date"),
+  
+  // Método de pago
+  paymentMethod: text("payment_method", { enum: ["stripe", "paypal", "bank_transfer", "crypto", "other"] }),
+  paymentStatus: text("payment_status", { enum: ["pending", "paid", "failed", "scheduled"] }).default("pending").notNull(),
+  
+  // Metadata
+  referrals: integer("referrals").default(0),
+  conversions: integer("conversions").default(0),
+  conversionRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default('0'),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertAffiliatePayoutSchema = createInsertSchema(affiliatePayouts).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectAffiliatePayoutSchema = createSelectSchema(affiliatePayouts);
+export type InsertAffiliatePayout = z.infer<typeof insertAffiliatePayoutSchema>;
+export type SelectAffiliatePayout = typeof affiliatePayouts.$inferSelect;
+
+// Investor Payments
+export const investorPayments = pgTable("investor_payments", {
+  id: serial("id").primaryKey(),
+  investorId: integer("investor_id"),
+  investorName: text("investor_name"),
+  investorEmail: text("investor_email"),
+  
+  // Tipo de inversión
+  investmentType: text("investment_type", { enum: ["equity", "debt", "revenue_share", "grant", "loan"] }).notNull(),
+  investmentAmount: decimal("investment_amount", { precision: 12, scale: 2 }).notNull(),
+  investmentDate: timestamp("investment_date").notNull(),
+  
+  // Retornos e interés
+  expectedReturn: decimal("expected_return", { precision: 5, scale: 2 }).notNull(), // Porcentaje
+  expectedReturnAmount: decimal("expected_return_amount", { precision: 12, scale: 2 }).default('0'),
+  interestRate: decimal("interest_rate", { precision: 5, scale: 2 }).default('0'), // Para loans
+  
+  // Pagos realizados
+  totalPaidOut: decimal("total_paid_out", { precision: 12, scale: 2 }).default('0').notNull(),
+  pendingPayment: decimal("pending_payment", { precision: 12, scale: 2 }).default('0').notNull(),
+  lastPaymentDate: timestamp("last_payment_date"),
+  nextPaymentDate: timestamp("next_payment_date"),
+  
+  // Información de pago
+  paymentMethod: text("payment_method", { enum: ["stripe", "paypal", "bank_transfer", "crypto", "wire", "check"] }),
+  paymentStatus: text("payment_status", { enum: ["pending", "paid", "partial", "failed", "on_hold"] }).default("pending").notNull(),
+  paymentFrequency: text("payment_frequency", { enum: ["monthly", "quarterly", "semi_annual", "annual", "milestone"] }).default("quarterly"),
+  
+  // Detalles
+  status: text("status", { enum: ["active", "completed", "defaulted", "withdrawn"] }).default("active").notNull(),
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertInvestorPaymentSchema = createInsertSchema(investorPayments).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectInvestorPaymentSchema = createSelectSchema(investorPayments);
+export type InsertInvestorPayment = z.infer<typeof insertInvestorPaymentSchema>;
+export type SelectInvestorPayment = typeof investorPayments.$inferSelect;

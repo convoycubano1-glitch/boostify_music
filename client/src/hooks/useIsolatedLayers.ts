@@ -8,7 +8,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { LayerType, ERROR_MESSAGES, ClipOperation } from '../constants/timeline-constants';
+import { LayerType } from '../interfaces/timeline';
+import { ClipOperation } from '../constants/timeline-constants';
 import { TimelineClip } from '../components/timeline/TimelineClip';
 
 /**
@@ -70,7 +71,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
       // Validar duración máxima para placeholders de IA
       if (clip.duration > maxAIPlaceholderDuration) {
         result.isValid = false;
-        result.error = `${ERROR_MESSAGES.AI_PLACEHOLDER_DURATION} (${maxAIPlaceholderDuration}s)`;
+        result.error = `AI Placeholder duration exceeds maximum allowed (${maxAIPlaceholderDuration}s)`;
         result.message = result.error; // Para compatibilidad
         setLastError(result.error);
         return result;
@@ -89,7 +90,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
           // No permitir eliminar en algunos casos específicos
           if (existingClips.filter(c => c.layer === clip.layer).length <= 1) {
             result.isValid = false;
-            result.error = ERROR_MESSAGES.CANNOT_DELETE_ISOLATED_LAYER;
+            result.error = 'Cannot delete the last clip in an isolated layer';
             result.message = result.error; // Para compatibilidad
             setLastError(result.error);
             return result;
@@ -103,7 +104,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
         case ClipOperation.SPLIT:
           // Por defecto, no permitir otras operaciones en capas restringidas
           result.isValid = false;
-          result.error = ERROR_MESSAGES.CANNOT_MODIFY_ISOLATED_CLIP;
+          result.error = 'Cannot modify clips in isolated layers';
           result.message = result.error; // Para compatibilidad
           setLastError(result.error);
           return result;
@@ -111,7 +112,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
         default:
           // Operación desconocida
           result.isValid = false;
-          result.error = ERROR_MESSAGES.INVALID_OPERATION;
+          result.error = 'Invalid operation on restricted layer';
           result.message = result.error; // Para compatibilidad
           setLastError(result.error);
           return result;
@@ -144,7 +145,7 @@ function useIsolatedLayers(options: IsolatedLayersOptions = {}) {
       
       if (hasOverlap) {
         result.isValid = false;
-        result.error = ERROR_MESSAGES.CLIP_OVERLAP;
+        result.error = 'Clips cannot overlap in this layer';
         result.message = result.error; // Para compatibilidad
         setLastError(result.error);
         return result;

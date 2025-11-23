@@ -5,6 +5,7 @@
  */
 
 import { Router, type Request, type Response } from 'express';
+import { logApiUsage } from '../utils/api-logger';
 
 const router = Router();
 
@@ -73,6 +74,21 @@ async function fetchWithFailover(url: string, options: RequestInit, context: str
     console.error(`❌ [FAILOVER] Error en ${context}:`, error);
     throw error;
   }
+}
+
+/**
+ * Registra uso de FAL API después de cada llamada exitosa
+ */
+async function logFalUsage(model: string, imageCount: number = 1, error?: string) {
+  await logApiUsage({
+    apiProvider: 'fal',
+    endpoint: '/subscribe',
+    model,
+    totalTokens: imageCount * 1000, // Estimamos 1000 tokens por imagen/resultado
+    status: error ? 'error' : 'success',
+    errorMessage: error || null,
+    metadata: { imageCount }
+  });
 }
 
 /**

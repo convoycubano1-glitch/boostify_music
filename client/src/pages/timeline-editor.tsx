@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Loader2, ArrowLeft, Plus } from 'lucide-react';
-import { TimelineDemo } from '@/components/timeline/TimelineDemo';
+import TimelineDemo from '@/components/timeline/TimelineDemo';
 import { apiRequest } from '@/lib/queryClient';
 
 interface Project {

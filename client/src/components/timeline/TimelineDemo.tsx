@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Slider } from '../../components/ui/slider';
-import { LayerType, ClipOperation } from '../../constants/timeline-constants';
+import { LayerType } from '../../interfaces/timeline';
+import { ClipOperation } from '../../constants/timeline-constants';
 import { useToast } from '../../hooks/use-toast';
 import LayerManager from './LayerManager';
 import { useTimelineLayers } from '../../hooks/useTimelineLayers';
@@ -707,62 +708,30 @@ const TimelineDemo: React.FC<TimelineDemoProps> = ({
               </div>
               
               {/* Renderizar clips por capa */}
-              {layers.map((layer) => {
-                // Filtrar clips que pertenecen a esta capa
-                const layerClips = clips.filter(
-                  c => c.layer === layer.id && (!layer.locked || lockedLayers[layer.id])
-                );
-                
-                return (
-                  <div 
-                    key={layer.id}
-                    className={`layer-track relative mb-1 ${
-                      !visibleLayers[layer.id] ? 'opacity-50' : ''
-                    }`}
-                    style={{ 
-                      height: `${layer.height}px`,
-                      display: visibleLayers[layer.id] ? 'block' : 'none'
-                    }}
-                  >
-                    {/* Fondo de la capa */}
-                    <div 
-                      className={`absolute inset-0 border ${
-                        selectedLayerId === layer.id ? 'border-primary' : 'border-gray-300'
-                      } rounded-md overflow-hidden`}
+              {layers.map((layer) => (
+                <div 
+                  key={layer.id}
+                  className={`layer-track relative mb-1 ${
+                    !visibleLayers[layer.id] ? 'opacity-50' : ''
+                  }`}
+                  style={{ height: `${layer.height}px` }}
+                >
+                  {clips.filter(c => c.layer === layer.id).map((clip) => (
+                    <TimelineClip
+                      key={clip.id}
+                      clip={clip}
+                      selected={selectedClipId === clip.id}
+                      onSelect={() => handleSelectClip(clip.id)}
+                      onDelete={() => handleDeleteClip(clip.id)}
+                      onDuplicate={() => handleDuplicateClip(clip.id)}
+                      onPreview={() => handlePreviewClip(clip.id)}
+                      onDragStart={(e, handle) => handleStartDragClip(e, clip.id, handle)}
+                      timeToPixels={timeToPixels}
+                      disabled={lockedLayers[layer.id]}
                     />
-                    
-                    {/* Clips en esta capa */}
-                    {layerClips.map(clip => (
-                      <TimelineClip
-                        key={clip.id}
-                        clip={clip}
-                        selected={selectedClipId === clip.id}
-                        timeToPixels={timeToPixels}
-                        disabled={layer.locked || mode === 'view'}
-                        onSelect={handleSelectClip}
-                        onDelete={handleDeleteClip}
-                        onDuplicate={handleDuplicateClip}
-                        onSplit={handleSplitClip}
-                        onPreview={handlePreviewClip}
-                        onMouseDown={handleStartDragClip}
-                      />
-                    ))}
-                    
-                    {/* Botón para añadir clip (solo en modo edición) */}
-                    {mode === 'edit' && !layer.locked && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 opacity-50 hover:opacity-100"
-                        onClick={() => handleAddClip(layer.type, layer.id)}
-                      >
-                        <PlusCircle className="h-3 w-3 mr-1" />
-                        <span className="text-xs">Clip</span>
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              ))}
               
               {/* Indicador de tiempo actual (playhead) */}
               <div 

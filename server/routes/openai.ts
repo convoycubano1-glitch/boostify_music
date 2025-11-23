@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { Express } from 'express';
 import fetch from 'node-fetch';
+import { logApiUsage } from '../utils/api-logger';
+import { calculateApiCost } from '../utils/api-pricing';
 
 // Configuración de OpenRouter
 // Eliminamos espacios en blanco extra que puedan estar en la clave API
@@ -68,9 +70,32 @@ export function setupOpenAIRoutes(app: Express) {
       }
 
       const data = await response.json();
+      
+      // Log API usage
+      if (data.usage) {
+        await logApiUsage({
+          apiProvider: 'openai',
+          endpoint: '/chat/completions',
+          model: model || 'anthropic/claude-3-haiku',
+          promptTokens: data.usage.prompt_tokens || 0,
+          completionTokens: data.usage.completion_tokens || 0,
+          status: 'success'
+        });
+      }
+      
       return res.json(data);
     } catch (error) {
       console.error('Error in chat completion endpoint:', error);
+      
+      // Log API error
+      await logApiUsage({
+        apiProvider: 'openai',
+        endpoint: '/chat/completions',
+        model: model || 'anthropic/claude-3-haiku',
+        status: 'error',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
       return res.status(500).json({ 
         error: 'Internal server error',
         message: error instanceof Error ? error.message : 'Unknown error' 

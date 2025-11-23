@@ -20,6 +20,70 @@ router.get("/users", async (req, res) => {
 });
 
 /**
+ * Sincronizar o crear un usuario de la red social (cuando se autentica)
+ */
+router.post("/users/sync", async (req, res) => {
+  try {
+    const { userId, displayName, avatar, bio = "", interests = [], language = "en" } = req.body;
+
+    if (!userId || !displayName) {
+      return res.status(400).json({ error: "userId and displayName are required" });
+    }
+
+    const userIdNum = typeof userId === 'string' ? parseInt(userId) : userId;
+
+    if (isNaN(userIdNum)) {
+      return res.status(400).json({ error: "Invalid userId" });
+    }
+
+    // Buscar si el usuario ya existe
+    const existingUsers = await db
+      .select()
+      .from(socialUsers)
+      .where(eq(socialUsers.id, userIdNum));
+
+    if (existingUsers.length > 0) {
+      // Actualizar usuario existente
+      const updated = await db
+        .update(socialUsers)
+        .set({
+          displayName,
+          avatar: avatar || existingUsers[0].avatar,
+          bio: bio || existingUsers[0].bio,
+          interests: interests.length > 0 ? interests : existingUsers[0].interests,
+          language: language || existingUsers[0].language,
+          updatedAt: new Date(),
+        })
+        .where(eq(socialUsers.id, userIdNum))
+        .returning();
+
+      console.log("✅ User updated:", updated[0].id);
+      return res.json(updated[0]);
+    }
+
+    // Crear nuevo usuario
+    const userData = {
+      id: userIdNum,
+      displayName,
+      avatar: avatar || null,
+      bio: bio || null,
+      interests: interests.length > 0 ? interests : null,
+      language: language || "en",
+      isBot: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const created = await db.insert(socialUsers).values(userData as any).returning();
+    console.log("✅ User created:", created[0].id);
+    res.status(201).json(created[0]);
+  } catch (error) {
+    console.error("Error syncing social user:", error);
+    res.status(500).json({ error: "Error syncing social user", details: String(error) });
+  }
+});
+
+/**
  * Obtener un usuario específico de la red social
  */
 router.get("/users/:id", async (req, res) => {
@@ -107,25 +171,117 @@ router.get("/posts", async (req, res) => {
 });
 
 /**
+ * Obtener posts de un artista específico
+ */
+router.get("/posts/artist/:artistId", async (req, res) => {
+  try {
+    const { artistId } = req.params;
+    const artistIdNum = parseInt(artistId);
+
+    if (isNaN(artistIdNum)) {
+      return res.status(400).json({ error: "Invalid artist ID" });
+    }
+
+    // Buscar todos los posts del artista ordenados por fecha de creación (más recientes primero)
+    const postsData = await db
+      .select()
+      .from(socialPosts)
+      .where(eq(socialPosts.userId, artistIdNum))
+      .orderBy(desc(socialPosts.createdAt));
+    
+    // Recolectar todos los posts con usuarios y comentarios
+    const postsWithDetails = await Promise.all(
+      postsData.map(async (post) => {
+        // Obtener el usuario que creó el post
+        const [postUser] = await db
+          .select()
+          .from(socialUsers)
+          .where(eq(socialUsers.id, post.userId));
+        
+        // Obtener los comentarios para este post
+        const postComments = await db
+          .select()
+          .from(comments)
+          .where(eq(comments.postId, post.id))
+          .orderBy(asc(comments.createdAt));
+        
+        // Recolectar información detallada para cada comentario
+        const commentsWithUsers = await Promise.all(
+          postComments.map(async (comment) => {
+            // Obtener el usuario que hizo el comentario
+            const [commentUser] = await db
+              .select()
+              .from(socialUsers)
+              .where(eq(socialUsers.id, comment.userId));
+            
+            return {
+              ...comment,
+              user: commentUser
+            };
+          })
+        );
+        
+        const isLiked = Math.random() > 0.5;
+        
+        return {
+          ...post,
+          user: postUser,
+          comments: commentsWithUsers,
+          isLiked
+        };
+      })
+    );
+    
+    res.json(postsWithDetails);
+  } catch (error) {
+    console.error("Error getting artist posts:", error);
+    res.status(500).json({ error: "Error getting artist posts" });
+  }
+});
+
+/**
  * Crear un nuevo post
  */
 router.post("/posts", async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, userId: bodyUserId } = req.body;
     
     if (!content) {
       return res.status(400).json({ error: "Content is required" });
     }
     
-    // Obtener el usuario actual
-    // Nota: En un sistema real, obtendríamos el usuario de la sesión
-    // Por ahora, simplemente usamos un ID de usuario fijo
-    const userId = req.query.userId || req.body.userId || 1; // Default to user ID 1
+    // Obtener el usuario ID del body o query
+    const userIdParam = bodyUserId || req.query.userId;
+    if (!userIdParam) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+    
+    const userId = typeof userIdParam === 'string' ? parseInt(userIdParam) : userIdParam;
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid userId" });
+    }
+    
+    // Verificar que el usuario existe
+    const [existingUser] = await db
+      .select()
+      .from(socialUsers)
+      .where(eq(socialUsers.id, userId));
+    
+    if (!existingUser) {
+      console.log(`User with ID ${userId} not found in socialUsers table`);
+      return res.status(404).json({ error: "User not found" });
+    }
     
     // Crear el post
+    const { mediaType, mediaData, whatsappUrl } = req.body;
+    
     const postData = {
-      userId: typeof userId === 'string' ? parseInt(userId) : userId,
+      userId,
       content,
+      mediaType: mediaType || null,
+      mediaData: mediaData || null,
+      whatsappUrl: whatsappUrl || null,
       likes: 0,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -142,6 +298,8 @@ router.post("/posts", async (req, res) => {
     // Generar respuestas automatizadas de usuarios bot
     await generateBotResponses(newPost);
     
+    console.log("✅ Post created successfully:", newPost.id);
+    
     res.status(201).json({
       ...newPost,
       user,
@@ -149,7 +307,7 @@ router.post("/posts", async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating post:", error);
-    res.status(500).json({ error: "Error creating post" });
+    res.status(500).json({ error: "Error creating post", details: String(error) });
   }
 });
 
@@ -376,3 +534,198 @@ async function generateBotReplies(post: any, comment: any) {
 }
 
 export default router;
+/**
+ * Actualizar/Editar un post
+ */
+router.patch("/posts/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content, userId } = req.body;
+
+    if (!content || !userId) {
+      return res.status(400).json({ error: "Content and userId are required" });
+    }
+
+    // Verificar que el post existe y pertenece al usuario
+    const [post] = await db
+      .select()
+      .from(socialPosts)
+      .where(eq(socialPosts.id, parseInt(id)));
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    if (post.userId !== userId) {
+      return res.status(403).json({ error: "You can only edit your own posts" });
+    }
+
+    // Actualizar el post
+    const [updatedPost] = await db
+      .update(socialPosts)
+      .set({
+        content,
+        updatedAt: new Date()
+      })
+      .where(eq(socialPosts.id, parseInt(id)))
+      .returning();
+
+    console.log("✅ Post updated:", updatedPost.id);
+    res.json(updatedPost);
+  } catch (error) {
+    console.error("Error updating post:", error);
+    res.status(500).json({ error: "Error updating post" });
+  }
+});
+
+/**
+ * Borrar un post
+ */
+router.delete("/posts/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
+    // Verificar que el post existe y pertenece al usuario
+    const [post] = await db
+      .select()
+      .from(socialPosts)
+      .where(eq(socialPosts.id, parseInt(id)));
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    if (post.userId !== userId) {
+      return res.status(403).json({ error: "You can only delete your own posts" });
+    }
+
+    // Borrar el post (los comentarios se borrarán en cascada)
+    await db
+      .delete(socialPosts)
+      .where(eq(socialPosts.id, parseInt(id)));
+
+    console.log("✅ Post deleted:", id);
+    res.json({ success: true, message: "Post deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ error: "Error deleting post" });
+  }
+});
+
+/**
+ * Crear desafío/reto musical
+ */
+router.post("/challenges", async (req, res) => {
+  try {
+    const { creatorId, title, description, hashtag, content, mediaType, mediaData, endDate } = req.body;
+
+    if (!creatorId || !title || !hashtag) {
+      return res.status(400).json({ error: "creatorId, title, and hashtag are required" });
+    }
+
+    const newChallenge = {
+      creatorId,
+      title,
+      description: description || null,
+      hashtag,
+      content: content || null,
+      mediaType: mediaType || null,
+      mediaData: mediaData || null,
+      endDate: endDate ? new Date(endDate) : null,
+      createdAt: new Date(),
+    };
+
+    console.log("✅ Challenge created:", title);
+    res.status(201).json(newChallenge);
+  } catch (error) {
+    console.error("Error creating challenge:", error);
+    res.status(500).json({ error: "Error creating challenge" });
+  }
+});
+
+/**
+ * Obtener todos los desafíos
+ */
+router.get("/challenges", async (req, res) => {
+  try {
+    const challenges = [];
+    res.json(challenges);
+  } catch (error) {
+    console.error("Error getting challenges:", error);
+    res.status(500).json({ error: "Error getting challenges" });
+  }
+});
+
+/**
+ * Agregar badge a usuario
+ */
+router.post("/users/:id/badge", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { badgeType, reason } = req.body;
+
+    if (!badgeType) {
+      return res.status(400).json({ error: "badgeType is required" });
+    }
+
+    const newBadge = {
+      userId: parseInt(id),
+      badgeType,
+      reason: reason || null,
+      createdAt: new Date(),
+    };
+
+    console.log("✅ Badge added to user", id);
+    res.status(201).json(newBadge);
+  } catch (error) {
+    console.error("Error adding badge:", error);
+    res.status(500).json({ error: "Error adding badge" });
+  }
+});
+
+/**
+ * Obtener badges de usuario
+ */
+router.get("/users/:id/badges", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const badges = [];
+    res.json(badges);
+  } catch (error) {
+    console.error("Error getting user badges:", error);
+    res.status(500).json({ error: "Error getting user badges" });
+  }
+});
+
+/**
+ * Búsqueda avanzada de artistas
+ */
+router.get("/users/search", async (req, res) => {
+  try {
+    const { genre, location, keyword } = req.query;
+    const users = [];
+    res.json(users);
+  } catch (error) {
+    console.error("Error searching users:", error);
+    res.status(500).json({ error: "Error searching users" });
+  }
+});
+
+/**
+ * Obtener sugerencias de colaboración
+ */
+router.get("/users/:id/collaboration-suggestions", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const suggestions = [];
+    res.json(suggestions);
+  } catch (error) {
+    console.error("Error getting collaboration suggestions:", error);
+    res.status(500).json({ error: "Error getting collaboration suggestions" });
+  }
+});

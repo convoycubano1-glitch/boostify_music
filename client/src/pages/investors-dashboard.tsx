@@ -1023,10 +1023,36 @@ export default function InvestorsDashboard() {
     ],
     nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     investmentRounds: [
-      { name: 'Seed Round', date: 'January 2026', status: 'Active', target: '$500K', description: 'Initial funding to develop AI music platform core features' },
-      { name: 'Angel Round', date: 'May 15, 2026', status: 'Upcoming', target: '$1.2M', description: 'Expansion of AI capabilities and user base' },
-      { name: 'Series A', date: 'October 2026', status: 'Upcoming', target: '$3.5M', description: 'Market expansion and strategic partnerships' },
-      { name: 'Series B', date: 'January 2027', status: 'Upcoming', target: '$8M', description: 'Global scaling and advanced AI features' }
+      { 
+        name: 'Seed Round', 
+        date: 'December 15, 2025', 
+        status: 'Active', 
+        target: '$250K',
+        equity: '10%',
+        raisedStatus: 'Private Round - January 1, 2026',
+        goal: '1,000 Active Users',
+        description: 'Initial seed funding to scale platform core features and establish market presence. Private round begins January 1 with curated investor database.'
+      },
+      { 
+        name: 'Series A', 
+        date: 'June 5, 2026', 
+        status: 'Upcoming', 
+        target: '$750K',
+        equity: '5%',
+        raisedStatus: 'Public Round',
+        goal: '10,000 Active Users',
+        description: 'Series A funding round to expand AI capabilities, enhance creator tools, and accelerate user acquisition across music production community.'
+      },
+      { 
+        name: 'Series B', 
+        date: 'November 15, 2026', 
+        status: 'Upcoming', 
+        target: '$2M',
+        equity: '5%',
+        raisedStatus: 'Strategic Round',
+        goal: '50,000 Active Users',
+        description: 'Series B to drive global expansion, launch Boostify Records AI label, implement blockchain for royalties, and establish enterprise partnerships.'
+      }
     ]
   };
 
@@ -1105,20 +1131,6 @@ export default function InvestorsDashboard() {
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
               <TabsList className="grid grid-cols-5 max-w-[1000px] mb-6 sm:mb-10 bg-slate-900/50 border border-cyan-500/20 p-1">
                 <TabsTrigger 
-                  value="overview" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
-                >
-                  <BarChart2 className="w-4 h-4 mr-2" />
-                  <span className="text-xs sm:text-sm">Overview</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="calculator" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  <span className="text-xs sm:text-sm">Calculator</span>
-                </TabsTrigger>
-                <TabsTrigger 
                   value="investments" 
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
                 >
@@ -1131,6 +1143,20 @@ export default function InvestorsDashboard() {
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Roadmap</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="calculator" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Calculator</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="overview" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                >
+                  <BarChart2 className="w-4 h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Overview</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="register" 
@@ -1449,72 +1475,130 @@ export default function InvestorsDashboard() {
                 </Card>
 
                 <Card className="p-4 sm:p-6">
-                  <div className="flex justify-between items-center mb-4 sm:mb-6">
-                    <h3 className="text-base sm:text-lg font-semibold">Investment Rounds</h3>
+                  <div className="flex justify-between items-center mb-6 sm:mb-8">
+                    <div>
+                      <h3 className="text-lg sm:text-2xl font-bold mb-1">Investment Funding Rounds</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Professional funding opportunities with tiered growth targets</p>
+                    </div>
                     <Button 
-                      variant="outline" 
-                      size="sm"
                       onClick={handleInvestNow}
-                      className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+                      size="lg"
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
                       Invest Now
                     </Button>
                   </div>
                   
-                  <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="w-full min-w-[640px]">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Round</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Launch Date</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Status</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Target</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-xs sm:text-sm">
-                        {investmentData.investmentRounds.map((round, index) => (
-                          <tr key={index} className="border-b hover:bg-muted/50">
-                            <td className="py-2 sm:py-3 px-4">{round.name}</td>
-                            <td className="py-2 sm:py-3 px-4">{round.date}</td>
-                            <td className="py-2 sm:py-3 px-4">
-                              <span className={`px-2 py-0.5 rounded-full text-xs ${
-                                round.status === 'Active' ? 'bg-green-100 text-green-800' : 
-                                round.status === 'Closed' ? 'bg-gray-100 text-gray-800' : 
-                                'bg-blue-100 text-blue-800'
-                              }`}>
-                                {round.status}
-                              </span>
-                            </td>
-                            <td className="py-2 sm:py-3 px-4">{round.raised || round.target}</td>
-                            <td className="py-2 sm:py-3 px-4">
-                              {round.status === 'Active' && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={handleInvestNow}
-                                  className="bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
-                                >
-                                  <DollarSign className="h-3 w-3 mr-1" />
-                                  Invest Now
-                                </Button>
-                              )}
-                              {round.status === 'Upcoming' && (
-                                <Button size="sm" variant="ghost" disabled>
-                                  Coming Soon
-                                </Button>
-                              )}
-                              {round.status === 'Closed' && (
-                                <Button size="sm" variant="ghost" disabled>
-                                  Closed
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    {investmentData.investmentRounds.map((round: any, index: number) => (
+                      <Card key={index} className={`p-4 sm:p-6 relative overflow-hidden ${
+                        round.status === 'Active' 
+                          ? 'bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-orange-500/30' 
+                          : 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700/30'
+                      }`}>
+                        {round.status === 'Active' && (
+                          <div className="absolute -top-3 right-4 px-3 py-1 bg-orange-500 text-white text-xs rounded-full font-semibold">
+                            OPEN NOW
+                          </div>
+                        )}
+                        
+                        <div className="mb-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <h4 className="text-lg sm:text-xl font-bold">{round.name}</h4>
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              round.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                            }`}>
+                              {round.status}
+                            </span>
+                          </div>
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-4">{round.description}</p>
+                        </div>
+                        
+                        <div className="space-y-3 mb-4">
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-xs text-muted-foreground">Launch Date</span>
+                            <span className="font-semibold text-sm">{round.date}</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-xs text-muted-foreground">Equity Offered</span>
+                            <span className="font-bold text-lg text-orange-400">{round.equity}</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-xs text-muted-foreground">Funding Target</span>
+                            <span className="font-bold text-sm">{round.target}</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                            <span className="text-xs text-muted-foreground">Round Type</span>
+                            <span className="text-xs font-semibold text-cyan-400">{round.raisedStatus}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">User Growth Goal</span>
+                            <span className="font-bold text-sm text-yellow-400">{round.goal}</span>
+                          </div>
+                        </div>
+                        
+                        {round.status === 'Active' && (
+                          <Button 
+                            onClick={handleInvestNow}
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold mt-2"
+                          >
+                            <DollarSign className="h-4 w-4 mr-2" />
+                            Invest Now
+                          </Button>
+                        )}
+                        {round.status === 'Upcoming' && (
+                          <Button 
+                            disabled
+                            variant="outline"
+                            className="w-full"
+                          >
+                            Coming Soon
+                          </Button>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <Card className="p-4 bg-orange-500/10 border-orange-500/20">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-orange-500/20 rounded-lg">
+                          <Target className="h-5 w-5 text-orange-500" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Total Capital Target</p>
+                          <p className="text-2xl font-bold">$3M</p>
+                          <p className="text-xs text-muted-foreground mt-1">Across all rounds</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 bg-cyan-500/10 border-cyan-500/20">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-cyan-500/20 rounded-lg">
+                          <Users className="h-5 w-5 text-cyan-500" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">User Growth Goal</p>
+                          <p className="text-2xl font-bold">50K+</p>
+                          <p className="text-xs text-muted-foreground mt-1">By Series B close</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 bg-yellow-500/10 border-yellow-500/20">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-yellow-500/20 rounded-lg">
+                          <TrendingUp className="h-5 w-5 text-yellow-500" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Total Equity Available</p>
+                          <p className="text-2xl font-bold">20%</p>
+                          <p className="text-xs text-muted-foreground mt-1">Across funding rounds</p>
+                        </div>
+                      </div>
+                    </Card>
                   </div>
                 </Card>
               </TabsContent>

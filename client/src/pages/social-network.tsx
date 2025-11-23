@@ -1,15 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { PostFeed } from "../components/social/post-feed";
+import { ArtistProfileEmbed } from "../components/social/artist-profile-embed";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "../lib/queryClient";
 import { useAuth } from "../hooks/use-auth";
 import { SocialUser } from "../lib/social/types";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
-import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked } from "lucide-react";
+import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked, Music, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "../components/ui/button";
+import { useToast } from "../hooks/use-toast";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebase";
 
 // Constantes que nos ahorraremos de repetir
 const LANGUAGE_BADGE_CLASS = "px-2 py-0.5 rounded-full text-xs inline-flex items-center";
@@ -17,7 +21,75 @@ const INFO_GROUP_CLASS = "flex items-center gap-2 text-muted-foreground text-sm"
 
 export default function SocialNetworkPage() {
   const { user } = useAuth() || {};
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState("feed");
+  const [syncedUserId, setSyncedUserId] = React.useState<number | null>(null);
+  const [artists, setArtists] = React.useState<any[]>([]);
+  const [currentUserArtist, setCurrentUserArtist] = React.useState<any>(null);
+
+  // Sincronizar usuario cuando se autentica
+  useEffect(() => {
+    const syncUser = async () => {
+      if (!user?.id) return;
+
+      try {
+        console.log("🔄 Syncing social user with ID:", user.id);
+        const response = await apiRequest({
+          url: "/api/social/users/sync",
+          method: "POST",
+          data: {
+            userId: user.id,
+            displayName: user.displayName || user.email?.split('@')[0] || 'Usuario',
+            avatar: user.photoURL || '',
+            bio: '',
+            interests: [],
+            language: navigator.language.startsWith('es') ? 'es' : 'en'
+          }
+        }) as any;
+        
+        console.log("✅ User synced successfully:", response.id);
+        setSyncedUserId(response.id);
+      } catch (error) {
+        console.error("Error syncing user:", error);
+        // No mostrar error toast - puede que el usuario ya esté sincronizado
+      }
+    };
+
+    syncUser();
+  }, [user?.id]);
+
+  // Cargar artistas desde Firestore y datos del artista actual
+  useEffect(() => {
+    const loadArtists = async () => {
+      try {
+        const usersRef = collection(db, "users");
+        const snapshot = await getDocs(usersRef);
+        const artistsList = snapshot.docs
+          .map(doc => ({
+            ...doc.data(),
+            id: doc.id
+          }))
+          .filter((user: any) => user.slug && user.displayName)
+          .slice(0, 6); // Mostrar máximo 6 artistas
+        setArtists(artistsList);
+
+        // Buscar el perfil del artista del usuario actual
+        if (user?.id) {
+          const q = query(usersRef, where("uid", "==", String(user.id)));
+          const userSnapshot = await getDocs(q);
+          if (userSnapshot.docs.length > 0) {
+            setCurrentUserArtist({
+              ...userSnapshot.docs[0].data(),
+              id: userSnapshot.docs[0].id
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading artists:", error);
+      }
+    };
+    loadArtists();
+  }, [user?.id]);
 
   // Consulta para obtener usuarios (para mostrar en la barra lateral)
   const { data: users } = useQuery({
@@ -40,8 +112,9 @@ export default function SocialNetworkPage() {
   };
 
   // Función para seleccionar un avatar aleatorio para usuarios sin uno
-  const getRandomAvatar = (userId: string) => {
-    const seed = userId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const getRandomAvatar = (userId: string | number) => {
+    const userIdStr = String(userId);
+    const seed = userIdStr.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return `https://avatars.dicebear.com/api/initials/${seed}.svg`;
   };
 
@@ -196,50 +269,115 @@ export default function SocialNetworkPage() {
             </TabsList>
             
             <TabsContent value="feed" className="space-y-6">
-              <PostFeed />
+              {/* Artistas Destacados */}
+              {artists.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Music className="h-5 w-5 text-orange-400" />
+                    Artistas en Boostify
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {artists.map((artist) => (
+                      <ArtistProfileEmbed key={artist.id} artist={artist} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Separator */}
+              <div className="border-t border-slate-700 my-6" />
+              
+              {/* Feed Social */}
+              <PostFeed userId={user?.id} />
             </TabsContent>
             
             <TabsContent value="profile" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Mi Perfil
-                  </CardTitle>
-                  <CardDescription>
-                    Información de tu perfil en la red social
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center space-x-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarFallback className="text-lg">
-                      {user?.email?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="space-y-3">
-                    <div>
-                      <h3 className="text-lg font-semibold">
-                        {user?.email?.split('@')[0] || "Usuario"}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {user?.email || "usuario@ejemplo.com"}
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">Editar perfil</Button>
-                  </div>
-                </CardContent>
-              </Card>
+              {currentUserArtist ? (
+                <>
+                  <Card className="bg-gradient-to-r from-purple-900/30 to-orange-900/30 border-orange-500/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Tu Perfil de Artista
+                      </CardTitle>
+                      <CardDescription>
+                        Información de tu perfil como artista en Boostify
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-start space-x-6">
+                      <Avatar className="h-24 w-24 border-2 border-orange-500/30">
+                        <AvatarImage 
+                          src={currentUserArtist?.photoURL || currentUserArtist?.profileImage}
+                          alt={currentUserArtist?.displayName}
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-500 text-white text-xl">
+                          {(currentUserArtist?.displayName || "A").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-4">
+                        <div>
+                          <h2 className="text-2xl font-bold">
+                            {currentUserArtist?.displayName || "Artista"}
+                          </h2>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {currentUserArtist?.genre && `Género: ${currentUserArtist.genre}`}
+                          </p>
+                          {currentUserArtist?.location && (
+                            <p className="text-sm text-muted-foreground">
+                              📍 {currentUserArtist.location}
+                            </p>
+                          )}
+                        </div>
+                        
+                        {currentUserArtist?.biography && (
+                          <p className="text-sm text-gray-300 line-clamp-3">
+                            {currentUserArtist.biography}
+                          </p>
+                        )}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mis publicaciones</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Aquí verás tus publicaciones cuando comiences a compartir contenido.
-                  </p>
-                </CardContent>
-              </Card>
+                        <div className="flex gap-2 flex-wrap pt-2">
+                          {currentUserArtist?.slug && (
+                            <Link href={`/artist/${currentUserArtist.slug}`} asChild>
+                              <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Ver Perfil Completo
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Mis publicaciones en la red social</CardTitle>
+                      <CardDescription>
+                        Publicaciones que has compartido en Boostify Network
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">
+                        Aquí aparecerán tus publicaciones cuando comiences a compartir contenido en la red social.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Mi Perfil</CardTitle>
+                    <CardDescription>
+                      Cargando información de tu perfil...
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      Estamos cargando la información de tu perfil como artista.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>

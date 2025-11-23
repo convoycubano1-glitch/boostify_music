@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { LayerType } from '../../constants/timeline-constants';
+import { LayerType } from '../../interfaces/timeline';
 
 export interface LayerConfig {
   /**

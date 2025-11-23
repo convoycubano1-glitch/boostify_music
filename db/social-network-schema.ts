@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean, serial } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Tabla de usuarios de la red social - EXACT column names from database
@@ -11,6 +11,9 @@ export const socialUsers = pgTable("social_users", {
   language: text("language").default("en"),
   isBot: boolean("isBot").default(false),
   personality: text("personality"),
+  genre: text("genre"), // Para búsqueda avanzada
+  location: text("location"), // Para filtrar por ubicación
+  isVerified: boolean("isVerified").default(false), // Artista verificado
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -20,9 +23,57 @@ export const posts = pgTable("social_posts", {
   id: integer("id").primaryKey().notNull(),
   userId: integer("userId").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
+  mediaType: text("mediaType"), // 'image', 'audio', 'video', 'voice-note'
+  mediaData: text("mediaData"), // Datos base64 para archivos pequeños
+  whatsappUrl: text("whatsappUrl"), // Link de WhatsApp
+  mentions: text("mentions").array(), // Array de IDs mencionados
+  challengeId: integer("challengeId"), // Si es respuesta a un desafío
+  collaboratorIds: integer("collaboratorIds").array(), // Artistas colaboradores
   likes: integer("likes").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// Tabla de desafíos/retos
+export const challenges = pgTable("social_challenges", {
+  id: serial("id").primaryKey(),
+  creatorId: integer("creatorId").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  hashtag: text("hashtag").notNull(),
+  content: text("content"), // Puede ser audio, video o texto
+  mediaType: text("mediaType"),
+  mediaData: text("mediaData"),
+  participantCount: integer("participantCount").default(0),
+  endDate: timestamp("endDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// Tabla de participantes en desafíos
+export const challengeParticipants = pgTable("social_challenge_participants", {
+  id: serial("id").primaryKey(),
+  challengeId: integer("challengeId").notNull().references(() => challenges.id, { onDelete: "cascade" }),
+  postId: integer("postId").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// Tabla de badges/logros
+export const userBadges = pgTable("social_user_badges", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
+  badgeType: text("badgeType").notNull(), // 'verified', 'trending', 'collaborator', 'trending_creator'
+  reason: text("reason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// Tabla de colaboraciones sugeridas
+export const collaborationSuggestions = pgTable("social_collaboration_suggestions", {
+  id: serial("id").primaryKey(),
+  userId1: integer("userId1").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
+  userId2: integer("userId2").notNull().references(() => socialUsers.id, { onDelete: "cascade" }),
+  compatibilityScore: integer("compatibilityScore"),
+  reason: text("reason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 // Tabla de comentarios - EXACT column names from database
@@ -81,3 +132,11 @@ export type NewPost = typeof posts.$inferInsert;
 
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
+
+export type Challenge = typeof challenges.$inferSelect;
+export type NewChallenge = typeof challenges.$inferInsert;
+
+export type UserBadge = typeof userBadges.$inferSelect;
+export type NewUserBadge = typeof userBadges.$inferInsert;
+
+export type CollaborationSuggestion = typeof collaborationSuggestions.$inferSelect;

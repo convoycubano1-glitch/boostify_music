@@ -150,7 +150,7 @@ export function Header() {
               </Link>
               
               {/* Social Network Icon */}
-              <Link href="/firestore-social">
+              <Link href="/social-network">
                 <Button size="sm" variant="ghost" className="text-white hover:bg-[#2A2A2A] p-2 mr-2 relative group">
                   <MessageSquare className="h-5 w-5 text-orange-400" />
                   <span className="absolute -top-1 -right-1 flex h-3 w-3">

@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { LayerType } from '../constants/timeline-constants';
+import { LayerType } from '../interfaces/timeline';
 
 /**
  * Configuración de una capa

@@ -95,6 +95,9 @@ import fashionStudioRouter from './routes/fashion-studio'; // Import Artist Fash
 import notificationsRouter from './routes/notifications'; // Import Notifications router for internal messaging
 import webhookStripeRouter from './routes/webhook-stripe'; // Import Stripe Webhook handler
 import subscriptionApiRouter from './routes/subscription-api'; // Import Subscription API routes (PostgreSQL)
+import apiUsageRouter from './routes/api-usage'; // Import API usage monitoring router
+import accountingRouter from './routes/accounting'; // Import accounting/transactions router
+import adminAgentRouter from './routes/admin-agent'; // Import AI admin agent
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -354,6 +357,9 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/crowdfunding', crowdfundingRouter); // Crowdfunding routes
   app.use('/api/tokenization', tokenizationRouter); // Tokenization (Web3/Blockchain) routes
   app.use('/api/admin/import-artists', adminImportArtistsRouter); // Admin: Import artists from JSON/Excel
+  app.use('/api/admin/api-usage', apiUsageRouter);
+  app.use('/api/admin/accounting', accountingRouter);
+  app.use('/api/admin/agent', adminAgentRouter);
   app.use('/api/virtual-label', virtualRecordLabelRouter); // Virtual Record Label integration routes
   app.use('/api/og-image', ogImageRouter); // Open Graph dynamic image generation
   app.use('/api/youtube', youtubeToolsRouter); // YouTube Growth Tools (Pre-Launch Score, Keywords, Title Analyzer, Content Ideas)
