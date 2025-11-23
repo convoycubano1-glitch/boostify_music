@@ -84,6 +84,7 @@ import { CrowdfundingButton } from "../crowdfunding/crowdfunding-button";
 import { CrowdfundingPanel } from "../crowdfunding/crowdfunding-panel";
 import { TokenizationPanel } from "../tokenization/tokenization-panel";
 import { TokenizedMusicView } from "../tokenization/tokenized-music-view";
+import { SocialPostsDisplay } from "./social-posts-display";
 import { NewsArticleModal } from "./news-article-modal";
 import { queryClient } from "../../lib/queryClient";
 
@@ -3093,6 +3094,20 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 `}} />
               </div>
             </div>
+                        );
+                      } else if (sectionId === 'social-posts') {
+                        sectionElement = (
+                          <SocialPostsDisplay userId={artist.pgId} />
+                        );
+                      } else if (sectionId === 'tokenization' && isOwnProfile) {
+                        sectionElement = (
+                          <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
+                            <TokenizationPanel 
+                              artistId={artist.pgId}
+                              artistName={artist.name}
+                              artistImage={artist.profileImage}
+                            />
+                          </div>
                         );
                       } else if (sectionId === 'merchandise' && (products.length > 0 || isOwnProfile)) {
                         sectionElement = (
