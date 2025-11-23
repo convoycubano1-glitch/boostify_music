@@ -2536,13 +2536,24 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         sectionElement = (
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
-                  <div 
-                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
-                    style={{ color: colors.hexAccent }}
+                  <button
+                    onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                    className="flex-1 text-left flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    data-testid={`button-toggle-section-${sectionId}`}
                   >
-                    <Music className="h-5 w-5" />
-                    {t('profile.sections.music')} ({songs.length})
-                  </div>
+                    <div 
+                      className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" 
+                      style={{ color: colors.hexAccent }}
+                    >
+                      {sectionExpanded[sectionId] ? (
+                        <ChevronDown className="h-5 w-5" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5" />
+                      )}
+                      <Music className="h-5 w-5" />
+                      {t('profile.sections.music')} ({songs.length})
+                    </div>
+                  </button>
                   {isOwnProfile && (
                     <Dialog open={showUploadSongDialog} onOpenChange={setShowUploadSongDialog}>
                       <DialogTrigger asChild>
@@ -2621,6 +2632,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   )}
                 </div>
                 
+                {sectionExpanded[sectionId] && (
                 <div className="space-y-3">
                   {songs.map((song) => (
                     <div
@@ -2716,19 +2728,31 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     </div>
                   ))}
                 </div>
+                )}
               </div>
                         );
                       } else if (sectionId === 'videos' && (videos.length > 0 || isOwnProfile)) {
                         sectionElement = (
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div className="flex justify-between items-center mb-4">
-                  <div 
-                    className="text-base font-semibold transition-colors duration-500 flex items-center gap-2" 
-                    style={{ color: colors.hexAccent }}
+                  <button
+                    onClick={() => setSectionExpanded(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))}
+                    className="flex-1 text-left flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    data-testid={`button-toggle-section-${sectionId}`}
                   >
-                    <VideoIcon className="h-5 w-5" />
-                    {t('profile.sections.videos')} ({videos.length})
-                  </div>
+                    <div 
+                      className="text-base font-semibold transition-colors duration-500 flex items-center gap-2 flex-1" 
+                      style={{ color: colors.hexAccent }}
+                    >
+                      {sectionExpanded[sectionId] ? (
+                        <ChevronDown className="h-5 w-5" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5" />
+                      )}
+                      <VideoIcon className="h-5 w-5" />
+                      {t('profile.sections.videos')} ({videos.length})
+                    </div>
+                  </button>
                   {isOwnProfile && (
                     <Dialog open={showUploadVideoDialog} onOpenChange={setShowUploadVideoDialog}>
                       <DialogTrigger asChild>
