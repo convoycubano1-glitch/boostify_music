@@ -3060,83 +3060,86 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 </div>
 
                 {sectionExpanded[sectionId] && (
-                newsArticles.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <Newspaper className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No hay noticias disponibles aún</p>
-                    {isOwnProfile && (
-                      <p className="text-sm mt-2">
-                        Usa el botón "Generar Noticias con IA" en editar perfil
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto pb-4 -mx-4 px-4">
-                    <div className="flex gap-4 min-w-max">
-                      {newsArticles.map((article) => {
-                        const categoryColors = {
-                          release: { bg: '#10B981', text: 'Lanzamiento' },
-                          performance: { bg: '#8B5CF6', text: 'Performance' },
-                          collaboration: { bg: '#F59E0B', text: 'Colaboración' },
-                          achievement: { bg: '#EF4444', text: 'Logro' },
-                          lifestyle: { bg: '#3B82F6', text: 'Lifestyle' }
-                        };
-                        
-                        const categoryInfo = categoryColors[article.category] || { bg: colors.hexPrimary, text: article.category };
-                        
-                        return (
-                          <div
-                            key={article.id}
-                            className="w-80 flex-shrink-0 bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300"
-                          >
-                            <div className="relative h-48 overflow-hidden">
-                              <img
-                                src={article.imageUrl}
-                                alt={article.title}
-                                className="w-full h-full object-cover"
-                              />
-                              <div 
-                                className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold text-white"
-                                style={{ backgroundColor: categoryInfo.bg }}
-                              >
-                                {categoryInfo.text}
-                              </div>
-                            </div>
+                  <>
+                    {newsArticles.length === 0 ? (
+                      <div className="text-center py-12 text-gray-400">
+                        <Newspaper className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>No hay noticias disponibles aún</p>
+                        {isOwnProfile && (
+                          <p className="text-sm mt-2">
+                            Usa el botón "Generar Noticias con IA" en editar perfil
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto pb-4 -mx-4 px-4">
+                        <div className="flex gap-4 min-w-max">
+                          {newsArticles.map((article) => {
+                            const categoryColors = {
+                              release: { bg: '#10B981', text: 'Lanzamiento' },
+                              performance: { bg: '#8B5CF6', text: 'Performance' },
+                              collaboration: { bg: '#F59E0B', text: 'Colaboración' },
+                              achievement: { bg: '#EF4444', text: 'Logro' },
+                              lifestyle: { bg: '#3B82F6', text: 'Lifestyle' }
+                            };
                             
-                            <div className="p-4 space-y-3">
-                              <h3 className="font-semibold text-white line-clamp-2 leading-tight">
-                                {article.title}
-                              </h3>
-                              
-                              <p className="text-sm text-gray-400 line-clamp-3 leading-relaxed">
-                                {article.summary || article.content}
-                              </p>
-                              
-                              <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <Eye className="h-3 w-3" />
-                                  {article.views || 0} vistas
+                            const categoryInfo = categoryColors[article.category] || { bg: colors.hexPrimary, text: article.category };
+                            
+                            return (
+                              <div
+                                key={article.id}
+                                className="w-80 flex-shrink-0 bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300"
+                              >
+                                <div className="relative h-48 overflow-hidden">
+                                  <img
+                                    src={article.imageUrl}
+                                    alt={article.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div 
+                                    className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                                    style={{ backgroundColor: categoryInfo.bg }}
+                                  >
+                                    {categoryInfo.text}
+                                  </div>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-xs h-7"
-                                  style={{ color: colors.hexAccent }}
-                                  onClick={() => {
-                                    setSelectedArticle(article);
-                                    setIsNewsModalOpen(true);
-                                  }}
-                                  data-testid={`button-read-more-${article.id}`}
-                                >
-                                  Leer más →
-                                </Button>
+                                
+                                <div className="p-4 space-y-3">
+                                  <h3 className="font-semibold text-white line-clamp-2 leading-tight">
+                                    {article.title}
+                                  </h3>
+                                  
+                                  <p className="text-sm text-gray-400 line-clamp-3 leading-relaxed">
+                                    {article.summary || article.content}
+                                  </p>
+                                  
+                                  <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                      <Eye className="h-3 w-3" />
+                                      {article.views || 0} vistas
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-xs h-7"
+                                      style={{ color: colors.hexAccent }}
+                                      onClick={() => {
+                                        setSelectedArticle(article);
+                                        setIsNewsModalOpen(true);
+                                      }}
+                                      data-testid={`button-read-more-${article.id}`}
+                                    >
+                                      Leer más →
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
                         );
