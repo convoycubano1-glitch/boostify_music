@@ -730,6 +730,20 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   
   const [sectionOrder, setSectionOrder] = useState<string[]>(defaultOrder);
   const [sectionVisibility, setSectionVisibility] = useState<Record<string, boolean>>(defaultVisibility);
+  const [sectionExpanded, setSectionExpanded] = useState<Record<string, boolean>>({
+    'songs': true,
+    'videos': true,
+    'news': true,
+    'social-posts': true,
+    'social-hub': true,
+    'merchandise': true,
+    'galleries': true,
+    'tokenization': true,
+    'monetize-cta': true,
+    'analytics': true,
+    'earnings': true,
+    'crowdfunding': true,
+  });
   const [isMerchandiseExpanded, setIsMerchandiseExpanded] = useState(true);
   const [isEarningsExpanded, setIsEarningsExpanded] = useState(true);
   const [isCrowdfundingExpanded, setIsCrowdfundingExpanded] = useState(true);
@@ -760,7 +774,8 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           order: sectionOrder,
-          visibility: sectionVisibility
+          visibility: sectionVisibility,
+          expanded: sectionExpanded
         })
       });
       
@@ -781,6 +796,45 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
         variant: "destructive"
       });
     }
+  };
+
+  // Expandir todas las secciones
+  const expandAll = () => {
+    const allExpanded = Object.keys(allSections).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+    setSectionExpanded(allExpanded);
+  };
+
+  // Contraer todas las secciones
+  const collapseAll = () => {
+    const allCollapsed = Object.keys(allSections).reduce((acc, key) => {
+      acc[key] = false;
+      return acc;
+    }, {} as Record<string, boolean>);
+    setSectionExpanded(allCollapsed);
+  };
+
+  // Activar todas las secciones
+  const activateAll = () => {
+    const allActive = Object.keys(allSections).reduce((acc, key) => {
+      const section = allSections[key as keyof typeof allSections];
+      if (!section.isOwnerOnly || isOwnProfile) {
+        acc[key] = true;
+      }
+      return acc;
+    }, {} as Record<string, boolean>);
+    setSectionVisibility(prev => ({ ...prev, ...allActive }));
+  };
+
+  // Desactivar todas las secciones
+  const deactivateAll = () => {
+    const allInactive = Object.keys(allSections).reduce((acc, key) => {
+      acc[key] = false;
+      return acc;
+    }, {} as Record<string, boolean>);
+    setSectionVisibility(allInactive);
   };
 
   // Manejar edición de noticia
@@ -2263,6 +2317,60 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   </DialogDescription>
                 </DialogHeader>
 
+                {/* Control Buttons */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={expandAll}
+                      className="flex-1 text-xs"
+                      style={{
+                        backgroundColor: colors.hexPrimary,
+                        color: 'white'
+                      }}
+                      data-testid="button-expand-all"
+                    >
+                      <ChevronDown className="h-3 w-3 mr-1" />
+                      Expandir Todo
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={collapseAll}
+                      variant="outline"
+                      className="flex-1 text-xs border-zinc-700"
+                      data-testid="button-collapse-all"
+                    >
+                      <ChevronRight className="h-3 w-3 mr-1" />
+                      Contraer Todo
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={activateAll}
+                      className="flex-1 text-xs"
+                      style={{
+                        backgroundColor: colors.hexAccent,
+                        color: 'black'
+                      }}
+                      data-testid="button-activate-all"
+                    >
+                      <Check className="h-3 w-3 mr-1" />
+                      Activar Todo
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={deactivateAll}
+                      variant="outline"
+                      className="flex-1 text-xs border-zinc-700"
+                      data-testid="button-deactivate-all"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Desactivar Todo
+                    </Button>
+                  </div>
+                </div>
+
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="layout-config">
                     {(provided) => (
@@ -2316,29 +2424,50 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                       {section.name}
                                     </span>
                                     
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => {
-                                        setSectionVisibility(prev => ({
-                                          ...prev,
-                                          [sectionId]: !prev[sectionId]
-                                        }));
-                                      }}
-                                      className="gap-2"
-                                    >
-                                      {isVisible ? (
-                                        <>
-                                          <Eye className="h-4 w-4" style={{ color: colors.hexAccent }} />
-                                          <span style={{ color: colors.hexAccent }}>Visible</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <EyeOff className="h-4 w-4 text-gray-500" />
-                                          <span className="text-gray-500">Oculto</span>
-                                        </>
-                                      )}
-                                    </Button>
+                                    <div className="flex gap-2 ml-auto">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          setSectionExpanded(prev => ({
+                                            ...prev,
+                                            [sectionId]: !prev[sectionId]
+                                          }));
+                                        }}
+                                        className="gap-1"
+                                        data-testid={`button-toggle-expand-${sectionId}`}
+                                      >
+                                        {sectionExpanded[sectionId] ? (
+                                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                                        ) : (
+                                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                                        )}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          setSectionVisibility(prev => ({
+                                            ...prev,
+                                            [sectionId]: !prev[sectionId]
+                                          }));
+                                        }}
+                                        className="gap-2"
+                                        data-testid={`button-toggle-visible-${sectionId}`}
+                                      >
+                                        {isVisible ? (
+                                          <>
+                                            <Eye className="h-4 w-4" style={{ color: colors.hexAccent }} />
+                                            <span style={{ color: colors.hexAccent }}>Visible</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <EyeOff className="h-4 w-4 text-gray-500" />
+                                            <span className="text-gray-500">Oculto</span>
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               )}
