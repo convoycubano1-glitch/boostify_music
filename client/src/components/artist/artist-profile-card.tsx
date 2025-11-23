@@ -56,7 +56,8 @@ import {
   Settings,
   Download,
   RefreshCw,
-  Newspaper
+  Newspaper,
+  Coins
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
