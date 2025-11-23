@@ -3138,7 +3138,6 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     </div>
                   </div>
                 )}
-                )}
               </div>
                         );
                       } else if (sectionId === 'social-hub') {
