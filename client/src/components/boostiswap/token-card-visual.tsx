@@ -1,5 +1,13 @@
 import React, { useState } from "react";
 import { Music2 } from "lucide-react";
+import { MusicPlayerWidget } from "./music-player-widget";
+
+interface Track {
+  id: string;
+  title: string;
+  duration: number;
+  url: string;
+}
 
 interface TokenCardVisualProps {
   songName: string;
@@ -9,6 +17,7 @@ interface TokenCardVisualProps {
   artistImage: string;
   songImageUrl?: string;
   change24h: number;
+  tracks?: Track[];
 }
 
 export function TokenCardVisual({
@@ -19,6 +28,7 @@ export function TokenCardVisual({
   artistImage,
   songImageUrl,
   change24h,
+  tracks,
 }: TokenCardVisualProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -107,9 +117,14 @@ export function TokenCardVisual({
       )}
 
       {/* Content - Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
+      <div className="absolute bottom-0 left-0 right-0 p-4 z-10 space-y-3">
+        {/* Music Player - if tracks available */}
+        {tracks && tracks.length > 0 && (
+          <MusicPlayerWidget tracks={tracks} artistName={artistName} />
+        )}
+
         {/* Song Title */}
-        <div className="mb-4">
+        <div className={tracks && tracks.length > 0 ? "" : "mb-4"}>
           <h3 className="text-white font-bold text-lg leading-tight truncate drop-shadow-lg">
             {songName}
           </h3>

@@ -65,6 +65,11 @@ export function ArtistTokensMarketplace() {
     new Set(tokenizedSongs.map((song: any) => song.artist))
   );
 
+  const getArtistTracks = (artistName: string) => {
+    const profile = Object.values(artistProfiles).find(p => p.name.toLowerCase() === artistName.toLowerCase());
+    return profile?.tracks || [];
+  };
+
   const handleTokenCardClick = (songId: number, artistName?: string) => {
     console.log("🎯 Clicked token card for song ID:", songId, "Artist:", artistName);
     
@@ -177,6 +182,7 @@ export function ArtistTokensMarketplace() {
                   artistImage={song.imageUrl}
                   songImageUrl={song.imageUrl}
                   change24h={song.change24h || 0}
+                  tracks={getArtistTracks(song.artist)}
                 />
               </div>
 

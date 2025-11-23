@@ -16,6 +16,12 @@ export interface ArtistProfile {
     yearlyGrowth: number;
     tokenAppreciation: number;
   };
+  tracks?: Array<{
+    id: string;
+    title: string;
+    duration: number;
+    url: string;
+  }>;
 }
 
 export const artistProfiles: Record<number, ArtistProfile> = {
@@ -47,6 +53,10 @@ export const artistProfiles: Record<number, ArtistProfile> = {
       yearlyGrowth: 145,
       tokenAppreciation: 28.4,
     },
+    tracks: [
+      { id: "1-1", title: "Moonlight Dreams", duration: 245, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+      { id: "1-2", title: "Neon Nights", duration: 198, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+    ],
   },
   2: {
     id: 2,
