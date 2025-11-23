@@ -2180,6 +2180,168 @@ export const selectAffiliatePayoutSchema = createSelectSchema(affiliatePayouts);
 export type InsertAffiliatePayout = z.infer<typeof insertAffiliatePayoutSchema>;
 export type SelectAffiliatePayout = typeof affiliatePayouts.$inferSelect;
 
+// ============================================
+// BOOSTISWAP - DEX FOR MUSIC TOKENS
+// ============================================
+
+/**
+ * Pares de trading - Cada par representa dos tokens que se pueden intercambiar
+ * Ej: SONG-001 / USDC o LUNA-ECHO / ETH
+ */
+export const swapPairs = pgTable("swap_pairs", {
+  id: serial("id").primaryKey(),
+  token1Id: integer("token1_id").notNull().references(() => tokenizedSongs.id, { onDelete: "cascade" }),
+  token2Id: integer("token2_id").notNull().references(() => tokenizedSongs.id, { onDelete: "cascade" }),
+  pairAddress: varchar("pair_address", { length: 42 }).unique(), // Smart contract address
+  reserve1: decimal("reserve1", { precision: 20, scale: 8 }).default('0').notNull(), // Token1 reserve
+  reserve2: decimal("reserve2", { precision: 20, scale: 8 }).default('0').notNull(), // Token2 reserve
+  volume24h: decimal("volume24h", { precision: 20, scale: 2 }).default('0').notNull(),
+  feeTier: integer("fee_tier").default(5).notNull(), // 0.5% = 5 basis points
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_swap_pairs_tokens").on(table.token1Id, table.token2Id),
+  index("idx_swap_pairs_active").on(table.isActive)
+]);
+
+/**
+ * Pools de liquidez - Contiene reservas de ambos tokens y datos del pool
+ */
+export const liquidityPools = pgTable("liquidity_pools", {
+  id: serial("id").primaryKey(),
+  pairId: integer("pair_id").notNull().references(() => swapPairs.id, { onDelete: "cascade" }),
+  totalShares: decimal("total_shares", { precision: 20, scale: 8 }).default('0').notNull(), // LP tokens emitidos
+  reserve1: decimal("reserve1", { precision: 20, scale: 8 }).default('0').notNull(),
+  reserve2: decimal("reserve2", { precision: 20, scale: 8 }).default('0').notNull(),
+  feesAccumulated: decimal("fees_accumulated", { precision: 20, scale: 8 }).default('0').notNull(),
+  apy: decimal("apy", { precision: 5, scale: 2 }).default('0').notNull(), // Annual Percentage Yield
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_liquidity_pools_pair").on(table.pairId)
+]);
+
+/**
+ * Posiciones de liquidez del usuario - Cada usuario puede tener múltiples posiciones
+ */
+export const liquidityPositions = pgTable("liquidity_positions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  poolId: integer("pool_id").notNull().references(() => liquidityPools.id, { onDelete: "cascade" }),
+  lpTokensHeld: decimal("lp_tokens_held", { precision: 20, scale: 8 }).notNull(),
+  walletAddress: varchar("wallet_address", { length: 42 }).notNull(),
+  amount1Deposited: decimal("amount1_deposited", { precision: 20, scale: 8 }).notNull(),
+  amount2Deposited: decimal("amount2_deposited", { precision: 20, scale: 8 }).notNull(),
+  feesEarned: decimal("fees_earned", { precision: 20, scale: 8 }).default('0').notNull(),
+  transactionHash: varchar("transaction_hash", { length: 66 }),
+  status: text("status", { enum: ["active", "withdrawn", "pending"] }).default("active").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_liquidity_positions_user").on(table.userId),
+  index("idx_liquidity_positions_pool").on(table.poolId),
+  index("idx_liquidity_positions_wallet").on(table.walletAddress)
+]);
+
+/**
+ * Historial de swaps ejecutados en BoostiSwap
+ */
+export const swapHistory = pgTable("swap_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  pairId: integer("pair_id").notNull().references(() => swapPairs.id, { onDelete: "cascade" }),
+  walletAddress: varchar("wallet_address", { length: 42 }).notNull(),
+  tokenInId: integer("token_in_id").notNull().references(() => tokenizedSongs.id),
+  tokenOutId: integer("token_out_id").notNull().references(() => tokenizedSongs.id),
+  amountIn: decimal("amount_in", { precision: 20, scale: 8 }).notNull(),
+  amountOut: decimal("amount_out", { precision: 20, scale: 8 }).notNull(),
+  priceImpact: decimal("price_impact", { precision: 5, scale: 2 }).default('0').notNull(), // Porcentaje
+  platformFeeUsd: decimal("platform_fee_usd", { precision: 10, scale: 2 }).default('0').notNull(), // 5% fee
+  lpFeeUsd: decimal("lp_fee_usd", { precision: 10, scale: 2 }).default('0').notNull(), // Liquidity provider fee
+  transactionHash: varchar("transaction_hash", { length: 66 }).unique(),
+  blockNumber: integer("block_number"),
+  status: text("status", { enum: ["pending", "confirmed", "failed"] }).default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_swap_history_user").on(table.userId),
+  index("idx_swap_history_pair").on(table.pairId),
+  index("idx_swap_history_wallet").on(table.walletAddress),
+  index("idx_swap_history_status").on(table.status)
+]);
+
+// ============================================
+// BOOSTISWAP RELATIONS
+// ============================================
+
+export const swapPairsRelations = relations(swapPairs, ({ one, many }) => ({
+  token1: one(tokenizedSongs, {
+    fields: [swapPairs.token1Id],
+    references: [tokenizedSongs.id],
+  }),
+  token2: one(tokenizedSongs, {
+    fields: [swapPairs.token2Id],
+    references: [tokenizedSongs.id],
+  }),
+  pools: many(liquidityPools),
+  swaps: many(swapHistory),
+}));
+
+export const liquidityPoolsRelations = relations(liquidityPools, ({ one, many }) => ({
+  pair: one(swapPairs, {
+    fields: [liquidityPools.pairId],
+    references: [swapPairs.id],
+  }),
+  positions: many(liquidityPositions),
+}));
+
+export const liquidityPositionsRelations = relations(liquidityPositions, ({ one }) => ({
+  user: one(users, {
+    fields: [liquidityPositions.userId],
+    references: [users.id],
+  }),
+  pool: one(liquidityPools, {
+    fields: [liquidityPositions.poolId],
+    references: [liquidityPools.id],
+  }),
+}));
+
+export const swapHistoryRelations = relations(swapHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [swapHistory.userId],
+    references: [users.id],
+  }),
+  pair: one(swapPairs, {
+    fields: [swapHistory.pairId],
+    references: [swapPairs.id],
+  }),
+}));
+
+// ============================================
+// BOOSTISWAP ZOD SCHEMAS
+// ============================================
+
+export const insertSwapPairSchema = createInsertSchema(swapPairs).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectSwapPairSchema = createSelectSchema(swapPairs);
+export type InsertSwapPair = z.infer<typeof insertSwapPairSchema>;
+export type SelectSwapPair = typeof swapPairs.$inferSelect;
+
+export const insertLiquidityPoolSchema = createInsertSchema(liquidityPools).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectLiquidityPoolSchema = createSelectSchema(liquidityPools);
+export type InsertLiquidityPool = z.infer<typeof insertLiquidityPoolSchema>;
+export type SelectLiquidityPool = typeof liquidityPools.$inferSelect;
+
+export const insertLiquidityPositionSchema = createInsertSchema(liquidityPositions).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectLiquidityPositionSchema = createSelectSchema(liquidityPositions);
+export type InsertLiquidityPosition = z.infer<typeof insertLiquidityPositionSchema>;
+export type SelectLiquidityPosition = typeof liquidityPositions.$inferSelect;
+
+export const insertSwapHistorySchema = createInsertSchema(swapHistory).omit({ id: true, createdAt: true });
+export const selectSwapHistorySchema = createSelectSchema(swapHistory);
+export type InsertSwapHistory = z.infer<typeof insertSwapHistorySchema>;
+export type SelectSwapHistory = typeof swapHistory.$inferSelect;
+
 // Investor Payments
 export const investorPayments = pgTable("investor_payments", {
   id: serial("id").primaryKey(),

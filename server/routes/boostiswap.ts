@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { db } from "../db";
-import { tokenizedSongs } from "../db/schema";
-import { users } from "../db/schema";
-import { desc, eq } from "drizzle-orm";
+import { tokenizedSongs, swapPairs, liquidityPools, liquidityPositions, swapHistory, users } from "../db/schema";
+import { desc, eq, and } from "drizzle-orm";
 
 const router = Router();
 
@@ -68,11 +67,16 @@ router.get("/tokenized-songs", async (req, res) => {
 });
 
 /**
- * Obtener todos los pares de trading
+ * Obtener todos los pares de trading activos
  */
 router.get("/pairs", async (req, res) => {
   try {
-    const pairs = [];
+    const pairs = await db
+      .select()
+      .from(swapPairs)
+      .where(eq(swapPairs.isActive, true))
+      .orderBy(desc(swapPairs.volume24h));
+    
     res.json(pairs);
   } catch (error) {
     console.error("Error getting pairs:", error);
@@ -81,14 +85,32 @@ router.get("/pairs", async (req, res) => {
 });
 
 /**
- * Crear nuevo par
+ * Crear nuevo par de trading
  */
 router.post("/pairs", async (req, res) => {
   try {
-    const { token1Id, token2Id } = req.body;
-    const pair = { id: 1, token1Id, token2Id, createdAt: new Date() };
-    res.status(201).json(pair);
+    const { token1Id, token2Id, pairAddress } = req.body;
+    
+    if (!token1Id || !token2Id || !pairAddress) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    
+    const pair = await db
+      .insert(swapPairs)
+      .values({
+        token1Id,
+        token2Id,
+        pairAddress,
+        reserve1: "0",
+        reserve2: "0",
+        volume24h: "0",
+        feeTier: 5,
+      })
+      .returning();
+    
+    res.status(201).json(pair[0]);
   } catch (error) {
+    console.error("Error creating pair:", error);
     res.status(500).json({ error: "Error creating pair" });
   }
 });
