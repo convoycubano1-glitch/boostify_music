@@ -1,16 +1,13 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { db } from '../db';
-import { prCampaigns, prMediaDatabase, prWebhookEvents, insertPRCampaignSchema, users } from '../../db/schema';
+import { prCampaigns, prMediaDatabase, prWebhookEvents, insertPRCampaignSchema } from '../../db/schema';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router = express.Router();
 
 const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/wwvf4anizf0gc9yr3wyoax6ip1n7rj7w';
-const GEMINI_KEY = process.env.AI_INTEGRATIONS_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI(GEMINI_KEY);
 
 /**
  * GET /api/pr/campaigns
@@ -83,27 +80,22 @@ router.post('/campaigns', authenticate, async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
     }
 
-    // Parse and validate request data with defaults for arrays
-    const bodyData = {
+    const validatedData = insertPRCampaignSchema.parse({
       userId: req.user.id,
-      title: req.body.title || '',
-      artistName: req.body.artistName || '',
-      artistProfileUrl: req.body.artistProfileUrl || '',
-      contentType: req.body.contentType || 'single',
-      contentTitle: req.body.contentTitle || '',
-      contentUrl: req.body.contentUrl || '',
-      targetMediaTypes: Array.isArray(req.body.targetMediaTypes) ? req.body.targetMediaTypes : [],
-      targetCountries: Array.isArray(req.body.targetCountries) ? req.body.targetCountries : [],
-      targetGenres: Array.isArray(req.body.targetGenres) ? req.body.targetGenres : [],
-      pitchMessage: req.body.pitchMessage || '',
-      contactEmail: req.body.contactEmail || '',
-      contactPhone: req.body.contactPhone || '',
-      campaignImage: req.body.campaignImage || '',
+      title: req.body.title,
+      artistName: req.body.artistName,
+      artistProfileUrl: req.body.artistProfileUrl,
+      contentType: req.body.contentType,
+      contentTitle: req.body.contentTitle,
+      contentUrl: req.body.contentUrl,
+      targetMediaTypes: req.body.targetMediaTypes,
+      targetCountries: req.body.targetCountries,
+      targetGenres: req.body.targetGenres,
+      pitchMessage: req.body.pitchMessage,
+      contactEmail: req.body.contactEmail,
+      contactPhone: req.body.contactPhone,
       status: 'draft'
-    };
-
-    // Validate data
-    const validatedData = insertPRCampaignSchema.parse(bodyData);
+    });
 
     const [newCampaign] = await db.insert(prCampaigns).values(validatedData).returning();
 
@@ -166,7 +158,7 @@ router.put('/campaigns/:id', authenticate, async (req: Request, res: Response) =
 
 /**
  * POST /api/pr/campaigns/:id/activate
- * Activa una campaña, obtiene el perfil completo del artista y envía todo al webhook de Make.com
+ * Activa una campaña y envía webhook a Make.com
  */
 router.post('/campaigns/:id/activate', authenticate, async (req: Request, res: Response) => {
   try {
@@ -176,7 +168,6 @@ router.post('/campaigns/:id/activate', authenticate, async (req: Request, res: R
 
     const campaignId = parseInt(req.params.id);
     
-    // Get campaign
     const [campaign] = await db.select().from(prCampaigns)
       .where(and(
         eq(prCampaigns.id, campaignId),
@@ -188,16 +179,13 @@ router.post('/campaigns/:id/activate', authenticate, async (req: Request, res: R
       return res.status(404).json({ success: false, message: 'Campaña no encontrada' });
     }
 
-    // Get COMPLETE artist profile from database
-    const [artist] = await db.select().from(users)
-      .where(eq(users.id, campaign.userId))
-      .limit(1);
+    // Filter media outlets based on campaign targets
+    let mediaQuery = db.select().from(prMediaDatabase)
+      .where(eq(prMediaDatabase.isActive, true));
 
-    if (!artist) {
-      return res.status(404).json({ success: false, message: 'Perfil del artista no encontrado' });
-    }
-
-    // Get target media based on campaign targets
+    // Apply filters if specified
+    const filters: any[] = [eq(prMediaDatabase.isActive, true)];
+    
     if (campaign.targetMediaTypes && campaign.targetMediaTypes.length > 0) {
       const mediaList = await db.select().from(prMediaDatabase)
         .where(and(
@@ -216,80 +204,22 @@ router.post('/campaigns/:id/activate', authenticate, async (req: Request, res: R
         language: media.language
       }));
 
-      // Build COMPLETE artist profile to send to webhook
-      const artistProfile = {
-        // Basic info
-        id: artist.id,
-        artistName: artist.artistName || artist.firstName || '',
-        realName: artist.realName || '',
-        email: artist.email || '',
-        phone: artist.phone || '',
-        
-        // Profile URLs and images
-        profileUrl: campaign.artistProfileUrl || `https://boostify.app/artist/${artist.slug || artist.artistName?.toLowerCase().replace(/\s+/g, '-')}`,
-        profileImage: artist.profileImage || '',
-        coverImage: artist.coverImage || '',
-        
-        // Biography and info
-        biography: artist.biography || '',
-        genre: artist.genre || '',
-        genres: artist.genres || [],
-        location: artist.location || '',
-        country: artist.country || '',
-        
-        // Social media
-        spotifyUrl: artist.spotifyUrl || '',
-        instagramHandle: artist.instagramHandle || '',
-        twitterHandle: artist.twitterHandle || '',
-        youtubeChannel: artist.youtubeChannel || '',
-        facebookUrl: artist.facebookUrl || '',
-        tiktokUrl: artist.tiktokUrl || '',
-        
-        // Website
-        website: artist.website || '',
-        
-        // Additional content
-        topYoutubeVideos: artist.topYoutubeVideos || [],
-        concerts: artist.concerts || { upcoming: [], highlights: [] }
-      };
-
-      // Prepare COMPLETE payload for Make.com with full artist profile
+      // Prepare payload for Make.com
       const makePayload = {
         campaignId: campaign.id,
-        
-        // Campaign details
-        campaignTitle: campaign.title,
+        artistName: campaign.artistName,
+        artistProfileUrl: campaign.artistProfileUrl || `https://boostify.app/artist/${campaign.artistName.toLowerCase().replace(/\s+/g, '-')}`,
         contentType: campaign.contentType,
         contentTitle: campaign.contentTitle,
         contentUrl: campaign.contentUrl,
-        campaignImage: campaign.campaignImage || '',
-        
-        // Artist PROFILE (complete)
-        artistProfile: artistProfile,
-        
-        // Campaign contact info
+        pitchMessage: campaign.pitchMessage,
         contactEmail: campaign.contactEmail,
         contactPhone: campaign.contactPhone,
-        pitchMessage: campaign.pitchMessage,
-        
-        // Target details
-        targetCountries: campaign.targetCountries || [],
-        targetGenres: campaign.targetGenres || [],
-        
-        // Media to contact
         targetMedia: targetMedia,
-        mediaCount: targetMedia.length,
-        
-        // Webhook callback URL
-        webhookUrl: `${process.env.REPLIT_DEV_DOMAIN || 'https://boostify.app'}/api/pr/webhooks/event`,
-        
-        // Timestamp
-        activatedAt: new Date().toISOString()
+        webhookUrl: `${process.env.REPLIT_DEV_DOMAIN || 'https://boostify.app'}/api/pr/webhooks/event`
       };
 
-      console.log('[PR ACTIVATE] Sending payload to Make.com:', JSON.stringify(makePayload, null, 2));
-
-      // Send to Make.com webhook
+      // Send to Make.com
       const makeResponse = await fetch(MAKE_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -315,10 +245,9 @@ router.post('/campaigns/:id/activate', authenticate, async (req: Request, res: R
 
       res.json({
         success: true,
-        message: `Campaña activada! Se contactarán ${targetMedia.length} medios. Perfil del artista enviado a ${targetMedia.length} outlets.`,
+        message: `Campaña activada! Se contactarán ${targetMedia.length} medios.`,
         campaign: updatedCampaign,
-        mediaCount: targetMedia.length,
-        artistProfile: artistProfile
+        mediaCount: targetMedia.length
       });
     } else {
       return res.status(400).json({ success: false, message: 'No hay tipos de medios seleccionados' });
@@ -449,99 +378,6 @@ router.get('/media', authenticate, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[PR MEDIA LIST ERROR]', error);
     res.status(500).json({ success: false, message: 'Error al obtener medios' });
-  }
-});
-
-/**
- * POST /api/pr/generate-image
- * Genera descripción y metadata de imagen usando Gemini AI
- */
-router.post('/generate-image', authenticate, async (req: Request, res: Response) => {
-  try {
-    const { artistName, contentType, contentTitle, genres } = req.body;
-    
-    if (!artistName || !contentTitle) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' });
-    }
-
-    // Generate image description using Gemini AI
-    try {
-      const prompt = `Create a detailed image description for a music promotional campaign. Return ONLY valid JSON with no markdown, no backticks, just raw JSON:
-
-{
-  "title": "Professional campaign image title",
-  "description": "Detailed description of a stunning modern music promotional image",
-  "style": "modern/vibrant/professional",
-  "colors": ["color1", "color2", "color3"],
-  "elements": ["element1", "element2"],
-  "tips": "Additional design tips for this genre"
-}
-
-Artist: ${artistName}
-Content: ${contentTitle}
-Type: ${contentType}
-Genres: ${genres?.join(', ') || 'music'}`;
-
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      
-      const response = await model.generateContent(prompt);
-      const textContent = response.response.candidates?.[0]?.content?.parts?.[0];
-      
-      if (!textContent || textContent.type !== 'text') {
-        throw new Error('No valid response from AI');
-      }
-
-      let imageMetadata;
-      try {
-        imageMetadata = JSON.parse(textContent.text);
-      } catch (e) {
-        // Fallback if JSON parsing fails
-        imageMetadata = {
-          title: `${contentTitle} - Campaign Image`,
-          description: `Professional promotional image for ${artistName}'s ${contentType}`,
-          style: 'modern',
-          colors: ['#FF6B6B', '#4ECDC4', '#45B7D1'],
-          elements: ['artist name', 'content title', 'modern typography', 'vibrant gradient'],
-          tips: `Perfect for reaching media in the ${genres?.[0] || 'music'} genre`
-        };
-      }
-
-      res.json({
-        success: true,
-        message: 'Image metadata generated successfully',
-        image: {
-          ...imageMetadata,
-          generatedAt: new Date().toISOString(),
-          artistName,
-          contentType,
-          contentTitle,
-          genres: genres || []
-        }
-      });
-    } catch (aiError: any) {
-      console.error('[GEMINI AI ERROR]', aiError);
-      // Fallback to basic template if Gemini fails
-      res.json({
-        success: true,
-        message: 'Image template generated (Gemini fallback)',
-        image: {
-          title: `${contentTitle} - Campaign Image`,
-          description: `Professional promotional image for ${artistName}'s ${contentType}`,
-          style: 'modern',
-          colors: ['#FF6B6B', '#4ECDC4', '#45B7D1'],
-          elements: ['artist name', 'content title', 'modern typography', 'vibrant gradient'],
-          tips: `Perfect for reaching media outlets`,
-          artistName,
-          contentType,
-          contentTitle,
-          genres: genres || [],
-          generatedAt: new Date().toISOString()
-        }
-      });
-    }
-  } catch (error: any) {
-    console.error('[PR GENERATE IMAGE ERROR]', error);
-    res.status(400).json({ success: false, message: 'Image generation requires valid artist and content information' });
   }
 });
 

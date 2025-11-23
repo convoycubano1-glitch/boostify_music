@@ -6,7 +6,7 @@ import { getAuth } from 'firebase/auth';
 const auth = getAuth();
 
 // Contract types definition
-export type ContractType = 'legal' | 'recording' | 'performance' | 'licensing' | 'distribution' | 'publishing' | 'management' | 'analysis' | 'collaboration';
+export type ContractType = 'legal' | 'recording' | 'performance' | 'licensing' | 'distribution' | 'publishing' | 'management' | 'analysis';
 
 // Contract interface
 export interface Contract {
@@ -28,7 +28,7 @@ export interface Contract {
  * @param contract Contract data to save
  * @returns Promise with the saved contract ID
  */
-export async function saveContract(contract: Omit<Contract, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> {
+export async function saveContract(contract: Omit<Contract, 'id'>): Promise<string> {
   try {
     // Ensure current user exists
     const user = auth.currentUser;

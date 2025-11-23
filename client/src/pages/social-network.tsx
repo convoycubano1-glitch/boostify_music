@@ -8,53 +8,16 @@ import { apiRequest } from "../lib/queryClient";
 import { useAuth } from "../hooks/use-auth";
 import { SocialUser } from "../lib/social/types";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
-import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked, Music, ExternalLink, Star, DollarSign, Send, X } from "lucide-react";
+import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked, Music, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
-import { Badge } from "../components/ui/badge";
-import { BookingDialog } from "../components/booking/booking-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
-import { Input } from "../components/ui/input";
-import { ScrollArea } from "../components/ui/scroll-area";
-import { ServiceRequestForm, ServiceRequestList } from "../components/services/ServiceRequestForm";
-import { Briefcase } from "lucide-react";
 
 // Constantes que nos ahorraremos de repetir
 const LANGUAGE_BADGE_CLASS = "px-2 py-0.5 rounded-full text-xs inline-flex items-center";
 const INFO_GROUP_CLASS = "flex items-center gap-2 text-muted-foreground text-sm";
-
-interface Musician {
-  id: string;
-  title: string;
-  photo: string;
-  instrument: string;
-  category: string;
-  description: string;
-  price: number;
-  rating: number;
-  totalReviews: number;
-  genres?: string[];
-}
-
-interface DirectMessage {
-  id: number;
-  senderId: number;
-  receiverId: number;
-  content: string;
-  isRead: boolean;
-  createdAt: string;
-}
-
-interface Conversation {
-  userId: number;
-  user: any;
-  lastMessage: DirectMessage;
-  unreadCount: number;
-  messageCount: number;
-}
 
 export default function SocialNetworkPage() {
   const { user } = useAuth() || {};
@@ -63,14 +26,6 @@ export default function SocialNetworkPage() {
   const [syncedUserId, setSyncedUserId] = React.useState<number | null>(null);
   const [artists, setArtists] = React.useState<any[]>([]);
   const [currentUserArtist, setCurrentUserArtist] = React.useState<any>(null);
-  const [musicians, setMusicians] = React.useState<Musician[]>([]);
-  const [isLoadingMusicians, setIsLoadingMusicians] = React.useState(false);
-  const [showMessagesModal, setShowMessagesModal] = React.useState(false);
-  const [conversations, setConversations] = React.useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = React.useState<number | null>(null);
-  const [messages, setMessages] = React.useState<DirectMessage[]>([]);
-  const [messageInput, setMessageInput] = React.useState("");
-  const [isLoadingMessages, setIsLoadingMessages] = React.useState(false);
 
   // Sincronizar usuario cuando se autentica
   useEffect(() => {
@@ -84,8 +39,8 @@ export default function SocialNetworkPage() {
           method: "POST",
           data: {
             userId: user.id,
-            displayName: user.username || user.firstName || user.email?.split('@')[0] || 'Usuario',
-            avatar: user.profileImageUrl || '',
+            displayName: user.displayName || user.email?.split('@')[0] || 'Usuario',
+            avatar: user.photoURL || '',
             bio: '',
             interests: [],
             language: navigator.language.startsWith('es') ? 'es' : 'en'
@@ -135,121 +90,6 @@ export default function SocialNetworkPage() {
     };
     loadArtists();
   }, [user?.id]);
-
-  // Cargar músicos desde Firestore
-  useEffect(() => {
-    const loadMusicians = async () => {
-      try {
-        setIsLoadingMusicians(true);
-        const musiciansRef = collection(db, "musicians");
-        const snapshot = await getDocs(musiciansRef);
-        const musiciansList: Musician[] = [];
-
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          musiciansList.push({
-            id: `firestore-${doc.id}`,
-            title: data.name || data.title,
-            photo: data.photo || data.photoURL,
-            instrument: data.instrument,
-            category: data.category,
-            description: data.description,
-            price: typeof data.price === 'string' ? parseFloat(data.price) : data.price,
-            rating: typeof data.rating === 'string' ? parseFloat(data.rating) : data.rating,
-            totalReviews: data.totalReviews || 0,
-            genres: data.genres || []
-          });
-        });
-
-        // Also load from musician_images collection
-        const imagesRef = collection(db, "musician_images");
-        const imagesSnapshot = await getDocs(imagesRef);
-        imagesSnapshot.forEach(doc => {
-          const data = doc.data();
-          musiciansList.push({
-            id: `firestore-img-${doc.id}`,
-            title: data.category || "Reference Musician",
-            photo: data.url,
-            instrument: data.category || "Various",
-            category: data.category || "Other",
-            description: data.prompt || "Reference musician from Firestore",
-            price: 150,
-            rating: 4.5,
-            totalReviews: 10,
-            genres: [data.category || "Various"]
-          });
-        });
-
-        setMusicians(musiciansList);
-      } catch (error) {
-        console.error("Error loading musicians:", error);
-      } finally {
-        setIsLoadingMusicians(false);
-      }
-    };
-
-    loadMusicians();
-  }, []);
-
-  // Cargar conversaciones cuando se abre modal de mensajes
-  const loadConversations = React.useCallback(async () => {
-    if (!syncedUserId) return;
-    try {
-      const data = await apiRequest({
-        url: `/api/social/messages/${syncedUserId}`,
-        method: "GET"
-      }) as Conversation[];
-      setConversations(data);
-    } catch (error) {
-      console.error("Error loading conversations:", error);
-    }
-  }, [syncedUserId]);
-
-  // Cargar mensajes de una conversación
-  const loadMessages = React.useCallback(async (otherUserId: number) => {
-    if (!syncedUserId) return;
-    try {
-      setIsLoadingMessages(true);
-      const data = await apiRequest({
-        url: `/api/social/messages/${syncedUserId}/${otherUserId}`,
-        method: "GET"
-      }) as DirectMessage[];
-      setMessages(data);
-      
-      // Marcar como leídos
-      await apiRequest({
-        url: `/api/social/messages/${syncedUserId}/read`,
-        method: "PUT",
-        data: { otherUserId }
-      });
-    } catch (error) {
-      console.error("Error loading messages:", error);
-    } finally {
-      setIsLoadingMessages(false);
-    }
-  }, [syncedUserId]);
-
-  // Enviar mensaje
-  const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedConversation || !syncedUserId) return;
-    
-    try {
-      await apiRequest({
-        url: "/api/social/messages",
-        method: "POST",
-        data: {
-          senderId: syncedUserId,
-          receiverId: selectedConversation,
-          content: messageInput
-        }
-      });
-      setMessageInput("");
-      await loadMessages(selectedConversation);
-      await loadConversations();
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to send message", variant: "destructive" });
-    }
-  };
 
   // Consulta para obtener usuarios (para mostrar en la barra lateral)
   const { data: users } = useQuery({
@@ -444,87 +284,6 @@ export default function SocialNetworkPage() {
                 </div>
               )}
               
-              {/* Separator */}
-              <div className="border-t border-slate-700 my-6" />
-
-              {/* Músicos Disponibles */}
-              {musicians.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Music className="h-5 w-5 text-orange-400" />
-                    Músicos para Colaborar
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {musicians.slice(0, 4).map((musician) => (
-                      <Card key={musician.id} className="overflow-hidden backdrop-blur-sm bg-background/80 border border-orange-500/10 shadow-lg hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 group">
-                        <div className="h-40 bg-orange-500/10 relative overflow-hidden">
-                          <img
-                            src={musician.photo || "/assets/musician-placeholder.jpg"}
-                            alt={musician.title}
-                            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div className="absolute top-3 right-3 z-10">
-                            <Badge variant="outline" className="bg-black/50 backdrop-blur-md border-orange-500/20 text-white px-2.5 py-1">
-                              {musician.instrument}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-sm font-semibold group-hover:text-orange-500 transition-colors line-clamp-1">{musician.title}</h3>
-                            <div className="flex items-center gap-1">
-                              <Star className="h-3 w-3 text-orange-500 fill-orange-500" />
-                              <span className="text-xs font-medium">{musician.rating.toFixed(1)}</span>
-                            </div>
-                          </div>
-                          <p className="text-muted-foreground mb-2 line-clamp-2 text-xs">{musician.description}</p>
-                          <div className="flex justify-between items-center mb-3 text-xs">
-                            <div className="text-muted-foreground">
-                              {musician.totalReviews} reseñas
-                            </div>
-                            <div className="flex items-center gap-1 font-semibold text-orange-500">
-                              <DollarSign className="h-3 w-3" />
-                              ${musician.price}
-                            </div>
-                          </div>
-                          <Button
-                            className="w-full bg-orange-500 hover:bg-orange-600 shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 h-8 text-xs"
-                            asChild
-                          >
-                            <BookingDialog musician={musician as any} />
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                  {musicians.length > 4 && (
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link href="/producer-tools">Ver todos los músicos →</Link>
-                    </Button>
-                  )}
-                </div>
-              )}
-              
-              {/* Separator */}
-              <div className="border-t border-slate-700 my-6" />
-
-              {/* Service Requests */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Briefcase className="h-5 w-5 text-orange-400" />
-                    Solicitudes de Servicios
-                  </h3>
-                  {syncedUserId && (
-                    <ServiceRequestForm 
-                      clientId={syncedUserId}
-                      onRequestCreated={() => {}}
-                    />
-                  )}
-                </div>
-                <ServiceRequestList filter="open" />
-              </div>
-
               {/* Separator */}
               <div className="border-t border-slate-700 my-6" />
               

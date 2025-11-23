@@ -98,7 +98,6 @@ import subscriptionApiRouter from './routes/subscription-api'; // Import Subscri
 import apiUsageRouter from './routes/api-usage'; // Import API usage monitoring router
 import accountingRouter from './routes/accounting'; // Import accounting/transactions router
 import adminAgentRouter from './routes/admin-agent'; // Import AI admin agent
-import productionWorkflowRouter from './routes/production-workflow'; // Import Production Workflow routes
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -370,7 +369,6 @@ export function registerRoutes(app: Express): HttpServer {
   app.use('/api/apify/instagram', apifyInstagramRouter); // Apify Instagram integration for real Instagram data
   app.use('/api/fashion', fashionStudioRouter); // Artist Fashion Studio (Virtual Try-On, AI Advisor, Kling Videos)
   app.use('/api/notifications', notificationsRouter); // Internal notifications system
-  app.use('/api/production-workflow', productionWorkflowRouter); // Production Workflow routes (projects, phases, tasks, studio sessions)
   app.use(creditsRouter); // Credits and payment routes
   
   // Helper function para obtener features de cada plan

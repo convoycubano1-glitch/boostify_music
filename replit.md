@@ -1,44 +1,9 @@
-# AI Music Video Creator + Social Network - Complete Platform
+# AI Music Video Creator - Simplified Version
 
 ## Overview
-**Boostify** - Plataforma completa de marketing musical con:
-- Creator de videos musicales con IA
-- **Red social especializada para músicos** con desafíos, badges, y colaboraciones inteligentes
-- Herramientas de crecimiento (YouTube, Spotify, TikTok)
-- Marketplace de merchandising
+Sistema simplificado para crear videos musicales con IA que permite a los usuarios subir canciones, extraer lyrics, generar scripts visuales y crear timelines con duraciones aleatorias.
 
 **URL de Producción**: https://boostify.replit.app
-
----
-
-## 🎵 RED SOCIAL MUSICAL - NUEVO (Noviembre 23, 2025)
-
-### ✅ Características Implementadas:
-
-**Backend (16 rutas completamente funcionales)**:
-- Desafíos musicales: crear, listar, participar
-- Badges/Logros: verified, trending, collaborator, trending_creator  
-- Búsqueda avanzada: por género, ubicación, keywords
-- Algoritmo inteligente de colaboraciones con score de compatibilidad
-- Editar/borrar posts con confirmación
-- Sistema de menciones @artista
-
-**Frontend (8 componentes nuevos)**:
-- Panel de desafíos en vivo
-- Buscador avanzado con filtros
-- Sugerencias inteligentes de colaboración
-- Visualización de badges
-- Edición inline de posts
-- Grid responsive con Tailwind
-
-**Base de Datos**:
-- 4 tablas nuevas: social_challenges, social_user_badges, social_challenge_participants, social_collaboration_suggestions
-- 6 columnas nuevas en usuarios: genre, location, isVerified, mentions, challengeId, collaboratorIds
-
-### 🎯 Casos de Uso:
-- Productor sube beat → Sistema detecta cantantes compatibles → Los conecta automáticamente
-- Artista crea desafío "Canta este beat" → Otros artistas participan → Viralidad orgánica
-- Usuarios ganan badges por engagement → Motiva participación continua
 
 ---
 

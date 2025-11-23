@@ -165,14 +165,14 @@ export default function SettingsPage() {
   // Cargar perfil de artista desde Firestore
   useEffect(() => {
     const loadArtistProfile = async () => {
-      if (!user?.id) {
+      if (!user?.uid) {
         setIsLoadingArtistProfile(false);
         return;
       }
 
       try {
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("userId", "==", user.id));
+        const q = query(usersRef, where("uid", "==", user.uid));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
@@ -202,7 +202,7 @@ export default function SettingsPage() {
     };
 
     loadArtistProfile();
-  }, [user?.id]);
+  }, [user?.uid]);
   
   // Funciones de generación con Gemini
   const handleGenerateBiography = async () => {
@@ -364,7 +364,7 @@ export default function SettingsPage() {
   };
 
   const handleArtistProfileSubmit = async (values: z.infer<typeof artistProfileSchema>) => {
-    if (!user?.id) {
+    if (!user?.uid) {
       toast({
         title: "Error",
         description: "Debes estar autenticado para actualizar tu perfil.",
@@ -377,11 +377,11 @@ export default function SettingsPage() {
 
     try {
       const usersRef = collection(db, "users");
-      const q = query(usersRef, where("userId", "==", user.id));
+      const q = query(usersRef, where("uid", "==", user.uid));
       const querySnapshot = await getDocs(q);
 
       const profileData = {
-        userId: user.id,
+        uid: user.uid,
         displayName: values.displayName,
         name: values.displayName,
         biography: values.biography || "",

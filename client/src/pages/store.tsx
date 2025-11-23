@@ -7,7 +7,6 @@ import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { motion } from "framer-motion";
 import { SiInstagram, SiFacebook, SiTelegram, SiTiktok, SiYoutube, SiX, SiLinkedin, SiPinterest, SiAndroid, SiApple } from "react-icons/si";
-import { AudioToolsStore } from "../components/store/AudioToolsStore";
 import { useToast } from "../hooks/use-toast";
 import { useAuth } from "../hooks/use-auth";
 import axios from "axios";
@@ -675,17 +674,11 @@ export default function StorePage() {
           </div>
 
           {/* Store Tabs */}
-          <Tabs defaultValue="audio" className="w-full mb-8">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-8">
-              <TabsTrigger value="audio">Audio Tools</TabsTrigger>
+          <Tabs defaultValue="bots" className="w-full mb-8">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
               <TabsTrigger value="bots">Automation Bots</TabsTrigger>
               <TabsTrigger value="apps">Mobile Apps</TabsTrigger>
             </TabsList>
-            
-            {/* Audio Tools Tab Content */}
-            <TabsContent value="audio">
-              <AudioToolsStore />
-            </TabsContent>
             
             {/* Bots Tab Content */}
             <TabsContent value="bots">

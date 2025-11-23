@@ -17,8 +17,7 @@ import {
   Bot,
   UserPlus,
   Wrench,
-  Trash2,
-  Edit
+  Trash2
 } from "lucide-react";
 import { fixGeneratedByForUserArtists } from "../lib/api/artist-profile-service";
 import { Head } from "../components/ui/head";
@@ -552,16 +551,6 @@ export default function MyArtistsPage() {
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Ver Perfil
-                        </Button>
-                      </Link>
-                      <Link href={`/edit-artist/${artist.id}`} className="flex-1">
-                        <Button
-                          variant="outline"
-                          className="w-full border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
-                          data-testid={`button-edit-artist-${artist.id}`}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Editar
                         </Button>
                       </Link>
                       <Button

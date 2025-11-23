@@ -7,19 +7,8 @@ import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
-import { 
-  users, artistNews, musicVideoProjects, artistProfileImages, artistMedia, songs, merchandise,
-  subscriptions, userRoles, artistWallet, salesTransactions, walletTransactions, 
-  crowdfundingCampaigns, crowdfundingContributions, marketingMetrics, analyticsHistory, 
-  contracts, audioDemos, payments, musicians, bookings, events, investors, managerTasks,
-  managerContacts, managerSchedule, managerNotes, courseInstructors, courseEnrollments,
-  userAchievements, courseReviews, quizAttempts, lessonProgress, spotifyCurators, userCredits,
-  creditTransactions, affiliates, affiliateLinks, affiliateClicks, affiliateConversions,
-  affiliateEarnings, affiliateCoupons, affiliatePromotions, affiliateBadges, affiliateReferrals,
-  affiliateMarketingMaterials, affiliatePayouts
-} from '../../db/schema';
-import { eq, desc, or } from 'drizzle-orm';
-import musicVideoProjectsRouter from './music-video-projects';
+import { users, artistNews } from '../../db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { generateCinematicImage, generateImageWithFaceReference } from '../services/gemini-image-service';
 import { GoogleGenAI } from "@google/genai";
 import { NotificationTemplates } from '../utils/notifications';
@@ -181,18 +170,13 @@ async function saveArtistToPostgreSQL(artistData: any, firestoreId: string, user
     }
 
     // Mapear datos de Firestore a PostgreSQL
-    // Asegurar que al menos tenemos el nombre del artista
-    const artistName = artistData.name || artistData.displayName || 'Unknown Artist';
-    const profileUrl = artistData.look?.profile_url || artistData.profileImage || 'https://via.placeholder.com/300x300?text=' + encodeURIComponent(artistName);
-    const coverUrl = artistData.look?.cover_url || artistData.coverImage || 'https://via.placeholder.com/1200x400?text=' + encodeURIComponent(artistName);
-    
     const postgresData = {
       role: 'artist' as const,
-      artistName: artistName,
+      artistName: artistData.name,
       slug,
       biography: artistData.biography || null,
-      profileImage: profileUrl,
-      coverImage: coverUrl,
+      profileImage: artistData.look?.profile_url || artistData.profileImage || null,
+      coverImage: artistData.look?.cover_url || artistData.coverImage || null,
       realName: artistData.realName || null,
       country: artistData.country || null,
       genres: artistData.music_genres || [],
@@ -209,16 +193,9 @@ async function saveArtistToPostgreSQL(artistData: any, firestoreId: string, user
       recordLabelId: null
     };
 
-    console.log(`📝 Guardando artista en PostgreSQL:`, {
-      artistName: postgresData.artistName,
-      slug: postgresData.slug,
-      profileImage: postgresData.profileImage ? '✅ SET' : '❌ NULL',
-      coverImage: postgresData.coverImage ? '✅ SET' : '❌ NULL'
-    });
-
     const [newUser] = await pgDb.insert(users).values(postgresData).returning({ id: users.id });
     
-    console.log(`✅ Artista guardado en PostgreSQL con ID: ${newUser.id}, nombre: ${newUser.artistName}`);
+    console.log(`Artista guardado en PostgreSQL con ID: ${newUser.id}`);
     return newUser.id;
   } catch (error) {
     console.error('Error al guardar artista en PostgreSQL:', error);
@@ -597,82 +574,7 @@ router.delete("/delete-artist/:pgId", isAuthenticated, async (req: Request, res:
       }
     }
 
-    // 4. Eliminar todas las referencias primero - COMPREHENSIVE CASCADE DELETE
-    try {
-      console.log(`🗑️ Iniciando eliminación en cascada de referencias para usuario ID: ${pgId}`);
-      
-      // Eliminar de TODAS las tablas que referencian users.id
-      // IMPORTANTE: Eliminar tablas anidadas primero (affiliate child tables antes de affiliates)
-      const deletionQueries = [
-        // Affiliate system - eliminar child tables primero
-        { name: 'affiliateLinks', query: pgDb.delete(affiliateLinks).where(eq(affiliateLinks.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliateClicks', query: pgDb.delete(affiliateClicks).where(eq(affiliateClicks.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliateConversions', query: pgDb.delete(affiliateConversions).where(eq(affiliateConversions.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliateEarnings', query: pgDb.delete(affiliateEarnings).where(eq(affiliateEarnings.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliateCoupons', query: pgDb.delete(affiliateCoupons).where(eq(affiliateCoupons.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliatePromotions', query: pgDb.delete(affiliatePromotions).where(eq(affiliatePromotions.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliateBadges', query: pgDb.delete(affiliateBadges).where(eq(affiliateBadges.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliateReferrals', query: pgDb.delete(affiliateReferrals).where(eq(affiliateReferrals.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliateMarketingMaterials', query: pgDb.delete(affiliateMarketingMaterials).where(eq(affiliateMarketingMaterials.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        { name: 'affiliatePayouts', query: pgDb.delete(affiliatePayouts).where(eq(affiliatePayouts.affiliateId, pgDb.select({ id: affiliates.id }).from(affiliates).where(eq(affiliates.userId, pgId)))) },
-        // Luego eliminar affiliates
-        { name: 'affiliates', query: pgDb.delete(affiliates).where(eq(affiliates.userId, pgId)) },
-        
-        // Resto de tablas
-        { name: 'artistMedia', query: pgDb.delete(artistMedia).where(eq(artistMedia.userId, pgId)) },
-        { name: 'songs', query: pgDb.delete(songs).where(eq(songs.userId, pgId)) },
-        { name: 'merchandise', query: pgDb.delete(merchandise).where(eq(merchandise.userId, pgId)) },
-        { name: 'subscriptions', query: pgDb.delete(subscriptions).where(eq(subscriptions.userId, pgId)) },
-        { name: 'userRoles', query: pgDb.delete(userRoles).where(or(eq(userRoles.userId, pgId), eq(userRoles.grantedBy, pgId))) },
-        { name: 'artistWallet', query: pgDb.delete(artistWallet).where(eq(artistWallet.userId, pgId)) },
-        { name: 'salesTransactions', query: pgDb.delete(salesTransactions).where(eq(salesTransactions.artistId, pgId)) },
-        { name: 'walletTransactions', query: pgDb.delete(walletTransactions).where(eq(walletTransactions.userId, pgId)) },
-        { name: 'crowdfundingCampaigns', query: pgDb.delete(crowdfundingCampaigns).where(eq(crowdfundingCampaigns.userId, pgId)) },
-        { name: 'crowdfundingContributions', query: pgDb.delete(crowdfundingContributions).where(eq(crowdfundingContributions.userId, pgId)) },
-        { name: 'marketingMetrics', query: pgDb.delete(marketingMetrics).where(eq(marketingMetrics.userId, pgId)) },
-        { name: 'analyticsHistory', query: pgDb.delete(analyticsHistory).where(eq(analyticsHistory.userId, pgId)) },
-        { name: 'contracts', query: pgDb.delete(contracts).where(eq(contracts.userId, pgId)) },
-        { name: 'audioDemos', query: pgDb.delete(audioDemos).where(eq(audioDemos.userId, pgId)) },
-        { name: 'musicians', query: pgDb.delete(musicians).where(eq(musicians.userId, pgId)) },
-        { name: 'bookings', query: pgDb.delete(bookings).where(eq(bookings.userId, pgId)) },
-        { name: 'events', query: pgDb.delete(events).where(eq(events.userId, pgId)) },
-        { name: 'investors', query: pgDb.delete(investors).where(eq(investors.userId, pgId)) },
-        { name: 'managerTasks', query: pgDb.delete(managerTasks).where(eq(managerTasks.userId, pgId)) },
-        { name: 'managerContacts', query: pgDb.delete(managerContacts).where(eq(managerContacts.userId, pgId)) },
-        { name: 'managerSchedule', query: pgDb.delete(managerSchedule).where(eq(managerSchedule.userId, pgId)) },
-        { name: 'managerNotes', query: pgDb.delete(managerNotes).where(eq(managerNotes.userId, pgId)) },
-        { name: 'courseInstructors', query: pgDb.delete(courseInstructors).where(eq(courseInstructors.userId, pgId)) },
-        { name: 'courseEnrollments', query: pgDb.delete(courseEnrollments).where(eq(courseEnrollments.userId, pgId)) },
-        { name: 'userAchievements', query: pgDb.delete(userAchievements).where(eq(userAchievements.userId, pgId)) },
-        { name: 'courseReviews', query: pgDb.delete(courseReviews).where(eq(courseReviews.userId, pgId)) },
-        { name: 'quizAttempts', query: pgDb.delete(quizAttempts).where(eq(quizAttempts.userId, pgId)) },
-        { name: 'lessonProgress', query: pgDb.delete(lessonProgress).where(eq(lessonProgress.userId, pgId)) },
-        { name: 'spotifyCurators', query: pgDb.delete(spotifyCurators).where(eq(spotifyCurators.userId, pgId)) },
-        { name: 'userCredits', query: pgDb.delete(userCredits).where(eq(userCredits.userId, pgId)) },
-        { name: 'creditTransactions', query: pgDb.delete(creditTransactions).where(eq(creditTransactions.userId, pgId)) },
-        { name: 'musicVideoProjects', query: pgDb.delete(musicVideoProjects).where(eq(musicVideoProjects.artistProfileId, pgId)) },
-        { name: 'artistProfileImages', query: pgDb.delete(artistProfileImages).where(eq(artistProfileImages.artistProfileId, pgId)) },
-        // Eliminar artistas generados por este usuario (generatedBy)
-        { name: 'users (generatedBy)', query: pgDb.delete(users).where(eq(users.generatedBy, pgId)) }
-      ];
-
-      let deletedCount = 0;
-      for (const item of deletionQueries) {
-        try {
-          await item.query;
-          deletedCount++;
-          console.log(`✅ ${item.name} - eliminado correctamente`);
-        } catch (e) {
-          console.log(`⚠️ ${item.name} - no hay registros o tabla no existe`);
-        }
-      }
-
-      console.log(`✅ Eliminadas referencias de ${deletedCount} tablas para usuario: ${pgId}`);
-    } catch (e) {
-      console.error('⚠️ Error durante eliminación en cascada:', e);
-    }
-
-    // 5. Finalmente, eliminar el usuario
+    // 4. Eliminar de PostgreSQL
     await pgDb
       .delete(users)
       .where(eq(users.id, pgId));

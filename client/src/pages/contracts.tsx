@@ -10,9 +10,13 @@ import {
   analyzeContract,
   getContractTemplates,
   generateFromTemplate,
+  saveContract, 
+  getUserContracts, 
+  deleteContract, 
+  updateContract, 
+  type Contract,
   type ContractTemplate 
 } from "../lib/gemini-contracts";
-import { getUserContracts, saveContract, deleteContract, updateContract, type Contract } from "../lib/contracts";
 import html2pdf from 'html2pdf.js';
 import {
   Dialog,
@@ -144,7 +148,7 @@ export default function ContractsPage() {
 
   // Update contract mutation
   const updateContractMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Omit<Contract, 'id'>> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Contract> }) => {
       await updateContract(id, updates);
     },
     onSuccess: () => {
@@ -233,16 +237,21 @@ export default function ContractsPage() {
   const saveContractMutation = useMutation({
     mutationFn: async (contractData: {
       title: string;
+      type: string;
       content: string;
-      type?: any;
-      status: 'draft' | 'active' | 'completed';
+      status: 'draft' | 'active' | 'signed' | 'expired';
     }) => {
       if (!auth.currentUser) {
         throw new Error('Usuario no autenticado');
       }
       
       logger.info('Saving contract with data:', contractData);
-      return await saveContract(contractData as any);
+      return await saveContract({
+        title: contractData.title,
+        content: contractData.content,
+        contractType: contractData.type,
+        status: contractData.status
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -271,39 +280,12 @@ export default function ContractsPage() {
         paymentTerms: values.terms,
         additionalClauses: values.additionalDetails
       });
-      
-      const contractTitle = `${values.type} Agreement - ${values.artistName}`;
       setGeneratedContract(contract);
-      setContractTitle(contractTitle);
-      
-      // Auto-save to database
-      if (auth.currentUser) {
-        try {
-          await saveContractMutation.mutateAsync({
-            title: contractTitle,
-            type: values.type as any,
-            content: contract,
-            status: "draft" as const
-          });
-          toast({
-            title: "Contract Generated & Saved",
-            description: "Your contract has been created and automatically saved to your library.",
-          });
-        } catch (saveError) {
-          logger.error('Error auto-saving contract:', saveError);
-          // Show the contract even if save fails
-          toast({
-            title: "Contract Generated",
-            description: "Contract created successfully (save failed - please try again).",
-            variant: "destructive",
-          });
-        }
-      } else {
-        toast({
-          title: "Contract Generated",
-          description: "Please log in to save contracts.",
-        });
-      }
+      setContractTitle(`${values.type} Agreement - ${values.artistName}`);
+      toast({
+        title: "Contract Generated",
+        description: "Your contract has been generated successfully.",
+      });
     } catch (error) {
       logger.error('Error generating contract:', error);
       toast({
@@ -358,11 +340,19 @@ export default function ContractsPage() {
     try {
       const analysis = await analyzeContract(contractText);
       
-      const risksList = analysis.risks.map((risk, i) => `${i + 1}. ${risk}`).join('\n');
-      const recsList = analysis.recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n');
-      const termsList = analysis.keyTerms.map((term, i) => `${i + 1}. ${term.term}: ${term.description}`).join('\n');
-      
-      const formattedAnalysis = `RESUMEN:\n${analysis.summary}\n\nRIESGOS IDENTIFICADOS:\n${risksList}\n\nRECOMENDACIONES:\n${recsList}\n\nTERMINOS CLAVE:\n${termsList}`;
+      const formattedAnalysis = `
+📊 RESUMEN:
+${analysis.summary}
+
+⚠️ RIESGOS IDENTIFICADOS:
+${analysis.risks.map((risk, i) => `${i + 1}. ${risk}`).join('\n')}
+
+💡 RECOMENDACIONES:
+${analysis.recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
+
+🔑 TÉRMINOS CLAVE:
+${analysis.keyTerms.map((term, i) => `${i + 1}. ${term.term}: ${term.description}`).join('\n')}
+`;
       
       setAnalysisResult(formattedAnalysis);
     } catch (error) {
@@ -378,102 +368,30 @@ export default function ContractsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-slate-950/20">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 px-6 md:px-10">
-        {/* Hero Section */}
-        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden rounded-3xl mb-16 mt-8 md:mt-12">
-          {/* Background Image */}
-          <div 
-            className="absolute inset-0 w-full h-full rounded-3xl"
-            style={{
-              backgroundImage: `url(/attached_assets/generated_images/modern_music_tech_vibrant_hero_background.png)`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              zIndex: 0
-            }}
-          />
-          
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/80 rounded-3xl" />
-          
-          {/* Animated Glow Effects */}
-          <div className="absolute top-1/4 left-0 w-96 h-96 bg-blue-600/30 rounded-full filter blur-3xl animate-pulse" 
-               style={{ animationDuration: '7s' }} />
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-purple-600/20 rounded-full filter blur-3xl animate-pulse" 
-               style={{ animationDuration: '10s' }} />
-          
-          {/* Content */}
-          <motion.div
-            className="relative z-10 text-center max-w-4xl mx-auto px-6"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8 }}
-              className="mb-6"
-            >
-              <div className="inline-block px-4 py-2 bg-blue-600/40 border border-blue-400/60 rounded-full text-sm font-semibold text-blue-200 backdrop-blur-sm">
-                ⚖️ AI-Powered Legal Management
-              </div>
-            </motion.div>
-            
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-5xl md:text-7xl font-black tracking-tight bg-gradient-to-r from-blue-200 via-purple-200 to-cyan-200 bg-clip-text text-transparent mb-6 leading-tight"
-            >
-              Legal Contract Management
-            </motion.h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-lg md:text-xl text-slate-200 max-w-2xl mx-auto leading-relaxed font-light mb-8"
-            >
-              Create, analyze, and manage your professional agreements with AI assistance
-            </motion.p>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
-              <Button
-                onClick={() => setSelectedTab("generator")}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-600/50"
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                Generate Contract
-              </Button>
-              <Button
-                onClick={() => setSelectedTab("analyzer")}
-                variant="outline"
-                className="border-blue-400/50 text-blue-200 hover:bg-blue-600/20 px-8 py-6 text-lg font-semibold rounded-xl backdrop-blur-sm"
-              >
-                <Scale className="w-5 h-5 mr-2" />
-                Analyze
-              </Button>
-            </motion.div>
-          </motion.div>
-        </section>
-
+      <main className="flex-1 pt-20 px-6 md:pt-24 md:px-10">
         <motion.div
           className="flex-1 space-y-10"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
+          <motion.div
+            className="flex flex-col space-y-4"
+            variants={itemVariants}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-orange-500 to-primary/60 bg-clip-text text-transparent">
+              Legal Contract Management
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
+              Create, analyze, and manage your professional agreements with AI assistance
+            </p>
+          </motion.div>
 
           <Tabs defaultValue={selectedTab} value={selectedTab} onValueChange={setSelectedTab} className="space-y-10">
             <motion.div variants={itemVariants}>
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-4 p-2 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-blue-500/20">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-4 p-2 bg-muted/50 backdrop-blur-sm rounded-xl border border-orange-500/20">
                 {[
                   { value: "contracts", icon: FileText, label: "Contracts", shortLabel: "Docs" },
                   { value: "generator", icon: Sparkles, label: "Contract Generator", shortLabel: "Generate" },
@@ -483,7 +401,7 @@ export default function ContractsPage() {
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
-                    className="gap-3 text-base py-4 px-6 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white hover:bg-slate-700/50"
+                    className="gap-3 text-base py-4 px-6 transition-all duration-300 data-[state=active]:bg-orange-500 data-[state=active]:text-white hover:bg-muted/80"
                   >
                     <tab.icon className="h-5 w-5" />
                     <span className="hidden md:inline">{tab.label}</span>
@@ -501,41 +419,39 @@ export default function ContractsPage() {
                 initial="hidden"
                 animate="visible"
               >
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-8 md:grid-cols-3">
                   {[
-                    { title: "Total Contracts", icon: FileText, count: contracts.length, color: "blue", bgColor: "bg-blue-600/20", borderColor: "border-blue-500/30", textColor: "text-blue-300", iconBg: "bg-blue-600/30" },
-                    { title: "Active Contracts", icon: CheckCircle2, count: contracts.filter(c => c.status === "active").length, color: "green", bgColor: "bg-green-600/20", borderColor: "border-green-500/30", textColor: "text-green-300", iconBg: "bg-green-600/30" },
-                    { title: "Pending Review", icon: Clock, count: contracts.filter(c => c.status === "draft").length, color: "purple", bgColor: "bg-purple-600/20", borderColor: "border-purple-500/30", textColor: "text-purple-300", iconBg: "bg-purple-600/30" }
+                    { title: "Total Contracts", icon: FileText, count: contracts.length, color: "orange" },
+                    { title: "Active Contracts", icon: CheckCircle2, count: contracts.filter(c => c.status === "active").length, color: "green" },
+                    { title: "Pending Review", icon: Clock, count: contracts.filter(c => c.status === "draft").length, color: "yellow" }
                   ].map((stat, index) => (
                     <motion.div
                       key={stat.title}
                       variants={itemVariants}
                       whileHover={{ y: -5 }}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <div className={`p-5 rounded-xl hover:shadow-2xl hover:shadow-${stat.color}-500/20 transition-all duration-300 group ${stat.bgColor} border ${stat.borderColor} hover:border-${stat.color}-400/50 hover:backdrop-blur-sm`}>
+                      <Card className="p-8 hover:shadow-xl transition-all duration-300 group border-t-4 border-t-orange-500/50">
                         <div className="flex items-center gap-4">
-                          <div className={`p-3 rounded-lg ${stat.iconBg} group-hover:scale-110 transition-transform`}>
-                            <stat.icon className={`h-6 w-6 ${stat.textColor}`} />
+                          <div className={`p-4 rounded-xl bg-${stat.color}-500/10 group-hover:bg-${stat.color}-500/20 transition-colors duration-300`}>
+                            <stat.icon className={`h-8 w-8 text-${stat.color}-500`} />
                           </div>
                           <div>
-                            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">{stat.title}</h3>
-                            <p className={`text-3xl font-black ${stat.textColor} mt-1`}>
+                            <h3 className="text-xl font-medium mb-1">{stat.title}</h3>
+                            <p className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-primary bg-clip-text text-transparent">
                               {stat.count}
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </Card>
                     </motion.div>
                   ))}
                 </div>
 
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/40 via-slate-800/20 to-slate-900/40 border border-slate-700/50 backdrop-blur p-6">
+                <Card className="overflow-hidden border-none shadow-xl p-6">
                   <div className="mb-6">
-                    <h3 className="text-3xl font-black bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent mb-2">📋 Contract List</h3>
-                    <p className="text-slate-400">Manage and track all your legal agreements in one place</p>
+                    <h3 className="text-2xl font-semibold mb-2">Contract List</h3>
+                    <p className="text-muted-foreground">Manage and track all your legal agreements in one place</p>
                   </div>
 
                   <div className="overflow-x-auto">
@@ -545,18 +461,18 @@ export default function ContractsPage() {
                           animate={{ rotate: 360 }}
                           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         >
-                          <Clock className="h-10 w-10 text-blue-400 mx-auto mb-4" />
+                          <Clock className="h-10 w-10 text-orange-500 mx-auto mb-4" />
                         </motion.div>
-                        <p className="text-lg text-slate-400">Loading your contracts...</p>
+                        <p className="text-lg text-muted-foreground">Loading your contracts...</p>
                       </div>
                     ) : (
                       <Table>
                         <TableHeader>
-                          <TableRow className="hover:bg-blue-500/5 border-b border-slate-700/50">
-                            <TableHead className="font-semibold text-slate-300 py-4">Title</TableHead>
-                            <TableHead className="hidden md:table-cell font-semibold text-slate-300 py-4">Type</TableHead>
-                            <TableHead className="font-semibold text-slate-300 py-4">Status</TableHead>
-                            <TableHead className="hidden md:table-cell font-semibold text-slate-300 py-4">Date</TableHead>
+                          <TableRow className="hover:bg-muted/5 border-b-2 border-border">
+                            <TableHead className="font-semibold text-lg py-4">Title</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold text-lg py-4">Type</TableHead>
+                            <TableHead className="font-semibold text-lg py-4">Status</TableHead>
+                            <TableHead className="hidden md:table-cell font-semibold text-lg py-4">Date</TableHead>
                             <TableHead className="w-[100px] py-4">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -570,12 +486,10 @@ export default function ContractsPage() {
                                   animate={{ opacity: 1, y: 0 }}
                                   transition={{ duration: 0.5 }}
                                 >
-                                  <div className="w-20 h-20 bg-gradient-to-br from-blue-600/30 to-purple-600/30 rounded-full flex items-center justify-center border border-blue-500/30">
-                                    <FileText className="h-10 w-10 text-blue-400" />
-                                  </div>
+                                  <FileText className="h-16 w-16 text-orange-500/50" />
                                   <div className="text-center space-y-2">
-                                    <p className="text-2xl font-black text-slate-100">No contracts yet</p>
-                                    <p className="text-slate-400">
+                                    <p className="text-2xl font-medium">No contracts yet</p>
+                                    <p className="text-muted-foreground">
                                       Start by creating your first contract
                                     </p>
                                   </div>
@@ -586,7 +500,7 @@ export default function ContractsPage() {
                                   >
                                     <Button
                                       onClick={() => setSelectedTab("generator")}
-                                      className="mt-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-lg px-8 py-6 h-auto font-semibold shadow-lg hover:shadow-blue-500/50"
+                                      className="mt-6 bg-orange-500 hover:bg-orange-600 text-lg px-8 py-6 h-auto"
                                     >
                                       <Plus className="mr-2 h-5 w-5" />
                                       Create Your First Contract
@@ -602,14 +516,14 @@ export default function ContractsPage() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="group hover:bg-blue-500/10 border-b border-slate-700/50 transition-colors"
+                                className="group hover:bg-muted/5"
                               >
-                                <TableCell className="font-semibold text-slate-100 text-base py-4">
+                                <TableCell className="font-medium text-base py-4">
                                   {contract.title}
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell py-4">
-                                  <Badge variant="outline" className="text-sm px-3 py-1 bg-slate-700/50 border-slate-600 text-slate-300">
-                                    {contract.type || 'Legal'}
+                                  <Badge variant="outline" className="text-sm px-3 py-1">
+                                    {contract.contractType || 'Legal'}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="py-4">
@@ -621,7 +535,7 @@ export default function ContractsPage() {
                                     <span>{contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}</span>
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell text-slate-400 py-4">
+                                <TableCell className="hidden md:table-cell text-muted-foreground py-4">
                                   {new Date(contract.createdAt).toLocaleDateString()}
                                 </TableCell>
                                 <TableCell className="py-4">
@@ -629,46 +543,46 @@ export default function ContractsPage() {
                                     <DropdownMenuTrigger asChild>
                                       <Button
                                         variant="ghost"
-                                        className="h-9 w-9 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600/20 text-slate-300"
+                                        className="h-9 w-9 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                       >
                                         <span className="sr-only">Open menu</span>
                                         <MoreVertical className="h-5 w-5" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-52 bg-slate-800 border-slate-700">
+                                    <DropdownMenuContent align="end" className="w-52">
                                       <DropdownMenuItem
                                         onClick={() => handleViewContract(contract)}
-                                        className="gap-3 py-3 cursor-pointer hover:bg-blue-600/30 text-slate-200"
+                                        className="gap-3 py-3 cursor-pointer hover:bg-orange-500/10"
                                       >
                                         <Eye className="h-5 w-5" />
                                         View Contract
                                       </DropdownMenuItem>
-                                      <DropdownMenuSeparator className="bg-slate-700" />
+                                      <DropdownMenuSeparator />
                                       <DropdownMenuItem
                                         onClick={() => handleDownloadPDF(contract)}
-                                        className="gap-3 py-3 cursor-pointer hover:bg-blue-600/30 text-slate-200"
+                                        className="gap-3 py-3 cursor-pointer hover:bg-orange-500/10"
                                       >
                                         <FileDown className="h-5 w-5" />
                                         Download PDF
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => handleDownloadText(contract)}
-                                        className="gap-3 py-3 cursor-pointer hover:bg-blue-600/30 text-slate-200"
+                                        className="gap-3 py-3 cursor-pointer hover:bg-orange-500/10"
                                       >
                                         <Download className="h-5 w-5" />
                                         Download Text
                                       </DropdownMenuItem>
-                                      <DropdownMenuSeparator className="bg-slate-700" />
+                                      <DropdownMenuSeparator />
                                       <DropdownMenuItem
                                         onClick={() => handleEditContract(contract)}
-                                        className="gap-3 py-3 cursor-pointer hover:bg-blue-600/30 text-slate-200"
+                                        className="gap-3 py-3 cursor-pointer hover:bg-orange-500/10"
                                       >
                                         <Edit className="h-5 w-5" />
                                         Edit Contract
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => handleDeleteContract(contract)}
-                                        className="gap-3 py-3 cursor-pointer text-red-400 hover:bg-red-600/30"
+                                        className="gap-3 py-3 cursor-pointer text-destructive hover:bg-destructive/10"
                                       >
                                         <Trash2 className="h-5 w-5" />
                                         Delete Contract
@@ -683,41 +597,41 @@ export default function ContractsPage() {
                       </Table>
                     )}
                   </div>
-                </div>
+                </Card>
               </motion.div>
             </TabsContent>
 
             {/* Generator Tab */}
             <motion.div variants={itemVariants}>
               <TabsContent value="generator">
-                <div className="bg-gradient-to-br from-slate-800/40 via-slate-800/20 to-slate-900/40 border border-slate-700/50 backdrop-blur rounded-2xl p-6">
+                <Card className="p-4 md:p-6">
                   <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
-                    <div className="p-3 md:p-4 bg-blue-600/30 rounded-lg">
-                      <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-blue-400" />
+                    <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                      <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl md:text-2xl font-black text-slate-100">Contract Generator</h3>
-                      <p className="text-sm md:text-base text-slate-400">
+                      <h3 className="text-xl md:text-2xl font-semibold">Contract Generator</h3>
+                      <p className="text-sm md:text-base text-muted-foreground">
                         Create professional contracts with AI assistance
                       </p>
                     </div>
                   </div>
                   <ContractForm onSubmit={handleGenerateContract} isLoading={isGenerating} />
-                </div>
+                </Card>
               </TabsContent>
             </motion.div>
 
             {/* Analyzer Tab */}
             <motion.div variants={itemVariants}>
               <TabsContent value="analyzer">
-                <div className="bg-gradient-to-br from-slate-800/40 via-slate-800/20 to-slate-900/40 border border-slate-700/50 backdrop-blur rounded-2xl p-6">
+                <Card className="p-4 md:p-6">
                   <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
-                    <div className="p-3 md:p-4 bg-purple-600/30 rounded-lg">
-                      <Scale className="h-6 w-6 md:h-8 md:w-8 text-purple-400" />
+                    <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                      <Scale className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl md:text-2xl font-black text-slate-100">Contract Analyzer</h3>
-                      <p className="text-sm md:text-base text-slate-400">
+                      <h3 className="text-xl md:text-2xl font-semibold">Contract Analyzer</h3>
+                      <p className="text-sm md:text-base text-muted-foreground">
                         Analyze and review contracts with AI assistance
                       </p>
                     </div>
@@ -727,21 +641,21 @@ export default function ContractsPage() {
                       placeholder="Paste your contract text here for analysis..."
                       value={contractToAnalyze}
                       onChange={(e) => setContractToAnalyze(e.target.value)}
-                      className="min-h-[150px] md:min-h-[200px] bg-slate-700/50 border-slate-600 text-slate-100 placeholder:text-slate-500"
+                      className="min-h-[150px] md:min-h-[200px]"
                     />
                     <Button
                       onClick={() => analyzeContractFunction(contractToAnalyze)}
                       disabled={isAnalyzing || !contractToAnalyze}
-                      className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
+                      className="w-full bg-orange-500 hover:bg-orange-600"
                     >
                       {isAnalyzing ? "Analyzing..." : "Analyze Contract"}
                     </Button>
                     {analysisResult && (
-                      <div className="mt-4 md:mt-6 p-4 border border-slate-700 rounded-lg bg-slate-700/30">
-                        <h4 className="font-semibold text-slate-100 mb-2">Analysis Results</h4>
+                      <div className="mt-4 md:mt-6 p-4 border rounded-lg bg-background/50">
+                        <h4 className="font-medium mb-2">Analysis Results</h4>
                         <ScrollArea className="h-[200px] md:h-[300px]">
                           <div className="space-y-4">
-                            <pre className="whitespace-pre-wrap font-mono text-xs md:text-sm text-slate-300">
+                            <pre className="whitespace-pre-wrap font-mono text-xs md:text-sm">
                               {analysisResult}
                             </pre>
                           </div>
@@ -749,21 +663,21 @@ export default function ContractsPage() {
                       </div>
                     )}
                   </div>
-                </div>
+                </Card>
               </TabsContent>
             </motion.div>
 
             {/* AI Agent Tab */}
             <motion.div variants={itemVariants}>
               <TabsContent value="ai-agent">
-                <div className="bg-gradient-to-br from-slate-800/40 via-slate-800/20 to-slate-900/40 border border-slate-700/50 backdrop-blur rounded-2xl p-6">
+                <Card className="p-4 md:p-6">
                   <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6 md:mb-8">
-                    <div className="p-3 md:p-4 bg-green-600/30 rounded-lg">
-                      <Brain className="h-6 w-6 md:h-8 md:w-8 text-green-400" />
+                    <div className="p-3 md:p-4 bg-orange-500/10 rounded-lg">
+                      <Brain className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl md:text-2xl font-black text-slate-100">Legal Artist AI Agent</h3>
-                      <p className="text-sm md:text-base text-slate-400">
+                      <h3 className="text-xl md:text-2xl font-semibold">Legal Artist AI Agent</h3>
+                      <p className="text-sm md:text-base text-muted-foreground">
                         Get expert legal advice for your music career
                       </p>
                     </div>
@@ -832,7 +746,7 @@ export default function ContractsPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Card>
               </TabsContent>
             </motion.div>
 
@@ -843,7 +757,7 @@ export default function ContractsPage() {
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold">{selectedContract?.title}</DialogTitle>
                 <DialogDescription>
-                  Created on {selectedContract?.createdAt ? new Date(selectedContract.createdAt).toLocaleDateString() : 'Unknown'}
+                  Created on {selectedContract?.createdAt.toLocaleDateString()}
                 </DialogDescription>
               </DialogHeader>
               <div className="flex-1 min-h-0">
@@ -884,7 +798,7 @@ export default function ContractsPage() {
                   </Button>
                   <Button
                     onClick={() => {
-                      if (selectedContract?.id) {
+                      if (selectedContract) {
                         updateContractMutation.mutate({
                           id: selectedContract.id,
                           updates: { content: editedContent }
@@ -913,7 +827,7 @@ export default function ContractsPage() {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
-                    if (selectedContract?.id) {
+                    if (selectedContract) {
                       deleteContractMutation.mutate(selectedContract.id);
                     }
                   }}
@@ -933,13 +847,13 @@ export default function ContractsPage() {
 function getStatusColor(status: string) {
   switch (status) {
     case "active":
-      return "bg-green-600/20 text-green-300 border border-green-500/30 hover:bg-green-600/30";
+      return "bg-green-500/10 text-green-500 hover:bg-green-500/20";
     case "pending":
-      return "bg-yellow-600/20 text-yellow-300 border border-yellow-500/30 hover:bg-yellow-600/30";
+      return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
     case "draft":
-      return "bg-slate-600/20 text-slate-300 border border-slate-500/30 hover:bg-slate-600/30";
+      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
     default:
-      return "bg-slate-600/20 text-slate-300 border border-slate-500/30 hover:bg-slate-600/30";
+      return "bg-gray-500/10 text-gray500/20";
   }
 }
 
