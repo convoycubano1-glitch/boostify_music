@@ -6,7 +6,8 @@ import {
   Play, 
   PlusCircle,
   Loader2,
-  ChartBar 
+  ChartBar,
+  Sparkles 
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
@@ -138,10 +139,16 @@ export const MusicSection: React.FC<MusicSectionProps> = ({
               <Music2 className="h-12 w-12 text-orange-500/40 mx-auto mb-3" />
               <p className="text-orange-100/70">No hay pistas disponibles</p>
               <p className="text-sm text-orange-300/50 mt-2">Las canciones que subas aparecerán aquí</p>
-              <Button variant="outline" className="mt-4 border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Subir música
-              </Button>
+              <div className="flex flex-col gap-3 mt-6">
+                <Button variant="outline" className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10" data-testid="button-upload-music">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Subir música
+                </Button>
+                <Button variant="outline" className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10" data-testid="button-generate-song">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generar Canción
+                </Button>
+              </div>
             </div>
           )}
         </div>
