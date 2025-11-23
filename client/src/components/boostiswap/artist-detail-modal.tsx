@@ -24,6 +24,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ArtistProfile } from "@/data/artist-profiles";
@@ -86,18 +87,19 @@ export function ArtistDetailModal({
       setIsProcessing(true);
       console.log("🛒 Comprando tokens para:", selectedArtist.name);
 
-      // Convert 100 tokens at 0.50 ETH each
+      // Convert 100 tokens at 0.005 ETH each
       const tokenAmount = BigInt(100);
       const pricePerTokenEth = "0.005"; // 0.005 ETH por token
       const totalPrice = parseFloat(pricePerTokenEth) * 100;
       const value = parseEther(totalPrice.toString());
 
-      // Call the smart contract
+      // Call the smart contract using safeBatchTransferFrom or mint function
+      // Using the correct function that exists in ERC1155 standard
       writeContract({
         address: BOOSTIFY_CONTRACT_ADDRESS as `0x${string}`,
         abi: ERC1155_ABI,
-        functionName: "buyArtistToken",
-        args: [BigInt(selectedArtist.id), tokenAmount],
+        functionName: "mint",
+        args: [address, BigInt(selectedArtist.id), tokenAmount, "0x"],
         value,
       });
 
@@ -328,6 +330,30 @@ export function ArtistDetailModal({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Artist Profile Link */}
+          <div className="bg-gradient-to-r from-blue-500/20 to-cyan-500/10 rounded-lg p-4 border border-blue-500/30">
+            <p className="text-sm text-muted-foreground mb-3">
+              Learn more about{" "}
+              <span className="font-semibold text-blue-300">
+                {artist.name}
+              </span>
+            </p>
+            <a 
+              href={`/artist/${artist.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full inline-block"
+            >
+              <Button 
+                variant="outline"
+                className="w-full border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
+              >
+                Visit Profile Page
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </a>
           </div>
 
           {/* Investment Call to Action */}
