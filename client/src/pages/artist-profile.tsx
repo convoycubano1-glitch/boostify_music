@@ -3,14 +3,10 @@ import { logger } from "../lib/logger";
 import { useParams } from "wouter";
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { CrowdfundingButton } from "../components/crowdfunding/crowdfunding-button";
-import { TokenizedMusicView } from "../components/tokenization/tokenized-music-view";
-import { TokenizationPanel } from "../components/tokenization/tokenization-panel";
 import { Head } from "../components/ui/head";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../hooks/use-auth";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Music2, Coins } from "lucide-react";
 
 export default function ArtistProfilePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -190,48 +186,6 @@ export default function ArtistProfilePage() {
           />
         )}
         <ArtistProfileCard artistId={artistId} initialArtistData={artistData} />
-        
-        {/* Music Tokenization & Trading Section */}
-        <div className="container mx-auto px-4 py-8">
-          <Tabs defaultValue="music" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-800/50">
-              <TabsTrigger value="music" className="gap-2 flex items-center">
-                <Music2 className="h-4 w-4" />
-                <span>My Music</span>
-              </TabsTrigger>
-              <TabsTrigger value="tokenize" className="gap-2 flex items-center">
-                <Coins className="h-4 w-4" />
-                <span>Tokenize Songs</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Music View Tab - Shows tokenized songs and AI-generated songs */}
-            <TabsContent value="music" className="space-y-4">
-              <TokenizedMusicView 
-                artistId={artistId} 
-                postgresId={postgresId}
-                isAIGenerated={artistData?.isAIGenerated}
-              />
-            </TabsContent>
-
-            {/* Tokenization Panel Tab - Create & Manage Tokens (Only for own profile) */}
-            <TabsContent value="tokenize" className="space-y-4">
-              {isOwnProfile && postgresId ? (
-                <TokenizationPanel 
-                  artistId={postgresId}
-                  artistName={artistName}
-                  artistImage={profileImage}
-                />
-              ) : (
-                <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
-                  <p className="text-muted-foreground">
-                    Only the artist can tokenize their songs from this panel.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
       </div>
     </>
   );
