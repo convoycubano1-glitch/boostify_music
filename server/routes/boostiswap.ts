@@ -2,16 +2,29 @@ import { Router } from "express";
 import { db } from "../db";
 import { tokenizedSongs, swapPairs, liquidityPools, liquidityPositions, swapHistory, users } from "../db/schema";
 import { desc, eq, and } from "drizzle-orm";
+import { calculateDEXFees, BOOSTISWAP_FEE_PERCENTAGE } from "../utils/web3-contracts";
 
 const router = Router();
 
-// AMM Formula: x * y = k (Constant Product)
-function calculateSwapAmount(inputAmount: number, inputReserve: number, outputReserve: number, feeBps: number = 5) {
-  const fee = (inputAmount * feeBps) / 10000;
-  const inputAfterFee = inputAmount - fee;
+/**
+ * Calcula el monto de salida de un swap con 5% DEX fee para Boostify
+ * Fórmula AMM: x * y = k (Constant Product)
+ * Fee: 5% para Boostify
+ */
+function calculateSwapAmount(inputAmount: number, inputReserve: number, outputReserve: number) {
+  // 5% fee para Boostify
+  const boostifyFeeAmount = (inputAmount * BOOSTISWAP_FEE_PERCENTAGE) / 100;
+  const inputAfterFee = inputAmount - boostifyFeeAmount;
+  
+  // AMM calculation con fee aplicado
   const outputAmount = (inputAfterFee * outputReserve) / (inputReserve + inputAfterFee);
   const priceImpact = ((inputAmount - outputAmount) / inputAmount) * 100;
-  return { outputAmount: Math.floor(outputAmount), fee, priceImpact };
+  
+  return { 
+    outputAmount: Math.floor(outputAmount), 
+    boostifyFee: boostifyFeeAmount,
+    priceImpact 
+  };
 }
 
 /**
@@ -254,9 +267,8 @@ router.post("/swap", async (req, res) => {
       });
     }
     
-    // Record swap in history
-    const platformFee = (fee * 0.05);
-    const lpFee = (fee * 0.95);
+    // Calcular fees usando la función centralizada
+    const feeCalculation = calculateDEXFees(inputAmount);
     
     const swap = await db
       .insert(swapHistory)
@@ -269,8 +281,8 @@ router.post("/swap", async (req, res) => {
         amountIn: inputAmount.toString(),
         amountOut: outputAmount.toString(),
         priceImpact: priceImpact.toString(),
-        platformFeeUsd: platformFee.toString(),
-        lpFeeUsd: lpFee.toString(),
+        platformFeeUsd: feeCalculation.boostifyFee.toString(),  // 5% para Boostify
+        lpFeeUsd: feeCalculation.lpFee.toString(),  // 0.25% para LP providers
         status: "confirmed"
       })
       .returning();
@@ -294,9 +306,13 @@ router.post("/swap", async (req, res) => {
         amountIn: inputAmount,
         amountOut: outputAmount,
         priceImpact: priceImpact.toFixed(2),
-        platformFee: platformFee.toFixed(2),
-        lpFee: lpFee.toFixed(2),
-        transactionHash: swap[0].transactionHash
+        platformFee: feeCalculation.boostifyFee.toFixed(2),  // 5% para Boostify desarrollo
+        lpFee: feeCalculation.lpFee.toFixed(2),  // 0.25% para LP providers
+        feeBreakdown: {
+          boostifyDevelopment: `${BOOSTISWAP_FEE_PERCENTAGE}%`,
+          liquidityProviders: "0.25%",
+          dao: "0.05%"
+        }
       }
     });
   } catch (error) {
