@@ -10,8 +10,7 @@ import {
   calculateSwapOutput, 
   calculateDEXFees, 
   MUSIC_TOKEN_ABI, 
-  BOOSTISWAP_ROUTER_ABI,
-  BOOSTIFY_FEE_PERCENTAGE 
+  BOOSTISWAP_ROUTER_ABI
 } from '../utils/web3-contracts';
 
 const router = Router();
@@ -149,7 +148,7 @@ router.get('/abis', (req: Request, res: Response) => {
   res.json({
     musicTokenABI: MUSIC_TOKEN_ABI,
     routerABI: BOOSTISWAP_ROUTER_ABI,
-    boostifyFeePercentage: BOOSTIFY_FEE_PERCENTAGE
+    boostifyFeePercentage: 5
   });
 });
 
