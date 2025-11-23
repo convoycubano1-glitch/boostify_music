@@ -7,7 +7,7 @@ import { Header } from "../components/layout/header";
 import { Badge } from "../components/ui/badge";
 import { Switch } from "../components/ui/switch";
 import { motion } from "framer-motion";
-import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2, PlayCircle, ChevronDown, FileText } from "lucide-react";
+import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2, PlayCircle, ChevronDown, FileText, Briefcase } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
 import { Input } from "../components/ui/input";
@@ -32,6 +32,11 @@ import { VersionControl } from "../components/producer/VersionControl";
 import { MusicAIGenerator } from "../components/music/music-ai-generator";
 import { AudioMastering } from "../components/music/audio-mastering";
 import { ModernAudioSuite } from "../components/music/modern-audio-suite";
+import { ServiceRequestForm, ServiceRequestList } from "../components/services/ServiceRequestForm";
+import { FloatingServiceRequestModal } from "../components/services/FloatingServiceRequestModal";
+import { VirtualStudioSession } from "../components/producer/VirtualStudioSession";
+import { ProductionProgressTracker } from "../components/producer/ProductionProgressTracker";
+import { useAuth } from "../hooks/use-auth";
 
 async function getStoredMusicianImages(): Promise<{ url: string; category: string; }[]> {
   try {
@@ -70,7 +75,7 @@ const musicians: MusicianService[] = [
     id: "1",
     userId: "user-1",
     title: "Alex Rivera",
-    photo: "/assets/musicians/guitarist-1.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Guitar",
     category: "Guitar",
     description: "Rock and blues specialist with 15 years of experience. Collaborations with international bands.",
@@ -83,7 +88,7 @@ const musicians: MusicianService[] = [
     id: "2",
     userId: "user-2",
     title: "Sarah Johnson",
-    photo: "/assets/musicians/guitarist-2.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Guitar",
     category: "Guitar",
     description: "Acoustic guitar and flamenco virtuoso. Graduate from Berklee College of Music.",
@@ -96,7 +101,7 @@ const musicians: MusicianService[] = [
     id: "3",
     userId: "user-3",
     title: "Miguel Torres",
-    photo: "/assets/musicians/guitarist-3.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Guitar",
     category: "Guitar",
     description: "Jazz and Latin fusion specialist. Experience with international tours.",
@@ -110,7 +115,7 @@ const musicians: MusicianService[] = [
     id: "4",
     userId: "user-4",
     title: "John Smith",
-    photo: "/assets/musicians/drummer-1.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Drums",
     category: "Drums",
     description: "Professional drummer with expertise in metal and rock. Studies at Musicians Institute.",
@@ -123,7 +128,7 @@ const musicians: MusicianService[] = [
     id: "5",
     userId: "user-5",
     title: "Lisa Chen",
-    photo: "/assets/musicians/drummer-2.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Drums",
     category: "Drums",
     description: "Latin rhythms and fusion specialist. Percussion studies in Cuba.",
@@ -136,7 +141,7 @@ const musicians: MusicianService[] = [
     id: "6",
     userId: "user-6",
     title: "David Wilson",
-    photo: "/assets/musicians/drummer-3.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Drums",
     category: "Drums",
     description: "Expert in jazz and electronic music. Producer and composer.",
@@ -150,7 +155,7 @@ const musicians: MusicianService[] = [
     id: "7",
     userId: "user-7",
     title: "Emma Watson",
-    photo: "/assets/musicians/pianist-1.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Piano",
     category: "Piano",
     description: "Classical pianist with Conservatory training. Specialized in baroque music.",
@@ -163,7 +168,7 @@ const musicians: MusicianService[] = [
     id: "8",
     userId: "user-8",
     title: "Carlos Ruiz",
-    photo: "/assets/musicians/pianist-2.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Piano",
     category: "Piano",
     description: "Jazz and contemporary music specialist. Experience in composition.",
@@ -176,7 +181,7 @@ const musicians: MusicianService[] = [
     id: "9",
     userId: "user-9",
     title: "Sophie Martin",
-    photo: "/assets/musicians/pianist-3.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Piano",
     category: "Piano",
     description: "Expert in composition and arrangements. Experience in orchestral projects.",
@@ -190,7 +195,7 @@ const musicians: MusicianService[] = [
     id: "10",
     userId: "user-10",
     title: "Maria García",
-    photo: "/assets/musicians/vocalist-1.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Vocals",
     category: "Vocals",
     description: "Versatile vocalist with experience in various genres. Classical and jazz vocal studies.",
@@ -203,7 +208,7 @@ const musicians: MusicianService[] = [
     id: "11",
     userId: "user-11",
     title: "James Brown",
-    photo: "/assets/musicians/vocalist-2.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Vocals",
     category: "Vocals",
     description: "Soul and R&B specialist. Extensive experience in choirs and live performances.",
@@ -216,7 +221,7 @@ const musicians: MusicianService[] = [
     id: "12",
     userId: "user-12",
     title: "Luna Kim",
-    photo: "/assets/musicians/vocalist-3.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Vocals",
     category: "Vocals",
     description: "Jazz and experimental music vocalist. Studies in vocal performance and composition.",
@@ -230,7 +235,7 @@ const musicians: MusicianService[] = [
     id: "13",
     userId: "user-13",
     title: "Mark Davis",
-    photo: "/assets/musicians/producer-1.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Production",
     category: "Production",
     description: "Urban music production specialist. Experience in mixing and mastering.",
@@ -243,7 +248,7 @@ const musicians: MusicianService[] = [
     id: "14",
     userId: "user-14",
     title: "Ana Silva",
-    photo: "/assets/musicians/producer-2.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Production",
     category: "Production",
     description: "EDM and electronic music producer. Specialist in electronic sounds.",
@@ -256,7 +261,7 @@ const musicians: MusicianService[] = [
     id: "15",
     userId: "user-15",
     title: "Tom Wilson",
-    photo: "/assets/musicians/producer-3.jpg",
+    photo: "/assets/musician-placeholder.jpg",
     instrument: "Production",
     category: "Production",
     description: "Rock and metal production specialist. Experience in recording.",
@@ -269,6 +274,7 @@ const musicians: MusicianService[] = [
 
 export default function ProducerToolsPage() {
   const { toast } = useToast();
+  const { user } = useAuth() || {};
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
@@ -693,11 +699,11 @@ export default function ProducerToolsPage() {
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
                     <Card className="overflow-hidden backdrop-blur-sm bg-background/80 border border-orange-500/10 shadow-lg hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 group">
-                      <div className="aspect-[4/3] bg-orange-500/10 relative overflow-hidden">
+                      <div className="h-40 bg-orange-500/10 relative overflow-hidden">
                         <img
                           src={musician.photo || "/assets/musician-placeholder.jpg"}
                           alt={musician.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         <div className="absolute top-3 right-3 z-10">
@@ -744,6 +750,26 @@ export default function ProducerToolsPage() {
               )}
             </div>
           </motion.div>
+
+          {/* Service Requests Section */}
+          <div className="mb-12 mt-16">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gradient-primary mb-2 flex items-center gap-2">
+                  <Briefcase className="h-8 w-8 text-orange-500" />
+                  Service Requests
+                </h2>
+                <p className="text-muted-foreground max-w-2xl">Browse service requests from musicians and producers or post your own</p>
+              </div>
+              {user?.id && (
+                <ServiceRequestForm 
+                  clientId={user.id as any} 
+                  onRequestCreated={() => {}}
+                />
+              )}
+            </div>
+            <ServiceRequestList filter="open" />
+          </div>
 
           {/* Admin Musicians Panel */}
           <div className="mb-12 mt-16">
@@ -992,6 +1018,7 @@ export default function ProducerToolsPage() {
           </div>
         </div>
       </ScrollArea>
+      <FloatingServiceRequestModal />
     </div>
   );
 }

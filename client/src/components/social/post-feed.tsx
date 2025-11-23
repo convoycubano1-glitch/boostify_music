@@ -4,6 +4,7 @@ import { PostCard } from "./post-card";
 import { CreatePostForm } from "./create-post-form";
 import { AdvancedSearch } from "./advanced-search";
 import { ChallengesSection } from "./challenges-section";
+import { CollaborationSuggestions } from "./collaboration-suggestions";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Skeleton } from "../ui/skeleton";
@@ -123,8 +124,17 @@ export function PostFeed({ userId: propUserId }: PostFeedProps) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Desafíos en vivo */}
-      <ChallengesSection />
+      {/* Grid con sugerencias y desafíos */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 space-y-4">
+          {/* Desafíos en vivo */}
+          <ChallengesSection />
+        </div>
+        <div>
+          {/* Sugerencias de colaboración */}
+          <CollaborationSuggestions />
+        </div>
+      </div>
 
       {/* Búsqueda avanzada */}
       <AdvancedSearch />

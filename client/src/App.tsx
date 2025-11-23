@@ -65,7 +65,7 @@ const MotionDNAPage = lazy(() => import("./pages/motion-dna"));
 const NewsPage = lazy(() => import("./pages/news"));
 const PRPage = lazy(() => import("./pages/pr"));
 const PrivacyPage = lazy(() => import("./pages/privacy"));
-const ProducerToolsPage = lazy(() => import("./pages/producer-tools"));
+const ProducerToolsPage = lazy(() => import("./pages/producer-tools-main"));
 const PromotionPage = lazy(() => import("./pages/promotion"));
 const RecordLabelServices = lazy(() => import("./pages/record-label-services"));
 const SettingsPage = lazy(() => import("./pages/settings"));
@@ -119,6 +119,7 @@ const AIVideoCreationPage = lazy(() => import("./pages/ai-video-creation"));
 const TimelineDemoPage = lazy(() => import("./pages/timeline-demo"));
 const DebugFirebasePage = lazy(() => import("./pages/debug-firebase"));
 const TimelineEditorPage = lazy(() => import("./pages/timeline-editor"));
+const EarningsPage = lazy(() => import("./pages/earnings"));
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -305,6 +306,7 @@ const Router = () => {
   const WrappedTimelineDemoPage = withPageWrapper(TimelineDemoPage);
   const WrappedDebugFirebasePage = withPageWrapper(DebugFirebasePage);
   const WrappedTimelineEditorPage = withPageWrapper(TimelineEditorPage);
+  const WrappedEarningsPage = withPageWrapper(EarningsPage);
   const WrappedDiagnosticsPage = withPageWrapper(DiagnosticsPage);
   const WrappedArticlePage = withPageWrapper(ArticlePage);
   const WrappedNotFound = withPageWrapper(NotFound);
@@ -430,6 +432,7 @@ const Router = () => {
           {getRouteComponent("/timeline", WrappedTimelineEditorPage, 'free')}
           {getRouteComponent("/timeline/:projectId", WrappedTimelineEditorPage, 'free')}
           {getRouteComponent("/debug-firebase", WrappedDebugFirebasePage, null)}
+          {getRouteComponent("/earnings", WrappedEarningsPage, 'free')}
           
           {/* Página de error 404 */}
           <Route component={WrappedNotFound} />

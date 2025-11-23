@@ -42,6 +42,9 @@ export function CreatePostForm({
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [mentions, setMentions] = useState<number[]>([]);
+  const [showMentionsSuggestions, setShowMentionsSuggestions] = useState(false);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
