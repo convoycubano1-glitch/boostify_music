@@ -310,6 +310,7 @@ const Router = () => {
   const WrappedTimelineEditorPage = withPageWrapper(TimelineEditorPage);
   const WrappedDiagnosticsPage = withPageWrapper(DiagnosticsPage);
   const WrappedArticlePage = withPageWrapper(ArticlePage);
+  const WrappedSocialMediaGeneratorPage = withPageWrapper(SocialMediaGeneratorPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -420,6 +421,7 @@ const Router = () => {
           {getRouteComponent("/animated-workflow", WrappedAnimatedWorkflowPage, 'free')}
           {getRouteComponent("/tokenization", WrappedTokenizationPage, 'free')}
           {getRouteComponent("/boostiswap", WrappedBoostiSwapPage, 'free')}
+          {getRouteComponent("/social-media-generator", WrappedSocialMediaGeneratorPage, 'free')}
           {getRouteComponent("/resources", WrappedResourcesPage, null)}
           {getRouteComponent("/tips", WrappedTipsPage, null)}
           {getRouteComponent("/guides", WrappedGuidesPage, null)}

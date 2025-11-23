@@ -101,6 +101,7 @@ import accountingRouter from './routes/accounting'; // Import accounting/transac
 import adminAgentRouter from './routes/admin-agent'; // Import AI admin agent
 import boostiswapContractsRouter from './routes/boostiswap-contracts'; // Import BoostiSwap Smart Contracts router
 import boostiswapRouter from './routes/boostiswap'; // Import BoostiSwap Marketplace router
+import socialMediaRouter from './routes/social-media'; // Import Social Media Content Generator router
 import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed function
 
 
@@ -751,6 +752,10 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   // Register BoostiSwap Marketplace router
   app.use('/api/boostiswap', boostiswapRouter);
   console.log('✅ Router de BoostiSwap Marketplace registrado');
+
+  // Social Media Content Generator routes
+  app.use('/api/social-media', socialMediaRouter);
+  console.log('✅ Router de Social Media Content Generator registrado');
   
   // Seed tokenized songs on startup (non-blocking)
   seedTokenizedSongs().catch(error => {
