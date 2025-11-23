@@ -78,19 +78,23 @@ const TokenizationHero = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-10 flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button 
-              size="lg"
-              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
-            >
-              Get Started
-            </Button>
-            <Button 
-              size="lg"
-              variant="outline"
-              className="border-orange-500/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/50"
-            >
-              Discover Benefits
-            </Button>
+            <Link href="/boostiswap">
+              <Button 
+                size="lg"
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+              >
+                Get Started
+              </Button>
+            </Link>
+            <Link href="/boostiswap">
+              <Button 
+                size="lg"
+                variant="outline"
+                className="border-orange-500/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/50"
+              >
+                Discover Benefits
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </div>
@@ -348,12 +352,14 @@ const CTASection = () => {
             Join the music industry revolution. Tokenize your music, connect directly with your fans, and maximize your income.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg"
-              className="bg-white text-orange-600 hover:bg-gray-100"
-            >
-              Start Tokenizing
-            </Button>
+            <Link href="/boostiswap">
+              <Button 
+                size="lg"
+                className="bg-white text-orange-600 hover:bg-gray-100"
+              >
+                Start Tokenizing
+              </Button>
+            </Link>
             <Button 
               size="lg"
               variant="outline"
