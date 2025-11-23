@@ -5,6 +5,9 @@ import { Router, Request, Response } from 'express';
 import { generateCinematicImage, generateImageWithMultipleFaceReferences, generateImageWithFAL } from '../services/gemini-image-service';
 import { generateArtistBiography, type ArtistInfo } from '../services/gemini-profile-service';
 import Stripe from 'stripe';
+import { db } from '../db';
+import { users } from '../db/schema';
+import { isNull, and } from 'drizzle-orm';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-02-24.acacia'
@@ -299,6 +302,103 @@ router.post('/create-checkout-session', async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       error: error.message || 'Failed to create checkout session'
+    });
+  }
+});
+
+/**
+ * Genera imágenes faltantes para artistas sin profile_image y cover_image
+ * POST /api/artist-profile/generate-missing-images
+ */
+router.post('/generate-missing-images', async (req: Request, res: Response) => {
+  try {
+    console.log('🎨 Starting to generate missing images for artists...');
+    
+    // Obtener artistas sin imágenes
+    const artistsWithoutImages = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          isNull(users.profileImage),
+          isNull(users.coverImage)
+        )
+      );
+    
+    console.log(`📊 Found ${artistsWithoutImages.length} artists without images`);
+    
+    const results = [];
+    
+    for (const artist of artistsWithoutImages) {
+      try {
+        console.log(`🎨 Generating images for: ${artist.artistName}`);
+        
+        const genre = artist.genres?.[0] || 'music';
+        const biography = artist.biography || 'Professional musician';
+        
+        // Generar imagen de perfil
+        const profilePrompt = `Professional artist profile photo: ${artist.artistName}, ${genre} artist. Modern, professional headshot with artistic lighting. Biography: ${biography.substring(0, 200)}. High quality portrait photography, studio lighting, professional artist photograph, centered composition, clean background, artistic and professional aesthetic.`;
+        
+        const profileResult = await generateCinematicImage(profilePrompt);
+        
+        // Generar imagen de banner
+        const bannerPrompt = `Professional artist banner cover image: ${artist.artistName}, ${genre} artist. Cinematic, wide-angle composition. Biography: ${biography.substring(0, 200)}. Wide format banner, 16:9 aspect ratio, cinematic lighting, professional music artist aesthetic, vibrant colors, high quality photography, artistic and dynamic composition.`;
+        
+        const bannerResult = await generateCinematicImage(bannerPrompt);
+        
+        if (profileResult.success && profileResult.imageUrl && bannerResult.success && bannerResult.imageUrl) {
+          // Guardar URLs en PostgreSQL
+          await db.update(users)
+            .set({
+              profileImage: profileResult.imageUrl,
+              coverImage: bannerResult.imageUrl,
+              updatedAt: new Date()
+            })
+            .where(users.id === artist.id);
+          
+          console.log(`✅ Images generated and saved for ${artist.artistName}`);
+          results.push({
+            artistId: artist.id,
+            artistName: artist.artistName,
+            success: true,
+            profileImage: profileResult.imageUrl,
+            coverImage: bannerResult.imageUrl
+          });
+        } else {
+          console.warn(`⚠️ Failed to generate images for ${artist.artistName}`);
+          results.push({
+            artistId: artist.id,
+            artistName: artist.artistName,
+            success: false,
+            error: 'Image generation failed'
+          });
+        }
+        
+        // Pequeño delay entre llamadas
+        await new Promise(r => setTimeout(r, 1000));
+        
+      } catch (error: any) {
+        console.error(`❌ Error generating images for ${artist.artistName}:`, error);
+        results.push({
+          artistId: artist.id,
+          artistName: artist.artistName,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Generated images for ${results.filter(r => r.success).length}/${results.length} artists`,
+      results
+    });
+    
+  } catch (error: any) {
+    console.error('Error in generate-missing-images:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to generate missing images'
     });
   }
 });
