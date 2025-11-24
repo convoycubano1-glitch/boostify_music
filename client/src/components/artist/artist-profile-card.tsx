@@ -3657,8 +3657,8 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         );
                       } else if (sectionId === 'analytics') {
                         const analyticsData = {
-                          totalPlays: songs.length * Math.floor(Math.random() * 100 + 50),
-                          totalViews: videos.length * Math.floor(Math.random() * 150 + 75)
+                          totalPlays: songs.reduce((sum, song) => sum + (song.plays || 0), 0),
+                          totalViews: videos.reduce((sum, video) => sum + (video.views || 0), 0)
                         };
                         
                         sectionElement = (
