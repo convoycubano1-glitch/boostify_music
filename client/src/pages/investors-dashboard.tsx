@@ -2333,21 +2333,26 @@ export default function InvestorsDashboard() {
                       {/* Total Projection */}
                       <div className="p-4 bg-orange-500/20 rounded-lg border border-orange-500/40 mt-6">
                         <h6 className="text-white font-bold mb-3">Projected Monthly Revenue by User Base</h6>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                           <div>
                             <p className="text-white/70 mb-1">1,000 Users (Jan 2026)</p>
-                            <p className="text-2xl font-bold text-orange-400">$500k - $800k/mo</p>
-                            <p className="text-xs text-white/60 mt-2">Annual: $6M - $9.6M</p>
+                            <p className="text-2xl font-bold text-orange-400">$600k - $950k/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $7.2M - $11.4M</p>
                           </div>
                           <div>
                             <p className="text-white/70 mb-1">5,000 Users (Jul 2026)</p>
-                            <p className="text-2xl font-bold text-orange-400">$2.5M - $4M/mo</p>
-                            <p className="text-xs text-white/60 mt-2">Annual: $30M - $48M</p>
+                            <p className="text-2xl font-bold text-orange-400">$3M - $4.5M/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $36M - $54M</p>
                           </div>
                           <div>
-                            <p className="text-white/70 mb-1">10,000 Users (Projection)</p>
-                            <p className="text-2xl font-bold text-orange-400">$5M - $8M/mo</p>
-                            <p className="text-xs text-white/60 mt-2">Annual: $60M - $96M</p>
+                            <p className="text-white/70 mb-1">10,000 Users (Dec 2026)</p>
+                            <p className="text-2xl font-bold text-orange-400">$5.5M - $9M/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $66M - $108M</p>
+                          </div>
+                          <div className="ring-2 ring-orange-400/50">
+                            <p className="text-white/70 mb-1">50,000 Users (2027 Goal)</p>
+                            <p className="text-2xl font-bold text-orange-300">$27M - $45M/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $324M - $540M</p>
                           </div>
                         </div>
                       </div>
