@@ -1922,76 +1922,49 @@ export default function InvestorsDashboard() {
                     <div>
                       <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4 text-white">Projected Revenue Growth</h4>
                       <div className="h-48 sm:h-64 bg-black/30 rounded-lg p-4 overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-orange-500/10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-green-500/10"></div>
                         <div className="relative z-10 h-full flex flex-col">
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-xs text-white/70">Revenue ($ millions)</span>
                             <div className="flex space-x-2">
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-200">Actual</span>
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-200">Projected</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-200">Projected Growth</span>
                             </div>
                           </div>
                           
-                          {/* Line chart */}
-                          <div className="flex-1 relative">
-                            {/* Horizontal grid lines */}
-                            <div className="absolute left-0 right-0 top-0 bottom-0">
-                              <div className="border-t border-white/10 absolute top-0 left-0 right-0"></div>
-                              <div className="border-t border-white/10 absolute top-1/4 left-0 right-0"></div>
-                              <div className="border-t border-white/10 absolute top-1/2 left-0 right-0"></div>
-                              <div className="border-t border-white/10 absolute top-3/4 left-0 right-0"></div>
-                              <div className="border-t border-white/10 absolute bottom-0 left-0 right-0"></div>
-                            </div>
-                            
-                            {/* Actual revenue line */}
-                            <svg className="absolute inset-0" viewBox="0 0 100 100" preserveAspectRatio="none">
-                              <path 
-                                d="M0,100 L10,90 L20,85 L30,75 L40,65 L50,55" 
-                                fill="none" 
-                                stroke="#22c55e" 
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                              />
-                              
-                              {/* Projected revenue line (dashed) */}
-                              <path 
-                                d="M50,70 L60,58 L70,42 L80,28 L90,15 L100,2" 
-                                fill="none" 
-                                stroke="#f97316" 
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeDasharray="2 2"
-                              />
-                              
-                              {/* Dots for data points */}
-                              <circle cx="0" cy="100" r="1.5" fill="#22c55e" />
-                              <circle cx="10" cy="90" r="1.5" fill="#22c55e" />
-                              <circle cx="20" cy="85" r="1.5" fill="#22c55e" />
-                              <circle cx="30" cy="75" r="1.5" fill="#22c55e" />
-                              <circle cx="40" cy="65" r="1.5" fill="#22c55e" />
-                              <circle cx="50" cy="70" r="1.5" fill="#22c55e" />
-                              
-                              <circle cx="60" cy="58" r="1.5" fill="#f97316" />
-                              <circle cx="70" cy="42" r="1.5" fill="#f97316" />
-                              <circle cx="80" cy="28" r="1.5" fill="#f97316" />
-                              <circle cx="90" cy="15" r="1.5" fill="#f97316" />
-                              <circle cx="100" cy="2" r="1.5" fill="#f97316" />
-                            </svg>
-                          </div>
-                          
-                          <div className="grid grid-cols-6 mt-2">
-                            <div className="text-center text-[8px] sm:text-xs text-white/70">2023</div>
-                            <div className="text-center text-[8px] sm:text-xs text-white/70">2024</div>
-                            <div className="text-center text-[8px] sm:text-xs text-white/70">2025</div>
-                            <div className="text-center text-[8px] sm:text-xs text-white/70">2026</div>
-                            <div className="text-center text-[8px] sm:text-xs text-white/70">2027</div>
-                            <div className="text-center text-[8px] sm:text-xs text-white/70">2028</div>
+                          <div className="flex-1 flex items-end space-x-2">
+                            {[
+                              { label: "Jan '26", value: "$0.8M", height: "2%" },
+                              { label: "Mar '26", value: "$1.5M", height: "4%" },
+                              { label: "May '26", value: "$2.8M", height: "7%" },
+                              { label: "Jul '26", value: "$4.2M", height: "10%" },
+                              { label: "Sep '26", value: "$6M", height: "14%" },
+                              { label: "Nov '26", value: "$8.5M", height: "20%" },
+                              { label: "Jan '27", value: "$12M", height: "28%" },
+                              { label: "Mar '27", value: "$16M", height: "38%" },
+                              { label: "May '27", value: "$21M", height: "50%" },
+                              { label: "Jul '27", value: "$27M", height: "64%" },
+                              { label: "Sep '27", value: "$32M", height: "76%" },
+                              { label: "Nov '27", value: "$38M", height: "90%" },
+                              { label: "Dec '28", value: "$45M", height: "100%" }
+                            ].map((item, index) => (
+                              <div key={index} className="flex-1 flex flex-col items-center">
+                                <div 
+                                  className="w-full max-w-[40px] bg-gradient-to-t from-green-500 to-green-400 rounded-t relative group cursor-pointer transition-all hover:from-green-600 hover:to-green-500"
+                                  style={{ height: item.height }}
+                                >
+                                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                    {item.value}
+                                  </div>
+                                </div>
+                                <span className="text-[8px] sm:text-xs mt-1 text-white/70">{item.label}</span>
+                              </div>
+                            ))}
                           </div>
                           
                           <div className="mt-2 pt-2 border-t border-white/10">
                             <div className="flex justify-between">
-                              <span className="text-xs text-white/70">$8M now</span>
-                              <span className="text-xs text-white/70">$540M+ by 2027</span>
+                              <span className="text-xs text-white/70">$0.8M Jan '26</span>
+                              <span className="text-xs text-white/70">$45M+ Dec '28</span>
                             </div>
                           </div>
                         </div>
