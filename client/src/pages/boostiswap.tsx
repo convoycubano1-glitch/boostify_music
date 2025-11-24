@@ -10,12 +10,16 @@ import { CryptoPriceWidget } from "../components/boostiswap/crypto-price-widget"
 import { ArtistPricesTicker } from "../components/boostiswap/artist-prices-ticker";
 import { useAuth } from "../hooks/use-auth";
 import { useWeb3 } from "../hooks/use-web3";
-import { Zap, Droplets, TrendingUp, Wallet, AlertCircle, Music2 } from "lucide-react";
+import { Zap, Droplets, TrendingUp, Wallet, AlertCircle, Music2, LogIn } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog";
+import { Button } from "../components/ui/button";
+import { Link } from "wouter";
 
 export default function BoostiSwapPage() {
   const { user } = useAuth() || {};
   const { isConnected, address, balanceFormatted, symbol } = useWeb3();
   const [activeTab, setActiveTab] = useState("artists");
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-orange-900/20 to-slate-900">
@@ -120,15 +124,51 @@ export default function BoostiSwapPage() {
           </TabsContent>
 
           <TabsContent value="swap" className="space-y-4">
-            <SwapInterface />
+            {user ? <SwapInterface /> : (
+              <div className="text-center py-12 bg-slate-800/30 rounded-lg border border-slate-700">
+                <LogIn className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Login Required to Swap</h3>
+                <p className="text-slate-400 mb-6">Sign in to execute trades on BoostiSwap</p>
+                <Link href="/login">
+                  <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In to Trade
+                  </Button>
+                </Link>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="pools" className="space-y-4">
-            <PoolsView />
+            {user ? <PoolsView /> : (
+              <div className="text-center py-12 bg-slate-800/30 rounded-lg border border-slate-700">
+                <LogIn className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Login Required for Pools</h3>
+                <p className="text-slate-400 mb-6">Sign in to provide liquidity or manage pools</p>
+                <Link href="/login">
+                  <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                </Link>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="liquidity" className="space-y-4">
-            {user ? <MyLiquidity userId={user.id} /> : <div className="text-center py-8 text-muted-foreground">Please sign in first</div>}
+            {user ? <MyLiquidity userId={user.id} /> : (
+              <div className="text-center py-12 bg-slate-800/30 rounded-lg border border-slate-700">
+                <LogIn className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white mb-2">Login Required</h3>
+                <p className="text-slate-400 mb-6">Sign in to view your liquidity</p>
+                <Link href="/login">
+                  <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                </Link>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
@@ -136,6 +176,30 @@ export default function BoostiSwapPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Login Modal for Operations */}
+      <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login Required</DialogTitle>
+            <DialogDescription>
+              You need to be logged in to execute trading operations on BoostiSwap
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 mt-6">
+            <Link href="/login" className="flex-1">
+              <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/signup" className="flex-1">
+              <Button variant="outline" className="w-full">
+                Create Account
+              </Button>
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

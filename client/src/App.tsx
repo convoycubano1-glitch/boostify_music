@@ -420,7 +420,7 @@ const Router = () => {
           {getRouteComponent("/layer-filter-demo", WrappedLayerFilterDemoPage, 'free')}
           {getRouteComponent("/animated-workflow", WrappedAnimatedWorkflowPage, 'free')}
           {getRouteComponent("/tokenization", WrappedTokenizationPage, 'free')}
-          {getRouteComponent("/boostiswap", WrappedBoostiSwapPage, 'free')}
+          {getRouteComponent("/boostiswap", WrappedBoostiSwapPage, null)}
           {getRouteComponent("/social-media-generator", WrappedSocialMediaGeneratorPage, 'free')}
           {getRouteComponent("/resources", WrappedResourcesPage, null)}
           {getRouteComponent("/tips", WrappedTipsPage, null)}
