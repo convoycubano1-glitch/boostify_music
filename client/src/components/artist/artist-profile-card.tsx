@@ -3578,7 +3578,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                               <ImageGalleryDisplay 
                                 artistId={artistId}
                                 pgId={artist.pgId}
-                                isOwner={isOwnProfile}
+                                isOwner={!!isOwnProfile}
                                 refreshKey={galleriesRefreshKey}
                               />
                             )}
@@ -4292,7 +4292,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             <ImageGalleryDisplay 
               artistId={artistId}
               pgId={artist.pgId}
-              isOwner={isOwnProfile}
+              isOwner={!!isOwnProfile}
               refreshKey={galleriesRefreshKey}
             />
 
@@ -5129,7 +5129,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           setIsNewsModalOpen(false);
           setSelectedArticle(null);
         }}
-        isOwner={isOwnProfile}
+        isOwner={!!isOwnProfile}
         onEdit={handleEditNews}
         onDelete={handleDeleteNews}
         onRegenerate={handleRegenerateNews}
