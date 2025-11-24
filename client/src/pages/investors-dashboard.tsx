@@ -1869,9 +1869,9 @@ export default function InvestorsDashboard() {
                   <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                     <div>
                       <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4 text-white">Projected User Growth</h4>
-                      <div className="h-48 sm:h-64 bg-black/30 rounded-lg p-4 overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-orange-500/10"></div>
-                        <div className="relative z-10 h-full flex flex-col">
+                      <div className="h-64 bg-black/30 rounded-lg p-4 overflow-visible relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-orange-500/10 rounded-lg"></div>
+                        <div className="relative z-10 h-56 flex flex-col">
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-xs text-white/70">Users (thousands)</span>
                             <div className="flex space-x-2">
@@ -1881,19 +1881,19 @@ export default function InvestorsDashboard() {
                           
                           <div className="flex-1 flex items-end space-x-2">
                             {[
-                              { label: "Jan '26", height: "2.8%" },
-                              { label: "Mar '26", height: "4.2%" },
-                              { label: "May '26", height: "7%" },
-                              { label: "Jul '26", height: "10%" },
-                              { label: "Sep '26", height: "15%" },
-                              { label: "Nov '26", height: "20%" },
-                              { label: "Jan '27", height: "30%" },
-                              { label: "Mar '27", height: "40%" },
-                              { label: "May '27", height: "52%" },
-                              { label: "Jul '27", height: "64%" },
-                              { label: "Sep '27", height: "78%" },
-                              { label: "Nov '27", height: "90%" },
-                              { label: "Dec '28", height: "100%" }
+                              { label: "Jan '26", height: "8px" },
+                              { label: "Mar '26", height: "12px" },
+                              { label: "May '26", height: "20px" },
+                              { label: "Jul '26", height: "28px" },
+                              { label: "Sep '26", height: "42px" },
+                              { label: "Nov '26", height: "56px" },
+                              { label: "Jan '27", height: "84px" },
+                              { label: "Mar '27", height: "112px" },
+                              { label: "May '27", height: "146px" },
+                              { label: "Jul '27", height: "180px" },
+                              { label: "Sep '27", height: "220px" },
+                              { label: "Nov '27", height: "252px" },
+                              { label: "Dec '28", height: "280px" }
                             ].map((item, index) => (
                               <div key={index} className="flex-1 flex flex-col items-center">
                                 <div 
@@ -1921,9 +1921,9 @@ export default function InvestorsDashboard() {
                     
                     <div>
                       <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4 text-white">Projected Revenue Growth</h4>
-                      <div className="h-48 sm:h-64 bg-black/30 rounded-lg p-4 overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-green-500/10"></div>
-                        <div className="relative z-10 h-full flex flex-col">
+                      <div className="h-64 bg-black/30 rounded-lg p-4 overflow-visible relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-green-500/10 rounded-lg"></div>
+                        <div className="relative z-10 h-56 flex flex-col">
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-xs text-white/70">Revenue ($ millions)</span>
                             <div className="flex space-x-2">
@@ -1933,19 +1933,19 @@ export default function InvestorsDashboard() {
                           
                           <div className="flex-1 flex items-end space-x-2">
                             {[
-                              { label: "Jan '26", value: "$0.8M", height: "2%" },
-                              { label: "Mar '26", value: "$1.5M", height: "4%" },
-                              { label: "May '26", value: "$2.8M", height: "7%" },
-                              { label: "Jul '26", value: "$4.2M", height: "10%" },
-                              { label: "Sep '26", value: "$6M", height: "14%" },
-                              { label: "Nov '26", value: "$8.5M", height: "20%" },
-                              { label: "Jan '27", value: "$12M", height: "28%" },
-                              { label: "Mar '27", value: "$16M", height: "38%" },
-                              { label: "May '27", value: "$21M", height: "50%" },
-                              { label: "Jul '27", value: "$27M", height: "64%" },
-                              { label: "Sep '27", value: "$32M", height: "76%" },
-                              { label: "Nov '27", value: "$38M", height: "90%" },
-                              { label: "Dec '28", value: "$45M", height: "100%" }
+                              { label: "Jan '26", value: "$0.8M", height: "8px" },
+                              { label: "Mar '26", value: "$1.5M", height: "12px" },
+                              { label: "May '26", value: "$2.8M", height: "20px" },
+                              { label: "Jul '26", value: "$4.2M", height: "28px" },
+                              { label: "Sep '26", value: "$6M", height: "42px" },
+                              { label: "Nov '26", value: "$8.5M", height: "56px" },
+                              { label: "Jan '27", value: "$12M", height: "84px" },
+                              { label: "Mar '27", value: "$16M", height: "112px" },
+                              { label: "May '27", value: "$21M", height: "146px" },
+                              { label: "Jul '27", value: "$27M", height: "180px" },
+                              { label: "Sep '27", value: "$32M", height: "220px" },
+                              { label: "Nov '27", value: "$38M", height: "252px" },
+                              { label: "Dec '28", value: "$45M", height: "280px" }
                             ].map((item, index) => (
                               <div key={index} className="flex-1 flex flex-col items-center">
                                 <div 
