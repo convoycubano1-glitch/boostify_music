@@ -9,7 +9,7 @@ import { NotificationTemplates } from '../utils/notifications';
 const router = Router();
 
 // Inicializar Stripe con la clave secreta (usar testing key si está disponible)
-const stripeKey = process.env.TESTING_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.TESTING_STRIPE_SECRET_KEY;
 const stripe = new Stripe(stripeKey!, {
   apiVersion: '2025-01-27.acacia' as any, // Usar la última versión de la API
 });
