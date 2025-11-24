@@ -1888,7 +1888,7 @@ export default function InvestorsDashboard() {
                           <div className="mt-2 pt-2 border-t border-white/10">
                             <div className="flex justify-between">
                               <span className="text-xs text-white/70">0.8M now</span>
-                              <span className="text-xs text-white/70">2.5M by Q2 '26</span>
+                              <span className="text-xs text-white/70">50M+ goal by 2027</span>
                             </div>
                           </div>
                         </div>
@@ -1931,7 +1931,7 @@ export default function InvestorsDashboard() {
                               
                               {/* Projected revenue line (dashed) */}
                               <path 
-                                d="M50,55 L60,45 L70,35 L80,25 L90,15 L100,5" 
+                                d="M50,70 L60,58 L70,42 L80,28 L90,15 L100,2" 
                                 fill="none" 
                                 stroke="#f97316" 
                                 strokeWidth="2"
@@ -1945,13 +1945,13 @@ export default function InvestorsDashboard() {
                               <circle cx="20" cy="85" r="1.5" fill="#22c55e" />
                               <circle cx="30" cy="75" r="1.5" fill="#22c55e" />
                               <circle cx="40" cy="65" r="1.5" fill="#22c55e" />
-                              <circle cx="50" cy="55" r="1.5" fill="#22c55e" />
+                              <circle cx="50" cy="70" r="1.5" fill="#22c55e" />
                               
-                              <circle cx="60" cy="45" r="1.5" fill="#f97316" />
-                              <circle cx="70" cy="35" r="1.5" fill="#f97316" />
-                              <circle cx="80" cy="25" r="1.5" fill="#f97316" />
+                              <circle cx="60" cy="58" r="1.5" fill="#f97316" />
+                              <circle cx="70" cy="42" r="1.5" fill="#f97316" />
+                              <circle cx="80" cy="28" r="1.5" fill="#f97316" />
                               <circle cx="90" cy="15" r="1.5" fill="#f97316" />
-                              <circle cx="100" cy="5" r="1.5" fill="#f97316" />
+                              <circle cx="100" cy="2" r="1.5" fill="#f97316" />
                             </svg>
                           </div>
                           
@@ -1966,8 +1966,8 @@ export default function InvestorsDashboard() {
                           
                           <div className="mt-2 pt-2 border-t border-white/10">
                             <div className="flex justify-between">
-                              <span className="text-xs text-white/70">$4.5M now</span>
-                              <span className="text-xs text-white/70">$20M by 2028</span>
+                              <span className="text-xs text-white/70">$8M now</span>
+                              <span className="text-xs text-white/70">$540M+ by 2027</span>
                             </div>
                           </div>
                         </div>
