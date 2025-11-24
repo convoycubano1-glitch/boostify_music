@@ -2089,13 +2089,7 @@ export default function InvestorsDashboard() {
                       {/* Artist Cards */}
                       <div className="mb-6">
                         <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">9. Artist Cards</h6>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-                            <p className="text-white/70 text-xs mb-1">Digital Artist Cards</p>
-                            <p className="text-xs text-white/60 mb-2">Limited edition collectible artist cards</p>
-                            <p className="text-xs text-white/60 mb-2">$0.99-4.99 per card, 70% margin</p>
-                            <p className="font-bold text-white">$25,000-75k/mo</p>
-                          </div>
+                        <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
                           <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                             <p className="text-white/70 text-xs mb-1">Artist Card Marketplace</p>
                             <p className="text-xs text-white/60 mb-2">2.5-5% commission on secondary sales</p>
