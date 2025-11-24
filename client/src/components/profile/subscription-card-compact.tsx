@@ -25,6 +25,12 @@ interface Subscription {
   cancelAtPeriodEnd?: boolean;
   features: string[];
   stripeSubscriptionId?: string;
+  videosLimit?: number;
+  songsLimit?: number;
+  videosUsed?: number;
+  songsUsed?: number;
+  artistsGeneratedLimit?: number;
+  artistsGeneratedUsed?: number;
 }
 
 interface PlanUsage {
@@ -39,35 +45,80 @@ const planConfig = {
     icon: Zap,
     color: "text-gray-400",
     bgColor: "bg-gray-500/10",
-    limit: 0
+    videosLimit: 1,
+    songsLimit: 2,
+    artistsLimit: 0,
+    price: 0
+  },
+  basic: {
+    name: "BASIC",
+    icon: Sparkles,
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/10",
+    videosLimit: 10,
+    songsLimit: 20,
+    artistsLimit: 1,
+    price: 59.99
+  },
+  pro: {
+    name: "PRO",
+    icon: Crown,
+    color: "text-yellow-400",
+    bgColor: "bg-yellow-500/10",
+    videosLimit: 50,
+    songsLimit: 100,
+    artistsLimit: 5,
+    price: 99.99
+  },
+  premium: {
+    name: "PREMIUM",
+    icon: Gem,
+    color: "text-purple-400",
+    bgColor: "bg-purple-500/10",
+    videosLimit: 999,
+    songsLimit: 999,
+    artistsLimit: 10,
+    price: 149.99
   },
   essential: {
     name: "ESSENTIAL",
     icon: Sparkles,
     color: "text-blue-400",
     bgColor: "bg-blue-500/10",
-    limit: 1
+    videosLimit: 1,
+    songsLimit: 2,
+    artistsLimit: 0,
+    price: 0
   },
   gold: {
     name: "GOLD",
     icon: Crown,
     color: "text-yellow-400",
     bgColor: "bg-yellow-500/10",
-    limit: 2
+    videosLimit: 2,
+    songsLimit: 5,
+    artistsLimit: 0,
+    price: 0
   },
   platinum: {
     name: "PLATINUM",
     icon: Gem,
     color: "text-purple-400",
     bgColor: "bg-purple-500/10",
-    limit: 4
+    videosLimit: 4,
+    songsLimit: 10,
+    artistsLimit: 1,
+    price: 0
   },
   diamond: {
     name: "DIAMOND",
     icon: Gem,
     color: "text-cyan-400",
     bgColor: "bg-cyan-500/10",
-    limit: 8
+    videosLimit: 8,
+    songsLimit: 20,
+    artistsLimit: 3,
+    price: 0
   }
 };
 
@@ -79,11 +130,13 @@ export function SubscriptionCardCompact() {
     queryKey: ["/api/subscriptions/current"],
   });
 
-  // Mock data para uso del plan - se puede conectar a un endpoint real
+  // Get actual usage from subscription data
   const usage: PlanUsage = {
-    videosGenerated: 1,
-    videosLimit: subscription ? planConfig[subscription.plan.toLowerCase() as keyof typeof planConfig]?.limit || 0 : 0,
-    percentageUsed: subscription ? (1 / (planConfig[subscription.plan.toLowerCase() as keyof typeof planConfig]?.limit || 1)) * 100 : 0
+    videosGenerated: subscription?.videosUsed || 0,
+    videosLimit: subscription?.videosLimit || 0,
+    percentageUsed: subscription && subscription.videosLimit > 0 
+      ? ((subscription.videosUsed || 0) / subscription.videosLimit) * 100 
+      : 0
   };
 
   const manageMutation = useMutation({
@@ -168,11 +221,12 @@ export function SubscriptionCardCompact() {
           </div>
 
           {/* Uso del plan */}
-          {!isFreePlan && usage.videosLimit > 0 && (
+          <div className="space-y-3">
+            {/* Videos */}
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-400">Videos este mes</span>
-                <span className="text-white font-medium">{usage.videosGenerated}/{usage.videosLimit}</span>
+                <span className="text-gray-400">📹 Videos</span>
+                <span className="text-white font-medium">{subscription?.videosUsed || 0}/{subscription?.videosLimit || 0}</span>
               </div>
               <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
                 <div 
@@ -181,7 +235,37 @@ export function SubscriptionCardCompact() {
                 />
               </div>
             </div>
-          )}
+
+            {/* Songs */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-400">🎵 Canciones</span>
+                <span className="text-white font-medium">{subscription?.songsUsed || 0}/{subscription?.songsLimit || 0}</span>
+              </div>
+              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${config.bgColor} transition-all duration-300`}
+                  style={{ width: `${Math.min(((subscription?.songsUsed || 0) / (subscription?.songsLimit || 1)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* AI Generated Artists */}
+            {(subscription?.artistsGeneratedLimit || 0) > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">🤖 Artistas IA</span>
+                  <span className="text-white font-medium">{subscription?.artistsGeneratedUsed || 0}/{subscription?.artistsGeneratedLimit || 0}</span>
+                </div>
+                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${config.bgColor} transition-all duration-300`}
+                    style={{ width: `${Math.min(((subscription?.artistsGeneratedUsed || 0) / (subscription?.artistsGeneratedLimit || 1)) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Fecha de renovación */}
           {subscription.currentPeriodEnd && (

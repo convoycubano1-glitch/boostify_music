@@ -134,7 +134,7 @@ export const subscriptions = pgTable("subscriptions", {
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   stripeSubscriptionId: text("stripe_subscription_id").unique(),
   stripeCustomerId: text("stripe_customer_id"),
-  plan: text("plan", { enum: ["free", "creator", "professional", "enterprise"] }).notNull(),
+  plan: text("plan", { enum: ["free", "basic", "pro", "premium", "creator", "professional", "enterprise"] }).notNull(),
   status: text("status", { enum: ["active", "cancelled", "expired", "trialing", "past_due"] }).notNull(),
   currentPeriodEnd: timestamp("current_period_end").notNull(),
   currentPeriodStart: timestamp("current_period_start"),
@@ -145,6 +145,13 @@ export const subscriptions = pgTable("subscriptions", {
   isTrial: boolean("is_trial").default(false).notNull(),
   trialEndsAt: timestamp("trial_ends_at"),
   grantedByBundle: text("granted_by_bundle"),
+  // Content limits per plan
+  videosLimit: integer("videos_limit").default(1).notNull(),
+  songsLimit: integer("songs_limit").default(2).notNull(),
+  videosUsed: integer("videos_used").default(0).notNull(),
+  songsUsed: integer("songs_used").default(0).notNull(),
+  artistsGeneratedLimit: integer("artists_generated_limit").default(0).notNull(),
+  artistsGeneratedUsed: integer("artists_generated_used").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
