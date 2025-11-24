@@ -23,7 +23,12 @@ export function MusicPlayerWidget({ tracks, artistName }: MusicPlayerWidgetProps
     return null;
   }
 
-  const currentTrack = tracks[currentTrackIndex];
+  const validTracks = tracks.filter((t: Track) => t && t.url);
+  if (validTracks.length === 0) {
+    return null;
+  }
+
+  const currentTrack = validTracks[currentTrackIndex];
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -37,12 +42,12 @@ export function MusicPlayerWidget({ tracks, artistName }: MusicPlayerWidgetProps
   };
 
   const playNext = () => {
-    setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
+    setCurrentTrackIndex((prev) => (prev + 1) % validTracks.length);
     setIsPlaying(true);
   };
 
   const playPrev = () => {
-    setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
+    setCurrentTrackIndex((prev) => (prev - 1 + validTracks.length) % validTracks.length);
     setIsPlaying(true);
   };
 
@@ -116,7 +121,7 @@ export function MusicPlayerWidget({ tracks, artistName }: MusicPlayerWidgetProps
         </div>
 
         <p className="text-xs text-white/50 mt-1">
-          Track {currentTrackIndex + 1} of {tracks.length}
+          Track {currentTrackIndex + 1} of {validTracks.length}
         </p>
       </div>
 
