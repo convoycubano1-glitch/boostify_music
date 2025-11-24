@@ -303,14 +303,6 @@ function RoadmapTimeline() {
       status: "completed"
     },
     {
-      date: "Marzo 2025",
-      title: "Hito: 1,000 Usuarios Activos",
-      description: "Primera meta de crecimiento alcanzada. Expansión del equipo de soporte y optimización de infraestructura.",
-      stats: "1,000 usuarios, $100K MRR",
-      status: "completed",
-      isKey: true
-    },
-    {
       date: "Abril 2025",
       title: "Integración con Stripe",
       description: "Sistema completo de pagos y suscripciones. Planes Basic ($59.99), Pro ($99.99) y Premium ($149.99) mensuales.",
@@ -348,9 +340,9 @@ function RoadmapTimeline() {
     },
     {
       date: "Enero 2026",
-      title: "Generador de Videos Automáticos Completo",
-      description: "Implementación completa del generador de videos musicales automáticos. Sistema totalmente operativo e integrado con la plataforma de artistas.",
-      stats: "Videos automáticos 100% funcional",
+      title: "Generador de Videos Automáticos + Hito: 1,000 Usuarios Activos",
+      description: "Implementación completa del generador de videos musicales automáticos. Sistema totalmente operativo e integrado con la plataforma de artistas. Primera meta de crecimiento alcanzada.",
+      stats: "Videos automáticos 100% funcional, 1,000 usuarios, $100K MRR",
       status: "upcoming",
       isKey: true
     },
