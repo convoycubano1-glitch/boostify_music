@@ -1372,7 +1372,7 @@ export default function InvestorsDashboard() {
 
             {/* Main Content Tabs - Modern Design */}
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-5 max-w-[1000px] mb-6 sm:mb-10 bg-slate-900/50 border border-cyan-500/20 p-1">
+              <TabsList className="grid grid-cols-6 max-w-[1200px] mb-6 sm:mb-10 bg-slate-900/50 border border-cyan-500/20 p-1">
                 <TabsTrigger 
                   value="investments" 
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
@@ -1386,6 +1386,13 @@ export default function InvestorsDashboard() {
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Roadmap</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="projections" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                >
+                  <BarChart className="w-4 h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Projections</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="calculator" 
@@ -1852,7 +1859,10 @@ export default function InvestorsDashboard() {
                   <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-white">Boostify Music Roadmap</h3>
                   <RoadmapTimeline />
                 </Card>
+              </TabsContent>
 
+              {/* Financial Projections Tab */}
+              <TabsContent value="projections">
                 <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20">
                   <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-white">Financial Projections</h3>
                   
