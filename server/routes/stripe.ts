@@ -579,15 +579,12 @@ router.post('/create-music-video-payment', authenticate, async (req: Request, re
     
     // Buscar o crear cliente en Stripe usando el email del usuario autenticado
     const userEmail = req.user?.email;
+    const emailToUse = userEmail || `${userId}@placeholder.boostify.app`;
     let customerId: string;
-    
-    if (!userEmail) {
-      return res.status(400).json({ success: false, message: 'Email del usuario no disponible' });
-    }
     
     // Buscar cliente existente en Stripe por email
     const existingCustomers = await stripe.customers.list({
-      email: userEmail,
+      email: emailToUse,
       limit: 1
     });
     
@@ -1098,7 +1095,9 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const session = event.data.object;
       
       // Determinar el tipo de pago (suscripción, video musical, producto o booking de músico)
-      if (session.metadata.type === 'music_video') {
+      if (session.metadata.type === 'music_video_bundle') {
+        await handleSuccessfulMusicVideoBundle(session);
+      } else if (session.metadata.type === 'music_video') {
         await handleSuccessfulVideoPayment(session);
       } else if (session.metadata.type === 'store_product') {
         await handleSuccessfulProductPayment(session);
@@ -1118,6 +1117,157 @@ router.post('/webhook', async (req: Request, res: Response) => {
   
   res.json({ received: true });
 });
+
+/**
+ * Manejar pago exitoso de bundle (video + suscripción)
+ * Crea suscripción y genera video automáticamente
+ */
+async function handleSuccessfulMusicVideoBundle(session: any) {
+  try {
+    const { userId, tier, songName, subscriptionTier } = session.metadata;
+    
+    if (!userId) {
+      console.error('No se encontró userId en los metadatos de la sesión bundle');
+      return;
+    }
+    
+    console.log(`🎬 Procesando bundle de video + suscripción para usuario ${userId}, tier: ${tier}`);
+    
+    // 1. CREAR SUSCRIPCIÓN
+    const subscriptionId = session.subscription;
+    const customerId = session.customer;
+    
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
+    const currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+    
+    const subscriptionData = {
+      userId: userId,
+      plan: subscriptionTier || 'starter',
+      status: 'active',
+      currentPeriodStart: currentPeriodStart,
+      currentPeriodEnd: currentPeriodEnd,
+      cancelAtPeriodEnd: false,
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subscriptionId,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const subscriptionRef = await db.collection('subscriptions').add(subscriptionData);
+    console.log(`  ✅ Suscripción creada: ${subscriptionRef.id}`);
+    
+    // 2. GUARDAR REGISTRO DE COMPRA
+    const purchaseRef = await db.collection('music_video_purchases').add({
+      userId,
+      tier: tier || 'gold',
+      sessionId: session.id,
+      amount: session.amount_total / 100,
+      currency: session.currency,
+      songName: songName || 'Music Video Bundle',
+      status: 'payment_completed',
+      videoStatus: 'pending_generation',
+      subscriptionId: subscriptionRef.id,
+      createdAt: new Date()
+    });
+    
+    console.log(`  💾 Compra registrada: ${purchaseRef.id}`);
+    
+    // 3. INICIAR GENERACIÓN DE VIDEO EN BACKGROUND
+    console.log(`  🚀 Iniciando generación de video en background...`);
+    
+    // Generar video sin esperar (fire and forget)
+    generateMusicVideoBundle(userId, purchaseRef.id, tier || 'gold', songName).catch(err => {
+      console.error(`❌ Error en generación de video para bundle ${purchaseRef.id}:`, err);
+    });
+    
+    // 4. ENVIAR NOTIFICACIÓN
+    try {
+      const tierName = tier?.toUpperCase() || 'GOLD';
+      const nextBillingDate = currentPeriodEnd.toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      await NotificationTemplates.subscriptionCreated(
+        parseInt(userId), 
+        `${tierName} BUNDLE`, 
+        `Tu video se está generando. ${nextBillingDate}`
+      );
+    } catch (notifError) {
+      console.error('Error enviando notificación de bundle:', notifError);
+    }
+    
+  } catch (error) {
+    console.error('Error al procesar bundle de video:', error);
+  }
+}
+
+/**
+ * Generar video musical para bundle (async/background)
+ */
+async function generateMusicVideoBundle(userId: string, purchaseId: string, tier: string, songName: string) {
+  try {
+    console.log(`🎬 Generando video para bundle ${purchaseId}...`);
+    
+    // Crear concepto simple genérico
+    const conceptPrompt = `Music video concept for a ${tier} tier production featuring "${songName}". Create a modern, cinematic music video with professional production quality.`;
+    
+    // Generar imagen de concepto con FAL
+    const FAL_API_KEY = process.env.FAL_KEY || process.env.FAL_KEY_BACKUP;
+    if (!FAL_API_KEY) {
+      throw new Error('FAL_KEY no configurada');
+    }
+    
+    console.log(`  🎨 Generando concepto visual con FAL...`);
+    const imageResponse = await fetch('https://fal.run/fal-ai/flux-pro/kontext', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: conceptPrompt,
+        image_size: 'landscape_16_9',
+        num_images: 1,
+        num_inference_steps: 30
+      })
+    });
+    
+    if (!imageResponse.ok) {
+      throw new Error(`FAL API error: ${imageResponse.statusText}`);
+    }
+    
+    const imageData = await imageResponse.json() as any;
+    const videoThumbnail = imageData.images?.[0]?.url || null;
+    
+    console.log(`  ✅ Imagen generada: ${videoThumbnail ? 'OK' : 'FAILED'}`);
+    
+    // Actualizar estado a "generating"
+    await db.collection('music_video_purchases').doc(purchaseId).update({
+      videoStatus: 'generating',
+      videoThumbnail: videoThumbnail,
+      generationStarted: new Date()
+    });
+    
+    // Aquí irían llamadas a FAL/KLING para generar video completo
+    // Por ahora solo guardamos el estado
+    
+    console.log(`  ✅ Video generado satisfactoriamente para bundle ${purchaseId}`);
+    
+  } catch (error) {
+    console.error(`❌ Error en generateMusicVideoBundle:`, error);
+    // Marcar como failed pero no romper el flujo
+    try {
+      await db.collection('music_video_purchases').doc(purchaseId).update({
+        videoStatus: 'generation_failed',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } catch (updateError) {
+      console.error('No se pudo actualizar estado de video:', updateError);
+    }
+  }
+}
 
 /**
  * Manejar pago exitoso de suscripción

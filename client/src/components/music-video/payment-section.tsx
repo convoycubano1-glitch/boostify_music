@@ -30,13 +30,15 @@ export const PaymentSection = memo(function PaymentSection({
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
+      // DEPRECATED: Individual video payment removed in favor of bundles
+      // Use music video pricing page for tier-based bundles (video + subscription)
       const response = await apiRequest({
-        url: '/api/stripe/create-music-video-payment',
+        url: '/api/stripe/create-music-video-bundle-checkout',
         method: 'POST',
         data: {
-          userId,
-          songName,
-          duration
+          tier: 'gold',
+          songName: songName || 'Music Video',
+          duration: duration || 180
         }
       }) as { url: string };
 
