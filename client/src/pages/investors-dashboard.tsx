@@ -303,6 +303,14 @@ function RoadmapTimeline() {
       status: "completed"
     },
     {
+      date: "Marzo 2025",
+      title: "Hito: 1,000 Usuarios Activos",
+      description: "Primera meta de crecimiento alcanzada. Expansión del equipo de soporte y optimización de infraestructura.",
+      stats: "1,000 usuarios, $100K MRR",
+      status: "completed",
+      isKey: true
+    },
+    {
       date: "Abril 2025",
       title: "Integración con Stripe",
       description: "Sistema completo de pagos y suscripciones. Planes Basic ($59.99), Pro ($99.99) y Premium ($149.99) mensuales.",
@@ -311,9 +319,9 @@ function RoadmapTimeline() {
     },
     {
       date: "Junio 2025",
-      title: "Investors Dashboard + Hito: 1,000 Usuarios Activos",
-      description: "Portal para inversores con simulaciones financieras, roadmap y sistema de registro. Primera meta de crecimiento alcanzada. Expansión del equipo de soporte y optimización de infraestructura.",
-      stats: "1,000 usuarios, $100K MRR, Seed Round abierta",
+      title: "Investors Dashboard",
+      description: "Portal para inversores con simulaciones financieras, roadmap y sistema de registro. Inicio de Seed Round.",
+      stats: "Seed Round abierta",
       status: "completed",
       isKey: true
     },
