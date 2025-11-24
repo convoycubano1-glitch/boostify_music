@@ -26,83 +26,13 @@ export function BottomNav() {
   // not to the public artist page (/artist/:slug)
   const profileHref = '/profile';
 
-  // Elementos de navegación para el botón "More" (23 páginas específicas) - Rutas verificadas contra App.tsx
-  const moreNavItems = [
-    { title: "BoostiSwap", icon: Zap, href: "/boostiswap", plan: "free" },
-    { title: "Virtual Record Label", icon: Radio, href: "/virtual-record-label", plan: "premium" },
-    { title: "AI Advisors", icon: PhoneCall, href: "/ai-advisors", plan: "premium" },
-    { title: "Store", icon: ShoppingBag, href: "/store", plan: "basic" },
-    { title: "Affiliates", icon: Users, href: "/affiliates", plan: "basic" },
-    { title: "Investors", icon: Layers, href: "/investors-dashboard", plan: "premium" }, // Corregido al nivel 'premium' según App.tsx
-    { title: "Dashboard", icon: BarChart, href: "/dashboard", plan: "free" },
-    { title: "Distribution Tools", icon: BarChart2, href: "/artist-dashboard", plan: "basic" },
-    { title: "Manager Tools", icon: Settings, href: "/manager-tools", plan: "pro" }, // Corregido al nivel 'pro' según App.tsx
-    { title: "Producer Tools", icon: Music2, href: "/producer-tools", plan: "pro" },
-    { title: "Music Videos", icon: Video, href: "/music-video-creator", plan: "premium" },
-    { title: "Education", icon: BookOpen, href: "/education", plan: "basic" },
-    { title: "Boostify TV", icon: Video, href: "/boostify-tv", plan: "premium" }, // Corregido al nivel 'premium' según App.tsx
-    { title: "Record Labels", icon: Headphones, href: "/record-label-services", plan: "premium" },
-    { title: "AI Agents", icon: Bot, href: "/ai-agents", plan: "premium" },
-    { title: "Artist Image", icon: FileText, href: "/artist-image-advisor", plan: "pro" }, // Corregido al nivel 'pro' según App.tsx
-    { title: "Merch", icon: ShoppingBag, href: "/merchandise", plan: "pro" }, // Corregido al nivel 'pro' según App.tsx
-    { title: "Spotify", icon: Music2, href: "/spotify", plan: "basic" }, // Corregido según App.tsx
-    { title: "Instagram", icon: Rss, href: "/instagram-boost", plan: "pro" }, // Corregido al nivel 'pro' según App.tsx
-    { title: "YouTube", icon: Video, href: "/youtube-views", plan: "pro" }, // Corregido al nivel 'pro' según App.tsx
-    { title: "Contracts", icon: FileText, href: "/contracts", plan: "basic" }, // Corregido al nivel 'basic' según App.tsx
-    { title: "PR", icon: Send, href: "/pr", plan: "basic" }, // Corregido según App.tsx
-    { title: "Contacts", icon: Users, href: "/contacts", plan: "pro" }, // Corregido al nivel 'pro' según App.tsx
-    { title: "Settings", icon: Settings, href: "/settings", plan: "free" },
-  ];
-
-  // Todos los elementos de navegación para la barra principal
+  // Todos los elementos de navegación para la barra principal - Nuevo orden
   const allNavItems = [
     {
       title: "Home",
       icon: Home,
-      href: "/dashboard",
-      plan: "free" // Accesible para todos
-    },
-    {
-      title: "Video",
-      icon: Video,
-      href: "/music-video-creator",
-      plan: "premium" // Requiere suscripción premium
-    },
-    {
-      title: "Music",
-      icon: Music2,
-      href: "/producer-tools",
-      plan: "pro" // Requiere suscripción pro
-    },
-    {
-      title: "Social",
-      icon: MessageSquare,
-      href: "/social-network",
-      plan: "basic" // Requiere suscripción básica
-    },
-    {
-      title: "Admin",
-      icon: BarChart2,
-      href: "/admin",
-      plan: "free" // Admin accessible to everyone
-    },
-    {
-      title: "Distribution",
-      icon: Upload,
-      href: "/artist-dashboard",
-      plan: "basic" // Requiere suscripción básica
-    },
-    {
-      title: "AI",
-      icon: Bot,
-      href: "/ai-agents",
-      plan: "premium" // Requiere suscripción premium
-    },
-    {
-      title: "Explicit",
-      icon: Zap,
-      href: "/boostify-explicit",
-      plan: "free" // Public page
+      href: "/",
+      plan: "free"
     },
     {
       title: "My Profile",
@@ -111,11 +41,80 @@ export function BottomNav() {
       plan: "free"
     },
     {
-      title: "My Artists",
-      icon: Mic,
-      href: "/my-artists",
+      title: "Investors",
+      icon: Layers,
+      href: "/investors-dashboard",
+      plan: null
+    },
+    {
+      title: "Music Video",
+      icon: Video,
+      href: "/music-video-creator",
       plan: "free"
     },
+    {
+      title: "Producer Tools",
+      icon: Music2,
+      href: "/producer-tools",
+      plan: "pro"
+    },
+    {
+      title: "Distribution",
+      icon: Upload,
+      href: "/artist-dashboard",
+      plan: "basic"
+    },
+    {
+      title: "BoostiSwap",
+      icon: Zap,
+      href: "/boostiswap",
+      plan: "free"
+    },
+    {
+      title: "YouTube",
+      icon: Video,
+      href: "/youtube-views",
+      plan: "pro"
+    },
+    {
+      title: "Spotify",
+      icon: Music2,
+      href: "/spotify",
+      plan: "basic"
+    },
+    {
+      title: "Instagram",
+      icon: Rss,
+      href: "/instagram-boost",
+      plan: "pro"
+    },
+    {
+      title: "PR",
+      icon: Send,
+      href: "/pr",
+      plan: "basic"
+    },
+  ];
+
+  // Elementos de navegación para el botón "More" - Resto de páginas organizadas
+  const moreNavItems = [
+    { title: "My Artists", icon: Mic, href: "/my-artists", plan: "free" },
+    { title: "Social Network", icon: MessageSquare, href: "/social-network", plan: "basic" },
+    { title: "Virtual Record Label", icon: Radio, href: "/virtual-record-label", plan: "premium" },
+    { title: "AI Advisors", icon: PhoneCall, href: "/ai-advisors", plan: "premium" },
+    { title: "Store", icon: ShoppingBag, href: "/store", plan: "basic" },
+    { title: "Affiliates", icon: Users, href: "/affiliates", plan: "basic" },
+    { title: "Manager Tools", icon: Settings, href: "/manager-tools", plan: "pro" },
+    { title: "Education", icon: BookOpen, href: "/education", plan: "basic" },
+    { title: "Boostify TV", icon: Video, href: "/boostify-tv", plan: "premium" },
+    { title: "Record Labels", icon: Headphones, href: "/record-label-services", plan: "premium" },
+    { title: "AI Agents", icon: Bot, href: "/ai-agents", plan: "premium" },
+    { title: "Artist Image", icon: FileText, href: "/artist-image-advisor", plan: "pro" },
+    { title: "Merch", icon: ShoppingBag, href: "/merchandise", plan: "pro" },
+    { title: "Contracts", icon: FileText, href: "/contracts", plan: "basic" },
+    { title: "Contacts", icon: Users, href: "/contacts", plan: "pro" },
+    { title: "Admin", icon: BarChart2, href: "/admin", plan: "free" },
+    { title: "Settings", icon: Settings, href: "/settings", plan: "free" },
   ];
 
   // Listen for radio toggle event
