@@ -1797,7 +1797,7 @@ export default function VirtualRecordLabelPage() {
           </Button>
         </div>
       </section>
-    </div>
+      </div>
     </PlanTierGuard>
   );
 }
