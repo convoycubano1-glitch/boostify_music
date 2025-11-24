@@ -8,8 +8,6 @@ import {
   ArrowRight, Globe, Headphones, Mic2, BarChart3
 } from 'lucide-react';
 import { Link } from 'wouter';
-import pricingDashboardImg from '@assets/generated_images/modern_pricing_dashboard_ui.png';
-import musicIndustryImg from '@assets/generated_images/music_industry_abstract_art.png';
 
 const plans = [
   {
@@ -164,7 +162,7 @@ export default function PricingPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="rounded-2xl overflow-hidden border border-orange-500/20 shadow-2xl mb-16"
           >
-            <img src={pricingDashboardImg} alt="Pricing Dashboard" className="w-full h-auto" />
+            <img src="/images/modern_pricing_dashboard_ui.png" alt="Pricing Dashboard" className="w-full h-auto" />
           </motion.div>
         </div>
       </section>
@@ -276,7 +274,7 @@ export default function PricingPage() {
               viewport={{ once: true }}
               className="rounded-2xl overflow-hidden border border-orange-500/20"
             >
-              <img src={musicIndustryImg} alt="Music Industry" className="w-full h-auto" />
+              <img src="/images/music_industry_abstract_art.png" alt="Music Industry" className="w-full h-auto" />
             </motion.div>
           </div>
         </div>
