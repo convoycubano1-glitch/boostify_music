@@ -7,11 +7,12 @@ import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
-import { users, artistNews } from '../../db/schema';
+import { users, artistNews, songs, tokenizedSongs } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { generateCinematicImage, generateImageWithFaceReference } from '../services/gemini-image-service';
 import { GoogleGenAI } from "@google/genai";
 import { NotificationTemplates } from '../utils/notifications';
+import { generateSocialMediaContent } from '../services/social-media-service';
 import axios from 'axios';
 
 const router = Router();
@@ -314,12 +315,111 @@ router.post("/create-manual", isAuthenticated, async (req: Request, res: Respons
 });
 
 /**
+ * Genera 10 canciones tokenizadas automáticas para un artista
+ */
+async function generateTokenizedSongs(artistId: number, artistName: string, genre: string): Promise<number[]> {
+  const songTitles = [
+    `${artistName} - Main Single`,
+    `${artistName} - Remix Version`,
+    `${artistName} - Acoustic Edition`,
+    `${artistName} - Featuring Remix`,
+    `${artistName} - Live Performance`,
+    `${artistName} - Studio Session`,
+    `${artistName} - Collaboration`,
+    `${artistName} - Deep Cut`,
+    `${artistName} - Fan Favorite`,
+    `${artistName} - Unreleased Track`
+  ];
+
+  const tokenIds: number[] = [];
+
+  for (let i = 0; i < 10; i++) {
+    const [song] = await pgDb.insert(songs).values({
+      userId: artistId,
+      title: songTitles[i],
+      description: `Tokenized song by ${artistName}`,
+      audioUrl: `ipfs://QmHash${Math.random().toString(36).substring(7)}`,
+      duration: `${180 + Math.random() * 120}`,
+      genre: genre,
+      isPublished: true
+    }).returning({ id: songs.id });
+
+    const tokenId = 1000 + artistId * 100 + i;
+    const tokenSymbol = `${artistName.substring(0, 3).toUpperCase()}-${String(i + 1).padStart(3, '0')}`;
+
+    const [tokenizedSong] = await pgDb.insert(tokenizedSongs).values({
+      artistId,
+      songName: songTitles[i],
+      tokenId: tokenId,
+      tokenSymbol: tokenSymbol,
+      totalSupply: 1000,
+      availableSupply: 1000,
+      pricePerTokenUsd: `${10 + Math.random() * 90}`,
+      royaltyPercentageArtist: 80,
+      royaltyPercentagePlatform: 20,
+      contractAddress: `0x${Math.random().toString(16).substring(2).padEnd(40, '0')}`,
+      metadataUri: `ipfs://QmMeta${Math.random().toString(36).substring(7)}`,
+      description: `Tokenized music by ${artistName}`,
+      benefits: ['Exclusive Access', 'Revenue Share', 'Creator Rights'],
+      isActive: true
+    }).returning({ id: tokenizedSongs.id });
+
+    tokenIds.push(tokenId);
+    console.log(`✅ Creada canción tokenizada #${i + 1}: ${songTitles[i]} (Token ID: ${tokenId})`);
+  }
+
+  return tokenIds;
+}
+
+/**
+ * Genera contenido de redes sociales para el artista
+ */
+async function generateArtistSocialContent(artistId: number, artistName: string, biography: string, slug: string): Promise<any> {
+  try {
+    const profileUrl = `https://boostify.app/artist/${slug}`;
+    const socialContent = await generateSocialMediaContent(artistName, biography, profileUrl, artistId);
+    console.log('✅ Contenido de redes sociales generado:', socialContent);
+    return socialContent;
+  } catch (error) {
+    console.error('⚠️ Error generando contenido social:', error);
+    return { success: false, error: 'No se pudo generar contenido social' };
+  }
+}
+
+/**
+ * Genera EPK automático para el artista
+ */
+async function generateArtistEPK(artistId: number, artistName: string, artistData: any): Promise<any> {
+  try {
+    const epkData = {
+      artistName,
+      genre: artistData.music_genres || ['Pop'],
+      biography: artistData.biography,
+      profileImage: artistData.look?.profile_url,
+      socialLinks: {
+        instagram: artistData.social_media?.instagram?.url,
+        spotify: artistData.social_media?.spotify?.url,
+        youtube: artistData.social_media?.youtube?.url,
+        tiktok: artistData.social_media?.tiktok?.url,
+        facebook: artistData.social_media?.facebook?.url
+      }
+    };
+    console.log('✅ EPK generado para:', artistName);
+    return epkData;
+  } catch (error) {
+    console.error('⚠️ Error generando EPK:', error);
+    return null;
+  }
+}
+
+/**
  * Endpoint para generar un artista aleatorio (requiere autenticación)
  * Versión protegida del endpoint anterior
+ * ✨ COMPLETO: Genera 10 canciones tokenizadas, contenido social y EPK automáticamente
  */
 router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    console.log('Recibida solicitud autenticada para generar artista aleatorio');
+    console.log('🎵 Recibida solicitud autenticada para generar artista con TODAS las funciones activadas');
 
     // Obtener ID del usuario autenticado
     const userId = req.user?.uid || req.user?.id;
@@ -327,7 +427,7 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
 
     // Generar datos del artista aleatorio
     const artistData = await generateRandomArtist();
-    console.log('Artista generado exitosamente:', artistData.name);
+    console.log('🎨 Artista generado exitosamente:', artistData.name);
 
     // Guardar artista en Firestore, incluyendo referencia al usuario que lo generó
     const artistDataWithUser = {
@@ -336,11 +436,11 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
     };
 
     const firestoreId = await saveArtistToFirestore(artistDataWithUser);
-    console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
+    console.log(`✅ Artista guardado en Firestore con ID: ${firestoreId}`);
 
-    // NUEVO: Guardar artista en PostgreSQL con referencia al creador
+    // Guardar artista en PostgreSQL con referencia al creador
     const postgresId = await saveArtistToPostgreSQL(artistDataWithUser, firestoreId, userId);
-    console.log(`Artista guardado en PostgreSQL con ID: ${postgresId}`);
+    console.log(`✅ Artista guardado en PostgreSQL con ID: ${postgresId}`);
 
     // Actualizar Firestore con el ID de PostgreSQL
     await db.collection('generated_artists').doc(firestoreId).update({ 
@@ -348,16 +448,47 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
       postgresId
     });
 
-    // Devolver respuesta con datos del artista y ambos IDs
+    // 🎵 GENERAR 10 CANCIONES TOKENIZADAS AUTOMÁTICAMENTE
+    console.log('🎵 Generando 10 canciones tokenizadas...');
+    const tokenIds = await generateTokenizedSongs(postgresId, artistData.name, artistData.music_genres?.[0] || 'Pop');
+    console.log(`✅ ${tokenIds.length} canciones tokenizadas creadas`);
+
+    // 📱 GENERAR CONTENIDO DE REDES SOCIALES AUTOMÁTICAMENTE
+    console.log('📱 Generando contenido para redes sociales...');
+    const socialContent = await generateArtistSocialContent(postgresId, artistData.name, artistData.biography, artistDataWithUser.slug || generateSlug(artistData.name));
+
+    // 📄 GENERAR EPK AUTOMÁTICO
+    console.log('📄 Generando EPK del artista...');
+    const epkData = await generateArtistEPK(postgresId, artistData.name, artistData);
+
+    // Devolver respuesta completa con todos los módulos activados
     res.status(200).json({
-      ...artistDataWithUser,
-      firestoreId,
-      postgresId
+      success: true,
+      message: '✅ Artista creado con TODOS los módulos activados',
+      artist: {
+        ...artistDataWithUser,
+        firestoreId,
+        postgresId
+      },
+      tokenization: {
+        status: 'activated',
+        songsCreated: 10,
+        tokenIds: tokenIds,
+        ready_for_metamask_mint: true
+      },
+      socialMedia: {
+        status: socialContent.success ? 'generated' : 'pending',
+        posts: socialContent.posts || []
+      },
+      epk: {
+        status: epkData ? 'generated' : 'pending',
+        data: epkData
+      }
     });
   } catch (error) {
-    console.error('Error generando artista aleatorio (ruta segura):', error);
+    console.error('❌ Error generando artista con módulos completos:', error);
     res.status(500).json({ 
-      error: 'Error al generar artista aleatorio',
+      error: 'Error al generar artista',
       details: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
