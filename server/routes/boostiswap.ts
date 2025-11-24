@@ -29,6 +29,7 @@ function calculateSwapAmount(inputAmount: number, inputReserve: number, outputRe
 
 /**
  * Obtener todas las canciones tokenizadas para el marketplace
+ * Combina datos de BD (artistas generados) + datos estáticos (20 artistas profesionales)
  */
 router.get("/tokenized-songs", async (req, res) => {
   try {
@@ -38,20 +39,30 @@ router.get("/tokenized-songs", async (req, res) => {
       .where((song) => song.isActive === true)
       .orderBy(desc(tokenizedSongs.createdAt));
     
-    console.log(`✅ [BOOSTISWAP] Se encontraron ${songs.length} canciones tokenizadas`);
+    console.log(`✅ [BOOSTISWAP] Se encontraron ${songs.length} canciones tokenizadas de artistas generados`);
     
-    // Format response for marketplace - fetch artist names
+    // Format response for marketplace - fetch artist names and profile images
     const formattedSongs = await Promise.all(
       songs.map(async (song) => {
         let artistName = song.songName;
+        let artistProfileImage = song.imageUrl || "";
+        let artistSlug = "";
+        
         try {
           if (song.artistId) {
-            const artist = await db.select({ name: users.artistName })
+            const artist = await db.select({ 
+              name: users.artistName,
+              profileImage: users.profileImage,
+              slug: users.slug
+            })
               .from(users)
               .where(eq(users.id, song.artistId))
               .limit(1);
-            if (artist.length > 0 && artist[0].name) {
-              artistName = artist[0].name;
+            
+            if (artist.length > 0) {
+              if (artist[0].name) artistName = artist[0].name;
+              if (artist[0].profileImage) artistProfileImage = artist[0].profileImage;
+              if (artist[0].slug) artistSlug = artist[0].slug;
             }
           }
         } catch (err) {
@@ -70,17 +81,72 @@ router.get("/tokenized-songs", async (req, res) => {
           availableSupply: song.availableSupply,
           volume24h: Math.floor(Math.random() * 50000) + 10000,
           holders: Math.floor(Math.random() * 1000) + 100,
-          imageUrl: song.imageUrl || "",
+          imageUrl: artistProfileImage || song.imageUrl || "",
           description: song.description || "",
           change24h: Math.random() * 30 - 5,
           contractAddress: song.contractAddress,
           tokenId: song.tokenId,
           blockchainTokenId: song.tokenId,
-          benefits: song.benefits || []
+          benefits: song.benefits || [],
+          artistSlug: artistSlug,
+          isGenerated: true
         };
       })
     );
     
+    // Si no hay canciones en BD, agregar datos estáticos de los 20 artistas profesionales
+    if (formattedSongs.length === 0) {
+      console.log("📚 Agregando 20 artistas profesionales estáticos como fallback...");
+      const staticArtists = [
+        { id: 1, artist: "Luna Echo", tokenSymbol: "LUNA", pricePerTokenUsd: 2.45, description: "A haunting synthwave track with ethereal vocals", imageUrl: "/artist-images/luna_echo_-_female_pop_singer.png" },
+        { id: 2, artist: "Urban Flow", tokenSymbol: "URBAN", pricePerTokenUsd: 3.15, description: "High-energy hip-hop with infectious beats", imageUrl: "/artist-images/urban_flow_-_hip-hop_artist.png" },
+        { id: 3, artist: "Electric Dreams", tokenSymbol: "ELDREAM", pricePerTokenUsd: 4.22, description: "Electropop sensation breaking charts worldwide", imageUrl: "/artist-images/electric_dreams_-_electronic_artist.png" },
+        { id: 4, artist: "Soul Harmony", tokenSymbol: "SOUL", pricePerTokenUsd: 2.88, description: "Deep R&B with timeless soul vibes", imageUrl: "/artist-images/soul_harmony_-_r&b_artist.png" },
+        { id: 5, artist: "Maya Rivers", tokenSymbol: "MAYA", pricePerTokenUsd: 1.99, description: "Indie folk masterpiece with acoustic instrumentation", imageUrl: "/artist-images/maya_rivers_-_indie_folk.png" },
+        { id: 6, artist: "Jah Vibes", tokenSymbol: "JAH", pricePerTokenUsd: 2.15, description: "Relaxing reggae vibes for the soul", imageUrl: "/artist-images/jah_vibes_-_reggae_artist.png" },
+        { id: 7, artist: "David Chen", tokenSymbol: "CHEN", pricePerTokenUsd: 5.50, description: "A virtuosic classical composition", imageUrl: "/artist-images/david_chen_-_classical_pianist.png" },
+        { id: 8, artist: "Sophia Kim", tokenSymbol: "SOPHIA", pricePerTokenUsd: 3.80, description: "Chart-topping K-pop sensation", imageUrl: "/artist-images/sophia_kim_-_k-pop_star.png" },
+        { id: 9, artist: "Marcus Stone", tokenSymbol: "MARCUS", pricePerTokenUsd: 4.15, description: "Smooth jazz saxophone performance", imageUrl: "/artist-images/marcus_stone_-_jazz_saxophonist.png" },
+        { id: 10, artist: "Isabella Santos", tokenSymbol: "BELLA", pricePerTokenUsd: 3.45, description: "Hot reggaeton track with infectious rhythm", imageUrl: "/artist-images/isabella_santos_-_reggaeton.png" },
+        { id: 11, artist: "Luke Bradley", tokenSymbol: "LUKE", pricePerTokenUsd: 2.65, description: "Classic country ballad", imageUrl: "/artist-images/luke_bradley_-_country_artist.png" },
+        { id: 12, artist: "Aria Nova", tokenSymbol: "ARIA", pricePerTokenUsd: 2.20, description: "Ethereal ambient electronic soundscape", imageUrl: "/artist-images/aria_nova_-_ambient_electronic.png" },
+        { id: 13, artist: "Alex Thunder", tokenSymbol: "ALEX", pricePerTokenUsd: 3.55, description: "Heavy trap production masterpiece", imageUrl: "/artist-images/alex_thunder_-_trap_producer.png" },
+        { id: 14, artist: "Victoria Cross", tokenSymbol: "VICTORIA", pricePerTokenUsd: 6.10, description: "Classical opera performance", imageUrl: "/artist-images/victoria_cross_-_opera_singer.png" },
+        { id: 15, artist: "Prince Diesel", tokenSymbol: "DIESEL", pricePerTokenUsd: 3.90, description: "Funky rhythmic groove", imageUrl: "/artist-images/prince_diesel_-_funk_artist.png" },
+        { id: 16, artist: "Ryan Phoenix", tokenSymbol: "RYAN", pricePerTokenUsd: 3.25, description: "Indie rock anthem", imageUrl: "/artist-images/ryan_phoenix_-_indie_rock.png" },
+        { id: 17, artist: "Pablo Fuego", tokenSymbol: "PABLO", pricePerTokenUsd: 2.99, description: "Energetic Latin music", imageUrl: "/artist-images/pablo_fuego_-_latin_artist.png" },
+        { id: 18, artist: "Emma White", tokenSymbol: "EMMA", pricePerTokenUsd: 3.55, description: "Catchy pop hit", imageUrl: "/artist-images/emma_white_-_pop_princess.png" },
+        { id: 19, artist: "Chris Void", tokenSymbol: "VOID", pricePerTokenUsd: 4.05, description: "Massive dubstep bass drop", imageUrl: "/artist-images/chris_void_-_dubstep_producer.png" },
+        { id: 20, artist: "James Grant", tokenSymbol: "JAMES", pricePerTokenUsd: 3.35, description: "Soulful R&B ballad", imageUrl: "/artist-images/james_grant_-_soul_singer.png" }
+      ];
+
+      const staticFormattedSongs = staticArtists.map((artist, idx) => ({
+        id: 100 + idx,
+        artistId: idx + 1,
+        songName: `${artist.artist} - Main Single`,
+        artist: artist.artist,
+        tokenSymbol: artist.tokenSymbol,
+        pricePerTokenUsd: artist.pricePerTokenUsd,
+        pricePerTokenEth: artist.pricePerTokenUsd / 2000, // Approximate conversion
+        totalSupply: 10000 + (idx * 1000),
+        availableSupply: 3500 + (idx * 500),
+        volume24h: Math.floor(Math.random() * 50000) + 10000,
+        holders: Math.floor(Math.random() * 1000) + 100,
+        imageUrl: artist.imageUrl,
+        description: artist.description,
+        change24h: Math.random() * 30 - 5,
+        contractAddress: `0x${Math.random().toString(16).substring(2).padEnd(40, '0')}`,
+        tokenId: 1000 + idx,
+        blockchainTokenId: 1000 + idx,
+        benefits: ['Exclusive Access', 'Revenue Share', 'Creator Rights'],
+        artistSlug: artist.artist.toLowerCase().replace(/\s+/g, '-'),
+        isGenerated: false
+      }));
+
+      formattedSongs.push(...staticFormattedSongs);
+      console.log(`✅ Agregados ${staticFormattedSongs.length} artistas estáticos. Total: ${formattedSongs.length}`);
+    }
+
     res.json(formattedSongs);
   } catch (error) {
     console.error("❌ Error getting tokenized songs:", error);
