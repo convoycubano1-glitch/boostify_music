@@ -669,6 +669,58 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       return res.status(500).json({ error: "Error al cancelar suscripción" });
     }
   });
+
+  // ENDPOINT DE PRUEBA - Enviar evento de ejemplo a Make para ver estructura
+  app.get('/api/test/send-to-make', async (req, res) => {
+    try {
+      console.log('📤 Enviando evento de prueba a Make...');
+      
+      const testEvent = {
+        event: 'subscription_created',
+        timestamp: new Date().toISOString(),
+        data: {
+          userEmail: 'artista@example.com',
+          userName: 'Artist Demo',
+          planTier: 'professional',
+          priceAmount: 99.99,
+          currency: 'usd',
+          currentPeriodEnd: '2025-12-24',
+          interval: 'monthly'
+        }
+      };
+
+      // Enviar a Make
+      const response = await fetch('https://hook.us2.make.com/ow1m732j9t4mjmnod9cyahk6im7w6uet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testEvent)
+      });
+
+      if (!response.ok) {
+        console.error(`❌ Error: ${response.statusText}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: response.statusText,
+          message: 'Make webhook no respondió correctamente'
+        });
+      }
+
+      console.log('✅ Evento enviado a Make exitosamente');
+      return res.json({
+        success: true,
+        message: 'Evento de prueba enviado a Make',
+        eventSent: testEvent
+      });
+    } catch (error) {
+      console.error('Error sending test event:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
   
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
