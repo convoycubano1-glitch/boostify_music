@@ -483,20 +483,20 @@ const App = () => {
       {/* Componente invisible para manejar errores de WebSocket */}
       <div className="min-h-screen bg-background text-foreground">
         <ViteHMRErrorHandler />
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>
-            <RainbowKitProvider>
-              <SubscriptionProvider>
-                <GlobalAuthGuard>
-                  <EditorProvider>
+        <QueryClientProvider client={queryClient}>
+          <SubscriptionProvider>
+            <GlobalAuthGuard>
+              <EditorProvider>
+                <WagmiProvider config={wagmiConfig}>
+                  <RainbowKitProvider>
                     <Router />
-                    <Toaster />
-                  </EditorProvider>
-                </GlobalAuthGuard>
-              </SubscriptionProvider>
-            </RainbowKitProvider>
-          </QueryClientProvider>
-        </WagmiProvider>
+                  </RainbowKitProvider>
+                </WagmiProvider>
+                <Toaster />
+              </EditorProvider>
+            </GlobalAuthGuard>
+          </SubscriptionProvider>
+        </QueryClientProvider>
       </div>
     </ErrorBoundary>
   );

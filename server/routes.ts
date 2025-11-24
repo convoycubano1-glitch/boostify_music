@@ -487,41 +487,49 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       const numUserId = parseInt(userId, 10);
       
       if (isNaN(numUserId)) {
-        return res.status(400).json({ error: "Invalid user ID" });
+        return res.status(200).json(null);
       }
       
-      // Obtener la suscripción más reciente del usuario
-      const [subscription] = await db
-        .select()
-        .from(subscriptions)
-        .where(eq(subscriptions.userId, numUserId))
-        .orderBy(desc(subscriptions.createdAt))
-        .limit(1);
+      // Intentar obtener la suscripción, pero devolver null silenciosamente si falla
+      try {
+        const results = await db
+          .select()
+          .from(subscriptions)
+          .where(eq(subscriptions.userId, numUserId))
+          .orderBy(desc(subscriptions.createdAt))
+          .limit(1);
 
-      // Retornar null si no hay suscripción (usuario en plan free)
-      if (!subscription) {
+        const subscription = results?.[0];
+
+        // Retornar null si no hay suscripción (usuario en plan free)
+        if (!subscription) {
+          return res.json(null);
+        }
+
+        return res.json({
+          id: subscription.id,
+          userId: subscription.userId,
+          plan: subscription.plan,
+          status: subscription.status,
+          currentPeriodStart: subscription.currentPeriodStart,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+          interval: subscription.interval,
+          stripeCustomerId: subscription.stripeCustomerId,
+          stripeSubscriptionId: subscription.stripeSubscriptionId,
+          isTrial: subscription.isTrial,
+          trialEndsAt: subscription.trialEndsAt,
+          createdAt: subscription.createdAt,
+          updatedAt: subscription.updatedAt,
+        });
+      } catch (dbError) {
+        // Database error - just return null
+        console.warn("Database error fetching subscription:", dbError);
         return res.json(null);
       }
-
-      return res.json({
-        id: subscription.id,
-        userId: subscription.userId,
-        plan: subscription.plan,
-        status: subscription.status,
-        currentPeriodStart: subscription.currentPeriodStart,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-        interval: subscription.interval,
-        stripeCustomerId: subscription.stripeCustomerId,
-        stripeSubscriptionId: subscription.stripeSubscriptionId,
-        isTrial: subscription.isTrial,
-        trialEndsAt: subscription.trialEndsAt,
-        createdAt: subscription.createdAt,
-        updatedAt: subscription.updatedAt,
-      });
     } catch (error) {
-      console.error("Error fetching subscription by userId:", error);
-      return res.status(500).json(null);
+      console.error("Error in subscription endpoint:", error);
+      return res.json(null);
     }
   });
 

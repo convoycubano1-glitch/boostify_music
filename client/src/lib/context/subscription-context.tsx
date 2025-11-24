@@ -70,14 +70,9 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
  */
 async function fetchSubscription(userId: number): Promise<Subscription | null> {
   try {
-    const response = await fetch(`/api/subscription/user/${userId}`);
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null; // No subscription found
-      }
-      throw new Error(`Failed to fetch subscription: ${response.statusText}`);
-    }
+    const response = await fetch(`/api/subscription/user/${userId}`, {
+      signal: AbortSignal.timeout(5000) // 5 second timeout to prevent hanging
+    });
     
     const data = await response.json();
     
@@ -95,8 +90,8 @@ async function fetchSubscription(userId: number): Promise<Subscription | null> {
     
     return null;
   } catch (error) {
-    logger.error('Error fetching subscription from PostgreSQL:', error);
-    throw error;
+    logger.debug('Subscription fetch (non-critical):', error instanceof Error ? error.message : 'Unknown error');
+    return null; // Return null instead of throwing to prevent breaking the app
   }
 }
 
@@ -105,14 +100,9 @@ async function fetchSubscription(userId: number): Promise<Subscription | null> {
  */
 async function fetchUserRole(userId: number): Promise<UserRole | null> {
   try {
-    const response = await fetch(`/api/user/role/${userId}`);
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null; // No role assigned (default: user)
-      }
-      throw new Error(`Failed to fetch user role: ${response.statusText}`);
-    }
+    const response = await fetch(`/api/user/role/${userId}`, {
+      signal: AbortSignal.timeout(5000) // 5 second timeout to prevent hanging
+    });
     
     const data = await response.json();
     
@@ -125,8 +115,8 @@ async function fetchUserRole(userId: number): Promise<UserRole | null> {
     
     return null;
   } catch (error) {
-    logger.error('Error fetching user role from PostgreSQL:', error);
-    throw error;
+    logger.debug('User role fetch (non-critical):', error instanceof Error ? error.message : 'Unknown error');
+    return null;
   }
 }
 
@@ -168,13 +158,16 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setSubscription(subscriptionData);
         setUserRole(roleData);
         
-        logger.info('Subscription and role loaded:', {
-          subscription: subscriptionData,
-          role: roleData
-        });
+        // Only log if data was actually loaded
+        if (subscriptionData || roleData) {
+          logger.info('Subscription and role loaded:', {
+            subscription: subscriptionData,
+            role: roleData
+          });
+        }
       } catch (err: any) {
-        logger.error('Error loading subscription and role:', err);
-        setError(err.message || 'Error al cargar datos de suscripción');
+        // Silently fail - fetchSubscription and fetchUserRole now handle errors gracefully
+        logger.debug('Error loading subscription and role (non-critical):', err?.message);
       } finally {
         setIsLoading(false);
       }
