@@ -121,6 +121,9 @@ const TimelineDemoPage = lazy(() => import("./pages/timeline-demo"));
 const DebugFirebasePage = lazy(() => import("./pages/debug-firebase"));
 const TimelineEditorPage = lazy(() => import("./pages/timeline-editor"));
 const SocialMediaGeneratorPage = lazy(() => import("./pages/social-media-generator"));
+const AIGenerationToolPage = lazy(() => import("./pages/ai-generation-tool"));
+const EPKCreatorPage = lazy(() => import("./pages/epk-creator"));
+const ImageGalleriesPage = lazy(() => import("./pages/image-galleries"));
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -311,6 +314,9 @@ const Router = () => {
   const WrappedDiagnosticsPage = withPageWrapper(DiagnosticsPage);
   const WrappedArticlePage = withPageWrapper(ArticlePage);
   const WrappedSocialMediaGeneratorPage = withPageWrapper(SocialMediaGeneratorPage);
+  const WrappedAIGenerationToolPage = withPageWrapper(AIGenerationToolPage);
+  const WrappedEPKCreatorPage = withPageWrapper(EPKCreatorPage);
+  const WrappedImageGalleriesPage = withPageWrapper(ImageGalleriesPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -422,6 +428,9 @@ const Router = () => {
           {getRouteComponent("/tokenization", WrappedTokenizationPage, 'free')}
           {getRouteComponent("/boostiswap", WrappedBoostiSwapPage, null)}
           {getRouteComponent("/social-media-generator", WrappedSocialMediaGeneratorPage, 'free')}
+          {getRouteComponent("/ai-generation-tool", WrappedAIGenerationToolPage, 'free')}
+          {getRouteComponent("/epk-creator", WrappedEPKCreatorPage, 'free')}
+          {getRouteComponent("/image-galleries", WrappedImageGalleriesPage, 'free')}
           {getRouteComponent("/resources", WrappedResourcesPage, null)}
           {getRouteComponent("/tips", WrappedTipsPage, null)}
           {getRouteComponent("/guides", WrappedGuidesPage, null)}
