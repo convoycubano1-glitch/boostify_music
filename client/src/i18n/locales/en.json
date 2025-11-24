@@ -77,10 +77,17 @@
     "sections": {
       "music": "Music",
       "videos": "Videos",
-      "merchandise": "Merch",
+      "merchandise": "Merchandise",
       "shows": "Shows",
+      "galleries": "Galleries",
       "analytics": "Activity Analytics",
-      "monetize": "Monetize Your Talent"
+      "monetize": "Monetize Your Talent",
+      "news": "News",
+      "socialPosts": "Social Posts",
+      "socialHub": "Social Hub",
+      "tokenization": "Tokenization",
+      "crowdfunding": "Crowdfunding",
+      "monetizeCTA": "Monetize Your Talent"
     },
     "analytics": {
       "title": "Activity Analytics",
@@ -91,6 +98,12 @@
       "views": "Views",
       "profileCompletion": "Profile Completion",
       "complete": "Complete"
+    },
+    "earnings": {
+      "title": "Earnings",
+      "totalEarnings": "Total Earnings",
+      "monthlyEarnings": "Monthly Earnings",
+      "withdrawn": "Withdrawn"
     },
     "monetize": {
       "title": "Monetize Your Talent",

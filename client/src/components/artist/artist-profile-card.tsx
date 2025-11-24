@@ -706,7 +706,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     'merchandise': { name: 'Merchandise', icon: ShoppingBag, isOwnerOnly: false },
     'galleries': { name: 'Galleries de Imágenes', icon: Image, isOwnerOnly: false },
     'tokenization': { name: 'Tokenización de Canciones', icon: Coins, isOwnerOnly: true },
-    'monetize-cta': { name: 'Monetiza Tu Talento', icon: Sparkles, isOwnerOnly: false },
+    'monetize-cta': { name: 'Monetize Your Talent', icon: Sparkles, isOwnerOnly: false },
     'analytics': { name: 'Analytics', icon: TrendingUp, isOwnerOnly: false },
     'earnings': { name: 'Earnings', icon: DollarSign, isOwnerOnly: true },
     'crowdfunding': { name: 'Crowdfunding', icon: Target, isOwnerOnly: true },
@@ -3599,7 +3599,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                   <ChevronRight className="h-5 w-5" />
                                 )}
                                 <Sparkles className="h-5 w-5" />
-                                Monetiza Tu Talento
+                                Monetize Your Talent
                               </div>
                             </button>
                             {sectionExpanded[sectionId] && (
@@ -4176,7 +4176,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               </div>
             </div>
 
-            {/* Tarjeta de Análisis de Actividad - Visible para todos */}
+            {/* Activity Analytics - Visible para todos */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               <div 
                 className="text-base font-semibold mb-4 transition-colors duration-500" 
@@ -4296,7 +4296,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               refreshKey={galleriesRefreshKey}
             />
 
-            {/* Tarjeta CTA: Monetiza Tu Talento - Visible para todos */}
+            {/* Tarjeta CTA: Monetize Your Talent - Visible para todos */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
               {/* Fondo decorativo */}
               <div className="absolute inset-0 opacity-10" style={{
