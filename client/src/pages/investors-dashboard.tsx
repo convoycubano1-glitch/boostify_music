@@ -133,13 +133,13 @@ function RevenueSimulationsCalculator() {
         <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
           <div className="flex justify-between mb-3">
             <label className="text-sm font-medium text-white">Blockchain Volume</label>
-            <span className="text-lg font-bold text-green-400">${(blockchainVolume/1000).toFixed(0)}k</span>
+            <span className="text-lg font-bold text-green-400">${(blockchainVolume/1000000).toFixed(2)}M</span>
           </div>
           <Slider
             value={[blockchainVolume]}
             min={50000}
-            max={1000000}
-            step={50000}
+            max={10000000}
+            step={500000}
             onValueChange={(value) => setBlockchainVolume(value[0])}
             className="w-full"
           />
