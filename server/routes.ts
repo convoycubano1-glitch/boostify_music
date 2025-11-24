@@ -75,6 +75,7 @@ import videoRenderingRouter from './routes/video-rendering'; // Import the video
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
+import { setupFiverServicesRoutes } from './routes/fiverr-services';
 import apiProxySecure from './routes/api-proxy-secure';
 import firebaseTokenRouter from './routes/firebase-token'; // Import Firebase token generator
 import artistWalletRouter from './routes/artist-wallet'; // Import Artist Wallet for earnings and credits
@@ -1172,6 +1173,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   setupVideosRoutes(app);
   setupEmailRoutes(app);
   setupApifyRoutes(app);
+  setupFiverServicesRoutes(app);
   setupSocialNetworkRoutes(app);
   app.use('/api/stripe', stripeRouter);
   

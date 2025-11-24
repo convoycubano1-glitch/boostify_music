@@ -3,7 +3,7 @@ import { db } from '../db';
 import { fiverr_services, pending_orders } from '../../shared/fiverr-services-schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAuth } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.get('/api/services', async (req, res) => {
 });
 
 // POST create order (requires auth)
-router.post('/api/services/order', requireAuth, async (req, res) => {
+router.post('/api/services/order', authenticate, async (req, res) => {
   try {
     const { serviceId, quantity, category } = req.body;
     const userId = req.user?.id;
@@ -76,7 +76,7 @@ router.post('/api/services/order', requireAuth, async (req, res) => {
 });
 
 // GET orders for user
-router.get('/api/services/orders', requireAuth, async (req, res) => {
+router.get('/api/services/orders', authenticate, async (req, res) => {
   try {
     const userId = req.user?.id;
     

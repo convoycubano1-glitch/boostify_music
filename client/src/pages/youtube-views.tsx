@@ -1146,6 +1146,10 @@ export default function YoutubeViewsPage() {
                   <Code className="w-4 h-4 mr-2" />
                   API
                 </TabsTrigger>
+                <TabsTrigger value="services" data-testid="tab-services" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Services
+                </TabsTrigger>
               </TabsList>
             </Card>
 
