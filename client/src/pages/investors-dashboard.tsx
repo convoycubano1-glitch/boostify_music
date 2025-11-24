@@ -1307,6 +1307,12 @@ export default function InvestorsDashboard() {
   // Handle contract download - Opens the investment contract
   const handleDownloadContract = () => {
     logger.info("Opening investment contract...");
+    // Show toast about demo contract
+    toast({
+      title: "Demo Contract",
+      description: "This is a preview of the investment contract. The official contract will be sent to you by email after your application is approved.",
+      variant: "default",
+    });
     // Open the contract in a new tab
     window.open("/investment-contract.html", "_blank");
   };
