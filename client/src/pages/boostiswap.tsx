@@ -57,14 +57,16 @@ export default function BoostiSwapPage() {
           )}
         </div>
 
-        {/* Crypto Price Widget */}
-        <div className="mb-3 sm:mb-4">
-          <CryptoPriceWidget />
+        {/* Artist Prices Ticker - LARGE */}
+        <div className="mb-4 sm:mb-6">
+          <h3 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Boostify Music Tokens</h3>
+          <ArtistPricesTicker />
         </div>
 
-        {/* Artist Prices Ticker */}
+        {/* Crypto Price Widget - SMALL */}
         <div className="mb-4 sm:mb-6">
-          <ArtistPricesTicker />
+          <h3 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Crypto Markets</h3>
+          <CryptoPriceWidget />
         </div>
 
         {/* Stats Bar */}

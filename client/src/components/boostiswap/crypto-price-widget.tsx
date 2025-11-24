@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface CryptoPrice {
@@ -19,7 +18,6 @@ const CRYPTO_PRICES: CryptoPrice[] = [
 
 export function CryptoPriceWidget() {
   const [prices, setPrices] = useState<CryptoPrice[]>(CRYPTO_PRICES);
-  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -34,57 +32,35 @@ export function CryptoPriceWidget() {
   }, []);
 
   return (
-    <div className="overflow-x-auto">
-      <div className="flex gap-3 pb-2">
-        {prices.map((crypto) => (
-          <div
-            key={crypto.symbol}
-            className="flex-shrink-0 bg-gradient-to-br from-slate-800/80 to-slate-700/50 border border-slate-600 rounded-lg p-4 w-60 hover:border-orange-500/50 transition group"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-xs font-bold">
-                  {crypto.image}
-                </div>
-                <div>
-                  <p className="font-semibold text-white text-sm">{crypto.symbol}</p>
-                  <p className="text-xs text-muted-foreground">{crypto.name}</p>
-                </div>
+    <div className="bg-slate-800/30 border-t border-b border-slate-700/50 py-2 px-4 overflow-hidden">
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-6 min-w-min">
+          {prices.map((crypto) => (
+            <div
+              key={crypto.symbol}
+              className="flex-shrink-0 flex items-center gap-2 hover:opacity-80 transition group"
+            >
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-xs font-bold text-orange-400">
+                {crypto.image}
               </div>
-            </div>
-            
-            <div className="space-y-1">
-              <div className="text-lg font-bold text-white">
-                ${crypto.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div>
+                <p className="text-xs font-bold text-white whitespace-nowrap">{crypto.symbol}</p>
+                <p className="text-xs text-muted-foreground">${crypto.price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
               </div>
-              
-              <div className={`flex items-center gap-1 text-sm font-semibold ${
+              <div className={`flex items-center gap-0.5 text-xs font-semibold whitespace-nowrap ${
                 crypto.change24h >= 0 ? 'text-green-400' : 'text-red-400'
               }`}>
                 {crypto.change24h >= 0 ? (
-                  <TrendingUp className="h-3 w-3" />
+                  <TrendingUp className="h-2 w-2" />
                 ) : (
-                  <TrendingDown className="h-3 w-3" />
+                  <TrendingDown className="h-2 w-2" />
                 )}
-                {Math.abs(crypto.change24h).toFixed(2)}%
+                {Math.abs(crypto.change24h).toFixed(1)}%
               </div>
             </div>
-
-            <div className="mt-3 pt-3 border-t border-slate-600/50">
-              <p className="text-xs text-muted-foreground">24h Change</p>
-              <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden mt-1">
-                <div
-                  className={`h-full transition-all ${
-                    crypto.change24h >= 0 ? 'bg-green-500' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${Math.min(Math.abs(crypto.change24h) * 10, 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">Real-time prices update every 3 seconds • Data simulated for demo</p>
     </div>
   );
 }
