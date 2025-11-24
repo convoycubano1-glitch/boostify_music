@@ -18,7 +18,7 @@ import { toast } from '../../hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '../ui/badge';
 import { motion } from 'framer-motion';
-import { SUBSCRIPTION_PLANS, getStripePriceId, getYearlySavings, type PlanTier } from '@/../../shared/pricing-config';
+import { SUBSCRIPTION_PLANS, getStripePriceId, getYearlySavings, type PlanTier } from '@/lib/pricing-config';
 
 interface ProcessedPlan {
   name: string;

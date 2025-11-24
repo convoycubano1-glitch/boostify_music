@@ -13,7 +13,7 @@ import { toast } from '../hooks/use-toast';
 import { format } from 'date-fns';
 import { PricingPlans } from '../components/subscription/pricing-plans';
 import { apiRequest } from '../lib/queryClient';
-import { SUBSCRIPTION_PLANS } from '../../shared/pricing-config';
+import { SUBSCRIPTION_PLANS } from '@/lib/pricing-config';
 
 /**
  * Account page with subscription management and user settings
