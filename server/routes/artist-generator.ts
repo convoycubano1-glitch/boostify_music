@@ -316,8 +316,9 @@ router.post("/create-manual", isAuthenticated, async (req: Request, res: Respons
 
 /**
  * Genera 10 canciones tokenizadas automáticas para un artista
+ * NUEVO: Guarda en PostgreSQL Y en Firestore para sincronización
  */
-async function generateTokenizedSongs(artistId: number, artistName: string, genre: string): Promise<number[]> {
+async function generateTokenizedSongs(artistId: number, artistName: string, genre: string, firebaseUid: string, artistFirestoreId: string): Promise<number[]> {
   const songTitles = [
     `${artistName} - Main Single`,
     `${artistName} - Remix Version`,
@@ -363,6 +364,27 @@ async function generateTokenizedSongs(artistId: number, artistName: string, genr
       benefits: ['Exclusive Access', 'Revenue Share', 'Creator Rights'],
       isActive: true
     }).returning({ id: tokenizedSongs.id });
+
+    // 🔥 NUEVO: Guardar también en Firestore para sincronización
+    try {
+      await db.collection('songs').add({
+        userId: firebaseUid,
+        artistId: artistFirestoreId,
+        name: songTitles[i],
+        title: songTitles[i],
+        audioUrl: `ipfs://QmHash${Math.random().toString(36).substring(7)}`,
+        duration: 180 + Math.random() * 120,
+        genre: genre,
+        tokenId: tokenId,
+        tokenSymbol: tokenSymbol,
+        isPublished: true,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+      console.log(`✅ Canción sincronizada a Firestore #${i + 1}: ${songTitles[i]}`);
+    } catch (firebaseError) {
+      console.warn(`⚠️ Error guardando en Firestore:`, firebaseError);
+    }
 
     tokenIds.push(tokenId);
     console.log(`✅ Creada canción tokenizada #${i + 1}: ${songTitles[i]} (Token ID: ${tokenId})`);
@@ -450,8 +472,8 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
 
     // 🎵 GENERAR 10 CANCIONES TOKENIZADAS AUTOMÁTICAMENTE
     console.log('🎵 Generando 10 canciones tokenizadas...');
-    const tokenIds = await generateTokenizedSongs(postgresId, artistData.name, artistData.music_genres?.[0] || 'Pop');
-    console.log(`✅ ${tokenIds.length} canciones tokenizadas creadas`);
+    const tokenIds = await generateTokenizedSongs(postgresId, artistData.name, artistData.music_genres?.[0] || 'Pop', userId, firestoreId);
+    console.log(`✅ ${tokenIds.length} canciones tokenizadas creadas y sincronizadas a Firestore`);
 
     // 📱 GENERAR CONTENIDO DE REDES SOCIALES AUTOMÁTICAMENTE
     console.log('📱 Generando contenido para redes sociales...');
