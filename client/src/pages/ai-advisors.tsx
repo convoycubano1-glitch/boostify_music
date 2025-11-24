@@ -359,8 +359,8 @@ export default function AIAdvisorsPage() {
       featureName="AI Advisors"
     >
       <div className="container max-w-6xl py-6 md:py-10 space-y-6 relative">
-      {/* Add global animation for fadeIn effect used on cards */}
-      <style>{`
+        {/* Add global animation for fadeIn effect used on cards */}
+        <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
