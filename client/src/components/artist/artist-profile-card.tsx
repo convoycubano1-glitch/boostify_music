@@ -3399,7 +3399,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         <ChevronRight className="h-5 w-5" />
                       )}
                       <ShoppingBag className="h-5 w-5" />
-                      Tienda Oficial ({products.length})
+                      Official Store ({products.length})
                     </div>
                   </button>
                 </div>
@@ -3426,7 +3426,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
                         <span className="text-sm sm:text-base font-bold text-white">
-                          Colaboración Boostify x Artista
+                          Boostify x Artist Collaboration
                         </span>
                         <span 
                           className="px-2 py-0.5 rounded-full text-xs font-bold"
@@ -3435,13 +3435,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                             color: 'white'
                           }}
                         >
-                          30% para ti
+                          30% for you
                         </span>
                       </div>
                       <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
                         These products are an exclusive collaboration between <strong style={{ color: colors.hexAccent }}>Boostify</strong> y <strong style={{ color: colors.hexAccent }}>{artist.name}</strong>. 
                         <span className="block mt-1">
-                          <strong className="text-white">Los artistas ganan el 30%</strong> de cada venta, sin inversión inicial ni inventario. Nosotros nos encargamos de producción, envío y atención al cliente.
+                          <strong className="text-white">Artists earn 30%</strong> of each sale, no upfront investment or inventory. We handle production, shipping and customer service.
                         </span>
                       </p>
                     </div>
@@ -3470,12 +3470,12 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <span className="text-sm sm:text-base font-bold text-white">
-                          🚀 Próximamente - Enero 2025
+                          🚀 Coming Soon - January 2025
                         </span>
                         <span 
                           className="px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-black"
                         >
-                          PREVENTA
+                          PRE-ORDER
                         </span>
                       </div>
                       <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
@@ -4093,29 +4093,6 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               </div>
             </div>
 
-            {/* Music Tokenization Section (Web3/Blockchain) */}
-            {isOwnProfile && (
-              <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px', position: 'relative', overflow: 'hidden' }}>
-                <div className="absolute inset-0 opacity-10" style={{
-                  background: `radial-gradient(circle at 70% 50%, ${colors.hexPrimary}, transparent 70%)`
-                }}></div>
-                
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="h-6 w-6" style={{ color: colors.hexAccent }} />
-                    <div className="text-base font-bold transition-colors duration-500" style={{ color: colors.hexAccent }}>
-                      Tokenización de Music (Web3)
-                    </div>
-                    <div className="ml-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30">
-                      <span className="text-xs font-bold text-purple-400">Blockchain</span>
-                    </div>
-                  </div>
-                  
-                  <TokenizationPanel artistId={parseInt(artistId)} />
-                </div>
-              </div>
-            )}
-            
             {/* Public View: Tokenized Music */}
             <TokenizedMusicView artistId={artistId} />
 
