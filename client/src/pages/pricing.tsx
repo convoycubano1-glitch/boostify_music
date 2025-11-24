@@ -134,25 +134,44 @@ export default function PricingPage() {
   const [, setLocation] = useLocation();
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 
-  const handleSelectPlan = (plan: typeof plans[0]) => {
+  const handleSelectPlan = async (plan: typeof plans[0]) => {
     try {
       setProcessingPlanId(plan.id);
 
-      // SIEMPRE guardar el plan en localStorage e ir a login
-      // El dashboard procesará automáticamente el checkout después
-      localStorage.setItem('selectedPlan', JSON.stringify({
-        planName: plan.name,
-        priceId: plan.priceId || null,
-        timestamp: Date.now()
-      }));
+      // Plan gratis - ir a login
+      if (!plan.priceId) {
+        window.location.href = '/api/login';
+        return;
+      }
+
+      // Para planes pagados, solicitar email
+      const email = prompt('Por favor ingresa tu email para el checkout:');
+      if (!email) {
+        setProcessingPlanId(null);
+        return;
+      }
 
       toast({
-        title: "Iniciando sesión",
-        description: `Te llevaremos a checkout para ${plan.name}...`
+        title: "Redirigiendo a Stripe",
+        description: `Iniciando checkout para ${plan.name}...`
       });
 
-      // Redirigir a login (el dashboard manejará el checkout después)
-      window.location.href = '/api/login';
+      // Hacer llamado directo a Stripe sin autenticación
+      const response = await fetch('/api/stripe/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId: plan.priceId,
+          email: email
+        })
+      });
+
+      const data = await response.json();
+      if (data.success && data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.message || 'No se pudo crear la sesión de checkout');
+      }
 
     } catch (error) {
       logger.error('Error selecting plan:', error);

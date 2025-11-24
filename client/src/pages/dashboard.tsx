@@ -94,47 +94,7 @@ export default function Dashboard() {
     };
     setMetrics(initialMetrics);
 
-    // Process pending plan selection after login
-    const processPendingPlan = async () => {
-      const selectedPlanStr = localStorage.getItem('selectedPlan');
-      if (!selectedPlanStr) return;
-
-      try {
-        const planData = JSON.parse(selectedPlanStr);
-        const { planName, priceId } = planData;
-
-        // Remove the pending plan
-        localStorage.removeItem('selectedPlan');
-
-        // If it's a paid plan, redirect to checkout
-        if (priceId && planName !== 'Free') {
-          toast({
-            title: "Procesando suscripción",
-            description: `Redirigiendo a checkout para el plan ${planName}...`,
-          });
-
-          // Import createCheckoutSession dynamically
-          const { createCheckoutSession } = await import('../lib/api/stripe-service');
-          const checkoutUrl = await createCheckoutSession(priceId);
-          window.location.href = checkoutUrl;
-        } else {
-          toast({
-            title: "¡Bienvenido!",
-            description: `Has iniciado sesión con el plan ${planName}.`,
-          });
-        }
-      } catch (error) {
-        logger.error('Error processing pending plan', { error });
-        localStorage.removeItem('selectedPlan');
-        toast({
-          title: "Aviso",
-          description: "No se pudo procesar el plan seleccionado. Puedes suscribirte desde la página de Pricing.",
-          variant: "default",
-        });
-      }
-    };
-
-    processPendingPlan();
+    // No need to process pending plans - checkout is done directly from pricing page
   }, [user, toast]);
 
   const services = [

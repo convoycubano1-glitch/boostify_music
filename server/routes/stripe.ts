@@ -216,62 +216,47 @@ const PRODUCT_PURCHASES_COLLECTION = 'product_purchases';
 
 /**
  * Crear una sesión de checkout para una nueva suscripción
+ * ENDPOINT PÚBLICO - no requiere autenticación
  */
-router.post('/create-subscription', authenticate, async (req: Request, res: Response) => {
+router.post('/create-subscription', async (req: Request, res: Response) => {
   try {
     // Aceptar tanto priceId como planId para mayor compatibilidad
-    const { priceId, planId } = req.body;
-    const userId = req.user?.uid;
+    const { priceId, planId, email } = req.body;
     
     // Usar el ID que venga, priorizando priceId (enviado desde el cliente)
     const selectedId = priceId || planId;
 
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+    if (!selectedId) {
+      return res.status(400).json({ success: false, message: 'Plan o precio no especificado' });
+    }
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email requerido' });
     }
 
     // Si es un plan conocido, usar su priceId, de lo contrario usar el ID directamente
     const isKnownPlan = !!PLAN_PRICE_IDS[selectedId as keyof typeof PLAN_PRICE_IDS];
     
-    if (!selectedId) {
-      return res.status(400).json({ success: false, message: 'Plan o precio no especificado' });
-    }
-
-    // Buscar o crear cliente en Stripe usando el email del usuario autenticado
-    const userEmail = req.user?.email;
+    // Buscar o crear cliente en Stripe usando el email proporcionado
     let customerId: string;
     
-    // Si no hay email, usar un email placeholder basado en el UID
-    const emailToUse = userEmail || `${userId}@placeholder.boostify.app`;
+    console.log(`Creating Stripe customer for email ${email}`);
     
-    console.log(`Creating Stripe customer for user ${userId} with email ${emailToUse}`);
-    
-    // Buscar cliente existente en Stripe por email o por metadata
+    // Buscar cliente existente en Stripe por email
     const existingCustomers = await stripe.customers.list({
-      email: emailToUse,
+      email: email,
       limit: 1
     });
     
     if (existingCustomers.data.length > 0) {
       customerId = existingCustomers.data[0].id;
     } else {
-      // Buscar por metadata si no se encontró por email
-      const customersByMetadata = await stripe.customers.search({
-        query: `metadata['firebaseUserId']:'${userId}'`,
-        limit: 1
+      // Crear un nuevo cliente en Stripe si no existe
+      const customer = await stripe.customers.create({
+        email: email
       });
       
-      if (customersByMetadata.data.length > 0) {
-        customerId = customersByMetadata.data[0].id;
-      } else {
-        // Crear un nuevo cliente en Stripe si no existe
-        const customer = await stripe.customers.create({
-          email: emailToUse,
-          metadata: { firebaseUserId: userId }
-        });
-        
-        customerId = customer.id;
-      }
+      customerId = customer.id;
     }
     
     // Crear sesión de checkout
@@ -295,13 +280,13 @@ router.post('/create-subscription', authenticate, async (req: Request, res: Resp
       success_url: `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/subscription/cancelled`,
       metadata: {
-        userId,
-        planId: planKey
+        planId: planKey,
+        email: email
       },
       subscription_data: {
         metadata: {
-          userId,
-          planId: planKey
+          planId: planKey,
+          email: email
         }
       }
     });
