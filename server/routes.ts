@@ -721,6 +721,104 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       });
     }
   });
+
+  // ENDPOINT DE PRUEBA - Enviar evento de PAGO EXITOSO
+  app.get('/api/test/send-to-make/payment-success', async (req, res) => {
+    try {
+      console.log('📤 Enviando evento de PAGO EXITOSO a Make...');
+      
+      const testEvent = {
+        event: 'payment_succeeded',
+        timestamp: new Date().toISOString(),
+        data: {
+          userEmail: 'beatmaker@example.com',
+          userName: 'Beat Producer Pro',
+          amount: 59.99,
+          currency: 'usd',
+          invoiceId: 'in_1QR7XK2eZvKYlo2CxH5q8qKl',
+          paidDate: '2025-11-24'
+        }
+      };
+
+      const response = await fetch('https://hook.us2.make.com/ow1m732j9t4mjmnod9cyahk6im7w6uet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testEvent)
+      });
+
+      if (!response.ok) {
+        console.error(`❌ Error: ${response.statusText}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: response.statusText
+        });
+      }
+
+      console.log('✅ Evento de pago exitoso enviado a Make');
+      return res.json({
+        success: true,
+        message: 'Evento de pago exitoso enviado a Make',
+        eventSent: testEvent
+      });
+    } catch (error) {
+      console.error('Error sending payment success event:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // ENDPOINT DE PRUEBA - Enviar evento de PLAN CAMBIADO
+  app.get('/api/test/send-to-make/plan-changed', async (req, res) => {
+    try {
+      console.log('📤 Enviando evento de PLAN CAMBIADO a Make...');
+      
+      const testEvent = {
+        event: 'plan_changed',
+        timestamp: new Date().toISOString(),
+        data: {
+          userEmail: 'producer@example.com',
+          userName: 'Music Producer Studio',
+          oldPlan: 'basic',
+          newPlan: 'professional',
+          priceAmount: 99.99,
+          currency: 'usd'
+        }
+      };
+
+      const response = await fetch('https://hook.us2.make.com/ow1m732j9t4mjmnod9cyahk6im7w6uet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testEvent)
+      });
+
+      if (!response.ok) {
+        console.error(`❌ Error: ${response.statusText}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: response.statusText
+        });
+      }
+
+      console.log('✅ Evento de plan cambiado enviado a Make');
+      return res.json({
+        success: true,
+        message: 'Evento de plan cambiado enviado a Make',
+        eventSent: testEvent
+      });
+    } catch (error) {
+      console.error('Error sending plan changed event:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
   
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
