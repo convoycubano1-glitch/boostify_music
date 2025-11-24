@@ -2162,7 +2162,7 @@ export default function InvestorsDashboard() {
                         <h4 className="text-sm sm:text-base font-medium text-white">Annual Revenue</h4>
                       </div>
                       <p className="text-2xl sm:text-3xl font-bold text-white">$12M</p>
-                      <p className="text-xs sm:text-sm text-white/70">Projected for 2025</p>
+                      <p className="text-xs sm:text-sm text-white/70">Projected for 2026</p>
                     </Card>
                     
                     <Card className="p-3 sm:p-4 bg-black/30 border-orange-500/20">
