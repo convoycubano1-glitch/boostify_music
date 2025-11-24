@@ -28,7 +28,10 @@ import {
   Calculator,
   UserPlus,
   Save,
-  PenSquare
+  PenSquare,
+  Play,
+  Pause,
+  RotateCcw
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/use-auth";
@@ -244,6 +247,236 @@ function RevenueSimulationsCalculator() {
           <p className="text-xs text-white/60">per user/month</p>
         </div>
       </div>
+    </Card>
+  );
+}
+
+// Fund Allocation Simulator Component
+function FundAllocationSimulator() {
+  const [isRunning, setIsRunning] = useState(false);
+  const [operations, setOperations] = useState<any[]>([]);
+  const [totalFunds] = useState(1000000);
+  const [spent, setSpent] = useState(0);
+
+  const fundAllocation = {
+    marketing: 0.60,
+    development: 0.30,
+    operations: 0.07,
+    infrastructure: 0.03
+  };
+
+  const operationTypes = {
+    marketing: {
+      label: 'Marketing',
+      color: 'from-blue-500 to-blue-600',
+      items: [
+        { desc: 'Instagram Ad Campaign', cost: 5000 },
+        { desc: 'YouTube Influencer', cost: 8000 },
+        { desc: 'Billboard Advertising', cost: 12000 },
+        { desc: 'Social Media Content', cost: 3000 },
+      ]
+    },
+    development: {
+      label: 'Development',
+      color: 'from-purple-500 to-purple-600',
+      items: [
+        { desc: 'API Development', cost: 15000 },
+        { desc: 'Mobile App Improvement', cost: 20000 },
+        { desc: 'AI Integration', cost: 25000 },
+      ]
+    },
+    operations: {
+      label: 'Operations',
+      color: 'from-green-500 to-green-600',
+      items: [
+        { desc: 'Customer Support Team', cost: 4000 },
+        { desc: 'Legal Compliance', cost: 3000 },
+      ]
+    },
+    infrastructure: {
+      label: 'Infrastructure',
+      color: 'from-orange-500 to-orange-600',
+      items: [
+        { desc: 'Server Hosting & CDN', cost: 5000 },
+        { desc: 'Cloud Services', cost: 3000 },
+      ]
+    }
+  };
+
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const interval = setInterval(() => {
+      const categories = Object.keys(operationTypes) as Array<keyof typeof operationTypes>;
+      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+      const items = operationTypes[randomCategory].items;
+      const randomItem = items[Math.floor(Math.random() * items.length)];
+
+      const newOp = {
+        id: Math.random().toString(),
+        type: randomCategory,
+        description: randomItem.desc,
+        amount: randomItem.cost,
+        timestamp: Date.now(),
+      };
+
+      setOperations(prev => [newOp, ...prev.slice(0, 9)]);
+      setSpent(prev => {
+        const newSpent = prev + randomItem.cost;
+        return newSpent > totalFunds ? totalFunds : newSpent;
+      });
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [isRunning, totalFunds]);
+
+  const remaining = totalFunds - spent;
+  const percentageSpent = (spent / totalFunds) * 100;
+
+  return (
+    <Card className="p-6 bg-black/30 border-orange-500/20">
+      <h5 className="font-bold text-white text-lg mb-6">Real-Time Fund Allocation Simulator - 100% Transparency</h5>
+      
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Left: Animation & Feed */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Fund Status Bar */}
+          <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-white/70 font-medium">Total Fund Distribution</span>
+              <span className="text-orange-400 font-bold">${(spent).toLocaleString()} / ${(totalFunds).toLocaleString()}</span>
+            </div>
+            <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-300"
+                style={{ width: `${percentageSpent}%` }}
+              ></div>
+            </div>
+            <div className="text-sm text-white/50 mt-2">{percentageSpent.toFixed(1)}% allocated</div>
+          </div>
+
+          {/* Budget Allocation Grid */}
+          <div className="grid grid-cols-4 gap-2">
+            {Object.entries(fundAllocation).map(([key, percentage]) => (
+              <div key={key} className="p-2 bg-white/5 rounded-lg border border-white/10 text-center">
+                <div className="text-xs text-white/60 mb-1">{operationTypes[key as keyof typeof operationTypes].label}</div>
+                <div className="text-sm font-bold text-white">{(percentage * 100).toFixed(0)}%</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Controls */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsRunning(!isRunning)}
+              className="flex-1 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center justify-center gap-2 text-sm"
+            >
+              {isRunning ? (
+                <>
+                  <Pause className="h-4 w-4" />
+                  Pause
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Start
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setOperations([]);
+                setSpent(0);
+                setIsRunning(false);
+              }}
+              className="px-3 py-2 rounded-lg bg-white/10 text-white font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 text-sm"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </button>
+          </div>
+
+          {/* Operations Feed */}
+          <div className="max-h-48 overflow-y-auto space-y-1 bg-black/40 rounded-lg p-3 border border-white/10">
+            {operations.length === 0 ? (
+              <div className="text-center py-6 text-white/40 text-xs">Click Start to begin simulation</div>
+            ) : (
+              operations.map((op) => (
+                <div
+                  key={op.id}
+                  className={`p-2 rounded text-xs border-l-2 bg-black/60 animate-pulse`}
+                  style={{
+                    borderLeftColor: op.type === 'marketing' ? '#3b82f6' : 
+                                   op.type === 'development' ? '#a855f7' :
+                                   op.type === 'operations' ? '#22c55e' : '#f97316'
+                  }}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-white font-semibold">{op.description}</div>
+                      <div className="text-white/50">{operationTypes[op.type as keyof typeof operationTypes].label}</div>
+                    </div>
+                    <div className="text-orange-400 font-bold">-${op.amount.toLocaleString()}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Right: Summary */}
+        <div className="space-y-3">
+          <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-lg border border-green-500/20">
+            <div className="text-white/70 text-xs mb-1">Remaining Budget</div>
+            <div className="text-2xl font-bold text-green-400">${(remaining).toLocaleString()}</div>
+            <div className="text-xs text-white/50 mt-1">{((remaining/totalFunds)*100).toFixed(1)}% available</div>
+          </div>
+
+          <div className="p-4 bg-gradient-to-br from-orange-500/10 to-red-600/5 rounded-lg border border-orange-500/20">
+            <div className="text-white/70 text-xs mb-1">Total Spent</div>
+            <div className="text-2xl font-bold text-orange-400">${(spent).toLocaleString()}</div>
+            <div className="text-xs text-white/50 mt-1">{percentageSpent.toFixed(1)}% of budget</div>
+          </div>
+
+          <div className="p-4 bg-black/40 rounded-lg border border-white/10">
+            <h6 className="text-xs font-bold text-white mb-3">Allocation %</h6>
+            <div className="space-y-2">
+              {Object.entries(fundAllocation).map(([key, percentage]) => (
+                <div key={key}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-white/70">{operationTypes[key as keyof typeof operationTypes].label}</span>
+                    <span className="text-white font-semibold">{(percentage * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full bg-gradient-to-r ${operationTypes[key as keyof typeof operationTypes].color} rounded-full`}
+                      style={{ width: `${percentage * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-3 bg-gradient-to-br from-blue-500/10 to-cyan-600/5 rounded-lg border border-blue-500/20">
+            <div className="flex items-center gap-2 text-xs">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-white/70">100% Transparent</span>
+            </div>
+            <p className="text-xs text-white/50 mt-1">All operations tracked real-time</p>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 0.4; }
+        }
+        .animate-pulse {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+      `}</style>
     </Card>
   );
 }
@@ -1996,9 +2229,14 @@ export default function InvestorsDashboard() {
                     </div>
                   </div>
 
-                  {/* Interactive Revenue Simulations Calculator */}
-                  <div className="mt-8">
-                    <RevenueSimulationsCalculator />
+                  {/* Interactive Revenue Simulations Calculator & Fund Simulator */}
+                  <div className="mt-8 grid lg:grid-cols-2 gap-8">
+                    <div>
+                      <RevenueSimulationsCalculator />
+                    </div>
+                    <div>
+                      <FundAllocationSimulator />
+                    </div>
                   </div>
 
                   {/* Revenue Simulations Based on Business Model */}
