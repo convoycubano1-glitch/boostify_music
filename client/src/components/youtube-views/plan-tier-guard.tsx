@@ -9,6 +9,7 @@ interface PlanTierGuardProps {
   userSubscription: string | null;
   children: React.ReactNode;
   featureName: string;
+  isAdmin?: boolean;
 }
 
 const PLAN_HIERARCHY = {
@@ -28,10 +29,11 @@ export function PlanTierGuard({
   userSubscription,
   children,
   featureName,
+  isAdmin = false,
 }: PlanTierGuardProps) {
   const userPlanLevel = PLAN_HIERARCHY[userSubscription as keyof typeof PLAN_HIERARCHY] || 0;
   const requiredPlanLevel = PLAN_HIERARCHY[requiredPlan];
-  const hasAccess = userPlanLevel >= requiredPlanLevel;
+  const hasAccess = isAdmin || userPlanLevel >= requiredPlanLevel;
 
   if (hasAccess) {
     return <>{children}</>;

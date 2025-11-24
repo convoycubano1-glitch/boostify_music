@@ -56,6 +56,9 @@ export default function MyArtistsPage() {
   const { user, isLoading: authLoading, userSubscription } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  
+  // Detectar si el usuario es admin
+  const isAdmin = user?.email === 'convoycubano@gmail.com';
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -264,6 +267,7 @@ export default function MyArtistsPage() {
       requiredPlan="premium" 
       userSubscription={userSubscription} 
       featureName="Artist Generation"
+      isAdmin={isAdmin}
     >
       <>
         <Head
