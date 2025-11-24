@@ -1089,102 +1089,6 @@ export default function YoutubeViewsPage() {
         </motion.div>
 
         <div className="container mx-auto">
-          {/* Tier Organization */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {/* CREATOR TIER */}
-            <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-2 border-border/50">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <Star className="w-5 h-5 text-green-500" />
-                </div>
-                <div>
-                  <h3 className="font-bold">CREATOR</h3>
-                  <p className="text-xs text-muted-foreground">Essential Tools</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Pre-Launch Predictor</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Keyword Generator</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Title Optimizer</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Content Ideas AI</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* PRO TIER */}
-            <Card className="p-6 bg-gradient-to-br from-orange-500/5 to-card border-2 border-orange-500/30">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                  <Award className="w-5 h-5 text-orange-500" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-orange-500">PRO</h3>
-                  <p className="text-xs text-muted-foreground">Advanced Features</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-500" />
-                  <span>AI Thumbnail Studio</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-500" />
-                  <span>Competitor X-Ray</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-500" />
-                  <span>Trend Detector</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-500" />
-                  <span>Viral Shorts Finder</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* ENTERPRISE TIER */}
-            <Card className="p-6 bg-gradient-to-br from-purple-500/5 to-card border-2 border-purple-500/30">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-purple-500">ENTERPRISE</h3>
-                  <p className="text-xs text-muted-foreground">Unlimited Power</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-purple-500" />
-                  <span>Multi-Channel Hub</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-purple-500" />
-                  <span>AI Content Calendar</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-purple-500" />
-                  <span>Auto-Optimization</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-purple-500" />
-                  <span>API Access</span>
-                </div>
-              </div>
-            </Card>
-          </div>
-
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <Card className="p-2">
               <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 h-auto bg-transparent">
@@ -1516,11 +1420,17 @@ export default function YoutubeViewsPage() {
                     )}
                   </motion.div>
                 )}
-              </Card>
+                </Card>
+              </PlanTierGuard>
             </TabsContent>
 
-            {/* TITLE ANALYZER TAB */}
+            {/* TITLE ANALYZER TAB - BASIC */}
             <TabsContent value="title">
+              <PlanTierGuard 
+                requiredPlan="basic" 
+                userSubscription={userSubscription} 
+                featureName="Title Analyzer"
+              >
               <Card className="p-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-4 bg-orange-500/10 rounded-lg">
@@ -1667,12 +1577,18 @@ export default function YoutubeViewsPage() {
                     </div>
                   </motion.div>
                 )}
-              </Card>
+                </Card>
+              </PlanTierGuard>
             </TabsContent>
 
-            {/* CONTENT IDEAS TAB */}
+            {/* CONTENT IDEAS TAB - BASIC */}
             <TabsContent value="content">
-              <Card className="p-6">
+              <PlanTierGuard 
+                requiredPlan="basic" 
+                userSubscription={userSubscription} 
+                featureName="Content Ideas Generator"
+              >
+                <Card className="p-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-4 bg-orange-500/10 rounded-lg">
                     <Lightbulb className="h-8 w-8 text-orange-500" />
