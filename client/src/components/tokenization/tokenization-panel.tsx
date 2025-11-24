@@ -228,7 +228,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Coins className="w-5 h-5" />
-            Tokenización de Música (Web3)
+            Music Tokenization (Web3)
           </CardTitle>
           <CardDescription>
             Tokeniza tus canciones en blockchain y permite que los fans compren tokens con MetaMask

@@ -1357,9 +1357,9 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             )}
           </div>
 
-          {/* Información de Contacto */}
+          {/* Contact Information */}
           <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold mb-3">Información de Contacto</h4>
+            <h4 className="text-sm font-semibold mb-3">Contact Information</h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contactEmail">Contact Email</Label>
@@ -1384,9 +1384,9 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             </div>
           </div>
 
-          {/* Redes Sociales */}
+          {/* Social Media */}
           <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold mb-3">Redes Sociales</h4>
+            <h4 className="text-sm font-semibold mb-3">Social Media</h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="instagram">Instagram</Label>
@@ -1847,7 +1847,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 
                 <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 space-y-3">
                   <p className="text-xs text-gray-400">
-                    Create galleries of 6 imágenes profesionales para tus sencillos usando IA
+                    Create galleries of 6 professional images for your singles using AI
                   </p>
                   
                   <div className="space-y-2 text-xs text-gray-400">

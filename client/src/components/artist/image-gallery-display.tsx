@@ -544,7 +544,7 @@ export function ImageGalleryDisplay({ artistId, pgId, isOwner = false, refreshKe
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
-              <h3 className="text-xl font-bold">Gestionar Galerías</h3>
+              <h3 className="text-xl font-bold">Manage Galleries</h3>
             </div>
           </div>
 
@@ -553,7 +553,7 @@ export function ImageGalleryDisplay({ artistId, pgId, isOwner = false, refreshKe
               <CardContent className="py-8 text-center text-muted-foreground">
                 <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No tienes galerías de imágenes aún.</p>
-                <p className="text-sm mt-1">Haz clic en "Subir Imágenes" para crear tu primera galería.</p>
+                <p className="text-sm mt-1">Click "Upload Images" to create your first gallery.</p>
               </CardContent>
             </Card>
           ) : (
@@ -873,7 +873,7 @@ export function ImageGalleryDisplay({ artistId, pgId, isOwner = false, refreshKe
       <AlertDialog open={!!galleryToDelete} onOpenChange={() => setGalleryToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar galería?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Gallery?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Se eliminará permanentemente esta galería y todas sus imágenes.
             </AlertDialogDescription>
@@ -895,7 +895,7 @@ export function ImageGalleryDisplay({ artistId, pgId, isOwner = false, refreshKe
       <AlertDialog open={!!imageToDelete} onOpenChange={() => setImageToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar imagen?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Image?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. La imagen será eliminada de la galería.
               {imageToDelete && galleries.find(g => g.id === imageToDelete.galleryId)?.generatedImages.length === 1 && (

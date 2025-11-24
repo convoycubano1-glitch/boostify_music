@@ -521,7 +521,7 @@ export function ArtistProfileView({
                 className="text-base font-semibold mb-4 transition-colors duration-500" 
                 style={{ color: colors.hexAccent }}
               >
-                Estadísticas del Perfil
+                Profile Statistics
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">

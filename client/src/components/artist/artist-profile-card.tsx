@@ -701,11 +701,11 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     'songs': { name: 'Music', icon: Music, isOwnerOnly: false },
     'videos': { name: 'Videos', icon: VideoIcon, isOwnerOnly: false },
     'news': { name: 'News', icon: Newspaper, isOwnerOnly: false },
-    'social-posts': { name: 'Posts Redes Sociales', icon: Share2, isOwnerOnly: false },
-    'social-hub': { name: 'Redes Sociales', icon: Share2, isOwnerOnly: false },
+    'social-posts': { name: 'Posts Social Media', icon: Share2, isOwnerOnly: false },
+    'social-hub': { name: 'Social Media', icon: Share2, isOwnerOnly: false },
     'merchandise': { name: 'Merchandise', icon: ShoppingBag, isOwnerOnly: false },
     'galleries': { name: 'Galleries de Imágenes', icon: Image, isOwnerOnly: false },
-    'tokenization': { name: 'Tokenización de Canciones', icon: Coins, isOwnerOnly: true },
+    'tokenization': { name: 'Song Tokenization', icon: Coins, isOwnerOnly: true },
     'monetize-cta': { name: 'Monetize Your Talent', icon: Sparkles, isOwnerOnly: false },
     'analytics': { name: 'Analytics', icon: TrendingUp, isOwnerOnly: false },
     'earnings': { name: 'Earnings', icon: DollarSign, isOwnerOnly: true },
@@ -846,7 +846,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Manejar eliminación de noticia
   const handleDeleteNews = async (articleId: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta noticia?')) {
+    if (!confirm('Are you sure you want to delete this news?')) {
       return;
     }
 
@@ -881,7 +881,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Manejar regeneración de noticia
   const handleRegenerateNews = async (articleId: number) => {
-    if (!confirm('¿Estás seguro de que quieres regenerar esta noticia? El contenido actual se perderá.')) {
+    if (!confirm('Are you sure you want to regenerate this news? The current content will be lost.')) {
       return;
     }
 
@@ -2228,7 +2228,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           {/* Columna Izquierda */}
           <section className="flex flex-col gap-4 sm:gap-5 md:gap-6">
             
-            {/* Tarjeta de Información de Artista */}
+            {/* Tarjeta de Information de Artista */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 md:gap-6">
                 <div className="relative flex-shrink-0">
@@ -3207,7 +3207,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     <ChevronRight className="h-5 w-5" />
                   )}
                   <Share2 className="h-5 w-5" />
-                  Redes Sociales
+                  Social Media
                 </div>
               </button>
               
@@ -3345,7 +3345,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                   <ChevronRight className="h-5 w-5" />
                                 )}
                                 <Share2 className="h-5 w-5" />
-                                Posts Redes Sociales
+                                Posts Social Media
                               </div>
                             </button>
                             {sectionExpanded[sectionId] && (
@@ -3368,7 +3368,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                   <ChevronRight className="h-5 w-5" />
                                 )}
                                 <Coins className="h-5 w-5" />
-                                Tokenización de Canciones
+                                Song Tokenization
                               </div>
                             </button>
                             {sectionExpanded[sectionId] && (
@@ -3548,7 +3548,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       </button>
                     </Link>
                     <p className="text-center text-xs text-gray-400 mt-2">
-                      Accede a herramientas avanzadas para potenciar tus ventas
+                      Access advanced tools to boost your sales
                     </p>
                   </div>
                 )}
@@ -3643,7 +3643,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
-                                  Mezclas
+                                  Mixing
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
@@ -3824,10 +3824,10 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     {/* Texto */}
                     <div className="flex-1 text-center sm:text-left">
                       <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
-                        Tarjetas Físicas Premium
+                        Premium Physical Cards
                       </h3>
                       <p className="text-sm text-gray-400">
-                        Imprime tu Artist Card en plástico de alta calidad
+                        Print your Artist Card on high-quality plastic
                       </p>
                     </div>
                   </div>
@@ -3838,25 +3838,25 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>Plástico PVC de calidad premium (mismo que tarjetas bancarias)</span>
+                      <span>Premium PVC plastic (same as bank cards)</span>
                     </div>
                     <div className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>Impresión a todo color con acabado brillante o mate</span>
+                      <span>Full-color printing with glossy or matte finish</span>
                     </div>
                     <div className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>Código QR integrado para compartir tu perfil fácilmente</span>
+                      <span>Integrated QR code to easily share your profile</span>
                     </div>
                     <div className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>Tamaño estándar de tarjeta de crédito (85.6 × 53.98 mm)</span>
+                      <span>Standard credit card size (85.6 × 53.98 mm)</span>
                     </div>
                     <div className="flex items-start gap-2 text-sm text-gray-300">
                       <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.hexAccent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3882,15 +3882,15 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                           </svg>
-                          Order Your Digital Cards
+                          Order Your Physical Cards
                         </span>
                       </button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle className="text-2xl">¡Próximamente!</DialogTitle>
+                        <DialogTitle className="text-2xl">Coming Soon!</DialogTitle>
                         <DialogDescription className="text-base">
-                          Estamos trabajando en el sistema de pedidos para traerte tarjetas físicas de la más alta calidad.
+                          We are working on the ordering system to bring you the highest quality physical cards.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
@@ -3901,12 +3901,12 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                             background: `${colors.hexPrimary}10`
                           }}
                         >
-                          <h4 className="font-bold text-white mb-2">¿Qué incluye?</h4>
+                          <h4 className="font-bold text-white mb-2">What's Included?</h4>
                           <ul className="space-y-2 text-sm text-gray-300">
-                            <li>• Paquetes desde 50 hasta 1000+ tarjetas</li>
-                            <li>• Envío internacional disponible</li>
-                            <li>• Precios especiales para pedidos grandes</li>
-                            <li>• Diseño personalizado incluido</li>
+                            <li>• Packages from 50 to 1000+ cards</li>
+                            <li>• International shipping available</li>
+                            <li>• Special pricing for large orders</li>
+                            <li>• Custom design included</li>
                           </ul>
                         </div>
                         <div 
@@ -3914,12 +3914,12 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                           style={{ borderColor: colors.hexBorder }}
                         >
                           <p className="text-sm text-gray-400">
-                            <strong className="text-white">Nota:</strong> Las tarjetas físicas son perfectas para eventos, shows, networking y promoción de tu marca musical. Comparte tu perfil digital de forma profesional y memorable.
+                            <strong className="text-white">Note:</strong> Physical cards are perfect for events, shows, networking and promoting your music brand. Share your digital profile in a professional and memorable way.
                           </p>
                         </div>
                         <div className="text-center">
                           <p className="text-sm" style={{ color: colors.hexAccent }}>
-                            📧 ¿Interesado? Contáctanos en <strong>cards@boostify.com</strong>
+                            📧 Interested? Contact us at <strong>cards@boostify.com</strong>
                           </p>
                         </div>
                       </div>
@@ -3935,7 +3935,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 className="text-base font-semibold mb-4 transition-colors duration-500" 
                 style={{ color: colors.hexAccent }}
               >
-                Estadísticas del Perfil
+                Profile Statistics
               </div>
               
               {/* Stats Grid */}
@@ -3970,13 +3970,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 >
                   <Users className="h-4 sm:h-5 w-4 sm:w-5 mx-auto mb-1" style={{ color: colors.hexAccent }} />
                   <div className="text-xl sm:text-2xl font-bold text-white">{artist.followers > 1000 ? `${(artist.followers / 1000).toFixed(1)}K` : artist.followers}</div>
-                  <div className="text-[10px] sm:text-xs text-gray-400">Seguidores</div>
+                  <div className="text-[10px] sm:text-xs text-gray-400">Followers</div>
                 </motion.div>
               </div>
 
               {/* Gráfico de Progreso Radial */}
               <div className="space-y-3">
-                <div className="text-sm font-medium text-gray-300">Nivel de Completitud</div>
+                <div className="text-sm font-medium text-gray-300">Completion Level</div>
                 <div className="h-32">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadialBarChart 
@@ -4083,7 +4083,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   </span>
                   <span className="flex items-center gap-1">
                     <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
-                    Mezclas
+                    Mixing
                   </span>
                   <span className="flex items-center gap-1">
                     <Check className="h-3 w-3" style={{ color: colors.hexAccent }} />
@@ -4119,13 +4119,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             {/* Public View: Tokenized Music */}
             <TokenizedMusicView artistId={artistId} />
 
-            {/* Tarjeta de Información */}
+            {/* Tarjeta de Information */}
             <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
               <div 
                 className="text-base font-semibold mb-3 transition-colors duration-500" 
                 style={{ color: colors.hexAccent }}
               >
-                Información
+                Information
               </div>
               <div className="space-y-3">
                 {artist.genre && (
@@ -4157,14 +4157,14 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
               </div>
             </div>
 
-            {/* Tarjeta de Redes Sociales */}
+            {/* Tarjeta de Social Media */}
             {(artist.instagram || artist.twitter || artist.youtube) && (
               <div className={cardStyles} style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}>
                 <div 
                   className="text-base font-semibold mb-3 transition-colors duration-500" 
                   style={{ color: colors.hexAccent }}
                 >
-                  Redes Sociales
+                  Social Media
                 </div>
                 <div className="space-y-2">
                   {artist.instagram && (
@@ -4205,7 +4205,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     >
                       <span className="text-sm">▶️ YouTube</span>
                       <span className="text-sm ml-auto" style={{ color: colors.hexAccent }}>
-                        Ver canal
+                        View Channel
                       </span>
                     </a>
                   )}
