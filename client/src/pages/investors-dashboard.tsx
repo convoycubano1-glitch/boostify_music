@@ -1921,50 +1921,74 @@ export default function InvestorsDashboard() {
                     
                     <div>
                       <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4 text-white">Projected Revenue Growth</h4>
-                      <div className="h-64 bg-black/30 rounded-lg p-4 overflow-visible relative">
+                      <div className="h-64 bg-black/30 rounded-lg p-4 overflow-hidden relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-green-500/10 rounded-lg"></div>
-                        <div className="relative z-10 h-56 flex flex-col">
-                          <div className="flex justify-between items-center mb-2">
+                        <div className="relative z-10 h-full flex flex-col">
+                          <div className="flex justify-between items-center mb-3">
                             <span className="text-xs text-white/70">Revenue ($ millions)</span>
                             <div className="flex space-x-2">
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-200">Projected Growth</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-200">Monthly Revenue</span>
                             </div>
                           </div>
                           
-                          <div className="flex-1 flex items-end space-x-1.5">
-                            {[
-                              { label: "Jan '26", value: "$0.8M", height: "6px" },
-                              { label: "Mar '26", value: "$1.5M", height: "10px" },
-                              { label: "May '26", value: "$2.8M", height: "18px" },
-                              { label: "Jul '26", value: "$4.2M", height: "28px" },
-                              { label: "Sep '26", value: "$6M", height: "40px" },
-                              { label: "Nov '26", value: "$8.5M", height: "57px" },
-                              { label: "Jan '27", value: "$12M", height: "80px" },
-                              { label: "Mar '27", value: "$16M", height: "107px" },
-                              { label: "May '27", value: "$21M", height: "141px" },
-                              { label: "Jul '27", value: "$27M", height: "181px" },
-                              { label: "Sep '27", value: "$32M", height: "215px" },
-                              { label: "Nov '27", value: "$38M", height: "255px" },
-                              { label: "Dec '28", value: "$45M", height: "302px" }
-                            ].map((item, index) => (
-                              <div key={index} className="flex-1 flex flex-col items-center justify-end">
-                                <div 
-                                  className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-sm relative group cursor-pointer transition-all hover:from-green-600 hover:to-green-500 shadow-lg"
-                                  style={{ height: item.height, maxWidth: "28px", margin: "0 auto" }}
-                                >
-                                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none">
-                                    {item.value}
-                                  </div>
-                                </div>
-                                <span className="text-[7px] mt-2 text-white/60">{item.label}</span>
-                              </div>
+                          <div className="flex-1 relative">
+                            <svg className="w-full h-full" viewBox="0 0 1300 200" preserveAspectRatio="none">
+                              <defs>
+                                <linearGradient id="revenueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
+                                  <stop offset="100%" stopColor="#22c55e" stopOpacity="0.05" />
+                                </linearGradient>
+                              </defs>
+                              
+                              {/* Grid lines */}
+                              <line x1="0" y1="200" x2="1300" y2="200" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                              <line x1="0" y1="150" x2="1300" y2="150" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                              <line x1="0" y1="100" x2="1300" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                              <line x1="0" y1="50" x2="1300" y2="50" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                              
+                              {/* Area under curve */}
+                              <path
+                                d="M 0,190 L 100,175 L 200,155 L 300,135 L 400,115 L 500,95 L 600,70 L 700,50 L 800,32 L 900,18 L 1000,8 L 1100,2 L 1300,0 L 1300,200 L 0,200 Z"
+                                fill="url(#revenueGradient)"
+                              />
+                              
+                              {/* Main line */}
+                              <path
+                                d="M 0,190 L 100,175 L 200,155 L 300,135 L 400,115 L 500,95 L 600,70 L 700,50 L 800,32 L 900,18 L 1000,8 L 1100,2 L 1300,0"
+                                fill="none"
+                                stroke="#22c55e"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              
+                              {/* Data points */}
+                              <circle cx="0" cy="190" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="100" cy="175" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="200" cy="155" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="300" cy="135" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="400" cy="115" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="500" cy="95" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="600" cy="70" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="700" cy="50" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="800" cy="32" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="900" cy="18" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="1000" cy="8" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="1100" cy="2" r="4" fill="#22c55e" opacity="0.8" />
+                              <circle cx="1300" cy="0" r="4" fill="#22c55e" opacity="0.8" />
+                            </svg>
+                          </div>
+                          
+                          <div className="flex justify-between mt-2 text-[7px] text-white/50 px-1">
+                            {["Jan '26", "Mar", "May", "Jul", "Sep", "Nov", "Jan '27", "Mar", "May", "Jul", "Sep", "Nov", "Dec '28"].map((month, i) => (
+                              <span key={i}>{month}</span>
                             ))}
                           </div>
                           
                           <div className="mt-2 pt-2 border-t border-white/10">
                             <div className="flex justify-between">
                               <span className="text-xs text-white/70">$0.8M Jan '26</span>
-                              <span className="text-xs text-white/70">$45M+ Dec '28</span>
+                              <span className="text-xs text-white/70">$45M Dec '28</span>
                             </div>
                           </div>
                         </div>
