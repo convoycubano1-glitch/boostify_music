@@ -326,9 +326,9 @@ function RoadmapTimeline() {
     },
     {
       date: "Octubre 2025",
-      title: "Hito: 1,000 Usuarios Activos",
-      description: "Primera meta de crecimiento alcanzada. Expansión del equipo de soporte y optimización de infraestructura.",
-      stats: "1,000 usuarios, $100K MRR",
+      title: "Hito: 1,000 Usuarios Activos + Generador de Videos Automáticos",
+      description: "Primera meta de crecimiento alcanzada. Implementación del generador de videos automáticos funcional. Expansión del equipo de soporte y optimización de infraestructura.",
+      stats: "1,000 usuarios, $100K MRR, Videos automáticos operativo",
       status: "upcoming",
       isKey: true
     },
@@ -1029,9 +1029,9 @@ export default function InvestorsDashboard() {
         status: 'Active', 
         target: '$250K',
         equity: '10%',
-        raisedStatus: 'Private Round - January 1, 2026',
+        raisedStatus: 'Active Round',
         goal: '1,000 Active Users',
-        description: 'Initial seed funding to scale platform core features and establish market presence. Private round begins January 1 with curated investor database.'
+        description: 'Seed round funding to accelerate platform development, expand core features, and establish strong market presence. Focus on achieving 1,000 active users and $100K MRR.'
       },
       { 
         name: 'Series A', 
@@ -1039,9 +1039,9 @@ export default function InvestorsDashboard() {
         status: 'Upcoming', 
         target: '$750K',
         equity: '5%',
-        raisedStatus: 'Public Round',
+        raisedStatus: 'Upcoming Round',
         goal: '10,000 Active Users',
-        description: 'Series A funding round to expand AI capabilities, enhance creator tools, and accelerate user acquisition across music production community.'
+        description: 'Series A funding to scale AI-powered video generation, expand AI capabilities, enhance creator tools, and accelerate global user acquisition across music production community.'
       },
       { 
         name: 'Series B', 
@@ -1051,7 +1051,7 @@ export default function InvestorsDashboard() {
         equity: '5%',
         raisedStatus: 'Strategic Round',
         goal: '50,000 Active Users',
-        description: 'Series B to drive global expansion, launch Boostify Records AI label, implement blockchain for royalties, and establish enterprise partnerships.'
+        description: 'Series B to drive global expansion, launch Boostify Records AI label, scale blockchain for automated royalties, establish enterprise partnerships, and solidify market leadership.'
       }
     ]
   };
