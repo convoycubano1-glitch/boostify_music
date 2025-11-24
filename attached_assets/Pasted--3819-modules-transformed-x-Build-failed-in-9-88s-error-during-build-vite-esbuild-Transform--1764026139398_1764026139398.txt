@@ -1,0 +1,75 @@
+✓ 3819 modules transformed.
+x Build failed in 9.88s
+error during build:
+[vite:esbuild] Transform failed with 7 errors:
+/home/runner/workspace/client/src/pages/youtube-views.tsx:1723:14: ERROR: Unexpected closing "TabsContent" tag does not match opening "PlanTierGuard" tag
+/home/runner/workspace/client/src/pages/youtube-views.tsx:2333:12: ERROR: Unexpected closing "Tabs" tag does not match opening "TabsContent" tag
+/home/runner/workspace/client/src/pages/youtube-views.tsx:2334:10: ERROR: Unexpected closing "div" tag does not match opening "Tabs" tag
+/home/runner/workspace/client/src/pages/youtube-views.tsx:2335:8: ERROR: Unexpected closing "main" tag does not match opening "div" tag
+/home/runner/workspace/client/src/pages/youtube-views.tsx:2336:6: ERROR: Unexpected closing "div" tag does not match opening "main" tag
+...
+file: /home/runner/workspace/client/src/pages/youtube-views.tsx:1723:14
+
+Unexpected closing "TabsContent" tag does not match opening "PlanTierGuard" tag
+1721|                  )}
+1722|                </Card>
+1723|              </TabsContent>
+   |                ^
+1724|  
+1725|              {/* PHASE 2 - THUMBNAIL GENERATOR TAB */}
+
+Unexpected closing "Tabs" tag does not match opening "TabsContent" tag
+2331|                </Card>
+2332|              </TabsContent>
+2333|            </Tabs>
+   |              ^
+2334|          </div>
+2335|        </main>
+
+Unexpected closing "div" tag does not match opening "Tabs" tag
+2332|              </TabsContent>
+2333|            </Tabs>
+2334|          </div>
+   |            ^
+2335|        </main>
+2336|      </div>
+
+Unexpected closing "main" tag does not match opening "div" tag
+2333|            </Tabs>
+2334|          </div>
+2335|        </main>
+   |          ^
+2336|      </div>
+2337|    );
+
+Unexpected closing "div" tag does not match opening "main" tag
+2334|          </div>
+2335|        </main>
+2336|      </div>
+   |        ^
+2337|    );
+2338|  }
+
+The character "}" is not valid inside a JSX element
+2336|      </div>
+2337|    );
+2338|  }
+   |  ^
+2339|  
+
+Unexpected end of file before a closing "div" tag
+2337|    );
+2338|  }
+2339|  
+   |  ^
+
+    at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+    at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)

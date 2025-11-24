@@ -1720,6 +1720,7 @@ export default function YoutubeViewsPage() {
                   </motion.div>
                 )}
               </Card>
+              </PlanTierGuard>
             </TabsContent>
 
             {/* PHASE 2 - THUMBNAIL GENERATOR TAB */}
