@@ -395,9 +395,9 @@ const Router = () => {
           {getRouteComponent("/init-products", WrappedInitProductsPage, 'free')}
           {getRouteComponent("/boostify-international", WrappedBoostifyInternationalPage, 'premium')}
           
-          {/* Rutas administrativas especiales */}
-          {getRouteComponent("/admin", WrappedAdminPage, 'free')} {/* Admin tiene acceso con verificación especial */}
-          {getRouteComponent("/affiliate-admin", WrappedAffiliateAdminPage, 'free')} {/* Admin affiliate dashboard */}
+          {/* Rutas administrativas especiales - Solo para admins */}
+          {getRouteComponent("/admin", WrappedAdminPage, null)} {/* Admin only - verificado en admin.tsx */}
+          {getRouteComponent("/affiliate-admin", WrappedAffiliateAdminPage, null)} {/* Admin only */}
           
           {/* Rutas que requieren autenticación con plan 'free' mínimo */}
           {getRouteComponent("/boostify-tv", WrappedBoostifyTVPage, 'free')}
