@@ -120,13 +120,15 @@ export function MusicPlayerWidget({ tracks, artistName }: MusicPlayerWidgetProps
         </p>
       </div>
 
-      <audio
-        ref={audioRef}
-        src={currentTrack.url}
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={handleEnded}
-        crossOrigin="anonymous"
-      />
+      {currentTrack.url && (
+        <audio
+          ref={audioRef}
+          src={currentTrack.url}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
+          crossOrigin="anonymous"
+        />
+      )}
     </div>
   );
 }
