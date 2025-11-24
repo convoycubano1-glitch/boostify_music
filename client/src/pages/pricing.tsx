@@ -134,41 +134,25 @@ export default function PricingPage() {
   const [, setLocation] = useLocation();
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 
-  const handleSelectPlan = async (plan: typeof plans[0]) => {
+  const handleSelectPlan = (plan: typeof plans[0]) => {
     try {
       setProcessingPlanId(plan.id);
 
-      // Plan gratis - ir a login
-      if (!plan.priceId) {
-        localStorage.setItem('selectedPlan', JSON.stringify({
-          planName: plan.name,
-          priceId: null,
-          timestamp: Date.now()
-        }));
-        window.location.href = '/api/login';
-        return;
-      }
+      // SIEMPRE guardar el plan en localStorage e ir a login
+      // El dashboard procesará automáticamente el checkout después
+      localStorage.setItem('selectedPlan', JSON.stringify({
+        planName: plan.name,
+        priceId: plan.priceId || null,
+        timestamp: Date.now()
+      }));
 
-      // Plan pagado - si NO está autenticado, ir a login
-      if (!user) {
-        localStorage.setItem('selectedPlan', JSON.stringify({
-          planName: plan.name,
-          priceId: plan.priceId,
-          timestamp: Date.now()
-        }));
-        window.location.href = '/api/login';
-        return;
-      }
-
-      // Si está autenticado y es plan pagado, crear checkout
       toast({
-        title: "Redirigiendo a Stripe",
-        description: `Iniciando checkout para ${plan.name}...`
+        title: "Iniciando sesión",
+        description: `Te llevaremos a checkout para ${plan.name}...`
       });
 
-      const { createCheckoutSession } = await import('@/lib/api/stripe-service');
-      const checkoutUrl = await createCheckoutSession(plan.priceId);
-      window.location.href = checkoutUrl;
+      // Redirigir a login (el dashboard manejará el checkout después)
+      window.location.href = '/api/login';
 
     } catch (error) {
       logger.error('Error selecting plan:', error);

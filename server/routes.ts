@@ -489,9 +489,6 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       if (isNaN(numUserId)) {
         return res.status(400).json({ error: "Invalid user ID" });
       }
-
-      const { subscriptions } = await import ('./db/schema');
-      const { eq, desc } = await import ('drizzle-orm');
       
       // Obtener la suscripción más reciente del usuario
       const [subscription] = await db
@@ -536,27 +533,29 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       if (isNaN(numUserId)) {
         return res.status(400).json({ error: "Invalid user ID" });
       }
-
-      const { user_roles } = await import ('./db/schema');
-      const { eq } = await import ('drizzle-orm');
       
       // Obtener el rol del usuario
       const [userRole] = await db
         .select()
-        .from(user_roles)
-        .where(eq(user_roles.userId, numUserId))
+        .from(users)
+        .where(eq(users.id, numUserId))
         .limit(1);
 
       if (!userRole) {
-        return res.status(404).json(null);
+        // Retornar rol por defecto si no existe
+        return res.json({
+          userId: numUserId,
+          role: 'user',
+          permissions: [],
+          grantedAt: new Date()
+        });
       }
 
       return res.json({
-        id: userRole.id,
-        userId: userRole.userId,
-        role: userRole.role,
-        permissions: userRole.permissions,
-        grantedAt: userRole.grantedAt,
+        userId: numUserId,
+        role: userRole.role || 'user',
+        permissions: [],
+        grantedAt: new Date()
       });
     } catch (error) {
       console.error("Error fetching user role:", error);
