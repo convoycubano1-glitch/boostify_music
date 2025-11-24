@@ -99,6 +99,7 @@ import subscriptionApiRouter from './routes/subscription-api'; // Import Subscri
 import apiUsageRouter from './routes/api-usage'; // Import API usage monitoring router
 import accountingRouter from './routes/accounting'; // Import accounting/transactions router
 import adminAgentRouter from './routes/admin-agent'; // Import AI admin agent
+import stripeEventsAdminRouter from './routes/stripe-events-admin'; // Import Stripe Events admin router
 import boostiswapContractsRouter from './routes/boostiswap-contracts'; // Import BoostiSwap Smart Contracts router
 import boostiswapRouter from './routes/boostiswap'; // Import BoostiSwap Marketplace router
 import socialMediaRouter from './routes/social-media'; // Import Social Media Content Generator router
@@ -366,6 +367,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/admin/api-usage', apiUsageRouter);
   app.use('/api/admin/accounting', accountingRouter);
   app.use('/api/admin/agent', adminAgentRouter);
+  app.use('/api/admin/stripe-events', stripeEventsAdminRouter);
   app.use('/api/virtual-label', virtualRecordLabelRouter); // Virtual Record Label integration routes
   app.use('/api/og-image', ogImageRouter); // Open Graph dynamic image generation
   app.use('/api/youtube', youtubeToolsRouter); // YouTube Growth Tools (Pre-Launch Score, Keywords, Title Analyzer, Content Ideas)
