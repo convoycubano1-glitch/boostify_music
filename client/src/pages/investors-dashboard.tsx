@@ -674,25 +674,25 @@ function RoadmapTimeline() {
           <div className="ml-12 h-full flex items-end">
             <div className="flex-1 flex items-end space-x-4">
               {[
-                { month: "Mar", users: 100, height: "0.2%" },
-                { month: "Apr", users: 250, height: "0.5%" },
-                { month: "May", users: 375, height: "0.75%" },
-                { month: "Jun", users: 500, height: "1%" },
-                { month: "Jul", users: 750, height: "1.5%" },
-                { month: "Aug", users: 1200, height: "2.4%" },
-                { month: "Sep", users: 1500, height: "3%" },
-                { month: "Oct", users: 3000, height: "6%" },
-                { month: "Nov", users: 6000, height: "12%" },
-                { month: "Dec", users: 10000, height: "20%" },
-                { month: "Jan '26", users: 15000, height: "30%" },
-                { month: "Feb '26", users: 20000, height: "40%" },
-                { month: "Mar '26", users: 25000, height: "50%" },
-                { month: "Apr '26", users: 35000, height: "70%" },
-                { month: "May '26", users: 50000, height: "100%" }
+                { month: "Mar", users: 100, height: "8px" },
+                { month: "Apr", users: 250, height: "12px" },
+                { month: "May", users: 375, height: "16px" },
+                { month: "Jun", users: 500, height: "20px" },
+                { month: "Jul", users: 750, height: "28px" },
+                { month: "Aug", users: 1200, height: "36px" },
+                { month: "Sep", users: 1500, height: "44px" },
+                { month: "Oct", users: 3000, height: "60px" },
+                { month: "Nov", users: 6000, height: "90px" },
+                { month: "Dec", users: 10000, height: "130px" },
+                { month: "Jan '26", users: 15000, height: "170px" },
+                { month: "Feb '26", users: 20000, height: "210px" },
+                { month: "Mar '26", users: 25000, height: "250px" },
+                { month: "Apr '26", users: 35000, height: "310px" },
+                { month: "May '26", users: 50000, height: "360px" }
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div 
-                    className="w-full max-w-[50px] bg-gradient-to-t from-orange-500 to-orange-400 rounded-t relative group cursor-pointer"
+                    className="w-full max-w-[50px] bg-gradient-to-t from-orange-500 to-orange-400 rounded-t relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500"
                     style={{ height: item.height }}
                   >
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
