@@ -540,4 +540,138 @@ function determinePlanTier(priceId: string): 'free' | 'creator' | 'professional'
   return priceToTierMap[priceId] || 'free';
 }
 
+/**
+ * TEST ENDPOINTS - Sin firma requerida
+ * Usa estos para simular webhooks SIN pagar
+ */
+
+// Test: Simular pago exitoso
+router.post('/test/simulate-payment-success', async (req: Request, res: Response) => {
+  try {
+    console.log('🧪 TEST: Simulando pago exitoso...');
+    
+    // Crear notificación de prueba
+    await db.insert(notifications).values({
+      userId: 1, // Usuario de prueba (ajusta si es necesario)
+      type: 'PAYMENT_SUCCESS',
+      title: '✅ TEST: Pago Exitoso',
+      message: 'Este es un evento de prueba - No es un pago real',
+      metadata: {
+        amount: 99.99,
+        currency: 'USD',
+        tier: 'professional',
+        eventType: 'PAYMENT_SUCCESS'
+      },
+      read: false,
+      createdAt: new Date()
+    }).catch(err => console.error('Error creating test notification:', err));
+
+    // Enviar a Make para email
+    await sendToMake('PAYMENT_SUCCESS', {
+      userEmail: 'test@boostify.dev',
+      userName: 'Test User',
+      amount: 99.99,
+      currency: 'USD',
+      tier: 'professional',
+      isTest: true
+    });
+
+    return res.json({
+      success: true,
+      message: '✅ Pago de prueba simulado correctamente',
+      info: 'Revisa tu DB en notifications y Check Make webhook'
+    });
+  } catch (error) {
+    console.error('❌ Test error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error en simulación'
+    });
+  }
+});
+
+// Test: Simular nueva suscripción
+router.post('/test/simulate-subscription', async (req: Request, res: Response) => {
+  try {
+    console.log('🧪 TEST: Simulando nueva suscripción...');
+    
+    await db.insert(notifications).values({
+      userId: 1,
+      type: 'SUBSCRIPTION_CREATED',
+      title: '✅ TEST: Suscripción Creada',
+      message: 'Este es un evento de prueba - No es una suscripción real',
+      metadata: {
+        amount: 59.99,
+        currency: 'USD',
+        tier: 'creator',
+        eventType: 'SUBSCRIPTION_CREATED'
+      },
+      read: false,
+      createdAt: new Date()
+    }).catch(err => console.error('Error creating test notification:', err));
+
+    await sendToMake('SUBSCRIPTION_CREATED', {
+      userEmail: 'test@boostify.dev',
+      userName: 'Test User',
+      planTier: 'creator',
+      amount: 59.99,
+      isTest: true
+    });
+
+    return res.json({
+      success: true,
+      message: '✅ Suscripción de prueba simulada correctamente',
+      info: 'Revisa tu DB en notifications y Check Make webhook'
+    });
+  } catch (error) {
+    console.error('❌ Test error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error en simulación'
+    });
+  }
+});
+
+// Test: Simular pago fallido
+router.post('/test/simulate-payment-failed', async (req: Request, res: Response) => {
+  try {
+    console.log('🧪 TEST: Simulando pago fallido...');
+    
+    await db.insert(notifications).values({
+      userId: 1,
+      type: 'PAYMENT_FAILED',
+      title: '❌ TEST: Pago Fallido',
+      message: 'Este es un evento de prueba - No es un pago fallido real',
+      metadata: {
+        amount: 99.99,
+        currency: 'USD',
+        tier: 'professional',
+        eventType: 'PAYMENT_FAILED'
+      },
+      read: false,
+      createdAt: new Date()
+    }).catch(err => console.error('Error creating test notification:', err));
+
+    await sendToMake('PAYMENT_FAILED', {
+      userEmail: 'test@boostify.dev',
+      userName: 'Test User',
+      amount: 99.99,
+      failedDate: new Date().toLocaleDateString(),
+      isTest: true
+    });
+
+    return res.json({
+      success: true,
+      message: '✅ Pago fallido de prueba simulado correctamente',
+      info: 'Revisa tu DB en notifications y Check Make webhook'
+    });
+  } catch (error) {
+    console.error('❌ Test error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error en simulación'
+    });
+  }
+});
+
 export default router;
