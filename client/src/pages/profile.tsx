@@ -1,7 +1,6 @@
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
 import { SubscriptionCardCompact } from "../components/profile/subscription-card-compact";
 import { MyArtistsCompact } from "../components/profile/my-artists-compact";
-import { ToolsSection } from "../components/profile/tools-section";
 import { useParams } from "wouter";
 import { useAuth } from "../hooks/use-auth";
 import { Head } from "../components/ui/head";
@@ -88,7 +87,6 @@ export default function ProfilePage() {
             <div className="space-y-2">
               <MyArtistsCompact />
               <SubscriptionCardCompact />
-              <ToolsSection />
             </div>
           </div>
         )}
