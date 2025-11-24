@@ -642,7 +642,7 @@ function ProductBuyButton({ product, colors, artistName }: { product: Product, c
               variant="outline"
               className="border-gray-700 text-gray-400 hover:bg-gray-900"
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               onClick={() => handleCheckout(selectedSize)}
@@ -698,17 +698,17 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   
   // Todas las secciones disponibles con metadata
   const allSections = {
-    'songs': { name: 'Música', icon: Music, isOwnerOnly: false },
+    'songs': { name: 'Music', icon: Music, isOwnerOnly: false },
     'videos': { name: 'Videos', icon: VideoIcon, isOwnerOnly: false },
-    'news': { name: 'Noticias', icon: Newspaper, isOwnerOnly: false },
+    'news': { name: 'News', icon: Newspaper, isOwnerOnly: false },
     'social-posts': { name: 'Posts Redes Sociales', icon: Share2, isOwnerOnly: false },
     'social-hub': { name: 'Redes Sociales', icon: Share2, isOwnerOnly: false },
-    'merchandise': { name: 'Merchandising', icon: ShoppingBag, isOwnerOnly: false },
-    'galleries': { name: 'Galerías de Imágenes', icon: Image, isOwnerOnly: false },
+    'merchandise': { name: 'Merchandise', icon: ShoppingBag, isOwnerOnly: false },
+    'galleries': { name: 'Galleries de Imágenes', icon: Image, isOwnerOnly: false },
     'tokenization': { name: 'Tokenización de Canciones', icon: Coins, isOwnerOnly: true },
     'monetize-cta': { name: 'Monetiza Tu Talento', icon: Sparkles, isOwnerOnly: false },
     'analytics': { name: 'Analytics', icon: TrendingUp, isOwnerOnly: false },
-    'earnings': { name: 'Ganancias', icon: DollarSign, isOwnerOnly: true },
+    'earnings': { name: 'Earnings', icon: DollarSign, isOwnerOnly: true },
     'crowdfunding': { name: 'Crowdfunding', icon: Target, isOwnerOnly: true },
   };
   
@@ -1891,7 +1891,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   const cardStyles = `bg-gradient-to-b from-gray-900 to-gray-950 bg-opacity-90 rounded-3xl p-6 shadow-xl ${colors.shadow} transition-colors duration-500`;
   const primaryBtn = `py-2 px-4 rounded-full text-sm font-semibold transition duration-300 shadow-lg whitespace-nowrap`;
   
-  const merchCategories = ['Todo', 'Música', 'Videos', 'Shows'];
+  const merchCategories = ['Todo', 'Music', 'Videos', 'Shows'];
   const totalPlays = songs.reduce((acc, song) => acc + (parseInt(song.duration?.split(':')[0] || '0') * 100), 0);
 
   return (
@@ -2174,7 +2174,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   }}
                 >
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" style={{ boxShadow: '0 0 8px #4ade80' }}></div>
-                  <span className="text-xs font-semibold text-white/90 tracking-wide">Verificado</span>
+                  <span className="text-xs font-semibold text-white/90 tracking-wide">Verified</span>
                 </div>
               </div>
             </div>
@@ -2205,7 +2205,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             style={{ borderColor: colors.hexBorder, borderWidth: '1px' }}
           >
             <label htmlFor="theme-selector" className="text-sm font-medium text-white whitespace-nowrap">
-              Personaliza tu Estilo:
+              Customize Your Style:
             </label>
             <div className="flex-1 w-full max-w-sm">
               <select
@@ -2242,7 +2242,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     data-testid="img-profile"
                   />
                   <div className="absolute -right-1 -bottom-1 py-1 px-2.5 text-xs rounded-full bg-green-500 text-green-950 font-semibold shadow-xl shadow-green-500/50">
-                    Verificado
+                    Verified
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 text-center sm:text-left w-full">
@@ -2263,7 +2263,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         data-testid="badge-virtual-artist"
                       >
                         <Bot className="h-3.5 w-3.5" />
-                        Artista Virtual
+                        Virtual Artist
                       </div>
                     )}
                   </div>
@@ -2321,7 +2321,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                           data-testid="button-edit-layout"
                         >
                           <Layout className="h-4 w-4 mr-2" />
-                          Personalizar Layout
+                          Customize Layout
                         </Button>
                       </>
                     ) : (
@@ -2345,7 +2345,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                           onClick={handleShare}
                           data-testid="button-share-profile"
                         >
-                          Compartir perfil
+                          Share Profile
                         </button>
                       </>
                     )}
@@ -2360,10 +2360,10 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-bold text-white">
                     <Layout className="h-6 w-6 inline mr-2" style={{ color: colors.hexAccent }} />
-                    Personalizar Layout del Perfil
+                    Customize Layout del Perfil
                   </DialogTitle>
                   <DialogDescription className="text-gray-400">
-                    Reordena las secciones y activa/desactiva las que quieras mostrar
+                    Reorder sections and enable/disable the ones you want to show
                   </DialogDescription>
                 </DialogHeader>
 
@@ -2381,7 +2381,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       data-testid="button-expand-all"
                     >
                       <ChevronDown className="h-3 w-3 mr-1" />
-                      Expandir Todo
+                      Expand All
                     </Button>
                     <Button
                       size="sm"
@@ -2391,7 +2391,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       data-testid="button-collapse-all"
                     >
                       <ChevronRight className="h-3 w-3 mr-1" />
-                      Contraer Todo
+                      Collapse All
                     </Button>
                   </div>
                   <div className="flex gap-2">
@@ -2406,7 +2406,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       data-testid="button-activate-all"
                     >
                       <Check className="h-3 w-3 mr-1" />
-                      Activar Todo
+                      Activate All
                     </Button>
                     <Button
                       size="sm"
@@ -2416,7 +2416,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       data-testid="button-deactivate-all"
                     >
                       <X className="h-3 w-3 mr-1" />
-                      Desactivar Todo
+                      Deactivate All
                     </Button>
                   </div>
                 </div>
@@ -2513,7 +2513,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                         ) : (
                                           <>
                                             <EyeOff className="h-4 w-4 text-gray-500" />
-                                            <span className="text-gray-500">Oculto</span>
+                                            <span className="text-gray-500">Hidden</span>
                                           </>
                                         )}
                                       </Button>
@@ -2536,7 +2536,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     onClick={() => setShowLayoutConfig(false)}
                     className="border-zinc-700 text-white hover:bg-zinc-800"
                   >
-                    Cancelar
+                    Cancel
                   </Button>
                   <Button
                     onClick={saveLayout}
@@ -2547,7 +2547,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     }}
                   >
                     <Save className="h-4 w-4" />
-                    Guardar Layout
+                    Save Layout
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -2559,9 +2559,9 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 <div className="text-center py-8">
                   <div className="mb-4">
                     <Sparkles className="h-12 w-12 mx-auto mb-3" style={{ color: colors.hexAccent }} />
-                    <h3 className="text-2xl font-bold text-white mb-2">¿Eres músico?</h3>
+                    <h3 className="text-2xl font-bold text-white mb-2">Are you a musician?</h3>
                     <p className="text-gray-400">
-                      Crea tu perfil de artista profesional gratis y llega a más fans
+                      Create your professional artist profile for free and reach more fans
                     </p>
                   </div>
                   <Link href="/signup">
@@ -2570,7 +2570,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       data-testid="button-cta-middle"
                     >
                       <Sparkles className="h-5 w-5" />
-                      Crear Mi Perfil Gratis
+                      Create My Free Profile
                     </Button>
                   </Link>
                 </div>
@@ -2614,14 +2614,14 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                           data-testid="button-upload-song"
                         >
                           <Plus className="h-4 w-4 mr-1" />
-                          Subir Canción
+                          Upload Song
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Subir Nueva Canción</DialogTitle>
+                          <DialogTitle>Upload New Song</DialogTitle>
                           <DialogDescription>
-                            Agrega una nueva canción a tu perfil
+                            Add a new song to your profile
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
@@ -2674,7 +2674,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                             }}
                             disabled={isUploadingSong}
                           >
-                            Cancelar
+                            Cancel
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -2948,7 +2948,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                             }}
                             disabled={isUploadingVideo}
                           >
-                            Cancelar
+                            Cancel
                           </Button>
                           <Button
                             onClick={handleUploadVideo}
@@ -3104,7 +3104,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         <ChevronRight className="h-5 w-5" />
                       )}
                       <Newspaper className="h-5 w-5" />
-                      Noticias ({newsArticles.length})
+                      News ({newsArticles.length})
                     </div>
                   </button>
                 </div>
@@ -3117,7 +3117,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         <p>No hay noticias disponibles aún</p>
                         {isOwnProfile && (
                           <p className="text-sm mt-2">
-                            Usa el botón "Generar Noticias con IA" en editar perfil
+                            Usa el botón "Generar News con IA" en editar perfil
                           </p>
                         )}
                       </div>
@@ -3441,7 +3441,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         </span>
                       </div>
                       <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-                        Estos productos son una colaboración exclusiva entre <strong style={{ color: colors.hexAccent }}>Boostify</strong> y <strong style={{ color: colors.hexAccent }}>{artist.name}</strong>. 
+                        These products are an exclusive collaboration between <strong style={{ color: colors.hexAccent }}>Boostify</strong> y <strong style={{ color: colors.hexAccent }}>{artist.name}</strong>. 
                         <span className="block mt-1">
                           <strong className="text-white">Los artistas ganan el 30%</strong> de cada venta, sin inversión inicial ni inventario. Nosotros nos encargamos de producción, envío y atención al cliente.
                         </span>
@@ -3481,9 +3481,9 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         </span>
                       </div>
                       <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-                        <strong className="text-yellow-400">La tienda oficial estará disponible a partir de enero 2025.</strong> Los productos mostrados son una vista previa y <strong className="text-white">los precios finales pueden variar</strong>. 
+                        <strong className="text-yellow-400">The official store will be available from January 2025.</strong> The products shown are a preview and <strong className="text-white">final prices may vary</strong>. 
                         <span className="block mt-1.5 text-gray-400">
-                          Estamos preparando una experiencia de compra excepcional con productos de alta calidad para tus fans.
+                          We are preparing an exceptional shopping experience with high-quality products for your fans.
                         </span>
                       </p>
                     </div>
@@ -3492,7 +3492,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
                 {sectionExpanded[sectionId] && (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-                  {products.map((product, index) => (
+                  {products.slice(0, 10).map((product, index) => (
                     <div
                       key={product.id}
                       className="rounded-lg md:rounded-xl overflow-hidden bg-black/50 hover:bg-gray-900/50 transition-all duration-200 border group cursor-pointer"
@@ -3571,7 +3571,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                   <ChevronRight className="h-5 w-5" />
                                 )}
                                 <Image className="h-5 w-5" />
-                                Galerías de Imágenes
+                                Galleries de Imágenes
                               </div>
                             </button>
                             {sectionExpanded[sectionId] && (
@@ -3965,7 +3965,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       </svg>
                     </div>
                     <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                      Mis Ganancias
+                      Mis Earnings
                     </span>
                     <span 
                       className="px-2 py-1 rounded-full text-xs font-bold"
@@ -4361,7 +4361,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   <div className="flex items-center gap-2 mb-4">
                     <Sparkles className="h-6 w-6" style={{ color: colors.hexAccent }} />
                     <div className="text-base font-bold transition-colors duration-500" style={{ color: colors.hexAccent }}>
-                      Tokenización de Música (Web3)
+                      Tokenización de Music (Web3)
                     </div>
                     <div className="ml-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30">
                       <span className="text-xs font-bold text-purple-400">Blockchain</span>
@@ -5051,7 +5051,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                 setDownloadVideoId(null);
               }}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               onClick={handleConfirmDownload}
