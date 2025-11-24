@@ -50,8 +50,9 @@ const BASE_URL = getBaseUrl();
 console.log('🔗 Stripe BASE_URL configurada:', BASE_URL);
 
 /**
- * MUSIC VIDEO BUNDLES - Video + First Month Subscription Included
- * Each tier includes video generation + 1 month free subscription to Boostify tools
+ * MUSIC VIDEO PRICING - STANDALONE PRODUCT
+ * Videos are sold separately from subscriptions (BASIC/PRO/PREMIUM)
+ * Each video tier is ONE payment for video generation only
  */
 interface TierConfig {
   name: string;
@@ -62,8 +63,6 @@ interface TierConfig {
   videos: number;
   lipsyncClips: number;
   regenerations: number;
-  subscriptionTier: string;
-  subscriptionValue: number;
   features: string[];
 }
 
@@ -77,21 +76,13 @@ const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
     videos: 40,
     lipsyncClips: 15,
     regenerations: 1,
-    subscriptionTier: 'starter',
-    subscriptionValue: 19.99,
     features: [
       '40 unique AI-generated scenes',
       '720p HD quality',
       'Lip-sync on 15 close-up shots',
       'No watermark',
       'MP4 download',
-      '1 free regeneration',
-      '🎁 First month Boostify STARTER free ($19.99 value)',
-      'Artist profile page',
-      '500 contact database',
-      'Instagram tools (20/month)',
-      'YouTube tools (10/month)',
-      'Spotify tools (10/month)'
+      '1 free regeneration'
     ]
   },
   gold: {
@@ -103,8 +94,6 @@ const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
     videos: 40,
     lipsyncClips: 15,
     regenerations: 2,
-    subscriptionTier: 'creator',
-    subscriptionValue: 59.99,
     features: [
       '40 unique AI-generated scenes',
       '1080p Full HD quality',
@@ -113,15 +102,7 @@ const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
       'No watermark',
       'HD download',
       '2 free regenerations',
-      'Email support',
-      '🎁 First month Boostify CREATOR free ($59.99 value)',
-      'PRO artist profile with analytics',
-      '2,000 contact database',
-      'Digital smart cards',
-      'Instagram tools (50/month)',
-      'YouTube tools (50/month)',
-      'Spotify tools (30/month)',
-      'Email campaigns (2/month)'
+      'Email support'
     ]
   },
   platinum: {
@@ -133,8 +114,6 @@ const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
     videos: 40,
     lipsyncClips: 40,
     regenerations: 3,
-    subscriptionTier: 'pro',
-    subscriptionValue: 99.99,
     features: [
       '40 unique AI-generated scenes',
       '1080p Full HD quality',
@@ -144,19 +123,7 @@ const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
       'HD download',
       'Automatic color grading',
       '3 free regenerations',
-      'Priority chat support',
-      '🎁 First month Boostify PRO free ($99.99 value)',
-      'PRO profile with video background',
-      '5,000 contact database',
-      'NFC smart cards',
-      'Booking calendar',
-      'Basic merchandise store',
-      'Instagram tools (100/month)',
-      'YouTube PRO tools (100/month + thumbnails)',
-      'Spotify tools (100/month)',
-      'Email campaigns (10/month)',
-      'SMS campaigns (5/month)',
-      'A/B testing tools'
+      'Priority chat support'
     ]
   },
   diamond: {
@@ -167,9 +134,7 @@ const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
     images: 60,
     videos: 60,
     lipsyncClips: 60,
-    regenerations: -1, // unlimited for 30 days
-    subscriptionTier: 'enterprise',
-    subscriptionValue: 149.99,
+    regenerations: -1,
     features: [
       '60 unique AI-generated scenes (extended video)',
       '4K Ultra HD quality',
@@ -1119,87 +1084,57 @@ router.post('/webhook', async (req: Request, res: Response) => {
 });
 
 /**
- * Manejar pago exitoso de bundle (video + suscripción)
- * Crea suscripción y genera video automáticamente
+ * Manejar pago exitoso de video (STANDALONE PRODUCT)
+ * Video es un producto separado que se cobra por separado de suscripciones
  */
 async function handleSuccessfulMusicVideoBundle(session: any) {
   try {
-    const { userId, tier, songName, subscriptionTier } = session.metadata;
+    const { userId, tier, songName } = session.metadata;
     
     if (!userId) {
-      console.error('No se encontró userId en los metadatos de la sesión bundle');
+      console.error('No se encontró userId en los metadatos de la sesión de video');
       return;
     }
     
-    console.log(`🎬 Procesando bundle de video + suscripción para usuario ${userId}, tier: ${tier}`);
+    console.log(`🎬 Procesando compra de video para usuario ${userId}, tier: ${tier}`);
     
-    // 1. CREAR SUSCRIPCIÓN
-    const subscriptionId = session.subscription;
-    const customerId = session.customer;
-    
-    const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
-    const currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
-    const currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
-    
-    const subscriptionData = {
-      userId: userId,
-      plan: subscriptionTier || 'starter',
-      status: 'active',
-      currentPeriodStart: currentPeriodStart,
-      currentPeriodEnd: currentPeriodEnd,
-      cancelAtPeriodEnd: false,
-      stripeCustomerId: customerId,
-      stripeSubscriptionId: subscriptionId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    const subscriptionRef = await db.collection('subscriptions').add(subscriptionData);
-    console.log(`  ✅ Suscripción creada: ${subscriptionRef.id}`);
-    
-    // 2. GUARDAR REGISTRO DE COMPRA
+    // GUARDAR REGISTRO DE COMPRA DE VIDEO
     const purchaseRef = await db.collection('music_video_purchases').add({
       userId,
       tier: tier || 'gold',
       sessionId: session.id,
       amount: session.amount_total / 100,
       currency: session.currency,
-      songName: songName || 'Music Video Bundle',
+      songName: songName || 'Music Video',
       status: 'payment_completed',
       videoStatus: 'pending_generation',
-      subscriptionId: subscriptionRef.id,
       createdAt: new Date()
     });
     
-    console.log(`  💾 Compra registrada: ${purchaseRef.id}`);
+    console.log(`  💾 Compra de video registrada: ${purchaseRef.id}`);
     
-    // 3. INICIAR GENERACIÓN DE VIDEO EN BACKGROUND
+    // INICIAR GENERACIÓN DE VIDEO EN BACKGROUND
     console.log(`  🚀 Iniciando generación de video en background...`);
     
     // Generar video sin esperar (fire and forget)
     generateMusicVideoBundle(userId, purchaseRef.id, tier || 'gold', songName).catch(err => {
-      console.error(`❌ Error en generación de video para bundle ${purchaseRef.id}:`, err);
+      console.error(`❌ Error en generación de video ${purchaseRef.id}:`, err);
     });
     
-    // 4. ENVIAR NOTIFICACIÓN
+    // ENVIAR NOTIFICACIÓN
     try {
       const tierName = tier?.toUpperCase() || 'GOLD';
-      const nextBillingDate = currentPeriodEnd.toLocaleDateString('es-ES', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-      await NotificationTemplates.subscriptionCreated(
+      await NotificationTemplates.paymentReceived(
         parseInt(userId), 
-        `${tierName} BUNDLE`, 
-        `Tu video se está generando. ${nextBillingDate}`
+        session.amount_total / 100,
+        `${tierName} Music Video - Generación en progreso`
       );
     } catch (notifError) {
-      console.error('Error enviando notificación de bundle:', notifError);
+      console.error('Error enviando notificación de pago:', notifError);
     }
     
   } catch (error) {
-    console.error('Error al procesar bundle de video:', error);
+    console.error('Error al procesar compra de video:', error);
   }
 }
 
@@ -1667,15 +1602,13 @@ router.post('/create-music-video-bundle-checkout', authenticate, async (req: Req
       success_url: `${BASE_URL}/music-video/success?session_id={CHECKOUT_SESSION_ID}&tier=${tier}`,
       cancel_url: `${BASE_URL}/music-video/cancelled`,
       metadata: {
-        type: 'music_video_bundle', // ✅ Para que el webhook lo detecte
+        type: 'music_video_bundle',
         userId,
         tier,
         songName: songName || 'Music Video',
-        duration: duration?.toString() || '0',
-        subscriptionTier: tierConfig.subscriptionTier,
-        subscriptionValue: tierConfig.subscriptionValue.toString()
+        duration: duration?.toString() || '0'
       },
-      client_reference_id: userId // ✅ Para identificar al usuario en el webhook
+      client_reference_id: userId
     });
 
     res.json({ 
