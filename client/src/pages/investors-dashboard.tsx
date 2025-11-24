@@ -326,11 +326,10 @@ function RoadmapTimeline() {
     },
     {
       date: "Octubre 2025",
-      title: "Hito: 1,000 Usuarios Activos + Generador de Videos Automáticos",
-      description: "Primera meta de crecimiento alcanzada. Implementación del generador de videos automáticos funcional. Expansión del equipo de soporte y optimización de infraestructura.",
-      stats: "1,000 usuarios, $100K MRR, Videos automáticos operativo",
-      status: "upcoming",
-      isKey: true
+      title: "Optimización de Infraestructura",
+      description: "Preparación de infraestructura para crecimiento masivo. Optimización de bases de datos, cachés distribuidos y CDN global.",
+      stats: "Infraestructura escalable lista",
+      status: "upcoming"
     },
     {
       date: "Diciembre 2025",
@@ -338,6 +337,14 @@ function RoadmapTimeline() {
       description: "Conexión directa con principales plataformas de streaming para sincronización automática de perfiles, estadísticas y distribución.",
       stats: "APIs integradas completamente",
       status: "upcoming"
+    },
+    {
+      date: "Enero 2026",
+      title: "Hito: 1,000 Usuarios Activos + Generador de Videos Automáticos",
+      description: "Primera meta de crecimiento alcanzada. Implementación del generador de videos automáticos funcional. Expansión del equipo de soporte y optimización de infraestructura.",
+      stats: "1,000 usuarios, $100K MRR, Videos automáticos operativo",
+      status: "upcoming",
+      isKey: true
     },
     {
       date: "Febrero 2026",
