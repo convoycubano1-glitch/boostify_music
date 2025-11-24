@@ -99,10 +99,10 @@ function RevenueSimulationsCalculator() {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
         {/* Active Users Slider */}
-        <div className="p-3 sm:p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+        <div className="p-3 sm:p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
           <div className="flex justify-between mb-2 sm:mb-3 flex-col sm:flex-row gap-1 sm:gap-0">
             <label className="text-xs sm:text-sm font-medium text-white">Active Users</label>
-            <span className="text-base sm:text-lg font-bold text-blue-400">{activeUsers.toLocaleString()}</span>
+            <span className="text-base sm:text-lg font-bold text-orange-400">{activeUsers.toLocaleString()}</span>
           </div>
           <Slider
             value={[activeUsers]}
@@ -116,7 +116,7 @@ function RevenueSimulationsCalculator() {
         </div>
 
         {/* Video Conversion Rate */}
-        <div className="p-3 sm:p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+        <div className="p-3 sm:p-4 bg-amber-500/10 rounded-lg border border-purple-500/20">
           <div className="flex justify-between mb-2 sm:mb-3 flex-col sm:flex-row gap-1 sm:gap-0">
             <label className="text-xs sm:text-sm font-medium text-white">Video Users %</label>
             <span className="text-base sm:text-lg font-bold text-purple-400">{videoConversion}%</span>
@@ -133,10 +133,10 @@ function RevenueSimulationsCalculator() {
         </div>
 
         {/* Blockchain Volume */}
-        <div className="p-3 sm:p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+        <div className="p-3 sm:p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
           <div className="flex justify-between mb-2 sm:mb-3 flex-col sm:flex-row gap-1 sm:gap-0">
             <label className="text-xs sm:text-sm font-medium text-white">Blockchain Volume</label>
-            <span className="text-base sm:text-lg font-bold text-green-400">${(blockchainVolume/1000000).toFixed(2)}M</span>
+            <span className="text-base sm:text-lg font-bold text-yellow-400">${(blockchainVolume/1000000).toFixed(2)}M</span>
           </div>
           <Slider
             value={[blockchainVolume]}
@@ -164,7 +164,7 @@ function RevenueSimulationsCalculator() {
           <tbody className="space-y-2">
             <tr className="border-b border-white/10">
               <td className="text-white py-2">1. Subscriptions</td>
-              <td className="text-right text-green-400 font-semibold">${calculations.subscriptions.total().toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-yellow-400 font-semibold">${calculations.subscriptions.total().toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
               <td className="text-right text-white/60">{((calculations.subscriptions.total() / monthlyTotal) * 100).toFixed(1)}%</td>
             </tr>
             <tr className="border-b border-white/10">
@@ -174,7 +174,7 @@ function RevenueSimulationsCalculator() {
             </tr>
             <tr className="border-b border-white/10">
               <td className="text-white py-2">3. Blockchain & Tokenization (5% fees)</td>
-              <td className="text-right text-cyan-400 font-semibold">${calculations.blockchain.total().toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-orange-400 font-semibold">${calculations.blockchain.total().toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
               <td className="text-right text-white/60">{((calculations.blockchain.total() / monthlyTotal) * 100).toFixed(1)}%</td>
             </tr>
             <tr className="border-b border-white/10">
@@ -194,7 +194,7 @@ function RevenueSimulationsCalculator() {
             </tr>
             <tr className="border-b border-white/10">
               <td className="text-white py-2">7. Boostify Token ($BOOST)</td>
-              <td className="text-right text-blue-400 font-semibold">${calculations.token.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-orange-400 font-semibold">${calculations.token.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
               <td className="text-right text-white/60">{((calculations.token / monthlyTotal) * 100).toFixed(1)}%</td>
             </tr>
             <tr className="border-b border-white/10">
@@ -219,7 +219,7 @@ function RevenueSimulationsCalculator() {
             </tr>
             <tr>
               <td className="text-white font-bold py-3">ANNUAL REVENUE</td>
-              <td className="text-right text-green-400 font-bold text-lg py-3">${annualTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+              <td className="text-right text-yellow-400 font-bold text-lg py-3">${annualTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
               <td className="text-right text-white/60 py-3">-</td>
             </tr>
           </tbody>
@@ -232,16 +232,16 @@ function RevenueSimulationsCalculator() {
           <p className="text-white/70 text-[10px] sm:text-xs mb-1">Monthly Revenue</p>
           <p className="text-lg sm:text-2xl font-bold text-orange-400">${(monthlyTotal/1000).toFixed(1)}k</p>
         </div>
-        <div className="p-2 sm:p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+        <div className="p-2 sm:p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
           <p className="text-white/70 text-[10px] sm:text-xs mb-1">Annual Revenue</p>
-          <p className="text-lg sm:text-2xl font-bold text-green-400">${(annualTotal/1000000).toFixed(2)}M</p>
+          <p className="text-lg sm:text-2xl font-bold text-yellow-400">${(annualTotal/1000000).toFixed(2)}M</p>
         </div>
-        <div className="p-2 sm:p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+        <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
           <p className="text-white/70 text-[10px] sm:text-xs mb-1">Top Revenue Stream</p>
-          <p className="text-base sm:text-lg font-bold text-blue-400">Subscriptions</p>
+          <p className="text-base sm:text-lg font-bold text-orange-400">Subscriptions</p>
           <p className="text-[9px] sm:text-xs text-white/60">{((calculations.subscriptions.total() / monthlyTotal) * 100).toFixed(0)}% of revenue</p>
         </div>
-        <div className="p-2 sm:p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+        <div className="p-2 sm:p-3 bg-amber-500/10 rounded-lg border border-purple-500/20">
           <p className="text-white/70 text-[10px] sm:text-xs mb-1">Revenue per User</p>
           <p className="text-lg sm:text-2xl font-bold text-purple-400">${(monthlyTotal / activeUsers).toFixed(2)}</p>
           <p className="text-[9px] sm:text-xs text-white/60">per user/month</p>
@@ -268,7 +268,7 @@ function FundAllocationSimulator() {
   const operationTypes = {
     marketing: {
       label: 'Marketing',
-      color: 'from-blue-500 to-blue-600',
+      color: 'from-orange-400 to-orange-500',
       items: [
         { desc: 'Instagram Ad Campaign', cost: 5000 },
         { desc: 'YouTube Influencer', cost: 8000 },
@@ -278,7 +278,7 @@ function FundAllocationSimulator() {
     },
     development: {
       label: 'Development',
-      color: 'from-purple-500 to-purple-600',
+      color: 'from-amber-500 to-orange-500',
       items: [
         { desc: 'API Development', cost: 15000 },
         { desc: 'Mobile App Improvement', cost: 20000 },
@@ -287,7 +287,7 @@ function FundAllocationSimulator() {
     },
     operations: {
       label: 'Operations',
-      color: 'from-green-500 to-green-600',
+      color: 'from-yellow-500 to-amber-500',
       items: [
         { desc: 'Customer Support Team', cost: 4000 },
         { desc: 'Legal Compliance', cost: 3000 },
@@ -295,7 +295,7 @@ function FundAllocationSimulator() {
     },
     infrastructure: {
       label: 'Infrastructure',
-      color: 'from-orange-500 to-orange-600',
+      color: 'from-orange-400 to-orange-600',
       items: [
         { desc: 'Server Hosting & CDN', cost: 5000 },
         { desc: 'Cloud Services', cost: 3000 },
@@ -348,7 +348,7 @@ function FundAllocationSimulator() {
             </div>
             <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-300"
+                className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full transition-all duration-300"
                 style={{ width: `${percentageSpent}%` }}
               ></div>
             </div>
@@ -369,7 +369,7 @@ function FundAllocationSimulator() {
           <div className="flex gap-2 flex-col sm:flex-row">
             <button
               onClick={() => setIsRunning(!isRunning)}
-              className="flex-1 px-2 sm:px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+              className="flex-1 px-2 sm:px-3 py-2 rounded-lg bg-gradient-to-r from-orange-400 to-amber-600 text-white font-bold hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
             >
               {isRunning ? (
                 <>
@@ -426,13 +426,13 @@ function FundAllocationSimulator() {
 
         {/* Right: Summary */}
         <div className="space-y-2 sm:space-y-3">
-          <div className="p-3 sm:p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-lg border border-green-500/20">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-orange-500/10 to-yellow-500/5 rounded-lg border border-yellow-500/20">
             <div className="text-white/70 text-xs mb-1">Remaining Budget</div>
-            <div className="text-xl sm:text-2xl font-bold text-green-400">${(remaining).toLocaleString()}</div>
+            <div className="text-xl sm:text-2xl font-bold text-yellow-400">${(remaining).toLocaleString()}</div>
             <div className="text-[10px] sm:text-xs text-white/50 mt-1">{((remaining/totalFunds)*100).toFixed(1)}% available</div>
           </div>
 
-          <div className="p-3 sm:p-4 bg-gradient-to-br from-orange-500/10 to-red-600/5 rounded-lg border border-orange-500/20">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-orange-400/10 to-orange-600/5 rounded-lg border border-orange-500/20">
             <div className="text-white/70 text-xs mb-1">Total Spent</div>
             <div className="text-xl sm:text-2xl font-bold text-orange-400">${(spent).toLocaleString()}</div>
             <div className="text-[10px] sm:text-xs text-white/50 mt-1">{percentageSpent.toFixed(1)}% of budget</div>
@@ -458,7 +458,7 @@ function FundAllocationSimulator() {
             </div>
           </div>
 
-          <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500/10 to-cyan-600/5 rounded-lg border border-blue-500/20">
+          <div className="p-2 sm:p-3 bg-gradient-to-br from-green-500/10 to-yellow-500/5 rounded-lg border border-orange-500/20">
             <div className="flex items-center gap-2 text-[10px] sm:text-xs">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-white/70">100% Transparent</span>
@@ -492,19 +492,19 @@ function UserGrowthSimulator() {
     direct_send: {
       label: '50K Direct Sends',
       conversionRate: 0.08, // 8% conversion
-      color: 'from-cyan-500 to-blue-600',
+      color: 'from-green-500 to-yellow-500',
       description: 'Automated landing page emails to prospects'
     },
     social: {
       label: 'Social Media Campaign',
       conversionRate: 0.05, // 5% conversion
-      color: 'from-pink-500 to-purple-600',
+      color: 'from-amber-500 to-orange-600',
       description: 'Instagram, TikTok, Twitter campaigns'
     },
     landing: {
       label: 'Pre-created Landing Pages',
       conversionRate: 0.12, // 12% conversion
-      color: 'from-orange-500 to-yellow-600',
+      color: 'from-orange-400 to-yellow-600',
       description: 'High-converting artist landing pages'
     }
   };
@@ -595,7 +595,7 @@ function UserGrowthSimulator() {
             </div>
             <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-300"
+                className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full transition-all duration-300"
                 style={{ width: `${growthPercentage}%` }}
               ></div>
             </div>
@@ -616,7 +616,7 @@ function UserGrowthSimulator() {
           <div className="flex gap-2 flex-col sm:flex-row">
             <button
               onClick={() => setIsRunning(!isRunning)}
-              className="flex-1 px-2 sm:px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+              className="flex-1 px-2 sm:px-3 py-2 rounded-lg bg-gradient-to-r from-orange-400 to-amber-600 text-white font-bold hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
             >
               {isRunning ? (
                 <>
@@ -659,7 +659,7 @@ function UserGrowthSimulator() {
                       <div className="text-white/50 text-[8px]">{op.campaign}</div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className="text-green-400 font-bold">+{op.conversions}</div>
+                      <div className="text-yellow-400 font-bold">+{op.conversions}</div>
                       {op.revenue > 0 && <div className="text-[8px] text-white/60">${op.revenue.toLocaleString()}</div>}
                     </div>
                   </div>
@@ -671,15 +671,15 @@ function UserGrowthSimulator() {
 
         {/* Right: Statistics */}
         <div className="space-y-2 sm:space-y-3">
-          <div className="p-3 sm:p-4 bg-gradient-to-br from-cyan-500/10 to-blue-600/5 rounded-lg border border-cyan-500/20">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-orange-500/10 to-blue-600/5 rounded-lg border border-orange-500/20">
             <div className="text-white/70 text-xs mb-1">Current Users</div>
-            <div className="text-xl sm:text-2xl font-bold text-cyan-400">{totalUsers.toLocaleString()}</div>
+            <div className="text-xl sm:text-2xl font-bold text-orange-400">{totalUsers.toLocaleString()}</div>
             <div className="text-[10px] sm:text-xs text-white/50 mt-1">Active on platform</div>
           </div>
 
-          <div className="p-3 sm:p-4 bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-lg border border-green-500/20">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-lg border border-yellow-500/20">
             <div className="text-white/70 text-xs mb-1">Est. Monthly Revenue</div>
-            <div className="text-xl sm:text-2xl font-bold text-green-400">${(avgMonthlyRevenue / 1000).toFixed(1)}k</div>
+            <div className="text-xl sm:text-2xl font-bold text-yellow-400">${(avgMonthlyRevenue / 1000).toFixed(1)}k</div>
             <div className="text-[10px] sm:text-xs text-white/50 mt-1">@ $15 avg per user</div>
           </div>
 
@@ -851,7 +851,7 @@ function InvestmentCalculator() {
       </div>
 
       <div>
-        <Card className="p-6 overflow-hidden bg-gradient-to-br from-orange-500/10 to-background border-orange-500/20">
+        <Card className="p-6 overflow-hidden bg-gradient-to-br from-orange-400/10 to-background border-orange-500/20">
           <h4 className="text-lg font-medium mb-8">Investment Results</h4>
           
           <div className="space-y-6">
@@ -1110,7 +1110,7 @@ function RoadmapTimeline() {
   return (
     <div className="space-y-6">
       {/* Projected Growth Chart */}
-      <div className="bg-gradient-to-r from-orange-500/10 to-transparent p-6 rounded-lg mb-8">
+      <div className="bg-gradient-to-r from-orange-400/10 to-transparent p-6 rounded-lg mb-8">
         <h4 className="text-lg font-semibold mb-4">Projected User Growth</h4>
         <div className="h-64 relative">
           {/* Y-Axis */}
@@ -1142,7 +1142,7 @@ function RoadmapTimeline() {
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div 
-                    className="w-full max-w-[50px] bg-gradient-to-t from-orange-500 to-orange-400 rounded-t relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500"
+                    className="w-full max-w-[50px] bg-gradient-to-t from-orange-400 to-orange-400 rounded-t relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500"
                     style={{ height: item.height }}
                   >
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -1624,7 +1624,7 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
       value: `$${(investorData?.stats?.totalInvested || 1200000).toLocaleString()}`, 
       growth: "+12.0%", 
       icon: DollarSign,
-      color: "text-cyan-400",
+      color: "text-orange-400",
       bgColor: "bg-cyan-500/10" 
     },
     { 
@@ -1632,8 +1632,8 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
       value: `+${(investorData?.stats?.currentReturn || 18.5).toFixed(1)}%`, 
       growth: "+2.5%", 
       icon: TrendingUp,
-      color: "text-green-400",
-      bgColor: "bg-green-500/10" 
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-500/10" 
     },
     { 
       title: "PROJECTED YIELD", 
@@ -1649,7 +1649,7 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
       growth: "+8.3%", 
       icon: BarChart,
       color: "text-purple-400",
-      bgColor: "bg-purple-500/10" 
+      bgColor: "bg-amber-500/10" 
     }
   ];
 
@@ -1658,7 +1658,7 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
       {stats.map((stat, index) => (
         <Card 
           key={index} 
-          className="relative p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-cyan-500/20 hover:border-cyan-500/50 transition-all duration-300 overflow-hidden group"
+          className="relative p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 hover:border-orange-500/50 transition-all duration-300 overflow-hidden group"
         >
           {/* Glow effect on hover */}
           <div className={`absolute inset-0 ${stat.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
@@ -1668,11 +1668,11 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
               <div className={`p-3 ${stat.bgColor} rounded-xl shadow-lg`}>
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />
               </div>
-              <span className="text-sm font-semibold text-green-400">{stat.growth}</span>
+              <span className="text-sm font-semibold text-yellow-400">{stat.growth}</span>
             </div>
             <div>
-              <p className="text-sm text-slate-400 mb-2">{stat.title}</p>
-              <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-cyan-300 to-cyan-100 bg-clip-text text-transparent">{stat.value}</p>
+              <p className="text-sm text-gray-400 mb-2">{stat.title}</p>
+              <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-200 bg-clip-text text-transparent">{stat.value}</p>
             </div>
           </div>
         </Card>
@@ -1775,36 +1775,36 @@ export default function InvestorsDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pb-14 sm:pb-0">
+    <div className="min-h-screen flex flex-col bg-gray-950 pb-14 sm:pb-0">
       <Header />
       <main className="flex-1 pt-14 sm:pt-16">
         <ScrollArea className="flex-1 h-[calc(100vh-5rem)]">
           <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
             {/* Hero Section - Modern Design */}
-            <section className="relative rounded-2xl overflow-hidden mb-8 sm:mb-12 bg-gradient-to-br from-cyan-500/10 via-slate-900 to-slate-950 p-6 sm:p-10 border border-cyan-500/20">
+            <section className="relative rounded-2xl overflow-hidden mb-8 sm:mb-12 bg-gradient-to-br from-orange-500/10 via-slate-900 to-gray-950 p-6 sm:p-10 border border-orange-500/20">
               {/* Glowing effect */}
               <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full filter blur-3xl opacity-20"></div>
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-yellow-500/10 rounded-full filter blur-3xl opacity-20"></div>
               
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-amber-600 flex items-center justify-center">
                     <TrendingUp className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-cyan-300 to-yellow-400 bg-clip-text text-transparent">
+                    <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-orange-400 via-orange-300 to-amber-400 bg-clip-text text-transparent">
                       INVESTOR DASHBOARD
                     </h1>
                   </div>
                 </div>
-                <p className="text-base md:text-xl text-slate-300 max-w-3xl mb-8">
+                <p className="text-base md:text-xl text-gray-300 max-w-3xl mb-8">
                   Manage your investments, monitor returns, and explore new opportunities with Boostify Music
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <Button 
                     onClick={handleInvestNow} 
                     size="lg" 
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-slate-950 font-semibold shadow-lg shadow-yellow-500/30"
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-950 font-semibold shadow-lg shadow-yellow-500/30"
                   >
                     <DollarSign className="mr-2 h-5 w-5" />
                     Invest Now
@@ -1812,7 +1812,7 @@ export default function InvestorsDashboard() {
                   <Button 
                     variant="outline" 
                     size="lg" 
-                    className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10 hover:text-cyan-200"
+                    className="border-orange-500/50 text-orange-300 hover:bg-cyan-500/10 hover:text-orange-200"
                     onClick={handleDownloadContract}
                   >
                     <Download className="mr-2 h-5 w-5" />
@@ -1824,45 +1824,45 @@ export default function InvestorsDashboard() {
 
             {/* Main Content Tabs - Modern Design */}
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-6 max-w-[1200px] mb-6 sm:mb-10 bg-slate-900/50 border border-cyan-500/20 p-1">
+              <TabsList className="grid grid-cols-6 max-w-[1200px] mb-6 sm:mb-10 bg-gray-900/50 border border-orange-500/20 p-1">
                 <TabsTrigger 
                   value="investments" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white text-gray-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/30"
                 >
                   <TrendingUp className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Investments</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="roadmap" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white text-gray-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/30"
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Roadmap</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="projections" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white text-gray-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/30"
                 >
                   <BarChart className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Projections</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="calculator" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white text-gray-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/30"
                 >
                   <DollarSign className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Calculator</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="overview" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white text-gray-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/30"
                 >
                   <BarChart2 className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Overview</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="register" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white text-slate-400 data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/30"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white text-gray-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/30"
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
                   <span className="text-xs sm:text-sm">Register</span>
@@ -1876,27 +1876,27 @@ export default function InvestorsDashboard() {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6 mb-8">
-                  <Card className="p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-cyan-500/20">
-                    <h3 className="text-lg font-semibold mb-6 text-cyan-300">Portfolio Value Over Time</h3>
+                  <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20">
+                    <h3 className="text-lg font-semibold mb-6 text-orange-300">Portfolio Value Over Time</h3>
                     <InvestmentPerformanceChart data={investmentData.monthlyReturns} />
                   </Card>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <Card className="p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-cyan-500/20 flex flex-col items-center justify-center">
-                      <p className="text-sm text-slate-400 mb-2">Diversification</p>
+                    <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 flex flex-col items-center justify-center">
+                      <p className="text-sm text-gray-400 mb-2">Diversification</p>
                       <div className="relative w-32 h-32">
                         <svg className="w-full h-full transform -rotate-90">
                           <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(30 41 59)" strokeWidth="12"/>
                           <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(6 182 212)" strokeWidth="12" strokeDasharray="264" strokeDashoffset="66" strokeLinecap="round"/>
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-3xl font-bold text-cyan-300">75%</span>
+                          <span className="text-3xl font-bold text-orange-300">75%</span>
                         </div>
                       </div>
                     </Card>
                     
-                    <Card className="p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-yellow-500/20 flex flex-col items-center justify-center">
-                      <p className="text-sm text-slate-400 mb-2">Risk Level</p>
+                    <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-yellow-500/20 flex flex-col items-center justify-center">
+                      <p className="text-sm text-gray-400 mb-2">Risk Level</p>
                       <div className="relative w-32 h-32">
                         <svg className="w-full h-full transform -rotate-90">
                           <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(30 41 59)" strokeWidth="12"/>
@@ -1910,16 +1910,16 @@ export default function InvestorsDashboard() {
                   </div>
                 </div>
 
-                <Card className="p-6 bg-gradient-to-br from-slate-900/90 to-slate-900/50 border border-cyan-500/20 mb-8">
+                <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 mb-8">
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold text-cyan-300">Investor Information</h3>
-                    <Button variant="outline" size="sm" className="border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10">
+                    <h3 className="text-lg font-semibold text-orange-300">Investor Information</h3>
+                    <Button variant="outline" size="sm" className="border-orange-500/50 text-orange-300 hover:bg-cyan-500/10">
                       <Download className="h-4 w-4 mr-2" />
                       Download Info
                     </Button>
                   </div>
 
-                  <div className="space-y-4 text-slate-300">
+                  <div className="space-y-4 text-gray-300">
                     <div>
                       <h4 className="text-base font-semibold mb-2 text-white">Investing in Boostify Music</h4>
                       <p className="text-sm">
@@ -1931,24 +1931,24 @@ export default function InvestorsDashboard() {
                       <h4 className="text-base font-semibold mb-3 text-white">Investment Benefits</h4>
                       <ul className="space-y-2 text-sm">
                         <li className="flex items-start gap-2">
-                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span><strong className="text-cyan-300">Monthly Returns:</strong> 4-6% based on your selected investment plan</span>
+                          <Check className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-orange-300">Monthly Returns:</strong> 4-6% based on your selected investment plan</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span><strong className="text-cyan-300">Minimum Investment:</strong> $2,000 USD</span>
+                          <Check className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-orange-300">Minimum Investment:</strong> $2,000 USD</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span><strong className="text-cyan-300">Monthly Payments:</strong> Profit distribution on the 15th of each month</span>
+                          <Check className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-orange-300">Monthly Payments:</strong> Profit distribution on the 15th of each month</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span><strong className="text-cyan-300">Transparent Contracts:</strong> Clear terms and comprehensive documentation</span>
+                          <Check className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-orange-300">Transparent Contracts:</strong> Clear terms and comprehensive documentation</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <Check className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                          <span><strong className="text-cyan-300">Exclusive Dashboard:</strong> Access to real-time statistics and analysis tools</span>
+                          <Check className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                          <span><strong className="text-orange-300">Exclusive Dashboard:</strong> Access to real-time statistics and analysis tools</span>
                         </li>
                       </ul>
                     </div>
@@ -1963,7 +1963,7 @@ export default function InvestorsDashboard() {
                     <div className="pt-4">
                       <Button 
                         onClick={handleInvestNow} 
-                        className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-slate-950 font-semibold w-full sm:w-auto"
+                        className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-950 font-semibold w-full sm:w-auto"
                       >
                         <DollarSign className="mr-2 h-4 w-4" />
                         Start Investing
@@ -2185,7 +2185,7 @@ export default function InvestorsDashboard() {
                     <Button 
                       onClick={handleInvestNow}
                       size="lg"
-                      className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
+                      className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
                       Invest Now
@@ -2196,8 +2196,8 @@ export default function InvestorsDashboard() {
                     {investmentData.investmentRounds.map((round: any, index: number) => (
                       <Card key={index} className={`p-4 sm:p-6 relative overflow-hidden ${
                         round.status === 'Active' 
-                          ? 'bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-orange-500/30' 
-                          : 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-700/30'
+                          ? 'bg-gradient-to-br from-orange-400/20 to-orange-500/5 border-orange-500/30' 
+                          : 'bg-gradient-to-br from-slate-800/50 to-gray-900/50 border-slate-700/30'
                       }`}>
                         {round.status === 'Active' && (
                           <div className="absolute -top-3 right-4 px-3 py-1 bg-orange-500 text-white text-xs rounded-full font-semibold">
@@ -2209,7 +2209,7 @@ export default function InvestorsDashboard() {
                           <div className="flex justify-between items-start mb-3">
                             <h4 className="text-lg sm:text-xl font-bold">{round.name}</h4>
                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              round.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+                              round.status === 'Active' ? 'bg-green-500/20 text-yellow-400' : 'bg-blue-500/20 text-orange-400'
                             }`}>
                               {round.status}
                             </span>
@@ -2232,7 +2232,7 @@ export default function InvestorsDashboard() {
                           </div>
                           <div className="flex justify-between items-center pb-2 border-b border-white/10">
                             <span className="text-xs text-muted-foreground">Round Type</span>
-                            <span className="text-xs font-semibold text-cyan-400">{round.raisedStatus}</span>
+                            <span className="text-xs font-semibold text-orange-400">{round.raisedStatus}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">User Growth Goal</span>
@@ -2276,10 +2276,10 @@ export default function InvestorsDashboard() {
                       </div>
                     </Card>
 
-                    <Card className="p-4 bg-cyan-500/10 border-cyan-500/20">
+                    <Card className="p-4 bg-cyan-500/10 border-orange-500/20">
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-cyan-500/20 rounded-lg">
-                          <Users className="h-5 w-5 text-cyan-500" />
+                          <Users className="h-5 w-5 text-orange-500" />
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">User Growth Goal</p>
@@ -2322,7 +2322,7 @@ export default function InvestorsDashboard() {
                     <div>
                       <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4 text-white">Projected User Growth</h4>
                       <div className="h-64 bg-black/30 rounded-lg p-4 overflow-visible relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-orange-500/10 rounded-lg"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-400/5 to-orange-500/10 rounded-lg"></div>
                         <div className="relative z-10 h-56 flex flex-col">
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-xs text-white/70">Users (thousands)</span>
@@ -2349,7 +2349,7 @@ export default function InvestorsDashboard() {
                             ].map((item, index) => (
                               <div key={index} className="flex-1 flex flex-col items-center justify-end">
                                 <div 
-                                  className="w-full bg-gradient-to-t from-orange-500 to-orange-400 rounded-sm relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500 shadow-lg"
+                                  className="w-full bg-gradient-to-t from-orange-400 to-orange-400 rounded-sm relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500 shadow-lg"
                                   style={{ height: item.height, maxWidth: "24px", margin: "0 auto" }}
                                 >
                                   <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-[9px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
@@ -2603,19 +2603,19 @@ export default function InvestorsDashboard() {
                       <div className="mb-6">
                         <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">1. Subscription Plans Revenue</h6>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                          <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
                             <p className="text-white/70 text-xs mb-1">Basic Plan</p>
                             <p className="font-bold text-white">$59.99/mo</p>
                             <p className="text-xs text-white/60 mt-2">• Core features + 10 productions</p>
                             <p className="text-xs text-white/60">• 30% of users (1k users = $18k/mo)</p>
                           </div>
-                          <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                          <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
                             <p className="text-white/70 text-xs mb-1">Pro Plan</p>
                             <p className="font-bold text-white">$99.99/mo</p>
                             <p className="text-xs text-white/60 mt-2">• Advanced AI + 30 productions</p>
                             <p className="text-xs text-white/60">• 40% of users (1k users = $39.9k/mo)</p>
                           </div>
-                          <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                          <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
                             <p className="text-white/70 text-xs mb-1">Premium Plan</p>
                             <p className="font-bold text-white">$149.99/mo</p>
                             <p className="text-xs text-white/60 mt-2">• Unlimited + Masterclasses</p>
@@ -2628,19 +2628,19 @@ export default function InvestorsDashboard() {
                       <div className="mb-6">
                         <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">2. Music Video Generator ($199/video)</h6>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                          <div className="p-3 bg-amber-500/10 rounded-lg border border-purple-500/20">
                             <p className="text-white/70 text-xs mb-1">1,000 Users</p>
                             <p className="text-xs text-white/60 mb-2">20% generate videos (200 videos)</p>
                             <p className="font-bold text-white">$39,800/mo</p>
                             <p className="text-xs text-white/60 mt-2">Annual: $477,600</p>
                           </div>
-                          <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                          <div className="p-3 bg-amber-500/10 rounded-lg border border-purple-500/20">
                             <p className="text-white/70 text-xs mb-1">5,000 Users</p>
                             <p className="text-xs text-white/60 mb-2">20% generate videos (1,000 videos)</p>
                             <p className="font-bold text-white">$199,000/mo</p>
                             <p className="text-xs text-white/60 mt-2">Annual: $2,388,000</p>
                           </div>
-                          <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                          <div className="p-3 bg-amber-500/10 rounded-lg border border-purple-500/20">
                             <p className="text-white/70 text-xs mb-1">10,000 Users</p>
                             <p className="text-xs text-white/60 mb-2">20% generate videos (2,000 videos)</p>
                             <p className="font-bold text-white">$398,000/mo</p>
@@ -2653,19 +2653,19 @@ export default function InvestorsDashboard() {
                       <div className="mb-6">
                         <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">3. Blockchain Fees & Tokenization (5% per transaction)</h6>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                          <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                             <p className="text-white/70 text-xs mb-1">BoostiSwap DEX Trading</p>
                             <p className="text-xs text-white/60 mb-2">5% commission on trades</p>
                             <p className="font-bold text-white">$50,000-150k/mo*</p>
                             <p className="text-xs text-white/60 mt-2">*Depends on trading volume</p>
                           </div>
-                          <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                          <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                             <p className="text-white/70 text-xs mb-1">Artist Token Deployment</p>
                             <p className="text-xs text-white/60 mb-2">Gas fees + platform commission</p>
                             <p className="font-bold text-white">$20,000-80k/mo*</p>
                             <p className="text-xs text-white/60 mt-2">*Per deployment volume</p>
                           </div>
-                          <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                          <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                             <p className="text-white/70 text-xs mb-1">Smart Contract Royalties</p>
                             <p className="text-xs text-white/60 mb-2">Automated royalty distribution 2-3%</p>
                             <p className="font-bold text-white">$30,000-100k/mo*</p>
@@ -2741,13 +2741,13 @@ export default function InvestorsDashboard() {
                       <div className="mb-6">
                         <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">7. Boostify Token ($BOOST) Ecosystem</h6>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div className="p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                          <div className="p-3 bg-cyan-500/10 rounded-lg border border-orange-500/20">
                             <p className="text-white/70 text-xs mb-1">Token Sales & Staking</p>
                             <p className="text-xs text-white/60 mb-2">IDO + ongoing secondary sales</p>
                             <p className="text-xs text-white/60 mb-2">3-5% platform commission</p>
                             <p className="font-bold text-white">$100,000-300k/mo</p>
                           </div>
-                          <div className="p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                          <div className="p-3 bg-cyan-500/10 rounded-lg border border-orange-500/20">
                             <p className="text-white/70 text-xs mb-1">Staking Rewards Pool</p>
                             <p className="text-xs text-white/60 mb-2">12% APY for token holders</p>
                             <p className="text-xs text-white/60 mb-2">Platform revenue from inflation</p>
@@ -2846,7 +2846,7 @@ export default function InvestorsDashboard() {
                     <Card className="p-3 sm:p-4 bg-black/30 border-orange-500/20">
                       <div className="flex items-center gap-2 sm:gap-3 mb-2">
                         <div className="p-1.5 rounded-full bg-blue-500/20">
-                          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
+                          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-orange-400" />
                         </div>
                         <h4 className="text-sm sm:text-base font-medium text-white">Projected Users</h4>
                       </div>
@@ -2857,7 +2857,7 @@ export default function InvestorsDashboard() {
                     <Card className="p-3 sm:p-4 bg-black/30 border-orange-500/20">
                       <div className="flex items-center gap-2 sm:gap-3 mb-2">
                         <div className="p-1.5 rounded-full bg-green-500/20">
-                          <BarChart className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
+                          <BarChart className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
                         </div>
                         <h4 className="text-sm sm:text-base font-medium text-white">Annual Revenue</h4>
                       </div>
