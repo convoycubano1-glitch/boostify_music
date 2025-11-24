@@ -1128,7 +1128,6 @@ export default function SpotifyPage() {
                     </Card>
                   </div>
                 )}
-                  </div>
                 </PlanTierGuard>
               </TabsContent>
 
