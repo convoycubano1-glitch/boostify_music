@@ -41,6 +41,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2020,
     fans: 2500000,
     streams: 450000000,
+    profileImage: "/artist-images/luna_echo_-_female_pop_singer.png",
     investmentPotential: "Very High",
     roi: 145,
     roadmap: [
@@ -108,6 +109,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2018,
     fans: 3800000,
     streams: 720000000,
+    profileImage: "/artist-images/urban_flow_-_hip-hop_artist.png",
     investmentPotential: "Very High",
     roi: 165,
     roadmap: [
@@ -137,6 +139,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2019,
     fans: 4200000,
     streams: 890000000,
+    profileImage: "/artist-images/electric_dreams_-_electronic_artist.png",
     investmentPotential: "Exceptional",
     roi: 187,
     roadmap: [
@@ -166,6 +169,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2017,
     fans: 2800000,
     streams: 560000000,
+    profileImage: "/artist-images/soul_harmony_-_r&b_artist.png",
     investmentPotential: "Very High",
     roi: 98,
     roadmap: [
@@ -229,6 +233,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2019,
     fans: 1200000,
     streams: 280000000,
+    profileImage: "/artist-images/maya_rivers_-_indie_folk.png",
     investmentPotential: "High",
     roi: 76,
     roadmap: [
@@ -258,6 +263,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2016,
     fans: 1900000,
     streams: 410000000,
+    profileImage: "/artist-images/jah_vibes_-_reggae_artist.png",
     investmentPotential: "High",
     roi: 85,
     roadmap: [
@@ -287,6 +293,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2015,
     fans: 850000,
     streams: 195000000,
+    profileImage: "/artist-images/david_chen_-_classical_pianist.png",
     investmentPotential: "Exceptional",
     roi: 201,
     roadmap: [
@@ -316,6 +323,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2020,
     fans: 5600000,
     streams: 1200000000,
+    profileImage: "/artist-images/sophia_kim_-_k-pop_star.png",
     investmentPotential: "Exceptional",
     roi: 234,
     roadmap: [
@@ -345,6 +353,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2017,
     fans: 920000,
     streams: 215000000,
+    profileImage: "/artist-images/marcus_stone_-_jazz_saxophonist.png",
     investmentPotential: "High",
     roi: 112,
     roadmap: [
@@ -374,6 +383,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2019,
     fans: 3400000,
     streams: 750000000,
+    profileImage: "/artist-images/isabella_santos_-_reggaeton.png",
     investmentPotential: "Very High",
     roi: 178,
     roadmap: [
@@ -403,6 +413,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2018,
     fans: 2100000,
     streams: 520000000,
+    profileImage: "/artist-images/luke_bradley_-_country_artist.png",
     investmentPotential: "High",
     roi: 68,
     roadmap: [
@@ -432,6 +443,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2018,
     fans: 1450000,
     streams: 380000000,
+    profileImage: "/artist-images/aria_nova_-_ambient_electronic.png",
     investmentPotential: "High",
     roi: 89,
     roadmap: [
@@ -461,6 +473,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2017,
     fans: 2900000,
     streams: 680000000,
+    profileImage: "/artist-images/alex_thunder_-_trap_producer.png",
     investmentPotential: "Very High",
     roi: 145,
     roadmap: [
@@ -490,6 +503,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2014,
     fans: 680000,
     streams: 125000000,
+    profileImage: "/artist-images/victoria_cross_-_opera_singer.png",
     investmentPotential: "Exceptional",
     roi: 223,
     roadmap: [
@@ -519,6 +533,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2016,
     fans: 1780000,
     streams: 420000000,
+    profileImage: "/artist-images/prince_diesel_-_funk_artist.png",
     investmentPotential: "High",
     roi: 103,
     roadmap: [
@@ -548,6 +563,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2019,
     fans: 2340000,
     streams: 545000000,
+    profileImage: "/artist-images/ryan_phoenix_-_indie_rock.png",
     investmentPotential: "High",
     roi: 92,
     roadmap: [
@@ -577,6 +593,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2018,
     fans: 3100000,
     streams: 710000000,
+    profileImage: "/artist-images/pablo_fuego_-_latin_artist.png",
     investmentPotential: "Very High",
     roi: 156,
     roadmap: [
@@ -606,6 +623,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2020,
     fans: 4500000,
     streams: 980000000,
+    profileImage: "/artist-images/emma_white_-_pop_princess.png",
     investmentPotential: "Exceptional",
     roi: 189,
     roadmap: [
@@ -635,6 +653,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2017,
     fans: 2550000,
     streams: 590000000,
+    profileImage: "/artist-images/chris_void_-_dubstep_producer.png",
     investmentPotential: "Very High",
     roi: 167,
     roadmap: [
@@ -664,6 +683,7 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2018,
     fans: 2650000,
     streams: 615000000,
+    profileImage: "/artist-images/james_grant_-_soul_singer.png",
     investmentPotential: "Very High",
     roi: 128,
     roadmap: [
