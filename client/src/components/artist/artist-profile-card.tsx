@@ -1046,27 +1046,52 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Query para canciones
   const { data: songs = [] as Song[], refetch: refetchSongs } = useQuery<Song[]>({
-    queryKey: ["songs", userProfile?.pgId || artistId],
+    queryKey: ["songs", userProfile?.pgId || userProfile?.uid || artistId],
     queryFn: async () => {
       try {
         const pgId = userProfile?.pgId || artistId;
-        logger.info(`🎵 Fetching songs for artist: ${pgId} (PostgreSQL ID)`);
+        const firebaseUid = userProfile?.uid || artistId;
+        logger.info(`🎵 Fetching songs for artist: ${pgId} (PostgreSQL ID) or ${firebaseUid} (Firebase UID)`);
+        
         const songsRef = collection(db, "songs");
-        const q = query(songsRef, where("userId", "==", pgId));
-        const querySnapshot = await getDocs(q);
+        let allSongs: any[] = [];
+        
+        // Intentar buscar por pgId primero (para artistas generados)
+        try {
+          const q1 = query(songsRef, where("userId", "==", pgId));
+          const snap1 = await getDocs(q1);
+          allSongs = [...snap1.docs.map(doc => ({ id: doc.id, ...doc.data() }))];
+          logger.info(`📊 Found ${snap1.size} songs by pgId`);
+        } catch (e) {
+          logger.warn('⚠️ Error searching by pgId:', e);
+        }
+        
+        // Si no se encontraron por pgId, intentar por Firebase UID (para usuarios personales)
+        if (allSongs.length === 0 && firebaseUid !== pgId) {
+          try {
+            const q2 = query(songsRef, where("userId", "==", firebaseUid));
+            const snap2 = await getDocs(q2);
+            allSongs = [...snap2.docs.map(doc => ({ id: doc.id, ...doc.data() }))];
+            logger.info(`📊 Found ${snap2.size} songs by Firebase UID`);
+          } catch (e) {
+            logger.warn('⚠️ Error searching by Firebase UID:', e);
+          }
+        }
+        
+        const querySnapshot = allSongs;
+        logger.info(`📊 Songs query returned ${querySnapshot.length} documents total`);
 
-        logger.info(`📊 Songs query returned ${querySnapshot.size} documents`);
-
-        if (querySnapshot.empty) {
+        if (querySnapshot.length === 0) {
           logger.info('⚠️ No songs found for this artist');
           return [];
         }
 
-        const songsData = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          logger.info('🎵 Song data:', { id: doc.id, name: data.name, audioUrl: data.audioUrl });
+        const songsData = querySnapshot.map((doc: any) => {
+          const data = typeof doc.data === 'function' ? doc.data() : doc;
+          const docId = doc.id || doc.id;
+          logger.info('🎵 Song data:', { id: docId, name: data.name, audioUrl: data.audioUrl });
           return {
-            id: doc.id,
+            id: docId,
             name: data.name,
             title: data.name,
             audioUrl: data.audioUrl,
