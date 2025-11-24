@@ -26,6 +26,36 @@ const stripe = new Stripe(stripeKey!, {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+// Make webhook URL para enviar eventos de suscripción
+const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/ow1m732j9t4mjmnod9cyahk6im7w6uet';
+
+/**
+ * Enviar evento a Make para que maneje los emails
+ */
+async function sendToMake(eventType: string, data: any) {
+  try {
+    const response = await fetch(MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        event: eventType,
+        timestamp: new Date().toISOString(),
+        data: data
+      })
+    });
+
+    if (!response.ok) {
+      console.error(`❌ Error sending to Make: ${response.statusText}`);
+    } else {
+      console.log(`✅ Event sent to Make: ${eventType}`);
+    }
+  } catch (error) {
+    console.error('❌ Error connecting to Make:', error);
+  }
+}
+
 /**
  * Endpoint para recibir webhooks de Stripe
  * IMPORTANTE: Este endpoint debe usar raw body (no JSON parsed)
@@ -164,7 +194,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     
     console.log(`✅ Music video bundle ${bundleTier} purchased! Trial subscription activated for user ${user.email}: ${planTier} (30 days)`);
     
-    // Enviar notificación
+    // Enviar notificación IN-APP
     await db.insert(notifications).values({
       userId: user.id,
       type: 'subscription_activated',
@@ -173,6 +203,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       read: false,
       createdAt: new Date()
     }).catch(err => console.error('Error creating notification:', err));
+    
+    // Enviar a Make para email
+    await sendToMake('subscription_activated', {
+      userEmail: user.email,
+      userName: user.artistName || user.email,
+      planTier: planTier,
+      bundleTier: bundleTier,
+      trialDays: 30,
+      type: 'bundle_trial'
+    });
     
     return;
   }
@@ -237,7 +277,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   
   console.log(`✅ Subscription created/updated for user ${user.email}: ${planTier}`);
   
-  // Enviar notificación
+  // Enviar notificación IN-APP
   await db.insert(notifications).values({
     userId: user.id,
     type: 'subscription_created',
@@ -246,6 +286,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     read: false,
     createdAt: new Date()
   }).catch(err => console.error('Error creating notification:', err));
+
+  // Enviar a Make para email
+  await sendToMake('subscription_created', {
+    userEmail: user.email,
+    userName: user.artistName || user.email,
+    planTier: planTier,
+    priceAmount: (subscription.items.data[0]?.price.unit_amount || 0) / 100,
+    currency: subscription.currency,
+    currentPeriodEnd: new Date(subscription.current_period_end * 1000).toLocaleDateString(),
+    interval: interval
+  });
 }
 
 /**
@@ -291,6 +342,17 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   });
   
   console.log(`✅ Subscription created for user ${user.email}`);
+  
+  // Enviar a Make para email
+  await sendToMake('subscription_created_webhook', {
+    userEmail: user.email,
+    userName: user.email,
+    planTier: planTier,
+    priceAmount: (subscription.items.data[0]?.price.unit_amount || 0) / 100,
+    currency: subscription.currency,
+    currentPeriodEnd: new Date(subscription.current_period_end * 1000).toLocaleDateString(),
+    interval: interval
+  });
 }
 
 /**
@@ -332,6 +394,16 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         read: false,
         createdAt: new Date()
       }).catch(err => console.error('Error creating notification:', err));
+
+      // Enviar a Make para email
+      await sendToMake('plan_changed', {
+        userEmail: user_result[0].email,
+        userName: user_result[0].artistName || user_result[0].email,
+        oldPlan: oldSub[0].plan,
+        newPlan: planTier,
+        priceAmount: (subscription.items.data[0]?.price.unit_amount || 0) / 100,
+        currency: subscription.currency
+      });
     }
   }
 }
@@ -385,6 +457,19 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       read: false,
       createdAt: new Date()
     }).catch(err => console.error('Error creating notification:', err));
+
+    // Enviar a Make para email
+    const user_result = await db.select().from(users).where(eq(users.id, subs[0].userId)).limit(1);
+    if (user_result.length > 0) {
+      await sendToMake('payment_succeeded', {
+        userEmail: user_result[0].email,
+        userName: user_result[0].artistName || user_result[0].email,
+        amount: (invoice.amount_paid || 0) / 100,
+        currency: invoice.currency,
+        invoiceId: invoice.id,
+        paidDate: new Date(invoice.created * 1000).toLocaleDateString()
+      });
+    }
   }
 }
 
@@ -420,6 +505,18 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
       read: false,
       createdAt: new Date()
     }).catch(err => console.error('Error creating notification:', err));
+
+    // Enviar a Make para email
+    const user_result = await db.select().from(users).where(eq(users.id, subs[0].userId)).limit(1);
+    if (user_result.length > 0) {
+      await sendToMake('payment_failed', {
+        userEmail: user_result[0].email,
+        userName: user_result[0].artistName || user_result[0].email,
+        amount: (invoice.amount_due || 0) / 100,
+        currency: invoice.currency,
+        failedDate: new Date(invoice.created * 1000).toLocaleDateString()
+      });
+    }
   }
 }
 
