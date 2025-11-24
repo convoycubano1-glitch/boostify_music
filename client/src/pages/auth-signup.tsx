@@ -9,7 +9,6 @@ import {
 import { SiGoogle, SiApple } from "react-icons/si";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { createCheckoutSession } from "@/lib/api/stripe-service";
 import { useToast } from "@/hooks/use-toast";
 
 const plans = [
