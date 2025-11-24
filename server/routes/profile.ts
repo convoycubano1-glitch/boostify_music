@@ -124,6 +124,10 @@ router.get('/:slugOrId', async (req: Request, res: Response) => {
       db.select().from(artistMedia).where(eq(artistMedia.userId, user.id))
     ]);
     
+    // Privacy protection: Hide sensitive contact info from public profile
+    // Only include email/phone if user has chosen to make them public
+    const shouldShowPrivateInfo = user.firestoreId === user.username || user.generatedBy === null;
+    
     // Return profile data without sensitive information
     const profile = {
       id: user.id,
@@ -138,16 +142,16 @@ router.get('/:slugOrId', async (req: Request, res: Response) => {
       coverImage: user.coverImage,
       bannerPosition: user.bannerPosition,
       loopVideoUrl: user.loopVideoUrl,
-      email: user.email,
-      phone: user.phone,
+      // Privacy: Only show contact info if explicitly allowed (AI-generated profiles)
+      email: shouldShowPrivateInfo ? user.email : undefined,
+      phone: shouldShowPrivateInfo ? user.phone : undefined,
       instagramHandle: user.instagramHandle,
       twitterHandle: user.twitterHandle,
       youtubeChannel: user.youtubeChannel,
       spotifyUrl: user.spotifyUrl,
       isAIGenerated: user.isAIGenerated,
       firestoreId: user.firestoreId,
-      generatedBy: user.generatedBy,
-      role: user.role,
+      pgId: user.id,
       songs: userSongs,
       merchandise: userMerch,
       videos: userVideos
@@ -417,16 +421,29 @@ router.post('/update-images', authenticate, async (req: Request, res: Response) 
 // POST /api/profile/:artistId/layout - Save profile layout configuration
 router.post('/profile/:artistId/layout', authenticate, async (req: Request, res: Response) => {
   try {
-    const artistId = parseInt(req.params.artistId);
+    const artistIdParam = req.params.artistId;
     const userId = req.user!.id;
     const firebaseUid = req.user!.uid;
     
-    // Verify ownership
-    const [artist] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, artistId))
-      .limit(1);
+    // Support both numeric ID and UUID
+    let artist;
+    const isNumericId = /^\d+$/.test(artistIdParam);
+    
+    if (isNumericId) {
+      const artistId = parseInt(artistIdParam);
+      [artist] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, artistId))
+        .limit(1);
+    } else {
+      // Try firestoreId (UUID)
+      [artist] = await db
+        .select()
+        .from(users)
+        .where(eq(users.firestoreId, artistIdParam))
+        .limit(1);
+    }
       
     if (!artist) {
       return res.status(404).json({ message: 'Artist not found' });
@@ -453,8 +470,9 @@ router.post('/profile/:artistId/layout', authenticate, async (req: Request, res:
         profileLayout: layout,
         updatedAt: new Date()
       })
-      .where(eq(users.id, artistId));
+      .where(eq(users.id, artist.id));
     
+    console.log(`✅ Layout saved for artist ${artist.id}`);
     res.json({ success: true, layout });
   } catch (error) {
     console.error('Error saving profile layout:', error);
