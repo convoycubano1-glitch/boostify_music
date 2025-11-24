@@ -124,13 +124,11 @@ router.get('/:slugOrId', async (req: Request, res: Response) => {
       db.select().from(artistMedia).where(eq(artistMedia.userId, user.id))
     ]);
     
-    // Privacy protection: Hide sensitive contact info from public profile
-    // Only include email/phone if user has chosen to make them public
-    const shouldShowPrivateInfo = user.firestoreId === user.username || user.generatedBy === null;
-    
     // Return profile data without sensitive information
+    // Include all fields needed for frontend to function properly
     const profile = {
       id: user.id,
+      pgId: user.id,
       username: user.username,
       artistName: user.artistName || user.username,
       slug: user.slug,
@@ -142,16 +140,16 @@ router.get('/:slugOrId', async (req: Request, res: Response) => {
       coverImage: user.coverImage,
       bannerPosition: user.bannerPosition,
       loopVideoUrl: user.loopVideoUrl,
-      // Privacy: Only show contact info if explicitly allowed (AI-generated profiles)
-      email: shouldShowPrivateInfo ? user.email : undefined,
-      phone: shouldShowPrivateInfo ? user.phone : undefined,
+      email: user.email,
+      phone: user.phone,
       instagramHandle: user.instagramHandle,
       twitterHandle: user.twitterHandle,
       youtubeChannel: user.youtubeChannel,
       spotifyUrl: user.spotifyUrl,
       isAIGenerated: user.isAIGenerated,
       firestoreId: user.firestoreId,
-      pgId: user.id,
+      generatedBy: user.generatedBy,
+      profileLayout: user.profileLayout,
       songs: userSongs,
       merchandise: userMerch,
       videos: userVideos
