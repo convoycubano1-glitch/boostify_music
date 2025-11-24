@@ -1,10 +1,10 @@
 import React from 'react';
 import { PricingPlans } from '../components/subscription/pricing-plans';
+import { motion } from 'framer-motion';
 import { 
   ChevronRight, CreditCard, ArrowUp, Sparkle, Shield, Clock, Calendar, 
   CheckCircle, Headphones, HelpCircle, LucideIcon
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { 
   Accordion,
   AccordionContent,
@@ -124,27 +124,50 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-zinc-900 text-white">
+    <div className="min-h-screen bg-gradient-to-b from-black via-orange-950/10 to-black text-white overflow-hidden">
+      {/* Animated background orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl"></div>
+      </div>
+
+      {/* Hero Section */}
+      <section className="relative z-10 pt-20 pb-12 px-4">
+        <motion.div
+          className="text-center max-w-3xl mx-auto"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <h1 className="text-5xl md:text-7xl font-black bg-gradient-to-r from-white via-orange-200 to-orange-500 bg-clip-text text-transparent mb-6">
+            Choose Your Stage
+          </h1>
+          <p className="text-lg md:text-xl text-gray-300 mb-8 leading-relaxed">
+            From discovering your sound to dominating the industry, we have the perfect plan for your music journey
+          </p>
+        </motion.div>
+      </section>
+
       {/* Pricing plans section */}
-      <section className="py-16 relative z-10">
+      <section className="py-8 relative z-10">
         <div className="container mx-auto px-4">
           <PricingPlans withAnimation={true} />
         </div>
       </section>
       
       {/* Features section */}
-      <section className="py-16 relative">
+      <section className="py-24 relative z-10">
         <div className="container mx-auto px-4">
           <motion.div 
-            className="text-center mb-12"
+            className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl font-bold mb-4">Why Choose Our Premium Plans?</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Our subscription plans are designed to provide everything you need at each stage of your music career
+            <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-white to-orange-400 bg-clip-text text-transparent mb-4">Why Our Plans Win</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-lg">
+              Everything you need to succeed, from day one to dominating the charts
             </p>
           </motion.div>
           

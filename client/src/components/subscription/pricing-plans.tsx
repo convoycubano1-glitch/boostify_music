@@ -313,11 +313,11 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
       >
         {pricingPlans.map((plan) => (
           <CardWrapper key={plan.key} {...(withAnimation ? { variants: itemVariants } : {})}>
-            <Card className={`flex flex-col h-full relative overflow-hidden border-2 ${
+            <Card className={`flex flex-col h-full relative overflow-hidden backdrop-blur-lg border-2 ${
               plan.popular 
-                ? 'border-orange-500 shadow-xl shadow-orange-500/20' 
-                : 'border-border hover:border-primary/50 hover:shadow-lg'
-            } transition-all duration-300`}>
+                ? 'bg-gradient-to-br from-orange-500/20 via-background/50 to-background border-orange-500 shadow-2xl shadow-orange-500/30 scale-105' 
+                : 'bg-gradient-to-br from-white/5 via-background to-background border-white/10 hover:border-orange-500/50 hover:shadow-2xl hover:shadow-orange-500/20'
+            } transition-all duration-500 group`}>
               {plan.highlight && (
                 <Badge 
                   className={`absolute top-3 right-3 ${
@@ -331,23 +331,52 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
                   {plan.highlight}
                 </Badge>
               )}
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-1">
-                  {plan.icon}
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-lg ${
+                    plan.key === 'free' ? 'bg-gray-500/20' :
+                    plan.key === 'creator' ? 'bg-blue-500/20' :
+                    plan.key === 'professional' ? 'bg-purple-500/20' :
+                    'bg-orange-500/20'
+                  }`}>
+                    {plan.icon}
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-black">{plan.name}</CardTitle>
+                    <CardDescription className="text-xs mt-1 text-gray-400">{plan.description}</CardDescription>
+                  </div>
                 </div>
-                <CardDescription className="text-sm">{plan.description}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1">
-                <div className="text-3xl font-bold mb-4">
+              <CardContent className="flex-1 pb-6">
+                <div className="mb-6">
                   {plan.price.monthly === 0 ? (
-                    <span className="text-foreground">Free</span>
+                    <div>
+                      <div className="text-4xl font-black text-white">Free Forever</div>
+                      <div className="text-sm text-gray-400 mt-2">No credit card needed</div>
+                    </div>
                   ) : (
                     <>
-                      <span className="text-foreground">${yearly ? plan.price.yearly : plan.price.monthly}</span>
-                      <span className="text-sm font-normal text-muted-foreground">/{yearly ? 'yr' : 'mo'}</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-5xl font-black text-white">${yearly ? Math.floor(plan.price.yearly / 12) : plan.price.monthly}</span>
+                        <span className="text-gray-400 text-sm">/{yearly ? 'mo' : 'mo'}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        {yearly ? `Billed $${plan.price.yearly}/year` : `Billed monthly`}
+                      </div>
                     </>
                   )}
+                </div>
+                <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-hide">
+                  {plan.features.slice(0, 6).map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-sm">
+                      <Check className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
+                        feature.included ? 'text-orange-500' : 'text-gray-600'
+                      }`} />
+                      <span className={feature.included ? 'text-gray-200' : 'text-gray-600 line-through'}>
+                        {feature.name}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
               <CardFooter>
