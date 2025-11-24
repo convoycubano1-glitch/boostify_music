@@ -168,7 +168,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
 
       setFormData({ ...formData, description: result.description });
       toast({
-        title: '¡Descripción mejorada!',
+        title: '¡Description mejorada!',
         description: 'La IA ha mejorado tu descripción',
       });
     } catch (error: any) {
@@ -206,13 +206,13 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
       setFormData({ ...formData, imageUrl: result.imageUrl });
       setImageTab('url');
       toast({
-        title: '¡Imagen generada!',
-        description: 'La IA ha generado la imagen para tu canción',
+        title: 'Image generated!',
+        description: 'AI has generated the image for your song',
       });
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'No se pudo generar la imagen',
+        description: error.message || 'Could not generate the image',
         variant: 'destructive',
       });
     } finally {
@@ -231,7 +231,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
             Music Tokenization (Web3)
           </CardTitle>
           <CardDescription>
-            Tokeniza tus canciones en blockchain y permite que los fans compren tokens con MetaMask
+            Tokenize your songs on blockchain and allow fans to buy tokens with MetaMask
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -240,7 +240,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Canciones Tokenizadas</p>
+                    <p className="text-sm text-muted-foreground">Tokenized Songs</p>
                     <p className="text-2xl font-bold">{songs.length}</p>
                   </div>
                   <Coins className="w-8 h-8 text-primary opacity-50" />
@@ -252,7 +252,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Ganancias Totales</p>
+                    <p className="text-sm text-muted-foreground">Total Earnings</p>
                     <p className="text-2xl font-bold">{parseFloat(totalEarningsEth).toFixed(4)} ETH</p>
                   </div>
                   <Wallet className="w-8 h-8 text-green-500 opacity-50" />
@@ -264,7 +264,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Tokens Activos</p>
+                    <p className="text-sm text-muted-foreground">Active Tokens</p>
                     <p className="text-2xl font-bold">{songs.filter(s => s.isActive).length}</p>
                   </div>
                   <TrendingUp className="w-8 h-8 text-blue-500 opacity-50" />
@@ -277,31 +277,31 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
             <DialogTrigger asChild>
               <Button className="w-full mb-4" data-testid="button-create-tokenized-song">
                 <Plus className="w-4 h-4 mr-2" />
-                Tokenizar Nueva Canción
+                Tokenize New Song
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Tokenizar Canción</DialogTitle>
+                <DialogTitle>Tokenize Song</DialogTitle>
                 <DialogDescription>
-                  Crea tokens ERC-1155 para tu canción en Polygon blockchain
+                  Create ERC-1155 tokens for your song on Polygon blockchain
                 </DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="songName">Nombre de la Canción</Label>
+                  <Label htmlFor="songName">Song Name</Label>
                   <Input
                     id="songName"
                     value={formData.songName}
                     onChange={(e) => setFormData({ ...formData, songName: e.target.value })}
-                    placeholder="Mi Canción Increíble"
+                    placeholder="My Awesome Song"
                     data-testid="input-song-name"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="tokenSymbol">Símbolo del Token</Label>
+                  <Label htmlFor="tokenSymbol">Token Symbol</Label>
                   <Input
                     id="tokenSymbol"
                     value={formData.tokenSymbol}
@@ -314,7 +314,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="totalSupply">Supply Total</Label>
+                    <Label htmlFor="totalSupply">Total Supply</Label>
                     <Input
                       id="totalSupply"
                       type="number"
@@ -325,7 +325,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
                   </div>
 
                   <div>
-                    <Label htmlFor="pricePerToken">Precio por Token (USD)</Label>
+                    <Label htmlFor="pricePerToken">Price per Token (USD)</Label>
                     <Input
                       id="pricePerToken"
                       type="number"
@@ -339,7 +339,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="description">Descripción</Label>
+                    <Label htmlFor="description">Description</Label>
                     <Button
                       type="button"
                       variant="outline"
@@ -351,12 +351,12 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
                       {isImprovingDescription ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          Mejorando...
+                          Improving...
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-3 h-3" />
-                          Mejorar con IA
+                          Improve with AI
                         </>
                       )}
                     </Button>
@@ -365,33 +365,33 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Describe tu canción... (o usa IA para generar)"
+                    placeholder="Describe your song... (or use AI to generate)"
                     rows={4}
                     data-testid="input-description"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Tip: Ingresa el nombre de la canción y haz clic en "Mejorar con IA"
+                    Tip: Ingresa el nombre de la canción y haz clic en "Improve with AI"
                   </p>
                 </div>
 
                 <div>
-                  <Label htmlFor="benefits">Beneficios (separados por comas)</Label>
+                  <Label htmlFor="benefits">Benefits (separated by commas)</Label>
                   <Input
                     id="benefits"
                     value={formData.benefits}
                     onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
-                    placeholder="Acceso exclusivo, Descuentos en merch, Meet & greet"
+                    placeholder="Exclusive access, Merch discounts, Meet & greet"
                     data-testid="input-benefits"
                   />
                 </div>
 
                 <div>
-                  <Label>Imagen de la Canción</Label>
+                  <Label>Song Image</Label>
                   <Tabs value={imageTab} onValueChange={(v) => setImageTab(v as 'url' | 'generate')} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="url">
                         <Upload className="w-3 h-3 mr-1" />
-                        URL de Imagen
+                        Image URL
                       </TabsTrigger>
                       <TabsTrigger value="generate">
                         <ImageIcon className="w-3 h-3 mr-1" />
@@ -452,7 +452,7 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
                   className="w-full"
                   data-testid="button-submit-tokenization"
                 >
-                  {createMutation.isPending ? 'Tokenizando...' : 'Tokenizar Canción'}
+                  {createMutation.isPending ? 'Tokenizing...' : 'Tokenize Song'}
                 </Button>
               </div>
 
@@ -474,13 +474,13 @@ export function TokenizationPanel({ artistId, artistName = 'Tu Artista', artistI
           </Dialog>
 
           <div className="space-y-4">
-            <h3 className="font-semibold">Tus Canciones Tokenizadas</h3>
+            <h3 className="font-semibold">Your Tokenized Songs</h3>
             {isLoading ? (
-              <p className="text-muted-foreground">Cargando...</p>
+              <p className="text-muted-foreground">Loading...</p>
             ) : songs.length === 0 ? (
               <Card>
                 <CardContent className="pt-6 text-center text-muted-foreground">
-                  No tienes canciones tokenizadas aún. ¡Crea tu primera tokenización!
+                  You don't have tokenized songs yet. Create your first tokenization!
                 </CardContent>
               </Card>
             ) : (
