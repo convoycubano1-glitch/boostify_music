@@ -6,6 +6,7 @@ import {
   courseQuizzes,
   quizQuestions,
   quizAttempts,
+  lessonProgress,
   courseEnrollments,
   courseInstructors,
   subscriptions
@@ -139,7 +140,14 @@ router.post('/api/education/enroll/:courseId', authenticate, async (req, res) =>
       .orderBy(courseLessons.orderIndex)
       .limit(1);
 
-    // First lesson is automatically unlocked on enrollment
+    if (firstLesson) {
+      await db.insert(lessonProgress).values({
+        userId: req.user.id,
+        lessonId: firstLesson.id,
+        unlockedAt: new Date(),
+        completed: false
+      });
+    }
 
     res.status(201).json({ enrollment, alreadyEnrolled: false });
   } catch (error) {
@@ -194,7 +202,16 @@ router.get('/api/education/lessons/:lessonId', authenticate, async (req, res) =>
       .from(courseQuizzes)
       .where(eq(courseQuizzes.lessonId, lessonId));
 
-    res.json({ lesson, quizzes });
+    const [progress] = await db.select()
+      .from(lessonProgress)
+      .where(
+        and(
+          eq(lessonProgress.userId, req.user.id),
+          eq(lessonProgress.lessonId, lessonId)
+        )
+      );
+
+    res.json({ lesson, quizzes, progress });
   } catch (error: any) {
     console.error('Error fetching lesson:', error);
     res.status(500).json({ 
@@ -212,7 +229,20 @@ router.post('/api/education/lessons/:lessonId/complete', authenticate, async (re
 
     const lessonId = parseInt(req.params.lessonId);
 
-    // Mark lesson as completed in courseEnrollments progress
+    await db.insert(lessonProgress)
+      .values({
+        userId: req.user.id,
+        lessonId,
+        completed: true,
+        completedAt: new Date()
+      })
+      .onConflictDoUpdate({
+        target: [lessonProgress.userId, lessonProgress.lessonId],
+        set: {
+          completed: true,
+          completedAt: new Date()
+        }
+      });
 
     const [lesson] = await db.select()
       .from(courseLessons)
@@ -226,7 +256,14 @@ router.post('/api/education/lessons/:lessonId/complete', authenticate, async (re
     const nextLesson = allLessons[lesson.orderIndex + 1];
 
     if (nextLesson) {
-      // Next lesson is now unlocked for the user
+      await db.insert(lessonProgress)
+        .values({
+          userId: req.user.id,
+          lessonId: nextLesson.id,
+          unlockedAt: new Date(),
+          completed: false
+        })
+        .onConflictDoNothing();
     }
 
     res.json({ success: true, nextLesson });
@@ -335,12 +372,21 @@ router.get('/api/education/my-courses', authenticate, async (req, res) => {
           .from(courseLessons)
           .where(eq(courseLessons.courseId, enrollment.courseId));
 
+        const completedLessons = await db.select()
+          .from(lessonProgress)
+          .where(
+            and(
+              eq(lessonProgress.userId, req.user!.id),
+              eq(lessonProgress.completed, true)
+            )
+          );
+
         return {
           ...course,
           enrollment,
-          progress: enrollment.progress || 0,
+          progress: Math.round((completedLessons.length / lessons.length) * 100),
           totalLessons: lessons.length,
-          completedLessons: Math.floor((enrollment.progress || 0) / 100 * lessons.length)
+          completedLessons: completedLessons.length
         };
       })
     );

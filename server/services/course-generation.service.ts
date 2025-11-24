@@ -3,7 +3,9 @@ import {
   courses, 
   courseLessons, 
   courseQuizzes, 
-  quizQuestions,
+  quizQuestions, 
+  contentGenerationQueue,
+  lessonProgress,
   courseEnrollments
 } from "@db/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -241,15 +243,39 @@ export async function checkLessonUnlockStatus(
     }
 
     if (course.dripStrategy === "sequential") {
-      // Sequential strategy: only first lesson is unlocked initially
       if (lesson.orderIndex === 0) {
         return { unlocked: true };
       }
-      // For now, all other lessons are locked until user progresses
-      return { 
-        unlocked: false, 
-        reason: "Complete previous lessons to unlock this one" 
-      };
+
+      const previousLessons = await db.select()
+        .from(courseLessons)
+        .where(
+          and(
+            eq(courseLessons.courseId, lesson.courseId),
+            sql`${courseLessons.orderIndex} < ${lesson.orderIndex}`
+          )
+        );
+
+      for (const prevLesson of previousLessons) {
+        const [progress] = await db.select()
+          .from(lessonProgress)
+          .where(
+            and(
+              eq(lessonProgress.userId, userId),
+              eq(lessonProgress.lessonId, prevLesson.id),
+              eq(lessonProgress.completed, true)
+            )
+          );
+
+        if (!progress) {
+          return { 
+            unlocked: false, 
+            reason: `Complete "${prevLesson.title}" first` 
+          };
+        }
+      }
+
+      return { unlocked: true };
     }
 
     if (course.dripStrategy === "enrollment" && lesson.dripDaysOffset !== null) {

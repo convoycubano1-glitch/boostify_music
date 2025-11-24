@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { tokenizedSongs, users } from '../db/schema';
+import { tokenizedSongs, tokenPurchases, artistTokenEarnings, users } from '../db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { GoogleGenerativeAI } from '@google/generative-ai';
