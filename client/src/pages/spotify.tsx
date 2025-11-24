@@ -13,12 +13,16 @@ import { SiSpotify } from "react-icons/si";
 import { Link } from "wouter";
 import { queryClient } from "../lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 
 export default function SpotifyPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("listeners");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  
+  // Detect user subscription plan
+  const userSubscription = (user as any)?.subscriptionPlan?.toLowerCase() || null;
 
   // Tab 1: Monthly Listeners Prediction
   const [artistUrl, setArtistUrl] = useState("");
