@@ -481,6 +481,225 @@ function FundAllocationSimulator() {
   );
 }
 
+// User Growth Simulator Component - Boostify User Acquisition & Conversion
+function UserGrowthSimulator() {
+  const [isRunning, setIsRunning] = useState(false);
+  const [operations, setOperations] = useState<any[]>([]);
+  const [totalUsers, setTotalUsers] = useState(1000);
+  const [campaignType, setCampaignType] = useState('direct_send'); // direct_send, social, landing
+  
+  const campaignTypes = {
+    direct_send: {
+      label: '50K Direct Sends',
+      conversionRate: 0.08, // 8% conversion
+      color: 'from-cyan-500 to-blue-600',
+      description: 'Automated landing page emails to prospects'
+    },
+    social: {
+      label: 'Social Media Campaign',
+      conversionRate: 0.05, // 5% conversion
+      color: 'from-pink-500 to-purple-600',
+      description: 'Instagram, TikTok, Twitter campaigns'
+    },
+    landing: {
+      label: 'Pre-created Landing Pages',
+      conversionRate: 0.12, // 12% conversion
+      color: 'from-orange-500 to-yellow-600',
+      description: 'High-converting artist landing pages'
+    }
+  };
+
+  const conversionActions = {
+    signup: { label: 'Sign Up Free', rate: 0.40, icon: '👤' },
+    basic_plan: { label: 'Basic Plan ($59.99)', rate: 0.30, icon: '📦' },
+    pro_plan: { label: 'Pro Plan ($99.99)', rate: 0.20, icon: '⭐' },
+    premium_plan: { label: 'Premium Plan ($149.99)', rate: 0.10, icon: '👑' },
+    video_generator: { label: 'Video Generator ($199)', rate: 0.35, icon: '🎬' },
+    tokenization: { label: 'Tokenization Service', rate: 0.15, icon: '🪙' },
+  };
+
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const interval = setInterval(() => {
+      const campaign = campaignTypes[campaignType as keyof typeof campaignTypes];
+      
+      // Random number of signups based on campaign type
+      const baseSignups = campaignType === 'direct_send' ? 50000 : campaignType === 'social' ? 5000 : 10000;
+      const signups = Math.floor(baseSignups * campaign.conversionRate / 100);
+      
+      // Pick a random conversion action
+      const actions = Object.entries(conversionActions);
+      const [action, actionData] = actions[Math.floor(Math.random() * actions.length)];
+      
+      // Calculate actual conversions from this action
+      const conversions = Math.floor(signups * actionData.rate);
+      
+      if (conversions > 0) {
+        const newOp = {
+          id: Math.random().toString(),
+          campaign: campaign.label,
+          action: actionData.label,
+          signups,
+          conversions,
+          revenue: action.includes('plan') ? conversions * parseInt(action.match(/\d+/)?.[0] || '59') : 
+                   action === 'video_generator' ? conversions * 199 : 0,
+          icon: actionData.icon,
+          timestamp: Date.now(),
+        };
+
+        setOperations(prev => [newOp, ...prev.slice(0, 14)]);
+        setTotalUsers(prev => {
+          const newTotal = prev + conversions;
+          return Math.min(newTotal, 50000);
+        });
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [isRunning, campaignType]);
+
+  const growthPercentage = ((totalUsers - 1000) / 49000) * 100;
+  const avgMonthlyRevenue = totalUsers * 15; // Average revenue per user
+
+  return (
+    <Card className="p-3 sm:p-6 bg-black/30 border-orange-500/20">
+      <h5 className="font-bold text-white text-base sm:text-lg mb-4 sm:mb-6">User Acquisition & Conversion Simulator - Boostify Growth Engine</h5>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        {/* Left: Campaign & Feed */}
+        <div className="md:col-span-2 space-y-3 sm:space-y-4">
+          {/* Campaign Selector */}
+          <div className="grid grid-cols-3 gap-2">
+            {Object.entries(campaignTypes).map(([key, campaign]) => (
+              <button
+                key={key}
+                onClick={() => setCampaignType(key)}
+                className={`p-2 sm:p-3 rounded-lg border transition-all ${
+                  campaignType === key
+                    ? 'bg-gradient-to-r ' + campaign.color + ' border-white/30'
+                    : 'bg-white/5 border-white/10 hover:border-white/20'
+                }`}
+              >
+                <div className="text-[10px] sm:text-xs font-bold text-white">{campaign.label}</div>
+                <div className="text-[8px] sm:text-[10px] text-white/60">{(campaign.conversionRate * 100).toFixed(0)}% conv</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Growth Progress */}
+          <div className="p-3 sm:p-4 bg-white/5 rounded-lg border border-white/10">
+            <div className="flex justify-between items-center mb-2 sm:mb-3">
+              <span className="text-white/70 font-medium text-xs sm:text-sm">Total Platform Users</span>
+              <span className="text-orange-400 font-bold text-sm sm:text-base">{totalUsers.toLocaleString()} / 50,000</span>
+            </div>
+            <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-300"
+                style={{ width: `${growthPercentage}%` }}
+              ></div>
+            </div>
+            <div className="text-xs text-white/50 mt-2">{growthPercentage.toFixed(1)}% growth target reached</div>
+          </div>
+
+          {/* Conversion Actions Grid */}
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            {Object.entries(conversionActions).map(([key, action]) => (
+              <div key={key} className="p-1.5 sm:p-2 bg-white/5 rounded-lg border border-white/10 text-center">
+                <div className="text-lg sm:text-2xl mb-0.5">{action.icon}</div>
+                <div className="text-[8px] sm:text-[10px] text-white/60 line-clamp-2">{action.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Controls */}
+          <div className="flex gap-2 flex-col sm:flex-row">
+            <button
+              onClick={() => setIsRunning(!isRunning)}
+              className="flex-1 px-2 sm:px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+            >
+              {isRunning ? (
+                <>
+                  <Pause className="h-4 w-4" />
+                  Pause Campaign
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  Start Campaign
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setOperations([]);
+                setTotalUsers(1000);
+                setIsRunning(false);
+              }}
+              className="px-2 sm:px-3 py-2 rounded-lg bg-white/10 text-white font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </button>
+          </div>
+
+          {/* Acquisition Feed */}
+          <div className="max-h-40 sm:max-h-48 overflow-y-auto space-y-1 bg-black/40 rounded-lg p-2 sm:p-3 border border-white/10">
+            {operations.length === 0 ? (
+              <div className="text-center py-4 sm:py-6 text-white/40 text-[10px] sm:text-xs">Click Start Campaign to begin user acquisition</div>
+            ) : (
+              operations.map((op) => (
+                <div
+                  key={op.id}
+                  className={`p-1.5 sm:p-2 rounded text-[9px] sm:text-xs border-l-2 bg-black/60 animate-pulse border-orange-500`}
+                >
+                  <div className="flex justify-between items-start gap-1">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-white truncate">{op.icon} {op.action}</div>
+                      <div className="text-white/50 text-[8px]">{op.campaign}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-green-400 font-bold">+{op.conversions}</div>
+                      {op.revenue > 0 && <div className="text-[8px] text-white/60">${op.revenue.toLocaleString()}</div>}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Right: Statistics */}
+        <div className="space-y-2 sm:space-y-3">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-cyan-500/10 to-blue-600/5 rounded-lg border border-cyan-500/20">
+            <div className="text-white/70 text-xs mb-1">Current Users</div>
+            <div className="text-xl sm:text-2xl font-bold text-cyan-400">{totalUsers.toLocaleString()}</div>
+            <div className="text-[10px] sm:text-xs text-white/50 mt-1">Active on platform</div>
+          </div>
+
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-lg border border-green-500/20">
+            <div className="text-white/70 text-xs mb-1">Est. Monthly Revenue</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-400">${(avgMonthlyRevenue / 1000).toFixed(1)}k</div>
+            <div className="text-[10px] sm:text-xs text-white/50 mt-1">@ $15 avg per user</div>
+          </div>
+
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-purple-500/10 to-pink-600/5 rounded-lg border border-purple-500/20">
+            <div className="text-white/70 text-xs mb-1">Conversion Rate</div>
+            <div className="text-xl sm:text-2xl font-bold text-purple-400">{campaignTypes[campaignType as keyof typeof campaignTypes].conversionRate * 100}%</div>
+            <div className="text-[10px] sm:text-xs text-white/50 mt-1">{campaignTypes[campaignType as keyof typeof campaignTypes].description}</div>
+          </div>
+
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-yellow-500/10 to-orange-600/5 rounded-lg border border-yellow-500/20">
+            <div className="text-white/70 text-xs mb-1">Growth Target</div>
+            <div className="text-xl sm:text-2xl font-bold text-yellow-400">{growthPercentage.toFixed(0)}%</div>
+            <div className="text-[10px] sm:text-xs text-white/50 mt-1">Progress to 50k users</div>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 // Investment Calculator Component
 function InvestmentCalculator() {
   const [investmentAmount, setInvestmentAmount] = useState(5000);
@@ -2237,6 +2456,11 @@ export default function InvestorsDashboard() {
                     <div>
                       <FundAllocationSimulator />
                     </div>
+                  </div>
+
+                  {/* User Growth & Acquisition Simulator */}
+                  <div className="mt-6 sm:mt-8">
+                    <UserGrowthSimulator />
                   </div>
 
                   {/* Revenue Simulations Based on Business Model */}
