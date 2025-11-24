@@ -13,7 +13,7 @@
 import { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
 import { db } from '../db';
-import { subscriptions, users } from '../db/schema';
+import { subscriptions, users, notifications } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 const router = Router();
@@ -163,6 +163,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
     
     console.log(`✅ Music video bundle ${bundleTier} purchased! Trial subscription activated for user ${user.email}: ${planTier} (30 days)`);
+    
+    // Enviar notificación
+    await db.insert(notifications).values({
+      userId: user.id,
+      type: 'subscription_activated',
+      title: `🎉 Welcome to ${planTier.charAt(0).toUpperCase() + planTier.slice(1)}!`,
+      message: `Your ${bundleTier} bundle trial has been activated. You now have access to all features for 30 days.`,
+      read: false,
+      createdAt: new Date()
+    }).catch(err => console.error('Error creating notification:', err));
+    
     return;
   }
   
@@ -225,6 +236,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   });
   
   console.log(`✅ Subscription created/updated for user ${user.email}: ${planTier}`);
+  
+  // Enviar notificación
+  await db.insert(notifications).values({
+    userId: user.id,
+    type: 'subscription_created',
+    title: `✅ Payment Successful - Welcome to ${planTier.charAt(0).toUpperCase() + planTier.slice(1)}!`,
+    message: `Your subscription has been activated. You now have access to all ${planTier} features until ${new Date(subscription.current_period_end * 1000).toLocaleDateString()}.`,
+    read: false,
+    createdAt: new Date()
+  }).catch(err => console.error('Error creating notification:', err));
 }
 
 /**
@@ -297,6 +318,22 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     .where(eq(subscriptions.stripeSubscriptionId, subscription.id));
   
   console.log(`✅ Subscription updated: ${subscription.id}`);
+  
+  // Enviar notificación si es cambio de plan
+  const oldSub = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, subscription.id)).limit(1);
+  if (oldSub.length > 0 && oldSub[0].plan !== planTier) {
+    const user_result = await db.select().from(users).where(eq(users.id, oldSub[0].userId)).limit(1);
+    if (user_result.length > 0) {
+      await db.insert(notifications).values({
+        userId: oldSub[0].userId,
+        type: 'plan_changed',
+        title: `🚀 Plan Updated to ${planTier.charAt(0).toUpperCase() + planTier.slice(1)}!`,
+        message: `Your subscription plan has been upgraded. Enjoy all your new features!`,
+        read: false,
+        createdAt: new Date()
+      }).catch(err => console.error('Error creating notification:', err));
+    }
+  }
 }
 
 /**
@@ -336,6 +373,19 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     .where(eq(subscriptions.stripeSubscriptionId, invoice.subscription as string));
   
   console.log(`✅ Payment succeeded for subscription: ${invoice.subscription}`);
+  
+  // Enviar notificación de pago exitoso
+  const subs = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, invoice.subscription as string)).limit(1);
+  if (subs.length > 0) {
+    await db.insert(notifications).values({
+      userId: subs[0].userId,
+      type: 'payment_succeeded',
+      title: '💰 Payment Received',
+      message: `Thank you! Your payment of $${(invoice.amount_paid || 0) / 100} has been processed successfully.`,
+      read: false,
+      createdAt: new Date()
+    }).catch(err => console.error('Error creating notification:', err));
+  }
 }
 
 /**
@@ -359,7 +409,18 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   
   console.log(`⚠️ Payment failed for subscription: ${invoice.subscription}`);
   
-  // TODO: Enviar email de notificación al usuario
+  // Enviar notificación de pago fallido
+  const subs = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, invoice.subscription as string)).limit(1);
+  if (subs.length > 0) {
+    await db.insert(notifications).values({
+      userId: subs[0].userId,
+      type: 'payment_failed',
+      title: '❌ Payment Failed',
+      message: 'Your recent payment could not be processed. Please update your payment method to keep your subscription active.',
+      read: false,
+      createdAt: new Date()
+    }).catch(err => console.error('Error creating notification:', err));
+  }
 }
 
 /**

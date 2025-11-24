@@ -561,6 +561,114 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       return res.status(500).json({ error: "Error al obtener rol de usuario" });
     }
   });
+
+  // Endpoint para cambiar de plan (CAMBIO DE PLAN CON PRORATION)
+  app.post('/api/subscription/change', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const { newPlanPriceId } = req.body;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      if (!newPlanPriceId) {
+        return res.status(400).json({ error: "newPlanPriceId requerido" });
+      }
+
+      const { subscriptions } = await import ('./db/schema');
+      const { eq } = await import ('drizzle-orm');
+      
+      // Obtener suscripción actual
+      const [currentSub] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1);
+
+      if (!currentSub || !currentSub.stripeSubscriptionId) {
+        return res.status(404).json({ error: "No active subscription found" });
+      }
+
+      // Obtener suscripción de Stripe
+      const stripeSubscription = await stripe.subscriptions.retrieve(currentSub.stripeSubscriptionId);
+      
+      // Actualizar suscripción en Stripe (cambiar plan con proration)
+      const updatedSubscription = await stripe.subscriptions.update(
+        currentSub.stripeSubscriptionId,
+        {
+          items: [{
+            id: stripeSubscription.items.data[0].id,
+            price: newPlanPriceId
+          }],
+          proration_behavior: 'create_prorations' // Crear proración automática
+        }
+      );
+
+      console.log(`✅ Plan cambió para usuario ${userId}: ${updatedSubscription.id}`);
+      
+      return res.json({
+        success: true,
+        message: "Plan actualizado exitosamente",
+        subscription: {
+          id: updatedSubscription.id,
+          status: updatedSubscription.status,
+          currentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000)
+        }
+      });
+    } catch (error) {
+      console.error("Error changing plan:", error);
+      return res.status(500).json({ error: "Error al cambiar de plan" });
+    }
+  });
+
+  // Endpoint para cancelar suscripción
+  app.post('/api/subscription/cancel', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      const { subscriptions } = await import ('./db/schema');
+      const { eq } = await import ('drizzle-orm');
+      
+      // Obtener suscripción actual
+      const [currentSub] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1);
+
+      if (!currentSub || !currentSub.stripeSubscriptionId) {
+        return res.status(404).json({ error: "No active subscription found" });
+      }
+
+      // Cancelar en Stripe (al final del período)
+      const cancelledSubscription = await stripe.subscriptions.update(
+        currentSub.stripeSubscriptionId,
+        {
+          cancel_at_period_end: true
+        }
+      );
+
+      console.log(`✅ Suscripción cancelada al final del período para usuario ${userId}`);
+      
+      return res.json({
+        success: true,
+        message: "Subscription will be cancelled at the end of the billing period",
+        subscription: {
+          id: cancelledSubscription.id,
+          cancelAtPeriodEnd: cancelledSubscription.cancel_at_period_end,
+          currentPeriodEnd: new Date(cancelledSubscription.current_period_end * 1000)
+        }
+      });
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      return res.status(500).json({ error: "Error al cancelar suscripción" });
+    }
+  });
   
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');

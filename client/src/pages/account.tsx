@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { logger } from "../lib/logger";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Separator } from '../components/ui/separator';
-import { CalendarIcon, CreditCard, User, Settings } from 'lucide-react';
+import { CalendarIcon, CreditCard, User, Settings, Loader2 } from 'lucide-react';
 import { useSubscription } from '../lib/context/subscription-context';
 import { useAuth } from '../hooks/use-auth';
 import { cancelSubscription } from '../lib/api/subscription-service';
@@ -12,15 +12,64 @@ import { Skeleton } from '../components/ui/skeleton';
 import { toast } from '../hooks/use-toast';
 import { format } from 'date-fns';
 import { PricingPlans } from '../components/subscription/pricing-plans';
+import { apiRequest } from '../lib/queryClient';
+import { SUBSCRIPTION_PLANS } from '../../shared/pricing-config';
 
 /**
  * Account page with subscription management and user settings
  */
 export default function AccountPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const { subscription, isLoading: subscriptionLoading, refreshSubscription } = useSubscription();
+  const { subscription, isLoading: subscriptionLoading, refreshSubscription, currentPlan } = useSubscription();
+  const [isChangingPlan, setIsChangingPlan] = useState(false);
   
   const isLoading = authLoading || subscriptionLoading;
+
+  const handleChangePlan = async (newPlanKey: string) => {
+    if (!user) return;
+    
+    const newPlan = SUBSCRIPTION_PLANS[newPlanKey as any];
+    if (!newPlan || newPlan.stripeIds.monthly === '') {
+      toast({
+        title: "Invalid Plan",
+        description: "This plan cannot be changed to at this time.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      if (!window.confirm(`Upgrade your plan to ${newPlan.displayName}? You'll be charged the difference pro-rata.`)) {
+        return;
+      }
+
+      setIsChangingPlan(true);
+
+      const result = await apiRequest('/api/subscription/change', {
+        method: 'POST',
+        body: JSON.stringify({
+          newPlanPriceId: newPlan.stripeIds.monthly
+        })
+      });
+
+      if (result.success) {
+        await refreshSubscription();
+        toast({
+          title: "Plan Updated",
+          description: `Successfully upgraded to ${newPlan.displayName}!`
+        });
+      }
+    } catch (error) {
+      logger.error('Error changing plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to change your plan. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsChangingPlan(false);
+    }
+  };
 
   const handleCancelSubscription = async () => {
     if (!user) return;
@@ -147,6 +196,44 @@ export default function AccountPage() {
               </CardFooter>
             </Card>
             
+            {subscription.active && (
+              <div className="mt-8">
+                <h2 className="text-xl font-bold mb-4">Upgrade Your Plan</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {Object.values(SUBSCRIPTION_PLANS).map((plan) => (
+                    <Card key={plan.key} className={plan.key === currentPlan ? 'border-orange-500 border-2' : ''}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{plan.displayName}</CardTitle>
+                        <CardDescription>{plan.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold mb-2">
+                          ${plan.price.monthly}
+                          <span className="text-sm text-muted-foreground">/mo</span>
+                        </div>
+                        {plan.key === currentPlan && (
+                          <div className="text-green-600 font-semibold">✓ Current Plan</div>
+                        )}
+                      </CardContent>
+                      <CardFooter>
+                        <Button
+                          onClick={() => handleChangePlan(plan.key)}
+                          disabled={plan.key === currentPlan || isChangingPlan}
+                          className="w-full"
+                          variant={plan.key === currentPlan ? 'outline' : 'default'}
+                        >
+                          {isChangingPlan ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : null}
+                          {plan.key === currentPlan ? 'Current Plan' : 'Upgrade'}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {((!subscription.active || subscription.cancelAtPeriodEnd)) && (
               <div className="mt-8">
                 <h2 className="text-xl font-bold mb-4">Available Plans</h2>
