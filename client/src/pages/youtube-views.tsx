@@ -22,6 +22,7 @@ import { Users2 } from "lucide-react";
 import { Header } from "../components/layout/header";
 import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
+import { ExtraServicesSection } from "../components/services/extra-services-section";
 
 // Types
 interface PreLaunchResult {
@@ -2264,6 +2265,15 @@ export default function YoutubeViewsPage() {
                   </motion.div>
                 )}
               </Card>
+            </TabsContent>
+
+            {/* PHASE 3 - EXTRA SERVICES TAB */}
+            <TabsContent value="services">
+              <ExtraServicesSection
+                category="youtube_boost"
+                title="Premium Creator Services"
+                description="Boost your channel with expert services from verified creators"
+              />
             </TabsContent>
 
             {/* PHASE 3 - API ACCESS TAB */}

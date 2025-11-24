@@ -1,6 +1,6 @@
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, Zap } from 'lucide-react';
+import { Star, Zap, Users, Clock } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -14,6 +14,8 @@ interface ExtraServiceCardProps {
   image?: string;
   extraFast?: boolean;
   category: string;
+  sellerDisplayName?: string;
+  deliveryDays?: number;
   onOrderCreated?: () => void;
 }
 
@@ -26,6 +28,8 @@ export function ExtraServiceCard({
   image,
   extraFast,
   category,
+  sellerDisplayName,
+  deliveryDays = 1,
   onOrderCreated,
 }: ExtraServiceCardProps) {
   const [loading, setLoading] = useState(false);
@@ -44,8 +48,8 @@ export function ExtraServiceCard({
 
       if (result.success) {
         toast({
-          title: 'Service Added',
-          description: 'Proceeding to checkout...',
+          title: 'Service Added to Cart',
+          description: 'Ready for checkout',
         });
         onOrderCreated?.();
       } else {
@@ -67,46 +71,89 @@ export function ExtraServiceCard({
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      {image && (
-        <div className="h-40 bg-gray-100 overflow-hidden">
+    <Card className="group overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all duration-300 border border-border/50 bg-gradient-to-br from-background to-background/80">
+      {/* Image Container */}
+      <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/5 overflow-hidden border-b border-border/50">
+        {image ? (
           <img
             src={image}
             alt={title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3C/svg%3E';
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
             }}
           />
-        </div>
-      )}
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-sm line-clamp-2 mb-2">{title}</h3>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">{rating.toFixed(2)}</span>
-            <span className="text-xs text-gray-500">({reviews})</span>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+            <Zap className="w-12 h-12 text-primary/30" />
           </div>
-          {extraFast && (
-            <div className="flex items-center gap-1 bg-orange-100 px-2 py-1 rounded text-xs font-semibold text-orange-700">
-              <Zap className="w-3 h-3" />
-              Fast
+        )}
+        
+        {/* Badge: Fast Delivery */}
+        {extraFast && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-orange-500/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-lg">
+            <Zap className="w-3.5 h-3.5" />
+            Fast
+          </div>
+        )}
+
+        {/* Overlay on Hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      </div>
+
+      <CardContent className="p-5 space-y-4">
+        {/* Title */}
+        <h3 className="font-semibold text-sm line-clamp-2 text-foreground leading-tight group-hover:text-primary transition-colors">
+          {title}
+        </h3>
+
+        {/* Seller Info */}
+        {sellerDisplayName && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Users className="w-3.5 h-3.5" />
+            <span className="truncate">{sellerDisplayName}</span>
+          </div>
+        )}
+
+        {/* Rating & Reviews */}
+        <div className="flex items-center justify-between py-2 border-y border-border/50">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+              <span className="text-sm font-semibold">{rating.toFixed(2)}</span>
             </div>
-          )}
+            <span className="text-xs text-muted-foreground">({reviews.toLocaleString()})</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="w-3.5 h-3.5" />
+            {deliveryDays}d
+          </div>
         </div>
-        <div className="text-lg font-bold text-primary">${price.toFixed(2)}</div>
-      </CardContent>
-      <CardFooter className="p-4 pt-0">
+
+        {/* Price */}
+        <div className="space-y-2">
+          <div className="text-2xl font-bold text-primary">
+            ${price.toFixed(2)}
+          </div>
+        </div>
+
+        {/* Add Button */}
         <Button
           onClick={handleAddService}
           disabled={loading}
-          className="w-full"
+          className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-semibold shadow-md hover:shadow-lg transition-all"
           size="sm"
         >
-          {loading ? 'Adding...' : 'Add to Order'}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Adding...
+            </span>
+          ) : (
+            'Add to Order'
+          )}
         </Button>
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 }
