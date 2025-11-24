@@ -457,191 +457,199 @@ function InvestmentCalculator() {
 
 // Componente Timeline Roadmap
 function RoadmapTimeline() {
+  const [expandedItems, setExpandedItems] = useState<number[]>([]);
+  
+  const toggleExpand = (index: number) => {
+    setExpandedItems(prev => 
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+    );
+  };
+
   const roadmapData = [
     {
-      date: "Enero 2024",
-      title: "Inicio del Proyecto Boostify",
-      description: "Desarrollo de la base tecnológica: arquitectura de la plataforma, integración inicial con Firebase, y diseño del modelo de negocio.",
-      stats: "Fundación establecida",
+      date: "January 2024",
+      title: "Boostify Project Launch",
+      description: "Development of technological foundation: platform architecture, initial Firebase integration, and business model design.",
+      stats: "Foundation established",
       status: "completed",
       isKey: true
     },
     {
-      date: "Marzo 2024",
-      title: "Prototipo de Generación de Videos con IA",
-      description: "Implementación inicial de generación de videos musicales usando IA. Primeras pruebas con Gemini 2.5 Flash (Nano Banana).",
-      stats: "10 videos de prueba generados",
+      date: "March 2024",
+      title: "AI Music Video Generation Prototype",
+      description: "Initial implementation of AI-powered music video generation. First tests with Gemini 2.5 Flash (Nano Banana).",
+      stats: "10 test videos generated",
       status: "completed"
     },
     {
-      date: "Junio 2024",
-      title: "Sistema de Directores y Perfiles JSON",
-      description: "Desarrollo de 10 directores cinematográficos con estilos únicos, cada uno con perfiles JSON detallados para personalización de videos.",
-      stats: "10 directores configurados",
+      date: "June 2024",
+      title: "Director System & JSON Profiles",
+      description: "Development of 10 cinematographic directors with unique styles, each with detailed JSON profiles for video customization.",
+      stats: "10 directors configured",
       status: "completed"
     },
     {
-      date: "Agosto 2024",
-      title: "Integración de Lip-Sync con Fal.ai MuseTalk",
-      description: "Implementación de sincronización labial automática para videos musicales, mejorando significativamente la calidad del producto final.",
-      stats: "Sincronización labial perfecta",
+      date: "August 2024",
+      title: "Lip-Sync Integration with Fal.ai MuseTalk",
+      description: "Implementation of automatic lip-sync for music videos, significantly improving final product quality.",
+      stats: "Perfect lip-sync synchronization",
       status: "completed"
     },
     {
-      date: "Octubre 2024",
-      title: "Firebase Storage y Gestión de Medios",
-      description: "Sistema completo de almacenamiento en la nube para videos, imágenes y assets generados por IA.",
-      stats: "Infraestructura escalable lista",
+      date: "October 2024",
+      title: "Firebase Storage & Media Management",
+      description: "Complete cloud storage system for AI-generated videos, images, and assets.",
+      stats: "Scalable infrastructure ready",
       status: "completed"
     },
     {
-      date: "Diciembre 2024",
-      title: "Distribution Tools y Manager Tools",
-      description: "Lanzamiento de herramientas de distribución musical y suite completa para managers con generación automática de 11 tipos de documentos profesionales.",
-      stats: "Beta cerrado con 50 usuarios",
+      date: "December 2024",
+      title: "Distribution Tools & Manager Suite",
+      description: "Launch of music distribution tools and comprehensive manager suite with automatic generation of 11 professional document types.",
+      stats: "Closed beta with 50 users",
       status: "completed",
       isKey: true
     },
     {
-      date: "Febrero 2025",
-      title: "Red Social para Artistas",
-      description: "Plataforma social interna para conectar artistas, productores y managers. Sistema de posts, comentarios y colaboraciones.",
-      stats: "200 usuarios activos en beta",
+      date: "February 2025",
+      title: "Artist Social Network",
+      description: "Internal social platform connecting artists, producers, and managers. Posts, comments, and collaboration system.",
+      stats: "200 active beta users",
       status: "completed"
     },
     {
-      date: "Abril 2025",
-      title: "Integración con Stripe",
-      description: "Sistema completo de pagos y suscripciones. Planes Basic ($59.99), Pro ($99.99) y Premium ($149.99) mensuales.",
-      stats: "Sistema de pagos operativo",
+      date: "April 2025",
+      title: "Stripe Integration",
+      description: "Complete payment and subscription system. Basic ($59.99), Pro ($99.99), and Premium ($149.99) monthly plans.",
+      stats: "Payment system operational",
       status: "completed"
     },
     {
-      date: "Junio 2025",
+      date: "June 2025",
       title: "Investors Dashboard",
-      description: "Portal para inversores con simulaciones financieras, roadmap y sistema de registro. Inicio de Seed Round.",
-      stats: "Seed Round abierta",
+      description: "Investor portal with financial simulations, roadmap, and registration system. Seed Round launch.",
+      stats: "Seed Round open",
       status: "completed",
       isKey: true
     },
     {
-      date: "Agosto 2025",
-      title: "Generación de Cover Art Cinematográfico",
-      description: "Sistema de IA para generar portadas de álbumes con calidad cinematográfica usando estilos de directores reconocidos.",
-      stats: "1,000+ covers generadas",
+      date: "August 2025",
+      title: "Cinematic Cover Art Generation",
+      description: "AI system for generating album covers with cinematic quality using renowned director styles.",
+      stats: "1,000+ covers generated",
       status: "in-progress"
     },
     {
-      date: "Octubre 2025",
-      title: "Optimización de Infraestructura",
-      description: "Preparación de infraestructura para crecimiento masivo. Optimización de bases de datos, cachés distribuidos y CDN global.",
-      stats: "Infraestructura escalable lista",
+      date: "October 2025",
+      title: "Infrastructure Optimization",
+      description: "Preparation of infrastructure for massive growth. Database optimization, distributed caching, and global CDN.",
+      stats: "Scalable infrastructure ready",
       status: "upcoming"
     },
     {
-      date: "Diciembre 2025",
-      title: "Integración con Spotify y Apple Music",
-      description: "Conexión directa con principales plataformas de streaming para sincronización automática de perfiles, estadísticas y distribución.",
-      stats: "APIs integradas completamente",
+      date: "December 2025",
+      title: "Spotify & Apple Music Integration",
+      description: "Direct connection with major streaming platforms for automatic profile sync, analytics, and distribution.",
+      stats: "APIs fully integrated",
       status: "upcoming"
     },
     {
-      date: "Enero 2026",
-      title: "Generador de Videos Automáticos + Hito: 1,000 Usuarios Activos",
-      description: "Implementación completa del generador de videos musicales automáticos. Sistema totalmente operativo e integrado con la plataforma de artistas. Primera meta de crecimiento alcanzada.",
-      stats: "Videos automáticos 100% funcional, 1,000 usuarios, $100K MRR",
+      date: "January 2026",
+      title: "Auto Music Video Generator + 1,000 Users Milestone",
+      description: "Complete implementation of automatic music video generator. Fully operational system integrated with artist platform. First growth milestone achieved.",
+      stats: "100% functional videos, 1,000 users, $100K MRR",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Febrero 2026",
-      title: "Lanzamiento de Boostify Records",
-      description: "Creación del sello discográfico Boostify Records: primer AI-powered record label que identifica, firma y desarrolla artistas usando análisis predictivo de IA.",
-      stats: "Primer sello 100% IA del mundo",
+      date: "February 2026",
+      title: "Boostify Records Launch",
+      description: "Creation of Boostify Records: world's first AI-powered record label identifying, signing, and developing artists with predictive AI analysis.",
+      stats: "World's first 100% AI label",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Marzo 2026",
-      title: "Marketplace de Colaboraciones",
-      description: "Plataforma para conectar artistas con productores, ingenieros, videógrafos y otros profesionales creativos.",
-      stats: "500+ colaboraciones activas",
+      date: "March 2026",
+      title: "Collaboration Marketplace",
+      description: "Platform connecting artists with producers, engineers, videographers, and other creative professionals.",
+      stats: "500+ active collaborations",
       status: "upcoming"
     },
     {
-      date: "Mayo 2026",
+      date: "May 2026",
       title: "Angel Round - $1.2M",
-      description: "Apertura de segunda ronda de inversión para expansión de funcionalidades de IA y crecimiento de base de usuarios.",
-      stats: "Inversión para escalar IA",
+      description: "Second investment round for AI functionality expansion and user base growth.",
+      stats: "Investment to scale AI",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Junio 2026",
-      title: "AI Record Label - Sistema Predictivo",
-      description: "Implementación de algoritmos de machine learning para identificar artistas con potencial viral. Análisis de datos de streaming, engagement y tendencias.",
-      stats: "IA identifica hits con 85% precisión",
+      date: "June 2026",
+      title: "AI Record Label - Predictive System",
+      description: "Implementation of machine learning algorithms to identify artists with viral potential. Streaming data, engagement, and trend analysis.",
+      stats: "AI identifies hits with 85% accuracy",
       status: "upcoming"
     },
     {
-      date: "Julio 2026",
-      title: "Hito: 5,000 Usuarios Activos",
-      description: "Expansión significativa de la base de usuarios. Objetivo de $550K en revenue mensual recurrente.",
-      stats: "5,000 usuarios, $550K MRR",
+      date: "July 2026",
+      title: "Milestone: 5,000 Active Users",
+      description: "Significant user base expansion. Target of $550K monthly recurring revenue.",
+      stats: "5,000 users, $550K MRR",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Agosto 2026",
-      title: "Boostify Blockchain - Tokenización de Música",
-      description: "Lanzamiento de blockchain propietaria para tokenizar derechos musicales, crear NFTs de canciones y smart contracts para regalías automáticas.",
-      stats: "Primera blockchain musical",
+      date: "August 2026",
+      title: "Boostify Blockchain - Music Tokenization",
+      description: "Launch of proprietary blockchain for tokenizing music rights, creating song NFTs, and automatic smart contract royalties.",
+      stats: "First music blockchain",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Septiembre 2026",
-      title: "Integración con TikTok y YouTube",
-      description: "Distribución automática de videos musicales a redes sociales. Herramientas de promoción y análisis de engagement.",
-      stats: "Multi-plataforma completa",
+      date: "September 2026",
+      title: "TikTok & YouTube Integration",
+      description: "Automatic distribution of music videos to social networks. Promotion tools and engagement analytics.",
+      stats: "Complete multi-platform",
       status: "upcoming"
     },
     {
-      date: "Octubre 2026",
+      date: "October 2026",
       title: "Series A - $3.5M",
-      description: "Tercera ronda de inversión enfocada en expansión de mercado y desarrollo de features enterprise para sellos discográficos.",
-      stats: "Expansión internacional",
+      description: "Third investment round focused on market expansion and enterprise features for record labels.",
+      stats: "International expansion",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Diciembre 2026",
-      title: "Hito: 10,000 Usuarios Activos",
-      description: "Meta estratégica alcanzada. Consolidación como plataforma líder de música con IA. Revenue proyectado de $1.2M mensual.",
-      stats: "10,000 usuarios, $1.2M MRR",
+      date: "December 2026",
+      title: "Milestone: 10,000 Active Users",
+      description: "Strategic milestone achieved. Consolidation as leading AI-powered music platform. Projected $1.2M monthly revenue.",
+      stats: "10,000 users, $1.2M MRR",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Enero 2027",
+      date: "January 2027",
       title: "Series B - $8M",
-      description: "Cuarta ronda de inversión para escalar globalmente, desarrollar features avanzadas de IA y establecer alianzas estratégicas.",
-      stats: "Escala global y AI avanzada",
+      description: "Fourth investment round for global scaling, advanced AI features development, and strategic partnerships.",
+      stats: "Global scale and advanced AI",
       status: "upcoming",
       isKey: true
     },
     {
-      date: "Marzo 2027",
-      title: "Boostify Records - Primeros Artistas Firmados",
-      description: "Firma de los primeros 10 artistas identificados por IA. Inversión en producción, marketing y distribución completamente gestionada por algoritmos.",
-      stats: "10 artistas bajo contrato IA",
+      date: "March 2027",
+      title: "Boostify Records - First Signed Artists",
+      description: "Signing of first 10 AI-identified artists. Production, marketing, and distribution completely algorithm-managed.",
+      stats: "10 artists under AI management",
       status: "upcoming"
     },
     {
-      date: "Junio 2027",
-      title: "Blockchain Royalties en Vivo",
-      description: "Sistema de pagos de regalías en tiempo real usando Boostify Blockchain. Transparencia total y distribución automática a todos los stakeholders.",
-      stats: "Pagos instantáneos 24/7",
+      date: "June 2027",
+      title: "Live Blockchain Royalties",
+      description: "Real-time royalty payment system using Boostify Blockchain. Complete transparency and automatic distribution to all stakeholders.",
+      stats: "Instant 24/7 payments",
       status: "upcoming",
       isKey: true
     }
@@ -649,33 +657,38 @@ function RoadmapTimeline() {
 
   return (
     <div className="space-y-6">
-      {/* Gráfica de Crecimiento Proyectado */}
+      {/* Projected Growth Chart */}
       <div className="bg-gradient-to-r from-orange-500/10 to-transparent p-6 rounded-lg mb-8">
-        <h4 className="text-lg font-semibold mb-4">Crecimiento Proyectado de Usuarios en 2025</h4>
+        <h4 className="text-lg font-semibold mb-4">Projected User Growth</h4>
         <div className="h-64 relative">
-          {/* Eje Y */}
+          {/* Y-Axis */}
           <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between items-end pr-2">
-            <span className="text-xs text-muted-foreground">10K</span>
-            <span className="text-xs text-muted-foreground">7.5K</span>
-            <span className="text-xs text-muted-foreground">5K</span>
-            <span className="text-xs text-muted-foreground">2.5K</span>
+            <span className="text-xs text-muted-foreground">50K</span>
+            <span className="text-xs text-muted-foreground">37.5K</span>
+            <span className="text-xs text-muted-foreground">25K</span>
+            <span className="text-xs text-muted-foreground">12.5K</span>
             <span className="text-xs text-muted-foreground">0</span>
           </div>
           
-          {/* Gráfica */}
+          {/* Chart */}
           <div className="ml-12 h-full flex items-end">
             <div className="flex-1 flex items-end space-x-4">
               {[
-                { month: "Mar", users: 100, height: "1%" },
-                { month: "Abr", users: 250, height: "2.5%" },
-                { month: "May", users: 375, height: "3.75%" },
-                { month: "Jun", users: 500, height: "5%" },
-                { month: "Jul", users: 750, height: "7.5%" },
-                { month: "Ago", users: 1200, height: "12%" },
-                { month: "Sep", users: 1500, height: "15%" },
-                { month: "Oct", users: 3000, height: "30%" },
-                { month: "Nov", users: 6000, height: "60%" },
-                { month: "Dic", users: 10000, height: "100%" }
+                { month: "Mar", users: 100, height: "0.2%" },
+                { month: "Apr", users: 250, height: "0.5%" },
+                { month: "May", users: 375, height: "0.75%" },
+                { month: "Jun", users: 500, height: "1%" },
+                { month: "Jul", users: 750, height: "1.5%" },
+                { month: "Aug", users: 1200, height: "2.4%" },
+                { month: "Sep", users: 1500, height: "3%" },
+                { month: "Oct", users: 3000, height: "6%" },
+                { month: "Nov", users: 6000, height: "12%" },
+                { month: "Dec", users: 10000, height: "20%" },
+                { month: "Jan '26", users: 15000, height: "30%" },
+                { month: "Feb '26", users: 20000, height: "40%" },
+                { month: "Mar '26", users: 25000, height: "50%" },
+                { month: "Apr '26", users: 35000, height: "70%" },
+                { month: "May '26", users: 50000, height: "100%" }
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div 
@@ -683,7 +696,7 @@ function RoadmapTimeline() {
                     style={{ height: item.height }}
                   >
                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      {item.users.toLocaleString()} usuarios
+                      {item.users.toLocaleString()} users
                     </div>
                   </div>
                   <span className="text-xs mt-2 text-muted-foreground">{item.month}</span>
@@ -700,14 +713,14 @@ function RoadmapTimeline() {
         <div className="space-y-8">
           {roadmapData.map((item, index) => (
             <div key={index} className="relative pl-16">
-              <div className={`absolute left-5 top-1 w-7 h-7 rounded-full flex items-center justify-center border-2 ${
+              <div className={`absolute left-5 top-1 w-7 h-7 rounded-full flex items-center justify-center border-2 cursor-pointer hover:scale-110 transition-transform ${
                 item.status === 'completed' ? 'bg-orange-500 border-orange-500' : 
-                item.status === 'inProgress' ? 'bg-background border-orange-500' : 
+                item.status === 'in-progress' ? 'bg-background border-orange-500' : 
                 item.isKey ? 'bg-background border-yellow-500' : 'bg-background border-muted-foreground'
-              }`}>
+              }`} onClick={() => toggleExpand(index)}>
                 {item.status === 'completed' ? (
                   <Check className="h-3.5 w-3.5 text-white" />
-                ) : item.status === 'inProgress' ? (
+                ) : item.status === 'in-progress' ? (
                   <Clock className="h-3.5 w-3.5 text-orange-500" />
                 ) : item.isKey ? (
                   <Calendar className="h-3.5 w-3.5 text-yellow-500" />
@@ -716,15 +729,27 @@ function RoadmapTimeline() {
                 )}
               </div>
 
-              <div className={`pb-4 ${item.isKey ? 'bg-orange-500/5 p-4 rounded-lg border border-orange-500/20' : ''}`}>
-                <span className={`text-sm font-medium ${item.isKey ? 'text-orange-500' : 'text-muted-foreground'} px-2 py-1 ${item.isKey ? 'bg-orange-500/10' : 'bg-muted/50'} rounded mb-2 inline-block`}>
-                  {item.date}
-                </span>
-                <h4 className={`text-base font-medium mt-2 mb-1 ${item.isKey ? 'text-orange-500' : ''}`}>{item.title}</h4>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
-                {item.stats && (
-                  <div className="mt-2 text-xs inline-block px-2 py-1 bg-black/20 rounded font-medium">
-                    {item.stats}
+              <div className={`pb-4 cursor-pointer transition-all ${item.isKey ? 'bg-orange-500/5 p-4 rounded-lg border border-orange-500/20' : ''}`} onClick={() => toggleExpand(index)}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <span className={`text-sm font-medium ${item.isKey ? 'text-orange-500' : 'text-muted-foreground'} px-2 py-1 ${item.isKey ? 'bg-orange-500/10' : 'bg-muted/50'} rounded mb-2 inline-block`}>
+                      {item.date}
+                    </span>
+                    <h4 className={`text-base font-medium mt-2 mb-1 ${item.isKey ? 'text-orange-500' : ''}`}>{item.title}</h4>
+                  </div>
+                  <span className={`ml-2 text-lg transform transition-transform ${expandedItems.includes(index) ? 'rotate-180' : ''}`}>
+                    ▼
+                  </span>
+                </div>
+                
+                {expandedItems.includes(index) && (
+                  <div className="mt-3 pt-3 border-t border-white/10 animate-in fade-in">
+                    <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                    {item.stats && (
+                      <div className="mt-2 text-xs inline-block px-2 py-1 bg-black/20 rounded font-medium">
+                        {item.stats}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
