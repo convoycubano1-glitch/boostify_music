@@ -7,7 +7,7 @@ import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
-import { users, artistNews, songs, tokenizedSongs } from '../../db/schema';
+import { users, songs, tokenizedSongs } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { generateCinematicImage, generateImageWithFaceReference } from '../services/gemini-image-service';
 import { GoogleGenAI } from "@google/genai";
