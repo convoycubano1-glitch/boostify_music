@@ -103,6 +103,7 @@ import boostiswapContractsRouter from './routes/boostiswap-contracts'; // Import
 import boostiswapRouter from './routes/boostiswap'; // Import BoostiSwap Marketplace router
 import socialMediaRouter from './routes/social-media'; // Import Social Media Content Generator router
 import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed function
+import billingRouter from './routes/billing'; // Import Billing router
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -376,6 +377,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/fashion', fashionStudioRouter); // Artist Fashion Studio (Virtual Try-On, AI Advisor, Kling Videos)
   app.use('/api/notifications', notificationsRouter); // Internal notifications system
   app.use(creditsRouter); // Credits and payment routes
+  app.use('/api/billing', billingRouter); // Billing routes for subscriptions and invoices
   
   // Helper function para obtener features de cada plan
   function getPlanFeatures(plan: string): string[] {
