@@ -104,12 +104,12 @@ function RevenueSimulationsCalculator() {
           <Slider
             value={[activeUsers]}
             min={1000}
-            max={10000}
-            step={100}
+            max={50000}
+            step={500}
             onValueChange={(value) => setActiveUsers(value[0])}
             className="w-full"
           />
-          <p className="text-xs text-white/60 mt-2">Range: 1k - 10k users</p>
+          <p className="text-xs text-white/60 mt-2">Range: 1k - 50k users</p>
         </div>
 
         {/* Video Conversion Rate */}
