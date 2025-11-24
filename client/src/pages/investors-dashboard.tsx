@@ -1879,32 +1879,32 @@ export default function InvestorsDashboard() {
                             </div>
                           </div>
                           
-                          <div className="flex-1 flex items-end space-x-2">
+                          <div className="flex-1 flex items-end gap-1">
                             {[
-                              { label: "Jan '26", height: "8px" },
-                              { label: "Mar '26", height: "12px" },
-                              { label: "May '26", height: "20px" },
-                              { label: "Jul '26", height: "28px" },
-                              { label: "Sep '26", height: "42px" },
-                              { label: "Nov '26", height: "56px" },
-                              { label: "Jan '27", height: "84px" },
-                              { label: "Mar '27", height: "112px" },
-                              { label: "May '27", height: "146px" },
-                              { label: "Jul '27", height: "180px" },
-                              { label: "Sep '27", height: "220px" },
-                              { label: "Nov '27", height: "252px" },
-                              { label: "Dec '28", height: "280px" }
+                              { label: "Jan '26", height: "4px" },
+                              { label: "Mar '26", height: "7px" },
+                              { label: "May '26", height: "12px" },
+                              { label: "Jul '26", height: "17px" },
+                              { label: "Sep '26", height: "25px" },
+                              { label: "Nov '26", height: "35px" },
+                              { label: "Jan '27", height: "52px" },
+                              { label: "Mar '27", height: "70px" },
+                              { label: "May '27", height: "91px" },
+                              { label: "Jul '27", height: "112px" },
+                              { label: "Sep '27", height: "137px" },
+                              { label: "Nov '27", height: "158px" },
+                              { label: "Dec '28", height: "175px" }
                             ].map((item, index) => (
-                              <div key={index} className="flex-1 flex flex-col items-center">
+                              <div key={index} className="flex-1 flex flex-col items-center justify-end">
                                 <div 
-                                  className="w-full max-w-[40px] bg-gradient-to-t from-orange-500 to-orange-400 rounded-t relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500"
-                                  style={{ height: item.height }}
+                                  className="w-full bg-gradient-to-t from-orange-500 to-orange-400 rounded-sm relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500 shadow-lg"
+                                  style={{ height: item.height, maxWidth: "24px", margin: "0 auto" }}
                                 >
-                                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-[9px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                                     {item.label}
                                   </div>
                                 </div>
-                                <span className="text-[8px] sm:text-xs mt-1 text-white/70">{item.label}</span>
+                                <span className="text-[7px] mt-2 text-white/60">{item.label}</span>
                               </div>
                             ))}
                           </div>
@@ -1931,32 +1931,32 @@ export default function InvestorsDashboard() {
                             </div>
                           </div>
                           
-                          <div className="flex-1 flex items-end space-x-2">
+                          <div className="flex-1 flex items-end space-x-1.5">
                             {[
-                              { label: "Jan '26", value: "$0.8M", height: "8px" },
-                              { label: "Mar '26", value: "$1.5M", height: "12px" },
-                              { label: "May '26", value: "$2.8M", height: "20px" },
+                              { label: "Jan '26", value: "$0.8M", height: "6px" },
+                              { label: "Mar '26", value: "$1.5M", height: "10px" },
+                              { label: "May '26", value: "$2.8M", height: "18px" },
                               { label: "Jul '26", value: "$4.2M", height: "28px" },
-                              { label: "Sep '26", value: "$6M", height: "42px" },
-                              { label: "Nov '26", value: "$8.5M", height: "56px" },
-                              { label: "Jan '27", value: "$12M", height: "84px" },
-                              { label: "Mar '27", value: "$16M", height: "112px" },
-                              { label: "May '27", value: "$21M", height: "146px" },
-                              { label: "Jul '27", value: "$27M", height: "180px" },
-                              { label: "Sep '27", value: "$32M", height: "220px" },
-                              { label: "Nov '27", value: "$38M", height: "252px" },
-                              { label: "Dec '28", value: "$45M", height: "280px" }
+                              { label: "Sep '26", value: "$6M", height: "40px" },
+                              { label: "Nov '26", value: "$8.5M", height: "57px" },
+                              { label: "Jan '27", value: "$12M", height: "80px" },
+                              { label: "Mar '27", value: "$16M", height: "107px" },
+                              { label: "May '27", value: "$21M", height: "141px" },
+                              { label: "Jul '27", value: "$27M", height: "181px" },
+                              { label: "Sep '27", value: "$32M", height: "215px" },
+                              { label: "Nov '27", value: "$38M", height: "255px" },
+                              { label: "Dec '28", value: "$45M", height: "302px" }
                             ].map((item, index) => (
-                              <div key={index} className="flex-1 flex flex-col items-center">
+                              <div key={index} className="flex-1 flex flex-col items-center justify-end">
                                 <div 
-                                  className="w-full max-w-[40px] bg-gradient-to-t from-green-500 to-green-400 rounded-t relative group cursor-pointer transition-all hover:from-green-600 hover:to-green-500"
-                                  style={{ height: item.height }}
+                                  className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-sm relative group cursor-pointer transition-all hover:from-green-600 hover:to-green-500 shadow-lg"
+                                  style={{ height: item.height, maxWidth: "28px", margin: "0 auto" }}
                                 >
-                                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none">
                                     {item.value}
                                   </div>
                                 </div>
-                                <span className="text-[8px] sm:text-xs mt-1 text-white/70">{item.label}</span>
+                                <span className="text-[7px] mt-2 text-white/60">{item.label}</span>
                               </div>
                             ))}
                           </div>
