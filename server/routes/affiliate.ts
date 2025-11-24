@@ -3,20 +3,9 @@ import { authenticate } from '../middleware/auth';
 import { db } from '../db';
 import { 
   affiliates, 
-  affiliateLinks, 
-  affiliateClicks, 
-  affiliateConversions,
-  affiliateEarnings,
-  affiliateCoupons,
-  affiliatePromotions,
-  affiliateBadges,
-  affiliateReferrals,
-  affiliateMarketingMaterials,
+  affiliateLinks,
   insertAffiliateSchema,
-  insertAffiliateLinkSchema,
-  insertAffiliateCouponSchema,
-  insertAffiliatePromotionSchema,
-  insertAffiliateReferralSchema
+  insertAffiliateLinkSchema
 } from '../../db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
