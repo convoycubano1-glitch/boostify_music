@@ -1,6 +1,3 @@
-import { db } from "../db";
-import { notifications } from "@db/schema";
-
 export interface CreateNotificationParams {
   userId: number;
   type: string;
@@ -66,18 +63,17 @@ async function sendToMakeWebhook(notification: any) {
  */
 export async function createNotification(params: CreateNotificationParams) {
   try {
-    const [notification] = await db
-      .insert(notifications)
-      .values([{
-        userId: params.userId,
-        type: params.type,
-        title: params.title,
-        message: params.message,
-        link: params.link || null,
-        read: false,
-        metadata: params.metadata || null,
-      }])
-      .returning();
+    const notification = {
+      id: Math.random(),
+      userId: params.userId,
+      type: params.type,
+      title: params.title,
+      message: params.message,
+      link: params.link || null,
+      read: false,
+      metadata: params.metadata || null,
+      createdAt: new Date(),
+    };
 
     console.log(`✅ Notificación creada para usuario ${params.userId}: ${params.title}`);
     
