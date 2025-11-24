@@ -368,11 +368,10 @@ const Router = () => {
           {getRouteComponent("/promotion", WrappedPromotionPage, 'pro')}
           {getRouteComponent("/youtube-views", WrappedYoutubeViewsPage, 'pro')}
           {getRouteComponent("/instagram-boost", WrappedInstagramBoostPage, 'pro')}
-          {getRouteComponent("/contacts", WrappedContactsPage, 'pro')}
           {getRouteComponent("/manager-tools", WrappedManagerToolsPage, 'pro')}
           {getRouteComponent("/producer-tools", WrappedProducerToolsPage, 'pro')}
           {getRouteComponent("/music-generator", WrappedMusicGeneratorPage, 'pro')}
-          {getRouteComponent("/artist-image-advisor", WrappedArtistImageAdvisor, 'pro')}
+          {getRouteComponent("/artist-image-advisor", WrappedArtistImageAdvisor, 'basic')}
           {getRouteComponent("/merchandise", WrappedMerchandisePage, 'pro')}
           {getRouteComponent("/translator", WrappedRealTimeTranslator, 'pro')}
           {getRouteComponent("/achievements", WrappedAchievementsPage, 'pro')}
@@ -384,6 +383,7 @@ const Router = () => {
           {getRouteComponent("/motion-dna", WrappedMotionDNAPage, null)}
           {getRouteComponent("/music-video-workflow", WrappedMusicVideoWorkflowPage, 'free')}
           {getRouteComponent("/music-video-flow", WrappedMusicVideoWorkflowEnhancedPage, 'free')}
+          {getRouteComponent("/contacts", WrappedContactsPage, 'premium')}
           {getRouteComponent("/record-label-services", WrappedRecordLabelServices, 'premium')}
           {getRouteComponent("/ai-agents", WrappedAIAgentsPage, 'premium')}
           {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
