@@ -557,9 +557,14 @@ export default function SpotifyPage() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* TAB 1: Monthly Listeners Prediction */}
+              {/* TAB 1: Monthly Listeners Prediction - BASIC */}
               <TabsContent value="listeners" className="space-y-6">
-                <div className="grid gap-6 lg:grid-cols-2">
+                <PlanTierGuard 
+                  requiredPlan="basic" 
+                  userSubscription={userSubscription} 
+                  featureName="Growth Prediction"
+                >
+                  <div className="grid gap-6 lg:grid-cols-2">
                   {/* Input Card */}
                   <Card className="group relative overflow-hidden border-orange-500/20 bg-black/40 backdrop-blur-sm hover:border-orange-500/40 transition-all duration-300">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -683,11 +688,17 @@ export default function SpotifyPage() {
                       </div>
                     </Card>
                   )}
-                </div>
+                  </div>
+                </PlanTierGuard>
               </TabsContent>
 
-              {/* TAB 2: Playlist Match */}
+              {/* TAB 2: Playlist Match - BASIC */}
               <TabsContent value="playlists" className="space-y-6">
+                <PlanTierGuard 
+                  requiredPlan="basic" 
+                  userSubscription={userSubscription} 
+                  featureName="Playlist Match Finder"
+                >
                 <div className="grid gap-6 lg:grid-cols-2">
                   <Card className="group border-orange-500/20 bg-black/40 backdrop-blur-sm hover:border-orange-500/40 transition-all duration-300">
                     <div className="p-8 space-y-6">
@@ -789,11 +800,17 @@ export default function SpotifyPage() {
                       </div>
                     </Card>
                   )}
-                </div>
+                  </div>
+                </PlanTierGuard>
               </TabsContent>
 
-              {/* TAB 3: Curator Finder */}
+              {/* TAB 3: Curator Finder - PRO */}
               <TabsContent value="curators" className="space-y-6">
+                <PlanTierGuard 
+                  requiredPlan="pro" 
+                  userSubscription={userSubscription} 
+                  featureName="Curator Finder"
+                >
                 <div className="flex gap-3 mb-4">
                   <Button
                     variant={curatorSubTab === 'search' ? 'default' : 'ghost'}
@@ -1111,10 +1128,16 @@ export default function SpotifyPage() {
                     </Card>
                   </div>
                 )}
+                </PlanTierGuard>
               </TabsContent>
 
-              {/* TAB 4: SEO Optimizer */}
+              {/* TAB 4: SEO Optimizer - PRO */}
               <TabsContent value="seo" className="space-y-6">
+                <PlanTierGuard 
+                  requiredPlan="pro" 
+                  userSubscription={userSubscription} 
+                  featureName="SEO Optimizer"
+                >
                 <div className="grid gap-6 lg:grid-cols-2">
                   <Card className="group border-orange-500/20 bg-black/40 backdrop-blur-sm hover:border-orange-500/40 transition-all duration-300">
                     <div className="p-8 space-y-6">
@@ -1229,7 +1252,8 @@ export default function SpotifyPage() {
                       </div>
                     </Card>
                   )}
-                </div>
+                  </div>
+                </PlanTierGuard>
               </TabsContent>
             </Tabs>
           </motion.div>
