@@ -35,9 +35,9 @@ export interface PlanConfig {
 export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
   free: {
     key: 'free',
-    displayName: 'Free',
-    description: 'Explore the basics',
-    highlight: 'Try it free',
+    displayName: 'Discover',
+    description: 'Start your music journey',
+    highlight: 'Always free',
     price: {
       monthly: 0,
       yearly: 0,
@@ -48,27 +48,27 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
       yearly: ''
     },
     features: [
-      { name: 'Social Network (Basic)', included: true },
-      { name: 'Store Access', included: true },
-      { name: 'Education Hub (View)', included: true },
-      { name: 'Boostify TV (Access)', included: true },
-      { name: 'Affiliates Program', included: true },
-      { name: 'Artist Dashboard', included: false },
-      { name: 'Spotify Tools', included: false },
-      { name: 'Contracts', included: false },
-      { name: 'PR Management', included: false },
-      { name: 'YouTube Boost', included: false },
-      { name: 'Instagram Boost', included: false },
-      { name: 'AI Advisors', included: false },
-      { name: 'Virtual Record Label', included: false },
+      { name: 'Community Hub', included: true },
+      { name: 'Merch Store', included: true },
+      { name: 'Learn Hub', included: true },
+      { name: 'BoostifyTV', included: true },
+      { name: 'Earn Commissions', included: true },
+      { name: 'Artist Hub', included: false },
+      { name: 'Spotify Growth', included: false },
+      { name: 'Legal Contracts', included: false },
+      { name: 'PR Mastery', included: false },
+      { name: 'YouTube Mastery', included: false },
+      { name: 'Instagram Domination', included: false },
+      { name: 'Expert Advisors', included: false },
+      { name: 'Label Creator', included: false },
       { name: 'AI Agents', included: false }
     ]
   },
   
   creator: {
     key: 'creator',
-    displayName: 'Creator',
-    description: 'For emerging artists',
+    displayName: 'Elevate',
+    description: 'Build your artist presence & fanbase',
     highlight: 'Most popular',
     popular: true,
     price: {
@@ -81,27 +81,27 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
       yearly: 'price_1SUz302LyFplWimfv5MZCNz4' // ✅ Creator Yearly - $604/año
     },
     features: [
-      { name: 'Everything in Free', included: true },
-      { name: 'Artist Dashboard', included: true },
-      { name: 'Spotify Tools', included: true },
-      { name: 'Contracts & Legal', included: true },
-      { name: 'PR Management', included: true },
-      { name: 'News & Events', included: true },
-      { name: 'Videos & Blog', included: true },
-      { name: 'Social Network (Full)', included: true },
-      { name: 'Artist Image Advisor', included: true },
-      { name: 'Education Courses', included: true },
-      { name: 'AI Advisors (3 calls/month)', included: true },
-      { name: 'YouTube Boost', included: false },
-      { name: 'Instagram Boost', included: false },
-      { name: 'Virtual Record Label', included: false }
+      { name: 'Everything in Discover', included: true },
+      { name: 'Artist Hub', included: true },
+      { name: 'Spotify Growth Engine', included: true },
+      { name: 'Contract Templates', included: true },
+      { name: 'PR Starter Kit', included: true },
+      { name: 'News & Events Hub', included: true },
+      { name: 'Content Studio', included: true },
+      { name: 'Full Community Access', included: true },
+      { name: 'Creative Image AI', included: true },
+      { name: 'Master Classes', included: true },
+      { name: 'Expert Advisors (3/month)', included: true },
+      { name: 'YouTube Mastery', included: false },
+      { name: 'Instagram Domination', included: false },
+      { name: 'Label Creator', included: false }
     ]
   },
   
   professional: {
     key: 'professional',
-    displayName: 'Professional',
-    description: 'For serious creators',
+    displayName: 'Amplify',
+    description: 'Scale your sound & reach globally',
     highlight: 'Best value',
     price: {
       monthly: 99.99,
@@ -113,29 +113,29 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
       yearly: 'price_1SUz302LyFplWimfG5YtbUJ3' // ✅ Professional Yearly - $1,007/año
     },
     features: [
-      { name: 'Everything in Creator', included: true },
-      { name: 'Analytics Dashboard', included: true },
-      { name: 'YouTube Boost (Trends, Optimizer)', included: true },
-      { name: 'Instagram Boost (AI Tools, Community)', included: true },
-      { name: 'Manager Tools', included: true },
-      { name: 'Producer Tools', included: true },
-      { name: 'Music Generator (Advanced)', included: true },
-      { name: 'Merchandise System', included: true },
-      { name: 'Real-time Translator', included: true },
-      { name: 'Image Generator (50/month)', included: true },
-      { name: 'Smart Cards', included: true },
-      { name: 'Achievements System', included: true },
-      { name: 'Contacts Management (Advanced)', included: true },
-      { name: 'AI Advisors (10 calls/month)', included: true },
-      { name: 'Virtual Record Label', included: false },
+      { name: 'Everything in Elevate', included: true },
+      { name: 'Pro Analytics Engine', included: true },
+      { name: 'YouTube Mastery Suite', included: true },
+      { name: 'Instagram Domination Suite', included: true },
+      { name: 'Career Manager Suite', included: true },
+      { name: 'Music Production Lab', included: true },
+      { name: 'AI Music Studio (Advanced)', included: true },
+      { name: 'Premium Merch Hub', included: true },
+      { name: 'Global Language Studio', included: true },
+      { name: 'Creative Canvas AI (50/month)', included: true },
+      { name: 'Milestone Cards', included: true },
+      { name: 'Achievement Badges', included: true },
+      { name: 'Network Pro', included: true },
+      { name: 'Expert Advisors (10/month)', included: true },
+      { name: 'Label Creator', included: false },
       { name: 'AI Agents', included: false }
     ]
   },
   
   enterprise: {
     key: 'enterprise',
-    displayName: 'Enterprise',
-    description: 'For established artists',
+    displayName: 'Dominate',
+    description: 'Conquer the music industry',
     highlight: 'Maximum power',
     price: {
       monthly: 149.99,
@@ -147,23 +147,23 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
       yearly: 'price_1SUz312LyFplWimfQSQLo349' // ✅ Enterprise Yearly - $1,511/año
     },
     features: [
-      { name: 'Everything in Professional', included: true },
-      { name: 'Virtual Record Label (10 artists)', included: true },
-      { name: 'AI Agents (Full Access)', included: true },
-      { name: 'AI Advisors (Unlimited calls)', included: true },
-      { name: 'Artist Generator (AI)', included: true },
-      { name: 'Ecosystem Management', included: true },
-      { name: 'Boostify International', included: true },
-      { name: 'Music Videos (Premium, Unlimited)', included: true },
-      { name: 'Analytics (Enterprise)', included: true },
-      { name: 'YouTube Boost (Unlimited)', included: true },
-      { name: 'Instagram Boost (Unlimited)', included: true },
-      { name: 'Spotify Boost (Unlimited)', included: true },
-      { name: 'Image Generator (Unlimited)', included: true },
-      { name: 'Music Generator (Unlimited)', included: true },
-      { name: 'Contacts (Enterprise)', included: true },
-      { name: 'Dedicated Support', included: true },
-      { name: 'Priority Processing', included: true }
+      { name: 'Everything in Amplify', included: true },
+      { name: '✨ Virtual Label Empire (10 artists)', included: true },
+      { name: '🤖 AI Agent Suite (Unlimited)', included: true },
+      { name: '👑 Expert Advisors (Unlimited)', included: true },
+      { name: '🎭 Artist Generator Pro', included: true },
+      { name: '🌍 Global Ecosystem Hub', included: true },
+      { name: '🚀 International Expansion', included: true },
+      { name: '🎬 Premium Video Studio (Unlimited)', included: true },
+      { name: '📊 Enterprise Analytics', included: true },
+      { name: '▶️ YouTube Mastery Unlimited', included: true },
+      { name: '📱 Instagram Domination Unlimited', included: true },
+      { name: '🎵 Spotify Growth Unlimited', included: true },
+      { name: '🎨 Creative Canvas Unlimited', included: true },
+      { name: '🎶 AI Music Studio (Unlimited)', included: true },
+      { name: '🤝 Enterprise Network', included: true },
+      { name: '🎯 VIP Support (24/7)', included: true },
+      { name: '⚡ Priority Fast-Track', included: true }
     ]
   }
 };
