@@ -550,9 +550,20 @@ router.post('/test/simulate-payment-success', async (req: Request, res: Response
   try {
     console.log('🧪 TEST: Simulando pago exitoso...');
     
+    // Obtener usuario existente o usar el primero disponible
+    let userId = 1;
+    try {
+      const existingUsers = await db.select().from(users).limit(1);
+      if (existingUsers.length > 0) {
+        userId = existingUsers[0].id;
+      }
+    } catch (e) {
+      console.log('📝 No user found, using userId 1 for test');
+    }
+    
     // Crear notificación de prueba
-    await db.insert(notifications).values({
-      userId: 1, // Usuario de prueba (ajusta si es necesario)
+    const result = await db.insert(notifications).values({
+      userId: userId,
       type: 'PAYMENT_SUCCESS',
       title: '✅ TEST: Pago Exitoso',
       message: 'Este es un evento de prueba - No es un pago real',
@@ -564,7 +575,10 @@ router.post('/test/simulate-payment-success', async (req: Request, res: Response
       },
       read: false,
       createdAt: new Date()
-    }).catch(err => console.error('Error creating test notification:', err));
+    }).catch(err => {
+      console.error('❌ Error creating test notification:', err);
+      throw err;
+    });
 
     // Enviar a Make para email
     await sendToMake('PAYMENT_SUCCESS', {
@@ -595,8 +609,19 @@ router.post('/test/simulate-subscription', async (req: Request, res: Response) =
   try {
     console.log('🧪 TEST: Simulando nueva suscripción...');
     
-    await db.insert(notifications).values({
-      userId: 1,
+    // Obtener usuario existente
+    let userId = 1;
+    try {
+      const existingUsers = await db.select().from(users).limit(1);
+      if (existingUsers.length > 0) {
+        userId = existingUsers[0].id;
+      }
+    } catch (e) {
+      console.log('📝 No user found, using userId 1 for test');
+    }
+    
+    const result = await db.insert(notifications).values({
+      userId: userId,
       type: 'SUBSCRIPTION_CREATED',
       title: '✅ TEST: Suscripción Creada',
       message: 'Este es un evento de prueba - No es una suscripción real',
@@ -608,7 +633,10 @@ router.post('/test/simulate-subscription', async (req: Request, res: Response) =
       },
       read: false,
       createdAt: new Date()
-    }).catch(err => console.error('Error creating test notification:', err));
+    }).catch(err => {
+      console.error('❌ Error creating test notification:', err);
+      throw err;
+    });
 
     await sendToMake('SUBSCRIPTION_CREATED', {
       userEmail: 'test@boostify.dev',
@@ -637,8 +665,19 @@ router.post('/test/simulate-payment-failed', async (req: Request, res: Response)
   try {
     console.log('🧪 TEST: Simulando pago fallido...');
     
-    await db.insert(notifications).values({
-      userId: 1,
+    // Obtener usuario existente
+    let userId = 1;
+    try {
+      const existingUsers = await db.select().from(users).limit(1);
+      if (existingUsers.length > 0) {
+        userId = existingUsers[0].id;
+      }
+    } catch (e) {
+      console.log('📝 No user found, using userId 1 for test');
+    }
+    
+    const result = await db.insert(notifications).values({
+      userId: userId,
       type: 'PAYMENT_FAILED',
       title: '❌ TEST: Pago Fallido',
       message: 'Este es un evento de prueba - No es un pago fallido real',
@@ -650,7 +689,10 @@ router.post('/test/simulate-payment-failed', async (req: Request, res: Response)
       },
       read: false,
       createdAt: new Date()
-    }).catch(err => console.error('Error creating test notification:', err));
+    }).catch(err => {
+      console.error('❌ Error creating test notification:', err);
+      throw err;
+    });
 
     await sendToMake('PAYMENT_FAILED', {
       userEmail: 'test@boostify.dev',
