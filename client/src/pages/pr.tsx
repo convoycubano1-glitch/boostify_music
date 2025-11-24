@@ -1142,6 +1142,7 @@ export default function PRPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </PlanTierGuard>
   );
 }
