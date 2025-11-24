@@ -101,7 +101,7 @@ export function ExtraServicesSection({
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 text-sm text-muted-foreground">
         <p className="flex items-start gap-2">
           <span className="text-primary font-semibold mt-0.5">💡</span>
-          <span>All services are delivered by verified creators. Your satisfaction is guaranteed with secure payment through Stripe.</span>
+          <span>All services are delivered by verified creators and charged separately. Your satisfaction is guaranteed with secure payment through Stripe. Available to all users.</span>
         </p>
       </div>
     </div>

@@ -30,7 +30,7 @@ router.get('/api/services', async (req, res) => {
   }
 });
 
-// POST create order (requires auth)
+// POST create order (requires auth - all users can order)
 router.post('/api/services/order', authenticate, async (req, res) => {
   try {
     const { serviceId, quantity, category } = req.body;
@@ -39,6 +39,9 @@ router.post('/api/services/order', authenticate, async (req, res) => {
     if (!userId || !serviceId || !quantity) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    // Services are available to ALL users (free, basic, pro, premium)
+    // They are charged separately via Stripe
 
     // Fetch service
     const service = await db

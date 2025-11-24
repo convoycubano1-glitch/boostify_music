@@ -2271,12 +2271,12 @@ export default function YoutubeViewsPage() {
               </Card>
             </TabsContent>
 
-            {/* PHASE 3 - EXTRA SERVICES TAB */}
+            {/* EXTRA SERVICES TAB - Available to all users */}
             <TabsContent value="services">
               <ExtraServicesSection
                 category="youtube_boost"
-                title="Premium Creator Services"
-                description="Boost your channel with expert services from verified creators"
+                title="Creator Services"
+                description="Enhance your channel with expert services from verified creators. Available for all users."
               />
             </TabsContent>
 
