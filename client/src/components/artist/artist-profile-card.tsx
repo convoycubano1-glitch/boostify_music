@@ -1115,24 +1115,49 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Query para videos
   const { data: videos = [] as Video[], refetch: refetchVideos } = useQuery<Video[]>({
-    queryKey: ["videos", userProfile?.pgId || artistId],
+    queryKey: ["videos", userProfile?.pgId || userProfile?.uid || artistId],
     queryFn: async () => {
       try {
         const pgId = userProfile?.pgId || artistId;
-        logger.info(`📹 Fetching videos for artist: ${pgId} (PostgreSQL ID)`);
+        const firebaseUid = userProfile?.uid || artistId;
+        logger.info(`📹 Fetching videos for artist: ${pgId} (PostgreSQL ID) or ${firebaseUid} (Firebase UID)`);
+        
         const videosRef = collection(db, "videos");
-        const q = query(videosRef, where("userId", "==", pgId));
-        const querySnapshot = await getDocs(q);
+        let allVideos: any[] = [];
+        
+        // Intentar buscar por pgId primero (para artistas generados)
+        try {
+          const q1 = query(videosRef, where("userId", "==", pgId));
+          const snap1 = await getDocs(q1);
+          allVideos = [...snap1.docs.map(doc => ({ id: doc.id, ...doc.data() }))];
+          logger.info(`📊 Found ${snap1.size} videos by pgId`);
+        } catch (e) {
+          logger.warn('⚠️ Error searching videos by pgId:', e);
+        }
+        
+        // Si no se encontraron por pgId, intentar por Firebase UID (para usuarios personales)
+        if (allVideos.length === 0 && firebaseUid !== pgId) {
+          try {
+            const q2 = query(videosRef, where("userId", "==", firebaseUid));
+            const snap2 = await getDocs(q2);
+            allVideos = [...snap2.docs.map(doc => ({ id: doc.id, ...doc.data() }))];
+            logger.info(`📊 Found ${snap2.size} videos by Firebase UID`);
+          } catch (e) {
+            logger.warn('⚠️ Error searching videos by Firebase UID:', e);
+          }
+        }
+        
+        const querySnapshot = allVideos;
+        logger.info(`📊 Videos query returned ${querySnapshot.length} documents total`);
 
-        logger.info(`📊 Videos query returned ${querySnapshot.size} documents`);
-
-        if (querySnapshot.empty) {
+        if (querySnapshot.length === 0) {
           logger.info('⚠️ No videos found for this artist');
           return [];
         }
 
-        const videosData = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
+        const videosData = querySnapshot.map((doc: any) => {
+          const data = typeof doc.data === 'function' ? doc.data() : doc;
+          const docId = doc.id || doc.id;
           
           // Solo extraer videoId si es una URL de YouTube
           const isYouTubeUrl = data.url?.includes('youtube.com') || data.url?.includes('youtu.be');
@@ -1148,7 +1173,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           }
           
           logger.info('📹 Video data:', { 
-            id: doc.id, 
+            id: docId, 
             title: data.title, 
             url: data.url,
             isYouTube: isYouTubeUrl,
@@ -1156,7 +1181,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
           });
           
           return {
-            id: doc.id,
+            id: docId,
             title: data.title,
             url: data.url,
             userId: data.userId || artistId,
