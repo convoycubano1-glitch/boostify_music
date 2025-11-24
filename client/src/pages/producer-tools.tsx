@@ -7,6 +7,8 @@ import { Header } from "../components/layout/header";
 import { Badge } from "../components/ui/badge";
 import { Switch } from "../components/ui/switch";
 import { motion } from "framer-motion";
+import { useAuth } from "../hooks/use-auth";
+import { useLocation } from "wouter";
 import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2, PlayCircle, ChevronDown, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
@@ -268,8 +270,37 @@ const musicians: MusicianService[] = [
 ];
 
 export default function ProducerToolsPage() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
+
+  // Check if user is authenticated - redirect if not
+  useEffect(() => {
+    if (!user) {
+      setLocation('/signup');
+    }
+  }, [user, setLocation]);
+
+  // Show loading or redirect message while checking auth
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <Card className="bg-zinc-900/50 border-orange-500/20 p-8 max-w-md text-center">
+          <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
+          <p className="text-white/70 mb-6">
+            You need to be logged in to access Producer Tools.
+          </p>
+          <Button 
+            onClick={() => setLocation('/signup')}
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+          >
+            Sign In / Sign Up
+          </Button>
+        </Card>
+      </div>
+    );
+  }
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
   const [isMastering, setIsMastering] = useState(false);
