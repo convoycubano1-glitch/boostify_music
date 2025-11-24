@@ -48,18 +48,20 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
       yearly: ''
     },
     features: [
-      { name: 'Profile (Basic)', included: true },
-      { name: 'Contacts (Limited)', included: true },
-      { name: 'Education Hub (View only)', included: true },
-      { name: 'Boostify TV (Limited access)', included: true },
-      { name: 'Community forum access', included: true },
-      { name: 'Music Generator', included: false },
-      { name: 'Music Videos', included: false },
-      { name: 'AI Agents', included: false },
-      { name: 'Artist Image', included: false },
-      { name: 'Analytics', included: false },
-      { name: 'Merchandise', included: false },
-      { name: 'Social Media Boost', included: false }
+      { name: 'Social Network (Basic)', included: true },
+      { name: 'Store Access', included: true },
+      { name: 'Education Hub (View)', included: true },
+      { name: 'Boostify TV (Access)', included: true },
+      { name: 'Affiliates Program', included: true },
+      { name: 'Artist Dashboard', included: false },
+      { name: 'Spotify Tools', included: false },
+      { name: 'Contracts', included: false },
+      { name: 'PR Management', included: false },
+      { name: 'YouTube Boost', included: false },
+      { name: 'Instagram Boost', included: false },
+      { name: 'AI Advisors', included: false },
+      { name: 'Virtual Record Label', included: false },
+      { name: 'AI Agents', included: false }
     ]
   },
   
@@ -80,18 +82,19 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     },
     features: [
       { name: 'Everything in Free', included: true },
-      { name: 'Profile (Complete)', included: true },
-      { name: 'Contacts (Full access)', included: true },
-      { name: 'Music Generator (Basic)', included: true },
-      { name: 'Music Videos (Standard)', included: true },
-      { name: 'AI Agents (Basic)', included: true },
-      { name: 'Artist Image (Basic)', included: true },
-      { name: 'Analytics (Basic)', included: true },
-      { name: 'Merchandise (Basic)', included: true },
-      { name: 'Education Hub (Full access)', included: true },
+      { name: 'Artist Dashboard', included: true },
+      { name: 'Spotify Tools', included: true },
+      { name: 'Contracts & Legal', included: true },
+      { name: 'PR Management', included: true },
+      { name: 'News & Events', included: true },
+      { name: 'Videos & Blog', included: true },
+      { name: 'Social Network (Full)', included: true },
+      { name: 'Artist Image Advisor', included: true },
+      { name: 'Education Courses', included: true },
+      { name: 'AI Advisors (3 calls/month)', included: true },
       { name: 'YouTube Boost', included: false },
       { name: 'Instagram Boost', included: false },
-      { name: 'Spotify Boost', included: false }
+      { name: 'Virtual Record Label', included: false }
     ]
   },
   
@@ -111,17 +114,21 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     },
     features: [
       { name: 'Everything in Creator', included: true },
+      { name: 'Analytics Dashboard', included: true },
+      { name: 'YouTube Boost (Trends, Optimizer)', included: true },
+      { name: 'Instagram Boost (AI Tools, Community)', included: true },
+      { name: 'Manager Tools', included: true },
+      { name: 'Producer Tools', included: true },
       { name: 'Music Generator (Advanced)', included: true },
-      { name: 'Music Videos (Pro)', included: true },
-      { name: 'AI Agents (Advanced)', included: true },
-      { name: 'Artist Image (Pro)', included: true },
-      { name: 'Analytics (Advanced)', included: true },
-      { name: 'Merchandise (Pro)', included: true },
-      { name: 'YouTube Boost (50/month)', included: true },
-      { name: 'Instagram Boost (50/month)', included: true },
-      { name: 'Spotify Boost (30/month)', included: true },
-      { name: 'Email Campaigns (5/month)', included: true },
-      { name: 'Priority Support', included: true }
+      { name: 'Merchandise System', included: true },
+      { name: 'Real-time Translator', included: true },
+      { name: 'Image Generator (50/month)', included: true },
+      { name: 'Smart Cards', included: true },
+      { name: 'Achievements System', included: true },
+      { name: 'Contacts Management (Advanced)', included: true },
+      { name: 'AI Advisors (10 calls/month)', included: true },
+      { name: 'Virtual Record Label', included: false },
+      { name: 'AI Agents', included: false }
     ]
   },
   
@@ -141,20 +148,22 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     },
     features: [
       { name: 'Everything in Professional', included: true },
-      { name: 'Music Generator (Unlimited)', included: true },
-      { name: 'Music Videos (Premium)', included: true },
-      { name: 'AI Agents (Unlimited)', included: true },
-      { name: 'Artist Image (Premium)', included: true },
-      { name: 'Analytics (Full)', included: true },
-      { name: 'Merchandise (Premium)', included: true },
+      { name: 'Virtual Record Label (10 artists)', included: true },
+      { name: 'AI Agents (Full Access)', included: true },
+      { name: 'AI Advisors (Unlimited calls)', included: true },
+      { name: 'Artist Generator (AI)', included: true },
+      { name: 'Ecosystem Management', included: true },
+      { name: 'Boostify International', included: true },
+      { name: 'Music Videos (Premium, Unlimited)', included: true },
+      { name: 'Analytics (Enterprise)', included: true },
       { name: 'YouTube Boost (Unlimited)', included: true },
       { name: 'Instagram Boost (Unlimited)', included: true },
       { name: 'Spotify Boost (Unlimited)', included: true },
-      { name: 'Email Campaigns (Unlimited)', included: true },
-      { name: 'SMS Campaigns (20/month)', included: true },
-      { name: 'Dedicated Account Manager', included: true },
-      { name: 'Custom Integrations', included: true },
-      { name: '24/7 Premium Support', included: true }
+      { name: 'Image Generator (Unlimited)', included: true },
+      { name: 'Music Generator (Unlimited)', included: true },
+      { name: 'Contacts (Enterprise)', included: true },
+      { name: 'Dedicated Support', included: true },
+      { name: 'Priority Processing', included: true }
     ]
   }
 };
