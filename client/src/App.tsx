@@ -83,6 +83,7 @@ const AchievementsPage = lazy(() => import("./pages/achievements-page"));
 const CourseDetailPage = lazy(() => import("./pages/course-detail-new"));
 const SmartCardsPage = lazy(() => import("./pages/smart-cards"));
 const InvestorsDashboard = lazy(() => import("./pages/investors-dashboard"));
+const FundsSimulation = lazy(() => import("./pages/funds-simulation"));
 const SocialNetworkPage = lazy(() => import("./pages/social-network"));
 const FirestoreSocialPage = lazy(() => import("./pages/firestore-social"));
 const ArtistProfilePage = lazy(() => import("./pages/artist-profile"));
@@ -264,6 +265,7 @@ const Router = () => {
   const WrappedCourseDetailPage = withPageWrapper(CourseDetailPage);
   const WrappedSmartCardsPage = withPageWrapper(SmartCardsPage);
   const WrappedInvestorsDashboard = withPageWrapper(InvestorsDashboard);
+  const WrappedFundsSimulation = withPageWrapper(FundsSimulation);
   const WrappedAffiliatesPage = withPageWrapper(AffiliatesPage);
   const WrappedAffiliatesNewPage = withPageWrapper(AffiliatesNewPage);
   const WrappedAffiliateAdminPage = withPageWrapper(AffiliateAdminPage);
@@ -390,6 +392,7 @@ const Router = () => {
           {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
           {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
           {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
+          {getRouteComponent("/funds-simulation", WrappedFundsSimulation, 'premium')}
           {getRouteComponent("/affiliates", WrappedAffiliatesPage, 'free')}
           {getRouteComponent("/affiliates-new", WrappedAffiliatesNewPage, 'free')}
           {getRouteComponent("/init-products", WrappedInitProductsPage, 'free')}
