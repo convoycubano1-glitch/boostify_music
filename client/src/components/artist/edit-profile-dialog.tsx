@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { logger } from "@/lib/logger";
 import {
   Dialog,
@@ -15,7 +16,7 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Badge } from "../ui/badge";
 import { useToast } from "../../hooks/use-toast";
-import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images, Newspaper, FileText, Music } from "lucide-react";
+import { Loader2, Sparkles, Wand2, Edit2, Upload, Image as ImageIcon, Plus, Calendar, Trash2, ExternalLink, ShoppingBag, Images, Newspaper, FileText, Music, Lock, AlertCircle } from "lucide-react";
 import { ImageGalleryGenerator } from "./image-gallery-generator";
 import { EPKGenerator } from "../artist-profile/epk-generator";
 import { db, storage } from "../../firebase";
@@ -30,6 +31,16 @@ interface Show {
   date: string;
   location: string;
   ticketUrl?: string;
+}
+
+interface Subscription {
+  plan: string;
+  aiGenerationLimit?: number;
+  aiGenerationUsed?: number;
+  epkLimit?: number;
+  epkUsed?: number;
+  imageGalleriesLimit?: number;
+  imageGalleriesUsed?: number;
 }
 
 interface EditProfileDialogProps {
@@ -70,6 +81,11 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   const bannerImageInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
+  
+  // Query para obtener datos de suscripción con límites
+  const { data: subscription } = useQuery<Subscription>({
+    queryKey: ["/api/subscriptions/current"],
+  });
 
   const [formData, setFormData] = useState(currentData);
   const [shows, setShows] = useState<Show[]>([]);
@@ -177,6 +193,75 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     }
   };
 
+  const checkAIGenerationLimit = () => {
+    if (!subscription) return true;
+    
+    const aiLimit = subscription.aiGenerationLimit || 0;
+    const aiUsed = subscription.aiGenerationUsed || 0;
+    
+    if (aiLimit > 0 && aiUsed >= aiLimit) {
+      toast({
+        title: "Límite Alcanzado",
+        description: `Ya has usado tus ${aiLimit} generaciones este mes. Upgrade tu plan para más.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const checkEPKLimit = () => {
+    if (!subscription) return true;
+    
+    const epkLimit = subscription.epkLimit || 0;
+    const epkUsed = subscription.epkUsed || 0;
+    
+    if (epkLimit === 0) {
+      toast({
+        title: "Herramienta Bloqueada",
+        description: "EPK está disponible solo para planes BASIC, PRO y PREMIUM.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    if (epkUsed >= epkLimit) {
+      toast({
+        title: "Límite Alcanzado",
+        description: `Ya has creado ${epkLimit} EPK${epkLimit !== 1 ? 's' : ''}. Upgrade tu plan para más.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const checkImageGalleriesLimit = () => {
+    if (!subscription) return true;
+    
+    const galleriesLimit = subscription.imageGalleriesLimit || 0;
+    const galleriesUsed = subscription.imageGalleriesUsed || 0;
+    
+    if (galleriesLimit === 0) {
+      toast({
+        title: "Herramienta Bloqueada",
+        description: "Galerías de Imágenes está disponible solo para planes BASIC, PRO y PREMIUM.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    if (galleriesUsed >= galleriesLimit) {
+      toast({
+        title: "Límite Alcanzado",
+        description: `Ya has creado ${galleriesLimit} galería${galleriesLimit !== 1 ? 's' : ''}. Upgrade tu plan para más.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleGenerateProducts = async () => {
     if (!formData.displayName) {
       toast({
@@ -186,6 +271,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       });
       return;
     }
+
+    if (!checkAIGenerationLimit()) return;
 
     setIsGeneratingProducts(true);
     try {
@@ -1488,13 +1575,42 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               <div>
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <ShoppingBag className="h-4 w-4" />
-                  Merchandise
+                  Generación Automática con IA
                 </h4>
                 <p className="text-xs text-gray-500 mt-1">
-                  Genera productos promocionales con imágenes únicas creadas por IA
+                  Genera productos y contenido profesional con imágenes únicas creadas por IA
                 </p>
               </div>
+              {subscription && (
+                <Badge variant="outline" className="text-xs">
+                  {subscription.aiGenerationUsed || 0}/{subscription.aiGenerationLimit || 0}
+                </Badge>
+              )}
             </div>
+            
+            {/* AI Generation Usage Bar */}
+            {subscription && subscription.aiGenerationLimit && subscription.aiGenerationLimit > 0 && (
+              <div className="mb-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="text-gray-400">Generaciones usadas</span>
+                  <span className={subscription.aiGenerationUsed >= subscription.aiGenerationLimit ? "text-red-400 font-semibold" : "text-gray-400"}>
+                    {subscription.aiGenerationUsed}/{subscription.aiGenerationLimit}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${
+                      subscription.aiGenerationUsed >= subscription.aiGenerationLimit 
+                        ? "bg-red-500" 
+                        : "bg-gradient-to-r from-blue-500 to-cyan-500"
+                    }`}
+                    style={{
+                      width: `${Math.min((subscription.aiGenerationUsed / subscription.aiGenerationLimit) * 100, 100)}%`
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="p-4 bg-gradient-to-br from-orange-500/10 to-purple-500/10 rounded-lg border border-orange-500/20">
               <div className="flex items-start gap-3 mb-3">
@@ -1606,7 +1722,43 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                   Genera un kit de prensa profesional completo con biografía mejorada, logros y fotos de prensa
                 </p>
               </div>
+              {subscription && (
+                <Badge variant="outline" className="text-xs">
+                  {subscription.epkUsed || 0}/{subscription.epkLimit || 0}
+                </Badge>
+              )}
             </div>
+            
+            {/* EPK Usage Status */}
+            {subscription && subscription.epkLimit === 0 && (
+              <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-2">
+                <Lock className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-yellow-600">EPK está disponible solo para planes BASIC, PRO y PREMIUM</p>
+              </div>
+            )}
+            
+            {subscription && subscription.epkLimit && subscription.epkLimit > 0 && (
+              <div className="mb-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="text-gray-400">EPKs creados</span>
+                  <span className={subscription.epkUsed >= subscription.epkLimit ? "text-red-400 font-semibold" : "text-gray-400"}>
+                    {subscription.epkUsed}/{subscription.epkLimit}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${
+                      subscription.epkUsed >= subscription.epkLimit 
+                        ? "bg-red-500" 
+                        : "bg-gradient-to-r from-green-500 to-emerald-500"
+                    }`}
+                    style={{
+                      width: `${Math.min((subscription.epkUsed / subscription.epkLimit) * 100, 100)}%`
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
               <div className="flex items-start gap-3 mb-3">
@@ -1626,9 +1778,23 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 </div>
               </div>
               
-              <div className="bg-black/20 rounded-lg p-3 border border-green-500/10">
-                <EPKGenerator />
-              </div>
+              {subscription && subscription.epkLimit && subscription.epkLimit > 0 && subscription.epkUsed < subscription.epkLimit ? (
+                <div className="bg-black/20 rounded-lg p-3 border border-green-500/10">
+                  <EPKGenerator />
+                </div>
+              ) : subscription && subscription.epkLimit && subscription.epkLimit > 0 ? (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-600">Límite Alcanzado</p>
+                    <p className="text-xs text-red-600/80 mt-1">Ya has creado {subscription.epkLimit} EPK este mes. Upgrade tu plan para más.</p>
+                  </div>
+                </div>
+              ) : subscription && subscription.epkLimit === 0 ? null : (
+                <div className="bg-black/20 rounded-lg p-3 border border-green-500/10">
+                  <EPKGenerator />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1636,10 +1802,49 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
           <div className="border-t pt-4">
             <div className="space-y-3">
               <div>
-                <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
-                  <Images className="h-4 w-4 text-purple-400" />
-                  <span className="text-purple-400">Galerías de Imágenes Profesionales</span>
-                </h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Images className="h-4 w-4 text-purple-400" />
+                    <span className="text-purple-400">Galerías de Imágenes Profesionales</span>
+                  </h4>
+                  {subscription && (
+                    <Badge variant="outline" className="text-xs">
+                      {subscription.imageGalleriesUsed || 0}/{subscription.imageGalleriesLimit || 0}
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Gallery Usage Status */}
+                {subscription && subscription.imageGalleriesLimit === 0 && (
+                  <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-2">
+                    <Lock className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-yellow-600">Galerías está disponible solo para planes BASIC, PRO y PREMIUM</p>
+                  </div>
+                )}
+                
+                {subscription && subscription.imageGalleriesLimit && subscription.imageGalleriesLimit > 0 && (
+                  <div className="mb-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <div className="flex justify-between text-xs mb-2">
+                      <span className="text-gray-400">Galerías creadas</span>
+                      <span className={subscription.imageGalleriesUsed >= subscription.imageGalleriesLimit ? "text-red-400 font-semibold" : "text-gray-400"}>
+                        {subscription.imageGalleriesUsed}/{subscription.imageGalleriesLimit}
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          subscription.imageGalleriesUsed >= subscription.imageGalleriesLimit 
+                            ? "bg-red-500" 
+                            : "bg-gradient-to-r from-purple-500 to-pink-500"
+                        }`}
+                        style={{
+                          width: `${Math.min((subscription.imageGalleriesUsed / subscription.imageGalleriesLimit) * 100, 100)}%`
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 space-y-3">
                   <p className="text-xs text-gray-400">
                     Crea galerías de 6 imágenes profesionales para tus sencillos usando IA
@@ -1672,16 +1877,26 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 </div>
               </div>
               
-              <ImageGalleryGenerator
-                artistId={artistId}
-                artistName={currentData.displayName}
-                onGalleryCreated={() => {
-                  onUpdate();
-                  if (onGalleryCreated) {
-                    onGalleryCreated();
-                  }
-                }}
-              />
+              {subscription && subscription.imageGalleriesLimit && subscription.imageGalleriesLimit > 0 && subscription.imageGalleriesUsed < subscription.imageGalleriesLimit ? (
+                <ImageGalleryGenerator
+                  artistId={artistId}
+                  artistName={currentData.displayName}
+                  onGalleryCreated={() => {
+                    onUpdate();
+                    if (onGalleryCreated) {
+                      onGalleryCreated();
+                    }
+                  }}
+                />
+              ) : subscription && subscription.imageGalleriesLimit && subscription.imageGalleriesLimit > 0 ? (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-600">Límite Alcanzado</p>
+                    <p className="text-xs text-red-600/80 mt-1">Ya has creado {subscription.imageGalleriesLimit} galería{subscription.imageGalleriesLimit !== 1 ? 's' : ''} este mes. Upgrade tu plan para más.</p>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
