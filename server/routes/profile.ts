@@ -421,7 +421,9 @@ router.post('/profile/:artistId/layout', authenticate, async (req: Request, res:
   try {
     const artistIdParam = req.params.artistId;
     const userId = req.user!.id;
-    const firebaseUid = req.user!.uid;
+    const firebaseUid = req.user!.uid || req.user!.username; // Fallback to username if uid not present
+    
+    console.log(`🔍 [LAYOUT SAVE] Attempting to save layout for:`, { artistIdParam, userId, firebaseUid });
     
     // Support both numeric ID and UUID
     let artist;
@@ -434,6 +436,7 @@ router.post('/profile/:artistId/layout', authenticate, async (req: Request, res:
         .from(users)
         .where(eq(users.id, artistId))
         .limit(1);
+      console.log(`🔍 [LAYOUT SAVE] Searched by numeric ID ${artistId}, found:`, artist?.username);
     } else {
       // Try firestoreId (UUID)
       [artist] = await db
@@ -441,16 +444,31 @@ router.post('/profile/:artistId/layout', authenticate, async (req: Request, res:
         .from(users)
         .where(eq(users.firestoreId, artistIdParam))
         .limit(1);
+      console.log(`🔍 [LAYOUT SAVE] Searched by firestoreId ${artistIdParam}, found:`, artist?.username);
     }
       
     if (!artist) {
+      console.log(`❌ [LAYOUT SAVE] Artist not found for:`, artistIdParam);
       return res.status(404).json({ message: 'Artist not found' });
     }
     
     // Allow if: (1) user created this artist via AI, or (2) it's the user's own profile (firestoreId matches)
-    const isOwner = artist.generatedBy === userId || artist.firestoreId === firebaseUid;
+    const isGeneratedByUser = artist.generatedBy === userId;
+    const isOwnProfile = artist.firestoreId === firebaseUid;
+    const isOwner = isGeneratedByUser || isOwnProfile;
+    
+    console.log(`🔍 [LAYOUT SAVE] Ownership check:`, { 
+      artistGeneratedBy: artist.generatedBy, 
+      userId, 
+      isGeneratedByUser,
+      artistFirestoreId: artist.firestoreId, 
+      firebaseUid, 
+      isOwnProfile,
+      isOwner
+    });
     
     if (!isOwner) {
+      console.log(`❌ [LAYOUT SAVE] Unauthorized - not owner`);
       return res.status(403).json({ message: 'Unauthorized' });
     }
     
@@ -470,11 +488,11 @@ router.post('/profile/:artistId/layout', authenticate, async (req: Request, res:
       })
       .where(eq(users.id, artist.id));
     
-    console.log(`✅ Layout saved for artist ${artist.id}`);
+    console.log(`✅ [LAYOUT SAVE] Layout successfully saved for artist ${artist.id} (${artist.username})`);
     res.json({ success: true, layout });
   } catch (error) {
-    console.error('Error saving profile layout:', error);
-    res.status(500).json({ message: 'Failed to save profile layout' });
+    console.error('❌ [LAYOUT SAVE] Error saving profile layout:', error);
+    res.status(500).json({ message: 'Failed to save profile layout', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
