@@ -41,6 +41,213 @@ import { useToast } from "../hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { apiRequest } from "@/lib/queryClient";
+
+// Revenue Simulations Calculator Component
+function RevenueSimulationsCalculator() {
+  const [activeUsers, setActiveUsers] = useState(5000);
+  const [videoConversion, setVideoConversion] = useState(20);
+  const [blockchainVolume, setBlockchainVolume] = useState(100000);
+  
+  // Calculate all revenue streams
+  const calculations = {
+    subscriptions: {
+      basic: (activeUsers * 0.35 * 59.99),
+      pro: (activeUsers * 0.40 * 99.99),
+      premium: (activeUsers * 0.25 * 149.99),
+      total: function() { return this.basic + this.pro + this.premium; }
+    },
+    musicVideos: (activeUsers * videoConversion / 100) * 199,
+    blockchain: {
+      dexTrading: (blockchainVolume * 0.05),
+      tokenDeployment: (blockchainVolume * 0.03),
+      royalties: (blockchainVolume * 0.02),
+      total: function() { return this.dexTrading + this.tokenDeployment + this.royalties; }
+    },
+    merchandise: (activeUsers * 10 * 0.5) * 0.20, // avg 10 artists per 1k users, $500 sales, 20% commission
+    licensing: {
+      youtube: 50000,
+      spotify: 30000,
+      total: function() { return this.youtube + this.spotify; }
+    },
+    onlyFans: 75000,
+    token: 50000,
+    courses: 30000,
+    artistCards: 60000,
+    mocapApi: 40000,
+  };
+
+  const monthlyTotal = 
+    calculations.subscriptions.total() +
+    calculations.musicVideos +
+    calculations.blockchain.total() +
+    calculations.merchandise +
+    calculations.licensing.total() +
+    calculations.onlyFans +
+    calculations.token +
+    calculations.courses +
+    calculations.artistCards +
+    calculations.mocapApi;
+
+  const annualTotal = monthlyTotal * 12;
+
+  return (
+    <Card className="p-6 bg-black/30 border-orange-500/20 mb-8">
+      <h5 className="font-bold text-white text-lg mb-6">Revenue Simulations Calculator - Adjust Parameters</h5>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Active Users Slider */}
+        <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+          <div className="flex justify-between mb-3">
+            <label className="text-sm font-medium text-white">Active Users</label>
+            <span className="text-lg font-bold text-blue-400">{activeUsers.toLocaleString()}</span>
+          </div>
+          <Slider
+            value={[activeUsers]}
+            min={1000}
+            max={10000}
+            step={100}
+            onValueChange={(value) => setActiveUsers(value[0])}
+            className="w-full"
+          />
+          <p className="text-xs text-white/60 mt-2">Range: 1k - 10k users</p>
+        </div>
+
+        {/* Video Conversion Rate */}
+        <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+          <div className="flex justify-between mb-3">
+            <label className="text-sm font-medium text-white">Video Users %</label>
+            <span className="text-lg font-bold text-purple-400">{videoConversion}%</span>
+          </div>
+          <Slider
+            value={[videoConversion]}
+            min={5}
+            max={50}
+            step={1}
+            onValueChange={(value) => setVideoConversion(value[0])}
+            className="w-full"
+          />
+          <p className="text-xs text-white/60 mt-2">% generating videos</p>
+        </div>
+
+        {/* Blockchain Volume */}
+        <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+          <div className="flex justify-between mb-3">
+            <label className="text-sm font-medium text-white">Blockchain Volume</label>
+            <span className="text-lg font-bold text-green-400">${(blockchainVolume/1000).toFixed(0)}k</span>
+          </div>
+          <Slider
+            value={[blockchainVolume]}
+            min={50000}
+            max={1000000}
+            step={50000}
+            onValueChange={(value) => setBlockchainVolume(value[0])}
+            className="w-full"
+          />
+          <p className="text-xs text-white/60 mt-2">Monthly trading volume</p>
+        </div>
+      </div>
+
+      {/* Revenue Breakdown Table */}
+      <div className="bg-black/50 rounded-lg p-6 mb-6 overflow-x-auto">
+        <h6 className="text-white font-bold mb-4">Monthly Revenue by Stream</h6>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/10">
+              <th className="text-left text-white/70 pb-3 font-medium">Revenue Stream</th>
+              <th className="text-right text-white/70 pb-3 font-medium">Amount</th>
+              <th className="text-right text-white/70 pb-3 font-medium">% of Total</th>
+            </tr>
+          </thead>
+          <tbody className="space-y-2">
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">1. Subscriptions</td>
+              <td className="text-right text-green-400 font-semibold">${calculations.subscriptions.total().toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.subscriptions.total() / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">2. Music Video Generator ($199/video)</td>
+              <td className="text-right text-purple-400 font-semibold">${calculations.musicVideos.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.musicVideos / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">3. Blockchain & Tokenization (5% fees)</td>
+              <td className="text-right text-cyan-400 font-semibold">${calculations.blockchain.total().toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.blockchain.total() / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">4. Artist Merchandise (20% commission)</td>
+              <td className="text-right text-amber-400 font-semibold">${calculations.merchandise.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.merchandise / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">5. Music Licensing & Streaming</td>
+              <td className="text-right text-indigo-400 font-semibold">${calculations.licensing.total().toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.licensing.total() / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">6. OnlyFans & Exclusive Content</td>
+              <td className="text-right text-pink-400 font-semibold">${calculations.onlyFans.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.onlyFans / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">7. Boostify Token ($BOOST)</td>
+              <td className="text-right text-blue-400 font-semibold">${calculations.token.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.token / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">8. Courses & Professional Services</td>
+              <td className="text-right text-red-400 font-semibold">${calculations.courses.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.courses / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">9. Artist Card Marketplace</td>
+              <td className="text-right text-yellow-400 font-semibold">${calculations.artistCards.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.artistCards / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="text-white py-2">10. Motion Capture & API Services</td>
+              <td className="text-right text-violet-400 font-semibold">${calculations.mocapApi.toLocaleString('en-US', {maximumFractionDigits: 0})}/mo</td>
+              <td className="text-right text-white/60">{((calculations.mocapApi / monthlyTotal) * 100).toFixed(1)}%</td>
+            </tr>
+            <tr className="bg-orange-500/20">
+              <td className="text-white font-bold py-3">TOTAL MONTHLY REVENUE</td>
+              <td className="text-right text-orange-400 font-bold text-lg py-3">${monthlyTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+              <td className="text-right text-white/60 py-3">100%</td>
+            </tr>
+            <tr>
+              <td className="text-white font-bold py-3">ANNUAL REVENUE</td>
+              <td className="text-right text-green-400 font-bold text-lg py-3">${annualTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</td>
+              <td className="text-right text-white/60 py-3">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Key Metrics Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+          <p className="text-white/70 text-xs mb-1">Monthly Revenue</p>
+          <p className="text-2xl font-bold text-orange-400">${(monthlyTotal/1000).toFixed(1)}k</p>
+        </div>
+        <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+          <p className="text-white/70 text-xs mb-1">Annual Revenue</p>
+          <p className="text-2xl font-bold text-green-400">${(annualTotal/1000000).toFixed(2)}M</p>
+        </div>
+        <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+          <p className="text-white/70 text-xs mb-1">Top Revenue Stream</p>
+          <p className="text-lg font-bold text-blue-400">Subscriptions</p>
+          <p className="text-xs text-white/60">{((calculations.subscriptions.total() / monthlyTotal) * 100).toFixed(0)}% of revenue</p>
+        </div>
+        <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+          <p className="text-white/70 text-xs mb-1">Revenue per User</p>
+          <p className="text-2xl font-bold text-purple-400">${(monthlyTotal / activeUsers).toFixed(2)}</p>
+          <p className="text-xs text-white/60">per user/month</p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 // Investment Calculator Component
 function InvestmentCalculator() {
   const [investmentAmount, setInvestmentAmount] = useState(5000);
@@ -1768,9 +1975,14 @@ export default function InvestorsDashboard() {
                     </div>
                   </div>
 
+                  {/* Interactive Revenue Simulations Calculator */}
+                  <div className="mt-8">
+                    <RevenueSimulationsCalculator />
+                  </div>
+
                   {/* Revenue Simulations Based on Business Model */}
                   <div className="mt-8">
-                    <h4 className="text-base sm:text-lg font-semibold mb-6 text-white">Revenue Simulations - Business Model Projections</h4>
+                    <h4 className="text-base sm:text-lg font-semibold mb-6 text-white">Revenue Projections - User Growth Scenarios</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                       {/* Simulation 1: 1,000 Active Users */}
@@ -1971,7 +2183,7 @@ export default function InvestorsDashboard() {
                             <p className="text-xs text-white/60 mt-2">*Per deployment volume</p>
                           </div>
                           <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                            <p className="text-white/70 text-xs mb-1">Smart Contract Regalías</p>
+                            <p className="text-white/70 text-xs mb-1">Smart Contract Royalties</p>
                             <p className="text-xs text-white/60 mb-2">Automated royalty distribution 2-3%</p>
                             <p className="font-bold text-white">$30,000-100k/mo*</p>
                             <p className="text-xs text-white/60 mt-2">*Recurring from volume</p>
