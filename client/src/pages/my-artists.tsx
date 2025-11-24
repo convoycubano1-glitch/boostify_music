@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "../lib/queryClient";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { useToast } from "../hooks/use-toast";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import { Link, useLocation } from "wouter";
 import {
   Plus,
@@ -52,7 +53,7 @@ interface Artist {
 }
 
 export default function MyArtistsPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, userSubscription } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -259,13 +260,18 @@ export default function MyArtistsPage() {
   const artists = artistsData?.artists || [];
 
   return (
-    <>
-      <Head
-        title="My Artists | Boostify Music"
-        description="Administra todos tus artistas generados con IA en Boostify Music"
-        url={window.location.href}
-      />
-      <div className="min-h-screen bg-black text-white py-8">
+    <PlanTierGuard 
+      requiredPlan="premium" 
+      userSubscription={userSubscription} 
+      featureName="Artist Generation"
+    >
+      <>
+        <Head
+          title="My Artists | Boostify Music"
+          description="Administra todos tus artistas generados con IA en Boostify Music"
+          url={window.location.href}
+        />
+        <div className="min-h-screen bg-black text-white py-8">
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -575,6 +581,7 @@ export default function MyArtistsPage() {
           )}
         </div>
       </div>
-    </>
+      </>
+    </PlanTierGuard>
   );
 }
