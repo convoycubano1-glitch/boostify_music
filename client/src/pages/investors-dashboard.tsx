@@ -674,21 +674,14 @@ function RoadmapTimeline() {
           <div className="ml-12 h-full flex items-end">
             <div className="flex-1 flex items-end space-x-4">
               {[
-                { month: "Mar", users: 100, height: "8px" },
-                { month: "Apr", users: 250, height: "12px" },
-                { month: "May", users: 375, height: "16px" },
-                { month: "Jun", users: 500, height: "20px" },
-                { month: "Jul", users: 750, height: "28px" },
-                { month: "Aug", users: 1200, height: "36px" },
-                { month: "Sep", users: 1500, height: "44px" },
-                { month: "Oct", users: 3000, height: "60px" },
-                { month: "Nov", users: 6000, height: "90px" },
-                { month: "Dec", users: 10000, height: "130px" },
-                { month: "Jan '26", users: 15000, height: "170px" },
-                { month: "Feb '26", users: 20000, height: "210px" },
-                { month: "Mar '26", users: 25000, height: "250px" },
-                { month: "Apr '26", users: 35000, height: "310px" },
-                { month: "May '26", users: 50000, height: "360px" }
+                { month: "Jan '26", users: 15000, height: "50px" },
+                { month: "Feb '26", users: 20000, height: "80px" },
+                { month: "Mar '26", users: 25000, height: "110px" },
+                { month: "Apr '26", users: 35000, height: "160px" },
+                { month: "May '26", users: 50000, height: "220px" },
+                { month: "Jun '26", users: 65000, height: "280px" },
+                { month: "Jul '26", users: 80000, height: "330px" },
+                { month: "Aug '26", users: 100000, height: "360px" }
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div 
