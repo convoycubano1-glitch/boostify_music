@@ -477,6 +477,90 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       return res.status(500).json({ error: "Error al obtener suscripción" });
     }
   });
+
+  // Endpoint para obtener suscripción por userId (PARA CONTEXTO DE SUSCRIPCIÓN)
+  app.get('/api/subscription/user/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const numUserId = parseInt(userId, 10);
+      
+      if (isNaN(numUserId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const { subscriptions } = await import ('./db/schema');
+      const { eq, desc } = await import ('drizzle-orm');
+      
+      // Obtener la suscripción más reciente del usuario
+      const [subscription] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, numUserId))
+        .orderBy(desc(subscriptions.createdAt))
+        .limit(1);
+
+      if (!subscription) {
+        return res.status(404).json(null);
+      }
+
+      return res.json({
+        id: subscription.id,
+        userId: subscription.userId,
+        plan: subscription.plan,
+        status: subscription.status,
+        currentPeriodStart: subscription.currentPeriodStart,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        interval: subscription.interval,
+        stripeCustomerId: subscription.stripeCustomerId,
+        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        isTrial: subscription.isTrial,
+        trialEndsAt: subscription.trialEndsAt,
+        createdAt: subscription.createdAt,
+        updatedAt: subscription.updatedAt,
+      });
+    } catch (error) {
+      console.error("Error fetching subscription by userId:", error);
+      return res.status(500).json({ error: "Error al obtener suscripción" });
+    }
+  });
+
+  // Endpoint para obtener rol de usuario por userId (PARA CONTEXTO DE SUSCRIPCIÓN)
+  app.get('/api/user/role/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const numUserId = parseInt(userId, 10);
+      
+      if (isNaN(numUserId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const { user_roles } = await import ('./db/schema');
+      const { eq } = await import ('drizzle-orm');
+      
+      // Obtener el rol del usuario
+      const [userRole] = await db
+        .select()
+        .from(user_roles)
+        .where(eq(user_roles.userId, numUserId))
+        .limit(1);
+
+      if (!userRole) {
+        return res.status(404).json(null);
+      }
+
+      return res.json({
+        id: userRole.id,
+        userId: userRole.userId,
+        role: userRole.role,
+        permissions: userRole.permissions,
+        grantedAt: userRole.grantedAt,
+      });
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      return res.status(500).json({ error: "Error al obtener rol de usuario" });
+    }
+  });
   
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
