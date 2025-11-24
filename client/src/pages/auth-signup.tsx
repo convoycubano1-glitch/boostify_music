@@ -14,88 +14,87 @@ import { useToast } from "@/hooks/use-toast";
 
 const plans = [
   {
-    name: "Free",
+    name: "Discover",
     price: "$0",
     period: "forever",
     priceId: null,
-    description: "Explore the basics",
+    description: "Start your music journey",
     popular: false,
     features: [
-      "Profile (Basic)",
-      "Contacts (Limited)",
-      "Education Hub (View only)",
-      "Boostify TV (Limited access)",
-      "Community forum access"
+      "Community Hub",
+      "Merch Store",
+      "Learn Hub",
+      "BoostifyTV",
+      "Earn Commissions"
     ],
-    color: "from-orange-400 to-orange-600",
+    color: "from-gray-400 to-gray-600",
     icon: Music2
   },
   {
-    name: "Creator",
+    name: "Elevate",
     price: "$59.99",
     period: "per month",
     priceId: "price_1R0lay2LyFplWimfQxUL6Hn0",
-    description: "For emerging artists",
+    description: "Build your artist presence & fanbase",
     popular: true,
     features: [
-      "Everything in Free",
-      "Profile (Complete)",
-      "Contacts (Full access)",
-      "Music Generator (Basic)",
-      "Music Videos (Standard)",
-      "AI Agents (Basic)",
-      "Artist Image (Basic)",
-      "Analytics (Basic)",
-      "Merchandise (Basic)",
-      "Education Hub (Full access)"
+      "Everything in Discover",
+      "Artist Hub",
+      "Spotify Growth Engine",
+      "Contract Templates",
+      "PR Starter Kit",
+      "News & Events Hub",
+      "Content Studio",
+      "Creative Image AI",
+      "Master Classes",
+      "Expert Advisors (3/month)"
     ],
     color: "from-orange-500 to-orange-700",
     icon: Video
   },
   {
-    name: "Professional",
+    name: "Amplify",
     price: "$99.99",
     period: "per month",
     priceId: "price_1R0laz2LyFplWimfsBd5ASoa",
-    description: "For serious creators",
+    description: "Scale your sound & reach globally",
     popular: false,
     features: [
-      "Everything in Creator",
-      "Music Generator (Advanced)",
-      "Music Videos (Professional)",
-      "AI Agents (Advanced)",
-      "Artist Image (Professional)",
-      "Analytics (Advanced)",
-      "Merchandise (Full catalog)",
-      "YouTube Boost",
-      "Instagram Boost",
-      "Spotify Boost",
-      "Contracts (Legal documents)",
-      "Priority support"
+      "Everything in Elevate",
+      "Pro Analytics Engine",
+      "YouTube Mastery Suite",
+      "Instagram Domination Suite",
+      "Career Manager Suite",
+      "Music Production Lab",
+      "AI Music Studio (Advanced)",
+      "Premium Merch Hub",
+      "Global Language Studio",
+      "Creative Canvas AI (50/month)",
+      "Expert Advisors (10/month)"
     ],
     color: "from-orange-600 to-red-600",
     icon: Zap
   },
   {
-    name: "Enterprise",
+    name: "Dominate",
     price: "$149.99",
     period: "per month",
     priceId: "price_1R0lb12LyFplWimf7JpMynKA",
-    description: "For studios & labels",
+    description: "Conquer the music industry",
     popular: false,
     features: [
-      "Everything in Professional",
-      "Record Label (Full suite)",
-      "Music Generator (Unlimited)",
-      "Music Videos (Unlimited)",
-      "AI Agents (Custom)",
-      "Analytics (Enterprise)",
-      "White-label branding",
-      "Multi-user team collaboration",
-      "API access for integrations",
-      "Dedicated account manager",
-      "Priority 24/7 support",
-      "Early access to new features"
+      "Everything in Amplify",
+      "Virtual Label Empire (10 artists)",
+      "AI Agent Suite (Unlimited)",
+      "Expert Advisors (Unlimited)",
+      "Artist Generator Pro",
+      "Global Ecosystem Hub",
+      "Premium Video Studio (Unlimited)",
+      "Enterprise Analytics",
+      "YouTube Mastery Unlimited",
+      "Instagram Domination Unlimited",
+      "Spotify Growth Unlimited",
+      "VIP Support (24/7)"
     ],
     color: "from-orange-700 to-red-700",
     icon: Crown
@@ -110,7 +109,7 @@ const authProviders = [
 ];
 
 export default function AuthSignupPage() {
-  const [selectedPlan, setSelectedPlan] = useState("Basic");
+  const [selectedPlan, setSelectedPlan] = useState("Elevate");
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const { toast } = useToast();
 
