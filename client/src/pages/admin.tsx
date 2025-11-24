@@ -11,7 +11,7 @@ import { useAuth } from '../hooks/use-auth';
 import { 
   BarChart3, Users, DollarSign, Music, FileVideo, Target, 
   Shield, RefreshCw, Activity, Upload, Sparkles, Link as LinkIcon,
-  TrendingUp, Zap, Users2, AreaChart, PieChart as PieChartIcon
+  TrendingUp, Zap, Users2, AreaChart, PieChart as PieChartIcon, CreditCard
 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { ArtistImportModal } from '../components/admin/artist-import-modal';
@@ -23,6 +23,7 @@ import { ApiLinks } from '../components/admin/api-links';
 import { SessionManager } from '../components/admin/session-manager';
 import { AffiliateSessions } from '../components/admin/affiliate-sessions';
 import { InvestorSessions } from '../components/admin/investor-sessions';
+import { StripeEventsLog } from '../components/admin/stripe-events-log';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -148,6 +149,7 @@ export default function AdminDashboard() {
                     { value: 'affiliates', label: 'Affiliates', icon: TrendingUp },
                     { value: 'investors', label: 'Investors', icon: Target },
                     { value: 'apis', label: 'APIs', icon: LinkIcon },
+                    { value: 'stripe-events', label: 'Stripe Events', icon: CreditCard },
                   ].map(tab => {
                     const Icon = tab.icon;
                     return (
@@ -259,6 +261,10 @@ export default function AdminDashboard() {
 
               <TabsContent value="apis" className="w-full">
                 <ApiLinks />
+              </TabsContent>
+
+              <TabsContent value="stripe-events" className="w-full">
+                <StripeEventsLog />
               </TabsContent>
             </Tabs>
           </div>
