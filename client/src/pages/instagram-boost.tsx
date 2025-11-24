@@ -1671,6 +1671,7 @@ export default function InstagramBoostPage() {
                   ))}
                 </div>
               </Card>
+              </PlanTierGuard>
             </TabsContent>
 
           </Tabs>
