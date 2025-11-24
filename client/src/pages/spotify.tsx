@@ -811,7 +811,7 @@ export default function SpotifyPage() {
                   userSubscription={userSubscription} 
                   featureName="Curator Finder"
                 >
-                <div className="flex gap-3 mb-4">
+                  <div className="flex gap-3 mb-4">
                   <Button
                     variant={curatorSubTab === 'search' ? 'default' : 'ghost'}
                     onClick={() => setCuratorSubTab('search')}
@@ -1128,6 +1128,7 @@ export default function SpotifyPage() {
                     </Card>
                   </div>
                 )}
+                  </div>
                 </PlanTierGuard>
               </TabsContent>
 
@@ -1138,7 +1139,7 @@ export default function SpotifyPage() {
                   userSubscription={userSubscription} 
                   featureName="SEO Optimizer"
                 >
-                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="grid gap-6 lg:grid-cols-2">
                   <Card className="group border-orange-500/20 bg-black/40 backdrop-blur-sm hover:border-orange-500/40 transition-all duration-300">
                     <div className="p-8 space-y-6">
                       <div className="flex items-center gap-3 mb-6">
