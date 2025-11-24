@@ -5,6 +5,7 @@ import { Card } from "../components/ui/card";
 import { useState } from "react";
 import { useAuth } from "../hooks/use-auth";
 import { useToast } from "../hooks/use-toast";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import { 
   Loader2, Play, TrendingUp, Home, Key, Video, MessageSquare, 
   Eye, Database, Brain, FileText, Sparkles, CheckCircle, 
@@ -159,6 +160,9 @@ export default function YoutubeViewsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("pre-launch");
+  
+  // Detect user subscription plan
+  const userSubscription = (user as any)?.subscriptionPlan?.toLowerCase() || null;
   
   // Pre-Launch Score states
   const [preLaunchTitle, setPreLaunchTitle] = useState("");
@@ -1240,9 +1244,14 @@ export default function YoutubeViewsPage() {
               </TabsList>
             </Card>
 
-            {/* PRE-LAUNCH SCORE TAB */}
+            {/* PRE-LAUNCH SCORE TAB - BASIC */}
             <TabsContent value="pre-launch">
-              <Card className="p-6">
+              <PlanTierGuard 
+                requiredPlan="basic" 
+                userSubscription={userSubscription} 
+                featureName="Pre-Launch Success Predictor"
+              >
+                <Card className="p-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-4 bg-orange-500/10 rounded-lg">
                     <Target className="h-8 w-8 text-orange-500" />
@@ -1386,12 +1395,18 @@ export default function YoutubeViewsPage() {
                     </div>
                   </motion.div>
                 )}
-              </Card>
+                </Card>
+              </PlanTierGuard>
             </TabsContent>
 
-            {/* KEYWORDS GENERATOR TAB */}
+            {/* KEYWORDS GENERATOR TAB - BASIC */}
             <TabsContent value="keywords">
-              <Card className="p-6">
+              <PlanTierGuard 
+                requiredPlan="basic" 
+                userSubscription={userSubscription} 
+                featureName="AI Keywords Generator"
+              >
+                <Card className="p-6">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-4 bg-orange-500/10 rounded-lg">
                     <Key className="h-8 w-8 text-orange-500" />
