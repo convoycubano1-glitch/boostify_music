@@ -1325,16 +1325,6 @@ function InvestorRegistrationForm() {
     try {
       setIsSubmitting(true);
       
-      if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "You must be logged in to register as an investor.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
       const investorData = {
         fullName: values.fullName,
         email: values.email,
@@ -1345,7 +1335,7 @@ function InvestorRegistrationForm() {
         riskTolerance: values.riskTolerance,
         investorType: values.investorType,
         termsAccepted: values.termsAccepted,
-        userId: user.uid,
+        userId: user?.uid || "guest",
         status: "pending",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -1360,7 +1350,7 @@ function InvestorRegistrationForm() {
       try {
         await axios.post('https://hook.us2.make.com/hfnbfse1q9gtm71xeamn5p5tj48fyv8x', {
           investorId: docRef.id,
-          userId: user.uid,
+          userId: user?.uid || "guest",
           fullName: values.fullName,
           email: values.email,
           phone: values.phone,
@@ -1690,7 +1680,7 @@ export default function InvestorsDashboard() {
   // Query investor data from API
   const { data: investorData, isLoading: isLoadingInvestor } = useQuery<any>({
     queryKey: ['/api/investors/me'],
-    enabled: !!user,
+    enabled: true,
   });
 
   // Query global stats from API
