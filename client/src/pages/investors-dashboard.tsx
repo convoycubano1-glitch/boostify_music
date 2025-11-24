@@ -1900,34 +1900,250 @@ export default function InvestorsDashboard() {
                       </Card>
                     </div>
 
-                    {/* Revenue Breakdown Details */}
+                    {/* Revenue Breakdown Details - Business Model Components */}
                     <Card className="p-4 bg-black/30 border-orange-500/20">
-                      <h5 className="font-semibold text-white mb-4">Business Model Components</h5>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                        <div className="p-3 bg-orange-500/10 rounded-lg">
-                          <p className="text-white/70 text-xs mb-1">Basic Plan</p>
-                          <p className="font-bold text-white">$59.99/mo</p>
-                          <p className="text-xs text-white/60 mt-1">Core features + 10 productions</p>
-                        </div>
-                        <div className="p-3 bg-orange-500/10 rounded-lg">
-                          <p className="text-white/70 text-xs mb-1">Pro Plan</p>
-                          <p className="font-bold text-white">$99.99/mo</p>
-                          <p className="text-xs text-white/60 mt-1">Advanced AI + 30 productions</p>
-                        </div>
-                        <div className="p-3 bg-orange-500/10 rounded-lg">
-                          <p className="text-white/70 text-xs mb-1">Premium Plan</p>
-                          <p className="font-bold text-white">$149.99/mo</p>
-                          <p className="text-xs text-white/60 mt-1">Unlimited + Masterclasses</p>
-                        </div>
-                        <div className="p-3 bg-orange-500/10 rounded-lg">
-                          <p className="text-white/70 text-xs mb-1">Music Videos</p>
-                          <p className="font-bold text-white">$199/video</p>
-                          <p className="text-xs text-white/60 mt-1">AI-generated with sync</p>
+                      <h5 className="font-semibold text-white mb-6">Business Model Components - Comprehensive Revenue Streams</h5>
+                      
+                      {/* Subscription Plans */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">1. Subscription Plans Revenue</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                            <p className="text-white/70 text-xs mb-1">Basic Plan</p>
+                            <p className="font-bold text-white">$59.99/mo</p>
+                            <p className="text-xs text-white/60 mt-2">• Core features + 10 productions</p>
+                            <p className="text-xs text-white/60">• 30% of users (1k users = $18k/mo)</p>
+                          </div>
+                          <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                            <p className="text-white/70 text-xs mb-1">Pro Plan</p>
+                            <p className="font-bold text-white">$99.99/mo</p>
+                            <p className="text-xs text-white/60 mt-2">• Advanced AI + 30 productions</p>
+                            <p className="text-xs text-white/60">• 40% of users (1k users = $39.9k/mo)</p>
+                          </div>
+                          <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                            <p className="text-white/70 text-xs mb-1">Premium Plan</p>
+                            <p className="font-bold text-white">$149.99/mo</p>
+                            <p className="text-xs text-white/60 mt-2">• Unlimited + Masterclasses</p>
+                            <p className="text-xs text-white/60">• 30% of users (1k users = $44.9k/mo)</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-4 p-3 bg-blue-500/10 rounded-lg">
-                        <p className="text-white/70 text-xs mb-1">Distribution & Commission Revenue</p>
-                        <p className="text-sm text-white/90">Estimated 5-10% commission on distribution services, artist management tools, and marketplace transactions</p>
+
+                      {/* Music Video Generator */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">2. Music Video Generator ($199/video)</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                            <p className="text-white/70 text-xs mb-1">1,000 Users</p>
+                            <p className="text-xs text-white/60 mb-2">20% generate videos (200 videos)</p>
+                            <p className="font-bold text-white">$39,800/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $477,600</p>
+                          </div>
+                          <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                            <p className="text-white/70 text-xs mb-1">5,000 Users</p>
+                            <p className="text-xs text-white/60 mb-2">20% generate videos (1,000 videos)</p>
+                            <p className="font-bold text-white">$199,000/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $2,388,000</p>
+                          </div>
+                          <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                            <p className="text-white/70 text-xs mb-1">10,000 Users</p>
+                            <p className="text-xs text-white/60 mb-2">20% generate videos (2,000 videos)</p>
+                            <p className="font-bold text-white">$398,000/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $4,776,000</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Blockchain & Tokenization */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">3. Blockchain Fees & Tokenization (5% per transaction)</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                            <p className="text-white/70 text-xs mb-1">BoostiSwap DEX Trading</p>
+                            <p className="text-xs text-white/60 mb-2">5% commission on trades</p>
+                            <p className="font-bold text-white">$50,000-150k/mo*</p>
+                            <p className="text-xs text-white/60 mt-2">*Depends on trading volume</p>
+                          </div>
+                          <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                            <p className="text-white/70 text-xs mb-1">Artist Token Deployment</p>
+                            <p className="text-xs text-white/60 mb-2">Gas fees + platform commission</p>
+                            <p className="font-bold text-white">$20,000-80k/mo*</p>
+                            <p className="text-xs text-white/60 mt-2">*Per deployment volume</p>
+                          </div>
+                          <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                            <p className="text-white/70 text-xs mb-1">Smart Contract Regalías</p>
+                            <p className="text-xs text-white/60 mb-2">Automated royalty distribution 2-3%</p>
+                            <p className="font-bold text-white">$30,000-100k/mo*</p>
+                            <p className="text-xs text-white/60 mt-2">*Recurring from volume</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Artist Merchandise & Products */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">4. Artist Merchandise & Product Sales (20% commission)</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                            <p className="text-white/70 text-xs mb-1">1,000 Active Artists</p>
+                            <p className="text-xs text-white/60 mb-2">$500/mo avg sales per artist</p>
+                            <p className="font-bold text-white">$100,000/mo</p>
+                            <p className="text-xs text-white/60 mt-2">20% = $20,000/mo</p>
+                          </div>
+                          <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                            <p className="text-white/70 text-xs mb-1">5,000 Active Artists</p>
+                            <p className="text-xs text-white/60 mb-2">$500/mo avg sales per artist</p>
+                            <p className="font-bold text-white">$500,000/mo</p>
+                            <p className="text-xs text-white/60 mt-2">20% = $100,000/mo</p>
+                          </div>
+                          <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                            <p className="text-white/70 text-xs mb-1">10,000 Active Artists</p>
+                            <p className="text-xs text-white/60 mb-2">$500/mo avg sales per artist</p>
+                            <p className="font-bold text-white">$1,000,000/mo</p>
+                            <p className="text-xs text-white/60 mt-2">20% = $200,000/mo</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Music Licensing & Streaming Revenue */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">5. Music Licensing & Streaming Revenue</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                            <p className="text-white/70 text-xs mb-1">AI Artist YouTube Channels</p>
+                            <p className="text-xs text-white/60 mb-2">100+ AI-generated channels</p>
+                            <p className="text-xs text-white/60 mb-2">Ad revenue share: $2k-5k/mo per channel</p>
+                            <p className="font-bold text-white">$200,000-500k/mo</p>
+                          </div>
+                          <div className="p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                            <p className="text-white/70 text-xs mb-1">Streaming Royalties (Spotify, Apple Music)</p>
+                            <p className="text-xs text-white/60 mb-2">API integration with platforms</p>
+                            <p className="text-xs text-white/60 mb-2">30-50% of artist royalties</p>
+                            <p className="font-bold text-white">$150,000-400k/mo</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Digital Artist Channels */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">6. OnlyFans & Explicit Digital Artist Channels</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="p-3 bg-pink-500/10 rounded-lg border border-pink-500/20">
+                            <p className="text-white/70 text-xs mb-1">OnlyFans Integration</p>
+                            <p className="text-xs text-white/60 mb-2">50+ artist channels active</p>
+                            <p className="text-xs text-white/60 mb-2">$3k-8k/mo per channel</p>
+                            <p className="font-bold text-white">$150,000-400k/mo</p>
+                          </div>
+                          <div className="p-3 bg-pink-500/10 rounded-lg border border-pink-500/20">
+                            <p className="text-white/70 text-xs mb-1">Exclusive Content Revenue</p>
+                            <p className="text-xs text-white/60 mb-2">Behind-the-scenes + explicit content</p>
+                            <p className="text-xs text-white/60 mb-2">Platform takes 15-20% cut</p>
+                            <p className="font-bold text-white">$80,000-250k/mo</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Boostify Token Revenue */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">7. Boostify Token ($BOOST) Ecosystem</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                            <p className="text-white/70 text-xs mb-1">Token Sales & Staking</p>
+                            <p className="text-xs text-white/60 mb-2">IDO + ongoing secondary sales</p>
+                            <p className="text-xs text-white/60 mb-2">3-5% platform commission</p>
+                            <p className="font-bold text-white">$100,000-300k/mo</p>
+                          </div>
+                          <div className="p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                            <p className="text-white/70 text-xs mb-1">Staking Rewards Pool</p>
+                            <p className="text-xs text-white/60 mb-2">12% APY for token holders</p>
+                            <p className="text-xs text-white/60 mb-2">Platform revenue from inflation</p>
+                            <p className="font-bold text-white">$50,000-150k/mo</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Educational & Services */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">8. Courses, Masterclasses & Professional Services</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                            <p className="text-white/70 text-xs mb-1">Premium Courses</p>
+                            <p className="text-xs text-white/60 mb-2">Music production, AI tools, Web3</p>
+                            <p className="text-xs text-white/60 mb-2">$29-99 per course</p>
+                            <p className="font-bold text-white">$20,000-60k/mo</p>
+                          </div>
+                          <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                            <p className="text-white/70 text-xs mb-1">Musician Services (20% commission)</p>
+                            <p className="text-xs text-white/60 mb-2">Production, mixing, mastering services</p>
+                            <p className="text-xs text-white/60 mb-2">$500-5k per service</p>
+                            <p className="font-bold text-white">$50,000-150k/mo</p>
+                          </div>
+                          <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                            <p className="text-white/70 text-xs mb-1">Artist Management Packages</p>
+                            <p className="text-xs text-white/60 mb-2">Profile customization, branding</p>
+                            <p className="text-xs text-white/60 mb-2">$99-499/mo premium tiers</p>
+                            <p className="font-bold text-white">$30,000-100k/mo</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Collectible Cards & NFTs */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">9. Artist Trading Cards & NFT Collectibles</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                            <p className="text-white/70 text-xs mb-1">Digital Trading Cards</p>
+                            <p className="text-xs text-white/60 mb-2">Limited edition artist cards</p>
+                            <p className="text-xs text-white/60 mb-2">$0.99-4.99 per card, 70% margin</p>
+                            <p className="font-bold text-white">$25,000-75k/mo</p>
+                          </div>
+                          <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                            <p className="text-white/70 text-xs mb-1">NFT Marketplace Sales</p>
+                            <p className="text-xs text-white/60 mb-2">2.5-5% commission on secondary sales</p>
+                            <p className="text-xs text-white/60 mb-2">Growing NFT trading volume</p>
+                            <p className="font-bold text-white">$40,000-120k/mo</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Motion Capture & API Services */}
+                      <div className="mb-6">
+                        <h6 className="text-white/80 text-xs font-bold mb-3 uppercase">10. Motion Capture & Advanced API Services</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="p-3 bg-violet-500/10 rounded-lg border border-violet-500/20">
+                            <p className="text-white/70 text-xs mb-1">Motion Capture API</p>
+                            <p className="text-xs text-white/60 mb-2">Professional mocap data licensing</p>
+                            <p className="text-xs text-white/60 mb-2">$500-2k per project/license</p>
+                            <p className="font-bold text-white">$30,000-100k/mo</p>
+                          </div>
+                          <div className="p-3 bg-violet-500/10 rounded-lg border border-violet-500/20">
+                            <p className="text-white/70 text-xs mb-1">Premium API & Webhooks</p>
+                            <p className="text-xs text-white/60 mb-2">For external developers & studios</p>
+                            <p className="text-xs text-white/60 mb-2">$99-999/mo tier pricing</p>
+                            <p className="font-bold text-white">$20,000-60k/mo</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Total Projection */}
+                      <div className="p-4 bg-orange-500/20 rounded-lg border border-orange-500/40 mt-6">
+                        <h6 className="text-white font-bold mb-3">Projected Monthly Revenue by User Base</h6>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="text-white/70 mb-1">1,000 Users (Jan 2026)</p>
+                            <p className="text-2xl font-bold text-orange-400">$500k - $800k/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $6M - $9.6M</p>
+                          </div>
+                          <div>
+                            <p className="text-white/70 mb-1">5,000 Users (Jul 2026)</p>
+                            <p className="text-2xl font-bold text-orange-400">$2.5M - $4M/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $30M - $48M</p>
+                          </div>
+                          <div>
+                            <p className="text-white/70 mb-1">10,000 Users (Projection)</p>
+                            <p className="text-2xl font-bold text-orange-400">$5M - $8M/mo</p>
+                            <p className="text-xs text-white/60 mt-2">Annual: $60M - $96M</p>
+                          </div>
+                        </div>
                       </div>
                     </Card>
                   </div>
