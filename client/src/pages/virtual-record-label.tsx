@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/use-auth";
 import { useToast } from "../hooks/use-toast";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import { useQuery } from "@tanstack/react-query";
 import { doc, setDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
@@ -136,7 +137,7 @@ const useUpdateEffect = (callbackFn: () => void, delay: number) => {
 };
 
 export default function VirtualRecordLabelPage() {
-  const { user } = useAuth();
+  const { user, userSubscription } = useAuth();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGeneratingLogo, setIsGeneratingLogo] = useState(false);
@@ -428,9 +429,11 @@ export default function VirtualRecordLabelPage() {
   const handlePlanChange = (planId: string) => {
     const selectedPlan = plans.find(plan => plan.id === planId);
     if (selectedPlan) {
+      // PREMIUM plan users limited to 10 artists max
+      const maxArtists = userSubscription?.plan === 'premium' ? 10 : selectedPlan.artistCount;
       setConfig({
         ...config,
-        artistCount: selectedPlan.artistCount
+        artistCount: Math.min(selectedPlan.artistCount, maxArtists)
       });
     }
   };
@@ -913,8 +916,13 @@ export default function VirtualRecordLabelPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <PlanTierGuard 
+      requiredPlan="premium" 
+      userSubscription={userSubscription} 
+      featureName="Virtual Record Label"
+    >
+      <div className="min-h-screen bg-background">
+        <Header />
       
       {/* Progress Overlay */}
       {showProgress && <ProgressOverlay />}
@@ -1790,5 +1798,6 @@ export default function VirtualRecordLabelPage() {
         </div>
       </section>
     </div>
+    </PlanTierGuard>
   );
 }
