@@ -819,6 +819,54 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       });
     }
   });
+
+  // ENDPOINT DE PRUEBA - Enviar evento de PAGO FALLIDO
+  app.get('/api/test/send-to-make/payment-failed', async (req, res) => {
+    try {
+      console.log('📤 Enviando evento de PAGO FALLIDO a Make...');
+      
+      const testEvent = {
+        event: 'payment_failed',
+        timestamp: new Date().toISOString(),
+        data: {
+          userEmail: 'customer@example.com',
+          userName: 'Failed Customer',
+          amount: 149.99,
+          currency: 'usd',
+          failedDate: '2025-11-24'
+        }
+      };
+
+      const response = await fetch('https://hook.us2.make.com/ow1m732j9t4mjmnod9cyahk6im7w6uet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testEvent)
+      });
+
+      if (!response.ok) {
+        console.error(`❌ Error: ${response.statusText}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: response.statusText
+        });
+      }
+
+      console.log('✅ Evento de pago fallido enviado a Make');
+      return res.json({
+        success: true,
+        message: 'Evento de pago fallido enviado a Make',
+        eventSent: testEvent
+      });
+    } catch (error) {
+      console.error('Error sending payment failed event:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
   
   // Contracts router moved after setupAuth() to ensure Passport is initialized
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
