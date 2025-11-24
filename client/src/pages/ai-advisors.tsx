@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/use-auth';
 import { useLocation } from 'wouter';
 import { Advisor } from '../lib/services/advisor-call-service';
 import { useSubscription } from '../lib/context/subscription-context';
+import { PlanTierGuard } from '../components/youtube-views/plan-tier-guard';
 
 // Components
 import { CallHistory } from '../components/ai-advisors/call-history';
@@ -217,7 +218,7 @@ const subscriptionFeatures = {
 
 export default function AIAdvisorsPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, userSubscription } = useAuth();
   const [, setLocation] = useLocation();
   const { subscription, currentPlan } = useSubscription();
   
