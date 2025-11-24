@@ -493,7 +493,22 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       // Intentar obtener la suscripción, pero devolver null silenciosamente si falla
       try {
         const results = await db
-          .select()
+          .select({
+            id: subscriptions.id,
+            userId: subscriptions.userId,
+            plan: subscriptions.plan,
+            status: subscriptions.status,
+            currentPeriodStart: subscriptions.currentPeriodStart,
+            currentPeriodEnd: subscriptions.currentPeriodEnd,
+            cancelAtPeriodEnd: subscriptions.cancelAtPeriodEnd,
+            interval: subscriptions.interval,
+            stripeCustomerId: subscriptions.stripeCustomerId,
+            stripeSubscriptionId: subscriptions.stripeSubscriptionId,
+            isTrial: subscriptions.isTrial,
+            trialEndsAt: subscriptions.trialEndsAt,
+            createdAt: subscriptions.createdAt,
+            updatedAt: subscriptions.updatedAt,
+          })
           .from(subscriptions)
           .where(eq(subscriptions.userId, numUserId))
           .orderBy(desc(subscriptions.createdAt))
