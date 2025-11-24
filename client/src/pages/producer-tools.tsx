@@ -9,6 +9,7 @@ import { Switch } from "../components/ui/switch";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/use-auth";
 import { useLocation } from "wouter";
+import useSubscriptionFeature from "../hooks/use-subscription-feature";
 import { Music2, DollarSign, Star, Music4, Mic2, Guitar, Drum, Piano, Plus, Wand2, Image as ImageIcon, Upload, Loader2, PlayCircle, ChevronDown, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/ui/collapsible";
@@ -274,6 +275,7 @@ export default function ProducerToolsPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
+  const { hasAccess: hasBasicPlanAccess } = useSubscriptionFeature({ requiredPlan: 'basic' });
 
   // Check if user is authenticated - redirect if not
   useEffect(() => {
@@ -789,39 +791,55 @@ export default function ProducerToolsPage() {
                 <p className="text-muted-foreground max-w-2xl">Collaborate seamlessly with professional tools designed for musicians and producers.</p>
               </div>
               <Badge variant="outline" className="mt-2 md:mt-0 bg-orange-500/10 text-orange-500 border-orange-500/20 px-3 py-1">
-                <span className="animate-pulse mr-2">●</span> Live Collaboration
+                <span className="animate-pulse mr-2">●</span> {!hasBasicPlanAccess ? 'BASIC Plan+' : 'Live Collaboration'}
               </Badge>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-              >
-                <FileExchangeHub />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-              >
-                <StudioVideoCall />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.3 }}
-              >
-                <ProductionProgressContainer />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.4 }}
-              >
-                <VersionControl />
-              </motion.div>
-            </div>
+            
+            {!hasBasicPlanAccess ? (
+              <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/30 p-12 text-center">
+                <h3 className="text-2xl font-bold mb-3">Upgrade to Access Production Tools</h3>
+                <p className="text-white/70 mb-6 max-w-2xl mx-auto">
+                  Production Workflow Tools including File Exchange, Video Studio, Progress Tracking, and Version Control require at least a BASIC subscription plan ($59.99/month).
+                </p>
+                <Button 
+                  onClick={() => setLocation('/signup')}
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-orange-500/20"
+                >
+                  View Subscription Plans
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                >
+                  <FileExchangeHub />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                >
+                  <StudioVideoCall />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.3 }}
+                >
+                  <ProductionProgressContainer />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.4 }}
+                >
+                  <VersionControl />
+                </motion.div>
+              </div>
+            )}
           </div>
 
           {/* AI Tools Section - Temporarily disabled */}
