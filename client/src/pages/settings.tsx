@@ -25,11 +25,6 @@ import {
   Sparkles,
   Wand2,
   FileText,
-  CreditCard,
-  Eye,
-  Trash2,
-  Check,
-  AlertCircle,
 } from "lucide-react";
 import { EPKGenerator } from "../components/artist-profile/epk-generator";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -69,10 +64,6 @@ export default function SettingsPage() {
   const [isGeneratingBiography, setIsGeneratingBiography] = useState(false);
   const [isGeneratingProfileImage, setIsGeneratingProfileImage] = useState(false);
   const [isGeneratingBannerImage, setIsGeneratingBannerImage] = useState(false);
-  
-  // Estados para Billing
-  const [billingInfo, setBillingInfo] = useState<any>(null);
-  const [isLoadingBilling, setIsLoadingBilling] = useState(false);
   
   // Schemas de validación
   const profileSchema = z.object({
@@ -117,14 +108,6 @@ export default function SettingsPage() {
     path: ["confirmPassword"]
   });
   
-  const privacySchema = z.object({
-    profileVisibility: z.enum(["public", "private", "followers"]),
-    allowMessages: z.boolean(),
-    allowCollaborations: z.boolean(),
-    showEmail: z.boolean(),
-    allowAnalytics: z.boolean(),
-  });
-  
   // Formularios iniciales
   const profileForm = useForm({
     resolver: zodResolver(profileSchema),
@@ -158,17 +141,6 @@ export default function SettingsPage() {
       currentPassword: "",
       newPassword: "",
       confirmPassword: ""
-    }
-  });
-
-  const privacyForm = useForm({
-    resolver: zodResolver(privacySchema),
-    defaultValues: {
-      profileVisibility: "public",
-      allowMessages: true,
-      allowCollaborations: true,
-      showEmail: false,
-      allowAnalytics: true,
     }
   });
 
@@ -488,15 +460,6 @@ export default function SettingsPage() {
     });
     securityForm.reset();
   };
-
-  const handlePrivacySubmit = (values: z.infer<typeof privacySchema>) => {
-    // Guardar configuración de privacidad
-    localStorage.setItem("privacySettings", JSON.stringify(values));
-    toast({
-      title: "Configuración de privacidad actualizada",
-      description: "Tus preferencias de privacidad han sido guardadas correctamente."
-    });
-  };
   
   // Aplicar el tema al cargar la página
   useEffect(() => {
@@ -525,17 +488,9 @@ export default function SettingsPage() {
             <User className="h-4 w-4" />
             <span className="text-xs md:text-sm">Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="billing" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
-            <CreditCard className="h-4 w-4" />
-            <span className="text-xs md:text-sm">Billing</span>
-          </TabsTrigger>
           <TabsTrigger value="notifications" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
             <Bell className="h-4 w-4" />
             <span className="text-xs md:text-sm">Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger value="privacy" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
-            <Eye className="h-4 w-4" />
-            <span className="text-xs md:text-sm">Privacy</span>
           </TabsTrigger>
           <TabsTrigger value="appearance" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
             <Palette className="h-4 w-4" />
@@ -936,267 +891,6 @@ export default function SettingsPage() {
               </form>
             </Form>
             
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="billing" className="space-y-4">
-          <Card className="p-3 md:p-6">
-            <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Billing & Subscription</h3>
-            
-            <div className="space-y-4">
-              {/* Current Plan */}
-              <div className="border rounded-lg p-4 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-white">Current Plan</h4>
-                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-orange-500 text-white">ACTIVE</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                  <div>
-                    <p className="text-xs text-white/60">Plan Type</p>
-                    <p className="text-lg font-bold text-white">Creator</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/60">Price</p>
-                    <p className="text-lg font-bold text-orange-400">$59.99/mo</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/60">Next Billing</p>
-                    <p className="text-sm font-semibold text-white">Jan 24, 2025</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Method */}
-              <div className="border rounded-lg p-4 bg-white/5">
-                <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  Payment Method
-                </h4>
-                <div className="bg-black/40 rounded p-3 mb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center text-white font-bold text-xs">VISA</div>
-                      <div>
-                        <p className="font-semibold text-white">Visa ending in 4242</p>
-                        <p className="text-xs text-white/60">Expires 12/26</p>
-                      </div>
-                    </div>
-                    <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 font-semibold">Default</span>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full md:w-auto"
-                  data-testid="button-update-payment"
-                >
-                  Update Payment Method
-                </Button>
-              </div>
-
-              {/* Billing History */}
-              <div className="border rounded-lg p-4 bg-white/5">
-                <h4 className="font-semibold text-white mb-3">Billing History</h4>
-                <div className="space-y-2">
-                  {[
-                    { date: "Dec 24, 2024", amount: "$59.99", status: "Paid" },
-                    { date: "Nov 24, 2024", amount: "$59.99", status: "Paid" },
-                    { date: "Oct 24, 2024", amount: "$59.99", status: "Paid" },
-                  ].map((invoice, i) => (
-                    <div key={i} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
-                      <div>
-                        <p className="text-sm text-white">{invoice.date}</p>
-                        <p className="text-xs text-white/60">Creator Plan</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <p className="font-semibold text-white">{invoice.amount}</p>
-                        <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 flex items-center gap-1">
-                          <Check className="h-3 w-3" />
-                          {invoice.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full mt-3"
-                  data-testid="button-download-receipts"
-                >
-                  Download All Receipts
-                </Button>
-              </div>
-
-              {/* Subscription Actions */}
-              <div className="border rounded-lg p-4 bg-white/5 space-y-2">
-                <h4 className="font-semibold text-white mb-3">Subscription Actions</h4>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full"
-                  data-testid="button-upgrade-plan"
-                >
-                  Upgrade to Professional
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full text-red-500 hover:text-red-600"
-                  data-testid="button-cancel-subscription"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Cancel Subscription
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="privacy" className="space-y-4">
-          <Card className="p-3 md:p-6">
-            <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Privacy Settings</h3>
-            
-            <Form {...privacyForm}>
-              <form onSubmit={privacyForm.handleSubmit(handlePrivacySubmit)} className="space-y-3 md:space-y-4">
-                <FormField
-                  control={privacyForm.control}
-                  name="profileVisibility"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Profile Visibility</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select visibility" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="public">Public - Anyone can view</SelectItem>
-                          <SelectItem value="followers">Followers Only</SelectItem>
-                          <SelectItem value="private">Private - Only you</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Control who can view your artist profile
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-3">Contact & Collaboration</h4>
-                  
-                  <FormField
-                    control={privacyForm.control}
-                    name="allowMessages"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
-                        <div className="space-y-0.5">
-                          <FormLabel>Allow Direct Messages</FormLabel>
-                          <FormDescription className="text-xs md:text-sm">
-                            Let other users contact you
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={privacyForm.control}
-                    name="allowCollaborations"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
-                        <div className="space-y-0.5">
-                          <FormLabel>Allow Collaboration Requests</FormLabel>
-                          <FormDescription className="text-xs md:text-sm">
-                            Receive music collaboration invitations
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-3">Data & Privacy</h4>
-                  
-                  <FormField
-                    control={privacyForm.control}
-                    name="showEmail"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
-                        <div className="space-y-0.5">
-                          <FormLabel>Show Email Publicly</FormLabel>
-                          <FormDescription className="text-xs md:text-sm">
-                            Display your email on your profile
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={privacyForm.control}
-                    name="allowAnalytics"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
-                        <div className="space-y-0.5">
-                          <FormLabel>Allow Analytics Tracking</FormLabel>
-                          <FormDescription className="text-xs md:text-sm">
-                            Help us improve with usage analytics
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3 flex gap-3">
-                  <AlertCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-blue-100">
-                    <p className="font-semibold">Privacy Policy</p>
-                    <p className="text-xs mt-1">Your data is processed according to our privacy policy. <a href="#" className="underline hover:no-underline">Learn more</a></p>
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full md:w-auto"
-                  disabled={!privacyForm.formState.isDirty}
-                >
-                  Save Changes
-                </Button>
-              </form>
-            </Form>
           </Card>
         </TabsContent>
 

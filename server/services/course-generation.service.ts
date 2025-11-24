@@ -5,6 +5,7 @@ import {
   courseQuizzes, 
   quizQuestions, 
   contentGenerationQueue,
+  lessonProgress,
   courseEnrollments
 } from "@db/schema";
 import { eq, and, sql } from "drizzle-orm";
