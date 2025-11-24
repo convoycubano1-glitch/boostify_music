@@ -1,0 +1,84 @@
+api/stripe/create-subscription:1  Failed to load resource: the server responded with a status of 401 ()
+index-9pkI6JsK.js:3774 [16:47:11.682] [ERROR] Error creating checkout session: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (index-9pkI6JsK.js:3204:1433)
+    at async Wa (index-9pkI6JsK.js:3204:2069)
+    at async dge (index-9pkI6JsK.js:6158:132504)
+    at async index-9pkI6JsK.js:6169:81346
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:11.683] [ERROR] Error message: 401: {"success":false,"message":"Usuario no autenticado"}
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:11.683] [ERROR] Error stack: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (https://boostifymusic.com/assets/index-9pkI6JsK.js:3204:1433)
+    at async Wa (https://boostifymusic.com/assets/index-9pkI6JsK.js:3204:2069)
+    at async dge (https://boostifymusic.com/assets/index-9pkI6JsK.js:6158:132504)
+    at async https://boostifymusic.com/assets/index-9pkI6JsK.js:6169:81346
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:11.683] [ERROR] Error processing pending plan Object
+error @ index-9pkI6JsK.js:3774
+pulse.walletconnect.org/e?projectId=d66803c6-d493-438d-b9d8-2c4637eb1868&st=appkit&sv=html-core-1.7.8:1  Failed to load resource: the server responded with a status of 400 ()
+api/subscription/user/2:1  Failed to load resource: the server responded with a status of 500 ()
+index-9pkI6JsK.js:3774 [16:47:11.770] [ERROR] Error fetching subscription from PostgreSQL: Error: Failed to fetch subscription: 
+    at IW (index-9pkI6JsK.js:3774:26491)
+    at async Promise.all (index 0)
+    at async index-9pkI6JsK.js:3774:27542
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:11.770] [ERROR] Error loading subscription and role: Error: Failed to fetch subscription: 
+    at IW (index-9pkI6JsK.js:3774:26491)
+    at async Promise.all (index 0)
+    at async index-9pkI6JsK.js:3774:27542
+error @ index-9pkI6JsK.js:3774
+api.web3modal.org/appkit/v1/config?projectId=d66803c6-d493-438d-b9d8-2c4637eb1868&st=appkit&sv=html-core-1.7.8:1  Failed to load resource: the server responded with a status of 403 ()
+api/stripe/create-subscription:1  Failed to load resource: the server responded with a status of 401 ()
+index-9pkI6JsK.js:3774 [16:47:41.312] [ERROR] Error creating checkout session: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (index-9pkI6JsK.js:3204:1433)
+    at async Wa (index-9pkI6JsK.js:3204:2069)
+    at async dge (index-9pkI6JsK.js:6158:132504)
+    at async g (index-9pkI6JsK.js:6158:139652)
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:41.312] [ERROR] Error message: 401: {"success":false,"message":"Usuario no autenticado"}
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:41.312] [ERROR] Error stack: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (https://boostifymusic.com/assets/index-9pkI6JsK.js:3204:1433)
+    at async Wa (https://boostifymusic.com/assets/index-9pkI6JsK.js:3204:2069)
+    at async dge (https://boostifymusic.com/assets/index-9pkI6JsK.js:6158:132504)
+    at async g (https://boostifymusic.com/assets/index-9pkI6JsK.js:6158:139652)
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:41.312] [ERROR] Error al crear sesión de checkout: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (index-9pkI6JsK.js:3204:1433)
+    at async Wa (index-9pkI6JsK.js:3204:2069)
+    at async dge (index-9pkI6JsK.js:6158:132504)
+    at async g (index-9pkI6JsK.js:6158:139652)
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:41.312] [ERROR] Error starting checkout: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (index-9pkI6JsK.js:3204:1433)
+    at async Wa (index-9pkI6JsK.js:3204:2069)
+    at async dge (index-9pkI6JsK.js:6158:132504)
+    at async g (index-9pkI6JsK.js:6158:139652)
+error @ index-9pkI6JsK.js:3774
+api/stripe/create-subscription:1  Failed to load resource: the server responded with a status of 401 ()
+index-9pkI6JsK.js:3774 [16:47:44.677] [ERROR] Error creating checkout session: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (index-9pkI6JsK.js:3204:1433)
+    at async Wa (index-9pkI6JsK.js:3204:2069)
+    at async dge (index-9pkI6JsK.js:6158:132504)
+    at async g (index-9pkI6JsK.js:6158:139652)
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:44.677] [ERROR] Error message: 401: {"success":false,"message":"Usuario no autenticado"}
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:44.677] [ERROR] Error stack: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (https://boostifymusic.com/assets/index-9pkI6JsK.js:3204:1433)
+    at async Wa (https://boostifymusic.com/assets/index-9pkI6JsK.js:3204:2069)
+    at async dge (https://boostifymusic.com/assets/index-9pkI6JsK.js:6158:132504)
+    at async g (https://boostifymusic.com/assets/index-9pkI6JsK.js:6158:139652)
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:44.677] [ERROR] Error al crear sesión de checkout: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (index-9pkI6JsK.js:3204:1433)
+    at async Wa (index-9pkI6JsK.js:3204:2069)
+    at async dge (index-9pkI6JsK.js:6158:132504)
+    at async g (index-9pkI6JsK.js:6158:139652)
+error @ index-9pkI6JsK.js:3774
+index-9pkI6JsK.js:3774 [16:47:44.677] [ERROR] Error starting checkout: Error: 401: {"success":false,"message":"Usuario no autenticado"}
+    at g4 (index-9pkI6JsK.js:3204:1433)
+    at async Wa (index-9pkI6JsK.js:3204:2069)
+    at async dge (index-9pkI6JsK.js:6158:132504)
+    at async g (index-9pkI6JsK.js:6158:139652)
+error @ index-9pkI6JsK.js:3774
