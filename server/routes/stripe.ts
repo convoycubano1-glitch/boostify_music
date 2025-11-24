@@ -221,7 +221,7 @@ const PRODUCT_PURCHASES_COLLECTION = 'product_purchases';
 router.post('/create-subscription', async (req: Request, res: Response) => {
   try {
     // Aceptar tanto priceId como planId para mayor compatibilidad
-    const { priceId, planId, email } = req.body;
+    const { priceId, planId } = req.body;
     
     // Usar el ID que venga, priorizando priceId (enviado desde el cliente)
     const selectedId = priceId || planId;
@@ -230,34 +230,8 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Plan o precio no especificado' });
     }
 
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email requerido' });
-    }
-
     // Si es un plan conocido, usar su priceId, de lo contrario usar el ID directamente
     const isKnownPlan = !!PLAN_PRICE_IDS[selectedId as keyof typeof PLAN_PRICE_IDS];
-    
-    // Buscar o crear cliente en Stripe usando el email proporcionado
-    let customerId: string;
-    
-    console.log(`Creating Stripe customer for email ${email}`);
-    
-    // Buscar cliente existente en Stripe por email
-    const existingCustomers = await stripe.customers.list({
-      email: email,
-      limit: 1
-    });
-    
-    if (existingCustomers.data.length > 0) {
-      customerId = existingCustomers.data[0].id;
-    } else {
-      // Crear un nuevo cliente en Stripe si no existe
-      const customer = await stripe.customers.create({
-        email: email
-      });
-      
-      customerId = customer.id;
-    }
     
     // Crear sesión de checkout
     // Determinar el precio a usar - si es un ID de precio directo o una clave de plan
@@ -268,7 +242,6 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
     const planKey = isKnownPlan ? selectedId : PRICE_ID_TO_PLAN[selectedId as keyof typeof PRICE_ID_TO_PLAN] || 'custom';
 
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
       payment_method_types: ['card'],
       line_items: [
         {
@@ -280,13 +253,11 @@ router.post('/create-subscription', async (req: Request, res: Response) => {
       success_url: `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/subscription/cancelled`,
       metadata: {
-        planId: planKey,
-        email: email
+        planId: planKey
       },
       subscription_data: {
         metadata: {
-          planId: planKey,
-          email: email
+          planId: planKey
         }
       }
     });

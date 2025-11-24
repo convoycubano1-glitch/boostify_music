@@ -144,13 +144,6 @@ export default function PricingPage() {
         return;
       }
 
-      // Para planes pagados, solicitar email
-      const email = prompt('Por favor ingresa tu email para el checkout:');
-      if (!email) {
-        setProcessingPlanId(null);
-        return;
-      }
-
       toast({
         title: "Redirigiendo a Stripe",
         description: `Iniciando checkout para ${plan.name}...`
@@ -161,8 +154,7 @@ export default function PricingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          priceId: plan.priceId,
-          email: email
+          priceId: plan.priceId
         })
       });
 
