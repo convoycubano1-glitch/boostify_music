@@ -353,7 +353,12 @@ export default function AIAdvisorsPage() {
   };
 
   return (
-    <div className="container max-w-6xl py-6 md:py-10 space-y-6 relative">
+    <PlanTierGuard 
+      requiredPlan="basic" 
+      userSubscription={userSubscription} 
+      featureName="AI Advisors"
+    >
+      <div className="container max-w-6xl py-6 md:py-10 space-y-6 relative">
       {/* Add global animation for fadeIn effect used on cards */}
       <style>{`
         @keyframes fadeIn {
@@ -665,7 +670,7 @@ export default function AIAdvisorsPage() {
                   variant={currentPlan === 'free' ? 'outline' : 'default'} 
                   className="w-full relative group overflow-hidden"
                   disabled={currentPlan === 'free'}
-                  onClick={() => setLocation('/pricing')}
+                  onClick={() => setLocation('/account')}
                 >
                   <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
                   <span className="relative z-10">
@@ -743,7 +748,7 @@ export default function AIAdvisorsPage() {
                   variant={currentPlan === 'basic' ? 'outline' : 'default'} 
                   className="w-full relative group overflow-hidden"
                   disabled={currentPlan === 'basic'}
-                  onClick={() => setLocation('/pricing')}
+                  onClick={() => setLocation('/account')}
                 >
                   <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
                   <span className="relative z-10">
@@ -860,7 +865,7 @@ export default function AIAdvisorsPage() {
                   variant={currentPlan === 'pro' ? 'outline' : 'default'} 
                   className="w-full relative group overflow-hidden"
                   disabled={currentPlan === 'pro'}
-                  onClick={() => setLocation('/pricing')}
+                  onClick={() => setLocation('/account')}
                 >
                   {/* Animated glowing effect on hover */}
                   <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
@@ -880,6 +885,7 @@ export default function AIAdvisorsPage() {
         open={modalOpen}
         onOpenChange={setModalOpen}
       />
-    </div>
+      </div>
+    </PlanTierGuard>
   );
 }
