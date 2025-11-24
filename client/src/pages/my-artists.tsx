@@ -272,7 +272,7 @@ export default function MyArtistsPage() {
           url={window.location.href}
         />
         <div className="min-h-screen bg-black text-white py-8">
-        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="container mx-auto px-4 max-w-7xl">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
@@ -579,8 +579,8 @@ export default function MyArtistsPage() {
               ))}
             </div>
           )}
+          </div>
         </div>
-      </div>
       </>
     </PlanTierGuard>
   );
