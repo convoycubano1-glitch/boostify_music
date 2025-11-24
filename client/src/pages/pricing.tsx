@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 import { 
   CheckCircle2, Zap, Music, Video, Users, Crown, Sparkles, 
-  ArrowRight, Globe, Headphones, Mic2, BarChart3
+  ArrowRight, Globe, Headphones, Mic2, BarChart3, Loader2
 } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import { logger } from '@/lib/logger';
 
 const plans = [
   {
@@ -19,6 +22,7 @@ const plans = [
     color: 'from-slate-500 to-slate-700',
     icon: Music,
     highlighted: false,
+    priceId: null,
     features: [
       'Community Hub',
       'Merch Store',
@@ -36,6 +40,7 @@ const plans = [
     color: 'from-orange-500 to-orange-700',
     icon: Headphones,
     highlighted: true,
+    priceId: 'price_1R0lay2LyFplWimfQxUL6Hn0',
     features: [
       'Everything in Discover',
       'Artist Hub',
@@ -58,6 +63,7 @@ const plans = [
     color: 'from-orange-600 to-red-600',
     icon: Zap,
     highlighted: false,
+    priceId: 'price_1R0laz2LyFplWimfsBd5ASoa',
     features: [
       'Everything in Elevate',
       'Pro Analytics Engine',
@@ -81,6 +87,7 @@ const plans = [
     color: 'from-orange-700 to-red-700',
     icon: Crown,
     highlighted: false,
+    priceId: 'price_1R0lb12LyFplWimf7JpMynKA',
     features: [
       'Everything in Amplify',
       'Virtual Label Empire (10 artists)',
@@ -122,6 +129,57 @@ const highlights = [
 ];
 
 export default function PricingPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
+
+  const handleSelectPlan = async (plan: typeof plans[0]) => {
+    try {
+      setProcessingPlanId(plan.id);
+
+      // Plan gratis - ir a login
+      if (!plan.priceId) {
+        localStorage.setItem('selectedPlan', JSON.stringify({
+          planName: plan.name,
+          priceId: null,
+          timestamp: Date.now()
+        }));
+        window.location.href = '/api/login';
+        return;
+      }
+
+      // Plan pagado - si NO está autenticado, ir a login
+      if (!user) {
+        localStorage.setItem('selectedPlan', JSON.stringify({
+          planName: plan.name,
+          priceId: plan.priceId,
+          timestamp: Date.now()
+        }));
+        window.location.href = '/api/login';
+        return;
+      }
+
+      // Si está autenticado y es plan pagado, crear checkout
+      toast({
+        title: "Redirigiendo a Stripe",
+        description: `Iniciando checkout para ${plan.name}...`
+      });
+
+      const { createCheckoutSession } = await import('@/lib/api/stripe-service');
+      const checkoutUrl = await createCheckoutSession(plan.priceId);
+      window.location.href = checkoutUrl;
+
+    } catch (error) {
+      logger.error('Error selecting plan:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo procesar tu solicitud. Por favor intenta de nuevo.",
+        variant: "destructive"
+      });
+      setProcessingPlanId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
@@ -159,9 +217,16 @@ export default function PricingPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="rounded-2xl overflow-hidden border border-orange-500/20 shadow-2xl mb-16"
+            className="rounded-2xl overflow-hidden border border-orange-500/20 shadow-2xl mb-16 bg-slate-800/50"
           >
-            <img src="/images/modern_pricing_dashboard_ui.png" alt="Pricing Dashboard" className="w-full h-auto" />
+            <img 
+              src="/images/modern_pricing_dashboard_ui.png" 
+              alt="Pricing Dashboard" 
+              className="w-full h-auto"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           </motion.div>
         </div>
       </section>
@@ -205,12 +270,24 @@ export default function PricingPage() {
                         <span className="text-slate-400 text-sm ml-2">{plan.period}</span>
                       </div>
 
-                      <Link href={plan.id === 'discover' ? '/auth-signup' : '/auth-signup'}>
-                        <Button className={`w-full mb-6 ${plan.highlighted ? `bg-gradient-to-r ${plan.color} hover:shadow-lg hover:shadow-orange-500/50` : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold transition-all`}>
-                          Get Started
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                      </Link>
+                      <Button 
+                        onClick={() => handleSelectPlan(plan)}
+                        disabled={processingPlanId === plan.id}
+                        className={`w-full mb-6 ${plan.highlighted ? `bg-gradient-to-r ${plan.color} hover:shadow-lg hover:shadow-orange-500/50` : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold transition-all`}
+                        data-testid={`button-select-plan-${plan.id}`}
+                      >
+                        {processingPlanId === plan.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Procesando...
+                          </>
+                        ) : (
+                          <>
+                            Get Started
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </>
+                        )}
+                      </Button>
 
                       <div className="space-y-3">
                         {plan.features.slice(0, 6).map((feature, idx) => (
@@ -271,63 +348,17 @@ export default function PricingPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="rounded-2xl overflow-hidden border border-orange-500/20"
+              className="rounded-2xl overflow-hidden border border-orange-500/20 bg-slate-800/50"
             >
-              <img src="/images/music_industry_abstract_art.png" alt="Music Industry" className="w-full h-auto" />
+              <img 
+                src="/images/music_industry_abstract_art.png" 
+                alt="Music Industry" 
+                className="w-full h-auto"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison Table */}
-      <section className="relative z-10 py-20 px-4 hidden lg:block">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mb-12"
-          >
-            <h2 className="text-4xl font-bold text-center mb-4">Feature Comparison</h2>
-            <p className="text-slate-300 text-center">See what's included in each plan</p>
-          </motion.div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="px-6 py-4 text-left font-semibold">Features</th>
-                  {plans.map(plan => (
-                    <th key={plan.id} className="px-6 py-4 text-center font-semibold text-orange-400">
-                      {plan.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {['Artist Hub', 'AI Content Creation', 'Analytics', 'Growth Tools', 'Record Label', 'Expert Support'].map((feature, idx) => (
-                  <tr key={idx} className="border-b border-slate-800 hover:bg-slate-800/50 transition">
-                    <td className="px-6 py-4 font-medium text-slate-300">{feature}</td>
-                    {plans.map(plan => (
-                      <td key={`${plan.id}-${idx}`} className="px-6 py-4 text-center">
-                        {(
-                          (feature === 'Artist Hub' && plan.id !== 'discover') ||
-                          (feature === 'AI Content Creation' && plan.id !== 'discover') ||
-                          (feature === 'Analytics' && plan.id !== 'discover') ||
-                          (feature === 'Growth Tools' && (plan.id === 'amplify' || plan.id === 'dominate')) ||
-                          (feature === 'Record Label' && plan.id === 'dominate') ||
-                          (feature === 'Expert Support' && plan.id === 'dominate')
-                        ) ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-400 mx-auto" />
-                        ) : (
-                          <span className="text-slate-600">-</span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </section>
@@ -344,40 +375,7 @@ export default function PricingPage() {
             <p className="text-xl text-slate-300 mb-8">
               Join thousands of artists already growing with Boostify. Start free, upgrade anytime.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth-signup">
-                <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:shadow-lg hover:shadow-orange-500/50 text-white font-bold px-8 py-3 rounded-lg text-lg">
-                  Start Free Now
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/contact">
-                <Button variant="outline" className="border-orange-500/50 text-white hover:bg-orange-500/10 font-bold px-8 py-3 rounded-lg text-lg">
-                  Contact Sales
-                </Button>
-              </Link>
-            </div>
           </motion.div>
-        </div>
-      </section>
-
-      {/* Footer Info */}
-      <section className="relative z-10 py-12 px-4 border-t border-slate-700">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <h3 className="font-bold mb-2">Flexible Plans</h3>
-              <p className="text-slate-400">Upgrade or downgrade anytime. No long-term contracts.</p>
-            </div>
-            <div>
-              <h3 className="font-bold mb-2">Secure Payments</h3>
-              <p className="text-slate-400">Powered by Stripe. Your data is always protected.</p>
-            </div>
-            <div>
-              <h3 className="font-bold mb-2">Money-Back Guarantee</h3>
-              <p className="text-slate-400">30-day satisfaction guarantee on all plans.</p>
-            </div>
-          </div>
         </div>
       </section>
     </div>
