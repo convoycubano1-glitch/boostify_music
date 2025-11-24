@@ -4278,14 +4278,14 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       data-testid="button-open-spotify"
                     >
                       <Music className="h-5 w-5" />
-                      <span className="font-semibold">Abrir en Spotify</span>
+                      <span className="font-semibold">Open on Spotify</span>
                     </a>
                   </div>
                 </div>
                 
                 {/* Mensaje de ayuda para móviles */}
                 <div className="mt-2 text-xs text-gray-400 text-center md:hidden">
-                  Si no ves el reproductor, usa el botón "Abrir en Spotify"
+                  Si no ves el reproductor, usa el botón "Open on Spotify"
                 </div>
               </div>
             )}
@@ -4293,7 +4293,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             {/* DEBUG: Mostrar si Spotify debería estar visible */}
             {artist.spotify && !getSpotifyEmbedUrl(artist.spotify) && (
               <div className={cardStyles} style={{ borderColor: 'red', borderWidth: '2px' }}>
-                <div className="text-red-500 font-bold">⚠️ DEBUG: Spotify URL inválida</div>
+                <div className="text-red-500 font-bold">⚠️ DEBUG: Invalid Spotify URL</div>
                 <div className="text-sm text-gray-400 mt-2">
                   URL: {artist.spotify}
                 </div>
@@ -4302,9 +4302,9 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             
             {!artist.spotify && (
               <div className={cardStyles} style={{ borderColor: 'yellow', borderWidth: '2px' }}>
-                <div className="text-yellow-500 font-bold">⚠️ DEBUG: No hay URL de Spotify</div>
+                <div className="text-yellow-500 font-bold">⚠️ DEBUG: No Spotify URL added</div>
                 <div className="text-sm text-gray-400 mt-2">
-                  Agrega tu URL de Spotify en "Editar Perfil"
+                  Add your Spotify URL in "Edit Profile"
                 </div>
               </div>
             )}

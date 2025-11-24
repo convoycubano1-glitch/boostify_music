@@ -938,7 +938,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
         });
 
         if (webhookResponse.ok) {
-          logger.info('✅ Datos enviados exitosamente al webhook de Make.com');
+          logger.info('✅ Data successfully sent to Make.com webhook');
         } else {
           logger.warn('⚠️ El webhook respondió con status:', webhookResponse.status);
         }
@@ -948,8 +948,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       }
       
       toast({
-        title: "Perfil actualizado",
-        description: "Tu perfil se ha guardado correctamente.",
+        title: "Profile Updated",
+        description: "Your profile has been saved successfully.",
       });
 
       setIsOpen(false);
@@ -958,7 +958,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.error("Error saving profile:", error);
       toast({
         title: "Error",
-        description: "No se pudo guardar el perfil. Intenta de nuevo.",
+        description: "Could not save profile. Try again.",
         variant: "destructive",
       });
     } finally {
@@ -1137,7 +1137,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 id="location"
                 value={formData.location}
                 onChange={(e) => handleChange("location", e.target.value)}
-                placeholder="Ciudad, País"
+                placeholder="City, Country"
               />
             </div>
           </div>
@@ -1430,7 +1430,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                   placeholder="https://open.spotify.com/artist/..."
                 />
                 <p className="text-xs text-gray-400 italic">
-                  Pega la URL de tu perfil de artista de Spotify. Se mostrará un reproductor en tu página.
+                  Paste your Spotify artist profile URL. A player will be displayed on your page.
                 </p>
               </div>
             </div>
@@ -1441,16 +1441,16 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Próximos Shows
+                Upcoming Shows
               </h4>
             </div>
 
             {/* Formulario para agregar show */}
             <div className="space-y-3 mb-4 p-3 bg-gray-900/30 rounded-lg border border-gray-700">
-              <h5 className="text-xs font-medium text-gray-400">Agregar Nuevo Show</h5>
+              <h5 className="text-xs font-medium text-gray-400">Add New Show</h5>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="newShowVenue" className="text-xs">Nombre del Lugar *</Label>
+                  <Label htmlFor="newShowVenue" className="text-xs">Venue Name *</Label>
                   <Input
                     id="newShowVenue"
                     value={newShow.venue}
@@ -1475,7 +1475,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                     id="newShowLocation"
                     value={newShow.location}
                     onChange={(e) => setNewShow({ ...newShow, location: e.target.value })}
-                    placeholder="Ciudad, País"
+                    placeholder="City, Country"
                     className="h-9"
                   />
                 </div>
