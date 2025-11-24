@@ -99,17 +99,18 @@ export function TokenCardVisual({
         </div>
       </div>
 
-      {/* Mini Chart - Center Top */}
-      <div className="absolute top-12 left-1/2 transform -translate-x-1/2 z-10 w-24 h-16 opacity-70">
+      {/* Large Chart - Center Prominent */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-3/4 h-2/3 opacity-80">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
+                <stop offset="5%" stopColor="#f97316" stopOpacity={0.9}/>
+                <stop offset="25%" stopColor="#a855f7" stopOpacity={0.5}/>
                 <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
               </linearGradient>
             </defs>
-            <Area type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2} fill="url(#colorArea)" />
+            <Area type="monotone" dataKey="value" stroke="#f97316" strokeWidth={3} fill="url(#colorArea)" isAnimationActive={true} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
