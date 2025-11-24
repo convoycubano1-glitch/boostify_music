@@ -121,10 +121,14 @@ export const merchandise = pgTable("merchandise", {
   name: text("name").notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  productionCost: decimal("production_cost", { precision: 10, scale: 2 }), // Cost to produce (for commission calculation)
   images: text("images").array().notNull(),
   category: text("category", { enum: ["apparel", "accessories", "music", "other"] }).default("other").notNull(),
   stock: integer("stock").default(0).notNull(),
   isAvailable: boolean("is_available").default(true).notNull(),
+  // Design customization
+  removeBoostifyLogo: boolean("remove_boostify_logo").default(false).notNull(), // PRO/PREMIUM only
+  isCustomDesign: boolean("is_custom_design").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -145,13 +149,26 @@ export const subscriptions = pgTable("subscriptions", {
   isTrial: boolean("is_trial").default(false).notNull(),
   trialEndsAt: timestamp("trial_ends_at"),
   grantedByBundle: text("granted_by_bundle"),
-  // Content limits per plan
+  // Content limits per plan - Videos & Songs
   videosLimit: integer("videos_limit").default(1).notNull(),
   songsLimit: integer("songs_limit").default(2).notNull(),
   videosUsed: integer("videos_used").default(0).notNull(),
   songsUsed: integer("songs_used").default(0).notNull(),
+  // AI Generated Artists
   artistsGeneratedLimit: integer("artists_generated_limit").default(0).notNull(),
   artistsGeneratedUsed: integer("artists_generated_used").default(0).notNull(),
+  // AI Tools & Features Limits
+  aiGenerationLimit: integer("ai_generation_limit").default(0).notNull(), // 0=FREE (required), 10=BASIC, 100=PRO, unlimited=PREMIUM
+  aiGenerationUsed: integer("ai_generation_used").default(0).notNull(),
+  epkLimit: integer("epk_limit").default(0).notNull(), // 0=NONE, 1=BASIC, 5=PRO, unlimited=PREMIUM
+  epkUsed: integer("epk_used").default(0).notNull(),
+  imageGalleriesLimit: integer("image_galleries_limit").default(0).notNull(), // 0=NONE, 1=BASIC, 5=PRO, unlimited=PREMIUM
+  imageGalleriesUsed: integer("image_galleries_used").default(0).notNull(),
+  // Permissions
+  removeBoostifyLogo: boolean("remove_boostify_logo").default(false).notNull(), // PRO & PREMIUM only
+  customizeMerchandise: boolean("customize_merchandise").default(false).notNull(), // PRO & PREMIUM only
+  // Commission info
+  commissionRate: integer("commission_rate").default(5).notNull(), // 5% FREE, 20% BASIC/PRO/PREMIUM
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -185,8 +202,10 @@ export const salesTransactions = pgTable("sales_transactions", {
   merchandiseId: integer("merchandise_id").references(() => merchandise.id),
   productName: text("product_name").notNull(),
   saleAmount: decimal("sale_amount", { precision: 10, scale: 2 }).notNull(), // Precio total de venta
-  artistEarning: decimal("artist_earning", { precision: 10, scale: 2 }).notNull(), // 30% para el artista
-  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(), // 70% para la plataforma
+  productionCost: decimal("production_cost", { precision: 10, scale: 2 }).default('0').notNull(), // Costo de producción
+  artistEarning: decimal("artist_earning", { precision: 10, scale: 2 }).notNull(), // Comisión del artista (5% o 20% después de costos)
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(), // Ganancia de la plataforma
+  commissionRate: integer("commission_rate").default(5).notNull(), // 5% FREE, 20% PAID
   quantity: integer("quantity").default(1).notNull(),
   currency: text("currency").default("usd").notNull(),
   buyerEmail: text("buyer_email"),

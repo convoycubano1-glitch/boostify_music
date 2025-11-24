@@ -31,6 +31,15 @@ interface Subscription {
   songsUsed?: number;
   artistsGeneratedLimit?: number;
   artistsGeneratedUsed?: number;
+  aiGenerationLimit?: number;
+  aiGenerationUsed?: number;
+  epkLimit?: number;
+  epkUsed?: number;
+  imageGalleriesLimit?: number;
+  imageGalleriesUsed?: number;
+  removeBoostifyLogo?: boolean;
+  customizeMerchandise?: boolean;
+  commissionRate?: number;
 }
 
 interface PlanUsage {
@@ -48,6 +57,12 @@ const planConfig = {
     videosLimit: 1,
     songsLimit: 2,
     artistsLimit: 0,
+    aiGenerationLimit: 0, // Obligatorio para FREE (sin stock)
+    epkLimit: 0,
+    imageGalleriesLimit: 0,
+    removeBoostifyLogo: false,
+    customizeMerchandise: false,
+    commissionRate: 5,
     price: 0
   },
   basic: {
@@ -58,6 +73,12 @@ const planConfig = {
     videosLimit: 10,
     songsLimit: 20,
     artistsLimit: 1,
+    aiGenerationLimit: 10,
+    epkLimit: 1,
+    imageGalleriesLimit: 1,
+    removeBoostifyLogo: false,
+    customizeMerchandise: false,
+    commissionRate: 20,
     price: 59.99
   },
   pro: {
@@ -68,6 +89,12 @@ const planConfig = {
     videosLimit: 50,
     songsLimit: 100,
     artistsLimit: 5,
+    aiGenerationLimit: 100,
+    epkLimit: 5,
+    imageGalleriesLimit: 5,
+    removeBoostifyLogo: true,
+    customizeMerchandise: true,
+    commissionRate: 20,
     price: 99.99
   },
   premium: {
@@ -78,47 +105,13 @@ const planConfig = {
     videosLimit: 999,
     songsLimit: 999,
     artistsLimit: 10,
+    aiGenerationLimit: 999,
+    epkLimit: 999,
+    imageGalleriesLimit: 999,
+    removeBoostifyLogo: true,
+    customizeMerchandise: true,
+    commissionRate: 20,
     price: 149.99
-  },
-  essential: {
-    name: "ESSENTIAL",
-    icon: Sparkles,
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/10",
-    videosLimit: 1,
-    songsLimit: 2,
-    artistsLimit: 0,
-    price: 0
-  },
-  gold: {
-    name: "GOLD",
-    icon: Crown,
-    color: "text-yellow-400",
-    bgColor: "bg-yellow-500/10",
-    videosLimit: 2,
-    songsLimit: 5,
-    artistsLimit: 0,
-    price: 0
-  },
-  platinum: {
-    name: "PLATINUM",
-    icon: Gem,
-    color: "text-purple-400",
-    bgColor: "bg-purple-500/10",
-    videosLimit: 4,
-    songsLimit: 10,
-    artistsLimit: 1,
-    price: 0
-  },
-  diamond: {
-    name: "DIAMOND",
-    icon: Gem,
-    color: "text-cyan-400",
-    bgColor: "bg-cyan-500/10",
-    videosLimit: 8,
-    songsLimit: 20,
-    artistsLimit: 3,
-    price: 0
   }
 };
 
@@ -263,6 +256,70 @@ export function SubscriptionCardCompact() {
                     style={{ width: `${Math.min(((subscription?.artistsGeneratedUsed || 0) / (subscription?.artistsGeneratedLimit || 1)) * 100, 100)}%` }}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* AI Generation Tool */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-400">✨ Generación IA</span>
+                <span className="text-white font-medium">{subscription?.aiGenerationUsed || 0}/{subscription?.aiGenerationLimit || 0}</span>
+              </div>
+              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${config.bgColor} transition-all duration-300`}
+                  style={{ width: `${Math.min(((subscription?.aiGenerationUsed || 0) / (subscription?.aiGenerationLimit || 1)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* EPK (Electronic Press Kit) */}
+            {(subscription?.epkLimit || 0) > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">📋 EPK</span>
+                  <span className="text-white font-medium">{subscription?.epkUsed || 0}/{subscription?.epkLimit || 0}</span>
+                </div>
+                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${config.bgColor} transition-all duration-300`}
+                    style={{ width: `${Math.min(((subscription?.epkUsed || 0) / (subscription?.epkLimit || 1)) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Image Galleries */}
+            {(subscription?.imageGalleriesLimit || 0) > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">🖼️ Galerías</span>
+                  <span className="text-white font-medium">{subscription?.imageGalleriesUsed || 0}/{subscription?.imageGalleriesLimit || 0}</span>
+                </div>
+                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${config.bgColor} transition-all duration-300`}
+                    style={{ width: `${Math.min(((subscription?.imageGalleriesUsed || 0) / (subscription?.imageGalleriesLimit || 1)) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Permissions & Features */}
+          <div className="space-y-2 pt-2 border-t border-gray-700">
+            <div className="text-xs font-semibold text-gray-300">Permisos & Características</div>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded ${subscription?.removeBoostifyLogo ? 'bg-green-500' : 'bg-gray-600'}`}></div>
+              <span className="text-xs text-gray-400">Eliminar logo Boostify</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded ${subscription?.customizeMerchandise ? 'bg-green-500' : 'bg-gray-600'}`}></div>
+              <span className="text-xs text-gray-400">Personalizar merchandising</span>
+            </div>
+            {subscription?.commissionRate && (
+              <div className="text-xs text-gray-400 pt-1">
+                💰 Comisión: <span className="text-green-400 font-semibold">{subscription.commissionRate}%</span> por venta
               </div>
             )}
           </div>
