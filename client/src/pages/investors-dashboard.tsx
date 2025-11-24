@@ -311,9 +311,9 @@ function RoadmapTimeline() {
     },
     {
       date: "Junio 2025",
-      title: "Investors Dashboard",
-      description: "Portal para inversores con simulaciones financieras, roadmap y sistema de registro. Inicio de Seed Round ($500K).",
-      stats: "Seed Round abierta",
+      title: "Investors Dashboard + Hito: 1,000 Usuarios Activos",
+      description: "Portal para inversores con simulaciones financieras, roadmap y sistema de registro. Primera meta de crecimiento alcanzada. Expansión del equipo de soporte y optimización de infraestructura.",
+      stats: "1,000 usuarios, $100K MRR, Seed Round abierta",
       status: "completed",
       isKey: true
     },
@@ -340,9 +340,9 @@ function RoadmapTimeline() {
     },
     {
       date: "Enero 2026",
-      title: "Hito: 1,000 Usuarios Activos + Generador de Videos Automáticos",
-      description: "Primera meta de crecimiento alcanzada. Implementación del generador de videos automáticos funcional. Expansión del equipo de soporte y optimización de infraestructura.",
-      stats: "1,000 usuarios, $100K MRR, Videos automáticos operativo",
+      title: "Generador de Videos Automáticos Completo",
+      description: "Implementación completa del generador de videos musicales automáticos. Sistema totalmente operativo e integrado con la plataforma de artistas.",
+      stats: "Videos automáticos 100% funcional",
       status: "upcoming",
       isKey: true
     },
