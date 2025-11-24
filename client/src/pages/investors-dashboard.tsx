@@ -94,15 +94,15 @@ function RevenueSimulationsCalculator() {
   const annualTotal = monthlyTotal * 12;
 
   return (
-    <Card className="p-6 bg-black/30 border-orange-500/20 mb-8">
-      <h5 className="font-bold text-white text-lg mb-6">Revenue Simulations Calculator - Adjust Parameters</h5>
+    <Card className="p-3 sm:p-6 bg-black/30 border-orange-500/20 mb-8">
+      <h5 className="font-bold text-white text-base sm:text-lg mb-4 sm:mb-6">Revenue Simulations Calculator - Adjust Parameters</h5>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
         {/* Active Users Slider */}
-        <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-          <div className="flex justify-between mb-3">
-            <label className="text-sm font-medium text-white">Active Users</label>
-            <span className="text-lg font-bold text-blue-400">{activeUsers.toLocaleString()}</span>
+        <div className="p-3 sm:p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+          <div className="flex justify-between mb-2 sm:mb-3 flex-col sm:flex-row gap-1 sm:gap-0">
+            <label className="text-xs sm:text-sm font-medium text-white">Active Users</label>
+            <span className="text-base sm:text-lg font-bold text-blue-400">{activeUsers.toLocaleString()}</span>
           </div>
           <Slider
             value={[activeUsers]}
@@ -112,14 +112,14 @@ function RevenueSimulationsCalculator() {
             onValueChange={(value) => setActiveUsers(value[0])}
             className="w-full"
           />
-          <p className="text-xs text-white/60 mt-2">Range: 1k - 50k users</p>
+          <p className="text-[10px] sm:text-xs text-white/60 mt-2">Range: 1k - 50k users</p>
         </div>
 
         {/* Video Conversion Rate */}
-        <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
-          <div className="flex justify-between mb-3">
-            <label className="text-sm font-medium text-white">Video Users %</label>
-            <span className="text-lg font-bold text-purple-400">{videoConversion}%</span>
+        <div className="p-3 sm:p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+          <div className="flex justify-between mb-2 sm:mb-3 flex-col sm:flex-row gap-1 sm:gap-0">
+            <label className="text-xs sm:text-sm font-medium text-white">Video Users %</label>
+            <span className="text-base sm:text-lg font-bold text-purple-400">{videoConversion}%</span>
           </div>
           <Slider
             value={[videoConversion]}
@@ -129,14 +129,14 @@ function RevenueSimulationsCalculator() {
             onValueChange={(value) => setVideoConversion(value[0])}
             className="w-full"
           />
-          <p className="text-xs text-white/60 mt-2">% generating videos</p>
+          <p className="text-[10px] sm:text-xs text-white/60 mt-2">% generating videos</p>
         </div>
 
         {/* Blockchain Volume */}
-        <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-          <div className="flex justify-between mb-3">
-            <label className="text-sm font-medium text-white">Blockchain Volume</label>
-            <span className="text-lg font-bold text-green-400">${(blockchainVolume/1000000).toFixed(2)}M</span>
+        <div className="p-3 sm:p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+          <div className="flex justify-between mb-2 sm:mb-3 flex-col sm:flex-row gap-1 sm:gap-0">
+            <label className="text-xs sm:text-sm font-medium text-white">Blockchain Volume</label>
+            <span className="text-base sm:text-lg font-bold text-green-400">${(blockchainVolume/1000000).toFixed(2)}M</span>
           </div>
           <Slider
             value={[blockchainVolume]}
@@ -146,14 +146,14 @@ function RevenueSimulationsCalculator() {
             onValueChange={(value) => setBlockchainVolume(value[0])}
             className="w-full"
           />
-          <p className="text-xs text-white/60 mt-2">Monthly trading volume</p>
+          <p className="text-[10px] sm:text-xs text-white/60 mt-2">Monthly trading volume</p>
         </div>
       </div>
 
       {/* Revenue Breakdown Table */}
-      <div className="bg-black/50 rounded-lg p-6 mb-6 overflow-x-auto">
-        <h6 className="text-white font-bold mb-4">Monthly Revenue by Stream</h6>
-        <table className="w-full text-sm">
+      <div className="bg-black/50 rounded-lg p-3 sm:p-6 mb-4 sm:mb-6 overflow-x-auto">
+        <h6 className="text-xs sm:text-sm text-white font-bold mb-3 sm:mb-4">Monthly Revenue by Stream</h6>
+        <table className="w-full text-[11px] sm:text-sm">
           <thead>
             <tr className="border-b border-white/10">
               <th className="text-left text-white/70 pb-3 font-medium">Revenue Stream</th>
@@ -227,24 +227,24 @@ function RevenueSimulationsCalculator() {
       </div>
 
       {/* Key Metrics Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
-          <p className="text-white/70 text-xs mb-1">Monthly Revenue</p>
-          <p className="text-2xl font-bold text-orange-400">${(monthlyTotal/1000).toFixed(1)}k</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+        <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+          <p className="text-white/70 text-[10px] sm:text-xs mb-1">Monthly Revenue</p>
+          <p className="text-lg sm:text-2xl font-bold text-orange-400">${(monthlyTotal/1000).toFixed(1)}k</p>
         </div>
-        <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-          <p className="text-white/70 text-xs mb-1">Annual Revenue</p>
-          <p className="text-2xl font-bold text-green-400">${(annualTotal/1000000).toFixed(2)}M</p>
+        <div className="p-2 sm:p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+          <p className="text-white/70 text-[10px] sm:text-xs mb-1">Annual Revenue</p>
+          <p className="text-lg sm:text-2xl font-bold text-green-400">${(annualTotal/1000000).toFixed(2)}M</p>
         </div>
-        <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-          <p className="text-white/70 text-xs mb-1">Top Revenue Stream</p>
-          <p className="text-lg font-bold text-blue-400">Subscriptions</p>
-          <p className="text-xs text-white/60">{((calculations.subscriptions.total() / monthlyTotal) * 100).toFixed(0)}% of revenue</p>
+        <div className="p-2 sm:p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+          <p className="text-white/70 text-[10px] sm:text-xs mb-1">Top Revenue Stream</p>
+          <p className="text-base sm:text-lg font-bold text-blue-400">Subscriptions</p>
+          <p className="text-[9px] sm:text-xs text-white/60">{((calculations.subscriptions.total() / monthlyTotal) * 100).toFixed(0)}% of revenue</p>
         </div>
-        <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
-          <p className="text-white/70 text-xs mb-1">Revenue per User</p>
-          <p className="text-2xl font-bold text-purple-400">${(monthlyTotal / activeUsers).toFixed(2)}</p>
-          <p className="text-xs text-white/60">per user/month</p>
+        <div className="p-2 sm:p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+          <p className="text-white/70 text-[10px] sm:text-xs mb-1">Revenue per User</p>
+          <p className="text-lg sm:text-2xl font-bold text-purple-400">${(monthlyTotal / activeUsers).toFixed(2)}</p>
+          <p className="text-[9px] sm:text-xs text-white/60">per user/month</p>
         </div>
       </div>
     </Card>
@@ -334,12 +334,12 @@ function FundAllocationSimulator() {
   const percentageSpent = (spent / totalFunds) * 100;
 
   return (
-    <Card className="p-6 bg-black/30 border-orange-500/20">
-      <h5 className="font-bold text-white text-lg mb-6">Real-Time Fund Allocation Simulator - 100% Transparency</h5>
+    <Card className="p-3 sm:p-6 bg-black/30 border-orange-500/20">
+      <h5 className="font-bold text-white text-base sm:text-lg mb-4 sm:mb-6">Real-Time Fund Allocation Simulator - 100% Transparency</h5>
       
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {/* Left: Animation & Feed */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="md:col-span-2 space-y-3 sm:space-y-4">
           {/* Fund Status Bar */}
           <div className="p-4 bg-white/5 rounded-lg border border-white/10">
             <div className="flex justify-between items-center mb-3">
@@ -356,20 +356,20 @@ function FundAllocationSimulator() {
           </div>
 
           {/* Budget Allocation Grid */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {Object.entries(fundAllocation).map(([key, percentage]) => (
-              <div key={key} className="p-2 bg-white/5 rounded-lg border border-white/10 text-center">
-                <div className="text-xs text-white/60 mb-1">{operationTypes[key as keyof typeof operationTypes].label}</div>
-                <div className="text-sm font-bold text-white">{(percentage * 100).toFixed(0)}%</div>
+              <div key={key} className="p-2 sm:p-3 bg-white/5 rounded-lg border border-white/10 text-center">
+                <div className="text-[10px] sm:text-xs text-white/60 mb-1">{operationTypes[key as keyof typeof operationTypes].label}</div>
+                <div className="text-xs sm:text-sm font-bold text-white">{(percentage * 100).toFixed(0)}%</div>
               </div>
             ))}
           </div>
 
           {/* Controls */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-col sm:flex-row">
             <button
               onClick={() => setIsRunning(!isRunning)}
-              className="flex-1 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center justify-center gap-2 text-sm"
+              className="flex-1 px-2 sm:px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
             >
               {isRunning ? (
                 <>
@@ -389,7 +389,7 @@ function FundAllocationSimulator() {
                 setSpent(0);
                 setIsRunning(false);
               }}
-              className="px-3 py-2 rounded-lg bg-white/10 text-white font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 text-sm"
+              className="px-2 sm:px-3 py-2 rounded-lg bg-white/10 text-white font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm"
             >
               <RotateCcw className="h-4 w-4" />
               Reset
@@ -397,14 +397,14 @@ function FundAllocationSimulator() {
           </div>
 
           {/* Operations Feed */}
-          <div className="max-h-48 overflow-y-auto space-y-1 bg-black/40 rounded-lg p-3 border border-white/10">
+          <div className="max-h-40 sm:max-h-48 overflow-y-auto space-y-1 bg-black/40 rounded-lg p-2 sm:p-3 border border-white/10">
             {operations.length === 0 ? (
-              <div className="text-center py-6 text-white/40 text-xs">Click Start to begin simulation</div>
+              <div className="text-center py-4 sm:py-6 text-white/40 text-[10px] sm:text-xs">Click Start to begin simulation</div>
             ) : (
               operations.map((op) => (
                 <div
                   key={op.id}
-                  className={`p-2 rounded text-xs border-l-2 bg-black/60 animate-pulse`}
+                  className={`p-1.5 sm:p-2 rounded text-[10px] sm:text-xs border-l-2 bg-black/60 animate-pulse`}
                   style={{
                     borderLeftColor: op.type === 'marketing' ? '#3b82f6' : 
                                    op.type === 'development' ? '#a855f7' :
@@ -412,11 +412,11 @@ function FundAllocationSimulator() {
                   }}
                 >
                   <div className="flex justify-between items-start">
-                    <div>
-                      <div className="text-white font-semibold">{op.description}</div>
-                      <div className="text-white/50">{operationTypes[op.type as keyof typeof operationTypes].label}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-white font-semibold truncate">{op.description}</div>
+                      <div className="text-white/50 text-[9px] sm:text-[10px]">{operationTypes[op.type as keyof typeof operationTypes].label}</div>
                     </div>
-                    <div className="text-orange-400 font-bold">-${op.amount.toLocaleString()}</div>
+                    <div className="text-orange-400 font-bold flex-shrink-0 ml-1">-${op.amount.toLocaleString()}</div>
                   </div>
                 </div>
               ))
@@ -425,20 +425,20 @@ function FundAllocationSimulator() {
         </div>
 
         {/* Right: Summary */}
-        <div className="space-y-3">
-          <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-lg border border-green-500/20">
+        <div className="space-y-2 sm:space-y-3">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-lg border border-green-500/20">
             <div className="text-white/70 text-xs mb-1">Remaining Budget</div>
-            <div className="text-2xl font-bold text-green-400">${(remaining).toLocaleString()}</div>
-            <div className="text-xs text-white/50 mt-1">{((remaining/totalFunds)*100).toFixed(1)}% available</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-400">${(remaining).toLocaleString()}</div>
+            <div className="text-[10px] sm:text-xs text-white/50 mt-1">{((remaining/totalFunds)*100).toFixed(1)}% available</div>
           </div>
 
-          <div className="p-4 bg-gradient-to-br from-orange-500/10 to-red-600/5 rounded-lg border border-orange-500/20">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-orange-500/10 to-red-600/5 rounded-lg border border-orange-500/20">
             <div className="text-white/70 text-xs mb-1">Total Spent</div>
-            <div className="text-2xl font-bold text-orange-400">${(spent).toLocaleString()}</div>
-            <div className="text-xs text-white/50 mt-1">{percentageSpent.toFixed(1)}% of budget</div>
+            <div className="text-xl sm:text-2xl font-bold text-orange-400">${(spent).toLocaleString()}</div>
+            <div className="text-[10px] sm:text-xs text-white/50 mt-1">{percentageSpent.toFixed(1)}% of budget</div>
           </div>
 
-          <div className="p-4 bg-black/40 rounded-lg border border-white/10">
+          <div className="p-3 sm:p-4 bg-black/40 rounded-lg border border-white/10">
             <h6 className="text-xs font-bold text-white mb-3">Allocation %</h6>
             <div className="space-y-2">
               {Object.entries(fundAllocation).map(([key, percentage]) => (
@@ -458,12 +458,12 @@ function FundAllocationSimulator() {
             </div>
           </div>
 
-          <div className="p-3 bg-gradient-to-br from-blue-500/10 to-cyan-600/5 rounded-lg border border-blue-500/20">
-            <div className="flex items-center gap-2 text-xs">
+          <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500/10 to-cyan-600/5 rounded-lg border border-blue-500/20">
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-white/70">100% Transparent</span>
             </div>
-            <p className="text-xs text-white/50 mt-1">All operations tracked real-time</p>
+            <p className="text-[10px] sm:text-xs text-white/50 mt-1">All operations tracked real-time</p>
           </div>
         </div>
       </div>
@@ -2153,14 +2153,14 @@ export default function InvestorsDashboard() {
                     </div>
                     
                     <div>
-                      <h4 className="text-sm sm:text-base font-medium mb-3 sm:mb-4 text-white">Projected Revenue Growth</h4>
-                      <div className="h-64 bg-black/30 rounded-lg p-4 overflow-hidden relative">
+                      <h4 className="text-xs sm:text-base font-medium mb-2 sm:mb-4 text-white">Projected Revenue Growth</h4>
+                      <div className="h-48 sm:h-64 bg-black/30 rounded-lg p-2 sm:p-4 overflow-hidden relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-green-500/10 rounded-lg"></div>
                         <div className="relative z-10 h-full flex flex-col">
-                          <div className="flex justify-between items-center mb-3">
-                            <span className="text-xs text-white/70">Revenue ($ millions)</span>
+                          <div className="flex justify-between items-center mb-2 sm:mb-3 flex-col sm:flex-row gap-1 sm:gap-2">
+                            <span className="text-[10px] sm:text-xs text-white/70">Revenue ($ millions)</span>
                             <div className="flex space-x-2">
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-200">Monthly Revenue</span>
+                              <span className="text-[9px] sm:text-xs px-1.5 py-0.5 rounded bg-green-500/20 text-green-200">Monthly Revenue</span>
                             </div>
                           </div>
                           
@@ -2212,16 +2212,16 @@ export default function InvestorsDashboard() {
                             </svg>
                           </div>
                           
-                          <div className="flex justify-between mt-2 text-[7px] text-white/50 px-1">
+                          <div className="flex justify-between mt-1 sm:mt-2 text-[6px] sm:text-[7px] text-white/50 px-0.5 sm:px-1">
                             {["Jan '26", "Mar", "May", "Jul", "Sep", "Nov", "Jan '27", "Mar", "May", "Jul", "Sep", "Nov", "Dec '28"].map((month, i) => (
                               <span key={i}>{month}</span>
                             ))}
                           </div>
                           
-                          <div className="mt-2 pt-2 border-t border-white/10">
+                          <div className="mt-1 sm:mt-2 pt-1 sm:pt-2 border-t border-white/10">
                             <div className="flex justify-between">
-                              <span className="text-xs text-white/70">$0.8M Jan '26</span>
-                              <span className="text-xs text-white/70">$45M Dec '28</span>
+                              <span className="text-[10px] sm:text-xs text-white/70">$0.8M Jan '26</span>
+                              <span className="text-[10px] sm:text-xs text-white/70">$45M Dec '28</span>
                             </div>
                           </div>
                         </div>
@@ -2230,7 +2230,7 @@ export default function InvestorsDashboard() {
                   </div>
 
                   {/* Interactive Revenue Simulations Calculator & Fund Simulator */}
-                  <div className="mt-8 grid lg:grid-cols-2 gap-8">
+                  <div className="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                     <div>
                       <RevenueSimulationsCalculator />
                     </div>
