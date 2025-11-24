@@ -14,6 +14,7 @@ import { useToast } from "../hooks/use-toast";
 import { useAuth } from "../hooks/use-auth";
 import { Header } from "../components/layout/header";
 import { apiRequest, queryClient } from "../lib/queryClient";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import {
   Rocket,
   Radio,
@@ -106,7 +107,7 @@ const GENRES = [
 
 export default function PRPage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, userSubscription } = useAuth();
   const [activeView, setActiveView] = useState<"list" | "wizard" | "campaign">("list");
   const [wizardStep, setWizardStep] = useState(1);
   const [selectedCampaign, setSelectedCampaign] = useState<number | null>(null);
@@ -391,10 +392,15 @@ export default function PRPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <PlanTierGuard 
+      requiredPlan="premium" 
+      userSubscription={userSubscription} 
+      featureName="PR Management Tools"
+    >
+      <div className="min-h-screen bg-background">
+        <Header />
+        
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
         {activeView === "list" && (
           <>
             <div 
