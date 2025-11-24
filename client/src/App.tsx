@@ -389,7 +389,7 @@ const Router = () => {
           {getRouteComponent("/ai-advisors", WrappedAIAdvisorsPage, 'premium')}
           {getRouteComponent("/artist-generator", WrappedArtistGeneratorPage, 'premium')}
           {getRouteComponent("/ecosystem", WrappedEcosystemPage, 'premium')}
-          {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, 'premium')}
+          {getRouteComponent("/investors-dashboard", WrappedInvestorsDashboard, null)}
           {getRouteComponent("/affiliates", WrappedAffiliatesPage, 'free')}
           {getRouteComponent("/affiliates-new", WrappedAffiliatesNewPage, 'free')}
           {getRouteComponent("/init-products", WrappedInitProductsPage, 'free')}
