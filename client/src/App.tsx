@@ -357,7 +357,7 @@ const Router = () => {
           {getRouteComponent("/videos", WrappedVideosPage, 'basic')}
           {getRouteComponent("/blog", WrappedBlogPage, 'basic')}
           {getRouteComponent("/store", WrappedStorePage, 'free')}
-          {getRouteComponent("/education", WrappedEducationPage, 'basic')}
+          {getRouteComponent("/education", WrappedEducationPage, 'free')}
           {getRouteComponent("/course/:id", WrappedCourseDetailPage, 'basic')}
           {getRouteComponent("/social-network", WrappedSocialNetworkPage, 'basic')}
           {getRouteComponent("/firestore-social", WrappedFirestoreSocialPage, 'basic')}
