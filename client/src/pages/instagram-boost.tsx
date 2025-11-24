@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/use-auth";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import { useToast } from "../hooks/use-toast";
 import { motion } from "framer-motion";
 import { SiInstagram } from "react-icons/si";
@@ -61,7 +62,7 @@ import {
 } from "lucide-react";
 
 export default function InstagramBoostPage() {
-  const { user } = useAuth();
+  const { user, userSubscription } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("ai-tools");
   const [aiToolTab, setAiToolTab] = useState("captions");
@@ -561,6 +562,11 @@ export default function InstagramBoostPage() {
 
             {/* AI Tools Tab - Contains all 5 AI Tools - FIRST AND MOST VISIBLE */}
             <TabsContent value="ai-tools">
+              <PlanTierGuard 
+                requiredPlan="basic" 
+                userSubscription={userSubscription} 
+                featureName="AI Tools"
+              >
               <div className="mb-6">
                 <h2 className="text-2xl font-bold mb-2">AI-Powered Instagram Tools</h2>
                 <p className="text-muted-foreground">Generate professional content with our advanced AI assistants</p>
@@ -590,8 +596,8 @@ export default function InstagramBoostPage() {
                   </TabsTrigger>
                 </TabsList>
 
-            {/* Caption Generator */}
-            <TabsContent value="captions" className="space-y-6">
+                {/* Caption Generator - BASIC */}
+                <TabsContent value="captions" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <Card className="p-6">
                   <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -966,10 +972,16 @@ export default function InstagramBoostPage() {
               </div>
             </TabsContent>
               </Tabs>
+              </PlanTierGuard>
             </TabsContent>
 
-            {/* Community Tab - Restructured */}
+            {/* Community Tab - PRO */}
             <TabsContent value="community" className="space-y-6">
+              <PlanTierGuard 
+                requiredPlan="pro" 
+                userSubscription={userSubscription} 
+                featureName="Community Tools"
+              >
               {/* Quick Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[
@@ -1124,10 +1136,16 @@ export default function InstagramBoostPage() {
                   </div>
                 </Card>
               </div>
+              </PlanTierGuard>
             </TabsContent>
 
-            {/* Influencers Tab - Restructured */}
+            {/* Influencers Tab - PREMIUM */}
             <TabsContent value="influencers" className="space-y-6">
+              <PlanTierGuard 
+                requiredPlan="premium" 
+                userSubscription={userSubscription} 
+                featureName="Influencer Tools"
+              >
               {/* Search and Filters */}
               <Card className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -1310,10 +1328,16 @@ export default function InstagramBoostPage() {
                   </Card>
                 </div>
               </div>
+              </PlanTierGuard>
             </TabsContent>
 
-            {/* Strategies Tab - Restructured */}
+            {/* Strategies Tab - PREMIUM */}
             <TabsContent value="strategies" className="space-y-6">
+              <PlanTierGuard 
+                requiredPlan="premium" 
+                userSubscription={userSubscription} 
+                featureName="Strategy Tools"
+              >
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Content Mix Strategy */}
                 <Card className="p-6">
@@ -1493,10 +1517,16 @@ export default function InstagramBoostPage() {
                   </div>
                 </div>
               </Card>
+              </PlanTierGuard>
             </TabsContent>
 
-            {/* Reports Tab - Restructured */}
+            {/* Reports Tab - PREMIUM */}
             <TabsContent value="reports" className="space-y-6">
+              <PlanTierGuard 
+                requiredPlan="premium" 
+                userSubscription={userSubscription} 
+                featureName="Analytics Reports"
+              >
               {/* Date Range Selector */}
               <Card className="p-4">
                 <div className="flex items-center justify-between">
