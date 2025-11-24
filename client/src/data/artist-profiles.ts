@@ -41,7 +41,6 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2020,
     fans: 2500000,
     streams: 450000000,
-    bannerImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=400&fit=crop",
     investmentPotential: "Very High",
     roi: 145,
     roadmap: [
@@ -109,7 +108,6 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2018,
     fans: 3800000,
     streams: 720000000,
-    bannerImage: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&h=400&fit=crop",
     investmentPotential: "Very High",
     roi: 165,
     roadmap: [
@@ -139,7 +137,6 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2019,
     fans: 4200000,
     streams: 890000000,
-    bannerImage: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&h=400&fit=crop",
     investmentPotential: "Exceptional",
     roi: 187,
     roadmap: [
@@ -169,7 +166,6 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2017,
     fans: 2800000,
     streams: 560000000,
-    bannerImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=400&fit=crop",
     investmentPotential: "Very High",
     roi: 98,
     roadmap: [
@@ -233,7 +229,6 @@ export const artistProfiles: Record<number, ArtistProfile> = {
     founded: 2019,
     fans: 1200000,
     streams: 280000000,
-    bannerImage: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=1200&h=400&fit=crop",
     investmentPotential: "High",
     roi: 76,
     roadmap: [
