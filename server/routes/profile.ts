@@ -419,6 +419,7 @@ router.post('/profile/:artistId/layout', authenticate, async (req: Request, res:
   try {
     const artistId = parseInt(req.params.artistId);
     const userId = req.user!.id;
+    const firebaseUid = req.user!.uid;
     
     // Verify ownership
     const [artist] = await db
@@ -427,13 +428,21 @@ router.post('/profile/:artistId/layout', authenticate, async (req: Request, res:
       .where(eq(users.id, artistId))
       .limit(1);
       
-    if (!artist || artist.generatedBy !== userId) {
+    if (!artist) {
+      return res.status(404).json({ message: 'Artist not found' });
+    }
+    
+    // Allow if: (1) user created this artist via AI, or (2) it's the user's own profile (firestoreId matches)
+    const isOwner = artist.generatedBy === userId || artist.firestoreId === firebaseUid;
+    
+    if (!isOwner) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
     
     const layoutSchema = z.object({
       order: z.array(z.string()),
-      visibility: z.record(z.boolean())
+      visibility: z.record(z.boolean()),
+      expanded: z.record(z.boolean()).optional()
     });
     
     const layout = layoutSchema.parse(req.body);
