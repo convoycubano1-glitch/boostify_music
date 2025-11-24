@@ -701,13 +701,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     'songs': { name: 'Music', icon: Music, isOwnerOnly: false },
     'videos': { name: 'Videos', icon: VideoIcon, isOwnerOnly: false },
     'news': { name: 'News', icon: Newspaper, isOwnerOnly: false },
-    'social-posts': { name: 'Posts Social Media', icon: Share2, isOwnerOnly: false },
-    'social-hub': { name: 'Social Media', icon: Share2, isOwnerOnly: false },
+    'social-posts': { name: 'Social Posts', icon: Share2, isOwnerOnly: false },
+    'social-hub': { name: 'Social Hub', icon: Share2, isOwnerOnly: false },
     'merchandise': { name: 'Merchandise', icon: ShoppingBag, isOwnerOnly: false },
-    'galleries': { name: 'Galleries de Imágenes', icon: Image, isOwnerOnly: false },
+    'galleries': { name: 'Image Galleries', icon: Image, isOwnerOnly: false },
     'tokenization': { name: 'Song Tokenization', icon: Coins, isOwnerOnly: true },
     'monetize-cta': { name: 'Monetize Your Talent', icon: Sparkles, isOwnerOnly: false },
-    'analytics': { name: 'Analytics', icon: TrendingUp, isOwnerOnly: false },
+    'analytics': { name: 'Activity Analytics', icon: TrendingUp, isOwnerOnly: false },
     'earnings': { name: 'Earnings', icon: DollarSign, isOwnerOnly: true },
     'crowdfunding': { name: 'Crowdfunding', icon: Target, isOwnerOnly: true },
   };
@@ -3721,7 +3721,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                   <ChevronRight className="h-5 w-5" />
                                 )}
                                 <DollarSign className="h-5 w-5" />
-                                {t('profile.earnings.title')}
+                                Earnings
                               </div>
                             </button>
 
@@ -3745,7 +3745,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                   <ChevronRight className="h-5 w-5" />
                                 )}
                                 <Target className="h-5 w-5" />
-                                Crowdfunding
+                                Crowdfunding Campaign
                               </div>
                             </button>
 
