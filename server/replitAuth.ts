@@ -167,11 +167,11 @@ export async function setupAuth(app: Express) {
     cb(null, user);
   });
 
-  // Login route
+  // Login route - Direct to Replit Auth without consent page
   app.get("/api/login", (req, res, next) => {
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
+      prompt: "login",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });

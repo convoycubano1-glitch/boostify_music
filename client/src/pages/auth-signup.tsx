@@ -115,37 +115,37 @@ export default function AuthSignupPage() {
   const { toast } = useToast();
 
   const handleSignUp = async (planName?: string, priceId?: string | null) => {
-    if (!planName) {
-      // Login directo sin plan seleccionado
-      window.location.href = "/api/login";
-      return;
-    }
-
-    setProcessingPlan(planName);
+    setProcessingPlan(planName || "login");
 
     try {
-      // Guardar el plan seleccionado y el priceId en localStorage
-      const planData = {
-        planName,
-        priceId: priceId || null,
-        timestamp: Date.now()
-      };
-      localStorage.setItem("selectedPlan", JSON.stringify(planData));
+      // Si hay plan seleccionado, guardar en localStorage
+      if (planName) {
+        const planData = {
+          planName,
+          priceId: priceId || null,
+          timestamp: Date.now()
+        };
+        localStorage.setItem("selectedPlan", JSON.stringify(planData));
 
-      // Mostrar mensaje apropiado
-      if (!priceId || planName === "Free") {
-        toast({
-          title: "¡Bienvenido!",
-          description: `Iniciando sesión con plan ${planName}...`,
-        });
+        if (!priceId || planName === "Free") {
+          toast({
+            title: "¡Bienvenido!",
+            description: `Iniciando sesión con plan ${planName}...`,
+          });
+        } else {
+          toast({
+            title: "Procesando suscripción",
+            description: `Por favor completa tu suscripción al plan ${planName}.`,
+          });
+        }
       } else {
         toast({
-          title: "Procesando suscripción",
-          description: `Por favor inicia sesión para completar tu suscripción al plan ${planName}.`,
+          title: "Iniciando sesión",
+          description: "Conectando con Replit...",
         });
       }
 
-      // Redirigir al login - después del login exitoso se procesará el plan
+      // Redirigir directamente a Replit Auth (sin página de consentimiento)
       window.location.href = "/api/login";
     } catch (error) {
       logger.error("Error al procesar signup:", error);
