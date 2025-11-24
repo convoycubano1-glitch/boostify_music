@@ -232,7 +232,7 @@ export function SubscriptionCardCompact() {
             {/* Songs */}
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-400">🎵 Canciones</span>
+                <span className="text-gray-400">🎵 Songs</span>
                 <span className="text-white font-medium">{subscription?.songsUsed || 0}/{subscription?.songsLimit || 0}</span>
               </div>
               <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
@@ -247,7 +247,7 @@ export function SubscriptionCardCompact() {
             {(subscription?.artistsGeneratedLimit || 0) > 0 && (
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">🤖 Artistas IA</span>
+                  <span className="text-gray-400">🤖 AI Artists</span>
                   <span className="text-white font-medium">{subscription?.artistsGeneratedUsed || 0}/{subscription?.artistsGeneratedLimit || 0}</span>
                 </div>
                 <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
@@ -262,7 +262,7 @@ export function SubscriptionCardCompact() {
             {/* AI Generation Tool */}
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-400">✨ Generación IA</span>
+                <span className="text-gray-400">✨ AI Generation</span>
                 <span className="text-white font-medium">{subscription?.aiGenerationUsed || 0}/{subscription?.aiGenerationLimit || 0}</span>
               </div>
               <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
@@ -293,7 +293,7 @@ export function SubscriptionCardCompact() {
             {(subscription?.imageGalleriesLimit || 0) > 0 && (
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">🖼️ Galerías</span>
+                  <span className="text-gray-400">🖼️ Galleries</span>
                   <span className="text-white font-medium">{subscription?.imageGalleriesUsed || 0}/{subscription?.imageGalleriesLimit || 0}</span>
                 </div>
                 <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
@@ -308,23 +308,23 @@ export function SubscriptionCardCompact() {
 
           {/* Permissions & Features */}
           <div className="space-y-2 pt-2 border-t border-gray-700">
-            <div className="text-xs font-semibold text-gray-300">Permisos & Características</div>
+            <div className="text-xs font-semibold text-gray-300">Permissions Permisos & Características Features</div>
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded ${subscription?.removeBoostifyLogo ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-xs text-gray-400">Eliminar logo Boostify</span>
+              <span className="text-xs text-gray-400">Remove Boostify Logo</span>
             </div>
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded ${subscription?.customizeMerchandise ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-              <span className="text-xs text-gray-400">Personalizar merchandising</span>
+              <span className="text-xs text-gray-400">Customize Merchandise</span>
             </div>
             {subscription?.commissionRate && (
               <div className="text-xs text-gray-400 pt-1">
-                💰 Comisión: <span className="text-green-400 font-semibold">{subscription.commissionRate}%</span> por venta
+                💰 Commission: <span className="text-green-400 font-semibold">{subscription.commissionRate}%</span> per sale
               </div>
             )}
           </div>
 
-          {/* Fecha de renovación */}
+          {/* Renewal Date */}
           {subscription.currentPeriodEnd && (
             <div className="flex items-center gap-2 text-xs text-gray-400 p-2 bg-gray-800/30 rounded">
               <Calendar className="h-3 w-3" />

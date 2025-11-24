@@ -134,8 +134,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   const handleAddShow = async () => {
     if (!newShow.venue.trim() || !newShow.date || !newShow.location.trim()) {
       toast({
-        title: "Campos requeridos",
-        description: "Por favor completa venue, fecha y ubicación.",
+        title: "Required Fields",
+        description: "Please complete venue, date and location.",
         variant: "destructive",
       });
       return;
@@ -154,8 +154,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       });
 
       toast({
-        title: "Show agregado",
-        description: "El show se agregó correctamente.",
+        title: "Show Added",
+        description: "Show was added successfully.",
       });
 
       setNewShow({ venue: '', date: '', location: '', ticketUrl: '' });
@@ -164,7 +164,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.error("Error adding show:", error);
       toast({
         title: "Error",
-        description: "No se pudo agregar el show.",
+        description: "Could not add show.",
         variant: "destructive",
       });
     } finally {
@@ -178,8 +178,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       await deleteDoc(showDoc);
       
       toast({
-        title: "Show eliminado",
-        description: "El show se eliminó correctamente.",
+        title: "Show Deleted",
+        description: "Show was deleted successfully.",
       });
 
       await loadShows();
@@ -187,7 +187,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.error("Error deleting show:", error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el show.",
+        description: "Could not delete show.",
         variant: "destructive",
       });
     }
@@ -201,8 +201,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     
     if (aiLimit > 0 && aiUsed >= aiLimit) {
       toast({
-        title: "Límite Alcanzado",
-        description: `Ya has usado tus ${aiLimit} generaciones este mes. Upgrade tu plan para más.`,
+        title: "Limit Reached",
+        description: `You have used your ${aiLimit} generations this month. Upgrade your plan for more.`,
         variant: "destructive",
       });
       return false;
@@ -218,8 +218,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     
     if (epkLimit === 0) {
       toast({
-        title: "Herramienta Bloqueada",
-        description: "EPK está disponible solo para planes BASIC, PRO y PREMIUM.",
+        title: "Tool Locked",
+        description: "EPK is available only for BASIC, PRO and PREMIUM plans.",
         variant: "destructive",
       });
       return false;
@@ -227,7 +227,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     
     if (epkUsed >= epkLimit) {
       toast({
-        title: "Límite Alcanzado",
+        title: "Limit Reached",
         description: `Ya has creado ${epkLimit} EPK${epkLimit !== 1 ? 's' : ''}. Upgrade tu plan para más.`,
         variant: "destructive",
       });
@@ -244,8 +244,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     
     if (galleriesLimit === 0) {
       toast({
-        title: "Herramienta Bloqueada",
-        description: "Galerías de Imágenes está disponible solo para planes BASIC, PRO y PREMIUM.",
+        title: "Tool Locked",
+        description: "Image Galleries is available only for BASIC, PRO and PREMIUM plans.",
         variant: "destructive",
       });
       return false;
@@ -253,7 +253,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     
     if (galleriesUsed >= galleriesLimit) {
       toast({
-        title: "Límite Alcanzado",
+        title: "Limit Reached",
         description: `Ya has creado ${galleriesLimit} galería${galleriesLimit !== 1 ? 's' : ''}. Upgrade tu plan para más.`,
         variant: "destructive",
       });
@@ -266,7 +266,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     if (!formData.displayName) {
       toast({
         title: "Error",
-        description: "Por favor ingresa tu nombre artístico primero.",
+        description: "Please enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -370,14 +370,14 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       }
 
       toast({
-        title: "¡Productos generados!",
-        description: `Se han creado ${productTypes.length} productos con imágenes únicas.`,
+        title: "Products Generated!",
+        description: `products with unique images have been created.`,
       });
     } catch (error) {
       logger.error("Error generating products:", error);
       toast({
         title: "Error",
-        description: "No se pudieron generar los productos. Intenta de nuevo.",
+        description: "Could not generate products. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -389,7 +389,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     if (!formData.displayName) {
       toast({
         title: "Error",
-        description: "Por favor ingresa tu nombre artístico primero.",
+        description: "Please enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -412,8 +412,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
 
       if (result.success) {
         toast({
-          title: "¡Noticias generadas!",
-          description: `Se han creado ${result.count} noticias con imágenes únicas.`,
+          title: "News Generated!",
+          description: `news items with unique images have been created.`,
         });
         
         onUpdate();
@@ -424,7 +424,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.error("Error generating news:", error);
       toast({
         title: "Error",
-        description: "No se pudieron generar las noticias. Intenta de nuevo.",
+        description: "Could not generate news. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -463,8 +463,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
 
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Archivo inválido",
-        description: "Por favor selecciona una imagen.",
+        title: "Invalid File",
+        description: "Please select an image.",
         variant: "destructive",
       });
       return;
@@ -479,14 +479,14 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       
       setReferenceImage(downloadURL);
       toast({
-        title: "Imagen cargada",
-        description: "Ahora puedes generar tu perfil y banner con esta imagen de referencia.",
+        title: "Image Uploaded",
+        description: "Now you can generate tu perfil y banner con esta imagen de referencia.",
       });
     } catch (error) {
       logger.error("Error uploading reference image:", error);
       toast({
         title: "Error",
-        description: "No se pudo cargar la imagen de referencia.",
+        description: "Could not load reference image.",
         variant: "destructive",
       });
     } finally {
@@ -501,8 +501,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
 
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Archivo inválido",
-        description: "Por favor selecciona una imagen (JPG, PNG, etc.).",
+        title: "Invalid File",
+        description: "Please select an image (JPG, PNG, etc.).",
         variant: "destructive",
       });
       return;
@@ -517,14 +517,14 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       
       handleChange("profileImage", downloadURL);
       toast({
-        title: "Imagen de perfil cargada",
-        description: "Tu imagen de perfil ha sido subida exitosamente.",
+        title: "Profile image uploaded",
+        description: "Your profile image has been uploaded successfully.",
       });
     } catch (error) {
       logger.error("Error uploading profile image:", error);
       toast({
         title: "Error",
-        description: "No se pudo cargar la imagen de perfil.",
+        description: "Could not upload profile image.",
         variant: "destructive",
       });
     } finally {
@@ -539,8 +539,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
 
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
       toast({
-        title: "Archivo inválido",
-        description: "Por favor selecciona una imagen (JPG, PNG, etc.) o un video (MP4, WebM, etc.).",
+        title: "Invalid File",
+        description: "Please select an image (JPG, PNG, etc.) o un video (MP4, WebM, etc.).",
         variant: "destructive",
       });
       return;
@@ -567,16 +567,16 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       handleChange("bannerImage", downloadURL);
       const fileType = file.type.startsWith('image/') ? 'imagen' : 'video';
       toast({
-        title: `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} de banner cargada`,
+        title: `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} of banner uploada`,
         description: isMovFile 
           ? `Tu ${fileType} fue subido, pero puede no funcionar en todos los navegadores. Considera usar .MP4 en su lugar.`
-          : `Tu ${fileType} de banner ha sido subida exitosamente.`,
+          : `Your banner has been uploaded successfully.`,
       });
     } catch (error) {
       logger.error("Error uploading banner media:", error);
       toast({
         title: "Error",
-        description: "No se pudo cargar el archivo de banner.",
+        description: "Could not upload banner file.",
         variant: "destructive",
       });
     } finally {
@@ -587,8 +587,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   const handleGenerateBiography = async () => {
     if (!formData.displayName) {
       toast({
-        title: "Nombre requerido",
-        description: "Debes ingresar tu nombre artístico primero.",
+        title: "Name Required",
+        description: "You must enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -610,15 +610,15 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       const data = await response.json();
 
       if (data.success && data.biography) {
-        logger.info('✅ Biografía generada exitosamente:', data.biography);
+        logger.info('✅ Biography generada exitosamente:', data.biography);
         // Actualizar el estado directamente
         setFormData(prev => ({
           ...prev,
           biography: data.biography
         }));
         toast({
-          title: "Biografía generada",
-          description: "Tu biografía ha sido generada automáticamente con IA.",
+          title: "Biography generada",
+          description: "Your biography has been automatically generated with AI.",
         });
       } else {
         throw new Error(data.error || 'Failed to generate biography');
@@ -627,7 +627,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.error("Error generating biography:", error);
       toast({
         title: "Error",
-        description: "No se pudo generar la biografía. Intenta de nuevo.",
+        description: "Could not generate biography. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -638,8 +638,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   const handleGenerateAlbum = async () => {
     if (!formData.displayName) {
       toast({
-        title: "Nombre requerido",
-        description: "Debes ingresar tu nombre artístico primero.",
+        title: "Name Required",
+        description: "You must enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -661,10 +661,10 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       const data = await response.json();
 
       if (data.success) {
-        logger.info('✅ Álbum generado exitosamente');
+        logger.info('✅ Album Generated exitosamente');
         toast({
-          title: "Álbum generado",
-          description: "Se han creado 3 canciones con audio. Puedes verlas en la sección de Música de tu perfil.",
+          title: "Album Generated",
+          description: "3 songs with audio have been created. You can view them in your profile Music section.",
         });
       } else {
         throw new Error(data.message || 'Failed to generate album');
@@ -673,7 +673,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.error("Error generating album:", error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo generar el álbum. Intenta de nuevo.",
+        description: error.message || "Could not generate album. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -684,8 +684,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   const handleGenerateProfileImage = async () => {
     if (!formData.displayName) {
       toast({
-        title: "Nombre requerido",
-        description: "Debes ingresar tu nombre artístico primero.",
+        title: "Name Required",
+        description: "You must enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -708,7 +708,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       const data = await response.json();
 
       if (data.success && data.imageUrl) {
-        logger.info('✅ Imagen de perfil generada exitosamente');
+        logger.info('✅ Profile Image Generated exitosamente');
         logger.info('🖼️ Nueva URL de imagen de perfil:', data.imageUrl.substring(0, 100));
         // Actualizar el estado directamente y forzar re-render
         setFormData(prev => {
@@ -724,8 +724,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
           return newKey;
         });
         toast({
-          title: "Imagen de perfil generada",
-          description: "Tu imagen de perfil ha sido generada con IA.",
+          title: "Profile Image Generated",
+          description: "Your profile image has been generated with AI.",
         });
       } else {
         throw new Error(data.error || 'Failed to generate profile image');
@@ -734,7 +734,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.error("Error generating profile image:", error);
       toast({
         title: "Error",
-        description: "No se pudo generar la imagen de perfil. Intenta de nuevo.",
+        description: "Could not generate profile image. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -745,8 +745,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
   const handleGenerateBannerImage = async () => {
     if (!formData.displayName) {
       toast({
-        title: "Nombre requerido",
-        description: "Debes ingresar tu nombre artístico primero.",
+        title: "Name Required",
+        description: "You must enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -790,8 +790,8 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
           return newKey;
         });
         toast({
-          title: "Imagen de banner generada",
-          description: "Tu imagen de banner ha sido generada con IA.",
+          title: "Banner Image Generated",
+          description: "Your banner image has been generated with AI.",
         });
       } else {
         throw new Error(data.error || 'Failed to generate banner image');
@@ -800,7 +800,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       logger.error("Error generating banner image:", error);
       toast({
         title: "Error",
-        description: "No se pudo generar la imagen de banner. Intenta de nuevo.",
+        description: "Could not generate banner image. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -841,7 +841,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
     if (!artistId) {
       toast({
         title: "Error",
-        description: "ID de artista no válido.",
+        description: "Invalid artist ID.",
         variant: "destructive",
       });
       return;
@@ -881,10 +881,10 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Error al actualizar perfil');
+        throw new Error(data.error || 'Error updating profile');
       }
 
-      logger.info('✅ Perfil actualizado exitosamente en PostgreSQL y Firebase');
+      logger.info('✅ Profile updated successfully en PostgreSQL y Firebase');
 
       // Invalidar TODAS las queryKeys relevantes para forzar actualización en el UI
       const numericId = parseInt(artistId);
@@ -971,14 +971,14 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="rounded-full border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
           <Edit2 className="mr-2 h-4 w-4" />
-          Editar Perfil
+          Edit Profile
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar Perfil de Artista</DialogTitle>
+          <DialogTitle>Edit Artist Profile</DialogTitle>
           <DialogDescription>
-            Actualiza tu información y genera contenido profesional con IA
+            Update your information and generate professional content with AI
           </DialogDescription>
         </DialogHeader>
 
@@ -1019,7 +1019,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               {referenceImage && (
                 <div className="flex items-center gap-2">
                   <ImageIcon className="h-4 w-4 text-green-500" />
-                  <span className="text-xs text-green-500">Imagen cargada ✓</span>
+                  <span className="text-xs text-green-500">Image Uploaded ✓</span>
                 </div>
               )}
             </div>
@@ -1028,9 +1028,9 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             )}
           </div>
 
-          {/* Nombre Artístico */}
+          {/* Artist Name */}
           <div className="space-y-2">
-            <Label htmlFor="displayName">Nombre Artístico *</Label>
+            <Label htmlFor="displayName">Artist Name *</Label>
             <Input
               id="displayName"
               value={formData.displayName}
@@ -1064,10 +1064,10 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             )}
           </div>
 
-          {/* Biografía con botón de generar */}
+          {/* Biography con botón de generar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="biography">Biografía</Label>
+              <Label htmlFor="biography">Biography</Label>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -1119,10 +1119,10 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             />
           </div>
 
-          {/* Género y Ubicación */}
+          {/* Género y Location */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="genre">Género Musical</Label>
+              <Label htmlFor="genre">Music Genre</Label>
               <Input
                 id="genre"
                 value={formData.genre}
@@ -1132,7 +1132,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Ubicación</Label>
+              <Label htmlFor="location">Location</Label>
               <Input
                 id="location"
                 value={formData.location}
@@ -1295,7 +1295,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 )}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <Label className="text-sm">Ajustar Posición del Banner</Label>
+                    <Label className="text-sm">Ajustar Banner Position</Label>
                     <span className="text-xs text-gray-500">
                       {formData.bannerPosition ? `${formData.bannerPosition}%` : '50%'}
                     </span>
@@ -1362,7 +1362,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             <h4 className="text-sm font-semibold mb-3">Información de Contacto</h4>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contactEmail">Email de Contacto</Label>
+                <Label htmlFor="contactEmail">Contact Email</Label>
                 <Input
                   id="contactEmail"
                   type="email"
@@ -1373,7 +1373,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contactPhone">Teléfono</Label>
+                <Label htmlFor="contactPhone">Phone</Label>
                 <Input
                   id="contactPhone"
                   value={formData.contactPhone}
@@ -1460,7 +1460,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="newShowDate" className="text-xs">Fecha y Hora *</Label>
+                  <Label htmlFor="newShowDate" className="text-xs">Date and Time *</Label>
                   <Input
                     id="newShowDate"
                     type="datetime-local"
@@ -1470,7 +1470,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="newShowLocation" className="text-xs">Ubicación *</Label>
+                  <Label htmlFor="newShowLocation" className="text-xs">Location *</Label>
                   <Input
                     id="newShowLocation"
                     value={newShow.location}
@@ -1480,7 +1480,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="newShowTicketUrl" className="text-xs">URL de Tickets (opcional)</Label>
+                  <Label htmlFor="newShowTicketUrl" className="text-xs">Ticket URL (opcional)</Label>
                   <Input
                     id="newShowTicketUrl"
                     value={newShow.ticketUrl}
@@ -1500,12 +1500,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 {isAddingShow ? (
                   <>
                     <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    Agregando...
+                    Adding...
                   </>
                 ) : (
                   <>
                     <Plus className="mr-2 h-3 w-3" />
-                    Agregar Show
+                    Add Show
                   </>
                 )}
               </Button>
@@ -1514,7 +1514,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             {/* Lista de shows existentes */}
             {shows.length > 0 && (
               <div className="space-y-2">
-                <h5 className="text-xs font-medium text-gray-400 mb-2">Shows Programados ({shows.length})</h5>
+                <h5 className="text-xs font-medium text-gray-400 mb-2">Scheduled Shows ({shows.length})</h5>
                 {shows.map((show) => {
                   const showDate = new Date(show.date);
                   const formattedDate = showDate.toLocaleDateString('es-ES', {
@@ -1559,7 +1559,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                           className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
                         >
                           <ExternalLink className="h-3 w-3" />
-                          Ver tickets
+                          View Tickets
                         </a>
                       )}
                     </div>
@@ -1575,10 +1575,10 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               <div>
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <ShoppingBag className="h-4 w-4" />
-                  Generación Automática con IA
+                  Automatic Generation with AI
                 </h4>
                 <p className="text-xs text-gray-500 mt-1">
-                  Genera productos y contenido profesional con imágenes únicas creadas por IA
+                  Generate products and professional content with unique AI-created images
                 </p>
               </div>
               {subscription && (
@@ -1592,7 +1592,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             {subscription && subscription.aiGenerationLimit && subscription.aiGenerationLimit > 0 && (
               <div className="mb-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
                 <div className="flex justify-between text-xs mb-2">
-                  <span className="text-gray-400">Generaciones usadas</span>
+                  <span className="text-gray-400">Generations Used</span>
                   <span className={subscription.aiGenerationUsed >= subscription.aiGenerationLimit ? "text-red-400 font-semibold" : "text-gray-400"}>
                     {subscription.aiGenerationUsed}/{subscription.aiGenerationLimit}
                   </span>
@@ -1617,7 +1617,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 <Sparkles className="h-5 w-5 text-orange-400 flex-shrink-0 mt-1" />
                 <div className="flex-1">
                   <h5 className="text-sm font-semibold text-white mb-1">
-                    Generación Automática con IA
+                    Automatic Generation with AI
                   </h5>
                   <p className="text-xs text-gray-300 leading-relaxed">
                     Crea 6 productos (T-Shirt, Hoodie, Gorra, Poster, Stickers, Vinyl) con imágenes únicas 
@@ -1642,12 +1642,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 {isGeneratingProducts ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando productos e imágenes...
+                    Generating products and images...
                   </>
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Generar Productos con IA
+                    Generate Products with AI
                   </>
                 )}
               </Button>
@@ -1660,7 +1660,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               <div>
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <Newspaper className="h-4 w-4" />
-                  Noticias del Artista
+                  Artist News
                 </h4>
                 <p className="text-xs text-gray-500 mt-1">
                   Genera noticias de prensa profesionales con imágenes únicas creadas por IA
@@ -1673,7 +1673,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 <Sparkles className="h-5 w-5 text-blue-400 flex-shrink-0 mt-1" />
                 <div className="flex-1">
                   <h5 className="text-sm font-semibold text-white mb-1">
-                    Generación Automática con IA
+                    Automatic Generation with AI
                   </h5>
                   <p className="text-xs text-gray-300 leading-relaxed">
                     Crea 5 noticias profesionales (Lanzamiento, Performance, Colaboración, Logros, Lifestyle) 
@@ -1698,12 +1698,12 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 {isGeneratingNews ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando noticias e imágenes...
+                    Generating news and images...
                   </>
                 ) : (
                   <>
                     <Newspaper className="mr-2 h-4 w-4" />
-                    Generar Noticias con IA
+                    Generate News with AI
                   </>
                 )}
               </Button>
@@ -1733,7 +1733,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
             {subscription && subscription.epkLimit === 0 && (
               <div className="mb-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-2">
                 <Lock className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-yellow-600">EPK está disponible solo para planes BASIC, PRO y PREMIUM</p>
+                <p className="text-xs text-yellow-600">EPK is available only for BASIC, PRO and PREMIUM plans</p>
               </div>
             )}
             
@@ -1765,15 +1765,15 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 <Sparkles className="h-5 w-5 text-green-400 flex-shrink-0 mt-1" />
                 <div className="flex-1">
                   <h5 className="text-sm font-semibold text-white mb-1">
-                    Kit de Prensa Completo
+                    Complete Press Kit
                   </h5>
                   <p className="text-xs text-gray-300 leading-relaxed">
-                    Crea un EPK profesional listo para enviar a medios, festivales y promotores. Incluye biografías 
+                    Create an EPK profesional listo para enviar a medios, festivales y promotores. Incluye biografías 
                     en diferentes formatos, logros destacados, citas inspiradoras, fact sheet y fotos de prensa 
                     coherentes con tu género musical generadas por Gemini 2.5 Flash (Nano Banana).
                   </p>
                   <p className="text-xs text-green-400 mt-2">
-                    📄 Descarga en JSON • PDF próximamente
+                    📄 Download as JSON • PDF coming soon
                   </p>
                 </div>
               </div>
@@ -1786,7 +1786,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-red-600">Límite Alcanzado</p>
+                    <p className="text-sm font-semibold text-red-600">Limit Reached</p>
                     <p className="text-xs text-red-600/80 mt-1">Ya has creado {subscription.epkLimit} EPK este mes. Upgrade tu plan para más.</p>
                   </div>
                 </div>
@@ -1805,7 +1805,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
                     <Images className="h-4 w-4 text-purple-400" />
-                    <span className="text-purple-400">Galerías de Imágenes Profesionales</span>
+                    <span className="text-purple-400">Professional Image Galleries</span>
                   </h4>
                   {subscription && (
                     <Badge variant="outline" className="text-xs">
@@ -1847,31 +1847,31 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 
                 <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4 space-y-3">
                   <p className="text-xs text-gray-400">
-                    Crea galerías de 6 imágenes profesionales para tus sencillos usando IA
+                    Create galleries of 6 imágenes profesionales para tus sencillos usando IA
                   </p>
                   
                   <div className="space-y-2 text-xs text-gray-400">
-                    <p className="font-semibold text-purple-300">📸 ¿Cómo funciona?</p>
+                    <p className="font-semibold text-purple-300">📸 How does it work?</p>
                     <ul className="list-disc list-inside space-y-1 ml-2">
-                      <li>Sube 1-3 fotos tuyas (para mantener tu identidad facial)</li>
-                      <li>Ingresa el nombre de tu sencillo</li>
-                      <li>La IA generará 6 imágenes profesionales diferentes</li>
-                      <li>Las imágenes aparecerán automáticamente en tu perfil público</li>
+                      <li>Upload 1-3 of your photos (to maintain your facial identity)</li>
+                      <li>Enter your single name</li>
+                      <li>AI will generate 6 imágenes profesionales diferentes</li>
+                      <li>Images will appear automatically on your public profile</li>
                     </ul>
                     
                     <p className="font-semibold text-purple-300 mt-3">✨ Incluye:</p>
                     <ul className="list-disc list-inside space-y-1 ml-2">
-                      <li>Close-up con iluminación dramática</li>
-                      <li>Foto en escenario performando</li>
-                      <li>Sesión urbana profesional</li>
-                      <li>Retrato artístico creativo</li>
-                      <li>Lifestyle natural</li>
-                      <li>Editorial de alta moda</li>
+                      <li>Close-up with dramatic lighting</li>
+                      <li>Photo on stage performing</li>
+                      <li>Professional urban session</li>
+                      <li>Creative artistic portrait</li>
+                      <li>Natural lifestyle</li>
+                      <li>High fashion editorial</li>
                     </ul>
 
                     <div className="mt-3 p-2 bg-orange-500/10 border border-orange-500/20 rounded">
-                      <p className="text-orange-300 font-semibold">💡 Tip Profesional:</p>
-                      <p className="mt-1">Usa fotos claras con buena iluminación donde se vea bien tu rostro. La IA mantendrá tus rasgos faciales en todas las 6 imágenes generadas.</p>
+                      <p className="text-orange-300 font-semibold">💡 Professional Tip:</p>
+                      <p className="mt-1">Use clear photos con good lighting where your face is visible. La IA will maintain your facial features en todas las 6 imágenes generadas.</p>
                     </div>
                   </div>
                 </div>
@@ -1892,7 +1892,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-red-600">Límite Alcanzado</p>
+                    <p className="text-sm font-semibold text-red-600">Limit Reached</p>
                     <p className="text-xs text-red-600/80 mt-1">Ya has creado {subscription.imageGalleriesLimit} galería{subscription.imageGalleriesLimit !== 1 ? 's' : ''} este mes. Upgrade tu plan para más.</p>
                   </div>
                 </div>
@@ -1903,16 +1903,16 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancelar
+            Cancel
           </Button>
           <Button onClick={handleSave} disabled={isSaving || !formData.displayName}>
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Guardando...
+                Saving...
               </>
             ) : (
-              "Guardar Cambios"
+              "Save Changes"
             )}
           </Button>
         </DialogFooter>

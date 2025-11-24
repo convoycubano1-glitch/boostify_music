@@ -157,7 +157,7 @@ export const subscriptions = pgTable("subscriptions", {
   // AI Generated Artists
   artistsGeneratedLimit: integer("artists_generated_limit").default(0).notNull(),
   artistsGeneratedUsed: integer("artists_generated_used").default(0).notNull(),
-  // AI Tools & Features Limits
+  // AI Tools AI Tools & Features Limits Features Limits
   aiGenerationLimit: integer("ai_generation_limit").default(0).notNull(), // 0=FREE (required), 10=BASIC, 100=PRO, unlimited=PREMIUM
   aiGenerationUsed: integer("ai_generation_used").default(0).notNull(),
   epkLimit: integer("epk_limit").default(0).notNull(), // 0=NONE, 1=BASIC, 5=PRO, unlimited=PREMIUM
@@ -165,8 +165,8 @@ export const subscriptions = pgTable("subscriptions", {
   imageGalleriesLimit: integer("image_galleries_limit").default(0).notNull(), // 0=NONE, 1=BASIC, 5=PRO, unlimited=PREMIUM
   imageGalleriesUsed: integer("image_galleries_used").default(0).notNull(),
   // Permissions
-  removeBoostifyLogo: boolean("remove_boostify_logo").default(false).notNull(), // PRO & PREMIUM only
-  customizeMerchandise: boolean("customize_merchandise").default(false).notNull(), // PRO & PREMIUM only
+  removeBoostifyLogo: boolean("remove_boostify_logo").default(false).notNull(), // PRO PRO & PREMIUM only PREMIUM only
+  customizeMerchandise: boolean("customize_merchandise").default(false).notNull(), // PRO PRO & PREMIUM only PREMIUM only
   // Commission info
   commissionRate: integer("commission_rate").default(5).notNull(), // 5% FREE, 20% BASIC/PRO/PREMIUM
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -195,16 +195,16 @@ export const artistWallet = pgTable("artist_wallet", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
-// Sales Transactions - Historial de ventas de merchandise
+// Sales Transactions - Sales transaction history
 export const salesTransactions = pgTable("sales_transactions", {
   id: serial("id").primaryKey(),
   artistId: integer("artist_id").references(() => users.id).notNull(),
   merchandiseId: integer("merchandise_id").references(() => merchandise.id),
   productName: text("product_name").notNull(),
-  saleAmount: decimal("sale_amount", { precision: 10, scale: 2 }).notNull(), // Precio total de venta
-  productionCost: decimal("production_cost", { precision: 10, scale: 2 }).default('0').notNull(), // Costo de producción
-  artistEarning: decimal("artist_earning", { precision: 10, scale: 2 }).notNull(), // Comisión del artista (5% o 20% después de costos)
-  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(), // Ganancia de la plataforma
+  saleAmount: decimal("sale_amount", { precision: 10, scale: 2 }).notNull(), // Total sale price
+  productionCost: decimal("production_cost", { precision: 10, scale: 2 }).default('0').notNull(), // Production cost
+  artistEarning: decimal("artist_earning", { precision: 10, scale: 2 }).notNull(), // Artist commission (5% o 20% after costs)
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(), // Platform earnings
   commissionRate: integer("commission_rate").default(5).notNull(), // 5% FREE, 20% PAID
   quantity: integer("quantity").default(1).notNull(),
   currency: text("currency").default("usd").notNull(),
@@ -214,7 +214,7 @@ export const salesTransactions = pgTable("sales_transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Wallet Transactions - Movimientos del wallet (ganancias y gastos)
+// Wallet Transactions - Wallet transactions (earnings and expenses)
 export const walletTransactions = pgTable("wallet_transactions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -228,7 +228,7 @@ export const walletTransactions = pgTable("wallet_transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
-// Crowdfunding Campaigns - Campañas de financiamiento colectivo de artistas
+// Crowdfunding Campaigns - Artist crowdfunding campaigns
 export const crowdfundingCampaigns = pgTable("crowdfunding_campaigns", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
