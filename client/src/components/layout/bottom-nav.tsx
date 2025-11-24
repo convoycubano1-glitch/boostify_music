@@ -4,7 +4,7 @@ import { cn } from "../../lib/utils";
 import {
   Home, Video, Music2, Bot, User, Radio, Menu, ChevronLeft, ChevronRight, Mic, BarChart2,
   MessageSquare, ShoppingBag, PhoneCall, Users, Layers, BarChart, Settings, BookOpen,
-  Headphones, FileText, Rss, Send, Shield, Upload, Zap
+  Headphones, FileText, Rss, Send, Shield, Upload, Zap, Activity
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigationVisibility } from "../../hooks/use-navigation-visibility";
@@ -32,6 +32,12 @@ export function BottomNav() {
       title: "Home",
       icon: Home,
       href: "/",
+      plan: "free"
+    },
+    {
+      title: "Dashboard",
+      icon: Activity,
+      href: "/dashboard",
       plan: "free"
     },
     {
