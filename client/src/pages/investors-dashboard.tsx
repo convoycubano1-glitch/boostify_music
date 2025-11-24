@@ -1873,61 +1873,46 @@ export default function InvestorsDashboard() {
                         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-orange-500/10"></div>
                         <div className="relative z-10 h-full flex flex-col">
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-xs text-white/70">Users (millions)</span>
+                            <span className="text-xs text-white/70">Users (thousands)</span>
                             <div className="flex space-x-2">
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-200">Current</span>
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-200">Projected</span>
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-200">Projected Growth</span>
                             </div>
                           </div>
                           
                           <div className="flex-1 flex items-end space-x-2">
-                            {/* Q1 2025 */}
-                            <div className="flex-1 flex flex-col items-center">
-                              <div className="h-[15%] w-3 bg-blue-500 rounded-t mb-1"></div>
-                              <div className="h-[25%] w-3 bg-orange-500/70 rounded-t"></div>
-                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q1</span>
-                            </div>
-                            
-                            {/* Q2 2025 */}
-                            <div className="flex-1 flex flex-col items-center">
-                              <div className="h-[22%] w-3 bg-blue-500 rounded-t mb-1"></div>
-                              <div className="h-[35%] w-3 bg-orange-500/70 rounded-t"></div>
-                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q2</span>
-                            </div>
-                            
-                            {/* Q3 2025 */}
-                            <div className="flex-1 flex flex-col items-center">
-                              <div className="h-[30%] w-3 bg-blue-500 rounded-t mb-1"></div>
-                              <div className="h-[45%] w-3 bg-orange-500/70 rounded-t"></div>
-                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q3</span>
-                            </div>
-                            
-                            {/* Q4 2025 */}
-                            <div className="flex-1 flex flex-col items-center">
-                              <div className="h-[40%] w-3 bg-blue-500 rounded-t mb-1"></div>
-                              <div className="h-[60%] w-3 bg-orange-500/70 rounded-t"></div>
-                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q4</span>
-                            </div>
-                            
-                            {/* Q1 2026 */}
-                            <div className="flex-1 flex flex-col items-center">
-                              <div className="h-[50%] w-3 bg-blue-500 rounded-t mb-1"></div>
-                              <div className="h-[80%] w-3 bg-orange-500/70 rounded-t"></div>
-                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q1 '26</span>
-                            </div>
-                            
-                            {/* Q2 2026 */}
-                            <div className="flex-1 flex flex-col items-center">
-                              <div className="h-[60%] w-3 bg-blue-500 rounded-t mb-1"></div>
-                              <div className="h-full w-3 bg-orange-500/70 rounded-t"></div>
-                              <span className="text-[8px] sm:text-xs mt-1 text-white/70">Q2 '26</span>
-                            </div>
+                            {[
+                              { label: "Jan '26", height: "2.8%" },
+                              { label: "Mar '26", height: "4.2%" },
+                              { label: "May '26", height: "7%" },
+                              { label: "Jul '26", height: "10%" },
+                              { label: "Sep '26", height: "15%" },
+                              { label: "Nov '26", height: "20%" },
+                              { label: "Jan '27", height: "30%" },
+                              { label: "Mar '27", height: "40%" },
+                              { label: "May '27", height: "52%" },
+                              { label: "Jul '27", height: "64%" },
+                              { label: "Sep '27", height: "78%" },
+                              { label: "Nov '27", height: "90%" },
+                              { label: "Dec '28", height: "100%" }
+                            ].map((item, index) => (
+                              <div key={index} className="flex-1 flex flex-col items-center">
+                                <div 
+                                  className="w-full max-w-[40px] bg-gradient-to-t from-orange-500 to-orange-400 rounded-t relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500"
+                                  style={{ height: item.height }}
+                                >
+                                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                    {item.label}
+                                  </div>
+                                </div>
+                                <span className="text-[8px] sm:text-xs mt-1 text-white/70">{item.label}</span>
+                              </div>
+                            ))}
                           </div>
                           
                           <div className="mt-2 pt-2 border-t border-white/10">
                             <div className="flex justify-between">
-                              <span className="text-xs text-white/70">0.8M now</span>
-                              <span className="text-xs text-white/70">50M+ goal by 2027</span>
+                              <span className="text-xs text-white/70">1K users Jan '26</span>
+                              <span className="text-xs text-white/70">50K users Dec '28</span>
                             </div>
                           </div>
                         </div>
