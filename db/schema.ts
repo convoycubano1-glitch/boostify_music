@@ -73,7 +73,7 @@ export const users = pgTable("users", {
   // Virtual Record Label fields
   firestoreId: text("firestore_id"),
   isAIGenerated: boolean("is_ai_generated").default(false).notNull(),
-  generatedBy: integer("generated_by").references(() => users.id),
+  generatedBy: integer("generated_by").references(() => users.id, { onDelete: "cascade" }),
   recordLabelId: text("record_label_id"),
   // Profile Layout Configuration
   profileLayout: json("profile_layout").$type<{
@@ -86,7 +86,7 @@ export const users = pgTable("users", {
 
 export const artistMedia = pgTable("artist_media", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   title: text("title").notNull(),
   type: text("type", { enum: ["video"] }).notNull(),
   storagePath: text("storage_path").notNull(),
@@ -101,7 +101,7 @@ export const artistMedia = pgTable("artist_media", {
 
 export const songs = pgTable("songs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   title: text("title").notNull(),
   description: text("description"),
   audioUrl: text("audio_url").notNull(),
@@ -117,7 +117,7 @@ export const songs = pgTable("songs", {
 
 export const merchandise = pgTable("merchandise", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
@@ -131,7 +131,7 @@ export const merchandise = pgTable("merchandise", {
 
 export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   stripeSubscriptionId: text("stripe_subscription_id").unique(),
   stripeCustomerId: text("stripe_customer_id"),
   plan: text("plan", { enum: ["free", "creator", "professional", "enterprise"] }).notNull(),
@@ -769,7 +769,7 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   aspectRatio: text("aspect_ratio"),
   
   // Auto-generated Artist Profile
-  artistProfileId: integer("artist_profile_id").references(() => users.id),
+  artistProfileId: integer("artist_profile_id").references(() => users.id, { onDelete: "cascade" }),
   
   // Project status
   status: text("status", { 
@@ -803,8 +803,8 @@ export const musicVideoProjects = pgTable("music_video_projects", {
 
 export const artistProfileImages = pgTable("artist_profile_images", {
   id: serial("id").primaryKey(),
-  artistProfileId: integer("artist_profile_id").references(() => users.id).notNull(),
-  musicVideoProjectId: integer("music_video_project_id").references(() => musicVideoProjects.id),
+  artistProfileId: integer("artist_profile_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  musicVideoProjectId: integer("music_video_project_id").references(() => musicVideoProjects.id, { onDelete: "cascade" }),
   
   imageUrl: text("image_url").notNull(),
   imageType: text("image_type", { 
@@ -830,7 +830,7 @@ export const artistProfileImages = pgTable("artist_profile_images", {
 
 export const musicianClips = pgTable("musician_clips", {
   id: serial("id").primaryKey(),
-  projectId: integer("project_id").references(() => musicVideoProjects.id),
+  projectId: integer("project_id").references(() => musicVideoProjects.id, { onDelete: "cascade" }),
   timelineItemId: text("timeline_item_id").notNull(),
   
   musicianType: text("musician_type", { 
