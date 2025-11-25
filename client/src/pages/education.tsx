@@ -390,8 +390,107 @@ export default function EducationPage() {
         // Si no hay cursos, auto-crear los cursos de muestra
         if (coursesData.length === 0) {
           logger.info("No courses found. Auto-creating sample courses...");
-          await createSampleCourses();
-          return; // Exit early to avoid processing empty array
+          
+          // Imágenes predefinidas por categoría
+          const defaultCategoryImages: Record<string, string> = {
+            "Marketing": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg",
+            "Business": "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg",
+            "Production": "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg",
+            "Branding": "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg",
+            "Distribution": "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg",
+            "default": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg"
+          };
+
+          // Contenido predefinido para cada curso
+          const courseContents: Record<string, any> = {
+            "Music Marketing Mastery": {
+              overview: "Master digital marketing strategies for musicians",
+              curriculum: [
+                { title: "Social Media Fundamentals", duration: "1 week" },
+                { title: "Content Strategy & Planning", duration: "1 week" },
+                { title: "Email Marketing Campaigns", duration: "1 week" },
+                { title: "Influencer Collaborations", duration: "1 week" }
+              ],
+              lessons: 4
+            },
+            "Music Business Essentials": {
+              overview: "Learn the fundamentals of the music business",
+              curriculum: [
+                { title: "Copyright & Intellectual Property", duration: "1 week" },
+                { title: "Understanding Royalties", duration: "1 week" },
+                { title: "Music Licensing Guide", duration: "1 week" },
+                { title: "Contract Negotiation", duration: "1 week" }
+              ],
+              lessons: 4
+            },
+            "Advanced Music Production & Engineering": {
+              overview: "Professional music production techniques",
+              curriculum: [
+                { title: "Advanced Mixing Techniques", duration: "2 weeks" },
+                { title: "Mastering & Distribution", duration: "2 weeks" },
+                { title: "Studio Workflow Optimization", duration: "1 week" },
+                { title: "Professional Audio Tools", duration: "1 week" }
+              ],
+              lessons: 6
+            },
+            "Artist Brand Development": {
+              overview: "Build and maintain your artist brand",
+              curriculum: [
+                { title: "Visual Identity Design", duration: "1 week" },
+                { title: "Social Media Presence", duration: "1 week" },
+                { title: "Artist Story & Narrative", duration: "1 week" },
+                { title: "Fan Engagement Strategies", duration: "1 week" }
+              ],
+              lessons: 4
+            },
+            "Digital Music Distribution Mastery": {
+              overview: "Master the digital distribution landscape",
+              curriculum: [
+                { title: "Streaming Platform Strategies", duration: "1 week" },
+                { title: "Playlist Pitching Techniques", duration: "1 week" },
+                { title: "Release Strategy & Planning", duration: "1 week" },
+                { title: "Analytics & Growth Optimization", duration: "1 week" }
+              ],
+              lessons: 4
+            }
+          };
+
+          const sampleCoursesData = [
+            { title: "Music Marketing Mastery", description: "Learn advanced digital marketing strategies specifically tailored for musicians and music industry professionals. From social media optimization to email campaigns, discover how to effectively promote your music in the digital age.", category: "Marketing", level: "Intermediate", price: 199 },
+            { title: "Music Business Essentials", description: "Master the fundamentals of the music business. Learn about copyright law, royalties, music licensing, and how to navigate contracts. Essential knowledge for any music professional.", category: "Business", level: "Beginner", price: 249 },
+            { title: "Advanced Music Production & Engineering", description: "Deep dive into professional music production techniques. From advanced mixing and mastering to studio workflow optimization, take your production skills to the next level.", category: "Production", level: "Advanced", price: 299 },
+            { title: "Artist Brand Development", description: "Learn how to build and maintain a strong artist brand. Cover everything from visual identity to social media presence, and create a compelling artist narrative that resonates with your audience.", category: "Branding", level: "Intermediate", price: 179 },
+            { title: "Digital Music Distribution Mastery", description: "Master the digital distribution landscape. Learn about streaming platforms, playlist pitching, release strategies, and how to maximize your music's reach in the digital age.", category: "Distribution", level: "Beginner", price: 149 }
+          ];
+
+          const createdCourses: Course[] = [];
+          for (const course of sampleCoursesData) {
+            const thumbnailUrl = defaultCategoryImages[course.category] || defaultCategoryImages.default;
+            const courseContent = courseContents[course.title];
+            const randomData = generateRandomCourseData();
+
+            const courseData = {
+              ...course,
+              content: courseContent,
+              thumbnail: thumbnailUrl,
+              lessons: courseContent.lessons,
+              duration: "4 weeks",
+              ...randomData,
+              createdAt: Timestamp.now(),
+              createdBy: auth.currentUser?.uid || ""
+            };
+
+            const courseRef = await addDoc(collection(db, 'courses'), courseData);
+            createdCourses.push({
+              id: courseRef.id,
+              ...courseData,
+              createdAt: new Date()
+            } as Course);
+          }
+
+          setCourses(createdCourses);
+          setIsLoading(false);
+          return;
         }
         
         setCourses(coursesData);
