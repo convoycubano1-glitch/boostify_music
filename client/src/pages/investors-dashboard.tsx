@@ -2166,76 +2166,76 @@ export default function InvestorsDashboard() {
                   </div>
                 </Card>
 
-                <Card className="p-4 sm:p-6">
-                  <div className="flex justify-between items-center mb-6 sm:mb-8">
+                <Card className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
                     <div>
-                      <h3 className="text-lg sm:text-2xl font-bold mb-1">Investment Funding Rounds</h3>
+                      <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Investment Funding Rounds</h3>
                       <p className="text-xs sm:text-sm text-muted-foreground">Professional funding opportunities with tiered growth targets</p>
                     </div>
                     <Button 
                       onClick={handleInvestNow}
-                      size="lg"
-                      className="bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
+                      size="sm"
+                      className="w-full sm:w-auto bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
                       Invest Now
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
                     {investmentData.investmentRounds.map((round: any, index: number) => (
-                      <Card key={index} className={`p-4 sm:p-6 relative overflow-hidden ${
+                      <Card key={index} className={`p-3 sm:p-6 relative overflow-hidden ${
                         round.status === 'Active' 
                           ? 'bg-gradient-to-br from-orange-400/20 to-orange-500/5 border-orange-500/30' 
                           : 'bg-gradient-to-br from-slate-800/50 to-gray-900/50 border-slate-700/30'
                       }`}>
                         {round.status === 'Active' && (
-                          <div className="absolute -top-3 right-4 px-3 py-1 bg-orange-500 text-white text-xs rounded-full font-semibold">
+                          <div className="absolute -top-2 right-2 sm:right-4 px-2 sm:px-3 py-0.5 sm:py-1 bg-orange-500 text-white text-[10px] sm:text-xs rounded-full font-semibold">
                             OPEN NOW
                           </div>
                         )}
                         
-                        <div className="mb-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <h4 className="text-lg sm:text-xl font-bold">{round.name}</h4>
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        <div className="mb-3 sm:mb-4">
+                          <div className="flex justify-between items-start mb-2 sm:mb-3 gap-2">
+                            <h4 className="text-base sm:text-xl font-bold flex-1">{round.name}</h4>
+                            <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold flex-shrink-0 ${
                               round.status === 'Active' ? 'bg-green-500/20 text-yellow-400' : 'bg-blue-500/20 text-orange-400'
                             }`}>
                               {round.status}
                             </span>
                           </div>
-                          <p className="text-xs sm:text-sm text-muted-foreground mb-4">{round.description}</p>
+                          <p className="text-[11px] sm:text-sm text-muted-foreground mb-3 sm:mb-4 line-clamp-3">{round.description}</p>
                         </div>
                         
-                        <div className="space-y-3 mb-4">
-                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                            <span className="text-xs text-muted-foreground">Launch Date</span>
-                            <span className="font-semibold text-sm">{round.date}</span>
+                        <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10 text-[11px] sm:text-xs">
+                            <span className="text-muted-foreground">Launch Date</span>
+                            <span className="font-semibold">{round.date}</span>
                           </div>
-                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                            <span className="text-xs text-muted-foreground">Equity Offered</span>
-                            <span className="font-bold text-lg text-orange-400">{round.equity}</span>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10 text-[11px] sm:text-xs">
+                            <span className="text-muted-foreground">Equity Offered</span>
+                            <span className="font-bold text-orange-400">{round.equity}</span>
                           </div>
-                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                            <span className="text-xs text-muted-foreground">Funding Target</span>
-                            <span className="font-bold text-sm">{round.target}</span>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10 text-[11px] sm:text-xs">
+                            <span className="text-muted-foreground">Funding Target</span>
+                            <span className="font-bold">{round.target}</span>
                           </div>
-                          <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                            <span className="text-xs text-muted-foreground">Round Type</span>
-                            <span className="text-xs font-semibold text-orange-400">{round.raisedStatus}</span>
+                          <div className="flex justify-between items-center pb-2 border-b border-white/10 text-[11px] sm:text-xs">
+                            <span className="text-muted-foreground">Round Type</span>
+                            <span className="font-semibold text-orange-400">{round.raisedStatus}</span>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-muted-foreground">User Growth Goal</span>
-                            <span className="font-bold text-sm text-yellow-400">{round.goal}</span>
+                          <div className="flex justify-between items-center text-[11px] sm:text-xs">
+                            <span className="text-muted-foreground">User Growth Goal</span>
+                            <span className="font-bold text-yellow-400">{round.goal}</span>
                           </div>
                         </div>
                         
                         {round.status === 'Active' && (
                           <Button 
                             onClick={handleInvestNow}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold mt-2"
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold mt-2 text-sm h-9"
                           >
-                            <DollarSign className="h-4 w-4 mr-2" />
+                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                             Invest Now
                           </Button>
                         )}
@@ -2243,7 +2243,7 @@ export default function InvestorsDashboard() {
                           <Button 
                             disabled
                             variant="outline"
-                            className="w-full"
+                            className="w-full text-sm h-9"
                           >
                             Coming Soon
                           </Button>
@@ -2252,42 +2252,42 @@ export default function InvestorsDashboard() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <Card className="p-4 bg-orange-500/10 border-orange-500/20">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-orange-500/20 rounded-lg">
-                          <Target className="h-5 w-5 text-orange-500" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    <Card className="p-3 sm:p-4 bg-orange-500/10 border-orange-500/20">
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <div className="p-1.5 sm:p-2 bg-orange-500/20 rounded-lg flex-shrink-0">
+                          <Target className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Total Capital Target</p>
-                          <p className="text-2xl font-bold">$3M</p>
-                          <p className="text-xs text-muted-foreground mt-1">Across all rounds</p>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="p-4 bg-cyan-500/10 border-orange-500/20">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-cyan-500/20 rounded-lg">
-                          <Users className="h-5 w-5 text-orange-500" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">User Growth Goal</p>
-                          <p className="text-2xl font-bold">50K+</p>
-                          <p className="text-xs text-muted-foreground mt-1">By Series B close</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Total Capital Target</p>
+                          <p className="text-lg sm:text-2xl font-bold break-words">$3M</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Across all rounds</p>
                         </div>
                       </div>
                     </Card>
 
-                    <Card className="p-4 bg-yellow-500/10 border-yellow-500/20">
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-yellow-500/20 rounded-lg">
-                          <TrendingUp className="h-5 w-5 text-yellow-500" />
+                    <Card className="p-3 sm:p-4 bg-cyan-500/10 border-orange-500/20">
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <div className="p-1.5 sm:p-2 bg-cyan-500/20 rounded-lg flex-shrink-0">
+                          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Total Equity Available</p>
-                          <p className="text-2xl font-bold">20%</p>
-                          <p className="text-xs text-muted-foreground mt-1">Across funding rounds</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">User Growth Goal</p>
+                          <p className="text-lg sm:text-2xl font-bold break-words">50K+</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">By Series B close</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-3 sm:p-4 bg-yellow-500/10 border-yellow-500/20">
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <div className="p-1.5 sm:p-2 bg-yellow-500/20 rounded-lg flex-shrink-0">
+                          <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Total Equity Available</p>
+                          <p className="text-lg sm:text-2xl font-bold break-words">20%</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Across funding rounds</p>
                         </div>
                       </div>
                     </Card>
