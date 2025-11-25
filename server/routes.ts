@@ -105,6 +105,7 @@ import boostiswapContractsRouter from './routes/boostiswap-contracts'; // Import
 import boostiswapRouter from './routes/boostiswap'; // Import BoostiSwap Marketplace router
 import socialMediaRouter from './routes/social-media'; // Import Social Media Content Generator router
 import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed function
+import educationGeminiRouter from './routes/education-gemini'; // Import Education Gemini AI router for course generation
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
