@@ -4,6 +4,11 @@ import { fiverr_services, pending_orders } from '../../shared/fiverr-services-sc
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2024-11-20'
+});
 
 const router = Router();
 
@@ -121,6 +126,43 @@ router.get('/api/services/orders', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+// POST create Stripe checkout session
+router.post('/api/services/checkout-session', authenticate, async (req, res) => {
+  try {
+    const { serviceId, stripePriceId, quantity, serviceName } = req.body;
+    const user = req.user as any;
+
+    if (!serviceId || !stripePriceId || !quantity) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: stripePriceId,
+          quantity: quantity,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${process.env.REPLIT_DOMAIN || 'http://localhost:5000'}/youtube-views?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.REPLIT_DOMAIN || 'http://localhost:5000'}/youtube-views`,
+      customer_email: user?.email,
+      metadata: {
+        serviceId,
+        userId: user?.id,
+        serviceName,
+      },
+    });
+
+    res.json({ success: true, url: session.url });
+  } catch (error) {
+    console.error('Error creating checkout session:', error);
+    res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
 
