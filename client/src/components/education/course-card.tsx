@@ -30,7 +30,7 @@ interface CourseCardProps {
   isEnrolled?: boolean;
 }
 
-export function CourseCard({ course, enrolled, progress, onEnroll, onPurchase, isEnrolled }: CourseCardProps) {
+export function CourseCard({ course, enrolled, progress, onEnroll, onPurchase, isEnrolled = false }: CourseCardProps) {
   const isGenerating = course.generationStatus === "generating";
   const levelColors = {
     Beginner: "bg-green-500/10 text-green-700 dark:text-green-400",
@@ -39,8 +39,7 @@ export function CourseCard({ course, enrolled, progress, onEnroll, onPurchase, i
   };
 
   return (
-    <Link href={`/courses/${course.id}`}>
-      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group h-full flex flex-col">
+    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group h-full flex flex-col">
         <div className="relative h-48 overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-background">
           {course.thumbnail && course.thumbnail.startsWith('data:image') ? (
             <img
@@ -150,6 +149,5 @@ export function CourseCard({ course, enrolled, progress, onEnroll, onPurchase, i
           </div>
         </div>
       </Card>
-    </Link>
   );
 }

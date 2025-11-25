@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "../components/layout/header";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -8,70 +8,98 @@ import { CourseCard } from "../components/education/course-card";
 import { CreateCourseDialog } from "../components/education/create-course-dialog";
 import { useToast } from "../hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
-import { 
-  fetchAllCourses, 
-  fetchUserCourses, 
-  enrollCourse, 
-  updateCourseFullContent,
-  saveCourses,
-  type CourseData
-} from "@/lib/firestore-courses";
 import { 
   BookOpen, Search, Sparkles, Filter, 
-  GraduationCap, Award, Zap
+  GraduationCap, Award
 } from "lucide-react";
-import { auth } from "../firebase";
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  thumbnail: string | null;
+  price: string;
+  estimatedHours: number;
+  preview: Array<{ title: string; description: string; duration: string }>;
+  fullCurriculum?: any;
+  quiz?: any;
+}
 
 export default function EducationPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-  const [allCourses, setAllCourses] = useState<CourseData[]>([]);
-  const [myCourses, setMyCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [coursesInitialized, setCoursesInitialized] = useState(false);
 
-  // Load courses from Firestore
+  // Load or generate courses
   useEffect(() => {
     const loadCourses = async () => {
       try {
         setIsLoading(true);
-        const courses = await fetchAllCourses();
+        console.log('🎓 Loading courses...');
         
-        // Si no hay cursos, generar los 20 automáticamente
-        if (courses.length === 0) {
-          console.log('📚 No courses found. Generating 20 AI courses...');
-          const response = await apiRequest('/api/education/generate-20-courses', {
-            method: 'POST'
-          });
-          
-          if (response.success && response.courses) {
-            // Guardar en Firestore
-            await saveCourses(response.courses);
-            setAllCourses(response.courses);
-            toast({
-              title: '🎉 Courses Generated!',
-              description: `${response.count} AI-powered courses have been created and are ready to explore.`
-            });
+        // Try to get courses from localStorage first (cache)
+        const cachedCourses = localStorage.getItem('ai_courses_cache');
+        if (cachedCourses) {
+          try {
+            const parsed = JSON.parse(cachedCourses);
+            console.log(`✅ Loaded ${parsed.length} courses from cache`);
+            setCourses(parsed);
+            setIsLoading(false);
+            return;
+          } catch (e) {
+            console.warn('Cache corrupted, regenerating courses');
           }
+        }
+
+        // Generate new courses
+        console.log('📚 Generating 20 AI courses...');
+        const response = await apiRequest('/api/education/generate-20-courses', {
+          method: 'POST'
+        });
+
+        if (response.success && response.courses && Array.isArray(response.courses)) {
+          console.log(`✅ Generated ${response.courses.length} courses`);
+          
+          // Map the courses to our format
+          const mappedCourses = response.courses.map((course: any) => ({
+            id: course.id || `course-${Math.random()}`,
+            title: course.title || 'Untitled Course',
+            description: course.description || 'No description',
+            level: course.level || 'Beginner',
+            thumbnail: course.thumbnail || null,
+            price: course.price || '0.00',
+            estimatedHours: course.estimatedHours || 10,
+            preview: course.preview || [],
+            fullCurriculum: course.fullCurriculum,
+            quiz: course.quiz
+          }));
+
+          setCourses(mappedCourses);
+          
+          // Cache in localStorage
+          try {
+            localStorage.setItem('ai_courses_cache', JSON.stringify(mappedCourses));
+          } catch (e) {
+            console.warn('Could not cache courses');
+          }
+
+          toast({
+            title: '🎉 Courses Generated!',
+            description: `${mappedCourses.length} AI-powered courses are ready to explore.`
+          });
         } else {
-          setAllCourses(courses);
+          console.error('Invalid response format:', response);
+          throw new Error('Invalid courses response');
         }
-        
-        // Cargar cursos del usuario si está autenticado
-        if (auth.currentUser) {
-          const userCourses = await fetchUserCourses(auth.currentUser.uid);
-          setMyCourses(userCourses);
-        }
-        
-        setCoursesInitialized(true);
       } catch (error: any) {
-        console.error('Error loading courses:', error);
+        console.error('❌ Error loading courses:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load courses',
+          description: error.message || 'Failed to load courses',
           variant: 'destructive'
         });
       } finally {
@@ -82,100 +110,10 @@ export default function EducationPage() {
     loadCourses();
   }, []);
 
-  // Enroll mutation
-  const enrollMutation = useMutation(
-    async (courseId: string) => {
-      if (!auth.currentUser) {
-        throw new Error('Must be logged in to enroll');
-      }
-      
-      const success = await enrollCourse(auth.currentUser.uid, courseId);
-      
-      if (!success) {
-        throw new Error('Failed to enroll in course');
-      }
-      
-      return courseId;
-    },
-    {
-      onSuccess: (courseId) => {
-        toast({
-          title: '🎉 Enrolled!',
-          description: 'You have been enrolled in the course. Content will be generated as you progress.'
-        });
-        
-        // Refresh user courses
-        if (auth.currentUser) {
-          fetchUserCourses(auth.currentUser.uid).then(setMyCourses);
-        }
-      },
-      onError: (error: any) => {
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to enroll in course',
-          variant: 'destructive'
-        });
-      }
-    }
-  );
-
-  // Generate full content on purchase mutation
-  const purchaseMutation = useMutation(
-    async (courseId: string) => {
-      if (!auth.currentUser) {
-        throw new Error('Must be logged in to purchase');
-      }
-
-      const course = allCourses.find(c => c.id === courseId);
-      if (!course) throw new Error('Course not found');
-
-      // Generate full course content
-      const response = await apiRequest('/api/education/generate-full-content', {
-        method: 'POST',
-        body: JSON.stringify({
-          courseId,
-          courseTitle: course.title,
-          level: course.level
-        })
-      });
-
-      if (response.success) {
-        // Update Firestore with full content
-        await updateCourseFullContent(
-          auth.currentUser.uid,
-          courseId,
-          response.content
-        );
-        return response.content;
-      }
-      
-      throw new Error('Failed to generate content');
-    },
-    {
-      onSuccess: () => {
-        toast({
-          title: '✨ Content Generated!',
-          description: 'Full course content has been generated. Start learning now!'
-        });
-        
-        // Refresh courses
-        if (auth.currentUser) {
-          fetchUserCourses(auth.currentUser.uid).then(setMyCourses);
-        }
-      },
-      onError: (error: any) => {
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to generate course content',
-          variant: 'destructive'
-        });
-      }
-    }
-  );
-
-  const filteredCourses = allCourses.filter((course: any) => {
-    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         course.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredCourses = courses.filter((course: any) => {
+    const matchesSearch = 
+      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      course.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = activeTab === "all" || course.level.toLowerCase() === activeTab;
     return matchesSearch && matchesTab;
   });
@@ -264,16 +202,16 @@ export default function EducationPage() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCourses.map((course: CourseData) => (
+                {filteredCourses.map((course: any) => (
                   <CourseCard 
                     key={course.id} 
                     course={{
-                      id: parseInt(course.id || '0'),
+                      id: parseInt(course.id.split('-').pop() || '0'),
                       title: course.title,
                       description: course.description,
                       category: 'Music',
                       level: course.level,
-                      lessonsCount: course.preview?.length || 2,
+                      lessonsCount: course.preview?.length || 10,
                       duration: `${Math.round(course.estimatedHours)}h`,
                       thumbnail: course.thumbnail,
                       price: course.price || '0.00',
@@ -282,49 +220,12 @@ export default function EducationPage() {
                       rating: '4.8',
                       totalReviews: 150
                     }}
-                    onEnroll={() => enrollMutation.mutate(course.id!)}
-                    onPurchase={() => purchaseMutation.mutate(course.id!)}
-                    isEnrolled={myCourses.some(c => c.id === course.id)}
                   />
                 ))}
               </div>
             )}
           </TabsContent>
         </Tabs>
-
-        {/* My Learning Journey */}
-        {myCourses && myCourses.length > 0 && (
-          <div className="mt-16">
-            <div className="flex items-center gap-3 mb-6">
-              <Award className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl font-bold">My Learning Journey</h2>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {myCourses.map((course: any) => (
-                <CourseCard 
-                  key={course.id} 
-                  course={{
-                    id: parseInt(course.id || '0'),
-                    title: course.title,
-                    description: course.description,
-                    category: 'Music',
-                    level: course.level,
-                    lessonsCount: course.preview?.length || 2,
-                    duration: `${Math.round(course.estimatedHours)}h`,
-                    thumbnail: course.thumbnail,
-                    price: course.price || '0.00',
-                    isAIGenerated: true,
-                    generationStatus: null,
-                    rating: '4.8',
-                    totalReviews: 150
-                  }}
-                  enrolled={true}
-                  progress={course.progress || 0}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <CreateCourseDialog 
