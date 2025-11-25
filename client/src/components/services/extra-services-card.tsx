@@ -49,6 +49,8 @@ export function ExtraServiceCard({
           serviceId: id,
           quantity: 1,
           category,
+          serviceName: title,
+          price,
         }),
       });
 

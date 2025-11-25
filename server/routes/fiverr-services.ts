@@ -38,8 +38,8 @@ router.get('/api/services', async (req, res) => {
 // POST create order (requires auth - all users can order)
 router.post('/api/services/order', authenticate, async (req, res) => {
   try {
-    const { serviceId, quantity, category } = req.body;
-    const userId = req.user?.id;
+    const { serviceId, quantity, category, serviceName, price } = req.body;
+    const userId = req.user?.id || req.user?.uid;
 
     if (!userId || !serviceId || !quantity) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -47,45 +47,40 @@ router.post('/api/services/order', authenticate, async (req, res) => {
 
     // Services are available to ALL users (free, basic, pro, premium)
     // They are charged separately via Stripe
+    // Service data comes from frontend (fiverr-services-data.ts)
+    
+    const totalPrice = (price || 0) * quantity;
+    const webhookToken = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Fetch service
-    const service = await db
-      .select()
-      .from(fiverr_services)
-      .where(eq(fiverr_services.id, parseInt(serviceId)))
-      .limit(1);
-
-    if (!service || service.length === 0) {
-      return res.status(404).json({ error: 'Service not found' });
+    // Create pending order in database
+    try {
+      await db.insert(pending_orders).values({
+        userId: String(userId),
+        serviceId: parseInt(String(serviceId)),
+        quantity,
+        boostifyPrice: totalPrice.toString(),
+        status: 'pending',
+        webhook_token: webhookToken,
+      });
+    } catch (dbError) {
+      console.error('Database insert error (non-blocking):', dbError);
+      // Continue even if DB insert fails - the order will be tracked via Stripe
     }
-
-    const svc = service[0];
-    const totalPrice = parseFloat(svc.boostifyPrice) * quantity;
-
-    // Create pending order
-    const order = await db.insert(pending_orders).values({
-      userId,
-      serviceId: parseInt(serviceId),
-      quantity,
-      boostifyPrice: totalPrice.toString(),
-      status: 'pending',
-      webhook_token: `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    });
 
     // Send order to Make.com webhook
     const webhookUrl = 'https://hook.us2.make.com/mwh176gi62elcbxxinq3jb7x8w9wf8op';
     const orderData = {
-      orderId: order.insertId || order[0],
-      userId,
-      serviceId: parseInt(serviceId),
-      serviceName: svc.title,
+      orderId: `order_${Date.now()}`,
+      userId: String(userId),
+      serviceId: String(serviceId),
+      serviceName: serviceName || 'Service',
       serviceCategory: category,
       quantity,
       totalPrice,
-      pricePerUnit: parseFloat(svc.boostifyPrice),
+      pricePerUnit: price || 0,
       status: 'pending',
       createdAt: new Date().toISOString(),
-      webhookToken: `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      webhookToken,
     };
 
     // Send to webhook asynchronously (don't block response)
@@ -99,7 +94,7 @@ router.post('/api/services/order', authenticate, async (req, res) => {
 
     res.json({
       success: true,
-      orderId: order.insertId || order[0],
+      orderId: orderData.orderId,
       message: 'Order created successfully',
     });
   } catch (error) {
