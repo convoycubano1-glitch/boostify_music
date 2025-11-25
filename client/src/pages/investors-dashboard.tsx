@@ -2086,83 +2086,63 @@ export default function InvestorsDashboard() {
 
               {/* Investments Tab */}
               <TabsContent value="investments">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                  <Card className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">
-                        <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
+                  <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-orange-500/20 rounded-lg flex-shrink-0">
+                        <DollarSign className="h-5 w-5 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Total Investment</p>
-                        <p className="text-xl sm:text-2xl font-bold">${investmentData.totalInvested}</p>
+                        <p className="text-xs text-muted-foreground">Total Investment</p>
+                        <p className="text-lg sm:text-xl font-bold">${investmentData.totalInvested}</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">
-                        <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
+                  <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-orange-500/20 rounded-lg flex-shrink-0">
+                        <TrendingUp className="h-5 w-5 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Current Value</p>
-                        <p className="text-xl sm:text-2xl font-bold">${investmentData.currentValue}</p>
+                        <p className="text-xs text-muted-foreground">Current Value</p>
+                        <p className="text-lg sm:text-xl font-bold">${investmentData.currentValue}</p>
                       </div>
                     </div>
                   </Card>
 
-                  <Card className="p-4 sm:p-6 sm:col-span-1">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="p-2 sm:p-3 bg-orange-500/10 rounded-lg">
-                        <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
+                  <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-orange-500/20 rounded-lg flex-shrink-0">
+                        <Clock className="h-5 w-5 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Next Payment</p>
-                        <p className="text-xl sm:text-2xl font-bold">{new Date(investmentData.nextPaymentDate).toLocaleDateString()}</p>
+                        <p className="text-xs text-muted-foreground">Next Payment</p>
+                        <p className="text-lg sm:text-xl font-bold">{new Date(investmentData.nextPaymentDate).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </Card>
                 </div>
 
-                <Card className="p-4 sm:p-6 mb-6 sm:mb-8">
-                  <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6">Investment History</h3>
+                <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20 mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-white">Investment History</h3>
                   
-                  <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="w-full min-w-[640px]">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Date</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Type</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Amount</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Status</th>
-                          <th className="text-left py-2 sm:py-3 px-4 text-xs sm:text-sm">Return</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-xs sm:text-sm">
-                        <tr className="border-b hover:bg-muted/50">
-                          <td className="py-2 sm:py-3 px-4 text-muted-foreground">-</td>
-                          <td className="py-2 sm:py-3 px-4 text-muted-foreground">No investments yet</td>
-                          <td className="py-2 sm:py-3 px-4 text-muted-foreground">-</td>
-                          <td className="py-2 sm:py-3 px-4">
-                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">Pending</span>
-                          </td>
-                          <td className="py-2 sm:py-3 px-4 text-muted-foreground">-</td>
-                        </tr>
-                        <tr className="hover:bg-muted/50">
-                          <td colSpan={5} className="py-4 sm:py-6 px-4 text-center">
-                            <p className="text-sm text-muted-foreground mb-3">Start investing in Boostify Music today!</p>
-                            <Button 
-                              size="sm" 
-                              onClick={handleInvestNow}
-                              className="bg-orange-500 hover:bg-orange-600"
-                            >
-                              <DollarSign className="h-4 w-4 mr-2" />
-                              Register as Investor
-                            </Button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-white/10">
+                      <span className="text-xs text-muted-foreground">Status</span>
+                      <span className="px-2 py-0.5 bg-gray-500/20 text-gray-400 rounded-full text-xs">No investments yet</span>
+                    </div>
+                    <div className="text-center py-4">
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-3">Start investing in Boostify Music today!</p>
+                      <Button 
+                        size="sm" 
+                        onClick={handleInvestNow}
+                        className="bg-orange-500 hover:bg-orange-600"
+                      >
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        Register as Investor
+                      </Button>
+                    </div>
                   </div>
                 </Card>
 
