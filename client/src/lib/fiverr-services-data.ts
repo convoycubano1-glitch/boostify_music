@@ -1,4 +1,4 @@
-// Real Fiverr services data - 15+ services from verified dataset with generated images
+// Real Fiverr services data - 15+ services from verified dataset with AI-generated images
 export const FIVERR_SERVICES_DATA = {
   youtube_boost: [
     {
@@ -11,7 +11,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Growth Expert',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: null,
+      imageUrl: '/attached_assets/generated_images/youtube_growth_analytics_dashboard.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE001',
       category: 'youtube_boost'
     },
@@ -53,7 +53,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Setup Expert',
       deliveryDays: 3,
       extraFast: false,
-      imageUrl: null,
+      imageUrl: '/attached_assets/generated_images/professional_channel_setup_studio.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE004',
       category: 'youtube_boost'
     },
@@ -67,7 +67,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'SEO Expert',
       deliveryDays: 2,
       extraFast: false,
-      imageUrl: null,
+      imageUrl: '/attached_assets/generated_images/youtube_video_seo_optimization.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE005',
       category: 'youtube_boost'
     },
