@@ -1,10 +1,5 @@
-import youtubeGrowthImg from '@assets/generated_images/youtube_growth_analytics_dashboard.png';
-import youtubeYtShortsImg from '@assets/generated_images/youtube_shorts_viral_promotion.png';
-import googleAdsImg from '@assets/generated_images/google_ads_marketing_strategy.png';
-import channelSetupImg from '@assets/generated_images/professional_channel_setup_studio.png';
-import seoOptimizationImg from '@assets/generated_images/youtube_video_seo_optimization.png';
-
 // Real Fiverr services data - 15+ services from verified dataset
+// Images stored locally - creative generated assets
 export const FIVERR_SERVICES_DATA = {
   youtube_boost: [
     {
@@ -17,7 +12,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Growth Expert',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: youtubeGrowthImg,
+      imageUrl: null,
       category: 'youtube_boost'
     },
     {
@@ -30,7 +25,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Viral Specialist',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: youtubeYtShortsImg,
+      imageUrl: null,
       category: 'youtube_boost'
     },
     {
@@ -43,7 +38,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Ads Specialist',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: googleAdsImg,
+      imageUrl: null,
       category: 'youtube_boost'
     },
     {
@@ -56,7 +51,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Setup Expert',
       deliveryDays: 3,
       extraFast: false,
-      imageUrl: channelSetupImg,
+      imageUrl: null,
       category: 'youtube_boost'
     },
     {
@@ -69,7 +64,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'SEO Expert',
       deliveryDays: 2,
       extraFast: false,
-      imageUrl: seoOptimizationImg,
+      imageUrl: null,
       category: 'youtube_boost'
     },
     {
