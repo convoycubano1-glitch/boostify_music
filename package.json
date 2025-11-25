@@ -117,6 +117,8 @@
     "nodemon": "^3.1.9",
     "openai": "^4.85.4",
     "openid-client": "^6.8.1",
+    "p-limit": "^7.2.0",
+    "p-retry": "^7.1.0",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "postcss": "^8.5.6",
