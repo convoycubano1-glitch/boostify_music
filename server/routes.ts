@@ -106,6 +106,7 @@ import boostiswapRouter from './routes/boostiswap'; // Import BoostiSwap Marketp
 import socialMediaRouter from './routes/social-media'; // Import Social Media Content Generator router
 import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed function
 import educationGeminiRouter from './routes/education-gemini'; // Import Education Gemini AI router for course generation
+import educationMockRouter from './routes/education-courses-mock'; // Import mock courses router
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -270,6 +271,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   setupEducationRoutes(app);
   app.use(educationProgressiveRouter);
   app.use(educationGeminiRouter);
+  app.use(educationMockRouter);
   setupFilesRoutes(app);
 
   // Register generated artists routes (no authentication required)
