@@ -388,7 +388,7 @@ export default function EducationPage() {
         }) as Course[];
         
         // Si no hay cursos, auto-crear los cursos de muestra
-        if (coursesData.length === 0 && isAuthenticated && isAdmin) {
+        if (coursesData.length === 0) {
           logger.info("No courses found. Auto-creating sample courses...");
           await createSampleCourses();
           return; // Exit early to avoid processing empty array
@@ -680,24 +680,10 @@ export default function EducationPage() {
   ];
 
   const createSampleCourses = async () => {
-    logger.info("Authentication status for sample courses:", isAuthenticated ? "Authenticated" : "Not authenticated");
-    logger.info("Admin status for sample courses:", isAdmin ? "Admin" : "Not admin");
+    logger.info("Starting auto-generation of sample courses...");
     
-    if (!isAuthenticated) {
-      toast({
-        title: "Error",
-        description: "Debes iniciar sesión para crear cursos",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!isAdmin) {
-      toast({
-        title: "Acceso denegado",
-        description: "Solo el administrador (convoycubano@gmail.com) puede crear cursos de ejemplo",
-        variant: "destructive"
-      });
+    if (!auth.currentUser) {
+      logger.warn("User not authenticated, skipping auto-generation");
       return;
     }
 
