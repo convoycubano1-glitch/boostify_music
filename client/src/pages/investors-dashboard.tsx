@@ -1672,7 +1672,7 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
 }
 
 export default function InvestorsDashboard() {
-  const [selectedTab, setSelectedTab] = useState("overview");
+  const [selectedTab, setSelectedTab] = useState("projections");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -1872,7 +1872,7 @@ export default function InvestorsDashboard() {
                   </Card>
 
                   <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                    <Card className="p-2 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 flex flex-col items-center justify-center">
+                    <Card className="p-4 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 flex flex-col items-center justify-center">
                       <p className="text-xs sm:text-sm text-gray-400 mb-2">Diversification</p>
                       <div className="relative w-20 sm:w-32 h-20 sm:h-32">
                         <svg className="w-full h-full transform -rotate-90">
@@ -1885,7 +1885,7 @@ export default function InvestorsDashboard() {
                       </div>
                     </Card>
                     
-                    <Card className="p-2 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-yellow-500/20 flex flex-col items-center justify-center">
+                    <Card className="p-4 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-yellow-500/20 flex flex-col items-center justify-center">
                       <p className="text-xs sm:text-sm text-gray-400 mb-2">Risk Level</p>
                       <div className="relative w-20 sm:w-32 h-20 sm:h-32">
                         <svg className="w-full h-full transform -rotate-90">
