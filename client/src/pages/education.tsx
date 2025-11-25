@@ -60,6 +60,15 @@ export default function EducationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Función para generar datos aleatorios de curso - MOVIDA AL INICIO
+  const generateRandomCourseData = () => {
+    return {
+      rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)),
+      totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50,
+      enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100,
+    };
+  };
   const [newCourse, setNewCourse] = useState<CourseFormData>({
     title: "",
     description: "",
@@ -586,14 +595,6 @@ export default function EducationPage() {
 
     fetchCourses();
   }, [toast, levelImages]);
-
-  const generateRandomCourseData = () => {
-    return {
-      rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)),
-      totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50,
-      enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100,
-    };
-  };
 
   const handleCreateCourse = async () => {
     logger.info("Authentication status:", isAuthenticated ? "Authenticated" : "Not authenticated");
