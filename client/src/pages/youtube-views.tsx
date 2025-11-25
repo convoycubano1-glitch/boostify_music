@@ -1066,6 +1066,30 @@ export default function YoutubeViewsPage() {
           </div>
         </motion.div>
 
+        {/* SERVICES WITHOUT SUBSCRIPTION - ALWAYS VISIBLE */}
+        <div className="container mx-auto">
+          <div className="mb-16">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                  <Sparkles className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
+                  Services Without Subscription
+                </h2>
+              </div>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                15+ professional creator services available to all users. No subscription required - pay only for what you need. Direct checkout with Stripe.
+              </p>
+            </div>
+            <ExtraServicesSection
+              category="youtube_boost"
+              title="YouTube Boost Services"
+              description="Expert services to grow your YouTube channel, from SEO optimization to viral promotion strategies"
+            />
+          </div>
+        </div>
+
         {/* TOOLS SECTION HEADER */}
         <motion.div
           id="tools"
@@ -1145,10 +1169,6 @@ export default function YoutubeViewsPage() {
                 <TabsTrigger value="api" data-testid="tab-api" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white">
                   <Code className="w-4 h-4 mr-2" />
                   API
-                </TabsTrigger>
-                <TabsTrigger value="services" data-testid="tab-services" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Services
                 </TabsTrigger>
               </TabsList>
             </Card>
@@ -2269,19 +2289,6 @@ export default function YoutubeViewsPage() {
                   </motion.div>
                 )}
               </Card>
-            </TabsContent>
-
-            {/* SERVICES WITHOUT SUBSCRIPTION TAB - Available to all users */}
-            <TabsContent value="services" className="max-w-6xl">
-              <div className="mb-8">
-                <h2 className="text-3xl font-bold mb-2">Services Without Subscription</h2>
-                <p className="text-muted-foreground">15+ professional creator services available to all users. No subscription required - pay only for what you need.</p>
-              </div>
-              <ExtraServicesSection
-                category="youtube_boost"
-                title="YouTube Boost Services"
-                description="Expert services to grow your YouTube channel, from SEO optimization to viral promotion strategies"
-              />
             </TabsContent>
 
             {/* PHASE 3 - API ACCESS TAB */}

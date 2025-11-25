@@ -81,7 +81,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Design Pro',
       deliveryDays: 2,
       extraFast: true,
-      imageUrl: 'attached_assets/generated_images/thumbnail_design_ab_testing.png',
+      imageUrl: '/attached_assets/generated_images/thumbnail_design_ab_testing.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE006',
       category: 'youtube_boost'
     },
@@ -95,7 +95,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Playlist Expert',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: 'attached_assets/generated_images/playlist_optimization_strategy.png',
+      imageUrl: '/attached_assets/generated_images/playlist_optimization_strategy.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE007',
       category: 'youtube_boost'
     },
@@ -109,7 +109,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Writer Pro',
       deliveryDays: 2,
       extraFast: false,
-      imageUrl: 'attached_assets/generated_images/creative_video_script_writing.png',
+      imageUrl: '/attached_assets/generated_images/creative_video_script_writing.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE008',
       category: 'youtube_boost'
     },
@@ -123,7 +123,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Branding Expert',
       deliveryDays: 3,
       extraFast: false,
-      imageUrl: 'attached_assets/generated_images/complete_channel_branding.png',
+      imageUrl: '/attached_assets/generated_images/complete_channel_branding.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE009',
       category: 'youtube_boost'
     },
@@ -137,7 +137,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Strategy Analyst',
       deliveryDays: 2,
       extraFast: true,
-      imageUrl: 'attached_assets/generated_images/competitor_analysis_strategy.png',
+      imageUrl: '/attached_assets/generated_images/competitor_analysis_strategy.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE010',
       category: 'youtube_boost'
     },
@@ -151,7 +151,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'SEO Master',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: 'attached_assets/generated_images/video_seo_description_tags.png',
+      imageUrl: '/attached_assets/generated_images/video_seo_description_tags.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE011',
       category: 'youtube_boost'
     },
@@ -165,7 +165,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Community Manager',
       deliveryDays: 1,
       extraFast: false,
-      imageUrl: 'attached_assets/generated_images/community_management_dashboard.png',
+      imageUrl: '/attached_assets/generated_images/community_management_dashboard.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE012',
       category: 'youtube_boost'
     },
@@ -179,7 +179,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Analytics Expert',
       deliveryDays: 2,
       extraFast: false,
-      imageUrl: 'attached_assets/generated_images/youtube_analytics_reports.png',
+      imageUrl: '/attached_assets/generated_images/youtube_analytics_reports.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE013',
       category: 'youtube_boost'
     },
@@ -193,7 +193,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Trend Scout',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: 'attached_assets/generated_images/trending_niche_research.png',
+      imageUrl: '/attached_assets/generated_images/trending_niche_research.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE014',
       category: 'youtube_boost'
     },
@@ -207,7 +207,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Partnership Manager',
       deliveryDays: 2,
       extraFast: false,
-      imageUrl: 'attached_assets/generated_images/collaboration_outreach_strategy.png',
+      imageUrl: '/attached_assets/generated_images/collaboration_outreach_strategy.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE015',
       category: 'youtube_boost'
     },
@@ -221,7 +221,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Monetization Pro',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: 'attached_assets/generated_images/youtube_monetization_setup.png',
+      imageUrl: '/attached_assets/generated_images/youtube_monetization_setup.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE016',
       category: 'youtube_boost'
     },
@@ -235,7 +235,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Planning Expert',
       deliveryDays: 2,
       extraFast: false,
-      imageUrl: 'attached_assets/generated_images/content_calendar_planning.png',
+      imageUrl: '/attached_assets/generated_images/content_calendar_planning.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE017',
       category: 'youtube_boost'
     }
