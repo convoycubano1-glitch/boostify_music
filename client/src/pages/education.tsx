@@ -55,9 +55,9 @@ export default function EducationPage() {
           }
         }
 
-        // Load mock courses (instant response)
-        console.log('📚 Loading 20 AI courses...');
-        const response = await apiRequest('/api/education/get-courses', {
+        // Generate new courses
+        console.log('📚 Generating 20 AI courses...');
+        const response = await apiRequest('/api/education/generate-20-courses', {
           method: 'POST'
         });
 
