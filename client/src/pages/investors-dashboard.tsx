@@ -1108,48 +1108,48 @@ function RoadmapTimeline() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Projected Growth Chart */}
-      <div className="bg-gradient-to-r from-orange-400/10 to-transparent p-6 rounded-lg mb-8">
-        <h4 className="text-lg font-semibold mb-4">Projected User Growth</h4>
-        <div className="h-64 relative">
+      <div className="bg-gradient-to-r from-orange-400/10 to-transparent p-3 sm:p-6 rounded-lg mb-4 sm:mb-8">
+        <h4 className="text-sm sm:text-lg font-semibold mb-3 sm:mb-4">Projected User Growth</h4>
+        <div className="h-48 sm:h-64 relative">
           {/* Y-Axis */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between items-end pr-2">
-            <span className="text-xs text-muted-foreground">50K</span>
-            <span className="text-xs text-muted-foreground">37.5K</span>
-            <span className="text-xs text-muted-foreground">25K</span>
-            <span className="text-xs text-muted-foreground">12.5K</span>
-            <span className="text-xs text-muted-foreground">0</span>
+          <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-12 flex flex-col justify-between items-end pr-1 sm:pr-2">
+            <span className="text-[10px] sm:text-xs text-muted-foreground">50K</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">37.5K</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">25K</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">12.5K</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">0</span>
           </div>
           
           {/* Chart */}
-          <div className="ml-12 h-full flex items-end">
-            <div className="flex-1 flex items-end space-x-4">
+          <div className="ml-8 sm:ml-12 h-full flex items-end">
+            <div className="flex-1 flex items-end gap-0.5 sm:gap-1">
               {[
-                { month: "Jan '26", users: 1000, height: "10px" },
-                { month: "Mar '26", users: 2000, height: "15px" },
-                { month: "May '26", users: 3500, height: "25px" },
-                { month: "Jul '26", users: 5000, height: "35px" },
-                { month: "Sep '26", users: 7500, height: "50px" },
-                { month: "Nov '26", users: 10000, height: "65px" },
-                { month: "Jan '27", users: 15000, height: "95px" },
-                { month: "Mar '27", users: 20000, height: "130px" },
-                { month: "May '27", users: 26000, height: "170px" },
-                { month: "Jul '27", users: 32000, height: "210px" },
-                { month: "Sep '27", users: 39000, height: "255px" },
-                { month: "Nov '27", users: 45000, height: "295px" },
-                { month: "Dec '28", users: 50000, height: "360px" }
+                { month: "Jan '26", users: 1000, height: "8px" },
+                { month: "Mar '26", users: 2000, height: "12px" },
+                { month: "May '26", users: 3500, height: "20px" },
+                { month: "Jul '26", users: 5000, height: "28px" },
+                { month: "Sep '26", users: 7500, height: "40px" },
+                { month: "Nov '26", users: 10000, height: "52px" },
+                { month: "Jan '27", users: 15000, height: "76px" },
+                { month: "Mar '27", users: 20000, height: "104px" },
+                { month: "May '27", users: 26000, height: "136px" },
+                { month: "Jul '27", users: 32000, height: "168px" },
+                { month: "Sep '27", users: 39000, height: "204px" },
+                { month: "Nov '27", users: 45000, height: "236px" },
+                { month: "Dec '28", users: 50000, height: "260px" }
               ].map((item, index) => (
-                <div key={index} className="flex flex-col items-center flex-1">
+                <div key={index} className="flex flex-col items-center flex-1 min-w-0">
                   <div 
-                    className="w-full max-w-[50px] bg-gradient-to-t from-orange-400 to-orange-400 rounded-t relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500"
+                    className="w-full max-w-[20px] sm:max-w-[50px] bg-gradient-to-t from-orange-400 to-orange-400 rounded-t relative group cursor-pointer transition-all hover:from-orange-600 hover:to-orange-500"
                     style={{ height: item.height }}
                   >
-                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-[10px] sm:text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                       {item.users.toLocaleString()} users
                     </div>
                   </div>
-                  <span className="text-xs mt-2 text-muted-foreground">{item.month}</span>
+                  <span className="text-[7px] sm:text-xs mt-1 sm:mt-2 text-muted-foreground whitespace-nowrap">{item.month}</span>
                 </div>
               ))}
             </div>
@@ -1158,12 +1158,12 @@ function RoadmapTimeline() {
       </div>
       
       {/* Timeline */}
-      <div className="relative mt-8">
-        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-orange-500/20"></div>
-        <div className="space-y-8">
+      <div className="relative mt-4 sm:mt-8">
+        <div className="absolute left-4 sm:left-8 top-0 bottom-0 w-0.5 bg-orange-500/20"></div>
+        <div className="space-y-4 sm:space-y-8">
           {roadmapData.map((item, index) => (
-            <div key={index} className="relative pl-16">
-              <div className={`absolute left-5 top-1 w-7 h-7 rounded-full flex items-center justify-center border-2 cursor-pointer hover:scale-110 transition-transform ${
+            <div key={index} className="relative pl-10 sm:pl-16">
+              <div className={`absolute left-1 sm:left-5 top-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border-2 cursor-pointer hover:scale-110 transition-transform ${
                 item.status === 'completed' ? 'bg-orange-500 border-orange-500' : 
                 item.status === 'in-progress' ? 'bg-background border-orange-500' : 
                 item.isKey ? 'bg-background border-yellow-500' : 'bg-background border-muted-foreground'
@@ -1179,22 +1179,22 @@ function RoadmapTimeline() {
                 )}
               </div>
 
-              <div className={`pb-4 cursor-pointer transition-all ${item.isKey ? 'bg-orange-500/5 p-4 rounded-lg border border-orange-500/20' : ''}`} onClick={() => toggleExpand(index)}>
+              <div className={`pb-3 sm:pb-4 cursor-pointer transition-all ${item.isKey ? 'bg-orange-500/5 p-3 sm:p-4 rounded-lg border border-orange-500/20' : ''}`} onClick={() => toggleExpand(index)}>
                 <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <span className={`text-sm font-medium ${item.isKey ? 'text-orange-500' : 'text-muted-foreground'} px-2 py-1 ${item.isKey ? 'bg-orange-500/10' : 'bg-muted/50'} rounded mb-2 inline-block`}>
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-xs sm:text-sm font-medium ${item.isKey ? 'text-orange-500' : 'text-muted-foreground'} px-2 py-1 ${item.isKey ? 'bg-orange-500/10' : 'bg-muted/50'} rounded mb-2 inline-block`}>
                       {item.date}
                     </span>
-                    <h4 className={`text-base font-medium mt-2 mb-1 ${item.isKey ? 'text-orange-500' : ''}`}>{item.title}</h4>
+                    <h4 className={`text-sm sm:text-base font-medium mt-2 mb-1 ${item.isKey ? 'text-orange-500' : ''}`}>{item.title}</h4>
                   </div>
-                  <span className={`ml-2 text-lg transform transition-transform ${expandedItems.includes(index) ? 'rotate-180' : ''}`}>
+                  <span className={`ml-2 text-sm sm:text-lg transform transition-transform flex-shrink-0 ${expandedItems.includes(index) ? 'rotate-180' : ''}`}>
                     ▼
                   </span>
                 </div>
                 
                 {expandedItems.includes(index) && (
-                  <div className="mt-3 pt-3 border-t border-white/10 animate-in fade-in">
-                    <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/10 animate-in fade-in">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-2">{item.description}</p>
                     {item.stats && (
                       <div className="mt-2 text-xs inline-block px-2 py-1 bg-black/20 rounded font-medium">
                         {item.stats}
@@ -2166,19 +2166,19 @@ export default function InvestorsDashboard() {
                   </div>
                 </Card>
 
-                <Card className="p-4 sm:p-6">
-                  <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">Investment Funding Rounds</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8">Professional funding opportunities with tiered growth targets</p>
+                <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20">
+                  <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-white">Investment Funding Rounds</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">Professional funding opportunities with tiered growth targets</p>
 
                   <Button 
                     onClick={handleInvestNow}
-                    className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg mb-6 sm:mb-8"
+                    className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg mb-4 sm:mb-6"
                   >
                     <CreditCard className="h-4 w-4 mr-2" />
                     Invest Now
                   </Button>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-6 sm:mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
                     {investmentData.investmentRounds.map((round: any, index: number) => (
                       <Card key={index} className={`p-4 sm:p-6 relative ${
                         round.status === 'Active' 
@@ -2200,7 +2200,7 @@ export default function InvestorsDashboard() {
                           </span>
                         </div>
                         
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-4 line-clamp-2">{round.description}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-4">{round.description}</p>
                         
                         <div className="space-y-3 mb-4">
                           <div>
@@ -2247,7 +2247,7 @@ export default function InvestorsDashboard() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                     <Card className="p-4 sm:p-6 bg-orange-500/10 border-orange-500/20">
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-orange-500/20 rounded-lg flex-shrink-0">
@@ -2255,7 +2255,7 @@ export default function InvestorsDashboard() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">Total Capital Target</p>
-                          <p className="text-2xl font-bold">$3M</p>
+                          <p className="text-xl sm:text-2xl font-bold">$3M</p>
                           <p className="text-xs text-muted-foreground mt-1">Across all rounds</p>
                         </div>
                       </div>
@@ -2268,7 +2268,7 @@ export default function InvestorsDashboard() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">User Growth Goal</p>
-                          <p className="text-2xl font-bold">50K+</p>
+                          <p className="text-xl sm:text-2xl font-bold">50K+</p>
                           <p className="text-xs text-muted-foreground mt-1">By Series B close</p>
                         </div>
                       </div>
@@ -2281,7 +2281,7 @@ export default function InvestorsDashboard() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">Total Equity Available</p>
-                          <p className="text-2xl font-bold">20%</p>
+                          <p className="text-xl sm:text-2xl font-bold">20%</p>
                           <p className="text-xs text-muted-foreground mt-1">Across funding rounds</p>
                         </div>
                       </div>
@@ -2292,11 +2292,9 @@ export default function InvestorsDashboard() {
 
               {/* Roadmap Tab */}
               <TabsContent value="roadmap">
-                <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20 overflow-hidden">
+                <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20">
                   <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-white">Boostify Music Roadmap</h3>
-                  <div className="w-full overflow-x-auto">
-                    <RoadmapTimeline />
-                  </div>
+                  <RoadmapTimeline />
                 </Card>
               </TabsContent>
 
