@@ -386,6 +386,14 @@ export default function EducationPage() {
             createdAt: data.createdAt?.toDate() || new Date()
           };
         }) as Course[];
+        
+        // Si no hay cursos, auto-crear los cursos de muestra
+        if (coursesData.length === 0 && isAuthenticated && isAdmin) {
+          logger.info("No courses found. Auto-creating sample courses...");
+          await createSampleCourses();
+          return; // Exit early to avoid processing empty array
+        }
+        
         setCourses(coursesData);
         
         // Después de cargar los cursos, procesamos las imágenes utilizando nuestro sistema de caché
