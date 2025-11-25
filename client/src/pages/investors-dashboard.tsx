@@ -1648,21 +1648,21 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
       {stats.map((stat, index) => (
         <Card 
           key={index} 
-          className="relative p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 hover:border-orange-500/50 transition-all duration-300 overflow-hidden group"
+          className="relative p-3 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 hover:border-orange-500/50 transition-all duration-300 overflow-hidden group"
         >
           {/* Glow effect on hover */}
           <div className={`absolute inset-0 ${stat.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
           
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 ${stat.bgColor} rounded-xl shadow-lg`}>
-                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <div className={`p-2 sm:p-3 ${stat.bgColor} rounded-xl shadow-lg`}>
+                <stat.icon className={`h-4 w-4 sm:h-6 sm:w-6 ${stat.color}`} />
               </div>
-              <span className="text-sm font-semibold text-yellow-400">{stat.growth}</span>
+              <span className="text-xs sm:text-sm font-semibold text-yellow-400">{stat.growth}</span>
             </div>
             <div>
-              <p className="text-sm text-gray-400 mb-2">{stat.title}</p>
-              <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-200 bg-clip-text text-transparent">{stat.value}</p>
+              <p className="text-xs sm:text-sm text-gray-400 mb-1 sm:mb-2">{stat.title}</p>
+              <p className="text-xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-200 bg-clip-text text-transparent">{stat.value}</p>
             </div>
           </div>
         </Card>
@@ -1861,65 +1861,65 @@ export default function InvestorsDashboard() {
 
               {/* Overview Tab */}
               <TabsContent value="overview">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
                   <InvestorStats investorData={investorData?.data} globalStats={globalStats} />
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
-                  <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20">
-                    <h3 className="text-lg font-semibold mb-6 text-orange-300">Portfolio Value Over Time</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6 mb-8">
+                  <Card className="p-3 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20">
+                    <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-orange-300">Portfolio Value Over Time</h3>
                     <InvestmentPerformanceChart data={investmentData.monthlyReturns} />
                   </Card>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 flex flex-col items-center justify-center">
-                      <p className="text-sm text-gray-400 mb-2">Diversification</p>
-                      <div className="relative w-32 h-32">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                    <Card className="p-2 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 flex flex-col items-center justify-center">
+                      <p className="text-xs sm:text-sm text-gray-400 mb-2">Diversification</p>
+                      <div className="relative w-20 sm:w-32 h-20 sm:h-32">
                         <svg className="w-full h-full transform -rotate-90">
                           <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(30 41 59)" strokeWidth="12"/>
                           <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(6 182 212)" strokeWidth="12" strokeDasharray="264" strokeDashoffset="66" strokeLinecap="round"/>
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-3xl font-bold text-orange-300">75%</span>
+                          <span className="text-lg sm:text-3xl font-bold text-orange-300">75%</span>
                         </div>
                       </div>
                     </Card>
                     
-                    <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-yellow-500/20 flex flex-col items-center justify-center">
-                      <p className="text-sm text-gray-400 mb-2">Risk Level</p>
-                      <div className="relative w-32 h-32">
+                    <Card className="p-2 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-yellow-500/20 flex flex-col items-center justify-center">
+                      <p className="text-xs sm:text-sm text-gray-400 mb-2">Risk Level</p>
+                      <div className="relative w-20 sm:w-32 h-20 sm:h-32">
                         <svg className="w-full h-full transform -rotate-90">
                           <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(30 41 59)" strokeWidth="12"/>
                           <circle cx="64" cy="64" r="56" fill="none" stroke="rgb(234 179 8)" strokeWidth="12" strokeDasharray="264" strokeDashoffset="184" strokeLinecap="round"/>
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-3xl font-bold text-yellow-400">30%</span>
+                          <span className="text-lg sm:text-3xl font-bold text-yellow-400">30%</span>
                         </div>
                       </div>
                     </Card>
                   </div>
                 </div>
 
-                <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 mb-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold text-orange-300">Investor Information</h3>
+                <Card className="p-3 sm:p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border border-orange-500/20 mb-8">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-orange-300">Investor Information</h3>
                     <Button variant="outline" size="sm" className="border-orange-500/50 text-orange-300 hover:bg-cyan-500/10">
                       <Download className="h-4 w-4 mr-2" />
                       Download Info
                     </Button>
                   </div>
 
-                  <div className="space-y-4 text-gray-300">
+                  <div className="space-y-3 sm:space-y-4 text-gray-300">
                     <div>
-                      <h4 className="text-base font-semibold mb-2 text-white">Investing in Boostify Music</h4>
-                      <p className="text-sm">
+                      <h4 className="text-sm sm:text-base font-semibold mb-2 text-white">Investing in Boostify Music</h4>
+                      <p className="text-xs sm:text-sm">
                         Boostify Music offers a unique opportunity to invest in the future of the music industry. Our AI-powered platform is revolutionizing how artists, producers, and fans interact with music.
                       </p>
                     </div>
                     
                     <div>
-                      <h4 className="text-base font-semibold mb-3 text-white">Investment Benefits</h4>
-                      <ul className="space-y-2 text-sm">
+                      <h4 className="text-sm sm:text-base font-semibold mb-3 text-white">Investment Benefits</h4>
+                      <ul className="space-y-2 text-xs sm:text-sm">
                         <li className="flex items-start gap-2">
                           <Check className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
                           <span><strong className="text-orange-300">Monthly Returns:</strong> 4-6% based on your selected investment plan</span>
@@ -1944,8 +1944,8 @@ export default function InvestorsDashboard() {
                     </div>
 
                     <div>
-                      <h4 className="text-base font-semibold mb-2 text-white">Upcoming Milestones</h4>
-                      <p className="text-sm">
+                      <h4 className="text-sm sm:text-base font-semibold mb-2 text-white">Upcoming Milestones</h4>
+                      <p className="text-xs sm:text-sm">
                         We're rapidly expanding, with the upcoming launch of our AI-enhanced streaming platform and new creator tools. Series B funding will accelerate our international growth.
                       </p>
                     </div>
