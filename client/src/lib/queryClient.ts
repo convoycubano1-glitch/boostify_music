@@ -34,7 +34,7 @@ interface ApiRequestOptions {
 
 export async function apiRequest(
   options: ApiRequestOptions | string,
-  url?: string,
+  urlOrOptions?: string | Partial<ApiRequestOptions>,
   data?: unknown | undefined,
 ): Promise<any> {
   const headers = await getAuthHeaders();
@@ -59,7 +59,7 @@ export async function apiRequest(
     }
     
     const res = await fetch(finalUrl, {
-      method,
+      method: method || 'GET',
       headers: requestHeaders,
       body: finalData ? JSON.stringify(finalData) : undefined,
       credentials: "include",
@@ -67,11 +67,45 @@ export async function apiRequest(
     
     await throwIfResNotOk(res);
     return await res.json();
+  } else if (typeof options === 'string' && options.startsWith('/')) {
+    // URL-first API: apiRequest('/api/...', { method: 'POST', data: {...} }) or apiRequest('/api/...', 'POST', data)
+    const url = options;
+    
+    if (typeof urlOrOptions === 'object') {
+      // apiRequest('/api/...', { method: 'POST', data: {...} })
+      const { method = 'GET', data: requestData, body: requestBody, headers: customHeaders } = urlOrOptions as Partial<ApiRequestOptions>;
+      const finalData = requestData || requestBody;
+      const requestHeaders = { ...headers, ...customHeaders };
+      
+      const res = await fetch(url, {
+        method,
+        headers: requestHeaders,
+        body: finalData ? JSON.stringify(finalData) : undefined,
+        credentials: "include",
+      });
+      
+      await throwIfResNotOk(res);
+      return await res.json();
+    } else {
+      // apiRequest('/api/...', 'POST', data) or apiRequest('/api/...')
+      const method = urlOrOptions || 'GET';
+      
+      const res = await fetch(url, {
+        method,
+        headers: data ? { ...headers } : headers,
+        body: data ? JSON.stringify(data) : undefined,
+        credentials: "include",
+      });
+      
+      await throwIfResNotOk(res);
+      return await res.json();
+    }
   } else {
     // Old API: options is the method, url is the URL
     const method = options;
+    const url = urlOrOptions as string;
     
-    const res = await fetch(url!, {
+    const res = await fetch(url, {
       method,
       headers: data ? { ...headers } : headers,
       body: data ? JSON.stringify(data) : undefined,
