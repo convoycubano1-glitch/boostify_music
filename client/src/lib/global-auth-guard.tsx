@@ -30,7 +30,6 @@ const PUBLIC_ROUTES = [
   '/blog',
   '/artist',
   '/investors',
-  '/youtube-views',
 ];
 
 /**
