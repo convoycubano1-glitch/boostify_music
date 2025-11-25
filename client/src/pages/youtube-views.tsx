@@ -1071,15 +1071,15 @@ export default function YoutubeViewsPage() {
           <div className="mb-16">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
                   <Sparkles className="w-7 h-7 text-white" />
                 </div>
-                <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
-                  Services Without Subscription
+                <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                  Growth Tools Suite
                 </h2>
               </div>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                15+ professional creator services available to all users. No subscription required - pay only for what you need. Direct checkout with Stripe.
+                Everything you need to dominate YouTube, from pre-launch analysis to enterprise automation.
               </p>
             </div>
             <ExtraServicesSection
