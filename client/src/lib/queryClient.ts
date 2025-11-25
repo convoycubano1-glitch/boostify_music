@@ -77,10 +77,15 @@ export async function apiRequest(
       const finalData = requestData || requestBody;
       const requestHeaders = { ...headers, ...customHeaders };
       
+      // If body is already a string (pre-serialized), don't stringify again
+      const bodyToSend = finalData 
+        ? (typeof finalData === 'string' ? finalData : JSON.stringify(finalData))
+        : undefined;
+      
       const res = await fetch(url, {
         method,
         headers: requestHeaders,
-        body: finalData ? JSON.stringify(finalData) : undefined,
+        body: bodyToSend,
         credentials: "include",
       });
       
