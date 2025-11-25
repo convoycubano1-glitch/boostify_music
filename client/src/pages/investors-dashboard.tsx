@@ -2166,81 +2166,79 @@ export default function InvestorsDashboard() {
                   </div>
                 </Card>
 
-                <Card className="p-3 sm:p-6 w-full max-w-full overflow-hidden">
-                  <div className="mb-4 sm:mb-8 w-full min-w-0">
-                    <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2 truncate">Investment Funding Rounds</h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Professional funding opportunities</p>
-                  </div>
+                <Card className="p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">Investment Funding Rounds</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8">Professional funding opportunities with tiered growth targets</p>
 
                   <Button 
                     onClick={handleInvestNow}
-                    className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg mb-4 sm:mb-8"
+                    className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg mb-6 sm:mb-8"
                   >
-                    <CreditCard className="h-4 w-4 mr-1 sm:mr-2" />
-                    <span className="truncate">Invest Now</span>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Invest Now
                   </Button>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6 mb-4 sm:mb-8 w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-6 sm:mb-8">
                     {investmentData.investmentRounds.map((round: any, index: number) => (
-                      <Card key={index} className={`p-3 sm:p-6 relative w-full min-w-0 ${
+                      <Card key={index} className={`p-4 sm:p-6 relative ${
                         round.status === 'Active' 
                           ? 'bg-gradient-to-br from-orange-400/20 to-orange-500/5 border-orange-500/30' 
                           : 'bg-gradient-to-br from-slate-800/50 to-gray-900/50 border-slate-700/30'
                       }`}>
                         {round.status === 'Active' && (
-                          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 px-2 sm:px-3 py-0.5 sm:py-1 bg-orange-500 text-white text-[10px] sm:text-xs rounded-full font-semibold whitespace-nowrap">
+                          <div className="absolute top-3 right-3 px-3 py-1 bg-orange-500 text-white text-xs rounded-full font-semibold">
                             OPEN NOW
                           </div>
                         )}
                         
-                        <div className="mb-3 sm:mb-4 pr-14 w-full min-w-0">
-                          <h4 className="text-xs sm:text-lg font-bold truncate">{round.name}</h4>
-                          <span className={`inline-block mt-1 px-2 py-0.5 sm:py-1 rounded text-xs font-semibold ${
+                        <div className="mb-3 sm:mb-4 pr-16">
+                          <h4 className="text-sm sm:text-lg font-bold mb-2">{round.name}</h4>
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
                             round.status === 'Active' ? 'bg-green-500/20 text-yellow-400' : 'bg-blue-500/20 text-orange-400'
                           }`}>
                             {round.status}
                           </span>
                         </div>
                         
-                        <p className="text-[11px] sm:text-sm text-muted-foreground mb-3 sm:mb-4 line-clamp-1">{round.description}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-4 line-clamp-2">{round.description}</p>
                         
-                        <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4 text-xs sm:text-sm">
-                          <div className="flex justify-between">
-                            <p className="text-muted-foreground">Date:</p>
-                            <p className="font-semibold text-right truncate ml-2">{round.date}</p>
+                        <div className="space-y-3 mb-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Launch Date</p>
+                            <p className="text-xs sm:text-sm font-semibold">{round.date}</p>
                           </div>
-                          <div className="flex justify-between">
-                            <p className="text-muted-foreground">Equity:</p>
-                            <p className="font-bold text-orange-400 truncate ml-2">{round.equity}</p>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Equity Offered</p>
+                            <p className="text-sm font-bold text-orange-400">{round.equity}</p>
                           </div>
-                          <div className="flex justify-between">
-                            <p className="text-muted-foreground">Target:</p>
-                            <p className="font-bold truncate ml-2">{round.target}</p>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Funding Target</p>
+                            <p className="text-sm font-bold">{round.target}</p>
                           </div>
-                          <div className="flex justify-between">
-                            <p className="text-muted-foreground">Type:</p>
-                            <p className="font-semibold text-orange-400 text-right truncate ml-2">{round.raisedStatus}</p>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Round Type</p>
+                            <p className="text-xs font-semibold text-orange-400">{round.raisedStatus}</p>
                           </div>
-                          <div className="flex justify-between">
-                            <p className="text-muted-foreground">Goal:</p>
-                            <p className="font-bold text-yellow-400 text-right truncate ml-2">{round.goal}</p>
+                          <div>
+                            <p className="text-xs text-muted-foreground">User Growth Goal</p>
+                            <p className="text-sm font-bold text-yellow-400">{round.goal}</p>
                           </div>
                         </div>
                         
                         {round.status === 'Active' && (
                           <Button 
                             onClick={handleInvestNow}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs sm:text-sm h-8 sm:h-9"
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
                           >
-                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            <span className="truncate">Invest</span>
+                            <DollarSign className="h-4 w-4 mr-2" />
+                            Invest Now
                           </Button>
                         )}
                         {round.status === 'Upcoming' && (
                           <Button 
                             disabled
                             variant="outline"
-                            className="w-full text-xs sm:text-sm h-8 sm:h-9"
+                            className="w-full"
                           >
                             Coming Soon
                           </Button>
@@ -2249,8 +2247,8 @@ export default function InvestorsDashboard() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <Card className="p-4 bg-orange-500/10 border-orange-500/20">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+                    <Card className="p-4 sm:p-6 bg-orange-500/10 border-orange-500/20">
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-orange-500/20 rounded-lg flex-shrink-0">
                           <Target className="h-5 w-5 text-orange-500" />
@@ -2263,7 +2261,7 @@ export default function InvestorsDashboard() {
                       </div>
                     </Card>
 
-                    <Card className="p-4 bg-cyan-500/10 border-orange-500/20">
+                    <Card className="p-4 sm:p-6 bg-cyan-500/10 border-orange-500/20">
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-cyan-500/20 rounded-lg flex-shrink-0">
                           <Users className="h-5 w-5 text-orange-500" />
@@ -2276,7 +2274,7 @@ export default function InvestorsDashboard() {
                       </div>
                     </Card>
 
-                    <Card className="p-4 bg-yellow-500/10 border-yellow-500/20">
+                    <Card className="p-4 sm:p-6 bg-yellow-500/10 border-yellow-500/20">
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-yellow-500/20 rounded-lg flex-shrink-0">
                           <TrendingUp className="h-5 w-5 text-yellow-500" />
@@ -2294,9 +2292,11 @@ export default function InvestorsDashboard() {
 
               {/* Roadmap Tab */}
               <TabsContent value="roadmap">
-                <Card className="p-4 sm:p-6 mb-6 sm:mb-8 bg-black/20 border-orange-500/20">
-                  <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-white">Boostify Music Roadmap</h3>
-                  <RoadmapTimeline />
+                <Card className="p-4 sm:p-6 bg-black/20 border-orange-500/20 overflow-hidden">
+                  <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-white">Boostify Music Roadmap</h3>
+                  <div className="w-full overflow-x-auto">
+                    <RoadmapTimeline />
+                  </div>
                 </Card>
               </TabsContent>
 
