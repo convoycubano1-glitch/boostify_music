@@ -1611,32 +1611,32 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
   const stats = [
     { 
       title: "TOTAL INVESTMENTS", 
-      value: `$${(investorData?.stats?.totalInvested || 1200000).toLocaleString()}`, 
-      growth: "+12.0%", 
+      value: `$${(investorData?.stats?.totalInvested || 500000).toLocaleString()}`, 
+      growth: "+15.3%", 
       icon: DollarSign,
       color: "text-orange-400",
       bgColor: "bg-cyan-500/10" 
     },
     { 
       title: "CURRENT RETURN", 
-      value: `+${(investorData?.stats?.currentReturn || 18.5).toFixed(1)}%`, 
-      growth: "+2.5%", 
+      value: `+${(investorData?.stats?.currentReturn || 12.5).toFixed(1)}%`, 
+      growth: "+3.2%", 
       icon: TrendingUp,
       color: "text-yellow-400",
       bgColor: "bg-yellow-500/10" 
     },
     { 
       title: "PROJECTED YIELD", 
-      value: `${(investorData?.stats?.projectedYield || 24.0).toFixed(1)}%`, 
-      growth: "+4.5%", 
+      value: `${(investorData?.stats?.projectedYield || 38.0).toFixed(1)}%`, 
+      growth: "+5.8%", 
       icon: Target,
       color: "text-yellow-400",
       bgColor: "bg-yellow-500/10" 
     },
     { 
       title: "PLATFORM CAPITAL", 
-      value: `$${((globalStats?.data?.totalCapital || 8500000) / 1000000).toFixed(1)}M`, 
-      growth: "+8.3%", 
+      value: `$${((globalStats?.data?.totalCapital || 500000) / 1000000).toFixed(1)}M`, 
+      growth: "+15.3%", 
       icon: BarChart,
       color: "text-purple-400",
       bgColor: "bg-amber-500/10" 
