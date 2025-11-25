@@ -2166,25 +2166,25 @@ export default function InvestorsDashboard() {
                   </div>
                 </Card>
 
-                <Card className="p-3 sm:p-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
-                    <div>
+                <Card className="p-3 sm:p-6 w-full overflow-hidden">
+                  <div className="flex flex-col gap-3 mb-6 sm:mb-8">
+                    <div className="w-full">
                       <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Investment Funding Rounds</h3>
                       <p className="text-xs sm:text-sm text-muted-foreground">Professional funding opportunities with tiered growth targets</p>
                     </div>
                     <Button 
                       onClick={handleInvestNow}
                       size="sm"
-                      className="w-full sm:w-auto bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
+                      className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
                       Invest Now
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6 mb-6 sm:mb-8 w-full">
                     {investmentData.investmentRounds.map((round: any, index: number) => (
-                      <Card key={index} className={`p-3 sm:p-6 relative overflow-hidden ${
+                      <Card key={index} className={`p-2 sm:p-6 relative overflow-hidden w-full ${
                         round.status === 'Active' 
                           ? 'bg-gradient-to-br from-orange-400/20 to-orange-500/5 border-orange-500/30' 
                           : 'bg-gradient-to-br from-slate-800/50 to-gray-900/50 border-slate-700/30'
@@ -2195,55 +2195,55 @@ export default function InvestorsDashboard() {
                           </div>
                         )}
                         
-                        <div className="mb-3 sm:mb-4">
-                          <div className="flex justify-between items-start mb-2 sm:mb-3 gap-2">
-                            <h4 className="text-base sm:text-xl font-bold flex-1">{round.name}</h4>
-                            <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold flex-shrink-0 ${
+                        <div className="mb-2 sm:mb-4">
+                          <div className="flex justify-between items-start mb-1 sm:mb-2 gap-1">
+                            <h4 className="text-sm sm:text-xl font-bold flex-1 truncate">{round.name}</h4>
+                            <span className={`px-1 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-xs font-semibold flex-shrink-0 whitespace-nowrap ${
                               round.status === 'Active' ? 'bg-green-500/20 text-yellow-400' : 'bg-blue-500/20 text-orange-400'
                             }`}>
                               {round.status}
                             </span>
                           </div>
-                          <p className="text-[11px] sm:text-sm text-muted-foreground mb-3 sm:mb-4 line-clamp-3">{round.description}</p>
+                          <p className="text-[10px] sm:text-sm text-muted-foreground mb-2 sm:mb-3 line-clamp-2">{round.description}</p>
                         </div>
                         
-                        <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
-                          <div className="flex justify-between items-center pb-2 border-b border-white/10 text-[11px] sm:text-xs">
-                            <span className="text-muted-foreground">Launch Date</span>
-                            <span className="font-semibold">{round.date}</span>
+                        <div className="space-y-1 sm:space-y-2 mb-2 sm:mb-3">
+                          <div className="flex justify-between items-center pb-1 border-b border-white/10 text-[9px] sm:text-xs gap-1">
+                            <span className="text-muted-foreground flex-shrink-0">Launch Date</span>
+                            <span className="font-semibold text-right">{round.date}</span>
                           </div>
-                          <div className="flex justify-between items-center pb-2 border-b border-white/10 text-[11px] sm:text-xs">
-                            <span className="text-muted-foreground">Equity Offered</span>
+                          <div className="flex justify-between items-center pb-1 border-b border-white/10 text-[9px] sm:text-xs gap-1">
+                            <span className="text-muted-foreground flex-shrink-0">Equity</span>
                             <span className="font-bold text-orange-400">{round.equity}</span>
                           </div>
-                          <div className="flex justify-between items-center pb-2 border-b border-white/10 text-[11px] sm:text-xs">
-                            <span className="text-muted-foreground">Funding Target</span>
+                          <div className="flex justify-between items-center pb-1 border-b border-white/10 text-[9px] sm:text-xs gap-1">
+                            <span className="text-muted-foreground flex-shrink-0">Target</span>
                             <span className="font-bold">{round.target}</span>
                           </div>
-                          <div className="flex justify-between items-center pb-2 border-b border-white/10 text-[11px] sm:text-xs">
-                            <span className="text-muted-foreground">Round Type</span>
-                            <span className="font-semibold text-orange-400">{round.raisedStatus}</span>
+                          <div className="flex justify-between items-center pb-1 border-b border-white/10 text-[9px] sm:text-xs gap-1">
+                            <span className="text-muted-foreground flex-shrink-0">Type</span>
+                            <span className="font-semibold text-orange-400 text-right">{round.raisedStatus}</span>
                           </div>
-                          <div className="flex justify-between items-center text-[11px] sm:text-xs">
-                            <span className="text-muted-foreground">User Growth Goal</span>
-                            <span className="font-bold text-yellow-400">{round.goal}</span>
+                          <div className="flex justify-between items-center text-[9px] sm:text-xs gap-1">
+                            <span className="text-muted-foreground flex-shrink-0">Goal</span>
+                            <span className="font-bold text-yellow-400 text-right">{round.goal}</span>
                           </div>
                         </div>
                         
                         {round.status === 'Active' && (
                           <Button 
                             onClick={handleInvestNow}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold mt-2 text-sm h-9"
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold mt-2 text-xs sm:text-sm h-8 sm:h-9 px-2"
                           >
-                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                            Invest Now
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            <span className="truncate">Invest Now</span>
                           </Button>
                         )}
                         {round.status === 'Upcoming' && (
                           <Button 
                             disabled
                             variant="outline"
-                            className="w-full text-sm h-9"
+                            className="w-full text-xs sm:text-sm h-8 sm:h-9 px-2"
                           >
                             Coming Soon
                           </Button>
