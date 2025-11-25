@@ -135,6 +135,13 @@ app.use((req, res, next) => {
     app.use('/uploads', express.static(uploadsPath));
     log(`📁 Serving uploaded files from: ${uploadsPath}`);
 
+    // Serve attached assets (generated images, AI content, etc)
+    const assetsPath = path.resolve(__dirname, '..', 'attached_assets');
+    if (fs.existsSync(assetsPath)) {
+      app.use('/attached_assets', express.static(assetsPath));
+      log(`🖼️ Serving attached assets from: ${assetsPath}`);
+    }
+
     // IMPORTANT: Register API routes BEFORE static file serving
     const server = await registerRoutes(app);
     log('✅ API routes registered successfully');
