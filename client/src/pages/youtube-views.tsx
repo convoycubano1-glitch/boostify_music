@@ -2271,12 +2271,16 @@ export default function YoutubeViewsPage() {
               </Card>
             </TabsContent>
 
-            {/* EXTRA SERVICES TAB - Available to all users */}
+            {/* SERVICES WITHOUT SUBSCRIPTION TAB - Available to all users */}
             <TabsContent value="services" className="max-w-6xl">
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold mb-2">Services Without Subscription</h2>
+                <p className="text-muted-foreground">15+ professional creator services available to all users. No subscription required - pay only for what you need.</p>
+              </div>
               <ExtraServicesSection
                 category="youtube_boost"
-                title="Creator Services"
-                description="Boost your channel with expert services from verified creators. Pay separately as needed."
+                title="YouTube Boost Services"
+                description="Expert services to grow your YouTube channel, from SEO optimization to viral promotion strategies"
               />
             </TabsContent>
 

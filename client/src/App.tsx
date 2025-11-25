@@ -121,7 +121,6 @@ const TimelineDemoPage = lazy(() => import("./pages/timeline-demo"));
 const DebugFirebasePage = lazy(() => import("./pages/debug-firebase"));
 const TimelineEditorPage = lazy(() => import("./pages/timeline-editor"));
 const SocialMediaGeneratorPage = lazy(() => import("./pages/social-media-generator"));
-const ExtraServicesPage = lazy(() => import("./pages/extra-services"));
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -312,7 +311,6 @@ const Router = () => {
   const WrappedDiagnosticsPage = withPageWrapper(DiagnosticsPage);
   const WrappedArticlePage = withPageWrapper(ArticlePage);
   const WrappedSocialMediaGeneratorPage = withPageWrapper(SocialMediaGeneratorPage);
-  const WrappedExtraServicesPage = withPageWrapper(ExtraServicesPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -369,7 +367,6 @@ const Router = () => {
           {getRouteComponent("/global", WrappedGlobalPage, 'pro')}
           {getRouteComponent("/promotion", WrappedPromotionPage, 'pro')}
           {getRouteComponent("/youtube-views", WrappedYoutubeViewsPage, 'pro')}
-          {getRouteComponent("/extra-services", WrappedExtraServicesPage, 'free')}
           {getRouteComponent("/instagram-boost", WrappedInstagramBoostPage, 'pro')}
           {getRouteComponent("/manager-tools", WrappedManagerToolsPage, 'pro')}
           {getRouteComponent("/producer-tools", WrappedProducerToolsPage, 'pro')}
