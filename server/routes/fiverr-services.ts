@@ -67,6 +67,31 @@ router.post('/api/services/order', authenticate, async (req, res) => {
       webhook_token: `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     });
 
+    // Send order to Make.com webhook
+    const webhookUrl = 'https://hook.us2.make.com/mwh176gi62elcbxxinq3jb7x8w9wf8op';
+    const orderData = {
+      orderId: order.insertId || order[0],
+      userId,
+      serviceId: parseInt(serviceId),
+      serviceName: svc.title,
+      serviceCategory: category,
+      quantity,
+      totalPrice,
+      pricePerUnit: parseFloat(svc.boostifyPrice),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      webhookToken: `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+
+    // Send to webhook asynchronously (don't block response)
+    fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData),
+    }).catch(error => {
+      console.error('Error sending to Make.com webhook:', error);
+    });
+
     res.json({
       success: true,
       orderId: order.insertId || order[0],

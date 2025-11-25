@@ -8,6 +8,7 @@ import { useState } from 'react';
 interface ExtraServiceCardProps {
   id: number;
   title: string;
+  description?: string;
   price: number;
   rating: number;
   reviews: number;
@@ -22,6 +23,7 @@ interface ExtraServiceCardProps {
 export function ExtraServiceCard({
   id,
   title,
+  description,
   price,
   rating,
   reviews,
@@ -101,11 +103,18 @@ export function ExtraServiceCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
-      <CardContent className="p-5 space-y-4">
+      <CardContent className="p-5 space-y-3">
         {/* Title */}
         <h3 className="font-semibold text-sm line-clamp-2 text-foreground leading-tight group-hover:text-primary transition-colors">
           {title}
         </h3>
+
+        {/* Description */}
+        {description && (
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {description}
+          </p>
+        )}
 
         {/* Seller Info */}
         {sellerDisplayName && (

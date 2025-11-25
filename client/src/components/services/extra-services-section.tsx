@@ -1,8 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { ExtraServiceCard } from './extra-services-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, AlertCircle } from 'lucide-react';
+import { FIVERR_SERVICES_DATA } from '@/lib/fiverr-services-data';
 
 interface ExtraServicesSectionProps {
   category: 'youtube_boost' | 'spotify_boost' | 'instagram_boost';
@@ -13,26 +14,31 @@ interface ExtraServicesSectionProps {
 
 export function ExtraServicesSection({
   category,
-  title = 'Premium Services',
-  description = 'Enhance your boost with expert services from verified creators',
+  title = 'Creator Services',
+  description = 'Boost your channel with expert services from verified creators',
   onOrderCreated,
 }: ExtraServicesSectionProps) {
-  const queryClient = useQueryClient();
-  const { data: services = [], isLoading } = useQuery({
-    queryKey: ['/api/services', category],
-    queryFn: async () => {
-      const res = await fetch(`/api/services?category=${category}`);
-      if (!res.ok) throw new Error('Failed to fetch services');
-      return res.json();
-    },
-    retry: 2,
-    staleTime: 5 * 60 * 1000,
-  });
+  const [services, setServices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleOrderCreated = () => {
-    queryClient.invalidateQueries({ queryKey: ['/api/services/orders'] });
-    onOrderCreated?.();
-  };
+  useEffect(() => {
+    // Simulate loading delay for better UX
+    const timer = setTimeout(() => {
+      try {
+        // Use real data from processed Fiverr dataset
+        const categoryServices = FIVERR_SERVICES_DATA[category] || [];
+        setServices(categoryServices);
+        setIsLoading(false);
+      } catch (err) {
+        setError('Unable to load services');
+        console.error('Error loading services:', err);
+        setIsLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [category]);
 
   if (isLoading) {
     return (
@@ -60,8 +66,26 @@ export function ExtraServicesSection({
     );
   }
 
+  if (error) {
+    return (
+      <Card className="p-6 border-yellow-200 bg-yellow-50">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-600 mt-1" />
+          <div>
+            <h4 className="font-semibold text-yellow-900">{error}</h4>
+            <p className="text-sm text-yellow-700 mt-1">Please refresh the page to try again.</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   if (!services || services.length === 0) {
-    return null;
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-muted-foreground">No services available for this category yet.</p>
+      </Card>
+    );
   }
 
   return (
@@ -84,15 +108,16 @@ export function ExtraServicesSection({
             key={service.id}
             id={service.id}
             title={service.title}
-            price={parseFloat(service.boostifyPrice)}
-            rating={parseFloat(service.sellerRating)}
+            description={service.description}
+            price={service.price}
+            rating={service.sellerRating}
             reviews={service.sellerReviews}
             image={service.imageUrl}
             extraFast={service.extraFast}
             category={category}
             sellerDisplayName={service.sellerDisplayName}
             deliveryDays={service.deliveryDays}
-            onOrderCreated={handleOrderCreated}
+            onOrderCreated={onOrderCreated}
           />
         ))}
       </div>
@@ -101,7 +126,7 @@ export function ExtraServicesSection({
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 text-sm text-muted-foreground">
         <p className="flex items-start gap-2">
           <span className="text-primary font-semibold mt-0.5">💡</span>
-          <span>All services are delivered by verified creators and charged separately. Your satisfaction is guaranteed with secure payment through Stripe. Available to all users.</span>
+          <span>All services are delivered by verified creators and charged separately. Available to all users.</span>
         </p>
       </div>
     </div>
