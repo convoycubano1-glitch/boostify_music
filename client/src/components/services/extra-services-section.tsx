@@ -117,6 +117,7 @@ export function ExtraServicesSection({
             category={category}
             sellerDisplayName={service.sellerDisplayName}
             deliveryDays={service.deliveryDays}
+            stripePrice={service.stripePrice}
             onOrderCreated={onOrderCreated}
           />
         ))}

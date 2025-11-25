@@ -17,6 +17,7 @@ interface ExtraServiceCardProps {
   category: string;
   sellerDisplayName?: string;
   deliveryDays?: number;
+  stripePrice?: string;
   onOrderCreated?: () => void;
 }
 
@@ -32,14 +33,17 @@ export function ExtraServiceCard({
   category,
   sellerDisplayName,
   deliveryDays = 1,
+  stripePrice,
   onOrderCreated,
 }: ExtraServiceCardProps) {
   const [loading, setLoading] = useState(false);
 
-  const handleAddService = async () => {
+  const handleCheckout = async () => {
     try {
       setLoading(true);
-      const result = await apiRequest('/api/services/order', {
+      
+      // Create order first
+      const orderResult = await apiRequest('/api/services/order', {
         method: 'POST',
         body: JSON.stringify({
           serviceId: id,
@@ -48,23 +52,34 @@ export function ExtraServiceCard({
         }),
       });
 
-      if (result.success) {
-        toast({
-          title: 'Service Added to Cart',
-          description: 'Ready for checkout',
-        });
-        onOrderCreated?.();
-      } else {
-        toast({
-          title: 'Error',
-          description: result.message || 'Failed to add service',
-          variant: 'destructive',
-        });
+      if (!orderResult.success) {
+        throw new Error(orderResult.message || 'Failed to create order');
       }
+
+      // Then redirect to Stripe checkout
+      if (stripePrice) {
+        const response = await fetch('/api/services/checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            serviceId: id,
+            stripePriceId: stripePrice,
+            quantity: 1,
+            serviceName: title,
+          }),
+        });
+
+        const { url } = await response.json();
+        if (url) {
+          window.location.href = url;
+        }
+      }
+
+      onOrderCreated?.();
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to add service',
+        description: error instanceof Error ? error.message : 'Failed to checkout',
         variant: 'destructive',
       });
     } finally {
@@ -146,9 +161,9 @@ export function ExtraServiceCard({
           </div>
         </div>
 
-        {/* Add Button */}
+        {/* Checkout Button */}
         <Button
-          onClick={handleAddService}
+          onClick={handleCheckout}
           disabled={loading}
           className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 font-semibold shadow-md hover:shadow-lg transition-all"
           size="sm"
@@ -156,10 +171,10 @@ export function ExtraServiceCard({
           {loading ? (
             <span className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Adding...
+              Processing...
             </span>
           ) : (
-            'Add to Order'
+            'Pay with Stripe'
           )}
         </Button>
       </CardContent>
