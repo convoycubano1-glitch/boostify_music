@@ -1097,21 +1097,7 @@ export default function YoutubeViewsPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="container mx-auto"
-        >
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                <SiYoutube className="w-7 h-7 text-white" />
-              </div>
-              <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                Growth Tools Suite
-              </h2>
-            </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to dominate YouTube, from pre-launch analysis to enterprise automation
-            </p>
-          </div>
-        </motion.div>
+        ></motion.div>
 
         <div className="container mx-auto">
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
