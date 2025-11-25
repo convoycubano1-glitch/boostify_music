@@ -4,9 +4,12 @@ import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
 import fs from 'fs';
 import fileUpload from 'express-fileupload';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Detect deployment environment using Replit's official environment variable
 // REPLIT_DEPLOYMENT is set to '1' only in actual Cloud Run deployments
