@@ -15,7 +15,7 @@ interface ExtraServicesSectionProps {
 export function ExtraServicesSection({
   category,
   title = 'Creator Services',
-  description = 'Boost your channel with expert services from verified creators',
+  description = 'Get premium services from verified creators to boost your presence',
   onOrderCreated,
 }: ExtraServicesSectionProps) {
   const [services, setServices] = useState<any[]>([]);
@@ -31,7 +31,7 @@ export function ExtraServicesSection({
         setServices(categoryServices);
         setIsLoading(false);
       } catch (err) {
-        setError('Unable to load services');
+        setError('Failed to load services');
         console.error('Error loading services:', err);
         setIsLoading(false);
       }
@@ -73,7 +73,7 @@ export function ExtraServicesSection({
           <AlertCircle className="w-5 h-5 text-yellow-600 mt-1" />
           <div>
             <h4 className="font-semibold text-yellow-900">{error}</h4>
-            <p className="text-sm text-yellow-700 mt-1">Please refresh the page to try again.</p>
+            <p className="text-sm text-yellow-700 mt-1">Please refresh the page to try again or contact support.</p>
           </div>
         </div>
       </Card>
@@ -83,7 +83,7 @@ export function ExtraServicesSection({
   if (!services || services.length === 0) {
     return (
       <Card className="p-6 text-center">
-        <p className="text-muted-foreground">No services available for this category yet.</p>
+        <p className="text-muted-foreground">No services available in this category at this time.</p>
       </Card>
     );
   }
@@ -126,7 +126,7 @@ export function ExtraServicesSection({
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 text-sm text-muted-foreground">
         <p className="flex items-start gap-2">
           <span className="text-primary font-semibold mt-0.5">💡</span>
-          <span>All services are delivered by verified creators and charged separately. Available to all users.</span>
+          <span>All services are delivered by verified industry professionals. Services are charged separately via secure checkout. Available to all Boostify users.</span>
         </p>
       </div>
     </div>
