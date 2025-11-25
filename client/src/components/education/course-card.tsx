@@ -25,9 +25,12 @@ interface CourseCardProps {
   };
   enrolled?: boolean;
   progress?: number;
+  onEnroll?: () => void;
+  onPurchase?: () => void;
+  isEnrolled?: boolean;
 }
 
-export function CourseCard({ course, enrolled, progress }: CourseCardProps) {
+export function CourseCard({ course, enrolled, progress, onEnroll, onPurchase, isEnrolled }: CourseCardProps) {
   const isGenerating = course.generationStatus === "generating";
   const levelColors = {
     Beginner: "bg-green-500/10 text-green-700 dark:text-green-400",
@@ -119,10 +122,31 @@ export function CourseCard({ course, enrolled, progress }: CourseCardProps) {
             <div className="text-2xl font-bold text-primary">
               {parseFloat(course.price) === 0 ? 'Free' : `$${parseFloat(course.price).toFixed(2)}`}
             </div>
-            <Button className="group/btn" data-testid={`button-view-course-${course.id}`}>
-              {enrolled ? 'Continue' : 'View Course'}
-              <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
-            </Button>
+            {!isEnrolled ? (
+              <Button 
+                className="group/btn" 
+                data-testid={`button-enroll-course-${course.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onEnroll?.();
+                }}
+              >
+                Enroll
+                <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
+              </Button>
+            ) : (
+              <Button 
+                className="group/btn" 
+                data-testid={`button-continue-course-${course.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onPurchase?.();
+                }}
+              >
+                Continue
+                <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
+              </Button>
+            )}
           </div>
         </div>
       </Card>

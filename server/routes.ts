@@ -269,6 +269,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   setupOpenAIRoutes(app);
   setupEducationRoutes(app);
   app.use(educationProgressiveRouter);
+  app.use(educationGeminiRouter);
   setupFilesRoutes(app);
 
   // Register generated artists routes (no authentication required)
