@@ -25,7 +25,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Viral Specialist',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: null,
+      imageUrl: '/attached_assets/generated_images/youtube_shorts_viral_promotion.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE002',
       category: 'youtube_boost'
     },
@@ -39,7 +39,7 @@ export const FIVERR_SERVICES_DATA = {
       sellerDisplayName: 'Ads Specialist',
       deliveryDays: 1,
       extraFast: true,
-      imageUrl: null,
+      imageUrl: '/attached_assets/generated_images/google_ads_youtube_promotion.png',
       stripePrice: 'price_1QJoX2K8QqFxY7dE003',
       category: 'youtube_boost'
     },
