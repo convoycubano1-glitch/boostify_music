@@ -693,66 +693,113 @@ export default function EducationPage() {
     try {
       logger.info("Starting sample courses creation process...");
       
+      // Imágenes predefinidas por categoría
+      const defaultCategoryImages: Record<string, string> = {
+        "Marketing": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg",
+        "Business": "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg",
+        "Production": "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg",
+        "Branding": "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg",
+        "Distribution": "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg",
+        "default": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg"
+      };
+
+      // Contenido predefinido para cada curso
+      const courseContents: Record<string, any> = {
+        "Music Marketing Mastery": {
+          overview: "Master digital marketing strategies for musicians",
+          curriculum: [
+            { title: "Social Media Fundamentals", duration: "1 week" },
+            { title: "Content Strategy & Planning", duration: "1 week" },
+            { title: "Email Marketing Campaigns", duration: "1 week" },
+            { title: "Influencer Collaborations", duration: "1 week" }
+          ],
+          lessons: 4,
+          keyPoints: [
+            "Build authentic social media presence",
+            "Create viral content strategies",
+            "Monetize your audience",
+            "Track and optimize campaigns"
+          ]
+        },
+        "Music Business Essentials": {
+          overview: "Learn the fundamentals of the music business",
+          curriculum: [
+            { title: "Copyright & Intellectual Property", duration: "1 week" },
+            { title: "Understanding Royalties", duration: "1 week" },
+            { title: "Music Licensing Guide", duration: "1 week" },
+            { title: "Contract Negotiation", duration: "1 week" }
+          ],
+          lessons: 4,
+          keyPoints: [
+            "Protect your intellectual property",
+            "Understand different royalty types",
+            "Navigate licensing agreements",
+            "Negotiate fair contracts"
+          ]
+        },
+        "Advanced Music Production & Engineering": {
+          overview: "Professional music production techniques",
+          curriculum: [
+            { title: "Advanced Mixing Techniques", duration: "2 weeks" },
+            { title: "Mastering & Distribution", duration: "2 weeks" },
+            { title: "Studio Workflow Optimization", duration: "1 week" },
+            { title: "Professional Audio Tools", duration: "1 week" }
+          ],
+          lessons: 6,
+          keyPoints: [
+            "Industry-standard mixing practices",
+            "Mastering for all platforms",
+            "Studio setup optimization",
+            "Advanced sound design"
+          ]
+        },
+        "Artist Brand Development": {
+          overview: "Build and maintain your artist brand",
+          curriculum: [
+            { title: "Visual Identity Design", duration: "1 week" },
+            { title: "Social Media Presence", duration: "1 week" },
+            { title: "Artist Story & Narrative", duration: "1 week" },
+            { title: "Fan Engagement Strategies", duration: "1 week" }
+          ],
+          lessons: 4,
+          keyPoints: [
+            "Create consistent visual identity",
+            "Develop authentic artist narrative",
+            "Build loyal fanbase",
+            "Cross-platform branding"
+          ]
+        },
+        "Digital Music Distribution Mastery": {
+          overview: "Master the digital distribution landscape",
+          curriculum: [
+            { title: "Streaming Platform Strategies", duration: "1 week" },
+            { title: "Playlist Pitching Techniques", duration: "1 week" },
+            { title: "Release Strategy & Planning", duration: "1 week" },
+            { title: "Analytics & Growth Optimization", duration: "1 week" }
+          ],
+          lessons: 4,
+          keyPoints: [
+            "Optimize for streaming algorithms",
+            "Pitch to curators effectively",
+            "Plan successful releases",
+            "Track performance metrics"
+          ]
+        }
+      };
+      
       for (const course of sampleCourses) {
         logger.info(`Creating sample course: ${course.title}`);
         
-        // Crear un prompt más específico para la imagen de curso de muestra
-        const imagePrompt = `professional ${course.level.toLowerCase()} level ${course.category.toLowerCase()} music education course cover titled "${course.title}", modern minimalist design, high quality, cinematic lighting, course thumbnail image for music industry education`;
-        logger.info("Generating image with fal-ai for sample course:", course.title);
-        
-        // Usar nuestro sistema mejorado para la generación de imágenes
-        const cacheKey = `course_sample_${Date.now()}_${course.title.substring(0, 20).replace(/\s+/g, '_').toLowerCase()}`;
-        
-        // Usamos imágenes predefinidas según la categoría para evitar generaciones innecesarias
-        const defaultCategoryImages: Record<string, string> = {
-          "Marketing": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg",
-          "Business": "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg",
-          "Production": "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg",
-          "Branding": "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg",
-          "Distribution": "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg",
-          "default": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg"
-        };
-        
-        // Usamos directamente la imagen predefinida por categoría
-        let thumbnailUrl = defaultCategoryImages[course.category] || defaultCategoryImages.default;
-        logger.info(`Using predefined image for sample course "${course.title}" (${course.category})`);
-        
-        // Guardamos en caché local para futuras referencias
-        imageCache[cacheKey] = thumbnailUrl;
-
-        const prompt = `Generate a professional music course with these characteristics:
-          - Title: "${course.title}"
-          - Description: "${course.description}"
-          - Level: ${course.level}
-          - Category: ${course.category}
-
-          The course should be detailed and practical, focused on the current music industry. 
-          Include specific actionable steps and real-world examples.
-          Create a comprehensive curriculum with clear structure and practical lessons.`;
-
-        logger.info("Calling generateCourseContent with prompt:", prompt.substring(0, 100) + "...");
-        toast({
-          title: "Creating course sample",
-          description: `Generating content for "${course.title}"... This might take a moment.`
-        });
-        
-        const courseContent = await generateCourseContent(prompt);
-        logger.info("Course content generated successfully:", typeof courseContent, Object.keys(courseContent));
-        
-        if (!courseContent || !courseContent.curriculum || !Array.isArray(courseContent.curriculum)) {
-          logger.error("Invalid content structure:", courseContent);
-          throw new Error(`Invalid course content structure for "${course.title}". Please try again.`);
-        }
-        
-        logger.info(`Generated curriculum with ${courseContent.curriculum.length} lessons`);
+        const thumbnailUrl = defaultCategoryImages[course.category] || defaultCategoryImages.default;
+        const courseContent = courseContents[course.title] || courseContents["Music Marketing Mastery"];
         const randomData = generateRandomCourseData();
 
         const courseData = {
           ...course,
           content: courseContent,
           thumbnail: thumbnailUrl,
-          lessons: courseContent.curriculum.length,
-          duration: `${Math.ceil(courseContent.curriculum.length / 2)} weeks`,
+          lessons: courseContent.lessons,
+          duration: "4 weeks",
           ...randomData,
           createdAt: Timestamp.now(),
           createdBy: auth.currentUser?.uid || ""
@@ -767,17 +814,11 @@ export default function EducationPage() {
         } as Course, ...prev]);
 
         createdCount++;
-
-        toast({
-          title: "Progress",
-          description: `Created course ${createdCount}/5: ${course.title}`
-        });
+        logger.info(`Successfully created course: ${course.title}`);
       }
 
-      toast({
-        title: "Success",
-        description: `Created ${createdCount} new courses successfully`
-      });
+      logger.info(`✅ All ${createdCount} courses created successfully`);
+      setIsLoading(false);
     } catch (error: any) {
       logger.error('Error creating sample courses:', error);
       toast({
