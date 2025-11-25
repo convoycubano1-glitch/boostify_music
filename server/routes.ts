@@ -2328,6 +2328,63 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
 
+  // Auto-create sample courses endpoint
+  app.post('/api/education/create-sample-courses', async (req: any, res) => {
+    try {
+      const admin = require('firebase-admin');
+      const db = admin.firestore();
+      
+      const sampleCourses = [
+        { title: "Music Marketing Mastery", description: "Learn advanced digital marketing strategies specifically tailored for musicians and music industry professionals. From social media optimization to email campaigns, discover how to effectively promote your music in the digital age.", category: "Marketing", level: "Intermediate", price: 199 },
+        { title: "Music Business Essentials", description: "Master the fundamentals of the music business. Learn about copyright law, royalties, music licensing, and how to navigate contracts. Essential knowledge for any music professional.", category: "Business", level: "Beginner", price: 249 },
+        { title: "Advanced Music Production & Engineering", description: "Deep dive into professional music production techniques. From advanced mixing and mastering to studio workflow optimization, take your production skills to the next level.", category: "Production", level: "Advanced", price: 299 },
+        { title: "Artist Brand Development", description: "Learn how to build and maintain a strong artist brand. Cover everything from visual identity to social media presence, and create a compelling artist narrative that resonates with your audience.", category: "Branding", level: "Intermediate", price: 179 },
+        { title: "Digital Music Distribution Mastery", description: "Master the digital distribution landscape. Learn about streaming platforms, playlist pitching, release strategies, and how to maximize your music's reach in the digital age.", category: "Distribution", level: "Beginner", price: 149 }
+      ];
+
+      const defaultImages = {
+        "Marketing": "https://storage.googleapis.com/pai-images/ae9e7782ddee4a0b9a1d2f5374fc0167.jpeg",
+        "Business": "https://storage.googleapis.com/pai-images/a0bb7f209be241cbbc4982a177f2d7d1.jpeg",
+        "Production": "https://storage.googleapis.com/pai-images/fd0f6b4aff5d4469ab4afd39d0490253.jpeg",
+        "Branding": "https://storage.googleapis.com/pai-images/16c2b91fafb84224b52e7bb0e13e4fe4.jpeg",
+        "Distribution": "https://storage.googleapis.com/pai-images/8e9a835ef5404252b5ff5eba50d04aec.jpeg"
+      };
+
+      // Check if courses already exist
+      const coursesRef = db.collection('courses');
+      const existingCourses = await coursesRef.limit(1).get();
+      
+      if (!existingCourses.empty) {
+        return res.json({ success: true, message: 'Courses already exist', count: 0 });
+      }
+
+      let createdCount = 0;
+      for (const course of sampleCourses) {
+        const courseData = {
+          ...course,
+          thumbnail: defaultImages[course.category] || defaultImages["Marketing"],
+          lessons: 4,
+          duration: "4 weeks",
+          rating: Number((Math.random() * (5 - 3.5) + 3.5).toFixed(1)),
+          totalReviews: Math.floor(Math.random() * (1000 - 50 + 1)) + 50,
+          enrolledStudents: Math.floor(Math.random() * (5000 - 100 + 1)) + 100,
+          content: { curriculum: [{ title: "Lesson 1" }], overview: course.description },
+          createdAt: admin.firestore.Timestamp.now(),
+          createdBy: "system"
+        };
+
+        await coursesRef.add(courseData);
+        createdCount++;
+      }
+
+      console.log(`✅ Created ${createdCount} sample courses`);
+      res.json({ success: true, message: `Created ${createdCount} courses`, count: createdCount });
+    } catch (error: any) {
+      console.error('❌ Error creating courses:', error);
+      res.status(500).json({ error: error.message || 'Failed to create courses' });
+    }
+  });
+
   const httpServer = createServer(app);
   
   httpServer.timeout = 900000;
