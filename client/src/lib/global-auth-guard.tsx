@@ -116,46 +116,6 @@ export function GlobalAuthGuard({ children }: GlobalAuthGuardProps) {
     <>
       {children}
 
-      {/* Modal de Autenticación */}
-      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-primary" />
-              Autenticación Requerida
-            </DialogTitle>
-            <DialogDescription>
-              Para acceder a esta funcionalidad, necesitas iniciar sesión o crear una cuenta.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Boostify Music Platform requiere autenticación para proteger tu información y personalizar tu experiencia.
-            </p>
-            
-            <div className="flex flex-col gap-3">
-              <Button 
-                onClick={() => window.location.href = '/auth'}
-                className="w-full"
-                data-testid="button-login"
-              >
-                Iniciar Sesión / Registrarse
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = '/'}
-                className="w-full"
-                data-testid="button-back-home"
-              >
-                Volver al Inicio
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Modal de Subscripción */}
       <Dialog open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal}>
         <DialogContent className="sm:max-w-md">
