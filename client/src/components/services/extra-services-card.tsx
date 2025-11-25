@@ -59,36 +59,29 @@ export function ExtraServiceCard({
       }
 
       // Then redirect to Stripe checkout
-      if (stripePrice) {
-        try {
-          const response = await fetch('/api/services/checkout-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              serviceId: id,
-              stripePriceId: stripePrice,
-              quantity: 1,
-              serviceName: title,
-            }),
-          });
+      const response = await fetch('/api/services/checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          serviceId: id,
+          quantity: 1,
+          serviceName: title,
+          price,
+        }),
+      });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.details || errorData.error || 'Checkout failed');
-          }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || 'Checkout failed');
+      }
 
-          const data = await response.json();
-          if (data.success && data.url) {
-            // Redirect to Stripe checkout
-            window.location.href = data.url;
-          } else {
-            throw new Error('No checkout URL received');
-          }
-        } catch (checkoutError) {
-          console.error('Checkout error:', checkoutError);
-          throw new Error(checkoutError instanceof Error ? checkoutError.message : 'Checkout failed');
-        }
+      const data = await response.json();
+      if (data.success && data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
       }
 
       onOrderCreated?.();

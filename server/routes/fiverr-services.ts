@@ -127,10 +127,10 @@ router.get('/api/services/orders', authenticate, async (req, res) => {
 // POST create Stripe checkout session
 router.post('/api/services/checkout-session', authenticate, async (req, res) => {
   try {
-    const { serviceId, stripePriceId, quantity, serviceName } = req.body;
+    const { serviceId, quantity, serviceName, price } = req.body;
     const user = req.user as any;
 
-    if (!serviceId || !stripePriceId || !quantity) {
+    if (!serviceId || !quantity || !price) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -138,23 +138,31 @@ router.post('/api/services/checkout-session', authenticate, async (req, res) => 
       return res.status(500).json({ error: 'Stripe not configured' });
     }
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session with dynamic pricing
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: stripePriceId,
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: serviceName || 'Boostify Service',
+              description: `Service ID: ${serviceId}`,
+            },
+            unit_amount: Math.round(price * 100), // Convert to cents
+          },
           quantity: quantity,
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.REPLIT_DOMAIN || 'http://localhost:5000'}/youtube-views?session_id={CHECKOUT_SESSION_ID}&payment=success`,
-      cancel_url: `${process.env.REPLIT_DOMAIN || 'http://localhost:5000'}/youtube-views?payment=cancelled`,
+      success_url: `${process.env.REPLIT_DOMAIN || 'https://' + process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'}/youtube-views?session_id={CHECKOUT_SESSION_ID}&payment=success`,
+      cancel_url: `${process.env.REPLIT_DOMAIN || 'https://' + process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'}/youtube-views?payment=cancelled`,
       customer_email: user?.email,
       metadata: {
         serviceId: String(serviceId),
-        userId: String(user?.id),
+        userId: String(user?.id || user?.uid),
         serviceName,
+        price: String(price),
       },
     });
 
