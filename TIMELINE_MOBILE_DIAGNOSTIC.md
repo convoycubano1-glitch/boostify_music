@@ -239,21 +239,25 @@ Las imágenes de escenas no tienen skeleton/placeholder
 
 ## 🛠️ PLAN DE ACCIÓN RECOMENDADO
 
-### Fase 1: Fixes Críticos (Inmediato)
+### Fase 1: Fixes Críticos (Inmediato) ✅ COMPLETADA
 1. ✅ Añadir botón cerrar timeline
 2. ✅ Ocultar sidebar en móvil por defecto
 3. ✅ Hacer thumbnails responsivos
 
-### Fase 2: Mejoras Core (Esta semana)
-4. Crear vista simplificada de layers para móvil
-5. Arreglar preview de escenas IA
-6. Mejorar seekbar para touch
-7. Añadir indicador de escena actual
+### Fase 2: Mejoras Core ✅ COMPLETADA
+4. ✅ Crear vista simplificada de layers para móvil
+5. ✅ Arreglar preview de escenas IA con transiciones
+6. ✅ Mejorar seekbar para touch
+7. ✅ Añadir indicador de escena actual
+8. ✅ Lazy loading de imágenes con placeholders
+9. ✅ Gestos touch (swipe izq/der para navegar)
+10. ✅ Botones skip anterior/siguiente
 
-### Fase 3: Pulido UX (Próxima semana)
-8. Gestos touch
-9. Lazy loading de imágenes
-10. Transiciones entre escenas
+### Fase 3: Pulido UX (Opcional/Futuro)
+11. ⏳ Double tap para zoom
+12. ⏳ Pinch to zoom
+13. ⏳ Precargar imágenes adyacentes
+14. ⏳ Animaciones de entrada/salida
 
 ---
 
