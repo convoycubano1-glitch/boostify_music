@@ -337,6 +337,10 @@ interface Director {
   imageUrl?: string;
 }
 
+// 🎯 BUSINESS LOGIC: Free tier limits
+const FREE_SCENES_LIMIT = 10; // Free users get 10 scenes preview
+const FULL_VIDEO_PRICE = 199; // Price in USD for full video generation
+
 interface MusicVideoAIProps {
   preSelectedDirector?: DirectorProfile | null;
 }
@@ -355,6 +359,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [selectedSceneId, setSelectedSceneId] = useState<number | null>(null);
   const [showLoadProjectDialog, setShowLoadProjectDialog] = useState(false);
   const [savedProjects, setSavedProjects] = useState<any[]>([]);
+  
+  // 🎬 VIDEO FORMAT: Store aspect ratio from onboarding (vertical/horizontal)
+  const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16' | '1:1'>('16:9');
+  const [videoStylePreset, setVideoStylePreset] = useState<string>('realistic');
   
   // DEBUG: Monitor timeline changes
   useEffect(() => {
@@ -1472,9 +1480,9 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     }
   };
 
-  // Handle payment success - continue generation from image 11
+  // Handle payment success - unlock full video generation
   const handlePaymentSuccess = async () => {
-    logger.info('💳 [PAYMENT] Payment successful');
+    logger.info('💳 [PAYMENT] Payment successful - unlocking full video generation');
     
     // Mark user as paid
     setHasUserPaid(true);
@@ -1483,9 +1491,104 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     setShowPaymentGate(false);
     
     toast({
-      title: "Payment Successful!",
-      description: "You can now generate up to 3 final videos.",
+      title: "🎉 Payment Successful!",
+      description: "Generating your complete music video now...",
     });
+    
+    // Start generating remaining scenes
+    await handleGenerateRemainingScenes();
+  };
+  
+  /**
+   * 🎬 FULL VIDEO: Generates remaining scenes after payment
+   */
+  const handleGenerateRemainingScenes = async () => {
+    if (!scriptContent || !audioBuffer) {
+      toast({
+        title: "Error",
+        description: "Missing script or audio data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsGeneratingRemaining(true);
+    
+    try {
+      // Parse full script
+      const parsedScript = JSON.parse(scriptContent);
+      let allScenes = parsedScript.scenes || [];
+      
+      // Get scenes starting from FREE_SCENES_LIMIT + 1
+      const remainingScenes = allScenes.slice(FREE_SCENES_LIMIT);
+      
+      logger.info(`🎬 [FULL VIDEO] Generating ${remainingScenes.length} remaining scenes...`);
+      
+      toast({
+        title: "🎬 Generating Full Video",
+        description: `Creating ${remainingScenes.length} remaining scenes...`,
+      });
+      
+      // Create remaining segments
+      const remainingSegments = createSegmentsFromScenes(remainingScenes, audioBuffer.duration);
+      
+      // Add to existing timeline items
+      setTimelineItems(prev => [...prev, ...remainingSegments]);
+      
+      // Generate images for remaining segments
+      setIsGeneratingShots(true);
+      
+      for (let i = 0; i < remainingSegments.length; i++) {
+        const item = remainingSegments[i];
+        
+        setGenerationProgress({
+          current: i + 1,
+          total: remainingSegments.length,
+          percentage: Math.round(((i + 1) / remainingSegments.length) * 100),
+          currentPrompt: item.imagePrompt || '',
+          generatedImages: [],
+          status: `Generating scene ${FREE_SCENES_LIMIT + i + 1}...`
+        });
+        
+        try {
+          const imageUrl = await generateImageForSegment(item);
+          
+          if (imageUrl) {
+            setTimelineItems(prev => prev.map(timelineItem =>
+              timelineItem.id === item.id
+                ? { ...timelineItem, generatedImage: imageUrl, firebaseUrl: imageUrl }
+                : timelineItem
+            ));
+          }
+        } catch (error) {
+          logger.error(`Error generating scene ${item.id}:`, error);
+        }
+        
+        // Rate limit
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      logger.info('✅ [FULL VIDEO] All images generated, starting video conversion...');
+      
+      // Auto-convert all remaining scenes to videos
+      await handleAutoConvertToVideos();
+      
+      toast({
+        title: "🎉 Full Video Complete!",
+        description: "Your complete music video is ready for export!",
+      });
+      
+    } catch (error) {
+      logger.error('❌ Error generating remaining scenes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate remaining scenes",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingRemaining(false);
+      setIsGeneratingShots(false);
+    }
   };
 
   // Handle preview approval - continue generating remaining images
@@ -1539,6 +1642,11 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     setProjectName(`${artistName} - ${songName}`);
     setArtistReferenceImages(referenceImages);
     setSelectedFile(audioFile);
+    
+    // 🎬 STORE VIDEO FORMAT: Save aspect ratio for all generators
+    setVideoAspectRatio(aspectRatio as '16:9' | '9:16' | '1:1');
+    setVideoStylePreset(videoStyle);
+    logger.info(`📐 Video format set: ${aspectRatio} (${aspectRatio === '9:16' ? 'VERTICAL' : aspectRatio === '1:1' ? 'SQUARE' : 'HORIZONTAL'})`);
     
     // Store concept brief if provided
     if (conceptBrief) {
@@ -2480,6 +2588,18 @@ DESIGN REQUIREMENTS:
         } else if (Array.isArray(parsedScript) && parsedScript.length > 0 && parsedScript[0].scene_id) {
           // Old format: direct array of scenes
           scenes = parsedScript;
+        }
+        
+        // 🎯 FREE TIER LIMIT: Limit scenes to FREE_SCENES_LIMIT for unpaid users
+        const totalScenes = scenes.length;
+        if (!hasUserPaid && scenes.length > FREE_SCENES_LIMIT) {
+          logger.info(`🎬 [FREE TIER] Limiting ${totalScenes} scenes to ${FREE_SCENES_LIMIT} for free preview`);
+          scenes = scenes.slice(0, FREE_SCENES_LIMIT);
+          
+          toast({
+            title: "🎬 Free Preview Mode",
+            description: `Creating ${FREE_SCENES_LIMIT} of ${totalScenes} scenes. Pay $${FULL_VIDEO_PRICE} to unlock the full video!`,
+          });
         }
         
         // Check if we have valid scenes
@@ -4402,6 +4522,20 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           }
           
           setCurrentStep(5); // Avanzar al siguiente paso
+          
+          // 🎬 AUTO-CONVERT: After generating images, auto-convert to videos for free preview
+          if (!hasUserPaid && successCount >= FREE_SCENES_LIMIT) {
+            logger.info('🎬 [FREE PREVIEW] Starting auto-conversion to videos...');
+            toast({
+              title: "🎬 Creating Video Preview",
+              description: "Converting your images to video clips with lipsync...",
+            });
+            
+            // Auto-start video conversion for free preview
+            setTimeout(() => {
+              handleAutoConvertToVideos();
+            }, 2000);
+          }
         }
       } else {
         toast({
@@ -4420,6 +4554,152 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       });
     } finally {
       setIsGeneratingShots(false);
+    }
+  };
+  
+  /**
+   * 🎬 AUTO-CONVERT: Converts free preview images to videos with lipsync
+   * - PERFORMANCE scenes get PixVerse lipsync
+   * - B-ROLL and STORY scenes get Kling video generation
+   */
+  const handleAutoConvertToVideos = async () => {
+    const itemsWithImages = timelineItems.filter(item => item.generatedImage || item.firebaseUrl);
+    
+    if (itemsWithImages.length === 0) {
+      logger.warn('⚠️ No images to convert to videos');
+      return;
+    }
+    
+    setIsGeneratingVideos(true);
+    setVideoGenerationProgress({ current: 0, total: itemsWithImages.length });
+    
+    logger.info(`🎬 [AUTO-CONVERT] Converting ${itemsWithImages.length} images to videos...`);
+    logger.info(`📐 Aspect ratio: ${videoAspectRatio}`);
+    
+    try {
+      // Detect PERFORMANCE clips for lipsync
+      const performanceClips = detectPerformanceClips(itemsWithImages);
+      const brollAndStoryClips = itemsWithImages.filter(item => 
+        item.shotCategory !== 'PERFORMANCE' || !performanceClips.includes(item)
+      );
+      
+      logger.info(`🎤 Performance clips for lipsync: ${performanceClips.length}`);
+      logger.info(`🎬 B-roll/Story clips for video: ${brollAndStoryClips.length}`);
+      
+      let processedCount = 0;
+      
+      // Process PERFORMANCE clips: First generate video, then apply lipsync
+      if (performanceClips.length > 0 && audioUrl) {
+        setLipSyncProgress({ current: 0, total: performanceClips.length, message: 'Processing performance scenes with lipsync...' });
+        
+        for (const clip of performanceClips) {
+          try {
+            const imageUrl = clip.generatedImage || clip.firebaseUrl || clip.imageUrl;
+            if (!imageUrl) continue;
+            
+            // Get segment duration in seconds
+            const segmentDuration = (clip.duration || 3500) / 1000;
+            
+            // STEP 1: Generate video from image using Kling (for consistent character)
+            logger.info(`🎬 [PERF ${clip.id}] Step 1: Generating video from image...`);
+            const videoResult = await generateVideoWithFAL(selectedVideoModel, {
+              imageUrl: imageUrl,
+              prompt: `${clip.imagePrompt || clip.visualDescription || 'Artist performing'}, singing, emotional performance`,
+              aspectRatio: videoAspectRatio,
+              duration: segmentDuration
+            });
+            
+            if (!videoResult.success || !videoResult.videoUrl) {
+              logger.error(`❌ Video generation failed for clip ${clip.id}`);
+              continue;
+            }
+            
+            // STEP 2: Apply PixVerse lipsync to the generated video
+            logger.info(`🎤 [PERF ${clip.id}] Step 2: Applying PixVerse lipsync...`);
+            const lipsyncResult = await applyPixVerseLipsync({
+              videoUrl: videoResult.videoUrl, // Use the generated VIDEO, not image
+              audioUrl: audioUrl
+            });
+            
+            // Use lipsync result if successful, otherwise use original video
+            const finalVideoUrl = (lipsyncResult.success && lipsyncResult.videoUrl) 
+              ? lipsyncResult.videoUrl 
+              : videoResult.videoUrl;
+            
+            // Update timeline item with video URL
+            setTimelineItems(prev => prev.map(item =>
+              item.id === clip.id
+                ? { 
+                    ...item, 
+                    generatedVideo: finalVideoUrl, 
+                    type: 'video' as const,
+                    hasLipsync: lipsyncResult.success 
+                  }
+                : item
+            ));
+            
+            processedCount++;
+            setVideoGenerationProgress({ current: processedCount, total: itemsWithImages.length });
+            setLipSyncProgress({ current: processedCount, total: performanceClips.length, message: `Processed ${processedCount} performance scenes` });
+            
+          } catch (error) {
+            logger.error(`❌ Performance processing failed for clip ${clip.id}:`, error);
+          }
+        }
+      }
+      
+      // Process B-ROLL and STORY clips with Kling video generation (no lipsync needed)
+      for (const clip of brollAndStoryClips) {
+        try {
+          const imageUrl = clip.generatedImage || clip.firebaseUrl || clip.imageUrl;
+          if (!imageUrl) continue;
+          
+          // Generate video from image using Kling
+          const videoResult = await generateVideoWithFAL(selectedVideoModel, {
+            imageUrl: imageUrl,
+            prompt: clip.imagePrompt || clip.visualDescription || 'Cinematic video with subtle movement',
+            aspectRatio: videoAspectRatio,
+            duration: (clip.duration || 3500) / 1000
+          });
+          
+          if (videoResult.success && videoResult.videoUrl) {
+            setTimelineItems(prev => prev.map(item =>
+              item.id === clip.id
+                ? { ...item, generatedVideo: videoResult.videoUrl, type: 'video' as const }
+                : item
+            ));
+            processedCount++;
+            setVideoGenerationProgress({ current: processedCount, total: itemsWithImages.length });
+          }
+        } catch (error) {
+          logger.error(`❌ Video generation failed for clip ${clip.id}:`, error);
+        }
+      }
+      
+      logger.info(`✅ [AUTO-CONVERT] Completed: ${processedCount}/${itemsWithImages.length} videos created`);
+      
+      // Show payment gate after free preview is complete
+      if (!hasUserPaid && processedCount > 0) {
+        toast({
+          title: "🎬 Preview Ready!",
+          description: `${processedCount} video clips created. Unlock the full video for $${FULL_VIDEO_PRICE}!`,
+        });
+        
+        // Delay then show payment gate
+        setTimeout(() => {
+          setShowPaymentGate(true);
+        }, 3000);
+      }
+      
+    } catch (error) {
+      logger.error('❌ Auto-convert failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert images to videos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingVideos(false);
     }
   };
 
@@ -5648,12 +5928,17 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         onSelectTemplate={handleTemplateSelection}
       />
 
-      {/* Payment Gate Modal */}
+      {/* Payment Gate Modal - Shows after free preview generation */}
       <PaymentGateModal
         isOpen={showPaymentGate}
         onClose={() => setShowPaymentGate(false)}
         onPaymentSuccess={handlePaymentSuccess}
         userEmail={user?.email || ''}
+        demoImagesCount={FREE_SCENES_LIMIT}
+        remainingImagesCount={Math.max(0, (scriptContent ? JSON.parse(scriptContent).scenes?.length || 40 : 40) - FREE_SCENES_LIMIT)}
+        totalScenes={scriptContent ? JSON.parse(scriptContent).scenes?.length || 40 : 40}
+        aspectRatio={videoAspectRatio}
+        songTitle={projectName || songTitle || 'Your Music Video'}
       />
 
       {/* Timeline Editor CapCut - Full Screen After Image Generation */}

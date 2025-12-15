@@ -34,6 +34,9 @@ interface PaymentGateModalProps {
   userEmail: string;
   demoImagesCount?: number;
   remainingImagesCount?: number;
+  totalScenes?: number;
+  aspectRatio?: string;
+  songTitle?: string;
 }
 
 function CheckoutForm({ onPaymentSuccess, userEmail }: { onPaymentSuccess: () => void; userEmail: string }) {
@@ -122,6 +125,9 @@ export function PaymentGateModal({
   userEmail,
   demoImagesCount = 10,
   remainingImagesCount = 30,
+  totalScenes = 40,
+  aspectRatio = '16:9',
+  songTitle = 'Your Music Video',
 }: PaymentGateModalProps) {
   const [clientSecret, setClientSecret] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -184,53 +190,72 @@ export function PaymentGateModal({
                   </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold mb-2">Demo Complete!</h3>
+                  <h3 className="text-xl font-semibold mb-2">🎬 Preview Ready!</h3>
                   <p className="text-muted-foreground">
-                    You've generated <span className="font-bold text-primary">{demoImagesCount} preview images</span> of your music video.
+                    You've generated <span className="font-bold text-primary">{demoImagesCount} preview scenes</span> with video clips and lipsync for <span className="font-bold">"{songTitle}"</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    📐 Format: <span className="font-semibold">{aspectRatio === '9:16' ? 'Vertical (TikTok/Reels)' : aspectRatio === '1:1' ? 'Square (Instagram)' : 'Horizontal (YouTube)'}</span>
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-primary">
+          <Card className="border-2 border-primary bg-gradient-to-br from-orange-500/5 to-purple-500/5">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-primary-foreground" />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-purple-600 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-white" />
                   </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold mb-4">Complete Your Video - $199</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-bold">Complete Music Video</h3>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold text-primary">$199</p>
+                      <p className="text-xs text-muted-foreground">one-time payment</p>
+                    </div>
+                  </div>
+                  
                   <ul className="space-y-3 mb-6">
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Generate <span className="font-bold">{remainingImagesCount} additional images</span> to complete your video</span>
+                      <span>Full song video ({totalScenes} total scenes)</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Professional lip-sync with MuseTalk AI</span>
+                      <span><strong>PixVerse AI Lipsync</strong> on all performance scenes</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Full HD final video export</span>
+                      <span><strong>Kling AI Video</strong> generation for cinematic b-rolls</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Cinematic director-quality results</span>
+                      <span><strong>Full HD 1080p</strong> final video export</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Keep your {demoImagesCount} preview images in the final video</span>
+                      <span>Professional color grading & transitions</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span>Download in {aspectRatio === '9:16' ? 'vertical' : aspectRatio === '1:1' ? 'square' : 'horizontal'} format</span>
                     </li>
                   </ul>
                   
                   <div className="bg-primary/10 rounded-lg p-4 mb-6">
-                    <p className="text-sm text-muted-foreground mb-1">Total Generation Time</p>
-                    <p className="text-2xl font-bold">~7 minutes</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      (Only {remainingImagesCount} images remaining - your {demoImagesCount} preview images are already done!)
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-sm text-muted-foreground">Estimated Generation Time</p>
+                      <p className="text-xl font-bold">~15-20 minutes</p>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div className="bg-gradient-to-r from-orange-500 to-purple-600 h-2 rounded-full" style={{ width: `${(demoImagesCount / totalScenes) * 100}%` }} />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      {demoImagesCount} of {totalScenes} scenes already generated • {remainingImagesCount} remaining
                     </p>
                   </div>
 
@@ -245,11 +270,11 @@ export function PaymentGateModal({
                   ) : (
                     <Button
                       onClick={createPaymentIntent}
-                      className="w-full"
+                      className="w-full h-14 text-lg font-bold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
                       data-testid="button-retry-payment"
                     >
                       <CreditCard className="w-5 h-5 mr-2" />
-                      Initialize Payment
+                      Continue to Payment - $199
                     </Button>
                   )}
                 </div>
@@ -259,7 +284,7 @@ export function PaymentGateModal({
 
           <div className="text-center text-sm text-muted-foreground">
             <Lock className="w-4 h-4 inline mr-1" />
-            Secure payment powered by Stripe
+            Secure payment powered by Stripe • 30-day money-back guarantee
           </div>
         </div>
       </DialogContent>
