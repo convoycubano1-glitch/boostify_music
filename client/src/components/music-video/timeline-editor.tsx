@@ -201,7 +201,8 @@ export function TimelineEditor({
                   startTime: clip.startTime || clip.start || 0,
                   duration: clip.duration || 0,
                   endTime: clip.endTime || (clip.start + clip.duration) || 0,
-                  url: clip.url || '',
+                  // Buscar URL en todos los campos posibles (fix para inconsistencia de nombres)
+                  url: clip.url || clip.generatedImage || clip.image_url || clip.publicUrl || clip.firebaseUrl || clip.imageUrl || '',
                   color: clip.color || '#FF5733',
                   content: clip.content || '',
                   selected: false
@@ -521,7 +522,8 @@ export function TimelineEditor({
             startTime: clip.startTime || clip.start || 0,
             duration: clip.duration || 0,
             endTime: clip.endTime || (clip.start + clip.duration) || 0,
-            url: clip.url || '',
+            // Buscar URL en todos los campos posibles (fix para inconsistencia de nombres)
+            url: clip.url || clip.generatedImage || clip.image_url || clip.publicUrl || clip.firebaseUrl || clip.imageUrl || '',
             color: clip.color || '#FF5733',
             content: clip.content || '',
             // No incluimos 'trackId' para evitar errores de tipo
@@ -549,7 +551,8 @@ export function TimelineEditor({
                     startTime: clip.startTime, // Alias de tiempo de inicio
                     duration: clip.duration,// Duración 
                     endTime: clip.endTime,  // Tiempo de finalización
-                    url: clip.url,          // URL del recurso
+                    // URL del recurso - buscar en todos los campos posibles
+                    url: clip.url || clip.generatedImage || clip.image_url || clip.publicUrl || clip.firebaseUrl || clip.imageUrl || '',
                     // Omitimos propiedades que podrían causar problemas de tipo
                     source: '',             // Fuente requerida por Clip
                     trimStart: 0,           // Valor por defecto

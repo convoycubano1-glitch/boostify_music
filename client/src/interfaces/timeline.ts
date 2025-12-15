@@ -58,6 +58,12 @@ export interface TimelineClip {
   start: number;            // Tiempo de inicio (segundos)
   duration: number;         // Duración (segundos)
   url?: string;             // URL del recurso (vídeo, audio, imagen)
+  // Alias de URL para compatibilidad con diferentes fuentes de datos
+  image_url?: string;       // Alias: usado en MusicVideoScene
+  imageUrl?: string;        // Alias: usado en respuestas del servidor
+  generatedImageUrl?: string; // Alias: URL de imagen generada
+  publicUrl?: string;       // Alias: URL pública de Firebase
+  firebaseUrl?: string;     // Alias: URL de Firebase Storage
   text?: string;            // Texto (para clips de tipo TEXT)
   color?: string;           // Color personalizado
   title?: string;           // Título descriptivo del clip
@@ -123,6 +129,39 @@ export interface AudioTrack {
   muted: boolean;            // Si está silenciada
   start: number;             // Tiempo de inicio (segundos)
   duration: number;          // Duración (segundos)
+}
+
+/**
+ * Helper function to extract image URL from any clip/scene object
+ * Handles inconsistent field naming across different parts of the system
+ */
+export function getImageUrl(item: any): string | undefined {
+  if (!item) return undefined;
+  
+  // Check all possible field names in order of preference
+  return item.url 
+    || item.generatedImage 
+    || item.image_url 
+    || item.imageUrl 
+    || item.publicUrl 
+    || item.firebaseUrl 
+    || item.generatedImageUrl
+    || item.thumbnailUrl
+    || undefined;
+}
+
+/**
+ * Normalizes a clip object to ensure url field is populated
+ * from any of the possible image URL fields
+ */
+export function normalizeClipUrl(clip: any): any {
+  if (!clip) return clip;
+  
+  const imageUrl = getImageUrl(clip);
+  if (imageUrl && !clip.url) {
+    return { ...clip, url: imageUrl };
+  }
+  return clip;
 }
 
 /**

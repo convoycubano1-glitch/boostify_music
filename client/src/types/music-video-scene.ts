@@ -478,7 +478,8 @@ export function sceneToTimelineClip(scene: MusicVideoScene, layerId: number): an
     type: 'image' as const,
     start: scene.start_time,
     duration: scene.duration,
-    url: scene.image_url || undefined,
+    // Buscar URL en todos los campos posibles para compatibilidad
+    url: scene.image_url || (scene as any).generatedImage || (scene as any).publicUrl || (scene as any).firebaseUrl || (scene as any).imageUrl || undefined,
     title: `${scene.shot_type} - ${scene.role}`,
     metadata: {
       scene_id: scene.scene_id,
