@@ -30,7 +30,9 @@ export default defineConfig({
       '.replit.dev',
       '.replit.app',
       '.repl.co',
-      '.onrender.com',   // Render deployment
+      '.onrender.com',
+      'boostifymusic.com',
+      '.boostifymusic.com',
     ],
   },
   build: {
