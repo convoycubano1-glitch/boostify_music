@@ -19,6 +19,15 @@ interface ClipItemProps {
 }
 
 /**
+ * Obtiene la URL de imagen del clip buscando en todos los campos posibles
+ */
+const getClipImageUrl = (clip: TimelineClip): string | null => {
+  return clip.imageUrl || clip.thumbnail || clip.url || 
+         clip.generatedImage || clip.image_url || 
+         clip.publicUrl || clip.firebaseUrl || null;
+};
+
+/**
  * Clip individual en el timeline
  * 
  * Características:
@@ -26,6 +35,7 @@ interface ClipItemProps {
  * - Permite seleccionar, mover y redimensionar el clip
  * - Visualiza el estado seleccionado
  * - Muestra información como el título del clip
+ * - Muestra imagen de fondo si existe (generada por IA)
  */
 const ClipItem: React.FC<ClipItemProps> = ({
   clip,
@@ -37,13 +47,20 @@ const ClipItem: React.FC<ClipItemProps> = ({
   isDragging,
   isResizing,
 }) => {
+  // Obtener URL de imagen si existe
+  const imageUrl = getClipImageUrl(clip);
+  const hasImage = imageUrl && (clip.type === 'image' || clip.type === 'video' || clip.generatedImage);
+
   // Calcula el estilo del clip basado en su posición y duración
   const clipStyle = {
     left: `${clip.start * timeScale}px`,
     width: `${clip.duration * timeScale}px`,
-    backgroundColor: clip.color || CLIP_COLORS[clip.type] || CLIP_COLORS.default,
+    backgroundColor: hasImage ? 'transparent' : (clip.color || CLIP_COLORS[clip.type] || CLIP_COLORS.default),
     opacity: clip.opacity !== undefined ? clip.opacity : 1,
     cursor: isDragging ? 'grabbing' : 'grab',
+    backgroundImage: hasImage ? `url(${imageUrl})` : 'none',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
   };
 
   /**
@@ -86,6 +103,11 @@ const ClipItem: React.FC<ClipItemProps> = ({
       onClick={handleSelect}
       onMouseDown={handleMoveStart}
     >
+      {/* Overlay oscuro para legibilidad del texto sobre imagen */}
+      {hasImage && (
+        <div className="clip-image-overlay" />
+      )}
+      
       {/* Manejador de redimensionamiento (inicio) */}
       <div
         className="resize-handle left"
@@ -141,6 +163,14 @@ const ClipItem: React.FC<ClipItemProps> = ({
           transition: box-shadow 0.15s ease;
         }
         
+        .clip-image-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5));
+          pointer-events: none;
+          z-index: 1;
+        }
+        
         .clip-item.selected {
           box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #3498db;
           z-index: 10;
@@ -156,6 +186,8 @@ const ClipItem: React.FC<ClipItemProps> = ({
           padding: 4px 8px;
           display: flex;
           flex-direction: column;
+          position: relative;
+          z-index: 2;
           overflow: hidden;
         }
         

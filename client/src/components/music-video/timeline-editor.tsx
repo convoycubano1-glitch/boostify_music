@@ -1465,61 +1465,91 @@ export function TimelineEditor({
                     }}
                   />
                   
-                  {/* Clips de esta capa - mejorados para móvil */}
+                  {/* Clips de esta capa - mejorados para móvil CON IMAGEN */}
                   {clips
                     .filter(clip => clip.layer === layer.id)
-                    .map(clip => (
-                      <div 
-                        key={`clip-${clip.id}`}
-                        className={cn(
-                          "clip absolute rounded border-2 flex items-center justify-center overflow-hidden",
-                          "cursor-pointer select-none shadow-sm touch-manipulation",
-                          "min-h-[30px] min-w-[40px]", // Mínimo tamaño para interacción táctil
-                          selectedClipId === clip.id && "ring-2 ring-ring ring-offset-1",
-                          lockedLayers[layer.id] && "opacity-50 cursor-not-allowed"
-                        )}
-                        style={{ 
-                          left: `${clip.start * PIXELS_PER_SECOND * zoom}px`,
-                          width: `${clip.duration * PIXELS_PER_SECOND * zoom}px`,
-                          top: '4px',
-                          height: 'calc(100% - 8px)',
-                          backgroundColor: CLIP_COLORS[layer.type as LayerType]?.background || '#e0e0e0',
-                          borderColor: CLIP_COLORS[layer.type as LayerType]?.border || '#c0c0c0',
-                          color: CLIP_COLORS[layer.type as LayerType]?.text || '#333333',
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedClipId(clip.id);
-                        }}
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
-                          seekToTime(clip.start);
-                        }}
-                      >
-                        {/* Contenido del clip (diferente según el tipo) - optimizado para pantallas pequeñas */}
-                        <div className="clip-content text-xs md:font-medium px-1 truncate w-full text-center">
-                          {clip.title || clip.name || (clip.type === 'audio' ? 'Audio' : 
-                            clip.type === 'image' ? 'Imagen' : 
-                            clip.type === 'text' ? 'Texto' : 
-                            clip.type === 'effect' ? 'Efecto' : 'Clip')}
-                        </div>
-                        
-                        {/* Iconos de metadatos del clip - más grandes para táctil */}
-                        {clip.metadata && (
-                          <div className="absolute right-1 top-1 flex space-x-1">
-                            {clip.metadata.movementApplied && (
-                              <div className="w-2.5 h-2.5 md:w-2 md:h-2 bg-blue-500 rounded-full" title="Movimiento aplicado" />
-                            )}
-                            {clip.metadata.faceSwapApplied && (
-                              <div className="w-2.5 h-2.5 md:w-2 md:h-2 bg-purple-500 rounded-full" title="Face swap aplicado" />
-                            )}
-                            {clip.metadata.musicianIntegrated && (
-                              <div className="w-2.5 h-2.5 md:w-2 md:h-2 bg-green-500 rounded-full" title="Músico integrado" />
-                            )}
+                    .map(clip => {
+                      // Obtener URL de imagen - buscar en todos los campos posibles
+                      const clipImageUrl = clip.url || clip.imageUrl || clip.thumbnail || 
+                                          clip.generatedImage || clip.image_url || 
+                                          clip.publicUrl || clip.firebaseUrl || '';
+                      const hasImage = clipImageUrl && (clip.type === 'image' || clip.type === 'video');
+                      
+                      return (
+                        <div 
+                          key={`clip-${clip.id}`}
+                          className={cn(
+                            "clip absolute rounded border-2 flex items-center justify-center overflow-hidden",
+                            "cursor-pointer select-none shadow-sm touch-manipulation",
+                            "min-h-[30px] min-w-[40px]", // Mínimo tamaño para interacción táctil
+                            selectedClipId === clip.id && "ring-2 ring-ring ring-offset-1",
+                            lockedLayers[layer.id] && "opacity-50 cursor-not-allowed"
+                          )}
+                          style={{ 
+                            left: `${clip.start * PIXELS_PER_SECOND * zoom}px`,
+                            width: `${clip.duration * PIXELS_PER_SECOND * zoom}px`,
+                            top: '4px',
+                            height: 'calc(100% - 8px)',
+                            backgroundColor: hasImage ? 'transparent' : (CLIP_COLORS[layer.type as LayerType]?.background || '#e0e0e0'),
+                            borderColor: CLIP_COLORS[layer.type as LayerType]?.border || '#c0c0c0',
+                            color: CLIP_COLORS[layer.type as LayerType]?.text || '#333333',
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedClipId(clip.id);
+                          }}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            seekToTime(clip.start);
+                          }}
+                        >
+                          {/* IMAGEN DE FONDO del clip si existe */}
+                          {hasImage && (
+                            <img 
+                              src={clipImageUrl}
+                              alt={clip.title || clip.name || 'Clip'}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              style={{ opacity: 0.85 }}
+                              onError={(e) => {
+                                // Si falla la carga de imagen, ocultarla
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          )}
+                          
+                          {/* Overlay oscuro para mejorar legibilidad del texto */}
+                          {hasImage && (
+                            <div className="absolute inset-0 bg-black/30" />
+                          )}
+                          
+                          {/* Contenido del clip (diferente según el tipo) - optimizado para pantallas pequeñas */}
+                          <div className={cn(
+                            "clip-content text-xs md:font-medium px-1 truncate w-full text-center relative z-10",
+                            hasImage && "text-white font-medium drop-shadow-md"
+                          )}>
+                            {clip.title || clip.name || (clip.type === 'audio' ? 'Audio' : 
+                              clip.type === 'image' ? 'Imagen' : 
+                              clip.type === 'text' ? 'Texto' : 
+                              clip.type === 'effect' ? 'Efecto' : 'Clip')}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          
+                          {/* Iconos de metadatos del clip - más grandes para táctil */}
+                          {clip.metadata && (
+                            <div className="absolute right-1 top-1 flex space-x-1 z-10">
+                              {clip.metadata.movementApplied && (
+                                <div className="w-2.5 h-2.5 md:w-2 md:h-2 bg-blue-500 rounded-full" title="Movimiento aplicado" />
+                              )}
+                              {clip.metadata.faceSwapApplied && (
+                                <div className="w-2.5 h-2.5 md:w-2 md:h-2 bg-purple-500 rounded-full" title="Face swap aplicado" />
+                              )}
+                              {clip.metadata.musicianIntegrated && (
+                                <div className="w-2.5 h-2.5 md:w-2 md:h-2 bg-green-500 rounded-full" title="Músico integrado" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               ))}
               
