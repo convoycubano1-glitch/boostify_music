@@ -56,6 +56,38 @@ export interface TimelineItem {
   movementPattern?: string;
   movementIntensity?: number;
   movementUrl?: string;
+  
+  // 🎬 NUEVOS: Campos del script para coherencia narrativa y control de referencias
+  // Controla si esta escena debe incluir al artista
+  useArtistReference?: boolean;
+  // Cómo usar la referencia: 'full_performance' | 'detail_shot' | 'alternate_angle' | 'story_character' | 'none'
+  referenceUsage?: 'full_performance' | 'detail_shot' | 'alternate_angle' | 'story_character' | 'none';
+  // Categoría de plano: PERFORMANCE | B-ROLL | STORY
+  shotCategory?: 'PERFORMANCE' | 'B-ROLL' | 'STORY';
+  // Contexto narrativo de la escena (qué está pasando en la historia)
+  narrativeContext?: string;
+  // Conexión entre la letra y el visual
+  lyricConnection?: string;
+  // Descripción visual detallada de la escena
+  visualDescription?: string;
+  // Emoción principal de la escena
+  emotion?: string;
+  // Progresión en el arco narrativo
+  storyProgression?: string;
+  // Sección musical (intro, verse, chorus, bridge, outro)
+  musicSection?: string;
+  // Movimiento de cámara
+  cameraMovement?: string;
+  // Tipo de lente
+  lens?: string;
+  // Iluminación
+  lighting?: string;
+  // Gradación de color
+  colorGrading?: string;
+  // Segmento de letra correspondiente
+  lyricsSegment?: string;
+  // Ubicación de la escena
+  location?: string;
 }
 
 /**

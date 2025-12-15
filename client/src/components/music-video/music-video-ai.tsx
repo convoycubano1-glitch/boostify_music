@@ -2490,8 +2490,12 @@ DESIGN REQUIREMENTS:
     }
   };
 
-  // New function to create timeline segments based on JSON script scenes
-  // Reads start_time and duration directly from the script JSON
+  /**
+   * 🎬 MEJORADO: Crea segmentos del timeline preservando TODOS los campos narrativos del script
+   * Esto permite que generateImageForSegment use el contexto completo para regenerar imágenes
+   * @param scenes - Escenas del script JSON
+   * @param totalDuration - Duración total del audio
+   */
   const createSegmentsFromScenes = (scenes: any[], totalDuration: number): TimelineItem[] => {
     const segments: TimelineItem[] = [];
     
@@ -2519,6 +2523,7 @@ DESIGN REQUIREMENTS:
       
       logger.info(`🎬 Creating clip ${sceneId}: start=${scene.start_time}s, duration=${scene.duration}s`);
       logger.info(`📝 Prompt: ${cinematicPrompt.substring(0, 100)}...`);
+      logger.info(`🎭 Shot Category: ${scene.shot_category || 'STORY'}, Use Reference: ${scene.use_artist_reference !== false}`);
       
       segments.push({
         id: sceneId, // CRITICAL: Use numeric ID for React keys
@@ -2533,6 +2538,32 @@ DESIGN REQUIREMENTS:
         imagePrompt: cinematicPrompt, // ✅ CORREGIDO: Usa visual_description del backend
         thumbnail: '', // Will be assigned when image is generated
         imageUrl: '', // Will be assigned when image is generated
+        
+        // 🎬 NUEVOS CAMPOS: Control de referencia del artista
+        useArtistReference: scene.use_artist_reference !== false, // Default true for backward compatibility
+        referenceUsage: scene.reference_usage || (scene.shot_category === 'PERFORMANCE' ? 'full_performance' : 
+                                                   scene.shot_category === 'B-ROLL' ? 'none' : 'story_character'),
+        shotCategory: scene.shot_category || 'STORY', // PERFORMANCE | B-ROLL | STORY
+        
+        // 🎭 NUEVOS CAMPOS: Contexto narrativo para regeneración inteligente
+        narrativeContext: scene.narrative_context || '',
+        lyricConnection: scene.lyric_connection || '',
+        visualDescription: scene.visual_description || scene.description || '',
+        emotion: scene.emotion || scene.mood || scene.emotional_tone || '',
+        storyProgression: scene.story_progression || '',
+        musicSection: scene.section || '', // intro, verse, chorus, bridge, outro
+        
+        // 🎥 NUEVOS CAMPOS: Especificaciones técnicas de cámara
+        cameraMovement: scene.camera_movement || 'static',
+        lens: scene.lens || 'standard',
+        lighting: scene.lighting || 'natural',
+        colorGrading: scene.color_grading || 'cinematic',
+        location: scene.location || 'performance space',
+        lyricsSegment: scene.lyrics || '', // Letra correspondiente
+        
+        mood: scene.mood || scene.emotional_tone || 'neutral',
+        transition: scene.transition || 'cut',
+        
         itemProps: {
           style: {
             background: `hsl(${(index * 30) % 360}, 70%, 50%)`,
@@ -2553,12 +2584,25 @@ DESIGN REQUIREMENTS:
           sound: scene.sound,
           emotional_tone: scene.emotional_tone,
           transition: scene.transition,
-          production_notes: scene.production_notes
+          production_notes: scene.production_notes,
+          // 🆕 Preserve original script fields for debugging
+          _original_shot_category: scene.shot_category,
+          _original_use_artist_reference: scene.use_artist_reference,
+          _original_reference_usage: scene.reference_usage
         }
       });
     });
     
-    logger.info(`✅ ${segments.length} clips created from JSON with random durations`);
+    logger.info(`✅ ${segments.length} clips created from JSON with FULL narrative context`);
+    
+    // Log resumen de categorías de escenas
+    const categories = segments.reduce((acc, s) => {
+      const cat = s.shotCategory || 'UNKNOWN';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    logger.info(`📊 Shot categories breakdown: ${JSON.stringify(categories)}`);
+    
     return segments;
   };
 
@@ -2879,36 +2923,85 @@ ${transcription}`;
   };
 
   /**
-   * Generates an image for a specific segment using Gemini 2.5 Flash Image (Nano Banana)
-   * Ultra-fast image generation optimized for music videos
-   * @param item - The timeline segment for which the image will be generated
-   * @returns Promise<string> URL of generated image or null in case of error
+   * 🎬 MEJORADO: Genera una imagen para un segmento usando prompts ricos en narrativa
+   * Usa campos del script para coherencia visual y decide si incluir referencia del artista
+   * @param item - El segmento del timeline con campos enriquecidos del script
+   * @returns Promise<string> URL de imagen generada o null si hay error
    */
   const generateImageForSegment = async (item: TimelineItem): Promise<string | null> => {
-    if (!item.imagePrompt) {
+    if (!item.imagePrompt && !item.visualDescription) {
       logger.warn(`Segment ${item.id} has no prompt to generate image`);
       return null;
     }
 
     try {
-      logger.info(`🎨 [Gemini Nano] Generando imagen para segmento ${item.id}...`);
+      logger.info(`🎨 [RICH IMG] Generando imagen para segmento ${item.id}...`);
+      
+      // 🎬 Construir prompt RICO EN NARRATIVA usando todos los campos del script
+      const richPrompt = buildRichCinematicPrompt(item);
+      
+      // 🎭 Determinar si usar referencia del artista basado en campos del script
+      const shouldUseArtistReference = determineArtistReferenceUsage(item);
+      
+      logger.info(`🎭 [SCENE ${item.id}] Category: ${item.shotCategory || 'UNKNOWN'}, ` +
+                  `Reference Usage: ${item.referenceUsage || 'default'}, ` +
+                  `Using Reference: ${shouldUseArtistReference}`);
 
-      // Build image generation params with cinematographic context
+      // Preparar referencias si corresponde
+      let referenceImages: string[] | undefined = undefined;
+      if (shouldUseArtistReference) {
+        if (masterCharacter?.imageUrl) {
+          referenceImages = [masterCharacter.imageUrl];
+        } else if (artistReferenceImages.length > 0) {
+          referenceImages = artistReferenceImages;
+        }
+      }
+      
+      // Build image generation params with enriched context
       const geminiParams: ImageGenerationParams = {
-        prompt: item.imagePrompt,
+        prompt: richPrompt,
         shotType: item.shotType || 'MS',
-        cinematicStyle: videoStyle.characterStyle || 'cinematic',
-        mood: videoStyle.mood || 'neutral',
+        cinematicStyle: item.visualDescription ? 'narrative-driven' : (videoStyle.characterStyle || 'cinematic'),
+        mood: item.emotion || item.mood || videoStyle.mood || 'neutral',
         duration: item.duration || 2,
-        sceneNumber: typeof item.id === 'string' ? parseInt(item.id, 10) : item.id,
+        sceneNumber: typeof item.id === 'string' ? parseInt(item.id, 10) : (item.id as number),
+        referenceImages: referenceImages, // Pasar referencias condicionalmente
+        directorStyle: videoStyle.selectedDirector?.name || 'Cinematic Director'
       };
 
-      // Generate image using Gemini Nano
-      logger.info(`📝 Prompt: ${geminiParams.prompt.substring(0, 100)}...`);
-      const result = await generateSceneImageWithGemini(geminiParams);
+      logger.info(`📝 Rich Prompt (${item.shotCategory || 'scene'}): ${richPrompt.substring(0, 150)}...`);
+      
+      // Usar el endpoint correcto según si hay referencias
+      let result;
+      if (referenceImages && referenceImages.length > 0) {
+        // Usar endpoint con referencias faciales
+        const response = await fetch('/api/gemini-image/generate-single-with-multiple-faces', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: richPrompt,
+            referenceImagesBase64: referenceImages,
+            sceneId: item.id,
+            scene: {
+              shotCategory: item.shotCategory,
+              referenceUsage: item.referenceUsage,
+              emotion: item.emotion
+            }
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        result = await response.json();
+        result = { success: !!result.imageUrl, imageUrl: result.imageUrl, error: result.error };
+      } else {
+        // Generar sin referencias (B-roll puro)
+        result = await generateSceneImageWithGemini(geminiParams);
+      }
 
       if (!result.success || !result.imageUrl) {
-        throw new Error(result.error || 'Error generating image with Gemini');
+        throw new Error(result.error || 'Error generating image');
       }
 
       logger.info(`✅ Imagen generada exitosamente: ${result.imageUrl.substring(0, 100)}`);
@@ -2928,6 +3021,108 @@ ${transcription}`;
       logger.error(`❌ Error generando imagen para segmento ${item.id}:`, error);
       return null;
     }
+  };
+  
+  /**
+   * 🎬 Construye un prompt cinematográfico RICO usando todos los campos narrativos del script
+   */
+  const buildRichCinematicPrompt = (item: TimelineItem): string => {
+    const parts: string[] = [];
+    
+    // 1. Descripción visual principal (lo más importante)
+    const mainDescription = item.visualDescription || item.imagePrompt || item.description || '';
+    parts.push(mainDescription);
+    
+    // 2. Contexto narrativo si existe
+    if (item.narrativeContext) {
+      parts.push(`Story context: ${item.narrativeContext}`);
+    }
+    
+    // 3. Conexión con la letra
+    if (item.lyricConnection) {
+      parts.push(`Lyric connection: ${item.lyricConnection}`);
+    }
+    
+    // 4. Especificaciones técnicas de cámara
+    const cameraSpecs: string[] = [];
+    if (item.shotType) cameraSpecs.push(`${item.shotType} shot`);
+    if (item.cameraMovement) cameraSpecs.push(`${item.cameraMovement} movement`);
+    if (item.lens) cameraSpecs.push(`${item.lens} lens`);
+    if (cameraSpecs.length > 0) {
+      parts.push(`Camera: ${cameraSpecs.join(', ')}`);
+    }
+    
+    // 5. Iluminación y color
+    if (item.lighting) {
+      parts.push(`Lighting: ${item.lighting}`);
+    }
+    if (item.colorGrading) {
+      parts.push(`Color grade: ${item.colorGrading}`);
+    }
+    
+    // 6. Emoción de la escena
+    if (item.emotion) {
+      parts.push(`Emotion: ${item.emotion}`);
+    }
+    
+    // 7. Ubicación
+    if (item.location) {
+      parts.push(`Location: ${item.location}`);
+    }
+    
+    // 8. Contexto de tipo de escena
+    const shotCategory = item.shotCategory || 'STORY';
+    if (shotCategory === 'PERFORMANCE') {
+      parts.push('Music video performance scene with artist singing/performing');
+    } else if (shotCategory === 'B-ROLL') {
+      parts.push('Cinematic b-roll visual, atmospheric and artistic, no people in focus');
+    } else {
+      parts.push('Narrative story scene with strong visual storytelling');
+    }
+    
+    // 9. Calidad profesional
+    parts.push('Professional music video quality, cinematic composition, broadcast-ready');
+    
+    return parts.join('. ');
+  };
+  
+  /**
+   * 🎭 Determina si se debe usar la referencia del artista basado en campos del script
+   */
+  const determineArtistReferenceUsage = (item: TimelineItem): boolean => {
+    // Si el script especifica explícitamente NO usar referencia
+    if (item.useArtistReference === false) {
+      return false;
+    }
+    
+    // Si reference_usage es 'none', no usar referencia
+    if (item.referenceUsage === 'none') {
+      return false;
+    }
+    
+    // B-ROLL puro normalmente no necesita referencia del artista
+    if (item.shotCategory === 'B-ROLL' && !item.useArtistReference) {
+      return false;
+    }
+    
+    // Para PERFORMANCE siempre usar referencia
+    if (item.shotCategory === 'PERFORMANCE') {
+      return true;
+    }
+    
+    // Para STORY, depende del reference_usage
+    if (item.shotCategory === 'STORY') {
+      return item.referenceUsage === 'story_character' || item.useArtistReference === true;
+    }
+    
+    // Tipos específicos que requieren referencia
+    const typesRequiringReference = ['full_performance', 'detail_shot', 'alternate_angle', 'story_character'];
+    if (item.referenceUsage && typesRequiringReference.includes(item.referenceUsage)) {
+      return true;
+    }
+    
+    // Default: usar referencia si está disponible (backward compatibility)
+    return true;
   };
 
   /**
