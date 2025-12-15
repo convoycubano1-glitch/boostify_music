@@ -304,6 +304,11 @@ export async function editImageWithNanoBanana(
 }
 
 /**
+ * Alias para editImageWithNanoBanana - usado por shot-variation-engine
+ */
+export const generateImageWithEdit = editImageWithNanoBanana;
+
+/**
  * ============================================================
  * GENERACIÓN CON REFERENCIA FACIAL - NANO BANANA EDIT
  * ============================================================

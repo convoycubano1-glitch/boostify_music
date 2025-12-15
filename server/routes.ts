@@ -93,6 +93,7 @@ import instagramToolsRouter from './routes/instagram-tools'; // Import Instagram
 import instagramOAuthRouter from './routes/instagram-oauth'; // Import Instagram OAuth for real API connection
 import musicVideoRouter from './routes/music-video'; // Import Music Video Concept Generation (Gemini AI)
 import audioAnalysisRouter from './routes/audio-analysis'; // Import Audio Analysis for intelligent video editing
+import autoEditRouter from './routes/auto-edit'; // Import Auto-Edit Engine for genre-based intelligent editing
 import artistProfilesRouter from './routes/artist-profiles'; // Import Artist Profiles auto-generation
 import apifyInstagramRouter from './routes/apify-instagram'; // Import Apify Instagram integration for real data
 import fashionStudioRouter from './routes/fashion-studio'; // Import Artist Fashion Studio (FAL + Gemini)
@@ -336,6 +337,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/music-video-projects', musicVideoProjectsRouter);
   app.use('/api/music-video', musicVideoRouter);
   app.use('/api/audio-analysis', audioAnalysisRouter); // Audio analysis for intelligent video editing
+  app.use('/api/auto-edit', autoEditRouter); // Auto-edit engine with genre-based intelligent cuts
   app.use('/api/artist-profiles', artistProfilesRouter);
   app.use('/api/video-rendering', videoRenderingRouter);
   app.use('/api/diagnostics', diagnosticsRouter); // System health check endpoints
