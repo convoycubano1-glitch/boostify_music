@@ -29,7 +29,8 @@ export default defineConfig({
     allowedHosts: [
       '.replit.dev',
       '.replit.app',
-      '.repl.co',        // ← Este es el cambio que permite .kirk.repl.co
+      '.repl.co',
+      '.onrender.com',   // Render deployment
     ],
   },
   build: {
