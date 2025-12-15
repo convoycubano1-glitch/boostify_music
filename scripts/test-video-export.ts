@@ -73,6 +73,7 @@ async function testShotstackConnection(): Promise<void> {
   log.section('2. Shotstack API Connection');
 
   const apiKey = process.env.SHOTSTACK_API_KEY;
+  const env = process.env.SHOTSTACK_ENV || 'sandbox';
   
   if (!apiKey) {
     log.error('SHOTSTACK_API_KEY no configurada - saltando test');
@@ -84,20 +85,33 @@ async function testShotstackConnection(): Promise<void> {
     return;
   }
 
+  // URL base según entorno
+  const baseUrl = env === 'production' 
+    ? 'https://api.shotstack.io/v1'
+    : 'https://api.shotstack.io/stage';
+
+  log.info(`Entorno: ${env.toUpperCase()}`);
+  log.info(`API URL: ${baseUrl}`);
+
   try {
-    const response = await fetch('https://api.shotstack.io/v1/render', {
+    // Test con endpoint /templates que acepta GET y verifica la API key
+    const response = await fetch(`${baseUrl}/templates`, {
       method: 'GET',
       headers: {
         'x-api-key': apiKey,
       },
     });
 
-    // 401 significa que la API key es inválida, 405 significa que el método no está permitido (pero la conexión funciona)
-    if (response.status === 405 || response.status === 200) {
-      log.success('Conexión a Shotstack API exitosa');
-      results.push({ name: 'Shotstack API', passed: true, message: 'Conexión exitosa' });
-    } else if (response.status === 401) {
-      log.error('API Key de Shotstack inválida');
+    if (response.status === 200) {
+      const data = await response.json();
+      log.success(`Shotstack API conectada (Owner: ${data.response?.owner || 'OK'})`);
+      results.push({ 
+        name: 'Shotstack API', 
+        passed: true, 
+        message: `Conexión OK - Owner: ${data.response?.owner || env}` 
+      });
+    } else if (response.status === 401 || response.status === 403) {
+      log.error(`API Key de Shotstack inválida o sin acceso (${response.status})`);
       results.push({ name: 'Shotstack API', passed: false, message: 'API Key inválida' });
     } else {
       log.warning(`Shotstack respondió con status: ${response.status}`);

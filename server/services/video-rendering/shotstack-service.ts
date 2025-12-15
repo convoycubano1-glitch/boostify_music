@@ -1,14 +1,24 @@
 /**
  * Shotstack Video Rendering Service
  * Combina múltiples clips de video con audio en un video final
+ * 
+ * Configuración:
+ * - SHOTSTACK_API_KEY: API key de Shotstack
+ * - SHOTSTACK_ENV: 'sandbox' (desarrollo) o 'production' (producción)
+ * - SHOTSTACK_OWNER_ID: ID del propietario (opcional, para referencia)
  */
 
 import axios from 'axios';
 import { logger } from '../../utils/logger';
 
 const SHOTSTACK_API_KEY = process.env.SHOTSTACK_API_KEY || '';
-const SHOTSTACK_API_URL = 'https://api.shotstack.io/v1';
-const SHOTSTACK_STAGE = process.env.SHOTSTACK_STAGE || 'stage'; // 'stage' para desarrollo, 'v1' para producción
+const SHOTSTACK_ENV = process.env.SHOTSTACK_ENV || 'sandbox'; // 'sandbox' o 'production'
+const SHOTSTACK_OWNER_ID = process.env.SHOTSTACK_OWNER_ID || '';
+
+// URL base según el entorno
+const SHOTSTACK_API_URL = SHOTSTACK_ENV === 'production' 
+  ? 'https://api.shotstack.io/v1'
+  : 'https://api.shotstack.io/stage';
 
 export interface TimelineClipData {
   id: string;
@@ -47,8 +57,9 @@ export async function startVideoRender(request: RenderRequest): Promise<RenderRe
       throw new Error('SHOTSTACK_API_KEY no está configurado');
     }
 
-    logger.log('🎬 [SHOTSTACK] Iniciando renderizado de video...');
+    logger.log(`🎬 [SHOTSTACK] Iniciando renderizado de video... (ENV: ${SHOTSTACK_ENV})`);
     logger.log(`📊 [SHOTSTACK] Clips: ${request.clips.length}, Audio: ${request.audioUrl ? 'Sí' : 'No'}`);
+    logger.log(`🔗 [SHOTSTACK] API URL: ${SHOTSTACK_API_URL}`);
 
     // Construir el timeline de Shotstack
     const timeline = buildShotstackTimeline(request);
