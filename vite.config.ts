@@ -26,11 +26,7 @@ export default defineConfig({
         secure: false,
       },
     },
-    allowedHosts: [
-      '.onrender.com',
-      'boostifymusic.com',
-      '.boostifymusic.com',
-    ],
+    allowedHosts: true, // Allow all hosts in production
   },
   build: {
     terserOptions: {
