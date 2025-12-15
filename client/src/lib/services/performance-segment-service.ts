@@ -2,11 +2,15 @@ import { logger } from "../logger";
 /**
  * Performance Segment Service
  * Maneja la lógica de negocio para segmentos de performance con lip-sync
+ * 
+ * 🎤 INTEGRADO CON: fal-ai/pixverse/lipsync (Video-to-Video)
+ * 📍 USA: shotCategory del script JSON para detección automática
  */
 
 import { cutAudioSegment, cutAudioSegments } from './audio-segmentation';
 import { generateTalkingHead, batchGenerateTalkingHeads } from '../api/fal-musetalk';
 import { uploadImageFromUrl } from '../firebase-storage';
+import { isLipsyncCandidate } from '../api/pixverse-lipsync';
 
 export interface PerformanceSegmentData {
   projectId: number;
@@ -29,27 +33,30 @@ export interface DetectedPerformanceClip {
   duration: number;
   lyrics: string;
   shotType: string;
+  shotCategory?: 'PERFORMANCE' | 'B-ROLL' | 'STORY'; // 🆕 Del script JSON
   isPerformance: boolean;
 }
 
 /**
- * Detecta automáticamente clips de performance en el script
- * 🎤 REGLA CRÍTICA: Lip-sync SOLO en planos donde se ve claramente la cara del artista
+ * 🎤 Detecta automáticamente clips candidatos para lip-sync
  * 
- * ✅ INCLUYE (Cara visible):
+ * MÉTODO PRIMARIO (nuevo): Usa shotCategory del script JSON
+ *   - shotCategory === 'PERFORMANCE' → Candidato para lip-sync
+ *   - shotCategory === 'B-ROLL' → NO candidato
+ *   - shotCategory === 'STORY' → Depende del contexto
+ * 
+ * MÉTODO SECUNDARIO (legacy): Shot type + keywords
+ * 
+ * ✅ INCLUYE (Cara visible, cantando):
  * - CU (Close-up): Primer plano de la cara
  * - ECU (Extreme Close-up): Primer plano extremo
- * - MCU (Medium Close-up): Plano medio corto (hombros hacia arriba)
- * - MS (Medium Shot): Plano medio (cintura hacia arriba)
+ * - MCU (Medium Close-up): Plano medio corto
+ * - MS (Medium Shot): Plano medio
  * 
- * ❌ EXCLUYE (Cara no visible o muy lejana):
- * - WS (Wide Shot): Plano general
- * - EWS (Extreme Wide Shot): Gran plano general
- * - FS (Full Shot): Plano completo (cuerpo entero)
- * - LS (Long Shot): Plano largo
- * - OTS (Over The Shoulder): Sobre el hombro
- * - POV (Point of View): Punto de vista
- * - Cualquier plano ambiental o de establecimiento
+ * ❌ EXCLUYE (Cara no visible o no cantando):
+ * - WS, EWS, FS, LS (planos amplios)
+ * - B-roll scenes
+ * - Scenes sin performance keywords
  */
 export function detectPerformanceClips(script: any): DetectedPerformanceClip[] {
   if (!script || !script.scenes) return [];
@@ -101,10 +108,29 @@ export function detectPerformanceClips(script: any): DetectedPerformanceClip[] {
   
   return script.scenes
     .filter((scene: any) => {
+      const sceneId = scene.scene_id || scene.id;
+      
+      // 🎯 MÉTODO PRIMARIO: Usar shotCategory del script JSON
+      const shotCategory = (scene.shot_category || scene.shotCategory || '').toUpperCase();
+      
+      // Si explícitamente es PERFORMANCE, incluir directamente
+      if (shotCategory === 'PERFORMANCE') {
+        logger.info(`✅ [LIP-SYNC] Clip ${sceneId} INCLUIDO: shotCategory=PERFORMANCE`);
+        return true;
+      }
+      
+      // Si explícitamente es B-ROLL, excluir directamente
+      if (shotCategory === 'B-ROLL') {
+        logger.info(`⛔ [LIP-SYNC] Clip ${sceneId} EXCLUIDO: shotCategory=B-ROLL`);
+        return false;
+      }
+      
+      // 🔄 MÉTODO SECUNDARIO: Shot type + keywords (para STORY o sin categoría)
       const shotType = (scene.shot_type || scene.shotType || '').toLowerCase().trim();
       const description = (scene.description || '').toLowerCase();
       const role = (scene.role || '').toLowerCase();
       const action = (scene.action || '').toLowerCase();
+      const visualDesc = (scene.visual_description || '').toLowerCase();
       
       // ❌ EXCLUIR explícitamente planos no válidos
       const isExcludedShot = excludedShotTypes.some(excluded => 
@@ -112,7 +138,7 @@ export function detectPerformanceClips(script: any): DetectedPerformanceClip[] {
       );
       
       if (isExcludedShot) {
-        logger.info(`⛔ [LIP-SYNC] Clip ${scene.scene_id || scene.id} EXCLUIDO: Shot type "${shotType}" no válido para lip-sync`);
+        logger.info(`⛔ [LIP-SYNC] Clip ${sceneId} EXCLUIDO: Shot type "${shotType}" no válido para lip-sync`);
         return false;
       }
       
@@ -122,19 +148,22 @@ export function detectPerformanceClips(script: any): DetectedPerformanceClip[] {
       );
       
       // ✅ Verificar que sea una escena de performance/cantando
-      const isPerformanceScene = 
-        performanceKeywords.some(keyword => 
-          description.includes(keyword) || 
-          role.includes(keyword) || 
-          action.includes(keyword)
-        );
+      const allText = `${description} ${role} ${action} ${visualDesc}`;
+      const isPerformanceScene = performanceKeywords.some(keyword => 
+        allText.includes(keyword)
+      );
       
-      const shouldInclude = isValidShot && isPerformanceScene;
+      // También verificar use_artist_reference del script
+      const useArtistRef = scene.use_artist_reference !== false;
+      
+      const shouldInclude = isValidShot && isPerformanceScene && useArtistRef;
       
       if (shouldInclude) {
-        logger.info(`✅ [LIP-SYNC] Clip ${scene.scene_id || scene.id} INCLUIDO: Shot type "${shotType}" + Performance scene`);
+        logger.info(`✅ [LIP-SYNC] Clip ${sceneId} INCLUIDO: Shot "${shotType}" + Performance scene`);
       } else if (isValidShot && !isPerformanceScene) {
-        logger.info(`⚠️ [LIP-SYNC] Clip ${scene.scene_id || scene.id} OMITIDO: Shot válido "${shotType}" pero NO es escena de performance`);
+        logger.info(`⚠️ [LIP-SYNC] Clip ${sceneId} OMITIDO: Shot válido "${shotType}" pero NO es escena de performance`);
+      } else if (!useArtistRef) {
+        logger.info(`⚠️ [LIP-SYNC] Clip ${sceneId} OMITIDO: use_artist_reference=false`);
       }
       
       return shouldInclude;
@@ -146,6 +175,7 @@ export function detectPerformanceClips(script: any): DetectedPerformanceClip[] {
       duration: scene.duration || 0,
       lyrics: scene.lyrics_segment || scene.lyrics || '',
       shotType: scene.shot_type || scene.shotType || '',
+      shotCategory: scene.shot_category || scene.shotCategory || 'PERFORMANCE',
       isPerformance: true
     }));
 }

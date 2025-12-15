@@ -71,6 +71,7 @@ import { CreativeOnboardingModal } from "./creative-onboarding-modal";
 import { DirectorSelectionModal } from "./director-selection-modal";
 import { ConceptSelectionModal } from "./concept-selection-modal";
 import { applyLipSync } from "../../lib/api/fal-lipsync";
+import { applyPixVerseLipsync, batchPixVerseLipsync, estimateLipsyncCost } from "../../lib/api/pixverse-lipsync";
 import { musicVideoProjectService, type MusicVideoProject } from "../../lib/services/music-video-project-service";
 import { musicVideoProjectServicePostgres, type MusicVideoProjectPostgres } from "../../lib/services/music-video-project-service-postgres";
 import { ProjectManager } from "./project-manager";
@@ -809,9 +810,17 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
     }
   };
 
-  // Función auxiliar para procesar lip-sync automáticamente en clips de performance
+  /**
+   * 🎤 MEJORADO: Procesa lip-sync usando PixVerse para clips de PERFORMANCE
+   * 
+   * NUEVO FLUJO:
+   * 1. Detecta clips por shotCategory='PERFORMANCE' o criterios legacy
+   * 2. Usa videoUrl existente de Kling O1 si está disponible
+   * 3. Aplica PixVerse lip-sync (video-to-video) con audio segmentado
+   * 4. Actualiza timeline con lipsyncVideoUrl
+   */
   const executePerformanceLipSync = async (script: string, buffer: AudioBuffer) => {
-    logger.info('🎤 [LIP-SYNC] Iniciando procesamiento de lip-sync por escena');
+    logger.info('🎤 [PIXVERSE LIP-SYNC] Iniciando procesamiento maestro de lip-sync');
     
     try {
       setIsProcessingLipSync(true);
@@ -827,23 +836,33 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         scenes = parsedScript;
       }
       
-      // Detectar clips de performance
+      // 🎯 Detectar clips de performance (ahora usa shotCategory)
       const performanceClips = detectPerformanceClips({ scenes });
       
-      logger.info(`🎤 [LIP-SYNC] Detectados ${performanceClips.length} clips de performance`);
+      logger.info(`🎤 [PIXVERSE] Detectados ${performanceClips.length} clips de PERFORMANCE para lip-sync`);
       
       if (performanceClips.length === 0) {
-        logger.info('ℹ️ [LIP-SYNC] No hay clips de performance, omitiendo lip-sync');
+        logger.info('ℹ️ [PIXVERSE] No hay clips de performance, omitiendo lip-sync');
+        toast({
+          title: "Lip-Sync Omitido",
+          description: "No se detectaron escenas de PERFORMANCE en el script",
+        });
         setIsProcessingLipSync(false);
+        setShowProgress(false);
         return;
       }
       
+      // 💰 Estimar costo
+      const costEstimate = estimateLipsyncCost(performanceClips);
+      logger.info(`💰 [PIXVERSE] Costo estimado: $${costEstimate.estimatedCost.toFixed(2)} (${costEstimate.totalSeconds}s @ $${costEstimate.costPerSecond}/s)`);
+      
       toast({
-        title: "🎤 Procesando Lip-Sync",
-        description: `Generando ${performanceClips.length} videos con sincronización labial (audio segmentado)...`,
+        title: "🎤 Procesando Lip-Sync con PixVerse",
+        description: `${performanceClips.length} escenas de performance (~$${costEstimate.estimatedCost.toFixed(2)})`,
       });
       
-      // Convertir performanceClips a SceneLipsyncConfig usando timeline items
+      // 🎬 Convertir performanceClips a SceneLipsyncConfig
+      // IMPORTANTE: Incluir videoUrl si existe (de Kling O1)
       const sceneConfigs: SceneLipsyncConfig[] = performanceClips.map(clip => {
         // Buscar el timeline item correspondiente
         const timelineItem = timelineItems.find(item => {
@@ -851,60 +870,71 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           return itemSceneId === clip.id;
         });
         
-        const imageUrl = timelineItem?.generatedImage || 
+        // Prioridad: videoUrl (Kling O1) > generatedImage > imageUrl > masterCharacter
+        const videoUrl = timelineItem?.videoUrl || '';
+        const imageUrl = (typeof timelineItem?.generatedImage === 'string' ? timelineItem.generatedImage : '') || 
                          timelineItem?.imageUrl || 
+                         timelineItem?.firebaseUrl ||
                          masterCharacter?.imageUrl || 
                          '';
+        
+        logger.info(`📋 [SCENE ${clip.id}] videoUrl: ${videoUrl ? 'YES' : 'NO'}, imageUrl: ${imageUrl ? 'YES' : 'NO'}, shotCategory: ${clip.shotCategory || 'UNKNOWN'}`);
         
         return {
           sceneId: clip.id,
           imageUrl: imageUrl,
+          videoUrl: videoUrl, // 🆕 Pasar video de Kling O1 si existe
           startTime: clip.startTime,
           endTime: clip.endTime,
           duration: clip.duration,
-          shotType: clip.shotType
+          shotType: clip.shotType,
+          shotCategory: clip.shotCategory // 🆕 Pasar categoría del script
         };
       });
       
-      if (sceneConfigs.some(config => !config.imageUrl)) {
-        logger.warn('⚠️ [LIP-SYNC] Algunas escenas no tienen imagen disponible');
+      // Verificar que todas las escenas tengan video o imagen
+      const missingMedia = sceneConfigs.filter(c => !c.videoUrl && !c.imageUrl);
+      if (missingMedia.length > 0) {
+        logger.warn(`⚠️ [PIXVERSE] ${missingMedia.length} escenas sin video ni imagen disponible`);
       }
       
       const userId = user?.uid || 'anonymous';
       
-      // Procesar lip-sync por escena con audio segmentado
+      // 🎤 Procesar lip-sync por escena con PixVerse
       const results = await batchProcessSceneLipsync(
         sceneConfigs,
         buffer,
         userId,
         projectName || 'untitled',
         (current, total, message) => {
-          logger.info(`🎤 [LIP-SYNC Progress] ${current}/${total}: ${message}`);
+          logger.info(`🎤 [PIXVERSE Progress] ${current}/${total}: ${message}`);
           setLipSyncProgress({ current, total, message });
           const progress = (current / total) * 100;
           setProgressPercentage(Math.round(progress));
         }
       );
       
-      logger.info(`✅ [LIP-SYNC] Procesados ${results.size} escenas con lip-sync`);
+      logger.info(`✅ [PIXVERSE] Procesados ${results.size} escenas con lip-sync`);
       
-      // Actualizar timeline con videos generados
+      // 🔄 Actualizar timeline con videos lip-synced
       setTimelineItems(prevItems => {
         return prevItems.map(item => {
           const sceneId = parseInt(item.id.toString().match(/(\d+)$/)?.[1] || '0');
           const lipsyncResult = results.get(sceneId);
           
           if (lipsyncResult?.success && lipsyncResult?.lipsyncVideoUrl) {
-            logger.info(`🎥 [LIP-SYNC] Actualizando clip ${sceneId} con video lip-sync`);
+            logger.info(`🎥 [PIXVERSE] Clip ${sceneId}: lip-sync aplicado exitosamente`);
             return {
               ...item,
-              videoUrl: lipsyncResult.lipsyncVideoUrl,
-              url: lipsyncResult.lipsyncVideoUrl,
+              lipsyncVideoUrl: lipsyncResult.lipsyncVideoUrl,
+              videoUrl: lipsyncResult.lipsyncVideoUrl, // Reemplazar video original con lip-synced
               lipsyncApplied: true,
               metadata: {
                 ...item.metadata,
                 hasLipSync: true,
+                lipsyncProvider: 'pixverse',
                 lipsyncVideoUrl: lipsyncResult.lipsyncVideoUrl,
+                originalVideoUrl: item.videoUrl, // Preservar original
                 lipsyncAppliedAt: new Date().toISOString()
               }
             };
@@ -915,21 +945,22 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       });
       
       const successCount = Array.from(results.values()).filter(r => r.success).length;
+      const failedCount = results.size - successCount;
       setProgressPercentage(100);
       
       toast({
-        title: "✅ Lip-Sync Completado",
-        description: `${successCount}/${results.size} videos generados con sincronización labial perfecta (audio segmentado)`,
+        title: "✅ PixVerse Lip-Sync Completado",
+        description: `${successCount}/${results.size} escenas de PERFORMANCE sincronizadas${failedCount > 0 ? ` (${failedCount} fallidas)` : ''}`,
       });
       
       setIsProcessingLipSync(false);
       setShowProgress(false);
       
     } catch (error) {
-      logger.error('❌ [LIP-SYNC] Error:', error);
+      logger.error('❌ [PIXVERSE LIP-SYNC] Error:', error);
       toast({
-        title: "Error en Lip-Sync",
-        description: error instanceof Error ? error.message : "Error procesando lip-sync",
+        title: "Error en PixVerse Lip-Sync",
+        description: error instanceof Error ? error.message : "Error procesando lip-sync con PixVerse",
         variant: "destructive",
       });
       setIsProcessingLipSync(false);

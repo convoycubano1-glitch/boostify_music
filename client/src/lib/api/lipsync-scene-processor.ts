@@ -1,30 +1,34 @@
 /**
  * Lip-Sync Scene Processor
- * Procesa lip-sync por escena individual usando audio segmentado
+ * Procesa lip-sync por escena individual usando PixVerse (video-to-video)
+ * 
+ * 🎤 MODELO: fal-ai/pixverse/lipsync ($0.04/segundo)
  * 
  * Flow:
- * 1. Recibe: audioBuffer completo + timelineItems con imágenes
- * 2. Detecta clips de performance (shot type + escena cantando)
+ * 1. Recibe: audioBuffer completo + timelineItems con videos generados
+ * 2. Filtra clips de PERFORMANCE (shotCategory o shot type + context)
  * 3. Para cada clip:
  *    a. Extrae audio segmentado [start:end]
  *    b. Sube audio segmentado a Firebase
- *    c. Genera video de imagen (zoom/pan durante duración)
- *    d. Aplica FAL lip-sync: video + audio segmentado
- *    e. Guarda videoUrl en timeline
+ *    c. Ya debe tener videoUrl del paso anterior (Kling O1)
+ *    d. Aplica PixVerse lip-sync: video + audio segmentado
+ *    e. Guarda lipsyncVideoUrl en timeline
  */
 
 import { logger } from '../logger';
-import { applyLipSync } from './fal-lipsync';
+import { applyPixVerseLipsync } from './pixverse-lipsync';
 import { cutAudioSegments } from '../services/audio-segmentation';
 import { uploadImageFromUrl } from '../firebase-storage';
 
 export interface SceneLipsyncConfig {
   sceneId: number;
   imageUrl: string;
+  videoUrl?: string; // 🆕 Video ya generado por Kling O1 (preferido)
   startTime: number;
   endTime: number;
   duration: number;
   shotType: string;
+  shotCategory?: 'PERFORMANCE' | 'B-ROLL' | 'STORY'; // 🆕 Del script JSON
 }
 
 export interface SceneLipsyncResult {
@@ -282,13 +286,17 @@ export async function generateImageVideo(
 }
 
 /**
- * Procesa lip-sync para una escena individual
+ * 🎤 Procesa lip-sync para una escena individual usando PixVerse
  * 
- * @param sceneConfig Configuración de la escena
+ * PREFERENCIA DE VIDEO:
+ * 1. Si sceneConfig.videoUrl existe (Kling O1 video) → Usar directamente
+ * 2. Si no, generar video desde imagen con generateImageVideo()
+ * 
+ * @param sceneConfig Configuración de la escena (con videoUrl preferido)
  * @param audioBuffer AudioBuffer completo de la canción
  * @param userId ID del usuario
  * @param projectName Nombre del proyecto
- * @returns Resultado del procesamiento
+ * @returns Resultado del procesamiento con lipsyncVideoUrl
  */
 export async function processSceneLipsync(
   sceneConfig: SceneLipsyncConfig,
@@ -297,11 +305,13 @@ export async function processSceneLipsync(
   projectName: string
 ): Promise<SceneLipsyncResult> {
   try {
-    logger.info(`🎤 [SCENE ${sceneConfig.sceneId}] Iniciando lip-sync...`);
+    logger.info(`🎤 [PIXVERSE SCENE ${sceneConfig.sceneId}] Iniciando lip-sync...`);
+    logger.info(`   Shot Category: ${sceneConfig.shotCategory || 'UNKNOWN'}`);
+    logger.info(`   Has Video: ${!!sceneConfig.videoUrl}`);
 
     // Paso 1: Extraer audio segmentado
     logger.info(
-      `✂️ [SCENE ${sceneConfig.sceneId}] Extrayendo audio [${sceneConfig.startTime}:${sceneConfig.endTime}]`
+      `✂️ [SCENE ${sceneConfig.sceneId}] Extrayendo audio [${sceneConfig.startTime.toFixed(2)}s - ${sceneConfig.endTime.toFixed(2)}s]`
     );
 
     const segmentedAudio = extractAudioSegment(
@@ -311,11 +321,6 @@ export async function processSceneLipsync(
     );
 
     const audioBlob = audioBufferToBlob(segmentedAudio);
-    const audioFile = new File(
-      [audioBlob],
-      `scene-${sceneConfig.sceneId}-audio.wav`,
-      { type: 'audio/wav' }
-    );
 
     // Paso 2: Subir audio a Firebase
     logger.info(`📤 [SCENE ${sceneConfig.sceneId}] Subiendo audio segmentado...`);
@@ -328,31 +333,39 @@ export async function processSceneLipsync(
     );
     URL.revokeObjectURL(audioUrl);
 
-    logger.info(`✅ [SCENE ${sceneConfig.sceneId}] Audio subido: ${permanentAudioUrl.substring(0, 50)}...`);
+    logger.info(`✅ [SCENE ${sceneConfig.sceneId}] Audio subido: ${permanentAudioUrl.substring(0, 60)}...`);
 
-    // Paso 3: Generar video de imagen (o reutilizar si ya existe)
-    logger.info(`🎬 [SCENE ${sceneConfig.sceneId}] Generando/preparando video...`);
+    // Paso 3: Obtener video para lip-sync
+    // PREFERIR videoUrl de Kling O1 si existe
+    let videoUrl: string;
+    
+    if (sceneConfig.videoUrl && sceneConfig.videoUrl.startsWith('http')) {
+      logger.info(`🎬 [SCENE ${sceneConfig.sceneId}] Usando video existente (Kling O1)`);
+      videoUrl = sceneConfig.videoUrl;
+    } else if (sceneConfig.imageUrl) {
+      logger.info(`🎬 [SCENE ${sceneConfig.sceneId}] Generando video desde imagen...`);
+      videoUrl = await generateImageVideo(
+        sceneConfig.imageUrl,
+        sceneConfig.duration,
+        sceneConfig.shotType
+      );
+    } else {
+      throw new Error('No video or image URL available for lip-sync');
+    }
 
-    const videoUrl = await generateImageVideo(
-      sceneConfig.imageUrl,
-      sceneConfig.duration,
-      sceneConfig.shotType
-    );
-
-    // Paso 4: Aplicar lip-sync FAL (video-to-video)
+    // Paso 4: Aplicar PixVerse lip-sync (video-to-video)
     logger.info(
-      `🎤 [SCENE ${sceneConfig.sceneId}] Aplicando lip-sync FAL Sync Lipsync 2.0...`
+      `🎤 [SCENE ${sceneConfig.sceneId}] Aplicando PixVerse lip-sync...`
     );
 
-    const lipsyncResult = await applyLipSync({
+    const lipsyncResult = await applyPixVerseLipsync({
       videoUrl: videoUrl,
-      audioUrl: permanentAudioUrl,
-      syncMode: 'cut_off', // Corta el audio si es más largo que el video
+      audioUrl: permanentAudioUrl
     });
 
     if (!lipsyncResult.success) {
       logger.error(
-        `❌ [SCENE ${sceneConfig.sceneId}] Lip-sync fallido:`,
+        `❌ [SCENE ${sceneConfig.sceneId}] PixVerse lip-sync fallido:`,
         lipsyncResult.error
       );
       return {
