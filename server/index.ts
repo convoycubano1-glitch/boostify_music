@@ -18,6 +18,12 @@ if (!process.env.NODE_ENV) {
 }
 
 const isProduction = process.env.NODE_ENV === 'production';
+console.log('='.repeat(60));
+console.log(`🚀 BOOSTIFY SERVER STARTING`);
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`Is Production: ${isProduction}`);
+console.log(`Working Directory: ${process.cwd()}`);
+console.log('='.repeat(60));
 log(`🚀 Running in ${process.env.NODE_ENV} mode`);
 
 const app = express();
