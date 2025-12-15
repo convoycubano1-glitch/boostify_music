@@ -5,17 +5,20 @@
  * MOBILE-OPTIMIZED: Diseñado para iPhone/Android con controles táctiles
  * FASE 2: Lazy loading, transiciones, gestos touch
  * FASE 3: Pinch-to-zoom, double-tap, preload, animaciones
+ * FASE 4: Audio Analysis integration - beats, sections, key moments
  */
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { 
   Play, Pause, Volume2, VolumeX, ZoomIn, ZoomOut, 
   Download, Settings, Undo2, Redo2, Trash2, Copy, X,
   Music, Wand2, Scissors, Hand, ChevronLeft, Menu, Layers,
-  ChevronRight, SkipBack, SkipForward, Maximize2, Minimize2
+  ChevronRight, SkipBack, SkipForward, Maximize2, Minimize2,
+  Activity, Zap, Radio // New icons for audio analysis
 } from 'lucide-react';
 import { TimelineLayers } from './TimelineLayers';
 import { Button } from '@/components/ui/button';
 import type { TimelineClip, TimelineMarker } from '@/interfaces/timeline';
+import { useAudioAnalysis, SECTION_COLORS, type AudioSection } from '@/hooks/useAudioAnalysis';
 
 interface TimelineEditorCapCutProps {
   initialClips: TimelineClip[];
@@ -23,6 +26,8 @@ interface TimelineEditorCapCutProps {
   scenes?: Array<{ id: string; imageUrl: string; timestamp: number; description: string; lyricsSegment?: string }>;
   videoPreviewUrl?: string;
   audioPreviewUrl?: string;
+  audioUrl?: string; // 🎵 FASE 4: URL para análisis de audio
+  projectId?: string; // 🎵 Para cache de análisis
   onChange?: (clips: TimelineClip[]) => void;
   onExport?: () => Promise<string | null>;
   onClose?: () => void;
@@ -89,6 +94,8 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
   scenes = [],
   videoPreviewUrl,
   audioPreviewUrl,
+  audioUrl,
+  projectId,
   onChange,
   onExport,
   onClose,
@@ -105,6 +112,44 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [tool, setTool] = useState<'select' | 'cut' | 'hand'>('select');
   const [showLayers, setShowLayers] = useState(false);
+  
+  // 🎵 FASE 4: Audio Analysis Integration
+  const [showAudioOverlay, setShowAudioOverlay] = useState(true);
+  const {
+    analysis: audioAnalysis,
+    isAnalyzing: isAnalyzingAudio,
+    analyzeAudio,
+    getSectionAt,
+    getDominantInstrumentAt,
+    getNearestBeat,
+    isKeyMomentNear,
+    getEnergyAt,
+  } = useAudioAnalysis();
+  
+  // 🎵 Auto-analyze audio when URL is provided
+  useEffect(() => {
+    if (audioUrl || audioPreviewUrl) {
+      analyzeAudio(audioUrl || audioPreviewUrl!, projectId);
+    }
+  }, [audioUrl, audioPreviewUrl, projectId, analyzeAudio]);
+  
+  // 🎵 Current audio section for UI display
+  const currentAudioSection = useMemo(() => {
+    if (!audioAnalysis) return null;
+    return getSectionAt(currentTime);
+  }, [audioAnalysis, currentTime, getSectionAt]);
+  
+  // 🎵 Current key moment (if near)
+  const currentKeyMoment = useMemo(() => {
+    if (!audioAnalysis) return null;
+    return isKeyMomentNear(currentTime, 0.5);
+  }, [audioAnalysis, currentTime, isKeyMomentNear]);
+  
+  // 🎵 Current energy level (0-100)
+  const currentEnergy = useMemo(() => {
+    if (!audioAnalysis) return 50;
+    return getEnergyAt(currentTime);
+  }, [audioAnalysis, currentTime, getEnergyAt]);
   
   // 🎬 Scene transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -758,6 +803,66 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
                 <div className="text-xs sm:text-sm text-zinc-300 font-mono ml-1 sm:ml-2">
                   {formatTime(currentTime)} <span className="text-zinc-500 hidden sm:inline">/</span> <span className="hidden sm:inline">{formatTime(duration)}</span>
                 </div>
+                
+                {/* 🎵 FASE 4: Audio Section & Energy Indicator */}
+                {audioAnalysis && currentAudioSection && (
+                  <div className="flex items-center gap-2 ml-2 sm:ml-4">
+                    {/* Section badge */}
+                    <div 
+                      className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider"
+                      style={{ 
+                        backgroundColor: SECTION_COLORS[currentAudioSection.type] + '30',
+                        color: SECTION_COLORS[currentAudioSection.type],
+                        borderWidth: 1,
+                        borderColor: SECTION_COLORS[currentAudioSection.type] + '50'
+                      }}
+                    >
+                      {currentAudioSection.type}
+                    </div>
+                    
+                    {/* Energy bar - hidden on mobile */}
+                    <div className="hidden sm:flex items-center gap-1">
+                      <Activity className="w-3 h-3 text-zinc-500" />
+                      <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all duration-200"
+                          style={{ 
+                            width: `${currentEnergy}%`,
+                            background: currentEnergy > 70 
+                              ? 'linear-gradient(90deg, #f97316, #ef4444)' 
+                              : currentEnergy > 40 
+                                ? 'linear-gradient(90deg, #eab308, #f97316)' 
+                                : 'linear-gradient(90deg, #10b981, #eab308)'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Key moment flash */}
+                    {currentKeyMoment && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/20 animate-pulse">
+                        <Zap className="w-3 h-3 text-yellow-400" />
+                        <span className="text-[10px] text-yellow-400 font-bold uppercase hidden sm:inline">
+                          {currentKeyMoment.type}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* BPM indicator - hidden on mobile */}
+                    <div className="hidden md:flex items-center gap-1 text-zinc-500">
+                      <Radio className="w-3 h-3" />
+                      <span className="text-[10px]">{audioAnalysis.bpm} BPM</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Loading indicator for audio analysis */}
+                {isAnalyzingAudio && (
+                  <div className="flex items-center gap-1 ml-2 text-zinc-500">
+                    <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[10px] hidden sm:inline">Analizando...</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-1 sm:gap-3">
@@ -822,13 +927,92 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
                     <Layers className="w-5 h-5" />
                   </Button>
                 )}
+                
+                {/* 🎵 Audio overlay toggle button */}
+                {audioAnalysis && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowAudioOverlay(!showAudioOverlay)}
+                    className={`min-w-[44px] min-h-[44px] p-2 ${showAudioOverlay ? 'text-cyan-400 bg-cyan-500/10' : 'text-zinc-400'}`}
+                    aria-label={showAudioOverlay ? 'Ocultar beats' : 'Mostrar beats'}
+                    title="Mostrar/ocultar análisis de audio"
+                  >
+                    <Activity className="w-5 h-5" />
+                  </Button>
+                )}
               </div>
             </div>
+            
+            {/* 🎵 FASE 4: Audio Sections Timeline Bar */}
+            {audioAnalysis && showAudioOverlay && (
+              <div className="relative h-6 bg-zinc-900/50 border-b border-zinc-800 overflow-hidden">
+                {/* Section colored bars */}
+                {audioAnalysis.sections.map((section, idx) => {
+                  const left = (section.startTime / duration) * 100;
+                  const width = ((section.endTime - section.startTime) / duration) * 100;
+                  return (
+                    <div
+                      key={`section-${idx}`}
+                      className="absolute top-0 h-full opacity-60 hover:opacity-80 transition-opacity cursor-pointer"
+                      style={{
+                        left: `${left}%`,
+                        width: `${width}%`,
+                        backgroundColor: SECTION_COLORS[section.type] || '#6b7280',
+                      }}
+                      title={`${section.type} (${section.energy})`}
+                    >
+                      {/* Section label - only show if wide enough */}
+                      {width > 8 && (
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[8px] sm:text-[10px] font-bold uppercase text-white/80 whitespace-nowrap">
+                          {section.type}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                
+                {/* Beat markers (downbeats only for clarity) */}
+                {audioAnalysis.downbeats.slice(0, 100).map((beat, idx) => {
+                  const left = (beat / duration) * 100;
+                  return (
+                    <div
+                      key={`beat-${idx}`}
+                      className="absolute top-0 w-px h-full bg-white/20"
+                      style={{ left: `${left}%` }}
+                    />
+                  );
+                })}
+                
+                {/* Key moment markers */}
+                {audioAnalysis.keyMoments.map((moment, idx) => {
+                  const left = (moment.timestamp / duration) * 100;
+                  return (
+                    <div
+                      key={`moment-${idx}`}
+                      className="absolute top-0 w-1 h-full bg-yellow-400/60 cursor-pointer"
+                      style={{ left: `${left}%` }}
+                      title={`${moment.type}: ${moment.description}`}
+                    >
+                      <Zap className="w-3 h-3 text-yellow-400 absolute -top-0.5 left-1/2 -translate-x-1/2" />
+                    </div>
+                  );
+                })}
+                
+                {/* Current position indicator */}
+                <div 
+                  className="absolute top-0 w-0.5 h-full bg-orange-500 z-10"
+                  style={{ left: `${(currentTime / duration) * 100}%` }}
+                />
+              </div>
+            )}
 
             {/* 📱 Scene Thumbnail Strip - Responsive with Lazy Loading */}
             <div className="flex overflow-x-auto gap-2 sm:gap-3 p-2 sm:p-3 bg-black/30 border-b border-zinc-800 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent snap-x snap-mandatory">
               {scenes.map((scene, idx) => {
                 const isActive = currentScene?.id === scene.id;
+                // 🎵 Get audio section for this scene
+                const sceneSection = audioAnalysis ? getSectionAt(scene.timestamp) : null;
                 return (
                   <button
                     key={scene.id}
@@ -840,6 +1024,9 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
                     }`}
                     title={scene.description}
                     aria-label={`Ir a escena ${idx + 1}`}
+                    style={sceneSection && showAudioOverlay ? {
+                      boxShadow: `0 0 0 1px ${SECTION_COLORS[sceneSection.type]}40`
+                    } : undefined}
                   >
                     {/* 📱 Responsive thumbnail sizes with LazyImage */}
                     <LazyImage
@@ -854,6 +1041,19 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
                     }`}>
                       {idx + 1}
                     </div>
+                    
+                    {/* 🎵 Audio section badge - top right */}
+                    {sceneSection && showAudioOverlay && (
+                      <div 
+                        className="absolute top-1 right-1 px-1 py-0.5 rounded text-[8px] font-bold uppercase"
+                        style={{ 
+                          backgroundColor: SECTION_COLORS[sceneSection.type],
+                          color: 'white'
+                        }}
+                      >
+                        {sceneSection.type.substring(0, 3)}
+                      </div>
+                    )}
                     
                     {/* Hover overlay with play icon - Desktop only */}
                     <div className="hidden sm:flex absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center">
