@@ -1388,8 +1388,8 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
           },
         ],
         mode: 'payment',
-        success_url: `${req.protocol}://${req.get('host')}/booking-confirmation?session_id={CHECKOUT_SESSION_ID}&success=true`,
-        cancel_url: `${req.protocol}://${req.get('host')}/booking-confirmation?canceled=true`,
+        success_url: `${process.env.PRODUCTION_URL || 'https://boostifymusic.com'}/booking-confirmation?session_id={CHECKOUT_SESSION_ID}&success=true`,
+        cancel_url: `${process.env.PRODUCTION_URL || 'https://boostifymusic.com'}/booking-confirmation?canceled=true`,
         metadata: {
           musicianId,
           userId: req.user!.id,
@@ -1443,8 +1443,8 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
           },
         ],
         mode: 'payment',
-        success_url: `${req.protocol}://${req.get('host')}/course/${courseId}?session_id={CHECKOUT_SESSION_ID}&success=true`,
-        cancel_url: `${req.protocol}://${req.get('host')}/education?canceled=true`,
+        success_url: `${process.env.PRODUCTION_URL || 'https://boostifymusic.com'}/course/${courseId}?session_id={CHECKOUT_SESSION_ID}&success=true`,
+        cancel_url: `${process.env.PRODUCTION_URL || 'https://boostifymusic.com'}/education?canceled=true`,
         metadata: {
           courseId,
           userId: req.user!.id,

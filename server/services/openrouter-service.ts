@@ -81,7 +81,7 @@ export class OpenRouterService {
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${this.apiKey}`,
-          "HTTP-Referer": "https://boostify-music.replit.app",
+          "HTTP-Referer": "https://boostifymusic.com",
           "X-Title": "Boostify Social Network"
         },
         body: JSON.stringify({

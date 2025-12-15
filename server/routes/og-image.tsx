@@ -26,7 +26,7 @@ router.get('/artist/:artistId', async (req, res) => {
     // Intentar obtener datos de PostgreSQL también
     let postgresData = null;
     try {
-      const response = await fetch(`${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/api/profile/${artistId}`);
+      const response = await fetch(`${process.env.PRODUCTION_URL || 'http://localhost:5000'}/api/profile/${artistId}`);
       if (response.ok) {
         postgresData = await response.json();
       }

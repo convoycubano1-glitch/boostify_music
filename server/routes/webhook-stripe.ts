@@ -15,6 +15,7 @@ import Stripe from 'stripe';
 import { db } from '../db';
 import { subscriptions, users, notifications } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { PRICE_ID_TO_PLAN, isAdminEmail } from '../../shared/constants';
 
 const router = Router();
 
@@ -522,22 +523,14 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
 /**
  * Determinar tier del plan basado en Price ID
+ * Usa constantes centralizadas de shared/constants.ts
  */
 function determinePlanTier(priceId: string): 'free' | 'creator' | 'professional' | 'enterprise' {
-  // Mapping de Price IDs a tiers
-  const priceToTierMap: Record<string, 'creator' | 'professional' | 'enterprise'> = {
-    // Monthly
-    'price_1R0lay2LyFplWimfQxUL6Hn0': 'creator',
-    'price_1R0laz2LyFplWimfsBd5ASoa': 'professional',
-    'price_1R0lb12LyFplWimf7JpMynKA': 'enterprise',
-    
-    // Yearly (Pendientes - actualizar cuando se creen)
-    'price_PENDING_CREATOR_YEARLY': 'creator',
-    'price_PENDING_PROFESSIONAL_YEARLY': 'professional',
-    'price_PENDING_ENTERPRISE_YEARLY': 'enterprise'
-  };
-  
-  return priceToTierMap[priceId] || 'free';
+  const plan = PRICE_ID_TO_PLAN[priceId];
+  if (plan === 'creator' || plan === 'professional' || plan === 'enterprise') {
+    return plan;
+  }
+  return 'free';
 }
 
 /**

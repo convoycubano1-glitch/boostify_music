@@ -1,12 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthUser } from './auth';
 
-type SubscriptionPlan = 'free' | 'basic' | 'pro' | 'premium';
+// Soporta AMBAS nomenclaturas para compatibilidad:
+// - Nueva: free, creator, professional, enterprise  
+// - Legacy: free, basic, pro, premium
+type SubscriptionPlan = 'free' | 'basic' | 'pro' | 'premium' | 'creator' | 'professional' | 'enterprise';
+
+// Mapeo de nomenclatura para normalizar planes
+const PLAN_MAPPING: Record<string, string> = {
+  'basic': 'creator',
+  'pro': 'professional',
+  'premium': 'enterprise',
+  'free': 'free',
+  'creator': 'creator',
+  'professional': 'professional',
+  'enterprise': 'enterprise'
+};
 
 /**
  * Middleware to check if a user has a specific subscription plan or higher
+ * Soporta ambas nomenclaturas (legacy y nueva)
  * 
- * @param requiredPlan The minimum subscription plan required ('free', 'basic', 'pro', 'premium')
+ * @param requiredPlan The minimum subscription plan required
  * @returns Middleware function that checks the user's subscription
  */
 export function requireSubscription(requiredPlan: SubscriptionPlan = 'free') {
@@ -62,16 +77,23 @@ export function requireSubscription(requiredPlan: SubscriptionPlan = 'free') {
         }
       }
 
-      // Map subscription plans to numeric values for easy comparison
-      const planValues: Record<SubscriptionPlan, number> = {
+      // Map subscription plans to numeric values (usando nomenclatura normalizada)
+      const planValues: Record<string, number> = {
         'free': 0,
-        'basic': 1,
-        'pro': 2,
-        'premium': 3
+        'creator': 1,
+        'basic': 1,      // Legacy alias
+        'professional': 2,
+        'pro': 2,        // Legacy alias
+        'enterprise': 3,
+        'premium': 3     // Legacy alias
       };
 
-      const userPlanValue = planValues[subscription.plan] || 0;
-      const requiredPlanValue = planValues[requiredPlan];
+      // Normalizar planes
+      const normalizedUserPlan = PLAN_MAPPING[subscription.plan] || subscription.plan;
+      const normalizedRequiredPlan = PLAN_MAPPING[requiredPlan] || requiredPlan;
+      
+      const userPlanValue = planValues[normalizedUserPlan] || 0;
+      const requiredPlanValue = planValues[normalizedRequiredPlan] || 0;
 
       // Check if user's plan meets or exceeds the required plan
       if (userPlanValue >= requiredPlanValue) {
@@ -95,8 +117,11 @@ export function requireSubscription(requiredPlan: SubscriptionPlan = 'free') {
   };
 }
 
-// Export a handler for premium features (shorthand for requireSubscription('premium'))
+// Export handlers for premium features (shortcuts)
 export const requirePremium = requireSubscription('premium');
+export const requireEnterprise = requireSubscription('enterprise');
+export const requireProfessional = requireSubscription('professional');
+export const requireCreator = requireSubscription('creator');
 
 // Export a handler for pro features (shorthand for requireSubscription('pro'))
 export const requirePro = requireSubscription('pro');

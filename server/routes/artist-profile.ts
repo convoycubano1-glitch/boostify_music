@@ -217,23 +217,18 @@ router.post('/generate-product-image', async (req: Request, res: Response) => {
 
 /**
  * Helper para obtener la URL base según el entorno
- * Igual que en stripe.ts para consistencia
+ * PRODUCCIÓN: boostifymusic.com
  */
 const getBaseUrl = () => {
+  const productionUrl = process.env.PRODUCTION_URL || 'https://boostifymusic.com';
+  
   if (process.env.NODE_ENV === 'production') {
-    return 'https://boostify.replit.app';
+    return productionUrl;
   }
   
   if (process.env.REPLIT_DOMAINS) {
     const domains = process.env.REPLIT_DOMAINS.split(',');
     return `https://${domains[0]}`;
-  }
-  
-  const replSlug = process.env.REPL_SLUG;
-  const replOwner = process.env.REPL_OWNER;
-  
-  if (replSlug && replOwner) {
-    return `https://${replSlug}.${replOwner}.repl.co`;
   }
   
   return 'http://localhost:5000';

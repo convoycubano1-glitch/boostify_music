@@ -5,6 +5,13 @@ import { db } from '../db';
 import { bookings, payments } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { NotificationTemplates } from '../utils/notifications';
+import { 
+  STRIPE_PRICE_IDS, 
+  PRICE_ID_TO_PLAN, 
+  PRODUCTION_URL,
+  isAdminEmail,
+  normalizePlanName 
+} from '../../shared/constants';
 
 const router = Router();
 
@@ -18,31 +25,23 @@ console.log('🔑 Using Stripe key:', stripeKey ? (stripeKey.startsWith('sk_test
 
 /**
  * URL base para redirecciones de Stripe
- * En producción, esta URL debería ser configurable y apuntar al dominio real
+ * Usa PRODUCTION_URL de shared/constants.ts
  */
 const getBaseUrl = () => {
-  // En producción, usar el dominio de producción
+  // Siempre usar el dominio de producción para redirecciones de Stripe
+  const productionUrl = process.env.PRODUCTION_URL || PRODUCTION_URL;
+  
   if (process.env.NODE_ENV === 'production') {
-    return 'https://boostify.replit.app';
+    return productionUrl;
   }
   
-  // En desarrollo, construir la URL usando las variables de entorno de Replit
-  const replId = process.env.REPL_ID;
-  const replSlug = process.env.REPL_SLUG;
-  const replOwner = process.env.REPL_OWNER;
-  
-  // Si tenemos REPLIT_DOMAINS (variable que contiene el dominio actual), usarla
+  // En desarrollo, usar la URL de producción para pruebas
   if (process.env.REPLIT_DOMAINS) {
     const domains = process.env.REPLIT_DOMAINS.split(',');
     return `https://${domains[0]}`;
   }
   
-  // Construir URL de desarrollo manualmente
-  if (replSlug && replOwner) {
-    return `https://${replSlug}.${replOwner}.repl.co`;
-  }
-  
-  // Fallback a localhost si nada más funciona
+  // Fallback a localhost
   return 'http://localhost:5000';
 };
 
@@ -166,21 +165,71 @@ const MUSIC_VIDEO_TIERS: Record<string, TierConfig> = {
 
 /**
  * Mapeo de planes a IDs de precio en Stripe
- * Estos IDs deben coincidir con los configurados en el dashboard de Stripe
+ * IMPORTANTE: Estos IDs deben coincidir con pricing.tsx y webhook-stripe.ts
+ * 
+ * Nomenclatura UNIFICADA:
+ * - UI Names: Discover, Elevate, Amplify, Dominate
+ * - DB Names: free, creator, professional, enterprise
+ * - Legacy Names (deprecated): basic, pro, premium
  */
-const PLAN_PRICE_IDS = {
-  'basic': 'price_1R0lay2LyFplWimfQxUL6Hn0',
-  'pro': 'price_1R0laz2LyFplWimfsBd5ASoa',
-  'premium': 'price_1R0lb12LyFplWimf7JpMynKA'
+const PLAN_PRICE_IDS: Record<string, { monthly: string; yearly: string }> = {
+  // Elevate = creator
+  'elevate': { 
+    monthly: 'price_1R0lay2LyFplWimfQxUL6Hn0', 
+    yearly: 'price_1Sei7X2LyFplWimfMgbnJvPM' 
+  },
+  'creator': { 
+    monthly: 'price_1R0lay2LyFplWimfQxUL6Hn0', 
+    yearly: 'price_1Sei7X2LyFplWimfMgbnJvPM' 
+  },
+  'basic': { 
+    monthly: 'price_1R0lay2LyFplWimfQxUL6Hn0', 
+    yearly: 'price_1Sei7X2LyFplWimfMgbnJvPM' 
+  },
+  
+  // Amplify = professional
+  'amplify': { 
+    monthly: 'price_1R0laz2LyFplWimfsBd5ASoa', 
+    yearly: 'price_1Sei7X2LyFplWimfL1qscrKR' 
+  },
+  'professional': { 
+    monthly: 'price_1R0laz2LyFplWimfsBd5ASoa', 
+    yearly: 'price_1Sei7X2LyFplWimfL1qscrKR' 
+  },
+  'pro': { 
+    monthly: 'price_1R0laz2LyFplWimfsBd5ASoa', 
+    yearly: 'price_1Sei7X2LyFplWimfL1qscrKR' 
+  },
+  
+  // Dominate = enterprise
+  'dominate': { 
+    monthly: 'price_1Sei8R2LyFplWimfXK8dAE06', 
+    yearly: 'price_1Sei8R2LyFplWimf15fDEJDL' 
+  },
+  'enterprise': { 
+    monthly: 'price_1Sei8R2LyFplWimfXK8dAE06', 
+    yearly: 'price_1Sei8R2LyFplWimf15fDEJDL' 
+  },
+  'premium': { 
+    monthly: 'price_1Sei8R2LyFplWimfXK8dAE06', 
+    yearly: 'price_1Sei8R2LyFplWimf15fDEJDL' 
+  }
 };
 
 /**
- * Mapeo de IDs de precio a nombres de plan
+ * Mapeo de IDs de precio a nombres de plan (DB names)
  */
-const PRICE_ID_TO_PLAN = {
-  'price_1R0lay2LyFplWimfQxUL6Hn0': 'basic',
-  'price_1R0laz2LyFplWimfsBd5ASoa': 'pro',
-  'price_1R0lb12LyFplWimf7JpMynKA': 'premium'
+const PRICE_ID_TO_PLAN: Record<string, string> = {
+  // Monthly
+  'price_1R0lay2LyFplWimfQxUL6Hn0': 'creator',
+  'price_1R0laz2LyFplWimfsBd5ASoa': 'professional',
+  'price_1Sei8R2LyFplWimfXK8dAE06': 'enterprise',
+  // Yearly
+  'price_1Sei7X2LyFplWimfMgbnJvPM': 'creator',
+  'price_1Sei7X2LyFplWimfL1qscrKR': 'professional',
+  'price_1Sei8R2LyFplWimf15fDEJDL': 'enterprise',
+  // Legacy
+  'price_1R0lb12LyFplWimf7JpMynKA': 'enterprise'
 };
 
 /**

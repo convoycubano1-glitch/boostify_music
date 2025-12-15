@@ -230,8 +230,8 @@ router.post('/investment/create-checkout', isAuthenticated, async (req: AuthRequ
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.origin || 'http://localhost:5000'}/investors-dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
-      cancel_url: `${req.headers.origin || 'http://localhost:5000'}/investors-dashboard?canceled=true`,
+      success_url: `${process.env.PRODUCTION_URL || 'https://boostifymusic.com'}/investors-dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      cancel_url: `${process.env.PRODUCTION_URL || 'https://boostifymusic.com'}/investors-dashboard?canceled=true`,
       metadata: {
         userId,
         investorId: userId,

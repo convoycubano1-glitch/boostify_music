@@ -54,7 +54,7 @@ const plans = [
     highlighted: true,
     badge: '🔥 Most Popular',
     priceId: 'price_1R0lay2LyFplWimfQxUL6Hn0',
-    yearlyPriceId: 'price_1R0lay2LyFplWimfQxUL6Hn0_yearly',
+    yearlyPriceId: 'price_1Sei7X2LyFplWimfMgbnJvPM',
     savings: 'Save $120/year',
     features: [
       { text: 'Everything in Discover', included: true, highlight: true },
@@ -81,7 +81,7 @@ const plans = [
     icon: Zap,
     highlighted: false,
     priceId: 'price_1R0laz2LyFplWimfsBd5ASoa',
-    yearlyPriceId: 'price_1R0laz2LyFplWimfsBd5ASoa_yearly',
+    yearlyPriceId: 'price_1Sei7X2LyFplWimfL1qscrKR',
     savings: 'Save $200/year',
     features: [
       { text: 'Everything in Elevate', included: true, highlight: true },
@@ -107,9 +107,8 @@ const plans = [
     accentColor: 'rose',
     icon: Crown,
     highlighted: false,
-    priceId: null,
-    yearlyPriceId: null,
-    comingSoon: true,
+    priceId: 'price_1Sei8R2LyFplWimfXK8dAE06',
+    yearlyPriceId: 'price_1Sei8R2LyFplWimf15fDEJDL',
     savings: 'Save $300/year',
     features: [
       { text: 'Everything in Amplify', included: true, highlight: true },

@@ -155,8 +155,8 @@ router.post('/api/services/checkout-session', authenticate, async (req, res) => 
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.REPLIT_DOMAIN || 'https://' + process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'}/youtube-views?session_id={CHECKOUT_SESSION_ID}&payment=success`,
-      cancel_url: `${process.env.REPLIT_DOMAIN || 'https://' + process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'}/youtube-views?payment=cancelled`,
+      success_url: `${process.env.PRODUCTION_URL || 'https://boostifymusic.com'}/youtube-views?session_id={CHECKOUT_SESSION_ID}&payment=success`,
+      cancel_url: `${process.env.PRODUCTION_URL || 'https://boostifymusic.com'}/youtube-views?payment=cancelled`,
       customer_email: user?.email,
       metadata: {
         serviceId: String(serviceId),

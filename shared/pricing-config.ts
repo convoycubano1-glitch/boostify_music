@@ -73,12 +73,12 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     popular: true,
     price: {
       monthly: 59.99,
-      yearly: 604.00, // 16% discount
-      yearlyEquivalentMonthly: 50.33
+      yearly: 599.99, // Save $120/year
+      yearlyEquivalentMonthly: 49.99
     },
     stripeIds: {
       monthly: 'price_1R0lay2LyFplWimfQxUL6Hn0',
-      yearly: 'price_1SUz302LyFplWimfv5MZCNz4' // ✅ Creator Yearly - $604/año
+      yearly: 'price_1Sei7X2LyFplWimfMgbnJvPM' // ✅ Elevate Yearly - $599.99/año
     },
     features: [
       { name: 'Everything in Discover', included: true },
@@ -105,12 +105,12 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     highlight: 'Best value',
     price: {
       monthly: 99.99,
-      yearly: 1007.00, // 16% discount
-      yearlyEquivalentMonthly: 83.92
+      yearly: 999.99, // Save $200/year
+      yearlyEquivalentMonthly: 83.33
     },
     stripeIds: {
       monthly: 'price_1R0laz2LyFplWimfsBd5ASoa',
-      yearly: 'price_1SUz302LyFplWimfG5YtbUJ3' // ✅ Professional Yearly - $1,007/año
+      yearly: 'price_1Sei7X2LyFplWimfL1qscrKR' // ✅ Amplify Yearly - $999.99/año
     },
     features: [
       { name: 'Everything in Elevate', included: true },
@@ -139,12 +139,12 @@ export const SUBSCRIPTION_PLANS: Record<PlanTier, PlanConfig> = {
     highlight: 'Maximum power',
     price: {
       monthly: 149.99,
-      yearly: 1511.00, // 16% discount
-      yearlyEquivalentMonthly: 125.92
+      yearly: 1499.99, // Save $300/year
+      yearlyEquivalentMonthly: 124.99
     },
     stripeIds: {
-      monthly: 'price_1R0lb12LyFplWimf7JpMynKA',
-      yearly: 'price_1SUz312LyFplWimfQSQLo349' // ✅ Enterprise Yearly - $1,511/año
+      monthly: 'price_1Sei8R2LyFplWimfXK8dAE06',
+      yearly: 'price_1Sei8R2LyFplWimf15fDEJDL' // ✅ Dominate Yearly - $1499.99/año
     },
     features: [
       { name: 'Everything in Amplify', included: true },

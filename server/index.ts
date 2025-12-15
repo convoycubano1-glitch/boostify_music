@@ -358,11 +358,10 @@ app.use((req, res, next) => {
         path.resolve(process.cwd(), 'dist', 'client') :
         path.join(process.cwd(), 'client/public')}`);
 
-      const accessURL = isReplitEnv ?
-        `https://${process.env.REPL_SLUG || 'your-replit'}.replit.app` :
-        process.env.NODE_ENV === "production" ?
-          `${process.env.APP_URL || 'https://your-app-domain.com'}` :
-          `http://localhost:${PORT}`;
+      const accessURL = process.env.PRODUCTION_URL ||
+        (process.env.NODE_ENV === "production" ?
+          `https://boostifymusic.com` :
+          `http://localhost:${PORT}`);
 
       log(`🔗 Access URL: ${accessURL}`);
     });

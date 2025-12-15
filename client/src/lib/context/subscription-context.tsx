@@ -8,8 +8,23 @@ import { logger } from "../logger";
 import { useAuth } from '../../hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 
-// Tipos de planes disponibles (UNIFICADOS con pricing-config.ts)
-export type PlanType = 'free' | 'creator' | 'professional' | 'enterprise';
+// Tipos de planes disponibles
+// Soporta AMBAS nomenclaturas para compatibilidad:
+// - Nueva: free, creator, professional, enterprise
+// - Legacy: free, basic, pro, premium
+export type PlanType = 'free' | 'creator' | 'professional' | 'enterprise' | 'basic' | 'pro' | 'premium';
+
+// Mapeo de nomenclatura legacy a nueva
+const PLAN_MAPPING: Record<string, string> = {
+  'basic': 'creator',
+  'pro': 'professional', 
+  'premium': 'enterprise',
+  // Los nuevos nombres se mapean a sí mismos
+  'free': 'free',
+  'creator': 'creator',
+  'professional': 'professional',
+  'enterprise': 'enterprise'
+};
 
 // Interfaz para los datos de suscripción
 export interface Subscription {
@@ -201,17 +216,23 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   
   /**
    * Verificar si el usuario tiene acceso a un plan específico
-   * Jerarquía: free < creator < professional < enterprise
+   * Soporta AMBAS nomenclaturas: legacy (basic/pro/premium) y nueva (creator/professional/enterprise)
+   * Jerarquía: free < creator/basic < professional/pro < enterprise/premium
    */
-  const hasAccess = (requiredPlan: PlanType): boolean => {
+  const hasAccess = (requiredPlan: PlanType | string): boolean => {
     // Admin tiene acceso a todo
     if (userRole?.role === 'admin') {
       return true;
     }
     
-    const planHierarchy: PlanType[] = ['free', 'creator', 'professional', 'enterprise'];
-    const currentIndex = planHierarchy.indexOf(currentPlan);
-    const requiredIndex = planHierarchy.indexOf(requiredPlan);
+    // Normalizar nombres de planes a la nueva nomenclatura
+    const normalizedCurrentPlan = PLAN_MAPPING[currentPlan] || currentPlan;
+    const normalizedRequiredPlan = PLAN_MAPPING[requiredPlan] || requiredPlan;
+    
+    // Jerarquía usando nombres normalizados
+    const planHierarchy = ['free', 'creator', 'professional', 'enterprise'];
+    const currentIndex = planHierarchy.indexOf(normalizedCurrentPlan);
+    const requiredIndex = planHierarchy.indexOf(normalizedRequiredPlan);
     
     return currentIndex >= requiredIndex;
   };
