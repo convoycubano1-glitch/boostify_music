@@ -5662,14 +5662,16 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           {typeof window !== 'undefined' && (
             <TimelineEditorCapCut
               initialClips={timelineItems}
-              duration={selectedFile?.duration || 0}
-              scenes={previewImages.map((img, idx) => ({
-                id: img.id || `scene-${idx}`,
-                imageUrl: img.url,
-                timestamp: (idx / previewImages.length) * (selectedFile?.duration || 0),
-                description: img.prompt || `Scene ${idx + 1}`
-              }))}
-              audioPreviewUrl={selectedFile?.url}
+              duration={selectedFile?.duration || audioDuration || 0}
+              scenes={timelineItems
+                .filter(item => item.generatedImage || item.firebaseUrl || item.imageUrl || item.thumbnail)
+                .map((item, idx) => ({
+                  id: String(item.id) || `scene-${idx}`,
+                  imageUrl: item.generatedImage || item.firebaseUrl || item.imageUrl || item.thumbnail || '',
+                  timestamp: (item.start_time || 0) / 1000, // Convert ms to seconds
+                  description: item.lyricsSegment || item.description || item.imagePrompt || `Scene ${idx + 1}`
+                }))}
+              audioPreviewUrl={selectedFile?.url || audioUrl}
               onChange={(clips) => setTimelineItems(clips)}
             />
           )}
