@@ -307,8 +307,8 @@ export async function generateShotVariations(
       logger.log(`[ShotVariation]    Generando ${variation.type}...`);
       
       const result = await generateImageWithEdit(
-        editPrompt,
-        [baseImageUrl], // nano-banana/edit requiere array
+        baseImageUrl, // Primera imagen como referencia
+        editPrompt,   // Prompt de edición
         { aspectRatio: aspectRatio as any }
       );
       
@@ -473,7 +473,7 @@ export function getAvailableShotTypes(genre: string, mood: string[] = []): strin
     ...profile.shotVariations.climax
   ];
   
-  const uniqueTypes = [...new Set(allShots.map(s => s.type))];
+  const uniqueTypes = Array.from(new Set(allShots.map(s => s.type)));
   return uniqueTypes;
 }
 

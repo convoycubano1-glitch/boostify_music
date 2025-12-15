@@ -811,7 +811,9 @@ export async function generateThreeConceptProposals(
   lyrics: string,
   directorName: string,
   artistReferences?: string[],
-  audioDuration?: number
+  audioDuration?: number,
+  artistName?: string,
+  songTitle?: string
 ): Promise<MusicVideoConcept[]> {
   try {
     logger.info("🎨 Generando 3 propuestas de concepto visual con Gemini...");
@@ -826,7 +828,9 @@ export async function generateThreeConceptProposals(
         lyrics,
         directorName,
         characterReference: artistReferences,
-        audioDuration
+        audioDuration,
+        artistName,
+        songTitle
       })
     });
     

@@ -50,13 +50,81 @@ async function generateTextWithOpenAI(prompt: string, options: {
 }
 
 /**
- * Genera imagen con FAL nano-banana (Gemini 2.5 Flash via FAL)
+ * 🎬 PREMIUM CINEMATOGRAPHIC POSTER PROMPTS
+ * Genera prompts de alta calidad estilo Hollywood/Cinema
  */
-async function generateConceptImage(prompt: string, conceptIndex: number): Promise<{ success: boolean; imageUrl?: string; error?: string; provider?: string }> {
+function buildPremiumPosterPrompt(concept: any, directorName: string, songInfo?: { artist?: string; title?: string }): string {
+  // Director-specific visual styles
+  const directorStyles: Record<string, string> = {
+    'Spike Jonze': 'Whimsical surrealism, intimate close-ups, warm nostalgic tones, dreamlike sequences with practical effects, indie film aesthetic',
+    'Hype Williams': 'Ultra-wide fisheye lens, opulent luxury aesthetic, slow-motion glamour, high contrast neon colors, bling and excess',
+    'Michel Gondry': 'Handcrafted DIY aesthetic, stop-motion elements, paper craft textures, vintage camera effects, playful inventiveness',
+    'David Fincher': 'Dark atmospheric shadows, desaturated color palette, meticulous symmetry, noir thriller mood, clinical precision',
+    'Edgar Wright': 'Dynamic kinetic framing, bold color blocking, rhythmic visual comedy, British wit aesthetic, pop culture homage',
+    'default': 'Professional cinematic composition, dramatic lighting, movie poster quality'
+  };
+
+  const directorStyle = directorStyles[directorName] || directorStyles['default'];
+  
+  // Extract visual elements from concept
+  const colors = concept.color_palette?.primary_colors?.join(', ') || 'dramatic cinematic colors';
+  const mood = concept.mood || 'intense emotional';
+  const visualTheme = concept.visual_theme || 'cinematic storytelling';
+  
+  // Build premium prompt
+  return `MASTERPIECE CINEMA POSTER DESIGN - Award-winning theatrical release quality
+
+VISUAL DIRECTION by ${directorName}:
+${directorStyle}
+
+POSTER CONCEPT: "${concept.title}"
+ATMOSPHERE: ${mood}
+VISUAL THEME: ${visualTheme}
+COLOR GRADING: ${colors}
+
+TECHNICAL REQUIREMENTS:
+- Ultra-high resolution 4K movie poster composition
+- Hollywood blockbuster theatrical one-sheet design
+- Professional key art with dramatic hero shot composition
+- Cinematic lighting: rim lights, volumetric fog, lens flares
+- IMAX/Dolby Cinema presentation quality
+- Award season campaign aesthetic (Oscar/Golden Globe caliber)
+
+ARTISTIC STYLE:
+- Drew Struzan-inspired painted realism mixed with photography
+- Deep atmospheric depth with layered composition
+- Dramatic chiaroscuro lighting with saturated accents
+- Film grain texture for authentic cinema feel
+- Premium theatrical poster typography space (leave top 15% for title)
+
+MOOD & EMOTION:
+${concept.story_concept?.substring(0, 200) || 'Powerful emotional narrative captured in a single iconic frame'}
+
+DO NOT include any text, titles, or typography - PURE VISUAL IMAGERY ONLY
+Create an iconic, memorable key art image that could win a Key Art Award`;
+}
+
+/**
+ * Genera imagen con FAL nano-banana (Gemini 2.5 Flash via FAL)
+ * ⚡ Optimizado con prompts premium cinematográficos
+ */
+async function generateConceptImage(
+  prompt: string, 
+  conceptIndex: number,
+  options?: { concept?: any; directorName?: string; songInfo?: { artist?: string; title?: string } }
+): Promise<{ success: boolean; imageUrl?: string; error?: string; provider?: string }> {
   try {
-    console.log(`🎨 [Concept #${conceptIndex + 1}] Generando imagen con FAL nano-banana...`);
+    console.log(`🎨 [Concept #${conceptIndex + 1}] Generando póster PREMIUM con FAL nano-banana...`);
     
-    const enhancedPrompt = `Create a cinematic movie poster for a music video with this concept: ${prompt}. High-quality, professional, cinematographic style.`;
+    // Use premium prompt if concept data is available
+    let enhancedPrompt = prompt;
+    if (options?.concept) {
+      enhancedPrompt = buildPremiumPosterPrompt(
+        options.concept, 
+        options.directorName || 'Creative Director',
+        options.songInfo
+      );
+    }
     
     const result = await generateImageWithNanoBanana(enhancedPrompt, {
       aspectRatio: '3:4', // Portrait para pósters
@@ -65,7 +133,7 @@ async function generateConceptImage(prompt: string, conceptIndex: number): Promi
     });
 
     if (result.success && result.imageUrl) {
-      console.log(`✅ [Concept #${conceptIndex + 1}] Imagen generada con FAL nano-banana`);
+      console.log(`✅ [Concept #${conceptIndex + 1}] ¡Póster PREMIUM generado con FAL nano-banana!`);
       return {
         success: true,
         imageUrl: result.imageUrl,
@@ -178,17 +246,21 @@ ${prompt}`;
     console.log(`📸 Generando ${concepts.length} imágenes de póster EN PARALELO...`);
 
     // Generar las 3 imágenes EN PARALELO (mucho más rápido que secuencial)
+    // 🎬 Usando prompts PREMIUM cinematográficos
     const imagePromises = concepts.map(async (concept: any, index: number) => {
-      // Crear prompt para la imagen basado en el concepto
-      const imagePrompt = `Professional cinematic movie poster for music video concept:
-Title: ${concept.title}
-Visual Theme: ${concept.visual_theme}
-Mood: ${concept.mood}
-Color Palette: ${concept.color_palette?.primary_colors?.join(', ')}
-Story: ${concept.story_concept?.substring(0, 150)}...
-Style: High-quality Hollywood-level cinematography, 4K poster design`;
-
-      const imageResult = await generateConceptImage(imagePrompt, index);
+      // Usar el nuevo sistema de prompts premium
+      const imageResult = await generateConceptImage(
+        '', // El prompt se genera internamente con el concepto
+        index,
+        {
+          concept: concept,
+          directorName: directorName || 'Creative Director',
+          songInfo: {
+            artist: req.body.artistName,
+            title: req.body.songTitle
+          }
+        }
+      );
       return {
         ...concept,
         coverImage: imageResult.imageUrl || null,

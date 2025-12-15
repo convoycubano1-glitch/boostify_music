@@ -599,7 +599,9 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         transcription, // ✅ La transcripción YA está completa
         videoStyle.selectedDirector.name,
         artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
-        audioDurationInSeconds
+        audioDurationInSeconds,
+        projectName || undefined, // artistName - para posters cinematográficos premium
+        selectedFile?.name?.replace(/\.[^/.]+$/, "") || songTitle || undefined // songTitle
       );
       logger.info("✅ [CONCEPTOS] 3 propuestas generadas con contexto completo");
 
@@ -1976,7 +1978,9 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         transcriptionText, // ✅ CRÍTICO: La letra YA está transcrita aquí
         director.name,
         characterReference,
-        audioDurationInSeconds
+        audioDurationInSeconds,
+        projectName || undefined, // artistName - para posters cinematográficos premium
+        selectedFile?.name?.replace(/\.[^/.]+$/, "") || songTitle || undefined // songTitle
       );
       logger.info('✅ [CONCEPTOS] 3 propuestas generadas con contexto de letra');
       

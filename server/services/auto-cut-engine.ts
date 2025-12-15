@@ -62,7 +62,7 @@ export interface CutPoint {
   section: string;        // Sección musical
   duration: number;       // ms hasta siguiente corte
   durationBeats: number;  // Beats hasta siguiente corte
-  transition: string;     // Tipo de transición
+  transition: 'cut' | 'fade' | 'crossfade' | 'flash' | 'zoom' | 'glitch' | 'shake' | 'dissolve';
   energy: string;         // Nivel de energía
   isKeyMoment: boolean;   // Si coincide con drop/climax
   keyMomentType?: string; // Tipo de momento clave
@@ -257,7 +257,7 @@ export function generateCutPoints(
       Math.abs(km.timestamp * 1000 - beat.time) < beatDuration * 2
     );
     
-    let transition = cutRule.transition;
+    let transition: CutPoint['transition'] = cutRule.transition;
     let isKeyMoment = false;
     let keyMomentType: string | undefined;
     
@@ -270,7 +270,7 @@ export function generateCutPoints(
       
       // Usar transición sugerida por el momento
       if (keyMoment.suggestedEffect) {
-        const effectToTransition: Record<string, string> = {
+        const effectToTransition: Record<string, CutPoint['transition']> = {
           'flash': 'flash',
           'zoom_in': 'zoom',
           'zoom_out': 'zoom',
