@@ -997,83 +997,219 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Web3 Music Tokenization Section */}
-      <section className="py-20 bg-gradient-to-br from-black to-zinc-900 relative overflow-hidden">
+      {/* Web3 Music Tokenization & BoostiSwap Section */}
+      <section className="py-24 bg-gradient-to-br from-black via-zinc-950 to-black relative overflow-hidden">
+        {/* Animated background */}
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]"></div>
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-600/20 rounded-full filter blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-600/20 rounded-full filter blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-r from-purple-600/20 to-orange-500/20 rounded-full filter blur-[120px] animate-pulse" style={{ animationDuration: '10s' }}></div>
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-l from-orange-600/20 to-purple-500/20 rounded-full filter blur-[100px] animate-pulse" style={{ animationDuration: '14s' }}></div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-4 py-1 text-sm">
-              NEW FEATURE
+          {/* Section Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Badge className="mb-4 bg-gradient-to-r from-purple-500/20 to-orange-500/20 text-orange-400 border-orange-500/30 px-6 py-2 text-sm font-bold">
+              🚀 WEB3 REVOLUTION
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-orange-500">
-              Web3 Music Tokenization
+            <h2 className="text-4xl md:text-6xl font-extrabold mb-6">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-orange-400 to-red-500">
+                Tokenize & Trade Your Music
+              </span>
             </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Revolutionize how you monetize your music. Turn your songs into digital assets and connect directly with fans without intermediaries.
+            <p className="text-xl md:text-2xl text-white/70 max-w-4xl mx-auto leading-relaxed">
+              Turn your songs into digital assets, earn royalties automatically, and let fans invest in your success through our revolutionary marketplace
             </p>
-          </div>
+          </motion.div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-2xl p-8 shadow-2xl order-2 lg:order-1">
-              <h3 className="text-2xl font-bold mb-4 text-white">Tokenization Benefits</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <span className="inline-flex items-center justify-center bg-orange-500/20 rounded-full p-2 mr-3 mt-1">
-                    <DollarSign className="h-5 w-5 text-orange-500" />
-                  </span>
-                  <div>
-                    <span className="font-bold text-white">Direct Revenue</span>
-                    <p className="text-gray-400">Receive payments from your fans without intermediaries cutting into your earnings.</p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <span className="inline-flex items-center justify-center bg-orange-500/20 rounded-full p-2 mr-3 mt-1">
-                    <Share2 className="h-5 w-5 text-orange-500" />
-                  </span>
-                  <div>
-                    <span className="font-bold text-white">Automatic Royalties</span>
-                    <p className="text-gray-400">Set up perpetual royalties that automatically pay you on every resale.</p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <span className="inline-flex items-center justify-center bg-orange-500/20 rounded-full p-2 mr-3 mt-1">
-                    <Users className="h-5 w-5 text-orange-500" />
-                  </span>
-                  <div>
-                    <span className="font-bold text-white">Fan Community</span>
-                    <p className="text-gray-400">Build a community of followers who invest directly in your success.</p>
-                  </div>
-                </li>
-              </ul>
-              <div className="mt-8">
-                <Link href="/tokenization">
-                  <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
-                    Explore Tokenization
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
+          {/* Two Cards Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             
-            <div className="relative order-1 lg:order-2">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-2xl blur-xl"></div>
-              <div className="relative bg-zinc-800/50 backdrop-blur border border-zinc-700/50 rounded-2xl p-8 overflow-hidden">
-                <div className="absolute -right-20 -top-20 w-40 h-40 bg-orange-500/10 rounded-full"></div>
-                <div className="absolute -left-20 -bottom-20 w-40 h-40 bg-red-500/10 rounded-full"></div>
-                <video 
-                  src="/assets/Standard_Mode_Generated_Video (7).mp4" 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline
-                  className="w-full h-auto relative z-10 rounded-xl shadow-2xl"
-                />
+            {/* Card 1: Tokenization */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="group"
+            >
+              <div className="relative h-full">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+                <div className="relative bg-zinc-900/90 backdrop-blur-xl border border-orange-500/20 rounded-2xl p-8 h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20">
+                      <Sparkles className="h-8 w-8 text-orange-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">Music Tokenization</h3>
+                      <p className="text-orange-400 text-sm">Turn songs into digital assets</p>
+                    </div>
+                  </div>
+                  
+                  <ul className="space-y-4 mb-8">
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center mt-0.5">
+                        <DollarSign className="h-4 w-4 text-orange-400" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-white">Direct Revenue</span>
+                        <p className="text-white/60 text-sm">No intermediaries - 100% of your earnings go to you</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center mt-0.5">
+                        <Share2 className="h-4 w-4 text-orange-400" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-white">Automatic Royalties</span>
+                        <p className="text-white/60 text-sm">Earn on every resale, forever</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center mt-0.5">
+                        <Users className="h-4 w-4 text-orange-400" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-white">Fan Investment</span>
+                        <p className="text-white/60 text-sm">Fans become stakeholders in your success</p>
+                      </div>
+                    </li>
+                  </ul>
+                  
+                  <Link href="/tokenization">
+                    <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-6 shadow-lg shadow-orange-500/20 group">
+                      <Sparkles className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                      Tokenize Your Music
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 2: BoostiSwap */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="group"
+            >
+              <div className="relative h-full">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+                <div className="relative bg-zinc-900/90 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-8 h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20">
+                      <Zap className="h-8 w-8 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">BoostiSwap</h3>
+                      <p className="text-purple-400 text-sm">Music NFT Marketplace</p>
+                    </div>
+                    <Badge className="ml-auto bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                      HOT 🔥
+                    </Badge>
+                  </div>
+                  
+                  <ul className="space-y-4 mb-8">
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center mt-0.5">
+                        <TrendingUp className="h-4 w-4 text-purple-400" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-white">Buy & Sell Music NFTs</span>
+                        <p className="text-white/60 text-sm">Trade tokenized songs on our marketplace</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center mt-0.5">
+                        <BarChart2 className="h-4 w-4 text-purple-400" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-white">Real-Time Analytics</span>
+                        <p className="text-white/60 text-sm">Track sales, trends, and market activity</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center mt-0.5">
+                        <Globe className="h-4 w-4 text-purple-400" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-white">Global Community</span>
+                        <p className="text-white/60 text-sm">Connect with collectors worldwide</p>
+                      </div>
+                    </li>
+                  </ul>
+                  
+                  <Link href="/boostiswap">
+                    <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold py-6 shadow-lg shadow-purple-500/20 group">
+                      <Zap className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                      Explore BoostiSwap
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Video Showcase */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="relative max-w-4xl mx-auto"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-orange-500/30 to-red-500/30 rounded-3xl blur-2xl"></div>
+            <div className="relative bg-zinc-800/50 backdrop-blur border border-zinc-700/50 rounded-3xl p-4 overflow-hidden">
+              <video 
+                src="/assets/Standard_Mode_Generated_Video (7).mp4" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline
+                className="w-full h-auto rounded-2xl shadow-2xl"
+              />
+              
+              {/* Floating stats on video */}
+              <div className="absolute bottom-8 left-8 right-8 flex justify-between">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.6 }}
+                  className="bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10"
+                >
+                  <p className="text-xs text-white/60">Total Volume</p>
+                  <p className="text-lg font-bold text-white">$2.5M+</p>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.7 }}
+                  className="bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10"
+                >
+                  <p className="text-xs text-white/60">Artists</p>
+                  <p className="text-lg font-bold text-white">5,000+</p>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.8 }}
+                  className="bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10 hidden sm:block"
+                >
+                  <p className="text-xs text-white/60">NFTs Minted</p>
+                  <p className="text-lg font-bold text-white">50K+</p>
+                </motion.div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
