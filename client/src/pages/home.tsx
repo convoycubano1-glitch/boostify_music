@@ -1197,7 +1197,7 @@ export default function HomePage() {
                       transition={{ delay: 0.8 }}
                       className="flex flex-col sm:flex-row gap-4 pt-4"
                     >
-                      <Link href="/signup">
+                      <Link href="/profile">
                         <Button 
                           size="lg"
                           className="group w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold px-8 py-6 text-lg shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105"
@@ -1207,7 +1207,7 @@ export default function HomePage() {
                           <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       </Link>
-                      <Link href="/artist-profiles">
+                      <Link href="/profile">
                         <Button 
                           size="lg"
                           variant="outline"
