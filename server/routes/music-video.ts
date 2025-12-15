@@ -231,23 +231,34 @@ router.post("/generate-script", async (req: Request, res: Response) => {
 
     const targetScenes = sceneCount || (audioDuration ? Math.ceil(audioDuration / 4) : 12);
 
+    // 🎨 Construir sección de concepto visual si existe
     let conceptSection = '';
     if (concept) {
       conceptSection = `
 
-🎨 VISUAL CONCEPT (USE THIS AS FOUNDATION):
-Story: ${concept.story_concept || ''}
+🎨 VISUAL CONCEPT (USE THIS AS THE NARRATIVE FOUNDATION):
+Story Concept: ${concept.story_concept || ''}
 Visual Theme: ${concept.visual_theme || ''}
-Mood: ${concept.mood || ''}
+Mood Progression: ${concept.mood_progression || concept.mood || ''}
 Color Palette: ${JSON.stringify(concept.color_palette || {})}
-Wardrobe: ${JSON.stringify(concept.wardrobe || concept.main_wardrobe || {})}
+Main Wardrobe: ${JSON.stringify(concept.wardrobe || concept.main_wardrobe || {})}
 Locations: ${JSON.stringify(concept.locations || [])}
+Recurring Visual Elements: ${JSON.stringify(concept.recurring_visual_elements || [])}
+Key Narrative Moments: ${JSON.stringify(concept.key_narrative_moments || [])}
+
+⚠️ IMPORTANT: Every scene must align with this concept. The story_concept defines the narrative arc.
 `;
     }
 
+    // 📝 Dividir la letra en segmentos para asignar a cada escena
+    const lyricsLines = lyrics.split('\n').filter((line: string) => line.trim().length > 0);
+    const linesPerScene = Math.max(1, Math.ceil(lyricsLines.length / targetScenes));
+    
+    console.log(`📝 Letra: ${lyricsLines.length} líneas, ~${linesPerScene} líneas por escena`);
+
     const prompt = `You are an award-winning music video director creating a COHESIVE NARRATIVE with visual variety. Generate a complete music video script for these lyrics. Return ONLY valid JSON, no markdown.
 
-LYRICS:
+📜 SONG LYRICS (THIS IS THE FOUNDATION - EVERY SCENE MUST CONNECT TO THESE LYRICS):
 ${lyrics}
 ${conceptSection}
 DIRECTOR: ${directorName || 'Creative Director'}
@@ -257,14 +268,20 @@ EDITING STYLE: ${editingStyle?.name || 'Dynamic'}
 
 🎯 CRITICAL CREATIVE REQUIREMENTS:
 
-1. **NARRATIVE COHERENCE**: Create a complete story arc with beginning, middle, and end. Every scene should connect logically to tell ONE cohesive story based on the concept and lyrics.
+1. **LYRICS-FIRST APPROACH**: 
+   - DIVIDE the lyrics evenly across all ${targetScenes} scenes
+   - Each scene's "lyrics" field MUST contain the actual lyrics for that moment
+   - The "lyric_connection" field MUST explain how the visual interprets those specific lyrics
+   - The "narrative_context" MUST connect the scene to the overall story inspired by the lyrics
 
-2. **SHOT VARIETY** (MUST FOLLOW THIS DISTRIBUTION):
+2. **NARRATIVE COHERENCE**: Create a complete story arc with beginning, middle, and end. Every scene should connect logically to tell ONE cohesive story based on the concept and lyrics.
+
+3. **SHOT VARIETY** (MUST FOLLOW THIS DISTRIBUTION):
    - 30% PERFORMANCE shots: Artist singing/performing (use "shot_category": "PERFORMANCE")
    - 40% B-ROLL shots: Cinematic visuals that tell the story WITHOUT the artist (use "shot_category": "B-ROLL")
    - 30% STORY shots: Narrative scenes with characters/elements from the story (use "shot_category": "STORY")
 
-3. **VISUAL PROGRESSION**: Scenes should progress naturally:
+4. **VISUAL PROGRESSION**: Scenes should progress naturally:
    - Opening: Establish the world and main character
    - Rising: Develop the conflict or emotional journey
    - Climax: Peak emotional or visual moment

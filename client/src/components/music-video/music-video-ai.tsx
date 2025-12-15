@@ -2377,29 +2377,42 @@ DESIGN REQUIREMENTS:
       // Pass audio duration to generate scenes every ~4 seconds
       const audioDurationInSeconds = audioBuffer?.duration || undefined;
       
-      // 🆕 PASO 1: Generar concepto visual primero
-      logger.info('🎨 [CONCEPTO] Generando concepto visual y narrativo...');
-      const concept = await generateMusicVideoConcept(
-        transcription,
-        artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
-        audioDurationInSeconds
-      );
+      // � PASO 1: Usar concepto seleccionado por el usuario O generar uno nuevo
+      let conceptToUse = selectedConcept;
       
-      if (concept) {
-        logger.info('✅ [CONCEPTO] Concepto generado:', concept);
+      if (!conceptToUse) {
+        // Si no hay concepto seleccionado, generar uno nuevo basado en la letra
+        logger.info('🎨 [CONCEPTO] No hay concepto seleccionado, generando uno nuevo basado en la letra...');
+        conceptToUse = await generateMusicVideoConcept(
+          transcription,
+          artistReferenceImages.length > 0 ? artistReferenceImages : undefined,
+          audioDurationInSeconds
+        );
+        
+        if (conceptToUse) {
+          logger.info('✅ [CONCEPTO] Concepto generado y guardado en estado');
+          setSelectedConcept(conceptToUse); // 🆕 Guardar para uso posterior
+        } else {
+          logger.warn('⚠️ [CONCEPTO] No se pudo generar concepto, el script se generará sin contexto visual');
+        }
       } else {
-        logger.info('⚠️ [CONCEPTO] No se pudo generar concepto, continuando sin él');
+        logger.info('🎨 [CONCEPTO] Usando concepto seleccionado por el usuario:', conceptToUse.title || conceptToUse.story_concept?.substring(0, 50));
       }
       
-      // PASO 2: Generar script usando el concepto y perfil completo del director
-      logger.info('📝 [SCRIPT] Generando script con concepto y perfil del director...');
+      // 📝 PASO 2: Generar script usando LETRA + CONCEPTO + DIRECTOR
+      // El script debe conectar cada escena con el segmento de letra correspondiente
+      logger.info('📝 [SCRIPT] Generando script conectando LETRA ↔ CONCEPTO ↔ ESCENAS...');
+      logger.info(`   - Letra: ${transcription.substring(0, 100)}...`);
+      logger.info(`   - Concepto: ${conceptToUse?.story_concept?.substring(0, 80) || 'Sin concepto'}...`);
+      logger.info(`   - Director: ${directorProfile?.name || 'Creative Director'}`);
+      
       const scriptResponse = await generateMusicVideoScript(
         transcription, 
         undefined, 
-        directorProfile, // Ahora pasamos el perfil completo
+        directorProfile, // Perfil completo del director
         audioDurationInSeconds,
         undefined,
-        concept
+        conceptToUse // 🆕 Pasar el concepto correcto (seleccionado o generado)
       );
       
       clearInterval(progressInterval);
@@ -2626,13 +2639,33 @@ DESIGN REQUIREMENTS:
     
     logger.info(`✅ ${segments.length} clips created from JSON with FULL narrative context`);
     
-    // Log resumen de categorías de escenas
+    // 📊 Log resumen de categorías de escenas
     const categories = segments.reduce((acc, s) => {
       const cat = s.shotCategory || 'UNKNOWN';
       acc[cat] = (acc[cat] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
     logger.info(`📊 Shot categories breakdown: ${JSON.stringify(categories)}`);
+    
+    // 🎤 VALIDACIÓN: Verificar conexión LETRA ↔ ESCENAS
+    const scenesWithLyrics = segments.filter(s => s.lyricsSegment && s.lyricsSegment.trim().length > 0);
+    const scenesWithLyricConnection = segments.filter(s => s.lyricConnection && s.lyricConnection.trim().length > 0);
+    const scenesWithNarrative = segments.filter(s => s.narrativeContext && s.narrativeContext.trim().length > 0);
+    
+    logger.info(`🎤 [VALIDATION] Lyrics Integration:`);
+    logger.info(`   - Scenes with lyrics segment: ${scenesWithLyrics.length}/${segments.length}`);
+    logger.info(`   - Scenes with lyric_connection: ${scenesWithLyricConnection.length}/${segments.length}`);
+    logger.info(`   - Scenes with narrative_context: ${scenesWithNarrative.length}/${segments.length}`);
+    
+    if (scenesWithLyrics.length < segments.length * 0.5) {
+      logger.warn(`⚠️ [VALIDATION] Less than 50% of scenes have lyrics - script may not be well connected to the song`);
+    }
+    
+    // Log primeras 3 escenas para debug
+    logger.info(`🎬 [SAMPLE] First 3 scenes narrative summary:`);
+    segments.slice(0, 3).forEach((s, i) => {
+      logger.info(`   Scene ${i+1}: "${s.lyricsSegment?.substring(0, 40) || 'No lyrics'}..." → "${s.lyricConnection?.substring(0, 50) || 'No connection'}..."`);
+    });
     
     return segments;
   };

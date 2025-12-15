@@ -1111,8 +1111,30 @@ function generarGuionFallback(
     else if (i % 3 === 1) musicSection = MusicSection.CHORUS;
     else if (i % 4 === 2) musicSection = MusicSection.BRIDGE;
     
-    // Balance 50/50: alternar entre performance y b-roll
-    const role: SceneRole = i % 2 === 0 ? SceneRole.PERFORMANCE : SceneRole.BROLL;
+    // 🎬 MEJORADO: Usar distribución 30/40/30 con shotCategory
+    // 30% PERFORMANCE, 40% B-ROLL, 30% STORY
+    let shotCategory: 'PERFORMANCE' | 'B-ROLL' | 'STORY';
+    let role: SceneRole;
+    let useArtistReference = true;
+    let referenceUsage: string = 'full_performance';
+    
+    const scenePosition = i / sceneCount;
+    if (i % 10 < 3) { // 30% PERFORMANCE
+      shotCategory = 'PERFORMANCE';
+      role = SceneRole.PERFORMANCE;
+      useArtistReference = true;
+      referenceUsage = 'full_performance';
+    } else if (i % 10 < 7) { // 40% B-ROLL
+      shotCategory = 'B-ROLL';
+      role = SceneRole.BROLL;
+      useArtistReference = false;
+      referenceUsage = 'none';
+    } else { // 30% STORY
+      shotCategory = 'STORY';
+      role = SceneRole.PERFORMANCE; // Story can have artist as character
+      useArtistReference = true;
+      referenceUsage = 'story_character';
+    }
     
     // Obtener shot type de la secuencia variada
     const shotType = shotSequence[i];
@@ -1130,14 +1152,32 @@ function generarGuionFallback(
     const sceneDuration = adjustedDurations[i];
     const start_time = accumulatedTime;
     
+    // 📝 NUEVO: Generar contexto narrativo y conexión con la letra
+    const storyProgressions = [
+      'Act 1 - Introduction: Establishing the world and emotional state',
+      'Act 1 - Rising Action: Building tension and introducing conflict',
+      'Act 2 - Development: Deepening the emotional journey',
+      'Act 2 - Turning Point: Key moment of transformation',
+      'Act 3 - Climax: Peak emotional intensity',
+      'Act 3 - Resolution: Finding closure and final statement'
+    ];
+    const storyProgression = storyProgressions[Math.min(Math.floor(scenePosition * 6), 5)];
+    
+    // Generar conexión con la letra basada en el contenido
+    const lyricConnection = lyricsText.length > 10 
+      ? `This lyric "${lyricsText.substring(0, 40)}..." is visualized through ${shotCategory === 'PERFORMANCE' ? 'direct performance' : shotCategory === 'B-ROLL' ? 'symbolic imagery' : 'narrative action'}`
+      : 'Instrumental section - mood and atmosphere focus';
+    
     // Generar descripción según el rol
     let description: string;
-    if (role === SceneRole.PERFORMANCE) {
+    let narrativeContext: string;
+    
+    if (shotCategory === 'PERFORMANCE') {
       description = isHighEnergy 
-        ? `Artist performing energetically, ${shotType} shot capturing dynamic movement and emotional expression. ${lyricsText}`
-        : `Artist performing intimately, ${shotType} shot focusing on emotive lip sync and subtle movements. ${lyricsText}`;
-    } else {
-      // B-roll: escenas de historia/ambiente
+        ? `Artist performing energetically, ${shotType} shot capturing dynamic movement and emotional expression.`
+        : `Artist performing intimately, ${shotType} shot focusing on emotive lip sync and subtle movements.`;
+      narrativeContext = `The artist channels the emotion of the lyrics, connecting directly with the audience through ${isHighEnergy ? 'energetic' : 'intimate'} performance.`;
+    } else if (shotCategory === 'B-ROLL') {
       const brollScenes = [
         `Cinematic ${shotType} of urban landscape with artistic composition`,
         `${shotType} capturing environmental storytelling elements`,
@@ -1145,24 +1185,37 @@ function generarGuionFallback(
         `${shotType} showcasing contextual setting and mood`,
         `Story-driven ${shotType} with strong visual metaphor`
       ];
-      description = brollScenes[i % brollScenes.length] + `. ${lyricsText}`;
+      description = brollScenes[i % brollScenes.length];
+      narrativeContext = `Visual metaphor representing the emotional themes of the lyrics - ${isHighEnergy ? 'dynamic energy' : 'introspective mood'}.`;
+    } else { // STORY
+      description = `Narrative ${shotType} showing the character's journey through ${isHighEnergy ? 'intense action' : 'reflective moments'}.`;
+      narrativeContext = `The story unfolds as the character experiences the emotions described in the lyrics, ${storyProgression.toLowerCase()}.`;
     }
     
-    // Crear escena con nuevo schema
+    // Crear escena con nuevo schema MEJORADO
     const scene: MusicVideoScene = {
       scene_id: `scene-${i + 1}`,
       start_time,
       duration: sceneDuration,
       role,
       shot_type: shotType,
+      shot_category: shotCategory as any, // Nueva propiedad
+      use_artist_reference: useArtistReference,
+      reference_usage: referenceUsage,
       camera_movement: cameraMovement,
       lens,
       visual_style: visualStyle,
       lighting,
       color_temperature: isHighEnergy ? '5000K' : '3200K',
       description,
+      visual_description: description, // Alias para compatibilidad
       lyrics_segment: lyricsText || `Segmento ${i + 1} de la canción`,
-      location: role === SceneRole.PERFORMANCE ? 'performance space' : 'cinematic environment',
+      lyrics: lyricsText || '', // Alias
+      lyric_connection: lyricConnection,
+      narrative_context: narrativeContext,
+      story_progression: storyProgression,
+      emotion: isHighEnergy ? 'energetic, passionate' : 'introspective, emotional',
+      location: shotCategory === 'PERFORMANCE' ? 'performance space' : 'cinematic environment',
       music_section: musicSection,
       status: 'pending'
     };
