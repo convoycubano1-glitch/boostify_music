@@ -11,16 +11,14 @@ import fileUpload from 'express-fileupload';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Detect deployment environment using Replit's official environment variable
-// REPLIT_DEPLOYMENT is set to '1' only in actual Cloud Run deployments
-if (process.env.REPLIT_DEPLOYMENT === '1') {
-  process.env.NODE_ENV = 'production';
-  log('🚀 Detected Replit deployment (REPLIT_DEPLOYMENT=1) - using production mode');
-} else {
-  // Force development mode for local Replit environment
+// Detect deployment environment
+// Use NODE_ENV from environment variables or default to development
+if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = 'development';
-  log('🛠️ Local development environment - using development mode');
 }
+
+const isProduction = process.env.NODE_ENV === 'production';
+log(`🚀 Running in ${process.env.NODE_ENV} mode`);
 
 const app = express();
 
