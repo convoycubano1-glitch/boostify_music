@@ -72,6 +72,7 @@ import falApiRouter from './routes/fal-api'; // Import the FAL AI router for sec
 import creditsRouter from './routes/credits'; // Import the credits and payments router
 import faceAnalysisRouter from './routes/face-analysis'; // Import the face analysis router
 import videoRenderingRouter from './routes/video-rendering'; // Import the video rendering router with Shotstack
+import diagnosticsRouter from './routes/diagnostics'; // Import diagnostics router for system health checks
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for tasks
 import { authenticate } from './middleware/auth';
 import { awardCourseCompletionAchievement } from './achievements';
@@ -335,6 +336,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/music-video', musicVideoRouter);
   app.use('/api/artist-profiles', artistProfilesRouter);
   app.use('/api/video-rendering', videoRenderingRouter);
+  app.use('/api/diagnostics', diagnosticsRouter); // System health check endpoints
   console.log('✅ Router de proyectos de music video registrado');
   console.log('✅ Router de perfiles de artista auto-generados registrado');
   
