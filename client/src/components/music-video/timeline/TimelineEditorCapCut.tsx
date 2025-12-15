@@ -3,12 +3,14 @@
  * Full-screen video editing with large preview + horizontal timeline
  * 
  * MOBILE-OPTIMIZED: Diseñado para iPhone/Android con controles táctiles
+ * FASE 2: Lazy loading, transiciones, gestos touch
  */
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { 
   Play, Pause, Volume2, VolumeX, ZoomIn, ZoomOut, 
   Download, Settings, Undo2, Redo2, Trash2, Copy, X,
-  Music, Wand2, Scissors, Hand, ChevronLeft, Menu, Layers
+  Music, Wand2, Scissors, Hand, ChevronLeft, Menu, Layers,
+  ChevronRight, SkipBack, SkipForward
 } from 'lucide-react';
 import { TimelineLayers } from './TimelineLayers';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,46 @@ interface TimelineEditorCapCutProps {
   exportProgress?: number;
   exportStatus?: string;
 }
+
+// 🖼️ Lazy Image Component with placeholder and fade-in
+const LazyImage: React.FC<{
+  src: string;
+  alt: string;
+  className?: string;
+  onLoad?: () => void;
+}> = ({ src, alt, className = '', onLoad }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  
+  return (
+    <div className={`relative ${className}`}>
+      {/* Placeholder skeleton */}
+      {!loaded && !error && (
+        <div className="absolute inset-0 bg-zinc-800 animate-pulse flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      {/* Error state */}
+      {error && (
+        <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
+          <Music className="w-6 h-6 text-zinc-600" />
+        </div>
+      )}
+      {/* Actual image */}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        loading="lazy"
+        onLoad={() => {
+          setLoaded(true);
+          onLoad?.();
+        }}
+        onError={() => setError(true)}
+      />
+    </div>
+  );
+};
 
 export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
   initialClips,
@@ -51,6 +93,10 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
   const [tool, setTool] = useState<'select' | 'cut' | 'hand'>('select');
   const [showLayers, setShowLayers] = useState(false);
   
+  // 🎬 Scene transition state
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [previousSceneUrl, setPreviousSceneUrl] = useState<string | null>(null);
+  
   // 📱 Mobile detection
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -62,6 +108,12 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
   
   // 📱 Sidebar hidden by default on mobile
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // 👆 Touch/Swipe gesture refs
+  const previewRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const isSwiping = useRef<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -87,6 +139,83 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
     if (!currentScene) return 0;
     return scenes.findIndex(s => s.id === currentScene.id) + 1;
   }, [currentScene, scenes]);
+  
+  // 🎬 Handle scene transition effect
+  const prevSceneRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (currentScene && prevSceneRef.current !== currentScene.imageUrl) {
+      if (prevSceneRef.current) {
+        setPreviousSceneUrl(prevSceneRef.current);
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setIsTransitioning(false);
+          setPreviousSceneUrl(null);
+        }, 300);
+      }
+      prevSceneRef.current = currentScene.imageUrl;
+    }
+  }, [currentScene]);
+  
+  // 👆 Navigate to next/previous scene
+  const goToNextScene = useCallback(() => {
+    if (currentSceneIndex < scenes.length) {
+      const nextScene = scenes[currentSceneIndex]; // currentSceneIndex is 1-based, so this gets the next
+      if (nextScene) {
+        setCurrentTime(nextScene.timestamp);
+      }
+    }
+  }, [currentSceneIndex, scenes]);
+  
+  const goToPrevScene = useCallback(() => {
+    if (currentSceneIndex > 1) {
+      const prevScene = scenes[currentSceneIndex - 2]; // -2 because 1-based and we want previous
+      if (prevScene) {
+        setCurrentTime(prevScene.timestamp);
+      }
+    } else {
+      setCurrentTime(0);
+    }
+  }, [currentSceneIndex, scenes]);
+  
+  // 👆 Touch gesture handlers for swipe navigation
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+  }, []);
+  
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartX.current) return;
+    
+    const deltaX = e.touches[0].clientX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    
+    // Check if horizontal swipe (more horizontal than vertical)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
+      isSwiping.current = true;
+    }
+  }, []);
+  
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!isSwiping.current) return;
+    
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const threshold = 50; // Minimum swipe distance
+    
+    if (Math.abs(deltaX) > threshold) {
+      if (deltaX > 0) {
+        // Swipe right = previous scene
+        goToPrevScene();
+      } else {
+        // Swipe left = next scene
+        goToNextScene();
+      }
+    }
+    
+    touchStartX.current = 0;
+    touchStartY.current = 0;
+    isSwiping.current = false;
+  }, [goToNextScene, goToPrevScene]);
 
   // Play loop
   useEffect(() => {
@@ -298,8 +427,14 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
 
         {/* Center - Video Preview Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Large Preview */}
-          <div className="flex-1 bg-black relative group overflow-hidden flex items-center justify-center min-h-[200px]">
+          {/* Large Preview with touch gestures */}
+          <div 
+            ref={previewRef}
+            className="flex-1 bg-black relative group overflow-hidden flex items-center justify-center min-h-[200px]"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             {videoPreviewUrl ? (
               <video
                 ref={videoRef}
@@ -308,15 +443,50 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
               />
             ) : scenes.length > 0 && currentScene ? (
               <div className="relative w-full h-full">
+                {/* 🎬 Previous scene (for crossfade transition) */}
+                {isTransitioning && previousSceneUrl && (
+                  <img
+                    src={previousSceneUrl}
+                    alt="Previous scene"
+                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 opacity-0"
+                  />
+                )}
+                
                 {/* 🎬 Current scene image with fade transition */}
-                <img
+                <LazyImage
                   src={currentScene.imageUrl}
                   alt={currentScene.description || `Escena ${currentSceneIndex}`}
-                  className="w-full h-full object-cover transition-opacity duration-300"
+                  className={`w-full h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-100' : ''}`}
                 />
                 
+                {/* 👆 Swipe hint indicators (mobile) */}
+                {isMobile && !isPlaying && (
+                  <>
+                    {/* Left arrow - previous scene */}
+                    {currentSceneIndex > 1 && (
+                      <button
+                        onClick={goToPrevScene}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:bg-black/60"
+                        aria-label="Escena anterior"
+                      >
+                        <ChevronLeft className="w-6 h-6 text-white" />
+                      </button>
+                    )}
+                    {/* Right arrow - next scene */}
+                    {currentSceneIndex < scenes.length && (
+                      <button
+                        onClick={goToNextScene}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:bg-black/60"
+                        aria-label="Siguiente escena"
+                      >
+                        <ChevronRight className="w-6 h-6 text-white" />
+                      </button>
+                    )}
+                  </>
+                )}
+                
                 {/* 📝 Scene info overlay (bottom) */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4 pointer-events-none">
                   {/* Lyrics segment as subtitle */}
                   {currentScene.lyricsSegment && (
                     <p className="text-white text-center text-sm sm:text-lg font-medium mb-2 drop-shadow-lg line-clamp-2">
@@ -398,7 +568,20 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
           <div className="bg-zinc-950 border-t border-orange-500/10">
             {/* Transport Controls - Mobile optimized */}
             <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-zinc-800">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
+                {/* Skip to previous scene */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={goToPrevScene}
+                  className="text-zinc-400 hover:text-white hover:bg-orange-500/20 active:bg-orange-500/30 min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] p-1.5 sm:p-2"
+                  aria-label="Escena anterior"
+                  disabled={currentSceneIndex <= 1}
+                >
+                  <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Button>
+                
+                {/* Play/Pause */}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -408,8 +591,21 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
                 >
                   {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                 </Button>
-                <div className="text-xs sm:text-sm text-zinc-300 font-mono">
-                  {formatTime(currentTime)} <span className="text-zinc-500">/</span> {formatTime(duration)}
+                
+                {/* Skip to next scene */}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={goToNextScene}
+                  className="text-zinc-400 hover:text-white hover:bg-orange-500/20 active:bg-orange-500/30 min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] p-1.5 sm:p-2"
+                  aria-label="Siguiente escena"
+                  disabled={currentSceneIndex >= scenes.length}
+                >
+                  <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Button>
+                
+                <div className="text-xs sm:text-sm text-zinc-300 font-mono ml-1 sm:ml-2">
+                  {formatTime(currentTime)} <span className="text-zinc-500 hidden sm:inline">/</span> <span className="hidden sm:inline">{formatTime(duration)}</span>
                 </div>
               </div>
 
@@ -478,28 +674,27 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
               </div>
             </div>
 
-            {/* 📱 Scene Thumbnail Strip - Responsive */}
-            <div className="flex overflow-x-auto gap-2 sm:gap-3 p-2 sm:p-3 bg-black/30 border-b border-zinc-800 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+            {/* 📱 Scene Thumbnail Strip - Responsive with Lazy Loading */}
+            <div className="flex overflow-x-auto gap-2 sm:gap-3 p-2 sm:p-3 bg-black/30 border-b border-zinc-800 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent snap-x snap-mandatory">
               {scenes.map((scene, idx) => {
                 const isActive = currentScene?.id === scene.id;
                 return (
                   <button
                     key={scene.id}
                     onClick={() => setCurrentTime(scene.timestamp)}
-                    className={`flex-shrink-0 relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all transform ${
+                    className={`flex-shrink-0 relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all transform snap-center ${
                       isActive
-                        ? 'border-orange-500 scale-105 shadow-lg shadow-orange-500/30'
+                        ? 'border-orange-500 scale-105 shadow-lg shadow-orange-500/30 ring-2 ring-orange-500/50'
                         : 'border-zinc-700/50 hover:border-orange-500/50 active:scale-95'
                     }`}
                     title={scene.description}
                     aria-label={`Ir a escena ${idx + 1}`}
                   >
-                    {/* 📱 Responsive thumbnail sizes */}
-                    <img
+                    {/* 📱 Responsive thumbnail sizes with LazyImage */}
+                    <LazyImage
                       src={scene.imageUrl}
                       alt={`Escena ${idx + 1}`}
-                      className="w-20 h-14 sm:w-28 sm:h-18 md:w-32 md:h-20 object-cover"
-                      loading="lazy"
+                      className="w-20 h-14 sm:w-28 sm:h-18 md:w-32 md:h-20"
                     />
                     
                     {/* Scene number badge */}
@@ -525,17 +720,67 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
               })}
             </div>
 
-            {/* Layers Panel - Collapsible on mobile */}
+            {/* Layers Panel - Simplified on Mobile, Full on Desktop */}
             {(!isMobile || showLayers) && (
               <div className={`${isMobile ? 'max-h-32' : 'max-h-40'} overflow-y-auto bg-black/50`}>
-                <TimelineLayers
-                  clips={clips}
-                  currentTime={currentTime}
-                  zoom={zoom}
-                  duration={duration}
-                  onSelectClip={(id) => handleClipSelect(String(id))}
-                  selectedClipId={selectedClipId ? parseInt(selectedClipId) : null}
-                />
+                {isMobile ? (
+                  // 📱 MOBILE: Simplified layer view - only show summary
+                  <div className="p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+                      <span className="font-bold uppercase">Capas Activas</span>
+                      <button 
+                        onClick={() => setShowLayers(false)}
+                        className="text-zinc-500 hover:text-white p-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    {/* Scene Images Layer */}
+                    {scenes.length > 0 && (
+                      <div className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg">
+                        <div className="w-3 h-3 rounded-full bg-pink-500" />
+                        <span className="text-sm text-white flex-1">🎬 Escenas IA</span>
+                        <span className="text-xs text-zinc-400">{scenes.length}</span>
+                      </div>
+                    )}
+                    
+                    {/* Audio Layer */}
+                    {(audioPreviewUrl || clips.filter(c => c.type === 'audio').length > 0) && (
+                      <div className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg">
+                        <div className="w-3 h-3 rounded-full bg-amber-500" />
+                        <span className="text-sm text-white flex-1">🎵 Audio</span>
+                        <span className="text-xs text-zinc-400">
+                          {formatTime(duration)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Text Layer */}
+                    {clips.filter(c => c.type === 'text').length > 0 && (
+                      <div className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg">
+                        <div className="w-3 h-3 rounded-full bg-orange-500" />
+                        <span className="text-sm text-white flex-1">📝 Texto</span>
+                        <span className="text-xs text-zinc-400">{clips.filter(c => c.type === 'text').length}</span>
+                      </div>
+                    )}
+                    
+                    {/* Info hint */}
+                    <p className="text-[10px] text-zinc-500 text-center mt-2">
+                      Desliza ← → en las escenas para navegar
+                    </p>
+                  </div>
+                ) : (
+                  // 🖥️ DESKTOP: Full timeline layers
+                  <TimelineLayers
+                    clips={clips}
+                    currentTime={currentTime}
+                    zoom={zoom}
+                    duration={duration}
+                    onSelectClip={(id) => handleClipSelect(String(id))}
+                    selectedClipId={selectedClipId ? parseInt(selectedClipId) : null}
+                  />
+                )}
               </div>
             )}
           </div>
